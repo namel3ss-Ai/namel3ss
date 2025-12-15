@@ -8,6 +8,8 @@ We are building an English-first, AI-native language with deterministic defaults
 - **Naming:** Prefer folder-first names (e.g., `parser/core.py` over `parser_core.py`). Keep module names clear and short.
 - **Clarity first:** Write human-readable messages and docs. Avoid hidden magic or implied behaviors.
 
+Single responsibility is enforced in CI. If CI fails with responsibility_check, split the file into a folder (e.g., executor/expr_eval.py, executor/statements.py). Keep files under 300 LOC when possible.
+
 ## Testing & Checks
 - Add or update tests for every behavior. Use `python -m pytest -q` from the repo root.
 - Compile check: `python -m compileall src -q` to catch syntax issues.

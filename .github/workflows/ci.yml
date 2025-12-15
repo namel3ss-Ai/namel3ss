@@ -30,3 +30,8 @@ jobs:
       - name: Enforce line limit
         run: python tools/line_limit_check.py
 
+      - name: Enforce single responsibility
+        run: python tools/responsibility_check.py
+
+      - name: Report largest source files
+        run: python tools/top_files.py
