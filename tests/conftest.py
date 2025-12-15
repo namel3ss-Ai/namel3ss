@@ -1,0 +1,35 @@
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+SRC = ROOT / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
+
+from namel3ss.ir.nodes import lower_program  # noqa: E402
+from namel3ss.parser.core import parse  # noqa: E402
+from namel3ss.runtime.executor import Executor  # noqa: E402
+
+
+def parse_program(code: str):
+    """Parse source into an AST program."""
+    return parse(code)
+
+
+def lower_ir_program(code: str):
+    """Parse then lower to IR Program."""
+    return lower_program(parse_program(code))
+
+
+def run_flow(code: str, flow_name: str = "demo", initial_state=None, store=None):
+    """Parse, lower, and execute a flow by name."""
+    ir_program = lower_ir_program(code)
+    flow = next((f for f in ir_program.flows if f.name == flow_name), None)
+    if flow is None:
+        raise ValueError(f"Flow '{flow_name}' not found")
+    schemas = {schema.name: schema for schema in ir_program.records}
+    executor = Executor(flow, schemas=schemas, initial_state=initial_state, store=store)
+    return executor.run()
+
+
+__all__ = ["parse_program", "lower_ir_program", "run_flow"]

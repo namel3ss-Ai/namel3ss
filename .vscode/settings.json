@@ -1,0 +1,14 @@
+{
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestArgs": ["-q"],
+  "editor.formatOnSave": true,
+  "python.analysis.extraPaths": ["src"],
+  "search.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.venv": true,
+    "**/dist": true,
+    "**/build": true
+  }
+}
