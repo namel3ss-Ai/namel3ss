@@ -18,8 +18,9 @@ page "home":
 
 def test_button_calls_missing_flow():
     source = '''page "home":
-  button "Create user" calls flow "create_user"
-'''
+  button "Create user":
+    calls flow "create_user"
+    '''
     with pytest.raises(Namel3ssError) as exc:
         lower_ir_program(source)
     assert "unknown flow" in str(exc.value).lower()

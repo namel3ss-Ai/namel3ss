@@ -4,7 +4,8 @@ from tests.conftest import lower_ir_program
 
 def test_button_action_id_is_slugified():
     source = '''page "home":
-  button "Create user" calls flow "create_user"
+  button "Create user":
+    calls flow "create_user"
 
 flow "create_user":
   return "ok"

@@ -23,9 +23,12 @@ def execute_run_agents_parallel(ctx: ExecutionContext, stmt: ir.RunAgentsParalle
     results: list[str] = []
     child_traces: list[dict] = []
     for entry in stmt.entries:
-        output, trace = run_agent_call(ctx, entry.agent_name, entry.input_expr, entry.line, entry.column)
+        try:
+            output, trace = run_agent_call(ctx, entry.agent_name, entry.input_expr, entry.line, entry.column)
+        except Namel3ssError as err:
+            raise Namel3ssError(f"Agent '{entry.agent_name}' failed: {err}", line=entry.line, column=entry.column) from err
         results.append(output)
-        child_traces.append(trace.__dict__ if hasattr(trace, "__dict__") else trace)
+        child_traces.append(_trace_to_dict(trace))
     ctx.locals[stmt.target] = results
     ctx.last_value = results
     ctx.traces.append({"type": "parallel_agents", "target": stmt.target, "agents": child_traces})
@@ -70,3 +73,18 @@ def run_agent_call(ctx: ExecutionContext, agent_name: str, input_expr, line: int
     )
     ctx.memory_manager.record_interaction(profile_override, ctx.state, user_input, response_output, tool_events)
     return response_output, trace
+
+
+def _trace_to_dict(trace: AITrace) -> dict:
+    return {
+        "ai_name": trace.ai_name,
+        "ai_profile_name": trace.ai_profile_name,
+        "agent_name": trace.agent_name,
+        "model": trace.model,
+        "system_prompt": trace.system_prompt,
+        "input": trace.input,
+        "output": trace.output,
+        "memory": trace.memory,
+        "tool_calls": trace.tool_calls,
+        "tool_results": trace.tool_results,
+    }

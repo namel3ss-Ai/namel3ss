@@ -3,7 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-
+# Reserved words mapped to their token types. Keep each keyword string once to
+# avoid silent overrides; duplicates hide earlier entries and break coverage.
+# When adding new keywords, append here only after confirming the token type is
+# unique and tests cover the new surface.
 KEYWORDS = {
     "flow": "FLOW",
     "page": "PAGE",
@@ -47,7 +50,6 @@ KEYWORDS = {
     "each": "EACH",
     "in": "IN",
     "match": "MATCH",
-    "with": "WITH",
     "when": "WHEN",
     "otherwise": "OTHERWISE",
     "try": "TRY",
@@ -75,7 +77,6 @@ KEYWORDS = {
     "be": "BE",
     "present": "PRESENT",
     "unique": "UNIQUE",
-    "match": "MATCH",
     "pattern": "PATTERN",
     "have": "HAVE",
     "length": "LENGTH",

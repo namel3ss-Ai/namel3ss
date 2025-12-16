@@ -11,7 +11,8 @@ flow "demo":
   return reply
 
 page "home":
-  button "Ask" calls flow "demo"
+  button "Ask":
+    calls flow "demo"
 '''
 
 

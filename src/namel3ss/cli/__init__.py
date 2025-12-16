@@ -1,2 +1,2 @@
-"""CLI entrypoints for Namel3ss tooling."""
+"""Command-line interface for Namel3ss."""
 

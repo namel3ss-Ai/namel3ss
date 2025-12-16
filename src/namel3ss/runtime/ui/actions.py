@@ -24,7 +24,7 @@ def handle_action(
         raise Namel3ssError("Payload must be a dictionary")
 
     store = store or MemoryStore()
-    working_state = state or {}
+    working_state = {} if state is None else state
     manifest = build_manifest(program_ir, state=working_state, store=store)
     actions: Dict[str, dict] = manifest.get("actions", {})
     if action_id not in actions:

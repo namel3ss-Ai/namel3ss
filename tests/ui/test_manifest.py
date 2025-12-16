@@ -14,7 +14,8 @@ page "home":
   text is "Hello"
   form is "User"
   table is "User"
-  button "Create user" calls flow "create_user"
+  button "Create user":
+    calls flow "create_user"
 '''
 
 

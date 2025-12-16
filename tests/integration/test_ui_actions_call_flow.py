@@ -7,7 +7,8 @@ SOURCE = '''flow "create_user":
   return "done"
 
 page "home":
-  button "Create user" calls flow "create_user"
+  button "Create user":
+    calls flow "create_user"
 '''
 
 

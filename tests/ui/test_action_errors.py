@@ -18,7 +18,8 @@ def test_payload_mapping_into_flow():
   return input.message
 
 page "home":
-  button "Send" calls flow "echo"
+  button "Send":
+    calls flow "echo"
 '''
     program = lower_ir_program(source)
     response = handle_action(program, action_id="page.home.button.send", payload={"message": "hi"})

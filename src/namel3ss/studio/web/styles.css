@@ -1,0 +1,42 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0 16px 32px 16px;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #ddd;
+  padding: 12px 0;
+}
+
+main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+section {
+  border: 1px solid #eee;
+  padding: 12px;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+pre {
+  background: #fff;
+  border: 1px solid #eee;
+  padding: 8px;
+  overflow: auto;
+}
+
+.element {
+  margin-bottom: 8px;
+}
+
+button {
+  padding: 6px 12px;
+}

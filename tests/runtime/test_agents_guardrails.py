@@ -46,7 +46,5 @@ agent "known":
 flow "demo":
   run agent "missing" with input: "x" as out
 '''
-    program = lower_ir_program(source)
-    flow = program.flows[0]
     with pytest.raises(Namel3ssError):
-        Executor(flow, schemas={}, ai_profiles=program.ais, agents=program.agents, ai_provider=MockProvider()).run()
+        lower_ir_program(source)

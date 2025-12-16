@@ -31,3 +31,21 @@ Namel3ss is an English-first, AI-native full-stack programming language that spa
 - Each source file must stay under 500 lines.
 - One responsibility per file; if it grows, split into a folder with smaller modules.
 - Prefer folder-first naming (e.g., `parser/core.py`, not `parser_core.py`).
+
+### Migration note (buttons)
+- Buttons are block-only (to avoid grammar chaos):
+  ```
+  button "Run":
+    calls flow "demo"
+  ```
+- Old one-line form is rejected:
+  ```
+  button "Run" calls flow "demo"
+  ```
+
+## Docs
+- [IR Reference](docs/ir.md)
+- [Runtime Model](docs/runtime.md)
+- [Error Reference](docs/errors.md)
+- [Quickstart](docs/quickstart.md)
+- [Roadmap](docs/roadmap.md)

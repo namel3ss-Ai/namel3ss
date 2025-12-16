@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Namel3ss Studio</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <h1>Namel3ss Studio</h1>
+    <button id="refresh">Refresh</button>
+    <button id="reset">Reset</button>
+  </header>
+  <main>
+    <section>
+      <h2>Summary</h2>
+      <pre id="summary"></pre>
+    </section>
+    <section>
+      <h2>UI Preview</h2>
+      <select id="pageSelect"></select>
+      <div id="ui"></div>
+    </section>
+    <section>
+      <h2>State</h2>
+      <pre id="state"></pre>
+    </section>
+    <section>
+      <h2>Traces</h2>
+      <pre id="traces"></pre>
+    </section>
+    <section>
+      <h2>Actions</h2>
+      <pre id="actions"></pre>
+    </section>
+    <section>
+      <h2>Lint Findings</h2>
+      <pre id="lint"></pre>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
