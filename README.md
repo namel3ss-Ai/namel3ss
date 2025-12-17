@@ -56,6 +56,7 @@ namel3ss is focused. Some things are not here yet — on purpose. Before using i
 - Quickstart guide: `docs/quickstart.md`
 - Examples: `examples/`
 - Learning book: `resources/books/learning_namel3ss_v0.1.0.md`
+- Links: repo, docs, issues, changelog below.
 
 ---
 
@@ -97,3 +98,11 @@ namel3ss is v0.1.0-alpha. It is stable enough for early adopters, prototypes, in
 
 ## Contributing
 Read: `CONTRIBUTING.md`. Keep files small, focused, and disciplined. namel3ss stays readable by design.
+
+---
+
+## Links
+- Repository: https://github.com/namel3ss-Ai/namel3ss
+- Documentation: https://github.com/namel3ss-Ai/namel3ss/tree/main/docs
+- Issues: https://github.com/namel3ss-Ai/namel3ss/issues
+- Changelog: https://github.com/namel3ss-Ai/namel3ss/blob/main/CHANGELOG.md

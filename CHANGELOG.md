@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.1.0a1
+- PyPI metadata polish (URLs, authors, license), no functional changes.
+
 ## v0.1.0-alpha
 
 - Language core (Phases 1–3): Stable keywords, parser/AST/IR contracts, deterministic defaults.
