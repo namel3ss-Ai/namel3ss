@@ -1,0 +1,8 @@
+ai "assistant":
+  provider is "openai"
+  model is "gpt-4.1"
+  system_prompt is "You are helpful."
+
+flow "demo":
+  ask ai "assistant" with input: "Hello!" as reply
+  return reply

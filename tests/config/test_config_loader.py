@@ -5,6 +5,11 @@ def test_default_config_values(tmp_path):
     cfg = load_config(config_path=tmp_path / "config.json")
     assert cfg.ollama.host == "http://127.0.0.1:11434"
     assert cfg.ollama.timeout_seconds == 30
+    assert cfg.openai.base_url == "https://api.openai.com"
+    assert cfg.openai.api_key is None
+    assert cfg.anthropic.api_key is None
+    assert cfg.gemini.api_key is None
+    assert cfg.mistral.api_key is None
 
 
 def test_env_overrides(monkeypatch, tmp_path):

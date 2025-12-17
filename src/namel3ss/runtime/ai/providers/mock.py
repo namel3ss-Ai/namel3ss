@@ -19,5 +19,5 @@ class MockProvider(AIProvider):
         if memory:
             mem_note = f" | mem:st={len(memory.get('short_term', []))}"
         if system_prompt:
-            return AIResponse(output=f"{prefix} {system_prompt} :: {user_input}{mem_note}")
-        return AIResponse(output=f"{prefix} {user_input}{mem_note}")
+            return AIResponse(output=str(f"{prefix} {system_prompt} :: {user_input}{mem_note}"))
+        return AIResponse(output=str(f"{prefix} {user_input}{mem_note}"))

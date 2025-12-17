@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import json
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
-
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.runtime.ai.http.client import post_json
 from namel3ss.runtime.ai.provider import AIProvider, AIResponse
+from namel3ss.runtime.ai.providers._shared.errors import map_http_error
+from namel3ss.runtime.ai.providers._shared.parse import ensure_text_output
 
 
 class OllamaProvider(AIProvider):
@@ -20,22 +19,14 @@ class OllamaProvider(AIProvider):
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": user_input})
         payload = {"model": model, "messages": messages}
-        data = json.dumps(payload).encode("utf-8")
-        request = Request(url, data=data, headers={"Content-Type": "application/json"})
         try:
-            with urlopen(request, timeout=self.timeout_seconds) as response:
-                body = response.read()
-        except (HTTPError, URLError) as err:
-            detail = getattr(err, "reason", None) or getattr(err, "code", "") or str(err)
-            raise Namel3ssError(f"Ollama is not reachable at {self.host}. Is Ollama running? ({detail})") from err
-        try:
-            result = json.loads(body.decode("utf-8"))
-        except json.JSONDecodeError as err:
-            raise Namel3ssError("Invalid response from Ollama (could not decode JSON)") from err
+            result = post_json(url=url, headers={"Content-Type": "application/json"}, payload=payload, timeout_seconds=self.timeout_seconds, provider_name="ollama")
+        except Namel3ssError:
+            raise
+        except Exception as err:
+            raise map_http_error("ollama", err) from err
         content = _extract_content(result)
-        if content is None:
-            raise Namel3ssError("Invalid response from Ollama (missing message content)")
-        return AIResponse(output=content)
+        return AIResponse(output=ensure_text_output("ollama", content))
 
 
 def _extract_content(payload: dict) -> str | None:

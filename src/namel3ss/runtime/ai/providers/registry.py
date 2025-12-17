@@ -6,6 +6,10 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.ai.provider import AIProvider
 from namel3ss.runtime.ai.providers.mock import MockProvider
 from namel3ss.runtime.ai.providers.ollama import OllamaProvider
+from namel3ss.runtime.ai.providers.openai import OpenAIProvider
+from namel3ss.runtime.ai.providers.anthropic import AnthropicProvider
+from namel3ss.runtime.ai.providers.gemini import GeminiProvider
+from namel3ss.runtime.ai.providers.mistral import MistralProvider
 
 
 _FACTORIES = {
@@ -14,6 +18,10 @@ _FACTORIES = {
         host=config.ollama.host,
         timeout_seconds=config.ollama.timeout_seconds,
     ),
+    "openai": lambda config: OpenAIProvider.from_config(config.openai),
+    "anthropic": lambda config: AnthropicProvider.from_config(config.anthropic),
+    "gemini": lambda config: GeminiProvider.from_config(config.gemini),
+    "mistral": lambda config: MistralProvider.from_config(config.mistral),
 }
 
 
