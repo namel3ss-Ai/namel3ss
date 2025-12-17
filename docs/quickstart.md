@@ -1,4 +1,4 @@
-# Namel3ss Quickstart
+# namel3ss Quickstart
 
 Run any `.ai` app with the file-first CLI.
 

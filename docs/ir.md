@@ -23,7 +23,7 @@
 - `Repeat`: fixed-count loop.
 - `ForEach`: loop over list.
 - `Match`: pattern equality branches with optional otherwise.
-- `TryCatch`: execute try-body, catch `Namel3ssError` into a variable.
+- `TryCatch`: execute try-body, catch `namel3ssError` into a variable.
 - `Save`: persist current record state to store.
 - `Find`: query records matching predicate.
 - `AskAIStmt`: call AI profile with input, bind result.

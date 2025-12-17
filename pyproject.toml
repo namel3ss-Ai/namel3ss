@@ -5,16 +5,30 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "namel3ss"
 version = "0.1.0-alpha"
-description = "Namel3ss is an English-first, AI-native programming language for full-stack apps with inspectable AI."
+description = "Build AI-native applications in plain English. Data, UI, backend logic, and AI — all in one .ai file."
 readme = "README.md"
 requires-python = ">=3.10"
+license = {text = "MIT"}
+keywords = ["ai", "language", "programming", "llm", "agents", "english", "declarative"]
 dependencies = []
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Intended Audience :: Developers",
     "Development Status :: 3 - Alpha",
+    "Topic :: Software Development :: Compilers",
+    "Topic :: Software Development :: Interpreters",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
+
+[project.urls]
+Homepage = "https://github.com/namel3ss-Ai/namel3ss"
+Documentation = "https://github.com/namel3ss-Ai/namel3ss#readme"
+Repository = "https://github.com/namel3ss-Ai/namel3ss"
+Changelog = "https://github.com/namel3ss-Ai/namel3ss/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [

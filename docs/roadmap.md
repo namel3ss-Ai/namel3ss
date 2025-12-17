@@ -1,44 +1,173 @@
-# Namel3ss Roadmap (Phases 0–9)
+# namel3ss Roadmap
 
-This roadmap captures the CTO plan for reaching a stable v3 of Namel3ss with deterministic defaults and explicit AI boundaries.
+namel3ss is an English-first, AI-native, full-stack programming language, built from the ground up to support AI. This roadmap shows what is **done**, what is **next**, and what is intentionally **out of scope** until real users demand it.
 
-## Phase 0 — Foundations
-- Repository scaffold (packages, docs, CI, line limit guard) and editable install path.
-- Define Core v1 contract (keywords, forbidden phrases, determinism boundary).
+---
 
-## Phase 1 — Lexing
-- Tokenize English-first syntax with clear token classes and error recovery hooks.
-- Emit precise, human-readable diagnostics with positions and suggested fixes.
+## Guiding Principles (Locked)
 
-## Phase 2 — Parsing & AST
-- Build a deterministic parser producing a typed AST with source spans.
-- Establish AST invariants and validation passes (duplicates, shadows, unreachable constructs).
+- **English-first, strict grammar** (no free-form English)
+- **AI is explicit, inspectable, and bounded**
+- **Deterministic runtime** (AI is the only non-deterministic boundary)
+- **Full-stack in one language** (UI + backend + AI)
+- **Discipline is non-negotiable**
+  - `< 500 LOC` per file (split at ~400)
+  - single responsibility per file
+  - folder-first structure
+  - tests mirror `src/`
+  - `.ai` is the only source file extension
 
-## Phase 3 — Semantic Analysis
-- Resolve names, scopes, and imports; enforce language contracts.
-- Introduce static checks for determinism boundaries and AI entrypoints.
+---
 
-## Phase 4 — IR Definition
-- Design a minimal, stable IR for lowering AST constructs.
-- Add IR validators and snapshot-friendly serialization for debugging.
+## ✅ Completed (v0.1.0-alpha)
 
-## Phase 5 — Runtime Core
-- Implement deterministic runtime primitives (control flow, data, errors).
-- Add tracing hooks for execution steps and deterministic replay.
+### Phase 0 — Foundation & Discipline ✅
+- Repo structure (`src/`, `tests/`, `docs/`)
+- CI checks + line-limit enforcement
+- CONTRIBUTING rules (single responsibility, 500 LOC)
+- Consistent test layout
 
-## Phase 6 — CLI & Tooling
-- Provide `namel3ss` CLI for compile, run, format, and inspect commands.
-- Build developer ergonomics: watch mode, structured errors, and help texts.
+### Phase 1 — Core Language Spine ✅
+- Lexer → Parser → AST → IR → Runtime pipeline
+- Variables: `let`, `set`, `constant`
+- Expressions, comparisons, boolean logic
+- Human-readable errors (line/column)
 
-## Phase 7 — Standard Library (Deterministic)
-- Ship minimal stdlib: data structures, IO wrappers, time, and math with explicit determinism guarantees.
-- Harden module loading, configuration, and reproducibility defaults.
+### Phase 2 — Control Flow ✅
+- `if / else`
+- `repeat` / `for each`
+- `match / when / otherwise`
+- `try / catch`
+- `return`
 
-## Phase 8 — AI Boundary & Augmentation
-- Add explicit AI blocks/calls with budgeting, caching, and audit logs.
-- Provide testing harnesses for AI paths with deterministic fallbacks and fixtures.
+### Phase 3 — Records + Validation + In-Memory Persistence ✅
+- `record` schema definitions
+- Constraints: `present`, `unique`, `pattern`, `gt/lt`, length variants
+- Runtime `save` / `find`
+- Structured validation errors
 
-## Phase 9 — v3 Hardening & Release
-- Optimize performance (profiling, caching, incremental builds).
-- Finalize documentation, compatibility promises, and release packaging for v3.
+### Phase 4 — Full-Stack UI (WOW loop) ✅
+- Declarative `page` blocks
+- Auto forms + tables from records
+- Deterministic action IDs
+- UI actions: `call_flow`, `submit_form`
+- Table previews from store
+- Block-only button grammar enforced
 
+### Phase 5 — AI Core (Structured & Traceable) ✅
+- `ai` profiles with model + system prompt
+- `ask ai ... with input: ... as ...` (locked form)
+- Tool exposure and tool loop guardrails (mock tool calls)
+- Memory v1: short-term / semantic / profile
+- Full AI traces (inputs/outputs/memory/tools)
+
+### Phase 6 — Multi-Agent Orchestration v1 ✅
+- `agent` declarations (AI + system prompt)
+- `run agent ... as ...`
+- `run agents in parallel: ... as ...`
+- Guardrails + deterministic parallel trace wrapper
+- Memory integration for agents
+
+### Phase 7 — Toolchain (CLI + Formatter + Linter) ✅
+- File-first CLI:
+  - `n3 app.ai`
+  - `check`, `ui`, `actions`, `flow`, `format`, `lint`, `studio`
+- Deterministic formatter (`format`, `format check`)
+- Linter (`lint`, `lint check`) with JSON findings
+- Actions listing (`actions`, `actions json`)
+- Caret-based error rendering
+
+### Phase 8 — Studio v1 ✅
+- Studio viewer (`studio`)
+- Interactor: click buttons, submit forms, persistent session state/store
+- Panels: UI, Actions, State, Traces, Lint
+- Safe edits v1 (title/text/button rename) with round-trip:
+  - edit → format → parse → lower → write (or reject)
+
+### Phase 9 — Demos + Quickstart ✅
+- 3 flagship examples:
+  - CRUD dashboard
+  - AI assistant over records
+  - Multi-agent workflow
+- Quickstart guide
+- Integration smoke tests to keep examples alive
+
+### Phase 10 — Templates (`n3 new`) ✅
+- `n3 new crud | ai-assistant | multi-agent`
+- Packaged templates with placeholders
+- Generated apps are formatted + lint-clean
+- `.gitignore` includes `.env` by default
+
+### Phase 11 — Release & Packaging ✅
+- `0.1.0-alpha` versioning
+- `VERSION` + `CHANGELOG.md`
+- Package ships templates + Studio web assets
+- Release smoke test (scaffold + parse/lower)
+
+### Phase 12 — Providers + Secrets UX ✅
+- Provider field in AI profiles (default `mock`)
+- Provider registry + runtime selection
+- Tier-1 providers implemented:
+  - Ollama, OpenAI, Anthropic, Gemini, Mistral
+- Config system (env/file/default)
+- `.env` auto-loading next to `app.ai` (env vars override `.env`)
+- Friendly missing-key errors
+- Comprehensive provider/config tests
+
+---
+
+## 🔜 Next (post v0.1.0-alpha)
+
+The next phases are intentionally based on real user demand. We do not ship “big features” without real usage pressure.
+
+### Phase 13 — Persistence v1 (SQLite)
+Goal: records survive restarts.
+- SQLite-backed store
+- minimal migrations story
+- preserve structured validation errors
+- Studio/CLI support remains unchanged
+
+### Phase 14 — Auth & Users (Minimal)
+Goal: enable per-user apps and meaningful memory scopes.
+- `record "User"` conventions
+- login/logout flows
+- `state.user` consistency
+- simple guard: “require user”
+
+### Phase 15 — Tool Calling for Tier-1 Providers
+Goal: feature parity with real providers.
+- OpenAI tool calling
+- Anthropic tool calling
+- Gemini tool calling
+- Mistral tool calling
+- unified tool-call trace shape
+
+### Phase 16 — Standard Library v1
+Goal: small, deterministic helpers (no bloat).
+- `time.*`, `math.*`, `string.*`, `json.*`
+- deterministic, testable utilities only
+
+---
+
+## 🚫 Intentionally Out of Scope (until proven necessary)
+
+These features can dilute focus and create chaos if added too early:
+
+- UI styling DSL
+- GraphQL
+- Distributed agents
+- Vendor-specific vector DB integrations
+- “AI auto-code inside the language”
+
+namel3ss stays powerful by staying understandable.
+
+---
+
+## Release philosophy
+
+- **Alpha means honesty.**
+- We ship fast, but we ship with discipline.
+- If something is hard to learn, we redesign it.
+
+The Rule of 3 applies:
+> If you can’t grasp the basics in 3 minutes, we redesign it.

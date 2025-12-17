@@ -15,7 +15,7 @@
 
 ## Records runtime
 - `save`: validates current `state.<record_name>` dict against schema and writes to store.
-- Validation errors raise `Namel3ssError` with context; uniqueness is checked via store lookup.
+- Validation errors raise `namel3ssError` with context; uniqueness is checked via store lookup.
 - `find`: runs a predicate over records in store, binding `<record>_results`.
 
 ## UI runtime actions

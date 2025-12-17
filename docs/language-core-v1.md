@@ -1,4 +1,4 @@
-# Namel3ss Core v1 Contract
+# namel3ss Core v1 Contract
 
 This document defines the stable Core v1 surface: keywords, forbidden phrases, and the determinism boundary between AI and non-AI execution. The goal is repeatable programs by default, with AI usage declared explicitly.
 
@@ -40,4 +40,3 @@ To keep the language precise and reproducible, the following phrases must not ap
 - Reject forbidden phrases at parse/validation time with clear, human-readable errors.
 - Keep AI boundary handling centralized (single-responsibility modules) to avoid accidental leakage into deterministic paths.
 - Document every AI-capable API with its determinism expectations and fallback behavior.
-
