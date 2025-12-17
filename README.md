@@ -1,21 +1,30 @@
 # Namel3ss
 
+[![PyPI version](https://badge.fury.io/py/namel3ss.svg)](https://pypi.org/project/namel3ss/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+
 Namel3ss is an English-first, AI-native programming language for building full-stack applications with deterministic behavior and inspectable AI.
 
-```
+```bash
 pip install namel3ss
 n3 new crud
-n3 crud/app.ai studio
+cd crud
+n3 app.ai studio
 ```
 
 - [Quickstart](docs/quickstart.md)
 - [Examples](examples/)
 - [Changelog](CHANGELOG.md)
+- [PyPI Package](https://pypi.org/project/namel3ss/)
 
 ## Installation
+
+```bash
+pip install namel3ss
+```
+
 - Requires Python 3.10+
-- `pip install namel3ss`
-- `n3 --help` to confirm the CLI entrypoint after installation.
+- Verify installation: `n3 --help`
 
 ## Run with Ollama (local)
 - Ensure Ollama is running locally.
