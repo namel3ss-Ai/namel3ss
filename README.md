@@ -72,6 +72,13 @@ Swap `provider`/`model` to `anthropic`+`claude-3`, `gemini`+`gemini-1.5-flash`, 
 - `tools/`: repo-level utilities (line-limit enforcement)
 - `.github/workflows/`: CI automation
 
+## Architecture at a Glance
+- Lexer → Parser → AST → IR → Runtime executor pipeline with deterministic defaults and explicit AI boundaries.
+- CLI is file-first (`n3 app.ai ...`) with modes for run, check, lint, format, actions, and studio UI.
+- Runtime supports providers via registry (mock, ollama, openai, anthropic, gemini, mistral) with env-first config and standardized errors.
+- Memory manager handles short-term, semantic, and profile contexts passed into AI calls.
+- Templates (`n3 new ...`) ship starter apps plus `.env`-safe `.gitignore` for secrets.
+
 ## Development Notes
 - Each source file must stay under 500 lines.
 - One responsibility per file; if it grows, split into a folder with smaller modules.
