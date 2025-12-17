@@ -40,7 +40,7 @@ def test_missing_key_errors(name):
     provider = PROVIDERS[name]().__class__(api_key=None)
     with pytest.raises(Namel3ssError) as err:
         provider.ask(model="m", system_prompt=None, user_input="hi")
-    assert str(err.value) == f"Provider '{name}' requires NAMEL3SS_{name.upper()}_API_KEY"
+    assert str(err.value) == f"Missing {name.upper()}_API_KEY (set it in .env or export it)"
 
 
 @pytest.mark.parametrize("name", ["ollama", "openai", "anthropic", "gemini", "mistral"])

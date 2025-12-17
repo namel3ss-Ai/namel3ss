@@ -9,7 +9,7 @@ from namel3ss.runtime.ai.providers._shared.errors import map_http_error, require
 def test_require_env_missing():
     with pytest.raises(Namel3ssError) as err:
         require_env("ollama", "ENV_VAR", None)
-    assert "Provider 'ollama' requires ENV_VAR" == str(err.value)
+    assert "Missing ENV_VAR (set it in .env or export it)" == str(err.value)
 
 
 def test_require_env_present():

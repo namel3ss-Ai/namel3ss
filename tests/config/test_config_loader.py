@@ -1,7 +1,15 @@
 from namel3ss.config.loader import load_config
 
 
-def test_default_config_values(tmp_path):
+def test_default_config_values(tmp_path, monkeypatch):
+    for key in [
+        "NAMEL3SS_OPENAI_API_KEY",
+        "NAMEL3SS_ANTHROPIC_API_KEY",
+        "NAMEL3SS_GEMINI_API_KEY",
+        "NAMEL3SS_MISTRAL_API_KEY",
+        "NAMEL3SS_OPENAI_BASE_URL",
+    ]:
+        monkeypatch.delenv(key, raising=False)
     cfg = load_config(config_path=tmp_path / "config.json")
     assert cfg.ollama.host == "http://127.0.0.1:11434"
     assert cfg.ollama.timeout_seconds == 30
