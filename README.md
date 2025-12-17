@@ -1,6 +1,21 @@
 # Namel3ss
 
-Namel3ss is an English-first, AI-native full-stack programming language that spans parser → AST → IR → runtime with deterministic defaults and explicit AI boundaries.
+Namel3ss is an English-first, AI-native programming language for building full-stack applications with deterministic behavior and inspectable AI.
+
+```
+pip install namel3ss
+n3 new crud
+n3 crud/app.ai studio
+```
+
+- [Quickstart](docs/quickstart.md)
+- [Examples](examples/)
+- [Changelog](CHANGELOG.md)
+
+## Installation
+- Requires Python 3.10+
+- `pip install namel3ss`
+- `n3 --help` to confirm the CLI entrypoint after installation.
 
 ## Now / Next / Later
 - Now: Phase 0 skeleton with docs, CI guardrails, and package scaffolding.
@@ -19,6 +34,11 @@ Namel3ss is an English-first, AI-native full-stack programming language that spa
 - Run tests: `python -m pytest -q`
 - Compile check: `python -m compileall src -q`
 - Enforce line limit: `python tools/line_limit_check.py`
+
+## Start a New App
+- Scaffold: `n3 new <template> [project_name]` (templates: `crud`, `ai-assistant`, `multi-agent`)
+- Names default to the template; hyphens become underscores on disk.
+- After scaffolding: `cd <project>` then `n3 app.ai studio` or `n3 app.ai actions`.
 
 ## Repository Layout
 - `src/namel3ss/`: language packages (lexer, parser, ast, ir, runtime, cli, errors, utils)

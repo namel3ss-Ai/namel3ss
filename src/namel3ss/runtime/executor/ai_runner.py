@@ -3,6 +3,7 @@ from __future__ import annotations
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.ai.provider import AIToolCallResponse
+from namel3ss.runtime.ai.providers.registry import get_provider
 from namel3ss.runtime.ai.trace import AITrace
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
@@ -53,8 +54,10 @@ def run_ai_with_tools(
 ) -> str:
     max_calls = 3
     tool_results: list[dict] = []
+    provider_name = getattr(profile, "provider", "mock") or "mock"
     for _ in range(max_calls + 1):
-        response = ctx.ai_provider.ask(
+        provider = _resolve_provider(ctx, provider_name)
+        response = provider.ask(
             model=profile.model,
             system_prompt=profile.system_prompt,
             user_input=user_input,
@@ -76,3 +79,12 @@ def run_ai_with_tools(
             raise Namel3ssError("AI response must be a string")
         return response.output
     raise Namel3ssError("AI exceeded maximum tool calls")
+
+
+def _resolve_provider(ctx: ExecutionContext, provider_name: str):
+    key = provider_name.lower()
+    if key in ctx.provider_cache:
+        return ctx.provider_cache[key]
+    provider = get_provider(key, ctx.config)
+    ctx.provider_cache[key] = provider
+    return provider

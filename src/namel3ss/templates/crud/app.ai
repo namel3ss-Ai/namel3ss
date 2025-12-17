@@ -1,0 +1,26 @@
+record "Customer":
+  name string must be present
+  email string must match pattern ".*@.*"
+  age int must be greater than 17
+
+flow "seed_customers":
+  set state.customer.name is "Alice"
+  set state.customer.email is "alice@example.com"
+  set state.customer.age is 21
+  save Customer
+  set state.customer.name is "Bob"
+  set state.customer.email is "bob@example.com"
+  set state.customer.age is 30
+  save Customer
+  return "seeded"
+
+flow "hello":
+  return "Hello from {{PROJECT_NAME}}"
+
+page "home":
+  title is "{{PROJECT_NAME}} Dashboard"
+  text is "Add customers and view them below."
+  button "Seed demo data":
+    calls flow "seed_customers"
+  form is "Customer"
+  table is "Customer"

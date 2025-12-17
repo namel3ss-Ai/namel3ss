@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Dict, Optional
 
+from namel3ss.config.loader import load_config
+from namel3ss.config.model import AppConfig
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.ai.mock_provider import MockProvider
 from namel3ss.runtime.ai.provider import AIProvider
@@ -26,7 +28,11 @@ class Executor:
         ai_profiles: Optional[Dict[str, ir.AIDecl]] = None,
         memory_manager: Optional[MemoryManager] = None,
         agents: Optional[Dict[str, ir.AgentDecl]] = None,
+        config: Optional[AppConfig] = None,
     ) -> None:
+        resolved_config = config or load_config()
+        default_ai_provider = ai_provider or MockProvider()
+        provider_cache = {"mock": default_ai_provider}
         self.ctx = ExecutionContext(
             flow=flow,
             schemas=schemas or {},
@@ -35,12 +41,14 @@ class Executor:
             constants=set(),
             last_value=None,
             store=store or MemoryStore(),
-            ai_provider=ai_provider or MockProvider(),
+            ai_provider=default_ai_provider,
             ai_profiles=ai_profiles or {},
             agents=agents or {},
             traces=[],
             memory_manager=memory_manager or MemoryManager(),
             agent_calls=0,
+            config=resolved_config,
+            provider_cache=provider_cache,
         )
         self.flow = self.ctx.flow
         self.schemas = self.ctx.schemas
@@ -55,6 +63,8 @@ class Executor:
         self.traces = self.ctx.traces
         self.memory_manager = self.ctx.memory_manager
         self.agent_calls = self.ctx.agent_calls
+        self.config = self.ctx.config
+        self.provider_cache = self.ctx.provider_cache
 
     def run(self) -> ExecutionResult:
         try:

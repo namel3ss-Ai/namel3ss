@@ -18,6 +18,7 @@ class AIMemory(Node):
 class AIDecl(Node):
     name: str
     model: str
+    provider: str
     system_prompt: Optional[str]
     exposed_tools: List[str]
     memory: AIMemory

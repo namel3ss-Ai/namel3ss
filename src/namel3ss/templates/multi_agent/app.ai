@@ -1,0 +1,43 @@
+tool "echo":
+  kind is "builtin"
+
+ai "assistant":
+  model is "gpt-4.1"
+  system_prompt is "You are a helpful multi-agent assistant for {{PROJECT_NAME}}."
+  tools:
+    expose "echo"
+  memory:
+    short_term is 5
+    semantic is true
+    profile is true
+
+agent "planner":
+  ai is "assistant"
+  system_prompt is "Plan step-by-step."
+
+agent "critic":
+  ai is "assistant"
+  system_prompt is "Find risks and gaps."
+
+agent "researcher":
+  ai is "assistant"
+  system_prompt is "Add supporting details."
+
+flow "run_workflow":
+  let task is "Plan a 3-step launch checklist for {{PROJECT_NAME}}"
+  run agent "planner" with input: task as plan
+  run agents in parallel:
+    agent "critic" with input: plan
+    agent "researcher" with input: plan
+  as feedback
+  ask ai "assistant" with input: plan as final
+  set state.plan is plan
+  set state.feedback is feedback
+  set state.final is final
+  return final
+
+page "workflow":
+  title is "{{PROJECT_NAME}} Multi-Agent Workflow"
+  text is "Planner plus critic and researcher."
+  button "Run workflow":
+    calls flow "run_workflow"

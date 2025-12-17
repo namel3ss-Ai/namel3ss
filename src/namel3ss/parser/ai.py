@@ -11,6 +11,7 @@ def parse_ai_decl(parser) -> ast_nodes.AIDecl:
     parser._expect("NEWLINE", "Expected newline after AI header")
     parser._expect("INDENT", "Expected indented AI body")
     model = None
+    provider = None
     system_prompt = None
     exposed_tools: list[str] = []
     memory = ast_nodes.AIMemory(line=ai_tok.line, column=ai_tok.column)
@@ -23,6 +24,11 @@ def parse_ai_decl(parser) -> ast_nodes.AIDecl:
             parser._expect("IS", "Expected 'is' after model")
             value_tok = parser._expect("STRING", "Expected model string")
             model = value_tok.value
+        elif key_tok.type == "PROVIDER":
+            parser._advance()
+            parser._expect("IS", "Expected 'is' after provider")
+            value_tok = parser._expect("STRING", "Expected provider string")
+            provider = value_tok.value
         elif key_tok.type == "SYSTEM_PROMPT":
             parser._advance()
             parser._expect("IS", "Expected 'is' after system_prompt")
@@ -85,6 +91,7 @@ def parse_ai_decl(parser) -> ast_nodes.AIDecl:
     return ast_nodes.AIDecl(
         name=name_tok.value,
         model=model,
+        provider=provider,
         system_prompt=system_prompt,
         exposed_tools=exposed_tools,
         memory=memory,

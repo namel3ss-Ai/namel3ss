@@ -5,6 +5,7 @@ import sys
 from namel3ss.cli.actions_mode import list_actions
 from namel3ss.cli.app_loader import load_program
 from namel3ss.cli.format_mode import run_format
+from namel3ss.cli.new_mode import run_new
 from namel3ss.cli.lint_mode import run_lint
 from namel3ss.cli.json_io import dumps_pretty, parse_payload
 from namel3ss.cli.runner import run_flow
@@ -18,18 +19,20 @@ RESERVED = {"check", "ui", "flow", "help", "format", "lint", "actions", "studio"
 
 def main(argv: list[str] | None = None) -> int:
     args = sys.argv[1:] if argv is None else argv
-    if not args:
-        _print_usage()
-        return 1
-
-    if args[0] == "help":
-        _print_usage()
-        return 0
-
-    path = args[0]
-    remainder = args[1:]
-
     try:
+        if not args:
+            _print_usage()
+            return 1
+
+        if args[0] == "help":
+            _print_usage()
+            return 0
+        if args[0] == "new":
+            return run_new(args[1:])
+
+        path = args[0]
+        remainder = args[1:]
+
         if remainder and remainder[0] == "format":
             check_only = len(remainder) > 1 and remainder[1] == "check"
             return run_format(path, check_only)
@@ -109,6 +112,7 @@ def _run_default(program_ir) -> int:
 
 def _print_usage() -> None:
     usage = """Usage:
+  n3 new [template] [name]       # scaffold from a template (omit args to list)
   n3 <app.ai>                      # run default flow
   n3 <app.ai> check                # validate only
   n3 <app.ai> ui                   # print UI manifest

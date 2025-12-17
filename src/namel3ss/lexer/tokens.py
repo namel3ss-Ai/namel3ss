@@ -15,6 +15,7 @@ KEYWORDS = {
     "with": "WITH",
     "input": "INPUT",
     "as": "AS",
+    "provider": "PROVIDER",
     "tools": "TOOLS",
     "expose": "EXPOSE",
     "tool": "TOOL",

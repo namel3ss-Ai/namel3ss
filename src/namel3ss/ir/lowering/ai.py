@@ -6,6 +6,7 @@ from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir.model.ai import AIDecl, AIMemory
 from namel3ss.ir.model.tools import ToolDecl
+from namel3ss.runtime.ai.providers.registry import is_supported_provider
 
 
 def _lower_ai_decls(ais: List[ast.AIDecl], tools: Dict[str, ToolDecl]) -> Dict[str, AIDecl]:
@@ -15,6 +16,9 @@ def _lower_ai_decls(ais: List[ast.AIDecl], tools: Dict[str, ToolDecl]) -> Dict[s
             raise Namel3ssError(f"Duplicate AI declaration '{ai.name}'", line=ai.line, column=ai.column)
         if not ai.model:
             raise Namel3ssError(f"AI '{ai.name}' must specify a model", line=ai.line, column=ai.column)
+        provider = (ai.provider or "mock").lower()
+        if not is_supported_provider(provider):
+            raise Namel3ssError(f"Unknown AI provider '{provider}'", line=ai.line, column=ai.column)
         exposed: List[str] = []
         for tool in ai.exposed_tools:
             if tool not in tools:
@@ -25,6 +29,7 @@ def _lower_ai_decls(ais: List[ast.AIDecl], tools: Dict[str, ToolDecl]) -> Dict[s
         ai_map[ai.name] = AIDecl(
             name=ai.name,
             model=ai.model,
+            provider=provider,
             system_prompt=ai.system_prompt,
             exposed_tools=exposed,
             memory=AIMemory(

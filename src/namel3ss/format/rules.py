@@ -28,7 +28,7 @@ def normalize_spacing(line: str) -> str:
         return ""
 
     # headers with names
-    m = re.match(r'^(flow|page|record|ai|agent|tool)\s+"([^"]+)"', rest)
+    m = re.match(r'^(flow|page|record|ai|agent|tool)\s+"([^"]+)"\s*:?\s*$', rest)
     if m:
         return f'{indent}{m.group(1)} "{m.group(2)}":'
 

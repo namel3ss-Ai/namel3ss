@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "namel3ss"
-version = "0.0.0"
-description = "Namel3ss: an English-first, AI-native full-stack programming language."
+version = "0.1.0-alpha"
+description = "Namel3ss is an English-first, AI-native programming language for full-stack apps with inspectable AI."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = []
@@ -13,7 +13,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
     "Intended Audience :: Developers",
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 3 - Alpha",
 ]
 
 [project.optional-dependencies]
@@ -23,9 +23,14 @@ dev = [
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"namel3ss.templates" = ["**/*.ai", "**/*.md"]
+"namel3ss.studio.web" = ["**/*"]
 
 [project.scripts]
 n3 = "namel3ss.cli.main:main"

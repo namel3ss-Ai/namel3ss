@@ -6,7 +6,7 @@ from typing import List
 from namel3ss.lint.types import Finding
 
 
-LEGACY_DECL = re.compile(r'^\s*(flow|page|record|ai|agent|tool)\s+is\s+"')
+LEGACY_DECL = re.compile(r'^(flow|page|record|ai|agent|tool)\s+is\s+"')
 ONE_LINE_BUTTON = re.compile(r'^\s*button\s+"[^"]+"\s+calls\s+flow\s+"[^"]+"\s*$')
 PAGE_HEADER = re.compile(r'^\s*page\s+"[^"]+"\s*:\s*$')
 FORBIDDEN_PAGE_TOKENS = {

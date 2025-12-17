@@ -7,6 +7,7 @@ def _ai_profile():
     return ir.AIDecl(
         name="assistant",
         model="gpt-4.1",
+        provider="mock",
         system_prompt="hi",
         exposed_tools=[],
         memory=ir.AIMemory(short_term=2, semantic=False, profile=False, line=1, column=1),

@@ -1,0 +1,30 @@
+tool "echo":
+  kind is "builtin"
+
+record "Note":
+  title string must be present
+  body string must be present
+
+ai "assistant":
+  model is "gpt-4.1"
+  system_prompt is "You are a helpful assistant for {{PROJECT_NAME}}."
+  tools:
+    expose "echo"
+  memory:
+    short_term is 5
+    semantic is true
+    profile is true
+
+flow "ask_assistant":
+  let prompt is "Summarize the latest notes."
+  ask ai "assistant" with input: prompt as reply
+  set state.reply is reply
+  return reply
+
+page "notes":
+  title is "{{PROJECT_NAME}} Notes Assistant"
+  text is "Save notes and ask the assistant for help."
+  form is "Note"
+  table is "Note"
+  button "Ask assistant":
+    calls flow "ask_assistant"

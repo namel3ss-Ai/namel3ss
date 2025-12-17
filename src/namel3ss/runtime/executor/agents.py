@@ -50,6 +50,7 @@ def run_agent_call(ctx: ExecutionContext, agent_name: str, input_expr, line: int
     profile_override = ir.AIDecl(
         name=ai_profile.name,
         model=ai_profile.model,
+        provider=ai_profile.provider,
         system_prompt=agent.system_prompt or ai_profile.system_prompt,
         exposed_tools=list(ai_profile.exposed_tools),
         memory=ai_profile.memory,
