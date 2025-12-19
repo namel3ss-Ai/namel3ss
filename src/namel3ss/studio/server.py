@@ -5,6 +5,7 @@ import os
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.render import format_error
@@ -52,10 +53,12 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
 
     def handle_static(self) -> None:
         web_root = Path(__file__).parent / "web"
-        if self.path in {"/", "/index.html"}:
+        parsed = urlparse(self.path)
+        path_only = parsed.path
+        if path_only in {"/", "/index.html"}:
             file_path = web_root / "index.html"
         else:
-            file_path = web_root / self.path.lstrip("/")
+            file_path = web_root / path_only.lstrip("/")
         if not file_path.exists():
             self.send_error(404)
             return
@@ -65,6 +68,8 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
             content_type = "application/javascript"
         if file_path.suffix == ".css":
             content_type = "text/css"
+        if file_path.suffix == ".svg":
+            content_type = "image/svg+xml"
         self.send_response(200)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(content)))

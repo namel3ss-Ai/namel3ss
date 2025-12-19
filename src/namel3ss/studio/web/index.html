@@ -6,39 +6,89 @@
   <title>Namel3ss Studio</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
-<body>
-  <header>
-    <h1>Namel3ss Studio</h1>
-    <button id="refresh">Refresh</button>
-    <button id="reset">Reset</button>
-  </header>
-  <main>
-    <section>
-      <h2>Summary</h2>
-      <pre id="summary"></pre>
-    </section>
-    <section>
-      <h2>UI Preview</h2>
-      <select id="pageSelect"></select>
-      <div id="ui"></div>
-    </section>
-    <section>
-      <h2>State</h2>
-      <pre id="state"></pre>
-    </section>
-    <section>
-      <h2>Traces</h2>
-      <pre id="traces"></pre>
-    </section>
-    <section>
-      <h2>Actions</h2>
-      <pre id="actions"></pre>
-    </section>
-    <section>
-      <h2>Lint Findings</h2>
-      <pre id="lint"></pre>
-    </section>
-  </main>
+<body class="studio-root">
+  <div class="studio-shell">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="brand">
+          <img src="namel3ss_horizontal_logo.svg" alt="namel3ss studio logo">
+          <span class="sr-only">Namel3ss Studio</span>
+        </div>
+        <div class="file-name" id="fileName"></div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn primary" id="refresh">Refresh</button>
+        <button class="btn secondary" id="reset">Reset</button>
+      </div>
+    </header>
+    <div class="shell-body">
+      <aside class="inspector">
+        <div class="tabs" role="tablist">
+          <button class="tab active" data-tab="summary">Summary</button>
+          <button class="tab" data-tab="state">State</button>
+          <button class="tab" data-tab="actions">Actions</button>
+          <button class="tab" data-tab="traces">Traces</button>
+          <button class="tab" data-tab="lint">Lint Findings</button>
+        </div>
+        <div class="tab-panels">
+          <div class="panel active" data-tab="summary">
+            <div class="panel-header">
+              <div class="section-title">Summary</div>
+              <button class="btn ghost small" id="summaryCopy">Copy JSON</button>
+            </div>
+            <div id="summary" class="panel-body"></div>
+          </div>
+          <div class="panel" data-tab="state">
+            <div class="panel-header">
+              <div class="section-title">State</div>
+              <button class="btn ghost small" id="stateCopy">Copy JSON</button>
+            </div>
+            <div id="state" class="panel-body"></div>
+          </div>
+          <div class="panel" data-tab="actions">
+            <div class="panel-header">
+              <div class="section-title">Actions</div>
+              <button class="btn ghost small" id="actionsCopy">Copy JSON</button>
+            </div>
+            <div id="actions" class="panel-body"></div>
+          </div>
+          <div class="panel" data-tab="traces">
+          <div class="panel-header">
+            <div class="section-title">Traces</div>
+            <button class="btn ghost small" id="tracesCopy">Copy JSON</button>
+          </div>
+          <div class="control-row">
+            <input id="tracesFilter" type="text" placeholder="Filter traces…" aria-label="Filter traces">
+            <div class="control-actions">
+              <button class="btn ghost small" id="traceCopyOutput">Copy output</button>
+              <button class="btn ghost small" id="traceCopyJson">Copy trace JSON</button>
+            </div>
+          </div>
+          <div id="traces" class="panel-body"></div>
+          </div>
+          <div class="panel" data-tab="lint">
+            <div class="panel-header">
+              <div class="section-title">Lint Findings</div>
+              <button class="btn ghost small" id="lintCopy">Copy JSON</button>
+            </div>
+            <div id="lint" class="panel-body"></div>
+          </div>
+        </div>
+      </aside>
+      <section class="preview">
+        <div class="panel">
+          <div class="panel-header preview-header">
+            <div class="section-title">UI Preview</div>
+            <div class="preview-controls">
+              <label for="pageSelect">Page</label>
+              <select id="pageSelect"></select>
+            </div>
+          </div>
+          <div id="ui" class="panel-body ui-body"></div>
+        </div>
+      </section>
+    </div>
+  </div>
   <script src="/app.js"></script>
 </body>
 </html>
