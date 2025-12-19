@@ -25,6 +25,50 @@ namel3ss removes the glue. It keeps the program **readable**, the runtime **dete
 
 ---
 
+## Language · Runtime · Memory · Studio
+
+### Language
+Intent-driven syntax that reads like thought.
+```ai
+page "home":
+  title is "Hello"
+  text is "Hello World"
+```
+
+### Runtime
+A unified runtime that behaves consistently across AI providers.
+```ai
+ai "assistant":
+  provider is "openai"
+  model is "gpt-4.1"
+  system_prompt is "You are a helpful assistant."
+
+flow "reply":
+  ask ai "assistant" with input: input.message as reply
+  return reply
+```
+
+### Memory
+Explicit memory with configurable recall.
+```ai
+ai "assistant":
+  provider is "openai"
+  model is "gpt-4.1"
+  memory:
+    short_term is 10
+    semantic is true
+    profile is true
+```
+
+### Studio
+A visual environment for building with namel3ss. Coming soon.
+```
+Studio
+Coming soon.
+```
+
+---
+
 ## 10-second demo
 ```bash
 pip install namel3ss
@@ -92,7 +136,7 @@ namel3ss supports local and cloud providers (including Ollama and Tier-1 cloud p
 ---
 
 ## Status
-namel3ss is v0.1.0-alpha. It is stable enough for early adopters, prototypes, internal tools, and learning — and it is evolving fast.
+namel3ss is v0.1.0a1. It is stable enough for early adopters, prototypes, internal tools, and learning — and it is evolving fast.
 
 ---
 
