@@ -145,8 +145,20 @@ Read: `CONTRIBUTING.md`. Keep files small, focused, and disciplined. namel3ss st
 
 ---
 
+## Community
+Join the conversation. Share ideas. Build together.
+
+<p>
+  <a href="https://discord.gg/x8s6aEwdU"><img src="https://img.shields.io/badge/Discord-Join%20us-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
+  <a href="https://www.linkedin.com/company/namel3ss/"><img src="https://img.shields.io/badge/LinkedIn-Follow-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"></a>
+</p>
+
+---
+
 ## Links
 - Repository: https://github.com/namel3ss-Ai/namel3ss
 - Documentation: https://github.com/namel3ss-Ai/namel3ss/tree/main/docs
 - Issues: https://github.com/namel3ss-Ai/namel3ss/issues
 - Changelog: https://github.com/namel3ss-Ai/namel3ss/blob/main/CHANGELOG.md
+- Discord: https://discord.gg/x8s6aEwdU
+- LinkedIn: https://www.linkedin.com/company/namel3ss/
