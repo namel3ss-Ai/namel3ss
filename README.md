@@ -92,15 +92,15 @@ CRUD dashboards (records → forms/tables → validation). Internal tools and ad
 ---
 
 ## What’s intentionally missing
-namel3ss is focused. Some things are not here yet — on purpose. Before using it for production systems, read: `resources/limitations.md`.
+namel3ss is focused. Some things are not here yet — on purpose. Before using it for production systems, read the [known limitations](resources/limitations.md).
 
 ---
 
 ## Quickstart
-- Quickstart guide: `docs/quickstart.md`
-- Examples: `examples/`
-- Learning book: `resources/books/learning_namel3ss_v0.1.0.md`
-- Links: repo, docs, issues, changelog below.
+- [Quickstart guide](docs/quickstart.md)
+- [Examples](examples/)
+- [Learning book](resources/books/learning_namel3ss_v0.1.0.md)
+- More links are listed below.
 
 ---
 
@@ -140,8 +140,25 @@ namel3ss is v0.1.0a1. It is stable enough for early adopters, prototypes, intern
 
 ---
 
+## Alpha testers wanted
+namel3ss is in early alpha. Breaking changes will happen. Documentation may lag.
+
+If you like testing early systems and giving honest, technical feedback, we want your input.
+
+**Get involved**
+- [Report a bug (GitHub Issues)](https://github.com/namel3ss-Ai/namel3ss/issues)
+- [Join design discussions (GitHub Discussions)](https://github.com/namel3ss-Ai/namel3ss/discussions/)
+- [Join the community on Discord](https://discord.gg/x8s6aEwdU)
+
+**Try these three things**
+1. Run the simplest example (or scaffold `n3 new crud`) and note anything unclear or broken.
+2. Change a small flow or syntax and see how the runtime responds; report surprises.
+3. Call an AI profile with a basic prompt and share any errors or friction you hit.
+
+---
+
 ## Contributing
-Read: `CONTRIBUTING.md`. Keep files small, focused, and disciplined. namel3ss stays readable by design.
+Read the [contributing guidelines](CONTRIBUTING.md). Keep files small, focused, and disciplined. namel3ss stays readable by design.
 
 ---
 
@@ -156,9 +173,9 @@ Join the conversation. Share ideas. Build together.
 ---
 
 ## Links
-- Repository: https://github.com/namel3ss-Ai/namel3ss
-- Documentation: https://github.com/namel3ss-Ai/namel3ss/tree/main/docs
-- Issues: https://github.com/namel3ss-Ai/namel3ss/issues
-- Changelog: https://github.com/namel3ss-Ai/namel3ss/blob/main/CHANGELOG.md
-- Discord: https://discord.gg/x8s6aEwdU
-- LinkedIn: https://www.linkedin.com/company/namel3ss/
+- [Source repository](https://github.com/namel3ss-Ai/namel3ss)
+- [Documentation](https://github.com/namel3ss-Ai/namel3ss/tree/main/docs)
+- [Issue tracker](https://github.com/namel3ss-Ai/namel3ss/issues)
+- [Changelog](https://github.com/namel3ss-Ai/namel3ss/blob/main/CHANGELOG.md)
+- [Discord community](https://discord.gg/x8s6aEwdU)
+- [LinkedIn page](https://www.linkedin.com/company/namel3ss/)
