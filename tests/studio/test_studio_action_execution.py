@@ -35,8 +35,8 @@ def test_action_flow_and_form_execution(tmp_path: Path) -> None:
     assert call_resp["result"] == "hi"
     assert isinstance(call_resp["state"], dict)
 
-    with pytest.raises(Namel3ssError):
-        execute_action(APP_SOURCE, session, "page.home.form.user", {})
+    bad_form = execute_action(APP_SOURCE, session, "page.home.form.user", {})
+    assert bad_form["ok"] is False
 
     good_form = execute_action(APP_SOURCE, session, "page.home.form.user", {"values": {"name": "Alice"}})
     assert good_form["ok"] is True

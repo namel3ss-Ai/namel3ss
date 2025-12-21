@@ -1,0 +1,55 @@
+record "Order":
+  field "id" is int must be present
+  field "customer" is string must be present
+  field "total" is number must be present
+  field "status" is string must be present
+
+flow "seed_orders":
+  set state.order.id is 101
+  set state.order.customer is "Acme Corp"
+  set state.order.total is 240
+  set state.order.status is "processing"
+  save Order
+  set state.order.id is 102
+  set state.order.customer is "Bright Traders"
+  set state.order.total is 120
+  set state.order.status is "shipped"
+  save Order
+  set state.order.id is 103
+  set state.order.customer is "Northwind"
+  set state.order.total is 86
+  set state.order.status is "processing"
+  save Order
+  return "seeded"
+
+flow "clear_orders":
+  set state.cleared is true
+  return "cleared"
+
+flow "refresh_orders":
+  return "ok"
+
+page "home":
+  title is "Product dashboard"
+  section "Overview":
+    row:
+      column:
+        card "Orders":
+          text is "Track and seed demo orders."
+          button "Seed data":
+            calls flow "seed_orders"
+      column:
+        card "Status":
+          text is "Clear demo state."
+          button "Clear":
+            calls flow "clear_orders"
+  divider
+  section "Orders":
+    row:
+      column:
+        card "Recent orders":
+          table is "Order"
+      column:
+        image is "https://dummyimage.com/600x360/efefef/000&text=Dashboard"
+  text is "All orders table"
+  table is "Order"

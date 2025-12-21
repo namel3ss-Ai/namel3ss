@@ -55,6 +55,19 @@ def normalize_spacing(line: str) -> str:
     if m:
         rest = f'calls flow "{m.group(1)}"'
 
+    # record field declarations to canonical "field \"name\" is <type> ..."
+    field_pattern = re.compile(
+        r'^(?:field\s+"([^"]+)"\s+)?([A-Za-z_][A-Za-z0-9_]*)\s+(?:is\s+)?'
+        r'(string|int|number|boolean|json)(\s+.+)?$'
+    )
+    m = field_pattern.match(rest)
+    if m:
+        explicit_name = m.group(1)
+        name = explicit_name or m.group(2)
+        type_name = m.group(3)
+        tail = m.group(4) or ""
+        rest = f'field "{name}" is {type_name}{tail}'
+
     rest = re.sub(r'\s+:', ":", rest)
     return f"{indent}{rest}"
 

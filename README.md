@@ -5,6 +5,16 @@ namel3ss (pronounced nameless) is an English-first, AI-native programming langua
 
 ---
 
+Start here:
+- [Quickstart](docs/quickstart.md)
+- [First 5 minutes](docs/first-5-minutes.md)
+- [What you can build today](docs/what-you-can-build-today.md)
+- [Examples](examples/)
+- [Stability](docs/stability.md)
+- [Known limitations](resources/limitations.md)
+
+---
+
 ## Why namel3ss
 Modern application development is fragmented.
 
@@ -34,6 +44,7 @@ page "home":
   title is "Hello"
   text is "Hello World"
 ```
+Record fields use `is` for types and `must` for constraints, e.g. `field "email" is text must be present`.
 
 ### Runtime
 A unified runtime that behaves consistently across AI providers.
@@ -76,6 +87,13 @@ n3 new crud
 n3 crud/app.ai studio
 ```
 You just generated a working app and opened Studio to run it, inspect state, and see traces.
+
+## Try it in 60 seconds
+```bash
+pip install namel3ss
+n3 new crud my_app
+n3 my_app/app.ai studio
+```
 
 ---
 
@@ -149,6 +167,11 @@ If you like testing early systems and giving honest, technical feedback, we want
 - [Report a bug (GitHub Issues)](https://github.com/namel3ss-Ai/namel3ss/issues)
 - [Join design discussions (GitHub Discussions)](https://github.com/namel3ss-Ai/namel3ss/discussions/)
 - [Join the community on Discord](https://discord.gg/x8s6aEwdU)
+
+## How to get help
+- [Issues](https://github.com/namel3ss-Ai/namel3ss/issues)
+- [Discussions](https://github.com/namel3ss-Ai/namel3ss/discussions/)
+- [Discord](https://discord.gg/x8s6aEwdU)
 
 **Try these three things**
 1. Run the simplest example (or scaffold `n3 new crud`) and note anything unclear or broken.

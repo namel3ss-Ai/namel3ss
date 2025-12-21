@@ -17,6 +17,7 @@ class Namel3ssError(Exception):
     column: Optional[int] = None
     end_line: Optional[int] = None
     end_column: Optional[int] = None
+    details: Optional[dict] = None
 
     def __str__(self) -> str:
         location = self._format_location()
@@ -31,4 +32,3 @@ class Namel3ssError(Exception):
             f"[line {self.line}, col {self.column or 1} - "
             f"line {self.end_line}, col {self.end_column}] "
         )
-

@@ -73,6 +73,14 @@ It keeps the system predictable and transparent while the language matures.
 
 Persistence will arrive later, once usage patterns are proven.
 
+### 7. Navigation and Theming
+
+namel3ss does not support complex routing or arbitrary CSS theming. Pages are single-level today; styling stays minimal and semantic.
+
+### 8. No Native Packaging
+
+There is no native mobile/desktop packaging; namel3ss focuses on file-first, local workflows.
+
 ### 3. No Authentication or User Management (Yet)
 
 There is no built-in:

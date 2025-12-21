@@ -4,6 +4,8 @@ import re
 
 from namel3ss.errors.base import Namel3ssError
 
+__all__ = ["replace_literal_at_line"]
+
 
 def replace_literal_at_line(source: str, line_no: int, expected: str | None, new_value: str) -> str:
     lines = source.splitlines()

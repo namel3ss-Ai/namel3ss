@@ -41,3 +41,36 @@ class TableItem(PageItem):
 class ButtonItem(PageItem):
     label: str
     flow_name: str
+
+
+@dataclass
+class SectionItem(PageItem):
+    label: str | None
+    children: List["PageItem"]
+
+
+@dataclass
+class CardItem(PageItem):
+    label: str | None
+    children: List["PageItem"]
+
+
+@dataclass
+class RowItem(PageItem):
+    children: List["PageItem"]
+
+
+@dataclass
+class ColumnItem(PageItem):
+    children: List["PageItem"]
+
+
+@dataclass
+class DividerItem(PageItem):
+    pass
+
+
+@dataclass
+class ImageItem(PageItem):
+    src: str
+    alt: str

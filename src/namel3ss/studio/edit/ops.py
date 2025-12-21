@@ -6,12 +6,14 @@ from namel3ss.ir import nodes as ir
 from namel3ss.ir.nodes import lower_program
 from namel3ss.parser.core import parse
 from namel3ss.runtime.store.memory_store import MemoryStore
-from namel3ss.studio.edit.selectors import find_element, find_line_number
+from namel3ss.studio.edit.selectors import find_element, find_element_with_parent, find_line_number
 from namel3ss.studio.edit.transform import replace_literal_at_line
+from namel3ss.studio.edit.transform.insert import insert_element
+from namel3ss.studio.edit.transform.move import move_element
 from namel3ss.studio.session import SessionState
 from namel3ss.ui.manifest import build_manifest
 
-SUPPORTED_OPS = {"set_title", "set_text", "set_button_label"}
+SUPPORTED_OPS = {"set_title", "set_text", "set_button_label", "insert", "move_up", "move_down"}
 
 
 def apply_edit_to_source(
@@ -29,8 +31,10 @@ def apply_edit_to_source(
     element_id = target.get("element_id")
     if not isinstance(page_name, str) or not isinstance(element_id, str):
         raise Namel3ssError("Edit target must include 'page' and 'element_id'")
-    if not isinstance(value, str):
+    if op in {"set_title", "set_text", "set_button_label"} and not isinstance(value, str):
         raise Namel3ssError("Edit value must be a string")
+    if op in {"insert"} and not isinstance(value, dict):
+        raise Namel3ssError("Insert value must be an object")
 
     program_ir = _lower(source)
     manifest = build_manifest(program_ir, state=_session_state(session), store=_session_store(session))
@@ -38,13 +42,39 @@ def apply_edit_to_source(
     if page.get("name") != page_name:
         raise Namel3ssError(f"Element '{element_id}' does not belong to page '{page_name}'")
 
-    old_text = _element_value_for_op(element, op)
-    line_no = find_line_number(source, page_name, element)
-    updated_source = replace_literal_at_line(source, line_no, old_text, value)
-    formatted = format_source(updated_source)
-    updated_ir = _lower(formatted)
-    updated_manifest = build_manifest(updated_ir, state=_session_state(session), store=_session_store(session))
-    return formatted, updated_ir, updated_manifest
+    if op in {"set_title", "set_text", "set_button_label"}:
+        old_text = _element_value_for_op(element, op)
+        line_no = find_line_number(source, page_name, element)
+        updated_source = replace_literal_at_line(source, line_no, old_text, value)
+        formatted = format_source(updated_source)
+        updated_ir = _lower(formatted)
+        updated_manifest = build_manifest(updated_ir, state=_session_state(session), store=_session_store(session))
+        return formatted, updated_ir, updated_manifest
+    if op == "insert":
+        updated_source = insert_element(
+            source,
+            target={"page": page_name, "element_id": element_id, "position": target.get("position")},
+            value=value,
+            program=program_ir,
+            manifest=manifest,
+        )
+        formatted = format_source(updated_source)
+        updated_ir = _lower(formatted)
+        updated_manifest = build_manifest(updated_ir, state=_session_state(session), store=_session_store(session))
+        return formatted, updated_ir, updated_manifest
+    if op in {"move_up", "move_down"}:
+        updated_source = move_element(
+            source,
+            manifest,
+            op=op,
+            target_element_id=element_id,
+            page_name=page_name,
+        )
+        formatted = format_source(updated_source)
+        updated_ir = _lower(formatted)
+        updated_manifest = build_manifest(updated_ir, state=_session_state(session), store=_session_store(session))
+        return formatted, updated_ir, updated_manifest
+    raise Namel3ssError(f"Unsupported edit op '{op}'")
 
 
 def _lower(source: str):

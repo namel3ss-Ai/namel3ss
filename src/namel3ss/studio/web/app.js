@@ -3,9 +3,16 @@ let cachedState = {};
 let cachedActions = {};
 let cachedTraces = [];
 let cachedLint = {};
+let cachedManifest = null;
 let traceFilterText = "";
 let traceFilterTimer = null;
 let selectedTrace = null;
+let selectedElementId = null;
+let selectedElement = null;
+let selectedPage = null;
+let versionLabel = null;
+let seedActionId = null;
+
 function copyText(value) {
   if (!value && value !== "") return;
   const text = typeof value === "string" ? value : JSON.stringify(value, null, 2);
@@ -35,6 +42,15 @@ function showEmpty(container, message) {
   empty.textContent = message;
   container.appendChild(empty);
 }
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  if (!toast) return;
+  toast.textContent = message;
+  toast.style.display = "block";
+  setTimeout(() => {
+    toast.style.display = "none";
+  }, 2000);
+}
 function createCodeBlock(content) {
   const pre = document.createElement("pre");
   pre.className = "code-block";
@@ -50,6 +66,10 @@ function setFileName(path) {
   }
   const parts = path.split(/[\\/]/);
   label.textContent = parts[parts.length - 1];
+}
+function setVersionLabel(version) {
+  versionLabel = versionLabel || document.getElementById("versionLabel");
+  if (versionLabel) versionLabel.textContent = version ? `namel3ss v${version}` : "";
 }
 function renderSummary(data) {
   cachedSummary = data || {};
@@ -158,16 +178,7 @@ function appendTraceSection(details, label, value, copyable = false) {
 }
 function matchTrace(trace, needle) {
   if (!needle) return true;
-  const values = [
-    trace.provider,
-    trace.model,
-    trace.ai_name,
-    trace.ai_profile_name,
-    trace.agent_name,
-    trace.input,
-    trace.output,
-    trace.result,
-  ]
+  const values = [trace.provider, trace.model, trace.ai_name, trace.ai_profile_name, trace.agent_name, trace.input, trace.output, trace.result]
     .map((v) => (typeof v === "string" ? v : v ? JSON.stringify(v) : ""))
     .join(" ")
     .toLowerCase();
@@ -254,8 +265,9 @@ async function executeAction(actionId, payload) {
     body: JSON.stringify({ id: actionId, payload }),
   });
   const data = await res.json();
-  if (!data.ok && data.error) {
-    alert(data.error);
+  if (!data.ok) {
+    showToast("Action failed safely.");
+    if (data.error) showToast(data.error);
   }
   if (!data.ok && data.errors) {
     return data;
@@ -267,169 +279,31 @@ async function executeAction(actionId, payload) {
     renderTraces(data.traces);
   }
   if (data.ui) {
+    cachedManifest = data.ui;
     renderUI(data.ui);
   }
+  reselectElement();
   return data;
 }
-async function performEdit(op, elementId, pageName, value) {
+async function performEdit(op, elementId, pageName, value, targetExtras = {}) {
   const res = await fetch("/api/edit", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ op, target: { element_id: elementId, page: pageName }, value }),
+    body: JSON.stringify({ op, target: { element_id: elementId, page: pageName, ...targetExtras }, value }),
   });
   const data = await res.json();
   if (!data.ok) {
-    alert(data.error || "Edit failed");
+    showToast(data.error || "Edit failed");
     return;
   }
   renderSummary(data.summary);
   renderActions(data.actions);
   renderLint(data.lint);
   if (data.ui) {
+    cachedManifest = data.ui;
     renderUI(data.ui);
   }
-}
-function renderUI(manifest) {
-  const select = document.getElementById("pageSelect");
-  const uiContainer = document.getElementById("ui");
-  const pages = manifest.pages || [];
-  const currentSelection = select.value;
-  select.innerHTML = "";
-  pages.forEach((p, idx) => {
-    const opt = document.createElement("option");
-    opt.value = p.name;
-    opt.textContent = p.name;
-    if (p.name === currentSelection || (currentSelection === "" && idx === 0)) {
-      opt.selected = true;
-    }
-    select.appendChild(opt);
-  });
-  function renderPage(pageName) {
-    uiContainer.innerHTML = "";
-    const page = pages.find((p) => p.name === pageName) || pages[0];
-    if (!page) {
-      showEmpty(uiContainer, "No pages");
-      return;
-    }
-    page.elements.forEach((el) => {
-      const wrapper = document.createElement("div");
-      wrapper.className = "ui-element";
-      if (el.type === "title") {
-        const h = document.createElement("h3");
-        h.textContent = el.value;
-        wrapper.appendChild(h);
-        const actions = document.createElement("div");
-        actions.className = "ui-buttons";
-        const edit = document.createElement("button");
-        edit.className = "btn ghost small";
-        edit.textContent = "Edit";
-        edit.onclick = () => showEditField(el, page.name, "set_title");
-        actions.appendChild(edit);
-        wrapper.appendChild(actions);
-      } else if (el.type === "text") {
-        const p = document.createElement("p");
-        p.textContent = el.value;
-        wrapper.appendChild(p);
-        const actions = document.createElement("div");
-        actions.className = "ui-buttons";
-        const edit = document.createElement("button");
-        edit.className = "btn ghost small";
-        edit.textContent = "Edit";
-        edit.onclick = () => showEditField(el, page.name, "set_text");
-        actions.appendChild(edit);
-        wrapper.appendChild(actions);
-      } else if (el.type === "button") {
-        const actions = document.createElement("div");
-        actions.className = "ui-buttons";
-        const btn = document.createElement("button");
-        btn.className = "btn primary";
-        btn.textContent = el.label;
-        btn.onclick = () => executeAction(el.action_id, {});
-        actions.appendChild(btn);
-        const rename = document.createElement("button");
-        rename.className = "btn ghost small";
-        rename.textContent = "Rename";
-        rename.onclick = () => showEditField(el, page.name, "set_button_label");
-        actions.appendChild(rename);
-        wrapper.appendChild(actions);
-      } else if (el.type === "form") {
-        const formTitle = document.createElement("div");
-        formTitle.className = "inline-label";
-        formTitle.textContent = `Form: ${el.record}`;
-        wrapper.appendChild(formTitle);
-        const form = document.createElement("form");
-        form.className = "ui-form";
-        (el.fields || []).forEach((f) => {
-          const label = document.createElement("label");
-          label.textContent = f.name;
-          const input = document.createElement("input");
-          input.name = f.name;
-          label.appendChild(input);
-          form.appendChild(label);
-        });
-        const submit = document.createElement("button");
-        submit.type = "submit";
-        submit.className = "btn primary";
-        submit.textContent = "Submit";
-        form.appendChild(submit);
-        const errors = document.createElement("div");
-        errors.className = "errors";
-        form.appendChild(errors);
-        form.onsubmit = async (e) => {
-          e.preventDefault();
-          const values = {};
-          (el.fields || []).forEach((f) => {
-            const input = form.querySelector(`input[name="${f.name}"]`);
-            values[f.name] = input ? input.value : "";
-          });
-          const result = await executeAction(el.action_id, { values });
-          if (!result.ok && result.errors) {
-            errors.textContent = result.errors.map((err) => `${err.field}: ${err.message}`).join("; ");
-          } else if (!result.ok && result.error) {
-            errors.textContent = result.error;
-          } else {
-            errors.textContent = "";
-          }
-        };
-        wrapper.appendChild(form);
-      } else if (el.type === "table") {
-        const table = document.createElement("table");
-        table.className = "ui-table";
-        const header = document.createElement("tr");
-        (el.columns || []).forEach((c) => {
-          const th = document.createElement("th");
-          th.textContent = c.name;
-          header.appendChild(th);
-        });
-        table.appendChild(header);
-        (el.rows || []).forEach((row) => {
-          const tr = document.createElement("tr");
-          (el.columns || []).forEach((c) => {
-            const td = document.createElement("td");
-            td.textContent = row[c.name] ?? "";
-            tr.appendChild(td);
-          });
-          table.appendChild(tr);
-        });
-        wrapper.appendChild(table);
-      }
-      uiContainer.appendChild(wrapper);
-    });
-  }
-  select.onchange = (e) => renderPage(e.target.value);
-  const initialPage = select.value || (pages[0] ? pages[0].name : "");
-  if (initialPage) {
-    renderPage(initialPage);
-  } else {
-    showEmpty(uiContainer, "No pages");
-  }
-}
-function showEditField(element, pageName, op) {
-  const newValue = prompt("Enter new value", element.value || element.label || "");
-  if (newValue === null) {
-    return;
-  }
-  performEdit(op, element.element_id, pageName, newValue);
+  reselectElement();
 }
 async function refreshAll() {
   const [summary, ui, actions, lint] = await Promise.all([
@@ -444,11 +318,15 @@ async function refreshAll() {
   renderState({});
   renderTraces([]);
   if (ui.ok !== false) {
+    cachedManifest = ui;
     renderUI(ui);
   } else {
     const uiContainer = document.getElementById("ui");
     showEmpty(uiContainer, ui.error || "Unable to load UI");
   }
+  seedActionId = detectSeedAction(cachedManifest, actions);
+  toggleSeed(seedActionId);
+  reselectElement();
 }
 function setupTabs() {
   const tabs = Array.from(document.querySelectorAll(".tab"));
@@ -473,6 +351,63 @@ function setupTraceFilter() {
     }, 120);
   });
 }
+function detectSeedAction(manifest, actionsPayload) {
+  const preferred = ["seed", "seed_data", "seed_demo", "demo_seed", "seed_customers"];
+  const actions = actionsPayload?.actions || Object.values(manifest?.actions || {});
+  const callFlows = actions.filter((a) => a.type === "call_flow");
+  for (const name of preferred) {
+    const found = callFlows.find((a) => a.flow === name);
+    if (found) return found.id || found.action_id || `action.${name}`;
+  }
+  return callFlows.length ? callFlows[0].id || callFlows[0].action_id || null : null;
+}
+function toggleSeed(actionId) {
+  const btn = document.getElementById("seed");
+  if (!btn) return;
+  if (actionId) btn.classList.remove("hidden");
+  else btn.classList.add("hidden");
+}
+const seedButton = document.getElementById("seed");
+if (seedButton) {
+  seedButton.onclick = async () => {
+    if (!seedActionId) {
+      showToast("No seed action found.");
+      return;
+    }
+    await executeAction(seedActionId, {});
+    refreshAll();
+  };
+}
+
+async function loadVersion() {
+  try {
+    const data = await fetchJson("/api/version");
+    if (data && data.ok && data.version) {
+      setVersionLabel(data.version);
+    }
+  } catch (err) {
+    setVersionLabel("");
+  }
+}
+
+window.reselectElement = function () {
+  if (!selectedElementId || !cachedManifest) {
+    renderInspector(null, null);
+    return;
+  }
+  const match = findElementInManifest(selectedElementId);
+  if (!match) {
+    renderInspector(null, null);
+    return;
+  }
+  selectedElement = match.element;
+  selectedPage = match.page;
+  renderInspector(selectedElement, selectedPage);
+  document.querySelectorAll(".ui-element").forEach((el) => {
+    el.classList.toggle("selected", el.dataset.elementId === selectedElementId);
+  });
+};
+
 document.getElementById("refresh").onclick = refreshAll;
 document.getElementById("reset").onclick = async () => {
   await fetch("/api/reset", { method: "POST", body: "{}" });
@@ -482,4 +417,50 @@ document.getElementById("reset").onclick = async () => {
 };
 setupTabs();
 setupTraceFilter();
+loadVersion();
+const helpButton = document.getElementById("helpButton");
+const helpModal = document.getElementById("helpModal");
+const helpClose = document.getElementById("helpClose");
+if (helpButton && helpModal && helpClose) {
+  helpButton.onclick = () => helpModal.classList.remove("hidden");
+  helpClose.onclick = () => helpModal.classList.add("hidden");
+  helpModal.addEventListener("click", (e) => {
+    if (e.target === helpModal) {
+      helpModal.classList.add("hidden");
+    }
+  });
+}
+
+function detectSeedAction(manifest, actionsPayload) {
+  const preferred = ["seed", "seed_data", "seed_demo", "demo_seed", "seed_customers"];
+  const actions = actionsPayload?.actions || Object.values(manifest?.actions || {});
+  const callFlows = actions.filter((a) => a.type === "call_flow");
+  for (const name of preferred) {
+    const found = callFlows.find((a) => a.flow === name);
+    if (found) return found.id || found.action_id || `action.${name}`;
+  }
+  return callFlows.length ? callFlows[0].id || callFlows[0].action_id || null : null;
+}
+
+function toggleSeed(actionId) {
+  const btn = document.getElementById("seed");
+  if (!btn) return;
+  if (actionId) {
+    btn.classList.remove("hidden");
+  } else {
+    btn.classList.add("hidden");
+  }
+}
+
+const seedButton = document.getElementById("seed");
+if (seedButton) {
+  seedButton.onclick = async () => {
+    if (!seedActionId) {
+      showToast("No seed action found.");
+      return;
+    }
+    await executeAction(seedActionId, {});
+    refreshAll();
+  };
+}
 refreshAll();

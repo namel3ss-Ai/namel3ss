@@ -64,6 +64,12 @@ n3 <your_app.ai> lint
 
 If you change language/runtime/parsing, update examples and integration tests accordingly.
 
+Quick reminders:
+- File size: ≤500 LOC; split near 400 with folder-first naming.
+- Single responsibility per file.
+- Propose grammar/UI changes as small PRs with examples and tests.
+- Use issue templates for bugs/ideas; include a minimal `.ai` snippet and `n3 <app.ai> check` output.
+
 ---
 
 ## What to Work On

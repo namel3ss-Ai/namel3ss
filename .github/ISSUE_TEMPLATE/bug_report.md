@@ -9,19 +9,27 @@ body:
         Thank you for helping improve namel3ss.
         Please keep reports focused and reproducible.
 
-  - type: input
-    id: version
+  - type: textarea
+    id: snippet
     attributes:
-      label: namel3ss version
-      placeholder: "0.1.0-alpha"
+      label: Minimal .ai snippet or attach the file
+      description: Keep it as small as possible to reproduce.
     validations:
       required: true
 
   - type: textarea
-    id: what-happened
+    id: check-output
     attributes:
-      label: What happened?
-      description: What did you expect to happen, and what actually happened?
+      label: Output of `n3 <app.ai> check`
+      description: Paste the full command output.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual
+      description: What you expected to happen, and what happened instead.
     validations:
       required: true
 
@@ -29,7 +37,6 @@ body:
     id: steps
     attributes:
       label: Steps to reproduce
-      description: Minimal steps to reproduce the issue.
       placeholder: |
         1. n3 app.ai
         2. Click button "Run"
@@ -37,8 +44,10 @@ body:
     validations:
       required: true
 
-  - type: textarea
-    id: logs
+  - type: input
+    id: os
     attributes:
-      label: Error output / trace
-      render: shell
+      label: OS and Python version
+      placeholder: "e.g., macOS 13, Python 3.11"
+    validations:
+      required: true

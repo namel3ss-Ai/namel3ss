@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.render import format_error
+from namel3ss.errors.payload import build_error_from_exception, build_error_payload
 from namel3ss.studio.api import (
     apply_edit,
     execute_action,
@@ -80,26 +81,47 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
         try:
             source = self._read_source()
         except Exception as err:  # pragma: no cover - IO error edge
-            payload = {"ok": False, "error": f"Cannot read source: {err}"}
+            payload = build_error_payload(f"Cannot read source: {err}", kind="runtime")
             self._respond_json(payload, status=500)
             return
         if self.path == "/api/summary":
-            payload = get_summary_payload(source, self.server.app_path)  # type: ignore[attr-defined]
-            status = 200 if payload.get("ok") else 400
-            self._respond_json(payload, status=status)
-            return
+            try:
+                payload = get_summary_payload(source, self.server.app_path)  # type: ignore[attr-defined]
+                status = 200 if payload.get("ok") else 400
+                self._respond_json(payload, status=status)
+                return
+            except Namel3ssError as err:
+                payload = build_error_from_exception(err, kind="parse", source=source)
+                self._respond_json(payload, status=400)
+                return
         if self.path == "/api/ui":
-            payload = get_ui_payload(source, self._get_session())
-            status = 200 if payload.get("ok", True) else 400
-            self._respond_json(payload, status=status)
-            return
+            try:
+                payload = get_ui_payload(source, self._get_session())
+                status = 200 if payload.get("ok", True) else 400
+                self._respond_json(payload, status=status)
+                return
+            except Namel3ssError as err:
+                payload = build_error_from_exception(err, kind="manifest", source=source)
+                self._respond_json(payload, status=400)
+                return
         if self.path == "/api/actions":
-            payload = get_actions_payload(source)
-            status = 200 if payload.get("ok") else 400
-            self._respond_json(payload, status=status)
-            return
+            try:
+                payload = get_actions_payload(source)
+                status = 200 if payload.get("ok") else 400
+                self._respond_json(payload, status=status)
+                return
+            except Namel3ssError as err:
+                payload = build_error_from_exception(err, kind="manifest", source=source)
+                self._respond_json(payload, status=400)
+                return
         if self.path == "/api/lint":
             payload = get_lint_payload(source)
+            self._respond_json(payload, status=200)
+            return
+        if self.path == "/api/version":
+            from namel3ss.studio.api import get_version_payload
+
+            payload = get_version_payload()
             self._respond_json(payload, status=200)
             return
         self.send_error(404)
@@ -110,48 +132,52 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
         try:
             body = json.loads(raw_body.decode("utf-8") or "{}")
         except json.JSONDecodeError:
-            self._respond_json({"ok": False, "error": "Invalid JSON body"}, status=400)
+            self._respond_json(build_error_payload("Invalid JSON body", kind="parse"), status=400)
             return
         try:
             source = self._read_source()
         except Exception as err:  # pragma: no cover
-            payload = {"ok": False, "error": f"Cannot read source: {err}"}
+            payload = build_error_payload(f"Cannot read source: {err}", kind="runtime")
             self._respond_json(payload, status=500)
             return
         if self.path == "/api/edit":
             if not isinstance(body, dict):
-                self._respond_json({"ok": False, "error": "Body must be a JSON object"}, status=400)
+                self._respond_json(build_error_payload("Body must be a JSON object", kind="edit"), status=400)
                 return
             op = body.get("op")
             target = body.get("target")
             value = body.get("value", "")
             if not isinstance(op, str):
-                self._respond_json({"ok": False, "error": "Edit op is required"}, status=400)
+                self._respond_json(build_error_payload("Edit op is required", kind="edit"), status=400)
                 return
             if not isinstance(target, dict):
-                self._respond_json({"ok": False, "error": "Edit target is required"}, status=400)
+                self._respond_json(build_error_payload("Edit target is required", kind="edit"), status=400)
                 return
-            if not isinstance(value, str):
-                self._respond_json({"ok": False, "error": "Edit value must be a string"}, status=400)
+            if op in {"set_title", "set_text", "set_button_label"} and not isinstance(value, str):
+                self._respond_json(build_error_payload("Edit value must be a string", kind="edit"), status=400)
                 return
             try:
                 resp = apply_edit(self.server.app_path, op, target, value, self._get_session())  # type: ignore[attr-defined]
                 self._respond_json(resp, status=200)
                 return
             except Namel3ssError as err:
-                self._respond_json({"ok": False, "error": format_error(err, source)}, status=400)
+                payload = build_error_from_exception(err, kind="edit", source=source)
+                self._respond_json(payload, status=400)
+                return
+            except Exception as err:  # pragma: no cover
+                self._respond_json(build_error_payload(str(err), kind="edit"), status=500)
                 return
         if self.path == "/api/action":
             if not isinstance(body, dict):
-                self._respond_json({"ok": False, "error": "Body must be a JSON object"}, status=400)
+                self._respond_json(build_error_payload("Body must be a JSON object", kind="runtime"), status=400)
                 return
             action_id = body.get("id")
             payload = body.get("payload") or {}
             if not isinstance(action_id, str):
-                self._respond_json({"ok": False, "error": "Action id is required"}, status=400)
+                self._respond_json(build_error_payload("Action id is required", kind="runtime"), status=400)
                 return
             if not isinstance(payload, dict):
-                self._respond_json({"ok": False, "error": "Payload must be an object"}, status=400)
+                self._respond_json(build_error_payload("Payload must be an object", kind="runtime"), status=400)
                 return
             try:
                 resp = execute_action(source, self._get_session(), action_id, payload)
@@ -159,7 +185,11 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
                 self._respond_json(resp, status=status)
                 return
             except Namel3ssError as err:
-                self._respond_json({"ok": False, "error": format_error(err, source)}, status=400)
+                payload = build_error_from_exception(err, kind="runtime", source=source)
+                self._respond_json(payload, status=400)
+                return
+            except Exception as err:  # pragma: no cover
+                self._respond_json(build_error_payload(str(err), kind="runtime"), status=500)
                 return
         if self.path == "/api/reset":
             self.server.session_state = SessionState()  # type: ignore[attr-defined]

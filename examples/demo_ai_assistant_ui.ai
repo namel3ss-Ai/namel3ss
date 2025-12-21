@@ -1,0 +1,33 @@
+ai "assistant":
+  provider is "mock"
+  model is "mock-model"
+  system_prompt is "You are a helpful assistant."
+
+record "Message":
+  field "content" is string must be present
+  field "from" is string must be present
+
+flow "send_message":
+  set state.error is "Set NAMEL3SS_OPENAI_API_KEY to use a real provider; mock is active."
+  set state.message.content is input.values.content
+  set state.message.from is "user"
+  save Message
+  ask ai "assistant" with input: input.values.content as reply
+  set state.message.content is reply
+  set state.message.from is "assistant"
+  save Message
+  set state.error is null
+  return reply
+
+page "assistant":
+  title is "AI Assistant"
+  section "Chat":
+    card "Conversation":
+      form is "Message"
+      button "Send":
+        calls flow "send_message"
+    card "Messages":
+      table is "Message"
+  divider
+  card "Status":
+    text is "Last error will appear in logs if a provider key is missing."

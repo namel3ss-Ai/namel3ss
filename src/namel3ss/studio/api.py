@@ -4,6 +4,7 @@ from pathlib import Path
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.render import format_error
+from namel3ss.errors.payload import build_error_from_exception
 from namel3ss.ir.nodes import lower_program
 from namel3ss.lint.engine import lint_source
 from namel3ss.parser.core import parse
@@ -12,6 +13,7 @@ from namel3ss.runtime.ui.actions import handle_action
 from namel3ss.studio.edit import apply_edit_to_source
 from namel3ss.studio.session import SessionState
 from namel3ss.ui.manifest import build_manifest
+from namel3ss.version import get_version
 
 
 def _load_program(source: str):
@@ -67,9 +69,17 @@ def get_lint_payload(source: str) -> dict:
     }
 
 
-def execute_action(source: str, session: SessionState, action_id: str, payload: dict) -> dict:
-    program_ir = _load_program(source)
-    return handle_action(program_ir, action_id=action_id, payload=payload, state=session.state, store=session.store)
+def get_version_payload() -> dict:
+    return {"ok": True, "version": get_version()}
+
+
+def execute_action(source: str, session: SessionState | None, action_id: str, payload: dict) -> dict:
+    try:
+        session = session or SessionState()
+        program_ir = _load_program(source)
+        return handle_action(program_ir, action_id=action_id, payload=payload, state=session.state, store=session.store)
+    except Namel3ssError as err:
+        return build_error_from_exception(err, kind="runtime", source=source)
 
 
 def apply_edit(app_path: str, op: str, target: dict, value: str, session: SessionState) -> dict:

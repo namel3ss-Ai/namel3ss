@@ -1,0 +1,30 @@
+record "Applicant":
+  field "email" is string must match pattern "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
+  field "name" is string must be present
+  field "bio" is string must have length at least 10
+
+flow "save_applicant":
+  set state.applicant.email is input.values.email
+  set state.applicant.name is input.values.name
+  set state.applicant.bio is input.values.bio
+  save Applicant
+  set state.applicant_name is input.values.name
+  return "saved"
+
+flow "reset_applicant":
+  set state.applicant_name is null
+  return "reset"
+
+page "onboarding":
+  title is "Onboarding"
+  section "Step 1: Profile":
+    card "Tell us about you":
+      form is "Applicant"
+      button "Reset":
+        calls flow "reset_applicant"
+    section "Step 2: Review":
+      text is "When saved, your name appears below."
+      card "Summary":
+        text is "Latest name is stored after you save the form."
+  text is "Quick apply form"
+  form is "Applicant"

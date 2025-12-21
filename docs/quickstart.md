@@ -38,3 +38,10 @@ Bundled demos remain under `examples/` if you want to inspect them directly:
 - `Refresh` reloads manifest, actions, lint.
 - `Reset` clears in-memory state/store.
 - Actions run via buttons and forms; traces and state update live.
+
+## Grammar note
+- Record fields use `is` for types and `must` for constraints, for example: `field "email" is text must be present`.
+
+## Next steps
+- Read [First 5 minutes](first-5-minutes.md) for a guided win.
+- See [What you can build today](what-you-can-build-today.md) to understand supported use cases.

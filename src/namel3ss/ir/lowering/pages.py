@@ -2,7 +2,21 @@ from __future__ import annotations
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
-from namel3ss.ir.model.pages import ButtonItem, FormItem, Page, PageItem, TableItem, TextItem, TitleItem
+from namel3ss.ir.model.pages import (
+    ButtonItem,
+    CardItem,
+    ColumnItem,
+    DividerItem,
+    FormItem,
+    ImageItem,
+    Page,
+    PageItem,
+    RowItem,
+    SectionItem,
+    TableItem,
+    TextItem,
+    TitleItem,
+)
 from namel3ss.schema import records as schema
 
 
@@ -45,4 +59,25 @@ def _lower_page_item(
                 column=item.column,
             )
         return ButtonItem(label=item.label, flow_name=item.flow_name, line=item.line, column=item.column)
+    if isinstance(item, ast.SectionItem):
+        children = [_lower_page_item(child, record_map, flow_names, page_name) for child in item.children]
+        return SectionItem(label=item.label, children=children, line=item.line, column=item.column)
+    if isinstance(item, ast.CardItem):
+        children = [_lower_page_item(child, record_map, flow_names, page_name) for child in item.children]
+        return CardItem(label=item.label, children=children, line=item.line, column=item.column)
+    if isinstance(item, ast.RowItem):
+        lowered_children: list[PageItem] = []
+        for child in item.children:
+            if not isinstance(child, ast.ColumnItem):
+                raise Namel3ssError("Rows may only contain columns", line=child.line, column=child.column)
+            lowered_children.append(_lower_page_item(child, record_map, flow_names, page_name))
+        return RowItem(children=lowered_children, line=item.line, column=item.column)
+    if isinstance(item, ast.ColumnItem):
+        children = [_lower_page_item(child, record_map, flow_names, page_name) for child in item.children]
+        return ColumnItem(children=children, line=item.line, column=item.column)
+    if isinstance(item, ast.DividerItem):
+        return DividerItem(line=item.line, column=item.column)
+    if isinstance(item, ast.ImageItem):
+        alt = item.alt if item.alt is not None else ""
+        return ImageItem(src=item.src, alt=alt, line=item.line, column=item.column)
     raise TypeError(f"Unhandled page item type: {type(item)}")

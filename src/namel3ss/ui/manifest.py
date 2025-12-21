@@ -15,12 +15,16 @@ def build_manifest(program: ir.Program, *, state: dict | None = None, store: Mem
     state = state or {}
     for page in program.pages:
         page_slug = _slugify(page.name)
-        elements = []
-        for idx, item in enumerate(page.items):
-            element, action_entry = _page_item_to_manifest(item, record_map, page.name, page_slug, idx, store)
-            elements.append(element)
-            if action_entry:
-                actions[action_entry["id"]] = action_entry
+        elements, action_entries = _build_children(
+            page.items,
+            record_map,
+            page.name,
+            page_slug,
+            [],
+            store,
+        )
+        for action_id, action_entry in action_entries.items():
+            actions[action_id] = action_entry
         pages.append(
             {
                 "name": page.name,
@@ -31,16 +35,41 @@ def build_manifest(program: ir.Program, *, state: dict | None = None, store: Mem
     return {"pages": pages, "actions": actions}
 
 
+def _build_children(
+    children: List[ir.PageItem],
+    record_map: Dict[str, schema.RecordSchema],
+    page_name: str,
+    page_slug: str,
+    path: List[int],
+    store: MemoryStore | None,
+) -> tuple[List[dict], Dict[str, dict]]:
+    elements: List[dict] = []
+    actions: Dict[str, dict] = {}
+    for idx, child in enumerate(children):
+        element, child_actions = _page_item_to_manifest(
+            child,
+            record_map,
+            page_name,
+            page_slug,
+            path + [idx],
+            store,
+        )
+        elements.append(element)
+        actions.update(child_actions)
+    return elements, actions
+
+
 def _page_item_to_manifest(
     item: ir.PageItem,
     record_map: Dict[str, schema.RecordSchema],
     page_name: str,
     page_slug: str,
-    index: int,
+    path: List[int],
     store: MemoryStore | None,
-) -> tuple[dict, dict | None]:
+) -> tuple[dict, Dict[str, dict]]:
+    index = path[-1] if path else 0
     if isinstance(item, ir.TitleItem):
-        element_id = _title_element_id(page_slug, index)
+        element_id = _element_id(page_slug, "title", path)
         return (
             {
                 "type": "title",
@@ -52,10 +81,10 @@ def _page_item_to_manifest(
                 "line": item.line,
                 "column": item.column,
             },
-            None,
+            {},
         )
     if isinstance(item, ir.TextItem):
-        element_id = _text_element_id(page_slug, index)
+        element_id = _element_id(page_slug, "text", path)
         return (
             {
                 "type": "text",
@@ -67,7 +96,7 @@ def _page_item_to_manifest(
                 "line": item.line,
                 "column": item.column,
             },
-            None,
+            {},
         )
     if isinstance(item, ir.FormItem):
         record = _require_record(item.record_name, record_map, item)
@@ -75,7 +104,7 @@ def _page_item_to_manifest(
         return (
             {
                 "type": "form",
-                "element_id": _form_element_id(page_slug, index),
+                "element_id": _element_id(page_slug, "form_item", path),
                 "id": action_id,
                 "action_id": action_id,
                 "record": record.name,
@@ -86,7 +115,7 @@ def _page_item_to_manifest(
                 "line": item.line,
                 "column": item.column,
             },
-            {"id": action_id, "type": "submit_form", "record": record.name},
+            {action_id: {"id": action_id, "type": "submit_form", "record": record.name}},
         )
     if isinstance(item, ir.TableItem):
         record = _require_record(item.record_name, record_map, item)
@@ -101,19 +130,19 @@ def _page_item_to_manifest(
                 "record": record.name,
                 "columns": [{"name": f.name, "type": f.type_name} for f in record.fields],
                 "rows": rows,
-                "element_id": _table_element_id(page_slug, index),
+                "element_id": _element_id(page_slug, "table", path),
                 "page": page_name,
                 "page_slug": page_slug,
                 "index": index,
                 "line": item.line,
                 "column": item.column,
             },
-            None,
+            {},
         )
     if isinstance(item, ir.ButtonItem):
         action_id = _button_action_id(page_name, item.label)
         action_entry = {"id": action_id, "type": "call_flow", "flow": item.flow_name}
-        element_id = _button_element_id(page_slug, index)
+        element_id = _element_id(page_slug, "button_item", path)
         element = {
             "type": "button",
             "label": item.label,
@@ -127,8 +156,90 @@ def _page_item_to_manifest(
             "line": item.line,
             "column": item.column,
         }
-        return element, action_entry
-    raise Namel3ssError(f"Unsupported page item '{type(item)}'")
+        return element, {action_id: action_entry}
+    if isinstance(item, ir.SectionItem):
+        children, actions = _build_children(item.children, record_map, page_name, page_slug, path, store)
+        element = {
+            "type": "section",
+            "label": item.label or "",
+            "children": children,
+            "element_id": _element_id(page_slug, "section", path),
+            "page": page_name,
+            "page_slug": page_slug,
+            "index": index,
+            "line": item.line,
+            "column": item.column,
+        }
+        return element, actions
+    if isinstance(item, ir.CardItem):
+        children, actions = _build_children(item.children, record_map, page_name, page_slug, path, store)
+        element = {
+            "type": "card",
+            "label": item.label or "",
+            "children": children,
+            "element_id": _element_id(page_slug, "card", path),
+            "page": page_name,
+            "page_slug": page_slug,
+            "index": index,
+            "line": item.line,
+            "column": item.column,
+        }
+        return element, actions
+    if isinstance(item, ir.RowItem):
+        children, actions = _build_children(item.children, record_map, page_name, page_slug, path, store)
+        element = {
+            "type": "row",
+            "children": children,
+            "element_id": _element_id(page_slug, "row", path),
+            "page": page_name,
+            "page_slug": page_slug,
+            "index": index,
+            "line": item.line,
+            "column": item.column,
+        }
+        return element, actions
+    if isinstance(item, ir.ColumnItem):
+        children, actions = _build_children(item.children, record_map, page_name, page_slug, path, store)
+        element = {
+            "type": "column",
+            "children": children,
+            "element_id": _element_id(page_slug, "column", path),
+            "page": page_name,
+            "page_slug": page_slug,
+            "index": index,
+            "line": item.line,
+            "column": item.column,
+        }
+        return element, actions
+    if isinstance(item, ir.DividerItem):
+        element = {
+            "type": "divider",
+            "element_id": _element_id(page_slug, "divider", path),
+            "page": page_name,
+            "page_slug": page_slug,
+            "index": index,
+            "line": item.line,
+            "column": item.column,
+        }
+        return element, {}
+    if isinstance(item, ir.ImageItem):
+        element = {
+            "type": "image",
+            "src": item.src,
+            "alt": item.alt,
+            "element_id": _element_id(page_slug, "image", path),
+            "page": page_name,
+            "page_slug": page_slug,
+            "index": index,
+            "line": item.line,
+            "column": item.column,
+        }
+        return element, {}
+    raise Namel3ssError(
+        f"Unsupported page item '{type(item)}'",
+        line=getattr(item, "line", None),
+        column=getattr(item, "column", None),
+    )
 
 
 def _field_to_manifest(field: schema.FieldSchema) -> dict:
@@ -171,7 +282,7 @@ def _literal_value(expr: ir.Expression | None) -> object:
 def _require_record(name: str, record_map: Dict[str, schema.RecordSchema], item: ir.PageItem) -> schema.RecordSchema:
     if name not in record_map:
         raise Namel3ssError(
-            f"Page references unknown record '{name}'",
+            f"Page references unknown record '{name}'. Add the record or update the reference.",
             line=item.line,
             column=item.column,
         )
@@ -190,24 +301,9 @@ def _table_id(page_name: str, record_name: str) -> str:
     return f"page.{_slugify(page_name)}.table.{_slugify(record_name)}"
 
 
-def _title_element_id(page_slug: str, index: int) -> str:
-    return f"page.{page_slug}.title.{index}"
-
-
-def _text_element_id(page_slug: str, index: int) -> str:
-    return f"page.{page_slug}.text.{index}"
-
-
-def _button_element_id(page_slug: str, index: int) -> str:
-    return f"page.{page_slug}.button_item.{index}"
-
-
-def _form_element_id(page_slug: str, index: int) -> str:
-    return f"page.{page_slug}.form_item.{index}"
-
-
-def _table_element_id(page_slug: str, index: int) -> str:
-    return f"page.{page_slug}.table.{index}"
+def _element_id(page_slug: str, kind: str, path: List[int]) -> str:
+    suffix = ".".join(str(p) for p in path) if path else "0"
+    return f"page.{page_slug}.{kind}.{suffix}"
 
 
 def _slugify(text: str) -> str:

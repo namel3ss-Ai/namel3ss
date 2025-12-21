@@ -38,6 +38,39 @@ class ButtonItem(PageItem):
 
 
 @dataclass
+class SectionItem(PageItem):
+    label: str | None
+    children: List["PageItem"]
+
+
+@dataclass
+class CardItem(PageItem):
+    label: str | None
+    children: List["PageItem"]
+
+
+@dataclass
+class RowItem(PageItem):
+    children: List["PageItem"]
+
+
+@dataclass
+class ColumnItem(PageItem):
+    children: List["PageItem"]
+
+
+@dataclass
+class DividerItem(PageItem):
+    pass
+
+
+@dataclass
+class ImageItem(PageItem):
+    src: str
+    alt: str | None = None
+
+
+@dataclass
 class PageDecl(Node):
     name: str
     items: List[PageItem]

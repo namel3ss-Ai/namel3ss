@@ -26,7 +26,14 @@ def parse_record_fields(parser) -> List[ast.FieldDecl]:
         name_tok = parser._current()
         if name_tok.type not in {"IDENT", "TITLE", "TEXT", "FORM", "TABLE", "BUTTON", "PAGE"}:
             raise Namel3ssError("Expected field name", line=name_tok.line, column=name_tok.column)
-        parser._advance()
+        # Support canonical "field \"name\" is type" while keeping legacy "name type".
+        if name_tok.value == "field":
+            parser._advance()
+            field_name_tok = parser._expect("STRING", "Expected field name string after 'field'")
+        else:
+            parser._advance()
+            field_name_tok = name_tok
+        parser._match("IS")
         type_tok = parser._current()
         if not type_tok.type.startswith("TYPE_"):
             raise Namel3ssError("Expected field type", line=type_tok.line, column=type_tok.column)
@@ -37,11 +44,11 @@ def parse_record_fields(parser) -> List[ast.FieldDecl]:
             constraint = parse_field_constraint(parser)
         fields.append(
             ast.FieldDecl(
-                name=name_tok.value,
+                name=field_name_tok.value,
                 type_name=type_name,
                 constraint=constraint,
-                line=name_tok.line,
-                column=name_tok.column,
+                line=field_name_tok.line,
+                column=field_name_tok.column,
             )
         )
         if parser._match("NEWLINE"):

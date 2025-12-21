@@ -11,8 +11,13 @@ from namel3ss.cli.json_io import dumps_pretty, parse_payload
 from namel3ss.cli.runner import run_flow
 from namel3ss.cli.ui_mode import render_manifest, run_action
 from namel3ss.cli.studio_mode import run_studio
+from namel3ss.cli.check_mode import run_check
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.render import format_error
+from namel3ss.lint.engine import lint_source
+from namel3ss.runtime.store.memory_store import MemoryStore
+from namel3ss.ui.manifest import build_manifest
+from namel3ss.version import get_version
 
 RESERVED = {"check", "ui", "flow", "help", "format", "lint", "actions", "studio"}
 
@@ -24,6 +29,9 @@ def main(argv: list[str] | None = None) -> int:
             _print_usage()
             return 1
 
+        if args[0] == "--version":
+            print(f"namel3ss {get_version()}")
+            return 0
         if args[0] == "help":
             _print_usage()
             return 0
@@ -33,6 +41,8 @@ def main(argv: list[str] | None = None) -> int:
         path = args[0]
         remainder = args[1:]
 
+        if remainder and remainder[0] == "check":
+            return run_check(path)
         if remainder and remainder[0] == "format":
             check_only = len(remainder) > 1 and remainder[1] == "check"
             return run_format(path, check_only)
@@ -73,9 +83,6 @@ def main(argv: list[str] | None = None) -> int:
             return _run_default(program_ir)
         cmd = remainder[0]
         tail = remainder[1:]
-        if cmd == "check":
-            print("OK")
-            return 0
         if cmd == "ui":
             manifest = render_manifest(program_ir)
             print(dumps_pretty(manifest))
