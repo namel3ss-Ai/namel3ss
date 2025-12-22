@@ -73,25 +73,24 @@ ai "assistant":
 ```
 
 ### Studio
-A visual environment for building with namel3ss. Coming soon.
-```
-Studio
-Coming soon.
+A visual environment for inspecting and interacting with namel3ss programs. An early Studio ships with v0.1.0a1/a2 — usable for state inspection, traces, and interaction. It is intentionally minimal and evolving.
+```bash
+n3 app.ai studio
 ```
 
 ---
 
 ## 10-second demo
 ```bash
-pip install namel3ss
+pip install namel3ss  # installs v0.1.0 alpha (a1/a2)
 n3 new crud
 n3 crud/app.ai studio
 ```
-You just generated a working app and opened Studio to run it, inspect state, and see traces.
+You just generated a working app and opened Studio to run it, inspect state, and see traces. If you hit installation or environment issues, please report them — that's part of alpha feedback.
 
 ## Try it in 60 seconds
 ```bash
-pip install namel3ss
+pip install namel3ss  # installs v0.1.0 alpha
 n3 new crud my_app
 n3 my_app/app.ai studio
 ```
@@ -99,14 +98,18 @@ n3 my_app/app.ai studio
 ---
 
 ## The Rule of 3
-The “3” in namel3ss is not decoration. It’s a promise.
+The "3" in namel3ss is not decoration. It's a promise.
 
 If you cannot understand the basics of namel3ss in 3 minutes, we consider that a design failure — and we will redesign it.
+
+In v0.1.0 alpha (a1/a2), the Rule of 3 applies primarily to language structure, mental model, and tooling flow. Full computational expressiveness is out of scope for this alpha.
 
 ---
 
 ## What you can build today
 CRUD dashboards (records → forms/tables → validation). Internal tools and admin panels. AI assistants over your records (with memory and traces). Multi-agent workflows (sequential + parallel orchestration). Prototypes that stay readable as they grow.
+
+In v0.1.0 alpha (a1/a2), namel3ss prioritizes structural clarity and intent over computation. Arithmetic operations, conditional logic (if/else, loops), and reusable functions/modules are intentionally limited or not yet supported. This is a design choice — full computational expressiveness is planned for future versions.
 
 ---
 
@@ -163,12 +166,16 @@ namel3ss supports local and cloud providers (including Ollama and Tier-1 cloud p
 ---
 
 ## Status
-namel3ss is v0.1.0a1. It is stable enough for early adopters, prototypes, internal tools, and learning — and it is evolving fast.
+namel3ss is currently in v0.1.0 alpha, including v0.1.0a1 and v0.1.0a2. These are design-validation releases. Breaking changes are expected between alpha revisions. Feedback from a1/a2 directly shapes upcoming versions.
+
+v0.1.0 alpha is intended for experimentation, learning, and language & tooling feedback. It is not production-ready. It is stable enough for early adopters, prototypes, internal tools, and learning — and it is evolving fast.
 
 ---
 
 ## Alpha testers wanted
-namel3ss is in early alpha. Breaking changes will happen. Documentation may lag.
+namel3ss is in early alpha (v0.1.0a1/a2). Breaking changes will happen. Documentation may lag.
+
+These releases are intended for experimentation, learning, and language & tooling feedback. namel3ss is not production-ready at this stage.
 
 If you like testing early systems and giving honest, technical feedback, we want your input.
 
