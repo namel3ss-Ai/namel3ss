@@ -5,7 +5,7 @@ from namel3ss.format.formatter import format_source
 from namel3ss.ir import nodes as ir
 from namel3ss.ir.nodes import lower_program
 from namel3ss.parser.core import parse
-from namel3ss.runtime.store.memory_store import MemoryStore
+from namel3ss.runtime.storage.base import Storage
 from namel3ss.studio.edit.selectors import find_element, find_element_with_parent, find_line_number
 from namel3ss.studio.edit.transform import replace_literal_at_line
 from namel3ss.studio.edit.transform.insert import insert_element
@@ -124,7 +124,7 @@ def _session_state(session: SessionState | None) -> dict:
     return session.state
 
 
-def _session_store(session: SessionState | None) -> MemoryStore | None:
+def _session_store(session: SessionState | None) -> Storage | None:
     if session is None:
         return None
     return session.store

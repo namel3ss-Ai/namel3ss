@@ -7,7 +7,8 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.executor import execute_program_flow
 from namel3ss.runtime.records.service import save_record_with_errors
-from namel3ss.runtime.store.memory_store import MemoryStore
+from namel3ss.runtime.storage.base import Storage
+from namel3ss.runtime.storage.factory import resolve_store
 from namel3ss.ui.manifest import build_manifest
 
 
@@ -17,7 +18,7 @@ def handle_action(
     action_id: str,
     payload: Optional[dict] = None,
     state: Optional[dict] = None,
-    store: Optional[MemoryStore] = None,
+    store: Optional[Storage] = None,
     runtime_theme: Optional[str] = None,
     preference_store=None,
     preference_key: str | None = None,
@@ -27,8 +28,8 @@ def handle_action(
     if payload is not None and not isinstance(payload, dict):
         raise Namel3ssError("Payload must be a dictionary")
 
-    store = store or MemoryStore()
-    working_state = {} if state is None else state
+    store = resolve_store(store)
+    working_state = store.load_state() if state is None else state
     manifest = build_manifest(program_ir, state=working_state, store=store, runtime_theme=runtime_theme)
     actions: Dict[str, dict] = manifest.get("actions", {})
     if action_id not in actions:
@@ -66,7 +67,7 @@ def _handle_call_flow(
     action: dict,
     payload: dict,
     state: dict,
-    store: MemoryStore,
+    store: Storage,
     manifest: dict,
     runtime_theme: Optional[str],
     preference_store=None,
@@ -112,7 +113,7 @@ def _handle_submit_form(
     action: dict,
     payload: dict,
     state: dict,
-    store: MemoryStore,
+    store: Storage,
     manifest: dict,
     runtime_theme: Optional[str],
 ) -> dict:

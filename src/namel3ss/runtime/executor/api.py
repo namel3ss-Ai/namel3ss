@@ -7,7 +7,8 @@ from namel3ss.ir import nodes as ir
 from namel3ss.runtime.ai.provider import AIProvider
 from namel3ss.runtime.executor.executor import Executor
 from namel3ss.runtime.executor.result import ExecutionResult
-from namel3ss.runtime.store.memory_store import MemoryStore
+from namel3ss.runtime.storage.base import Storage
+from namel3ss.runtime.storage.factory import resolve_store
 from namel3ss.schema.records import RecordSchema
 from namel3ss.runtime.theme.resolution import resolve_initial_theme
 
@@ -27,6 +28,7 @@ def execute_flow(
         input_data=input_data,
         ai_provider=ai_provider,
         ai_profiles=ai_profiles,
+        store=resolve_store(None),
     ).run()
 
 
@@ -36,7 +38,7 @@ def execute_program_flow(
     *,
     state: Optional[Dict[str, object]] = None,
     input: Optional[Dict[str, object]] = None,
-    store: Optional[MemoryStore] = None,
+    store: Optional[Storage] = None,
     ai_provider: Optional[AIProvider] = None,
     runtime_theme: Optional[str] = None,
     preference_store=None,
@@ -66,7 +68,7 @@ def execute_program_flow(
         schemas=schemas,
         initial_state=state,
         input_data=input,
-        store=store,
+        store=resolve_store(store),
         ai_provider=ai_provider,
         ai_profiles=program.ais,
         agents=program.agents,

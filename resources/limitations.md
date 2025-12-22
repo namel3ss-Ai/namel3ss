@@ -59,19 +59,15 @@ That means:
 
 This is the phase where we optimize thinking, not scaling.
 
-### 2. No Persistent Database (Yet)
+### 2. Local-Only Persistence (Opt-in)
 
-Data is stored in memory.
+Persistence v1 is opt-in and local:
 
-When the process restarts:
+- enable with `N3_PERSIST=1` (uses SQLite at `.namel3ss/data.db`)
+- no clustering or remote storage
+- traces, secrets, and provider data are not persisted
 
-- state resets
-- records reset
-
-This is not a bug.
-It keeps the system predictable and transparent while the language matures.
-
-Persistence will arrive later, once usage patterns are proven.
+Default remains in-memory and deterministic. This keeps behavior predictable unless persistence is explicitly requested.
 
 ### 7. Navigation and Theming
 
@@ -114,9 +110,12 @@ If you need heavy computation today, namel3ss can call out to tools written in P
 
 The language stays focused on application intent, not utility sprawl.
 
-### 5. Tool Calling for Cloud LLMs Is Limited
+### 5. Tool Calling Scope
 
-namel3ss fully supports tool calling with the mock provider.
+Tool calling works locally and for the supported cloud providers, but:
+
+- only single tool call per turn is wired
+- JSON mode/streaming are not yet supported
 
 For real providers (OpenAI, Anthropic, Gemini, Mistral):
 

@@ -211,7 +211,18 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
                 self._respond_json(payload, status=400)
                 return
         if self.path == "/api/reset":
-            self.server.session_state = SessionState()  # type: ignore[attr-defined]
+            session = self._get_session()
+            store = getattr(session, "store", None)
+            if store is not None:
+                try:
+                    store.clear()
+                except Exception as err:  # pragma: no cover - defensive
+                    payload = build_error_payload(f"Unable to reset store: {err}", kind="runtime")
+                    self._respond_json(payload, status=500)
+                    return
+                self.server.session_state = SessionState(store=store)  # type: ignore[attr-defined]
+            else:
+                self.server.session_state = SessionState()  # type: ignore[attr-defined]
             self._respond_json({"ok": True}, status=200)
             return
         self.send_error(404)

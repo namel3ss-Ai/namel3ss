@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from dataclasses import asdict
 from typing import Dict, List, Optional
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
-from namel3ss.runtime.store.memory_store import MemoryStore
+from namel3ss.runtime.storage.base import Storage
+from namel3ss.runtime.storage.metadata import PersistenceMetadata
 from namel3ss.runtime.theme.resolution import resolve_effective_theme, ThemeSource
 from namel3ss.schema import records as schema
 
@@ -13,7 +15,7 @@ def build_manifest(
     program: ir.Program,
     *,
     state: dict | None = None,
-    store: MemoryStore | None = None,
+    store: Storage | None = None,
     runtime_theme: str | None = None,
     persisted_theme: str | None = None,
 ) -> dict:
@@ -49,6 +51,7 @@ def build_manifest(
                 "elements": elements,
             }
         )
+    persistence = _resolve_persistence(store)
     return {
         "pages": pages,
         "actions": actions,
@@ -63,7 +66,30 @@ def build_manifest(
             "tokens": getattr(program, "theme_tokens", {}),
             "preference": getattr(program, "theme_preference", {"allow_override": False, "persist": "none"}),
         },
+        "ui": {
+            "persistence": persistence,
+        },
     }
+
+
+def _resolve_persistence(store: Storage | None) -> dict:
+    default_meta = PersistenceMetadata(enabled=False, kind="memory", path=None, schema_version=None)
+    if store is None:
+        meta = default_meta
+    else:
+        getter = getattr(store, "get_metadata", None)
+        meta = getter() if callable(getter) else default_meta
+        meta = meta or default_meta
+    if isinstance(meta, PersistenceMetadata):
+        return asdict(meta)
+    if isinstance(meta, dict):
+        return {
+            "enabled": bool(meta.get("enabled", False)),
+            "kind": meta.get("kind") or "memory",
+            "path": meta.get("path"),
+            "schema_version": meta.get("schema_version"),
+        }
+    return asdict(default_meta)
 
 
 def _build_children(
@@ -72,7 +98,7 @@ def _build_children(
     page_name: str,
     page_slug: str,
     path: List[int],
-    store: MemoryStore | None,
+    store: Storage | None,
 ) -> tuple[List[dict], Dict[str, dict]]:
     elements: List[dict] = []
     actions: Dict[str, dict] = {}
@@ -96,7 +122,7 @@ def _page_item_to_manifest(
     page_name: str,
     page_slug: str,
     path: List[int],
-    store: MemoryStore | None,
+    store: Storage | None,
 ) -> tuple[dict, Dict[str, dict]]:
     index = path[-1] if path else 0
     if isinstance(item, ir.TitleItem):

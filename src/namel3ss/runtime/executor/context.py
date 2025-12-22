@@ -8,7 +8,7 @@ from namel3ss.ir import nodes as ir
 from namel3ss.runtime.ai.provider import AIProvider
 from namel3ss.runtime.ai.trace import AITrace
 from namel3ss.runtime.memory.manager import MemoryManager
-from namel3ss.runtime.store.memory_store import MemoryStore
+from namel3ss.runtime.storage.base import Storage
 from namel3ss.schema.records import RecordSchema
 
 
@@ -20,7 +20,7 @@ class ExecutionContext:
     locals: Dict[str, object]
     constants: set[str]
     last_value: Optional[object]
-    store: MemoryStore
+    store: Storage
     ai_provider: AIProvider
     ai_profiles: Dict[str, ir.AIDecl]
     agents: Dict[str, ir.AgentDecl]

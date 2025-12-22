@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Tuple
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
-from namel3ss.runtime.store.memory_store import MemoryStore
+from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.validators.constraints import collect_validation_errors, validate_record_instance
 from namel3ss.schema.records import RecordSchema
 
@@ -14,7 +14,7 @@ def save_record_or_raise(
     values: Dict[str, object],
     schemas: Dict[str, RecordSchema],
     state: Dict[str, object],
-    store: MemoryStore,
+    store: Storage,
     line: int | None = None,
     column: int | None = None,
 ) -> dict:
@@ -30,7 +30,7 @@ def save_record_with_errors(
     values: Dict[str, object],
     schemas: Dict[str, RecordSchema],
     state: Dict[str, object],
-    store: MemoryStore,
+    store: Storage,
 ) -> Tuple[Optional[dict], List[Dict[str, str]]]:
     schema = _get_schema(record_name, schemas)
     type_errors = _type_errors(schema, values)
@@ -102,4 +102,3 @@ def _literal_eval(expr: ir.Expression | None) -> object:
     if isinstance(expr, ir.Literal):
         return expr.value
     raise Namel3ssError("Only literal expressions supported in schema constraints for forms")
-

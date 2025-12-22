@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.executor import execute_program_flow
-from namel3ss.runtime.store.memory_store import MemoryStore
+from namel3ss.runtime.storage.factory import resolve_store
 from namel3ss.runtime.preferences.factory import preference_store_for_app, app_pref_key
 
 
@@ -14,7 +14,7 @@ def run_flow(program_ir, flow_name: str | None = None) -> dict:
         selected,
         state={},
         input={},
-        store=MemoryStore(),
+        store=resolve_store(None),
         runtime_theme=getattr(program_ir, "theme", None),
         preference_store=pref_store,
         preference_key=app_pref_key(None),

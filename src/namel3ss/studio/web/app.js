@@ -30,6 +30,15 @@ function copyText(value) {
     document.body.removeChild(textarea);
   }
 }
+function getPersistenceInfo() {
+  const persistence = (cachedManifest && cachedManifest.ui && cachedManifest.ui.persistence) || {};
+  const kind = (persistence.kind || "memory").toLowerCase();
+  return {
+    enabled: !!persistence.enabled,
+    kind,
+    path: persistence.path || "",
+  };
+}
 function updateCopyButton(id, getter) {
   const btn = document.getElementById(id);
   if (!btn) return;
@@ -408,7 +417,6 @@ if (seedButton) {
     refreshAll();
   };
 }
-
 async function loadVersion() {
   try {
     const data = await fetchJson("/api/version");
@@ -419,7 +427,6 @@ async function loadVersion() {
     setVersionLabel("");
   }
 }
-
 window.reselectElement = function () {
   if (!selectedElementId || !cachedManifest) {
     renderInspector(null, null);
@@ -440,7 +447,13 @@ window.reselectElement = function () {
 
 document.getElementById("refresh").onclick = refreshAll;
 document.getElementById("reset").onclick = async () => {
-  const ok = window.confirm("Reset will clear state and records for this session. Continue?");
+  const persistence = getPersistenceInfo();
+  const resetPath = persistence.path ? ` in ${persistence.path}` : "";
+  const prompt =
+    persistence.kind === "sqlite" && persistence.enabled
+      ? `Reset will clear persisted records/state${resetPath}. Continue?`
+      : "Reset will clear state and records for this session. Continue?";
+  const ok = window.confirm(prompt);
   if (!ok) return;
   await fetch("/api/reset", { method: "POST", body: "{}" });
   renderState({});

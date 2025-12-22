@@ -12,7 +12,7 @@ from namel3ss.runtime.executor.result import ExecutionResult
 from namel3ss.runtime.executor.signals import _ReturnSignal
 from namel3ss.runtime.executor.statements import execute_statement
 from namel3ss.runtime.memory.manager import MemoryManager
-from namel3ss.runtime.store.memory_store import MemoryStore
+from namel3ss.runtime.storage.factory import resolve_store
 from namel3ss.schema.records import RecordSchema
 
 
@@ -22,7 +22,7 @@ class Executor:
         flow: ir.Flow,
         schemas: Optional[Dict[str, RecordSchema]] = None,
         initial_state: Optional[Dict[str, object]] = None,
-        store: Optional[MemoryStore] = None,
+        store: Optional[object] = None,
         input_data: Optional[Dict[str, object]] = None,
         ai_provider: Optional[AIProvider] = None,
         ai_profiles: Optional[Dict[str, ir.AIDecl]] = None,
@@ -34,14 +34,16 @@ class Executor:
         resolved_config = config or load_config()
         default_ai_provider = ai_provider or MockProvider()
         provider_cache = {"mock": default_ai_provider}
+        resolved_store = resolve_store(store)
+        starting_state = initial_state if initial_state is not None else resolved_store.load_state()
         self.ctx = ExecutionContext(
             flow=flow,
             schemas=schemas or {},
-            state=initial_state or {},
+            state=starting_state or {},
             locals={"input": input_data or {}},
             constants=set(),
             last_value=None,
-            store=store or MemoryStore(),
+            store=resolved_store,
             ai_provider=default_ai_provider,
             ai_profiles=ai_profiles or {},
             agents=agents or {},
@@ -69,11 +71,21 @@ class Executor:
         self.provider_cache = self.ctx.provider_cache
 
     def run(self) -> ExecutionResult:
+        self.ctx.store.begin()
         try:
-            for stmt in self.ctx.flow.body:
-                execute_statement(self.ctx, stmt)
-        except _ReturnSignal as signal:
-            self.ctx.last_value = signal.value
+            try:
+                for stmt in self.ctx.flow.body:
+                    execute_statement(self.ctx, stmt)
+            except _ReturnSignal as signal:
+                self.ctx.last_value = signal.value
+            self.ctx.store.save_state(self.ctx.state)
+            self.ctx.store.commit()
+        except Exception:
+            try:
+                self.ctx.store.rollback()
+            except Exception:
+                pass
+            raise
         self.last_value = self.ctx.last_value
         self.agent_calls = self.ctx.agent_calls
         return ExecutionResult(

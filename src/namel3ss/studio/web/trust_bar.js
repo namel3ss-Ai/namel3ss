@@ -1,8 +1,21 @@
 function renderTruthBar(manifest) {
+  const storeEl = document.getElementById("truthStore");
   const runtimeEl = document.getElementById("truthRuntime");
   const effectiveEl = document.getElementById("truthEffective");
   const persistedEl = document.getElementById("truthPersisted");
   const overrideEl = document.getElementById("truthOverride");
+  if (manifest) {
+    const persistence = (manifest.ui && manifest.ui.persistence) || {};
+    const kind = (persistence.kind || "memory").toLowerCase();
+    const label = kind === "sqlite" ? "SQLite" : "Memory";
+    if (storeEl) {
+      const parts = [`Store: ${label}`];
+      if (kind === "sqlite" && persistence.path) {
+        parts.push(persistence.path);
+      }
+      storeEl.textContent = parts.join(" · ");
+    }
+  }
   if (!manifest || !manifest.theme) return;
   const theme = manifest.theme;
   const runtime = theme.current || theme.setting || "system";

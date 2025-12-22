@@ -15,14 +15,14 @@ from namel3ss.cli.ui_mode import render_manifest, run_action
 from namel3ss.cli.doctor import run_doctor
 from namel3ss.cli.studio_mode import run_studio
 from namel3ss.cli.check_mode import run_check
+from namel3ss.cli.persist_mode import run_persist
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.render import format_error
 from namel3ss.lint.engine import lint_source
-from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.ui.manifest import build_manifest
 from namel3ss.version import get_version
 
-RESERVED = {"check", "ui", "flow", "help", "format", "lint", "actions", "studio"}
+RESERVED = {"check", "ui", "flow", "help", "format", "lint", "actions", "studio", "persist"}
 
 
 def _allow_aliases_from_flags(flags: list[str]) -> bool:
@@ -104,6 +104,8 @@ def main(argv: list[str] | None = None) -> int:
                     continue
                 i += 1
             return run_studio(path, port, dry)
+        if remainder and remainder[0] == "persist":
+            return run_persist(path, remainder[1:])
 
         program_ir, source = load_program(path, allow_legacy_type_aliases=_allow_aliases_from_flags([]))
         if not remainder:
@@ -159,6 +161,8 @@ def _print_usage() -> None:
   n3 <app.ai> lint check           # lint, fail on findings
   n3 <app.ai> studio [--port N]    # start Studio viewer (use --dry to skip server in tests)
   n3 <app.ai> studio --dry         # dry run (prints URL)
+  n3 <app.ai> persist status       # show persistence mode/path
+  n3 <app.ai> persist reset --yes  # reset persisted data (SQLite only)
   n3 <app.ai> actions              # list actions (plain text)
   n3 <app.ai> actions json         # list actions (JSON)
   n3 <app.ai> <action_id> [json]   # execute UI action (payload optional)
