@@ -38,15 +38,16 @@ from namel3ss.parser.statements import (
 
 
 class Parser:
-    def __init__(self, tokens: List[Token]) -> None:
+    def __init__(self, tokens: List[Token], allow_legacy_type_aliases: bool = True) -> None:
         self.tokens = tokens
         self.position = 0
+        self.allow_legacy_type_aliases = allow_legacy_type_aliases
 
     @classmethod
-    def parse(cls, source: str) -> ast.Program:
+    def parse(cls, source: str, allow_legacy_type_aliases: bool = True) -> ast.Program:
         lexer = Lexer(source)
         tokens = lexer.tokenize()
-        parser = cls(tokens)
+        parser = cls(tokens, allow_legacy_type_aliases=allow_legacy_type_aliases)
         program = parser._parse_program()
         parser._expect("EOF")
         return program
@@ -162,5 +163,5 @@ class Parser:
         return parse_page_item(self)
 
 
-def parse(source: str) -> ast.Program:
-    return Parser.parse(source)
+def parse(source: str, allow_legacy_type_aliases: bool = True) -> ast.Program:
+    return Parser.parse(source, allow_legacy_type_aliases=allow_legacy_type_aliases)

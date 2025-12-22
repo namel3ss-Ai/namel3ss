@@ -1,8 +1,8 @@
 record "Order":
-  field "id" is int must be present
-  field "customer" is string must be present
+  field "id" is number must be present
+  field "customer" is text must be present
   field "total" is number must be present
-  field "status" is string must be present
+  field "status" is text must be present
 
 flow "seed_orders":
   set state.order.id is 101

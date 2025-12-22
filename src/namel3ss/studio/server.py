@@ -96,7 +96,7 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
                 return
         if self.path == "/api/ui":
             try:
-                payload = get_ui_payload(source, self._get_session())
+                payload = get_ui_payload(source, self._get_session(), self.server.app_path)  # type: ignore[attr-defined]
                 status = 200 if payload.get("ok", True) else 400
                 self._respond_json(payload, status=status)
                 return
@@ -180,7 +180,7 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
                 self._respond_json(build_error_payload("Payload must be an object", kind="runtime"), status=400)
                 return
             try:
-                resp = execute_action(source, self._get_session(), action_id, payload)
+                resp = execute_action(source, self._get_session(), action_id, payload, self.server.app_path)  # type: ignore[attr-defined]
                 status = 200 if resp.get("ok", True) else 200
                 self._respond_json(resp, status=status)
                 return
@@ -190,6 +190,25 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
                 return
             except Exception as err:  # pragma: no cover
                 self._respond_json(build_error_payload(str(err), kind="runtime"), status=500)
+                return
+        if self.path == "/api/theme":
+            if not isinstance(body, dict) or "value" not in body:
+                self._respond_json(build_error_payload("Theme value required", kind="runtime"), status=400)
+                return
+            value = body.get("value")
+            if value not in {"light", "dark", "system"}:
+                self._respond_json(build_error_payload("Theme must be light, dark, or system.", kind="runtime"), status=400)
+                return
+            session = self._get_session()
+            try:
+                from namel3ss.studio.theme import apply_runtime_theme
+
+                resp = apply_runtime_theme(source, session, value, self.server.app_path)  # type: ignore[attr-defined]
+                self._respond_json(resp, status=200)
+                return
+            except Namel3ssError as err:
+                payload = build_error_from_exception(err, kind="runtime", source=source)
+                self._respond_json(payload, status=400)
                 return
         if self.path == "/api/reset":
             self.server.session_state = SessionState()  # type: ignore[attr-defined]

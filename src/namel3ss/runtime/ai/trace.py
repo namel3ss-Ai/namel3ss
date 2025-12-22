@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 
@@ -16,3 +16,4 @@ class AITrace:
     memory: dict
     tool_calls: list
     tool_results: list
+    canonical_events: list[dict] = field(default_factory=list)

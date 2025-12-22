@@ -2,10 +2,11 @@ tool "echo":
   kind is "builtin"
 
 record "Note":
-  title string must be present
-  body string must be present
+  field "title" is text must be present
+  field "body" is text must be present
 
 ai "assistant":
+  provider is "mock"
   model is "gpt-4.1"
   system_prompt is "You are a helpful assistant for {{PROJECT_NAME}}."
   tools:

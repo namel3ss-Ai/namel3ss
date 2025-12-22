@@ -19,6 +19,10 @@ class FieldDecl(Node):
     name: str
     type_name: str
     constraint: Optional[FieldConstraint]
+    type_was_alias: bool = False
+    raw_type_name: Optional[str] = None
+    type_line: Optional[int] = None
+    type_column: Optional[int] = None
 
 
 @dataclass

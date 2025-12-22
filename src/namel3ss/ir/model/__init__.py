@@ -1,6 +1,6 @@
 from namel3ss.ir.model.base import Expression, Node, Statement
 from namel3ss.ir.model.program import Flow, Program
-from namel3ss.ir.model.statements import ForEach, If, Let, Match, MatchCase, Repeat, Return, Save, Set, TryCatch, Find
+from namel3ss.ir.model.statements import ForEach, If, Let, Match, MatchCase, Repeat, Return, Save, Set, ThemeChange, TryCatch, Find
 from namel3ss.ir.model.expressions import AttrAccess, BinaryOp, Comparison, Literal, StatePath, UnaryOp, VarReference, Assignable
 from namel3ss.ir.model.ai import AIDecl, AIMemory, AskAIStmt
 from namel3ss.ir.model.agents import AgentDecl, ParallelAgentEntry, RunAgentStmt, RunAgentsParallelStmt
@@ -36,6 +36,7 @@ __all__ = [
     "Return",
     "Save",
     "Set",
+    "ThemeChange",
     "TryCatch",
     "Find",
     "AttrAccess",

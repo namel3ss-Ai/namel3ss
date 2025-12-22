@@ -96,4 +96,11 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
     if isinstance(stmt, ir.Find):
         handle_find(ctx, stmt)
         return
+    if isinstance(stmt, ir.ThemeChange):
+        if stmt.value not in {"light", "dark", "system"}:
+            raise Namel3ssError("Theme must be one of: light, dark, system", line=stmt.line, column=stmt.column)
+        ctx.runtime_theme = stmt.value
+        ctx.traces.append({"type": "theme_change", "value": stmt.value})
+        ctx.last_value = stmt.value
+        return
     raise Namel3ssError(f"Unsupported statement type: {type(stmt)}", line=stmt.line, column=stmt.column)

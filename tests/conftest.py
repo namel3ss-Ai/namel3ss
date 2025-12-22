@@ -28,7 +28,13 @@ def run_flow(code: str, flow_name: str = "demo", initial_state=None, store=None)
     if flow is None:
         raise ValueError(f"Flow '{flow_name}' not found")
     schemas = {schema.name: schema for schema in ir_program.records}
-    executor = Executor(flow, schemas=schemas, initial_state=initial_state, store=store)
+    executor = Executor(
+        flow,
+        schemas=schemas,
+        initial_state=initial_state,
+        store=store,
+        runtime_theme=getattr(ir_program, "theme", None),
+    )
     return executor.run()
 
 

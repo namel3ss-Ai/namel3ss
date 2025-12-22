@@ -47,7 +47,7 @@ def test_openai_provider_missing_key(monkeypatch):
     provider = OpenAIProvider(api_key=None)
     with pytest.raises(Namel3ssError) as err:
         provider.ask(model="gpt-4.1", system_prompt=None, user_input="hi")
-    assert "Missing OPENAI_API_KEY (set it in .env or export it)" == str(err.value)
+    assert "Missing OPENAI_API_KEY" in str(err.value)
 
 
 def test_openai_provider_http_errors(monkeypatch):

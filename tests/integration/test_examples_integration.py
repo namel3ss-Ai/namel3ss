@@ -35,21 +35,12 @@ def test_crud_demo_actions():
     source, ir_program = _load_program(EXAMPLES_DIR / "demo_crud_dashboard.ai")
     store = MemoryStore()
     state = {}
-    ok = handle_action(
-        ir_program,
-        action_id="page.home.form.customer",
-        payload={"values": {"name": "Test", "email": "test@example.com", "age": 25}},
-        state=state,
-        store=store,
-    )
+    manifest = _manifest(ir_program, state=state, store=store)
+    form_actions = [aid for aid, a in manifest["actions"].items() if a.get("type") == "submit_form"]
+    assert form_actions, "No form actions found in CRUD demo"
+    ok = handle_action(ir_program, action_id=form_actions[0], payload={"values": {"name": "Test", "email": "test@example.com", "plan": "Starter", "age": 25}}, state=state, store=store)
     assert ok["ok"] is True
-    bad = handle_action(
-        ir_program,
-        action_id="page.home.form.customer",
-        payload={"values": {"email": "bad"}},
-        state=state,
-        store=store,
-    )
+    bad = handle_action(ir_program, action_id=form_actions[0], payload={"values": {"email": "bad"}}, state=state, store=store)
     assert bad["ok"] is False
     assert bad["errors"]
 
@@ -58,7 +49,10 @@ def test_ai_assistant_demo():
     source, ir_program = _load_program(EXAMPLES_DIR / "demo_ai_assistant_over_records.ai")
     state = {}
     store = MemoryStore()
-    resp = handle_action(ir_program, action_id="page.notes.button.ask_assistant", payload={}, state=state, store=store)
+    manifest = _manifest(ir_program, state=state, store=store)
+    buttons = [aid for aid, a in manifest["actions"].items() if a.get("type") == "call_flow" and a.get("flow") == "ask_assistant"]
+    assert buttons
+    resp = handle_action(ir_program, action_id=buttons[0], payload={}, state=state, store=store)
     assert resp["ok"] is True
     assert resp["traces"]
     assert "reply" in resp["state"]

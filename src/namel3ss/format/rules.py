@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 from typing import List
 
+from namel3ss.types import normalize_type_name
+
 
 def migrate_buttons(lines: List[str]) -> List[str]:
     migrated: List[str] = []
@@ -58,13 +60,15 @@ def normalize_spacing(line: str) -> str:
     # record field declarations to canonical "field \"name\" is <type> ..."
     field_pattern = re.compile(
         r'^(?:field\s+"([^"]+)"\s+)?([A-Za-z_][A-Za-z0-9_]*)\s+(?:is\s+)?'
-        r'(string|int|number|boolean|json)(\s+.+)?$'
+        r'(string|str|int|integer|number|boolean|bool|json)(\s+.+)?$'
     )
     m = field_pattern.match(rest)
     if m:
         explicit_name = m.group(1)
         name = explicit_name or m.group(2)
-        type_name = m.group(3)
+        raw_type = m.group(3)
+        canonical_type, _ = normalize_type_name(raw_type)
+        type_name = canonical_type
         tail = m.group(4) or ""
         rest = f'field "{name}" is {type_name}{tail}'
 

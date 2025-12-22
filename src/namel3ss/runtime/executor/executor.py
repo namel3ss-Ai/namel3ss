@@ -29,6 +29,7 @@ class Executor:
         memory_manager: Optional[MemoryManager] = None,
         agents: Optional[Dict[str, ir.AgentDecl]] = None,
         config: Optional[AppConfig] = None,
+        runtime_theme: Optional[str] = None,
     ) -> None:
         resolved_config = config or load_config()
         default_ai_provider = ai_provider or MockProvider()
@@ -49,6 +50,7 @@ class Executor:
             agent_calls=0,
             config=resolved_config,
             provider_cache=provider_cache,
+            runtime_theme=runtime_theme,
         )
         self.flow = self.ctx.flow
         self.schemas = self.ctx.schemas
@@ -74,4 +76,9 @@ class Executor:
             self.ctx.last_value = signal.value
         self.last_value = self.ctx.last_value
         self.agent_calls = self.ctx.agent_calls
-        return ExecutionResult(state=self.ctx.state, last_value=self.ctx.last_value, traces=self.ctx.traces)
+        return ExecutionResult(
+            state=self.ctx.state,
+            last_value=self.ctx.last_value,
+            traces=self.ctx.traces,
+            runtime_theme=self.ctx.runtime_theme,
+        )

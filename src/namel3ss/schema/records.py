@@ -6,7 +6,17 @@ from typing import Dict, List, Optional
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
 
-SUPPORTED_TYPES = {"string", "int", "number", "boolean", "json"}
+SUPPORTED_TYPES = {
+    "text",
+    "string",
+    "str",
+    "number",
+    "int",
+    "integer",
+    "boolean",
+    "bool",
+    "json",
+}
 
 
 @dataclass
@@ -49,4 +59,3 @@ class RecordSchema:
                 raise Namel3ssError(
                     f"Constraint 'pattern' requires a regex string in record '{self.name}' field '{f.name}'"
                 )
-

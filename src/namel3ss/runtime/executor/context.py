@@ -29,3 +29,4 @@ class ExecutionContext:
     agent_calls: int
     config: AppConfig
     provider_cache: Dict[str, AIProvider]
+    runtime_theme: str | None

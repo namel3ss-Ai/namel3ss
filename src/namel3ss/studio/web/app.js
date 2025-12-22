@@ -11,8 +11,11 @@ let selectedElementId = null;
 let selectedElement = null;
 let selectedPage = null;
 let versionLabel = null;
+let themeSetting = "system";
+let runtimeTheme = null;
+let themeOverride = null;
 let seedActionId = null;
-
+let preferencePolicy = { allow_override: false, persist: "none" };
 function copyText(value) {
   if (!value && value !== "") return;
   const text = typeof value === "string" ? value : JSON.stringify(value, null, 2);
@@ -89,6 +92,27 @@ function renderSummary(data) {
     row.innerHTML = `<div class="kv-label">${key}</div><div class="kv-value">${counts[key]}</div>`;
     kv.appendChild(row);
   });
+  if (cachedManifest && cachedManifest.theme) {
+    const setting = cachedManifest.theme.setting || "system";
+    const runtime = cachedManifest.theme.current || setting;
+    const display = themeOverride || runtime;
+    const effective = resolveTheme(display);
+    const tokenMap = applyThemeTokens(cachedManifest.theme.tokens || {}, display);
+    const row = document.createElement("div");
+    row.className = "kv-row";
+    const overrideLabel = themeOverride ? " (preview override)" : "";
+    row.innerHTML = `<div class="kv-label">theme</div><div class="kv-value">setting: ${setting}, runtime: ${runtime}, effective: ${effective}${overrideLabel}</div>`;
+    kv.appendChild(row);
+    const tokensRow = document.createElement("div");
+    tokensRow.className = "kv-row";
+    tokensRow.innerHTML = `<div class="kv-label">tokens</div><div class="kv-value">${JSON.stringify(tokenMap)}</div>`;
+    kv.appendChild(tokensRow);
+    const pref = cachedManifest.theme.preference || {};
+    const prefRow = document.createElement("div");
+    prefRow.className = "kv-row";
+    prefRow.innerHTML = `<div class="kv-label">preference</div><div class="kv-value">allow_override: ${pref.allow_override ? "true" : "false"}, persist: ${pref.persist || "none"}</div>`;
+    kv.appendChild(prefRow);
+  }
   container.appendChild(kv);
   updateCopyButton("summaryCopy", () => JSON.stringify(data, null, 2));
 }
@@ -176,34 +200,15 @@ function appendTraceSection(details, label, value, copyable = false) {
   wrapper.appendChild(createCodeBlock(value));
   details.appendChild(wrapper);
 }
-function matchTrace(trace, needle) {
-  if (!needle) return true;
-  const values = [trace.provider, trace.model, trace.ai_name, trace.ai_profile_name, trace.agent_name, trace.input, trace.output, trace.result]
-    .map((v) => (typeof v === "string" ? v : v ? JSON.stringify(v) : ""))
-    .join(" ")
-    .toLowerCase();
-  return values.includes(needle);
-}
-function updateTraceCopyButtons() {
-  const outputBtn = document.getElementById("traceCopyOutput");
-  const jsonBtn = document.getElementById("traceCopyJson");
-  const has = !!selectedTrace;
-  [outputBtn, jsonBtn].forEach((btn) => {
-    if (!btn) return;
-    btn.disabled = !has;
-  });
-  if (outputBtn) {
-    outputBtn.onclick = () => {
-      if (selectedTrace) copyText(selectedTrace.output ?? selectedTrace.result ?? "");
-    };
+  function matchTrace(trace, needle) {
+    if (!needle) return true;
+    const values = [trace.provider, trace.model, trace.ai_name, trace.ai_profile_name, trace.agent_name, trace.input, trace.output, trace.result]
+      .map((v) => (typeof v === "string" ? v : v ? JSON.stringify(v) : ""))
+      .join(" ")
+      .toLowerCase();
+    return values.includes(needle);
   }
-  if (jsonBtn) {
-    jsonBtn.onclick = () => {
-      if (selectedTrace) copyText(selectedTrace);
-    };
-  }
-}
-function renderTraces(data) {
+  function renderTraces(data) {
   cachedTraces = Array.isArray(data) ? data : cachedTraces;
   selectedTrace = null;
   const container = document.getElementById("traces"); if (!container) return; container.innerHTML = "";
@@ -281,6 +286,15 @@ async function executeAction(actionId, payload) {
   if (data.ui) {
     cachedManifest = data.ui;
     renderUI(data.ui);
+    const setting = (cachedManifest.theme && cachedManifest.theme.setting) || "system";
+    const runtime = (cachedManifest.theme && cachedManifest.theme.current) || setting;
+    themeSetting = setting;
+    runtimeTheme = runtime;
+    const currentTheme = themeOverride || runtime;
+    applyTheme(currentTheme);
+    applyThemeTokens(cachedManifest.theme && cachedManifest.theme.tokens ? cachedManifest.theme.tokens : {}, currentTheme);
+    const selector = document.getElementById("themeSelect");
+    if (selector) selector.value = themeOverride || setting;
   }
   reselectElement();
   return data;
@@ -324,8 +338,24 @@ async function refreshAll() {
     const uiContainer = document.getElementById("ui");
     showEmpty(uiContainer, ui.error || "Unable to load UI");
   }
+  const setting = (cachedManifest && cachedManifest.theme && cachedManifest.theme.setting) || "system";
+  const runtime = (cachedManifest && cachedManifest.theme && cachedManifest.theme.current) || setting;
+  themeSetting = setting;
+  runtimeTheme = runtime;
+  preferencePolicy = (cachedManifest && cachedManifest.theme && cachedManifest.theme.preference) || preferencePolicy;
+  const currentTheme = themeOverride || runtime;
+  applyTheme(currentTheme);
+  const activeTokens = (cachedManifest && cachedManifest.theme && cachedManifest.theme.tokens) || {};
+  applyThemeTokens(activeTokens, currentTheme);
+  const selector = document.getElementById("themeSelect");
+  if (selector) {
+    selector.value = themeOverride || runtime || setting;
+    selector.disabled = !preferencePolicy.allow_override;
+  }
   seedActionId = detectSeedAction(cachedManifest, actions);
   toggleSeed(seedActionId);
+  applyLocalPreferenceIfNeeded();
+  renderTruthBar(cachedManifest);
   reselectElement();
 }
 function setupTabs() {
@@ -410,11 +440,34 @@ window.reselectElement = function () {
 
 document.getElementById("refresh").onclick = refreshAll;
 document.getElementById("reset").onclick = async () => {
+  const ok = window.confirm("Reset will clear state and records for this session. Continue?");
+  if (!ok) return;
   await fetch("/api/reset", { method: "POST", body: "{}" });
   renderState({});
   renderTraces([]);
   refreshAll();
 };
+const themeSelect = document.getElementById("themeSelect");
+if (themeSelect) {
+  themeSelect.onchange = (e) => {
+    const value = e.target.value;
+    if (!preferencePolicy.allow_override) {
+      themeOverride = value;
+      applyTheme(value);
+      const tokens = (cachedManifest && cachedManifest.theme && cachedManifest.theme.tokens) || {};
+      applyThemeTokens(tokens, value);
+      renderTruthBar(cachedManifest);
+      renderSummary(cachedSummary);
+      if (cachedManifest) {
+        renderUI(cachedManifest);
+        reselectElement();
+      }
+      return;
+    }
+    themeOverride = null;
+    updateRuntimeTheme(value, preferencePolicy.persist);
+  };
+}
 setupTabs();
 setupTraceFilter();
 loadVersion();
@@ -429,38 +482,5 @@ if (helpButton && helpModal && helpClose) {
       helpModal.classList.add("hidden");
     }
   });
-}
-
-function detectSeedAction(manifest, actionsPayload) {
-  const preferred = ["seed", "seed_data", "seed_demo", "demo_seed", "seed_customers"];
-  const actions = actionsPayload?.actions || Object.values(manifest?.actions || {});
-  const callFlows = actions.filter((a) => a.type === "call_flow");
-  for (const name of preferred) {
-    const found = callFlows.find((a) => a.flow === name);
-    if (found) return found.id || found.action_id || `action.${name}`;
-  }
-  return callFlows.length ? callFlows[0].id || callFlows[0].action_id || null : null;
-}
-
-function toggleSeed(actionId) {
-  const btn = document.getElementById("seed");
-  if (!btn) return;
-  if (actionId) {
-    btn.classList.remove("hidden");
-  } else {
-    btn.classList.add("hidden");
-  }
-}
-
-const seedButton = document.getElementById("seed");
-if (seedButton) {
-  seedButton.onclick = async () => {
-    if (!seedActionId) {
-      showToast("No seed action found.");
-      return;
-    }
-    await executeAction(seedActionId, {});
-    refreshAll();
-  };
 }
 refreshAll();

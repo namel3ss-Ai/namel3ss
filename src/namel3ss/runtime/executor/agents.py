@@ -59,7 +59,7 @@ def run_agent_call(ctx: ExecutionContext, agent_name: str, input_expr, line: int
     )
     memory_context = ctx.memory_manager.recall_context(profile_override, user_input, ctx.state)
     tool_events: list[dict] = []
-    response_output = run_ai_with_tools(ctx, profile_override, user_input, memory_context, tool_events)
+    response_output, canonical_events = run_ai_with_tools(ctx, profile_override, user_input, memory_context, tool_events)
     trace = AITrace(
         ai_name=profile_override.name,
         ai_profile_name=profile_override.name,
@@ -71,6 +71,7 @@ def run_agent_call(ctx: ExecutionContext, agent_name: str, input_expr, line: int
         memory=memory_context,
         tool_calls=[e for e in tool_events if e.get("type") == "call"],
         tool_results=[e for e in tool_events if e.get("type") == "result"],
+        canonical_events=canonical_events,
     )
     ctx.memory_manager.record_interaction(profile_override, ctx.state, user_input, response_output, tool_events)
     return response_output, trace
@@ -88,4 +89,5 @@ def _trace_to_dict(trace: AITrace) -> dict:
         "memory": trace.memory,
         "tool_calls": trace.tool_calls,
         "tool_results": trace.tool_results,
+        "canonical_events": getattr(trace, "canonical_events", []),
     }

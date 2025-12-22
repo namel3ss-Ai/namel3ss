@@ -27,11 +27,11 @@ Formatter and linter:
 
 ## Demos
 
-Bundled demos remain under `examples/` if you want to inspect them directly:
+Bundled demos under `examples/` you can run immediately:
 
-- CRUD Dashboard: `n3 examples/demo_crud_dashboard.ai actions`
-- AI Assistant over Records: `n3 examples/demo_ai_assistant_over_records.ai ui`
-- Multi-Agent Workflow: `n3 examples/demo_multi_agent_workflow.ai studio`
+- CRUD Dashboard: `n3 examples/demo_crud_dashboard.ai studio`
+- Onboarding flow: `n3 examples/demo_onboarding_flow.ai studio`
+- AI assistant over records: `n3 examples/demo_ai_assistant_over_records.ai studio`
 
 ## Studio tips
 
@@ -40,8 +40,10 @@ Bundled demos remain under `examples/` if you want to inspect them directly:
 - Actions run via buttons and forms; traces and state update live.
 
 ## Grammar note
-- Record fields use `is` for types and `must` for constraints, for example: `field "email" is text must be present`.
+- Record fields use `is` for types and `must` for constraints, and canonical types are `text`, `number`, `boolean`, for example: `field "email" is text must be present`, `field "age" is number must be greater than 17`, `field "active" is boolean must be present`.
 
 ## Next steps
 - Read [First 5 minutes](first-5-minutes.md) for a guided win.
+- Run the [CRUD dashboard example](examples/demo_crud_dashboard.ai) after your first project.
 - See [What you can build today](what-you-can-build-today.md) to understand supported use cases.
+- UI details live in the [UI DSL Spec](ui-dsl.md).

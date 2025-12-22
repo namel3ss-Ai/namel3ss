@@ -9,21 +9,22 @@ from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.ui.manifest import build_manifest
 
 
-def run_check(path: str) -> int:
+def run_check(path: str, allow_legacy_type_aliases: bool = True) -> int:
     sections: list[str] = []
     try:
-        program_ir, source = load_program(path)
+        program_ir, source = load_program(path, allow_legacy_type_aliases=allow_legacy_type_aliases)
         sections.append("Parse: OK")
     except Namel3ssError as err:
         sections.append(f"Parse: FAIL\n{format_error(err, locals().get('source', ''))}")
         print("\n".join(sections))
         return 1
 
-    findings = lint_source(source)
+    findings = lint_source(source, allow_legacy_type_aliases=allow_legacy_type_aliases)
     if findings:
         sections.append(f"Lint: FAIL ({len(findings)} findings)")
         for f in findings:
             sections.append(f"- {f.code} {f.severity} {f.message} ({f.line}:{f.column})")
+        sections.append("Fix: run `n3 app.ai format` or address the findings above, then re-run `n3 app.ai lint`.")
     else:
         sections.append("Lint: OK")
 

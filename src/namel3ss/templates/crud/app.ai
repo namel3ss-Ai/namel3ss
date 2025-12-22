@@ -1,15 +1,18 @@
 record "Customer":
-  name string must be present
-  email string must match pattern ".*@.*"
-  age int must be greater than 17
+  field "name" is text must be present
+  field "email" is text must match pattern ".+@.+"
+  field "plan" is text must be present
+  field "age" is number must be greater than 17
 
 flow "seed_customers":
   set state.customer.name is "Alice"
   set state.customer.email is "alice@example.com"
+  set state.customer.plan is "Starter"
   set state.customer.age is 21
   save Customer
   set state.customer.name is "Bob"
   set state.customer.email is "bob@example.com"
+  set state.customer.plan is "Pro"
   set state.customer.age is 30
   save Customer
   return "seeded"

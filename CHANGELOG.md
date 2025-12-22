@@ -33,3 +33,4 @@ No breaking changes without an explicit changelog entry.
 ### Deprecated
 
 ### Removed
+- Added canonical type enforcement: aliases (string/int/bool) are deprecated; formatter rewrites them and lint errors by default. Use text/number/boolean (json if applicable).

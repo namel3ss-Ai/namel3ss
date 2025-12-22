@@ -2,12 +2,13 @@ tool "echo":
   kind is "builtin"
 
 record "Note":
-  title string must be present
-  body string must be present
+  field "heading" is text must be present
+  field "content" is text must have length at least 5
 
 ai "assistant":
-  model is "gpt-4.1"
-  system_prompt is "You are a helpful assistant for notes."
+  provider is "mock"
+  model is "mock-model"
+  system_prompt is "You are a concise assistant that summarizes notes."
   tools:
     expose "echo"
   memory:
@@ -15,8 +16,14 @@ ai "assistant":
     semantic is true
     profile is true
 
+flow "seed_notes":
+  set state.note.heading is "Release plan"
+  set state.note.content is "Ship in weekly iterations with clear changelog."
+  save Note
+  return "seeded notes"
+
 flow "ask_assistant":
-  let prompt is "Summarize the latest notes."
+  let prompt is "Summarize the notes shown in the table for a team update."
   ask ai "assistant" with input: prompt as reply
   set state.reply is reply
   return reply
@@ -24,7 +31,13 @@ flow "ask_assistant":
 page "notes":
   title is "Notes Assistant"
   text is "Save notes and ask the assistant for help."
-  form is "Note"
-  table is "Note"
-  button "Ask assistant":
-    calls flow "ask_assistant"
+  section "Notes":
+    card "Manage notes":
+      form is "Note"
+      button "Seed example note":
+        calls flow "seed_notes"
+    card "Saved notes":
+      table is "Note"
+  card "Assistant":
+    button "Ask assistant":
+      calls flow "ask_assistant"

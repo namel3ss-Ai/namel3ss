@@ -25,17 +25,21 @@ def test_record_fields_with_is_and_constraints_parse_and_lower():
     record = program.records[0]
     fields = {f.name: f for f in record.fields}
 
-    assert fields["email"].type_name == "string"
+    assert fields["email"].type_name == "text"
     assert fields["email"].constraint.kind == "present"
 
+    assert fields["name"].type_name == "text"
     assert fields["name"].constraint.kind == "unique"
 
+    assert fields["bio"].type_name == "text"
     assert fields["bio"].constraint.kind == "len_min"
     assert fields["bio"].constraint.expression.value == 3
 
+    assert fields["summary"].type_name == "text"
     assert fields["summary"].constraint.kind == "len_max"
     assert fields["summary"].constraint.expression.value == 12
 
+    assert fields["code"].type_name == "text"
     assert fields["code"].constraint.kind == "pattern"
     assert fields["code"].constraint.pattern == "^[A-Z]{3}-[0-9]{2}$"
 

@@ -37,7 +37,12 @@ def apply_edit_to_source(
         raise Namel3ssError("Insert value must be an object")
 
     program_ir = _lower(source)
-    manifest = build_manifest(program_ir, state=_session_state(session), store=_session_store(session))
+    manifest = build_manifest(
+        program_ir,
+        state=_session_state(session),
+        store=_session_store(session),
+        runtime_theme=_session_runtime_theme(session) or getattr(program_ir, "theme", None),
+    )
     element, page = find_element(manifest, element_id)
     if page.get("name") != page_name:
         raise Namel3ssError(f"Element '{element_id}' does not belong to page '{page_name}'")
@@ -48,7 +53,12 @@ def apply_edit_to_source(
         updated_source = replace_literal_at_line(source, line_no, old_text, value)
         formatted = format_source(updated_source)
         updated_ir = _lower(formatted)
-        updated_manifest = build_manifest(updated_ir, state=_session_state(session), store=_session_store(session))
+        updated_manifest = build_manifest(
+            updated_ir,
+            state=_session_state(session),
+            store=_session_store(session),
+            runtime_theme=_session_runtime_theme(session) or getattr(updated_ir, "theme", None),
+        )
         return formatted, updated_ir, updated_manifest
     if op == "insert":
         updated_source = insert_element(
@@ -60,7 +70,12 @@ def apply_edit_to_source(
         )
         formatted = format_source(updated_source)
         updated_ir = _lower(formatted)
-        updated_manifest = build_manifest(updated_ir, state=_session_state(session), store=_session_store(session))
+        updated_manifest = build_manifest(
+            updated_ir,
+            state=_session_state(session),
+            store=_session_store(session),
+            runtime_theme=_session_runtime_theme(session) or getattr(updated_ir, "theme", None),
+        )
         return formatted, updated_ir, updated_manifest
     if op in {"move_up", "move_down"}:
         updated_source = move_element(
@@ -72,7 +87,12 @@ def apply_edit_to_source(
         )
         formatted = format_source(updated_source)
         updated_ir = _lower(formatted)
-        updated_manifest = build_manifest(updated_ir, state=_session_state(session), store=_session_store(session))
+        updated_manifest = build_manifest(
+            updated_ir,
+            state=_session_state(session),
+            store=_session_store(session),
+            runtime_theme=_session_runtime_theme(session) or getattr(updated_ir, "theme", None),
+        )
         return formatted, updated_ir, updated_manifest
     raise Namel3ssError(f"Unsupported edit op '{op}'")
 
@@ -108,3 +128,9 @@ def _session_store(session: SessionState | None) -> MemoryStore | None:
     if session is None:
         return None
     return session.store
+
+
+def _session_runtime_theme(session: SessionState | None) -> str | None:
+    if session is None:
+        return None
+    return session.runtime_theme

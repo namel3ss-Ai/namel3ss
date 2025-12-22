@@ -1,26 +1,41 @@
 record "Customer":
-  name string must be present
-  email string must match pattern ".*@.*"
-  age int must be greater than 17
+  field "name" is text must be present
+  field "email" is text must match pattern ".+@.+"
+  field "plan" is text must be present
+  field "age" is number must be greater than 17
 
 flow "seed_customers":
-  set state.customer.name is "Alice"
-  set state.customer.email is "alice@example.com"
-  set state.customer.age is 21
+  set state.customer.name is "Ada Lovelace"
+  set state.customer.email is "ada@example.com"
+  set state.customer.plan is "Pro"
+  set state.customer.age is 28
   save Customer
-  set state.customer.name is "Bob"
-  set state.customer.email is "bob@example.com"
-  set state.customer.age is 30
+  set state.customer.name is "Ben Lee"
+  set state.customer.email is "ben@example.com"
+  set state.customer.plan is "Starter"
+  set state.customer.age is 24
   save Customer
-  return "seeded"
+  return "Seeded demo customers"
 
-flow "hello":
-  return "Hello from Namel3ss"
+flow "reset_dashboard":
+  set state.customer is null
+  return "State cleared (records remain for review)."
 
 page "home":
   title is "Customer Dashboard"
   text is "Add customers and view them below."
-  button "Seed demo data":
-    calls flow "seed_customers"
-  form is "Customer"
-  table is "Customer"
+  section "Quick actions":
+    row:
+      column:
+        button "Seed demo data":
+          calls flow "seed_customers"
+      column:
+        button "Reset state":
+          calls flow "reset_dashboard"
+  row:
+    column:
+      card "Add customer":
+        form is "Customer"
+    column:
+      card "Customer list":
+        table is "Customer"

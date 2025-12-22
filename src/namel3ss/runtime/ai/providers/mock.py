@@ -14,6 +14,8 @@ class MockProvider(AIProvider):
             self.call_index += 1
             if isinstance(resp, AIToolCallResponse):
                 return resp
+            if isinstance(resp, AIResponse):
+                return resp
         prefix = f"[{model}]"
         mem_note = ""
         if memory:

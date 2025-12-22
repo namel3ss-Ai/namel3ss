@@ -74,3 +74,8 @@ class Save(Statement):
 class Find(Statement):
     record_name: str
     predicate: Expression
+
+
+@dataclass
+class ThemeChange(Statement):
+    value: str

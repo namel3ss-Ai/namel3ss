@@ -15,6 +15,7 @@ from namel3ss.ir.model.statements import (
     Return,
     Save,
     Set,
+    ThemeChange,
     TryCatch,
 )
 from namel3ss.ir.model.statements import Statement as IRStatement
@@ -101,6 +102,8 @@ def _lower_statement(stmt: ast.Statement, agents) -> IRStatement:
         return Save(record_name=stmt.record_name, line=stmt.line, column=stmt.column)
     if isinstance(stmt, ast.Find):
         return Find(record_name=stmt.record_name, predicate=_lower_expression(stmt.predicate), line=stmt.line, column=stmt.column)
+    if isinstance(stmt, ast.ThemeChange):
+        return ThemeChange(value=stmt.value, line=stmt.line, column=stmt.column)
     if isinstance(stmt, ast.RunAgentStmt):
         return RunAgentStmt(
             agent_name=stmt.agent_name,

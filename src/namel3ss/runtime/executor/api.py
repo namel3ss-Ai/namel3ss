@@ -9,6 +9,7 @@ from namel3ss.runtime.executor.executor import Executor
 from namel3ss.runtime.executor.result import ExecutionResult
 from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.schema.records import RecordSchema
+from namel3ss.runtime.theme.resolution import resolve_initial_theme
 
 
 def execute_flow(
@@ -37,12 +38,30 @@ def execute_program_flow(
     input: Optional[Dict[str, object]] = None,
     store: Optional[MemoryStore] = None,
     ai_provider: Optional[AIProvider] = None,
+    runtime_theme: Optional[str] = None,
+    preference_store=None,
+    preference_key: str | None = None,
 ) -> ExecutionResult:
     flow = next((f for f in program.flows if f.name == flow_name), None)
     if flow is None:
         raise Namel3ssError(f"Unknown flow '{flow_name}'")
     schemas = {schema.name: schema for schema in program.records}
-    return Executor(
+    pref_policy = getattr(program, "theme_preference", {}) or {}
+    allow_override = pref_policy.get("allow_override", False)
+    persist_mode = pref_policy.get("persist", "none")
+    persisted, warning = (None, None)
+    if allow_override and persist_mode == "file" and preference_store and preference_key:
+        persisted, warning = preference_store.load_theme(preference_key)
+    resolution = resolve_initial_theme(
+        allow_override=allow_override,
+        persist_mode=persist_mode,
+        persisted_value=persisted,
+        session_theme=runtime_theme,
+        app_setting=getattr(program, "theme", "system"),
+        system_available=False,
+        system_value=None,
+    )
+    result = Executor(
         flow,
         schemas=schemas,
         initial_state=state,
@@ -51,4 +70,14 @@ def execute_program_flow(
         ai_provider=ai_provider,
         ai_profiles=program.ais,
         agents=program.agents,
+        runtime_theme=resolution.setting_used.value,
     ).run()
+    if allow_override and preference_store and preference_key and getattr(program, "theme_preference", {}).get("persist") == "file":
+        if result.runtime_theme in {"light", "dark", "system"}:
+            preference_store.save_theme(preference_key, result.runtime_theme)
+    if warning:
+        result.traces.append({"type": "theme_warning", "message": warning})
+    result.theme_source = resolution.source.value
+    if result.runtime_theme is None:
+        result.runtime_theme = resolution.setting_used.value
+    return result

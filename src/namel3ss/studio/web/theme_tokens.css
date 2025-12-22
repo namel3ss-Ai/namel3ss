@@ -1,0 +1,39 @@
+body.theme-dark {
+  background: #0f0f0f;
+  color: #f5f5f5;
+}
+body.theme-dark .panel,
+body.theme-dark .list-item,
+body.theme-dark .trace-row,
+body.theme-dark .ui-element {
+  background: #1a1a1a;
+  border-color: #2a2a2a;
+  color: #f5f5f5;
+}
+body.theme-dark .btn {
+  background: #111;
+  color: #f5f5f5;
+  border-color: #333;
+}
+body.theme-dark .btn:hover {
+  border-color: #444;
+  background: #161616;
+}
+body.theme-dark .tabs .tab {
+  background: #1a1a1a;
+  color: #f5f5f5;
+}
+body.theme-dark .panel-header,
+body.theme-dark .panel-body,
+body.theme-dark .section-title {
+  color: #f5f5f5;
+}
+
+body[data-theme-surface="raised"] .panel { background: #f7f7f7; }
+body[data-theme-text="strong"] { color: #000; }
+body[data-theme-muted="subtle"] .empty-state { color: #777; }
+body[data-theme-border="strong"] .panel,
+body[data-theme-border="strong"] .list-item,
+body[data-theme-border="strong"] .trace-row,
+body[data-theme-border="strong"] .ui-element { border-color: #cfcfcf; }
+body[data-theme-accent="secondary"] .btn.primary { border-color: #b5b5b5; }

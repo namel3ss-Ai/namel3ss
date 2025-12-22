@@ -1,30 +1,49 @@
 record "Applicant":
-  field "email" is string must match pattern "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$"
-  field "name" is string must be present
-  field "bio" is string must have length at least 10
+  field "email" is text must match pattern ".+@.+"
+  field "name" is text must be present
+  field "role" is text must be present
+  field "bio" is text must have length at least 10
 
-flow "save_applicant":
+flow "start_onboarding":
+  set state.step is "profile"
+  return "started"
+
+flow "save_profile":
   set state.applicant.email is input.values.email
   set state.applicant.name is input.values.name
+  set state.applicant.role is input.values.role
   set state.applicant.bio is input.values.bio
   save Applicant
-  set state.applicant_name is input.values.name
-  return "saved"
+  set state.step is "review"
+  return "profile saved"
+
+flow "confirm_profile":
+  set state.confirmed is true
+  set state.step is "done"
+  return "confirmed"
 
 flow "reset_applicant":
-  set state.applicant_name is null
+  set state.applicant.email is null
+  set state.applicant.name is null
+  set state.applicant.role is null
+  set state.applicant.bio is null
+  set state.confirmed is false
+  set state.step is "profile"
   return "reset"
 
 page "onboarding":
-  title is "Onboarding"
+  title is "Product Onboarding"
   section "Step 1: Profile":
     card "Tell us about you":
+      text is "Save a profile to move to review."
       form is "Applicant"
-      button "Reset":
+      button "Reset form state":
         calls flow "reset_applicant"
-    section "Step 2: Review":
-      text is "When saved, your name appears below."
-      card "Summary":
-        text is "Latest name is stored after you save the form."
-  text is "Quick apply form"
-  form is "Applicant"
+  section "Step 2: Review":
+    card "Review details":
+      table is "Applicant"
+      button "Confirm profile":
+        calls flow "confirm_profile"
+  section "Step 3: Progress":
+    card "Status":
+      text is "Form saves record, confirmation flags completion."

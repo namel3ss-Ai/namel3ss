@@ -5,14 +5,31 @@ from typing import Dict, List, Optional
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.store.memory_store import MemoryStore
+from namel3ss.runtime.theme.resolution import resolve_effective_theme, ThemeSource
 from namel3ss.schema import records as schema
 
 
-def build_manifest(program: ir.Program, *, state: dict | None = None, store: MemoryStore | None = None) -> dict:
+def build_manifest(
+    program: ir.Program,
+    *,
+    state: dict | None = None,
+    store: MemoryStore | None = None,
+    runtime_theme: str | None = None,
+    persisted_theme: str | None = None,
+) -> dict:
+    ui_schema_version = "1"
     record_map: Dict[str, schema.RecordSchema] = {rec.name: rec for rec in program.records}
     pages = []
     actions: Dict[str, dict] = {}
     state = state or {}
+    theme_setting = getattr(program, "theme", "system")
+    theme_current = runtime_theme or theme_setting
+    effective = resolve_effective_theme(theme_current, False, None)
+    source = ThemeSource.APP.value
+    if persisted_theme and persisted_theme == theme_current:
+        source = ThemeSource.PERSISTED.value
+    elif runtime_theme and runtime_theme != theme_setting:
+        source = ThemeSource.SESSION.value
     for page in program.pages:
         page_slug = _slugify(page.name)
         elements, action_entries = _build_children(
@@ -32,7 +49,21 @@ def build_manifest(program: ir.Program, *, state: dict | None = None, store: Mem
                 "elements": elements,
             }
         )
-    return {"pages": pages, "actions": actions}
+    return {
+        "pages": pages,
+        "actions": actions,
+        "theme": {
+            "schema_version": ui_schema_version,
+            "setting": theme_setting,
+            "current": theme_current,
+            "persisted_current": persisted_theme,
+            "effective": effective.value,
+            "source": source,
+            "runtime_supported": getattr(program, "theme_runtime_supported", False),
+            "tokens": getattr(program, "theme_tokens", {}),
+            "preference": getattr(program, "theme_preference", {"allow_override": False, "persist": "none"}),
+        },
+    }
 
 
 def _build_children(

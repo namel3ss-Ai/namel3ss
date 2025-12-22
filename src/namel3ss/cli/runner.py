@@ -3,11 +3,22 @@ from __future__ import annotations
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.executor import execute_program_flow
 from namel3ss.runtime.store.memory_store import MemoryStore
+from namel3ss.runtime.preferences.factory import preference_store_for_app, app_pref_key
 
 
 def run_flow(program_ir, flow_name: str | None = None) -> dict:
     selected = _select_flow(program_ir, flow_name)
-    result = execute_program_flow(program_ir, selected, state={}, input={}, store=MemoryStore())
+    pref_store = preference_store_for_app(None, getattr(program_ir, "theme_preference", {}).get("persist"))
+    result = execute_program_flow(
+        program_ir,
+        selected,
+        state={},
+        input={},
+        store=MemoryStore(),
+        runtime_theme=getattr(program_ir, "theme", None),
+        preference_store=pref_store,
+        preference_key=app_pref_key(None),
+    )
     traces = [_trace_to_dict(t) for t in result.traces]
     return {"ok": True, "state": result.state, "result": result.last_value, "traces": traces}
 

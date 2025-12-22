@@ -109,7 +109,18 @@ class Lexer:
                 column += consumed
                 continue
 
-            raise Namel3ssError(f"Unexpected character '{ch}'", line=line_no, column=column)
+            if ch in {"{", "}"}:
+                raise Namel3ssError(
+                    "Object literals (`{}`) are not supported in namel3ss. "
+                    "Use records, forms, or state assignments instead.",
+                    line=line_no,
+                    column=column,
+                )
+            raise Namel3ssError(
+                f"Unexpected character '{ch}'. Fix: remove the character or rewrite in namel3ss syntax.",
+                line=line_no,
+                column=column,
+            )
 
         return tokens
 
@@ -149,4 +160,3 @@ class Lexer:
         if token_type == "BOOLEAN":
             return raw.lower() == "true"
         return raw
-

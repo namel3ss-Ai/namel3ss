@@ -2,6 +2,7 @@ tool "echo":
   kind is "builtin"
 
 ai "assistant":
+  provider is "mock"
   model is "gpt-4.1"
   system_prompt is "You are a helpful multi-agent assistant for {{PROJECT_NAME}}."
   tools:

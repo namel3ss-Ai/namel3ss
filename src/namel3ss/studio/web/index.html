@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Namel3ss Studio</title>
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/theme_tokens.css">
 </head>
 <body class="studio-root">
   <div class="studio-shell">
@@ -17,13 +18,25 @@
         <div class="file-name" id="fileName"></div>
       </div>
       <div class="topbar-actions">
-        <button class="btn primary" id="refresh">Refresh</button>
-        <button class="btn secondary" id="reset">Reset</button>
+        <button class="btn primary" id="refresh" title="Reload UI and actions (non-destructive)">Refresh</button>
+        <button class="btn secondary" id="reset" title="Clear state and store">Reset</button>
         <button class="btn secondary hidden" id="seed">Seed</button>
+        <label for="themeSelect" id="themeLabel">Theme</label>
+        <select id="themeSelect" class="theme-select">
+          <option value="system">System</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
         <button class="btn ghost small" id="helpButton">Help</button>
         <div class="version" id="versionLabel"></div>
       </div>
     </header>
+    <div class="truth-bar" id="truthBar">
+      <div class="truth-item" id="truthRuntime"></div>
+      <div class="truth-item" id="truthEffective"></div>
+      <div class="truth-item" id="truthPersisted"></div>
+      <div class="truth-item" id="truthOverride"></div>
+    </div>
     <div id="helpModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
       <div class="modal-content">
         <div class="modal-header">
@@ -132,6 +145,11 @@
     </div>
   </div>
   <script src="/ui_renderer.js"></script>
+  <script src="/theme_tokens.js"></script>
+  <script src="/theme_runtime.js"></script>
+  <script src="/theme_preference.js"></script>
+  <script src="/trust_bar.js"></script>
+  <script src="/trace_utils.js"></script>
   <script src="/app.js"></script>
   <script src="/ui_controls.js"></script>
 </body>

@@ -11,3 +11,5 @@ class ExecutionResult:
     state: Dict[str, object]
     last_value: Optional[object]
     traces: list[AITrace]
+    runtime_theme: Optional[str] = None
+    theme_source: Optional[str] = None

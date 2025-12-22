@@ -9,6 +9,7 @@ Start here:
 - [Quickstart](docs/quickstart.md)
 - [First 5 minutes](docs/first-5-minutes.md)
 - [What you can build today](docs/what-you-can-build-today.md)
+- [UI DSL Spec](docs/ui-dsl.md)
 - [Examples](examples/)
 - [Stability](docs/stability.md)
 - [Known limitations](resources/limitations.md)
@@ -44,7 +45,7 @@ page "home":
   title is "Hello"
   text is "Hello World"
 ```
-Record fields use `is` for types and `must` for constraints, e.g. `field "email" is text must be present`.
+Record fields use `is` for types and `must` for constraints; canonical types are `text`, `number`, and `boolean` (e.g. `field "email" is text must be present`).
 
 ### Runtime
 A unified runtime that behaves consistently across AI providers.
@@ -117,8 +118,16 @@ namel3ss is focused. Some things are not here yet — on purpose. Before using i
 ## Quickstart
 - [Quickstart guide](docs/quickstart.md)
 - [Examples](examples/)
+- [Examples you can run](#examples-you-can-run)
 - [Learning book](resources/books/learning_namel3ss_v0.1.0.md)
 - More links are listed below.
+
+---
+
+## Examples you can run
+- CRUD dashboard: [docs/examples/demo_crud_dashboard.md](docs/examples/demo_crud_dashboard.md)
+- Onboarding flow: [docs/examples/demo_onboarding_flow.md](docs/examples/demo_onboarding_flow.md)
+- AI assistant over records: [docs/examples/demo_ai_assistant_over_records.md](docs/examples/demo_ai_assistant_over_records.md)
 
 ---
 

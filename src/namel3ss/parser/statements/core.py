@@ -13,7 +13,7 @@ from namel3ss.parser.statements.control_flow import (
     parse_try,
 )
 from namel3ss.parser.statements.data import parse_find, parse_save
-from namel3ss.parser.statements.letset import parse_let, parse_set
+from namel3ss.parser.statements.letset import parse_let, parse_set, parse_set_theme
 
 
 def parse_statement(parser) -> ast.Statement:
@@ -21,6 +21,9 @@ def parse_statement(parser) -> ast.Statement:
     if tok.type == "LET":
         return parse_let(parser)
     if tok.type == "SET":
+        # Theme changes use a dedicated syntax: set theme to "<value>"
+        if parser.tokens[parser.position + 1].type == "THEME":
+            return parse_set_theme(parser)
         return parse_set(parser)
     if tok.type == "IF":
         return parse_if(parser)

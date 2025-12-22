@@ -7,7 +7,7 @@ from namel3ss.errors.render import format_error
 from namel3ss.lint.engine import lint_source
 
 
-def run_lint(path_str: str, check_only: bool) -> int:
+def run_lint(path_str: str, check_only: bool, strict: bool = True, allow_legacy_type_aliases: bool = True) -> int:
     path = Path(path_str)
     if path.suffix != ".ai":
         raise Namel3ssError("Input file must have .ai extension")
@@ -15,7 +15,7 @@ def run_lint(path_str: str, check_only: bool) -> int:
         source = path.read_text(encoding="utf-8")
     except FileNotFoundError as err:
         raise Namel3ssError(f"File not found: {path}") from err
-    findings = lint_source(source)
+    findings = lint_source(source, strict=strict, allow_legacy_type_aliases=allow_legacy_type_aliases)
     output = {
         "ok": len(findings) == 0,
         "count": len(findings),

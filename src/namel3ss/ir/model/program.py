@@ -20,6 +20,10 @@ class Flow(Node):
 
 @dataclass
 class Program(Node):
+    theme: str
+    theme_tokens: Dict[str, str]
+    theme_runtime_supported: bool
+    theme_preference: Dict[str, object]
     records: List[schema.RecordSchema]
     flows: List[Flow]
     pages: List[Page]

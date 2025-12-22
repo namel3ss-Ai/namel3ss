@@ -81,6 +81,10 @@ namel3ss does not support complex routing or arbitrary CSS theming. Pages are si
 
 There is no native mobile/desktop packaging; namel3ss focuses on file-first, local workflows.
 
+### 9. Type aliases are deprecated
+
+Canonical types are `text`, `number`, `boolean` (and `json` if present). Legacy aliases (`string`/`int`/`bool`) are accepted for compatibility but are lint errors by default. Run `n3 app.ai format` to rewrite to canonical types automatically.
+
 ### 3. No Authentication or User Management (Yet)
 
 There is no built-in:

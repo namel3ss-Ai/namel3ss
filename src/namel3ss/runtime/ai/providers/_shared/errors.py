@@ -8,7 +8,9 @@ from namel3ss.errors.base import Namel3ssError
 def require_env(provider_name: str, env_var: str, value: str | None) -> str:
     if value is None or str(value).strip() == "":
         short_var = env_var.replace("NAMEL3SS_", "")
-        raise Namel3ssError(f"Missing {short_var} (set it in .env or export it)")
+        raise Namel3ssError(
+            f"Missing {short_var}. Fix: set {env_var} in .env or export it, then re-run."
+        )
     return value
 
 

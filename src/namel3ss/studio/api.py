@@ -10,6 +10,7 @@ from namel3ss.lint.engine import lint_source
 from namel3ss.parser.core import parse
 from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.runtime.ui.actions import handle_action
+from namel3ss.runtime.preferences.factory import preference_store_for_app, app_pref_key
 from namel3ss.studio.edit import apply_edit_to_source
 from namel3ss.studio.session import SessionState
 from namel3ss.ui.manifest import build_manifest
@@ -37,13 +38,20 @@ def get_summary_payload(source: str, path: str) -> dict:
         return {"ok": False, "error": format_error(err, source)}
 
 
-def get_ui_payload(source: str, session: SessionState | None = None) -> dict:
+def get_ui_payload(source: str, session: SessionState | None = None, app_path: str | None = None) -> dict:
     try:
+        session = session or SessionState()
         program_ir = _load_program(source)
+        preference_store = preference_store_for_app(app_path, getattr(program_ir, "theme_preference", {}).get("persist"))
+        persisted, _ = preference_store.load_theme(app_pref_key(app_path))
+        runtime_theme = session.runtime_theme or persisted or getattr(program_ir, "theme", "system")
+        session.runtime_theme = runtime_theme
         manifest = build_manifest(
             program_ir,
-            state=session.state if session else {},
-            store=session.store if session else MemoryStore(),
+            state=session.state,
+            store=session.store,
+            runtime_theme=runtime_theme,
+            persisted_theme=persisted,
         )
         return manifest
     except Namel3ssError as err:
@@ -73,11 +81,26 @@ def get_version_payload() -> dict:
     return {"ok": True, "version": get_version()}
 
 
-def execute_action(source: str, session: SessionState | None, action_id: str, payload: dict) -> dict:
+def execute_action(source: str, session: SessionState | None, action_id: str, payload: dict, app_path: str | None = None) -> dict:
     try:
         session = session or SessionState()
         program_ir = _load_program(source)
-        return handle_action(program_ir, action_id=action_id, payload=payload, state=session.state, store=session.store)
+        response = handle_action(
+            program_ir,
+            action_id=action_id,
+            payload=payload,
+            state=session.state,
+            store=session.store,
+            runtime_theme=session.runtime_theme or getattr(program_ir, "theme", "system"),
+            preference_store=preference_store_for_app(app_path, getattr(program_ir, "theme_preference", {}).get("persist")),
+            preference_key=app_pref_key(app_path),
+            allow_theme_override=getattr(program_ir, "theme_preference", {}).get("allow_override"),
+        )
+        if response and isinstance(response, dict):
+            ui_theme = (response.get("ui") or {}).get("theme") if response.get("ui") else None
+            if ui_theme and ui_theme.get("current"):
+                session.runtime_theme = ui_theme.get("current")
+        return response
     except Namel3ssError as err:
         return build_error_from_exception(err, kind="runtime", source=source)
 

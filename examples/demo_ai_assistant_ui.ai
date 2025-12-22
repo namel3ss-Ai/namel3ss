@@ -4,8 +4,8 @@ ai "assistant":
   system_prompt is "You are a helpful assistant."
 
 record "Message":
-  field "content" is string must be present
-  field "from" is string must be present
+  field "content" is text must be present
+  field "from" is text must be present
 
 flow "send_message":
   set state.error is "Set NAMEL3SS_OPENAI_API_KEY to use a real provider; mock is active."
