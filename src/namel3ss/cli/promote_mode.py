@@ -1,0 +1,154 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+from namel3ss.cli.app_path import resolve_app_path
+from namel3ss.cli.builds import app_path_from_metadata, load_build_metadata, read_latest_build_id
+from namel3ss.cli.promotion_state import load_state, record_promotion, record_rollback
+from namel3ss.cli.targets import parse_target
+from namel3ss.errors.base import Namel3ssError
+from namel3ss.errors.guidance import build_guidance_message
+
+
+def run_promote_command(args: list[str]) -> int:
+    app_arg, target_raw, build_id, rollback = _parse_args(args)
+    project_root = resolve_app_path(app_arg).parent
+    if rollback:
+        _perform_rollback(project_root)
+        return 0
+    if target_raw is None:
+        raise Namel3ssError(
+            build_guidance_message(
+                what="Missing target for promotion.",
+                why="Use --to to pick local, service, or edge.",
+                fix="Pass a target to promote to.",
+                example="n3 promote --to service",
+            )
+        )
+    target = parse_target(target_raw)
+    selected_build = build_id or read_latest_build_id(project_root, target.name)
+    if not selected_build:
+        raise Namel3ssError(
+            build_guidance_message(
+                what=f"No build found for target '{target.name}'.",
+                why="Promotion needs a build snapshot.",
+                fix="Run `n3 build` for the target, then promote again.",
+                example="n3 build --target service",
+            )
+        )
+    build_path, metadata = load_build_metadata(project_root, target.name, selected_build)
+    meta_target = str(metadata.get("target", target.name))
+    if meta_target != target.name:
+        raise Namel3ssError(
+            build_guidance_message(
+                what=f"Build '{selected_build}' was created for target '{meta_target}'.",
+                why="Targets cannot be mixed during promotion.",
+                fix="Build a snapshot for the requested target.",
+                example=f"n3 build --target {target.name}",
+            )
+        )
+    record_promotion(project_root, target.name, selected_build)
+    app_snapshot = app_path_from_metadata(build_path, metadata)
+    print(f"Promoted build {selected_build} to target '{target.name}'.")
+    print(f"Snapshot: {app_snapshot.parent.as_posix()}")
+    if target.name == "service":
+        print("Next: n3 run --target service --build {id}".format(id=selected_build))
+    if target.name == "edge":
+        print("Edge runtime is simulated; run `n3 run --target edge` for the stub.")
+    print("Note: database migrations are not auto-rolled back in this phase.")
+    return 0
+
+
+def _perform_rollback(project_root: Path) -> None:
+    state = load_state(project_root)
+    active = state.get("active") or {}
+    prev = state.get("previous") or {}
+    if not prev.get("target") and not active.get("target"):
+        raise Namel3ssError(
+            build_guidance_message(
+                what="Nothing to roll back.",
+                why="No previous promotion is recorded.",
+                fix="Promote a build before rolling back.",
+                example="n3 promote --to local",
+            )
+        )
+    new_state = record_rollback(project_root)
+    active_after = new_state.get("active") or {}
+    target = active_after.get("target") or "none"
+    build = active_after.get("build_id") or "none"
+    print(f"Rolled back. Active target: {target}. Active build: {build}.")
+    print("Database schema changes are not automatically rolled back.")
+
+
+def _parse_args(args: list[str]) -> tuple[str | None, str | None, str | None, bool]:
+    app_arg = None
+    target = None
+    build_id = None
+    rollback = False
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg == "--to":
+            if i + 1 >= len(args):
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="--to flag is missing a value.",
+                        why="Promotion requires a target.",
+                        fix="Pass local, service, or edge after --to.",
+                        example="n3 promote --to service",
+                    )
+                )
+            target = args[i + 1]
+            i += 2
+            continue
+        if arg == "--build":
+            if i + 1 >= len(args):
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="--build flag is missing a value.",
+                        why="A build id must follow --build.",
+                        fix="Provide the build id.",
+                        example="n3 promote --to service --build service-abc123",
+                    )
+                )
+            build_id = args[i + 1]
+            i += 2
+            continue
+        if arg == "--rollback":
+            rollback = True
+            i += 1
+            continue
+        if arg.startswith("--"):
+            raise Namel3ssError(
+                build_guidance_message(
+                    what=f"Unknown flag '{arg}'.",
+                    why="Only --to, --build, and --rollback are supported.",
+                    fix="Remove the unsupported flag.",
+                    example="n3 promote --to local",
+                )
+            )
+        if app_arg is None:
+            app_arg = arg
+            i += 1
+            continue
+        raise Namel3ssError(
+            build_guidance_message(
+                what="Too many positional arguments.",
+                why="Promotion accepts at most one app path.",
+                fix="Provide a single app.ai path or none.",
+                example="n3 promote app.ai --to service",
+            )
+        )
+    if rollback and (target or build_id):
+        raise Namel3ssError(
+            build_guidance_message(
+                what="Rollback cannot be combined with other flags.",
+                why="Rollback reverts the last promotion only.",
+                fix="Run rollback alone.",
+                example="n3 promote --rollback",
+            )
+        )
+    return app_arg, target, build_id, rollback
+
+
+__all__ = ["run_promote_command"]

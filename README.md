@@ -13,6 +13,7 @@ Start here:
 - [Examples](examples/)
 - [Stability](docs/stability.md)
 - [Known limitations](resources/limitations.md)
+- [Targets & promotion](docs/targets-and-promotion.md)
 
 ---
 

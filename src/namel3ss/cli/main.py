@@ -10,6 +10,10 @@ from namel3ss.cli.format_mode import run_format
 from namel3ss.cli.new_mode import run_new
 from namel3ss.cli.lint_mode import run_lint
 from namel3ss.cli.json_io import dumps_pretty, parse_payload
+from namel3ss.cli.run_mode import run_run_command
+from namel3ss.cli.build_mode import run_build_command
+from namel3ss.cli.promote_mode import run_promote_command
+from namel3ss.cli.status_mode import run_status_command
 from namel3ss.cli.runner import run_flow
 from namel3ss.cli.ui_mode import render_manifest, run_action
 from namel3ss.cli.doctor import run_doctor
@@ -75,6 +79,14 @@ def main(argv: list[str] | None = None) -> int:
         if args[0] == "help":
             _print_usage()
             return 0
+        if args[0] == "run":
+            return run_run_command(args[1:])
+        if args[0] == "build":
+            return run_build_command(args[1:])
+        if args[0] == "promote":
+            return run_promote_command(args[1:])
+        if args[0] == "status":
+            return run_status_command(args[1:])
         if args[0] == "data":
             return run_data(None, args[1:])
         if args[0] == "persist":
@@ -200,6 +212,10 @@ def _run_default(program_ir) -> int:
 def _print_usage() -> None:
     usage = """Usage:
   n3 new [template] [name]       # scaffold from a template (omit args to list)
+  n3 run [app.ai] [--target T]     # run app.ai with a target (auto-detects app.ai)
+  n3 build [app.ai] [--target T]   # build artifacts for a target
+  n3 promote [--to T|--rollback]   # promote last build to a target or roll back
+  n3 status [app.ai]               # show active target/build status
   n3 <app.ai>                      # run default flow
   n3 <app.ai> check                # validate only
   n3 <app.ai> ui                   # print UI manifest
