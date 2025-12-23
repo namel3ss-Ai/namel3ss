@@ -18,11 +18,18 @@ from namel3ss.ir.model.pages import (
     TitleItem,
 )
 from namel3ss.schema import records as schema
+from namel3ss.ir.lowering.expressions import _lower_expression
 
 
 def _lower_page(page: ast.PageDecl, record_map: dict[str, schema.RecordSchema], flow_names: set[str]) -> Page:
     items = [_lower_page_item(item, record_map, flow_names, page.name) for item in page.items]
-    return Page(name=page.name, items=items, line=page.line, column=page.column)
+    return Page(
+        name=page.name,
+        items=items,
+        requires=_lower_expression(page.requires) if page.requires else None,
+        line=page.line,
+        column=page.column,
+    )
 
 
 def _lower_page_item(

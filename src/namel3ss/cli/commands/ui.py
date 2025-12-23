@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 
+from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.render import format_error
 from namel3ss.ir.nodes import lower_program
 from namel3ss.parser.core import parse
+from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.ui.manifest import build_manifest
 from namel3ss.cli.io.json_io import dumps_pretty
@@ -18,7 +21,9 @@ def run(args) -> int:
         source, _ = read_source(args.path)
         ast_program = parse(source)
         program_ir = lower_program(ast_program)
-        manifest = build_manifest(program_ir, state={}, store=MemoryStore())
+        config = load_config(app_path=Path(args.path))
+        identity = resolve_identity(config, getattr(program_ir, "identity", None))
+        manifest = build_manifest(program_ir, state={}, store=MemoryStore(), identity=identity)
         print(dumps_pretty(manifest))
         return 0
     except Namel3ssError as err:

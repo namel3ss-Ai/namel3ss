@@ -1,0 +1,3 @@
+capsule "local":
+  exports:
+    flow "local_flow"

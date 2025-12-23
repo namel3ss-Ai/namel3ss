@@ -59,3 +59,11 @@ Run:
 - `n3 examples/modular_inventory/app.ai graph`
 - `n3 examples/modular_inventory/app.ai exports`
 - `cd examples/modular_inventory && n3 test`
+
+## demo_packages
+Local module + external package layout with `packages/` and lockfile.
+
+Run:
+- `n3 examples/demo_packages/app.ai ui`
+- `cd examples/demo_packages && n3 pkg tree`
+- `cd examples/demo_packages && n3 pkg why shared`

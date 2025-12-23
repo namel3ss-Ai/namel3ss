@@ -15,6 +15,7 @@ def _program():
 def test_manifest_persistence_memory(monkeypatch):
     program = _program()
     monkeypatch.delenv("N3_PERSIST", raising=False)
+    monkeypatch.delenv("N3_PERSIST_TARGET", raising=False)
     manifest = build_manifest(program, state={}, store=MemoryStore())
     persistence = manifest["ui"]["persistence"]
     assert persistence["enabled"] is False
@@ -25,7 +26,7 @@ def test_manifest_persistence_memory(monkeypatch):
 
 def test_manifest_persistence_sqlite(tmp_path, monkeypatch):
     program = _program()
-    monkeypatch.setenv("N3_PERSIST", "1")
+    monkeypatch.setenv("N3_PERSIST_TARGET", "sqlite")
     monkeypatch.chdir(tmp_path)
     store = create_store()
     manifest = build_manifest(program, state={}, store=store)

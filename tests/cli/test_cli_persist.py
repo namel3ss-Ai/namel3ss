@@ -25,7 +25,7 @@ def _user_schema():
 
 def _seed_sqlite(tmp_path, monkeypatch):
     path = _write_app(tmp_path)
-    monkeypatch.setenv("N3_PERSIST", "1")
+    monkeypatch.setenv("N3_PERSIST_TARGET", "sqlite")
     monkeypatch.chdir(tmp_path)
     store = create_store()
     schema = _user_schema()
@@ -36,23 +36,24 @@ def _seed_sqlite(tmp_path, monkeypatch):
     return path, schema
 
 
-def test_persist_status_memory(tmp_path, capsys, monkeypatch):
+def test_data_status_project_root(tmp_path, capsys, monkeypatch):
     path = _write_app(tmp_path)
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("N3_PERSIST", raising=False)
-    code = main([str(path), "persist", "status"])
+    monkeypatch.delenv("N3_PERSIST_TARGET", raising=False)
+    code = main(["data"])
     out = capsys.readouterr().out.lower()
     assert code == 0
     assert "store kind: memory" in out
     assert "persistence enabled: false" in out
-    assert "n3_persist=1" in out
+    assert "n3_persist_target=sqlite" in out
 
 
-def test_persist_status_sqlite(tmp_path, capsys, monkeypatch):
+def test_data_status_file_first(tmp_path, capsys, monkeypatch):
     path = _write_app(tmp_path)
-    monkeypatch.setenv("N3_PERSIST", "1")
+    monkeypatch.setenv("N3_PERSIST_TARGET", "sqlite")
     monkeypatch.chdir(tmp_path)
-    code = main([str(path), "persist", "status"])
+    code = main([str(path), "data"])
     out = capsys.readouterr().out
     assert code == 0
     assert "Store kind: sqlite" in out
@@ -60,9 +61,10 @@ def test_persist_status_sqlite(tmp_path, capsys, monkeypatch):
     assert f"Schema version: {SCHEMA_VERSION}" in out
 
 
-def test_persist_reset_requires_yes(tmp_path, capsys, monkeypatch):
+def test_data_reset_requires_confirmation(tmp_path, capsys, monkeypatch):
     path, schema = _seed_sqlite(tmp_path, monkeypatch)
-    code = main([str(path), "persist", "reset"])
+    monkeypatch.setattr("builtins.input", lambda _: "NO")
+    code = main([str(path), "data", "reset"])
     out = capsys.readouterr().out
     assert code == 1
     store = create_store()
@@ -70,12 +72,12 @@ def test_persist_reset_requires_yes(tmp_path, capsys, monkeypatch):
     if hasattr(store, "close"):
         store.close()
     assert records
-    assert "Refusing to reset" in out
+    assert "reset aborted" in out.lower()
 
 
-def test_persist_reset_clears_sqlite(tmp_path, capsys, monkeypatch):
+def test_data_reset_clears_sqlite(tmp_path, capsys, monkeypatch):
     path, schema = _seed_sqlite(tmp_path, monkeypatch)
-    code = main([str(path), "persist", "reset", "--yes"])
+    code = main([str(path), "data", "reset", "--yes"])
     out = capsys.readouterr().out.lower()
     assert code == 0
     store = create_store()
@@ -87,3 +89,12 @@ def test_persist_reset_clears_sqlite(tmp_path, capsys, monkeypatch):
     assert state == {}
     assert "reset at" in out
     assert str(SCHEMA_VERSION) in out
+
+
+def test_persist_status_alias_still_works(tmp_path, capsys, monkeypatch):
+    path = _write_app(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    code = main([str(path), "persist", "status"])
+    out = capsys.readouterr().out.lower()
+    assert code == 0
+    assert "store kind: memory" in out

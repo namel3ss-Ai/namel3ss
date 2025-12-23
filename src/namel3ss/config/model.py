@@ -31,12 +31,27 @@ class MistralConfig:
 
 
 @dataclass
+class PersistenceConfig:
+    target: str = "memory"
+    db_path: str = ".namel3ss/data.db"
+    database_url: str | None = None
+    edge_kv_url: str | None = None
+
+
+@dataclass
+class IdentityConfig:
+    defaults: dict[str, object] = field(default_factory=dict)
+
+
+@dataclass
 class AppConfig:
     ollama: OllamaConfig = field(default_factory=OllamaConfig)
     openai: OpenAIConfig = field(default_factory=OpenAIConfig)
     anthropic: AnthropicConfig = field(default_factory=AnthropicConfig)
     gemini: GeminiConfig = field(default_factory=GeminiConfig)
     mistral: MistralConfig = field(default_factory=MistralConfig)
+    persistence: PersistenceConfig = field(default_factory=PersistenceConfig)
+    identity: IdentityConfig = field(default_factory=IdentityConfig)
 
 
 __all__ = [
@@ -46,4 +61,6 @@ __all__ = [
     "AnthropicConfig",
     "GeminiConfig",
     "MistralConfig",
+    "PersistenceConfig",
+    "IdentityConfig",
 ]

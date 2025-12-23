@@ -2,6 +2,22 @@
 
 No breaking changes without an explicit changelog entry.
 
+## v0.1.0a6
+### Added
+- Package manifest `namel3ss.toml` and lockfile `namel3ss.lock.json`.
+- GitHub-backed package installs into `packages/` with checksum and license verification.
+- `n3 pkg` commands: add/install/plan/tree/why/verify/licenses (+ `--json`).
+- Packages docs and demo example (`docs/packages.md`, `examples/demo_packages/`).
+
+### Changed
+- Module resolution now checks `packages/<name>/` after `modules/<name>/`.
+
+### Fixed
+
+### Deprecated
+
+### Removed
+
 ## v0.1.0a5
 ### Added
 - Capsules module system with `modules/<name>/capsule.ai`, explicit exports, and `use "<module>" as <alias>` imports.

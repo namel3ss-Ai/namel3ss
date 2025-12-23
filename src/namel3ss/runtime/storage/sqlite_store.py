@@ -8,9 +8,10 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from namel3ss.errors.base import Namel3ssError
-from namel3ss.schema.records import RecordSchema
+from namel3ss.schema.records import EXPIRES_AT_FIELD, TENANT_KEY_FIELD, RecordSchema
 from namel3ss.runtime.storage.metadata import PersistenceMetadata
 from namel3ss.runtime.store.memory_store import Contains
+from namel3ss.runtime.storage.base import RecordScope
 from namel3ss.runtime.storage.state_codec import decode_state, encode_state
 from namel3ss.utils.json_tools import dumps as json_dumps
 from namel3ss.utils.numbers import decimal_is_int, decimal_to_str, is_number, to_decimal
@@ -108,36 +109,62 @@ class SQLiteStore:
 
     def _ensure_table(self, schema: RecordSchema) -> None:
         table = _slug(schema.name)
-        if table in self._prepared_tables:
-            return
-        id_col = "id" if "id" in schema.field_map else "_id"
-        columns = [f"{_quote_ident(id_col)} INTEGER PRIMARY KEY AUTOINCREMENT"]
-        for field in schema.fields:
-            col_name = _slug(field.name)
-            col_type = self._sql_type(field.type_name)
-            if col_name == id_col:
-                continue
-            columns.append(f"{_quote_ident(col_name)} {col_type}")
-        uniques = [f"UNIQUE({_quote_ident(_slug(f))})" for f in schema.unique_fields]
-        stmt = f"CREATE TABLE IF NOT EXISTS {_quote_ident(table)} ({', '.join(columns + uniques)})"
-        self.conn.execute(stmt)
-        self._prepared_tables.add(table)
+        if table not in self._prepared_tables:
+            id_col = "id" if "id" in schema.field_map else "_id"
+            columns = [f"{_quote_ident(id_col)} INTEGER PRIMARY KEY AUTOINCREMENT"]
+            for field in schema.storage_fields():
+                col_name = _slug(field.name)
+                col_type = self._sql_type(field.type_name)
+                if col_name == id_col:
+                    continue
+                columns.append(f"{_quote_ident(col_name)} {col_type}")
+            stmt = f"CREATE TABLE IF NOT EXISTS {_quote_ident(table)} ({', '.join(columns)})"
+            self.conn.execute(stmt)
+            self._prepared_tables.add(table)
+        self._ensure_columns(schema)
         self._ensure_indexes(schema)
         self.conn.commit()
+
+    def _ensure_columns(self, schema: RecordSchema) -> None:
+        table = _slug(schema.name)
+        existing = self._existing_columns(table)
+        id_col = "id" if "id" in schema.field_map else "_id"
+        for field in schema.storage_fields():
+            col_name = _slug(field.name)
+            if col_name == id_col or col_name in existing:
+                continue
+            col_type = self._sql_type(field.type_name)
+            self.conn.execute(
+                f"ALTER TABLE {_quote_ident(table)} ADD COLUMN {_quote_ident(col_name)} {col_type}"
+            )
+        if not self.conn.in_transaction:
+            self.conn.commit()
+
+    def _existing_columns(self, table: str) -> set[str]:
+        rows = self.conn.execute(f"PRAGMA table_info('{table}')").fetchall()
+        return {row["name"] for row in rows}
 
     def _ensure_indexes(self, schema: RecordSchema) -> None:
         table = _slug(schema.name)
         prepared = self._prepared_indexes.setdefault(table, set())
         if not prepared:
             prepared.update(self._existing_indexes(table))
+        tenant_col = _slug(TENANT_KEY_FIELD) if schema.tenant_key else None
         for field in schema.unique_fields:
             col = _slug(field)
-            index_name = self._index_name(table, col)
+            if tenant_col:
+                index_name = self._index_name(table, f"{tenant_col}_{col}")
+            else:
+                index_name = self._index_name(table, col)
             if index_name in prepared:
                 continue
+            if tenant_col:
+                columns = f"{_quote_ident(tenant_col)}, {_quote_ident(col)}"
+            else:
+                columns = f"{_quote_ident(col)}"
             self.conn.execute(
                 f"CREATE UNIQUE INDEX IF NOT EXISTS {_quote_ident(index_name)} "
-                f"ON {_quote_ident(table)} ({_quote_ident(col)})"
+                f"ON {_quote_ident(table)} ({columns})"
             )
             prepared.add(index_name)
 
@@ -217,7 +244,7 @@ class SQLiteStore:
         id_col = "id" if "id" in schema.field_map else "_id"
         col_names = []
         values = []
-        for field in schema.fields:
+        for field in schema.storage_fields():
             if field.name == id_col:
                 continue
             col_names.append(_quote_ident(_slug(field.name)))
@@ -235,11 +262,17 @@ class SQLiteStore:
         rec[id_col] = self.conn.execute("SELECT last_insert_rowid()").fetchone()[0]
         return rec
 
-    def find(self, schema: RecordSchema, predicate) -> List[dict]:
+    def find(self, schema: RecordSchema, predicate, scope: RecordScope | None = None) -> List[dict]:
+        scope = scope or RecordScope()
         self._ensure_table(schema)
+        self._cleanup_expired(schema, scope)
         if isinstance(predicate, dict):
-            return self._find_by_filters(schema, predicate)
-        cursor = self.conn.execute(f"SELECT * FROM {_quote_ident(_slug(schema.name))}")
+            return self._find_by_filters(schema, predicate, scope)
+        where_clause, params = self._scope_where(schema, scope)
+        sql = f"SELECT * FROM {_quote_ident(_slug(schema.name))}"
+        if where_clause:
+            sql += f" WHERE {where_clause}"
+        cursor = self.conn.execute(sql, params)
         rows = cursor.fetchall()
         results: List[dict] = []
         for row in rows:
@@ -248,37 +281,63 @@ class SQLiteStore:
                 results.append(rec)
         return results
 
-    def list_records(self, schema: RecordSchema, limit: int = 20) -> List[dict]:
+    def list_records(self, schema: RecordSchema, limit: int = 20, scope: RecordScope | None = None) -> List[dict]:
+        scope = scope or RecordScope()
         self._ensure_table(schema)
+        self._cleanup_expired(schema, scope)
         id_col = "id" if "id" in schema.field_map else "_id"
-        cursor = self.conn.execute(
-            f"SELECT * FROM {_quote_ident(_slug(schema.name))} ORDER BY {_quote_ident(id_col)} ASC LIMIT ?",
-            (limit,),
+        where_clause, params = self._scope_where(schema, scope)
+        sql = (
+            f"SELECT * FROM {_quote_ident(_slug(schema.name))} "
+            f"ORDER BY {_quote_ident(id_col)} ASC LIMIT ?"
         )
+        params = list(params) + [limit]
+        if where_clause:
+            sql = (
+                f"SELECT * FROM {_quote_ident(_slug(schema.name))} "
+                f"WHERE {where_clause} ORDER BY {_quote_ident(id_col)} ASC LIMIT ?"
+            )
+        cursor = self.conn.execute(sql, params)
         return [self._deserialize_row(schema, row) for row in cursor.fetchall()]
 
-    def check_unique(self, schema: RecordSchema, record: dict) -> str | None:
+    def check_unique(self, schema: RecordSchema, record: dict, scope: RecordScope | None = None) -> str | None:
+        scope = scope or RecordScope()
         self._ensure_table(schema)
+        self._cleanup_expired(schema, scope)
+        tenant_value = record.get(TENANT_KEY_FIELD)
         for field in schema.unique_fields:
             val = record.get(field)
             if val is None:
                 continue
             col = _slug(field)
+            clauses = [f"{_quote_ident(col)} = ?"]
+            params = [self._serialize_value(schema.field_map[field].type_name, val)]
+            if schema.tenant_key:
+                tenant_col = _slug(TENANT_KEY_FIELD)
+                clauses.append(f"{_quote_ident(tenant_col)} = ?")
+                params.append(tenant_value)
+            ttl_clause, ttl_params = self._ttl_clause(schema, scope)
+            if ttl_clause:
+                clauses.append(ttl_clause)
+                params.extend(ttl_params)
+            where_clause = " AND ".join(clauses)
             cursor = self.conn.execute(
-                f"SELECT 1 FROM {_quote_ident(_slug(schema.name))} WHERE {_quote_ident(col)} = ? LIMIT 1",
-                (self._serialize_value(schema.field_map[field].type_name, val),),
+                f"SELECT 1 FROM {_quote_ident(_slug(schema.name))} WHERE {where_clause} LIMIT 1",
+                params,
             )
             if cursor.fetchone():
                 return field
         return None
 
-    def _find_by_filters(self, schema: RecordSchema, filters: dict[str, Any]) -> List[dict]:
+    def _find_by_filters(self, schema: RecordSchema, filters: dict[str, Any], scope: RecordScope) -> List[dict]:
+        scope_clause, scope_params = self._scope_where(schema, scope)
         where_clause, params = self._build_where_clause(schema, filters)
         table = _quote_ident(_slug(schema.name))
+        clauses = [clause for clause in [scope_clause, where_clause] if clause]
         sql = f"SELECT * FROM {table}"
-        if where_clause:
-            sql += f" WHERE {where_clause}"
-        cursor = self.conn.execute(sql, params)
+        if clauses:
+            sql += " WHERE " + " AND ".join(clauses)
+        cursor = self.conn.execute(sql, [*scope_params, *params])
         return [self._deserialize_row(schema, row) for row in cursor.fetchall()]
 
     def _build_where_clause(self, schema: RecordSchema, filters: dict[str, Any]) -> tuple[str, list[Any]]:
@@ -296,6 +355,37 @@ class SQLiteStore:
             parts.append(f"{_quote_ident(col)} = ?")
             params.append(self._serialize_value(field_schema.type_name if field_schema else "text", expected))
         return " AND ".join(parts), params
+
+    def _scope_where(self, schema: RecordSchema, scope: RecordScope) -> tuple[str, list[Any]]:
+        clauses: list[str] = []
+        params: list[Any] = []
+        if schema.tenant_key and scope.tenant_value is not None:
+            tenant_col = _slug(TENANT_KEY_FIELD)
+            clauses.append(f"{_quote_ident(tenant_col)} = ?")
+            params.append(scope.tenant_value)
+        ttl_clause, ttl_params = self._ttl_clause(schema, scope)
+        if ttl_clause:
+            clauses.append(ttl_clause)
+            params.extend(ttl_params)
+        return " AND ".join(clauses), params
+
+    def _ttl_clause(self, schema: RecordSchema, scope: RecordScope) -> tuple[str, list[Any]]:
+        if schema.ttl_hours is None or scope.now is None:
+            return "", []
+        col = _quote_ident(_slug(EXPIRES_AT_FIELD))
+        return f"{col} IS NOT NULL AND CAST({col} AS REAL) > ?", [float(scope.now)]
+
+    def _cleanup_expired(self, schema: RecordSchema, scope: RecordScope) -> None:
+        if schema.ttl_hours is None or scope.now is None:
+            return
+        table = _quote_ident(_slug(schema.name))
+        col = _quote_ident(_slug(EXPIRES_AT_FIELD))
+        self.conn.execute(
+            f"DELETE FROM {table} WHERE {col} IS NULL OR CAST({col} AS REAL) <= ?",
+            (float(scope.now),),
+        )
+        if not self.conn.in_transaction:
+            self.conn.commit()
 
     def load_state(self) -> dict:
         row = self.conn.execute("SELECT payload FROM app_state WHERE id = 1").fetchone()

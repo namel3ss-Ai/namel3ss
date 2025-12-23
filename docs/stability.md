@@ -17,10 +17,11 @@ namel3ss is in early alpha. We keep core behavior predictable while we iterate.
 - Formatting details and lint rules.
 - Templates and examples as we learn.
 - Capsules (modules) and the built-in `n3 test` runner while the ecosystem matures.
+- Package manager commands (`n3 pkg`) and `packages/` installs while the ecosystem matures.
 
 ## Breaking changes policy
 - No silent breaks: breaking changes are recorded in the changelog.
 - Deprecated patterns will be surfaced via lint/formatter where possible.
 - File-first workflow remains: `.ai` is the source of truth; CLI commands stay stable.
 - Strict types opt-in: toolchain can reject legacy type aliases with `--no-legacy-type-aliases` or `N3_NO_LEGACY_TYPE_ALIASES=1`. Default remains compatible for now; use canonical types.
-- Persistence v1: opt-in only via `N3_PERSIST=1` (uses local SQLite `.namel3ss/data.db`). Inspect via `n3 <app.ai> persist status`; reset persisted data with `n3 <app.ai> persist reset --yes` (SQLite only). Default remains in-memory; no traces/secrets are persisted. SQLite schema version is `2` with primary-key and unique-field indexes; migrations run automatically on open. Pragmas: WAL mode + `synchronous=NORMAL`, `foreign_keys=ON`, `busy_timeout=5000` to keep writes safe while improving throughput.
+- Persistence v1: opt-in via `N3_PERSIST_TARGET` (`sqlite`, `postgres`, `edge`). Legacy `N3_PERSIST=1` still enables SQLite (`.namel3ss/data.db`). Inspect via `n3 data`; reset persisted data with `n3 data reset --yes` (SQLite only). Default remains in-memory; no traces/secrets are persisted. SQLite schema version is `2` with primary-key and unique-field indexes; migrations run automatically on open. Pragmas: WAL mode + `synchronous=NORMAL`, `foreign_keys=ON`, `busy_timeout=5000` to keep writes safe while improving throughput.

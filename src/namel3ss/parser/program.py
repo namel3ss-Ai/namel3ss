@@ -12,6 +12,7 @@ from namel3ss.parser.flow import parse_flow
 from namel3ss.parser.pages import parse_page
 from namel3ss.parser.records import parse_record
 from namel3ss.parser.modules import parse_capsule_decl, parse_use_decl
+from namel3ss.parser.identity import parse_identity
 from namel3ss.parser.tool import parse_tool
 
 
@@ -28,6 +29,7 @@ def parse_program(parser) -> ast.Program:
     agents: List[ast.AgentDecl] = []
     uses: List[ast.UseDecl] = []
     capsule: ast.CapsuleDecl | None = None
+    identity: ast.IdentityDecl | None = None
     theme_preference = {"allow_override": (False, None, None), "persist": ("none", None, None)}
     while parser._current().type != "EOF":
         if parser._match("NEWLINE"):
@@ -60,6 +62,31 @@ def parse_program(parser) -> ast.Program:
                     column=tok.column,
                 )
             capsule = parse_capsule_decl(parser)
+            continue
+        if tok.type == "IDENT" and tok.value == "identity":
+            if parser.allow_capsule:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Identity declarations are not allowed in capsule.ai.",
+                        why="Identity is defined at the app level.",
+                        fix="Move the identity declaration into app.ai.",
+                        example='identity "user":',
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            if identity is not None:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Multiple identity declarations found.",
+                        why="Only one identity block is allowed per app.",
+                        fix="Keep a single identity declaration.",
+                        example='identity "user":',
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            identity = parse_identity(parser)
             continue
         if parser.allow_capsule:
             raise Namel3ssError(
@@ -117,6 +144,7 @@ def parse_program(parser) -> ast.Program:
         agents=agents,
         uses=uses,
         capsule=capsule,
+        identity=identity,
         line=None,
         column=None,
     )

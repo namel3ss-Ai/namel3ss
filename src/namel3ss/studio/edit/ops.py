@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.format.formatter import format_source
 from namel3ss.ir import nodes as ir
 from namel3ss.ir.nodes import lower_program
 from namel3ss.parser.core import parse
+from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.studio.edit.selectors import find_element, find_element_with_parent, find_line_number
 from namel3ss.studio.edit.transform import replace_literal_at_line
@@ -37,11 +39,14 @@ def apply_edit_to_source(
         raise Namel3ssError("Insert value must be an object")
 
     program_ir = _lower(source)
+    config = load_config()
+    identity = resolve_identity(config, getattr(program_ir, "identity", None))
     manifest = build_manifest(
         program_ir,
         state=_session_state(session),
         store=_session_store(session),
         runtime_theme=_session_runtime_theme(session) or getattr(program_ir, "theme", None),
+        identity=identity,
     )
     element, page = find_element(manifest, element_id)
     if page.get("name") != page_name:
@@ -58,6 +63,7 @@ def apply_edit_to_source(
             state=_session_state(session),
             store=_session_store(session),
             runtime_theme=_session_runtime_theme(session) or getattr(updated_ir, "theme", None),
+            identity=resolve_identity(config, getattr(updated_ir, "identity", None)),
         )
         return formatted, updated_ir, updated_manifest
     if op == "insert":
@@ -75,6 +81,7 @@ def apply_edit_to_source(
             state=_session_state(session),
             store=_session_store(session),
             runtime_theme=_session_runtime_theme(session) or getattr(updated_ir, "theme", None),
+            identity=resolve_identity(config, getattr(updated_ir, "identity", None)),
         )
         return formatted, updated_ir, updated_manifest
     if op in {"move_up", "move_down"}:
@@ -92,6 +99,7 @@ def apply_edit_to_source(
             state=_session_state(session),
             store=_session_store(session),
             runtime_theme=_session_runtime_theme(session) or getattr(updated_ir, "theme", None),
+            identity=resolve_identity(config, getattr(updated_ir, "identity", None)),
         )
         return formatted, updated_ir, updated_manifest
     raise Namel3ssError(f"Unsupported edit op '{op}'")

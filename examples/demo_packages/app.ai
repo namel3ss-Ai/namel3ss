@@ -1,0 +1,10 @@
+use "local" as local
+use "shared" as shared
+
+page "home":
+  title is "Packages demo"
+  text is "Local modules and external packages resolve the same."
+  button "Run local":
+    calls flow "local.local_flow"
+  button "Run shared":
+    calls flow "shared.shared_flow"

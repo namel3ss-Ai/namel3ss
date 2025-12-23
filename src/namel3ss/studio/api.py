@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.render import format_error
 from namel3ss.errors.payload import build_error_from_exception
 from namel3ss.ir.nodes import lower_program
 from namel3ss.lint.engine import lint_source
 from namel3ss.parser.core import parse
+from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.runtime.ui.actions import handle_action
 from namel3ss.runtime.preferences.factory import preference_store_for_app, app_pref_key
@@ -42,6 +44,8 @@ def get_ui_payload(source: str, session: SessionState | None = None, app_path: s
     try:
         session = session or SessionState()
         program_ir = _load_program(source)
+        config = load_config(app_path=Path(app_path) if app_path else None)
+        identity = resolve_identity(config, getattr(program_ir, "identity", None))
         preference_store = preference_store_for_app(app_path, getattr(program_ir, "theme_preference", {}).get("persist"))
         persisted, _ = preference_store.load_theme(app_pref_key(app_path))
         runtime_theme = session.runtime_theme or persisted or getattr(program_ir, "theme", "system")
@@ -52,6 +56,7 @@ def get_ui_payload(source: str, session: SessionState | None = None, app_path: s
             store=session.store,
             runtime_theme=runtime_theme,
             persisted_theme=persisted,
+            identity=identity,
         )
         return manifest
     except Namel3ssError as err:
@@ -61,7 +66,9 @@ def get_ui_payload(source: str, session: SessionState | None = None, app_path: s
 def get_actions_payload(source: str) -> dict:
     try:
         program_ir = _load_program(source)
-        manifest = build_manifest(program_ir, state={}, store=MemoryStore())
+        config = load_config()
+        identity = resolve_identity(config, getattr(program_ir, "identity", None))
+        manifest = build_manifest(program_ir, state={}, store=MemoryStore(), identity=identity)
         data = _actions_from_manifest(manifest)
         return {"ok": True, "count": len(data), "actions": data}
     except Namel3ssError as err:
@@ -85,6 +92,7 @@ def execute_action(source: str, session: SessionState | None, action_id: str, pa
     try:
         session = session or SessionState()
         program_ir = _load_program(source)
+        config = load_config(app_path=Path(app_path) if app_path else None)
         response = handle_action(
             program_ir,
             action_id=action_id,
@@ -95,6 +103,7 @@ def execute_action(source: str, session: SessionState | None, action_id: str, pa
             preference_store=preference_store_for_app(app_path, getattr(program_ir, "theme_preference", {}).get("persist")),
             preference_key=app_pref_key(app_path),
             allow_theme_override=getattr(program_ir, "theme_preference", {}).get("allow_override"),
+            config=config,
         )
         if response and isinstance(response, dict):
             ui_theme = (response.get("ui") or {}).get("theme") if response.get("ui") else None

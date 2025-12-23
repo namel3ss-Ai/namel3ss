@@ -100,3 +100,27 @@ def test_module_cycle_detection(tmp_path: Path) -> None:
     with pytest.raises(Namel3ssError) as excinfo:
         load_project(app)
     assert "cycle" in str(excinfo.value).lower()
+
+
+def test_package_fallback_for_modules(tmp_path: Path) -> None:
+    app = tmp_path / "app.ai"
+    _write(
+        app,
+        'use "inventory" as inv\n'
+        'flow "demo":\n'
+        '  return "ok"\n',
+    )
+    _write(
+        tmp_path / "packages" / "inventory" / "capsule.ai",
+        'capsule "inventory":\n'
+        "  exports:\n"
+        '    flow "calc_total"\n',
+    )
+    _write(
+        tmp_path / "packages" / "inventory" / "logic.ai",
+        'flow "calc_total":\n'
+        "  return 42\n",
+    )
+    project = load_project(app)
+    flow_names = {flow.name for flow in project.program.flows}
+    assert "inventory.calc_total" in flow_names

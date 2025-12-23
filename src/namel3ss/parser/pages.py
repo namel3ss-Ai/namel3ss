@@ -26,6 +26,9 @@ def parse_page(parser) -> ast.PageDecl:
     page_tok = parser._advance()
     name_tok = parser._expect("STRING", "Expected page name string")
     parser._expect("COLON", "Expected ':' after page name")
+    requires_expr = None
+    if _match_ident_value(parser, "requires"):
+        requires_expr = parser._parse_expression()
     parser._expect("NEWLINE", "Expected newline after page header")
     parser._expect("INDENT", "Expected indented page body")
     items: List[ast.PageItem] = []
@@ -34,7 +37,13 @@ def parse_page(parser) -> ast.PageDecl:
             continue
         items.append(parse_page_item(parser))
     parser._expect("DEDENT", "Expected end of page body")
-    return ast.PageDecl(name=name_tok.value, items=items, line=page_tok.line, column=page_tok.column)
+    return ast.PageDecl(
+        name=name_tok.value,
+        items=items,
+        requires=requires_expr,
+        line=page_tok.line,
+        column=page_tok.column,
+    )
 
 
 def parse_page_item(parser) -> ast.PageItem:
@@ -129,3 +138,11 @@ def parse_page_item(parser) -> ast.PageItem:
         line=tok.line,
         column=tok.column,
     )
+
+
+def _match_ident_value(parser, value: str) -> bool:
+    tok = parser._current()
+    if tok.type == "IDENT" and tok.value == value:
+        parser._advance()
+        return True
+    return False

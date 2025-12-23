@@ -1,10 +1,18 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from decimal import Decimal
 from typing import Protocol
 
 from namel3ss.runtime.storage.metadata import PersistenceMetadata
 
 from namel3ss.schema.records import RecordSchema
+
+
+@dataclass(frozen=True)
+class RecordScope:
+    tenant_value: str | None = None
+    now: Decimal | None = None
 
 
 class Storage(Protocol):
@@ -13,9 +21,11 @@ class Storage(Protocol):
     def rollback(self) -> None: ...
 
     def save(self, schema: RecordSchema, record: dict) -> dict: ...
-    def find(self, schema: RecordSchema, predicate) -> list[dict]: ...
-    def list_records(self, schema: RecordSchema, limit: int = 20) -> list[dict]: ...
-    def check_unique(self, schema: RecordSchema, record: dict) -> str | None: ...
+    def find(self, schema: RecordSchema, predicate, scope: RecordScope | None = None) -> list[dict]: ...
+    def list_records(self, schema: RecordSchema, limit: int = 20, scope: RecordScope | None = None) -> list[dict]: ...
+    def check_unique(
+        self, schema: RecordSchema, record: dict, scope: RecordScope | None = None
+    ) -> str | None: ...
     def clear(self) -> None: ...
 
     def load_state(self) -> dict: ...

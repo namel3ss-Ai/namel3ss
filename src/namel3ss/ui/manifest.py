@@ -6,6 +6,8 @@ from typing import Dict, List, Optional
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.storage.base import Storage
+from namel3ss.runtime.records.service import build_record_scope
+from namel3ss.runtime.identity.guards import build_guard_context, enforce_requires
 from namel3ss.runtime.storage.metadata import PersistenceMetadata
 from namel3ss.runtime.theme.resolution import resolve_effective_theme, ThemeSource
 from namel3ss.schema import records as schema
@@ -18,6 +20,7 @@ def build_manifest(
     store: Storage | None = None,
     runtime_theme: str | None = None,
     persisted_theme: str | None = None,
+    identity: dict | None = None,
 ) -> dict:
     ui_schema_version = "1"
     record_map: Dict[str, schema.RecordSchema] = {rec.name: rec for rec in program.records}
@@ -32,7 +35,15 @@ def build_manifest(
         source = ThemeSource.PERSISTED.value
     elif runtime_theme and runtime_theme != theme_setting:
         source = ThemeSource.SESSION.value
+    identity = identity or {}
     for page in program.pages:
+        enforce_requires(
+            build_guard_context(identity=identity, state=state),
+            getattr(page, "requires", None),
+            subject=f'page "{page.name}"',
+            line=page.line,
+            column=page.column,
+        )
         page_slug = _slugify(page.name)
         elements, action_entries = _build_children(
             page.items,
@@ -41,6 +52,7 @@ def build_manifest(
             page_slug,
             [],
             store,
+            identity,
         )
         for action_id, action_entry in action_entries.items():
             actions[action_id] = action_entry
@@ -99,6 +111,7 @@ def _build_children(
     page_slug: str,
     path: List[int],
     store: Storage | None,
+    identity: dict | None,
 ) -> tuple[List[dict], Dict[str, dict]]:
     elements: List[dict] = []
     actions: Dict[str, dict] = {}
@@ -110,6 +123,7 @@ def _build_children(
             page_slug,
             path + [idx],
             store,
+            identity,
         )
         elements.append(element)
         actions.update(child_actions)
@@ -123,6 +137,7 @@ def _page_item_to_manifest(
     page_slug: str,
     path: List[int],
     store: Storage | None,
+    identity: dict | None,
 ) -> tuple[dict, Dict[str, dict]]:
     index = path[-1] if path else 0
     if isinstance(item, ir.TitleItem):
@@ -179,7 +194,8 @@ def _page_item_to_manifest(
         table_id = _table_id(page_name, item.record_name)
         rows = []
         if store is not None:
-            rows = store.list_records(record)[:20]
+            scope = build_record_scope(record, identity)
+            rows = store.list_records(record, scope=scope)[:20]
         return (
             {
                 "type": "table",
@@ -215,7 +231,9 @@ def _page_item_to_manifest(
         }
         return element, {action_id: action_entry}
     if isinstance(item, ir.SectionItem):
-        children, actions = _build_children(item.children, record_map, page_name, page_slug, path, store)
+        children, actions = _build_children(
+            item.children, record_map, page_name, page_slug, path, store, identity
+        )
         element = {
             "type": "section",
             "label": item.label or "",
@@ -229,7 +247,9 @@ def _page_item_to_manifest(
         }
         return element, actions
     if isinstance(item, ir.CardItem):
-        children, actions = _build_children(item.children, record_map, page_name, page_slug, path, store)
+        children, actions = _build_children(
+            item.children, record_map, page_name, page_slug, path, store, identity
+        )
         element = {
             "type": "card",
             "label": item.label or "",
@@ -243,7 +263,9 @@ def _page_item_to_manifest(
         }
         return element, actions
     if isinstance(item, ir.RowItem):
-        children, actions = _build_children(item.children, record_map, page_name, page_slug, path, store)
+        children, actions = _build_children(
+            item.children, record_map, page_name, page_slug, path, store, identity
+        )
         element = {
             "type": "row",
             "children": children,
@@ -256,7 +278,9 @@ def _page_item_to_manifest(
         }
         return element, actions
     if isinstance(item, ir.ColumnItem):
-        children, actions = _build_children(item.children, record_map, page_name, page_slug, path, store)
+        children, actions = _build_children(
+            item.children, record_map, page_name, page_slug, path, store, identity
+        )
         element = {
             "type": "column",
             "children": children,

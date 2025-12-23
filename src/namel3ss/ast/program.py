@@ -5,12 +5,16 @@ from typing import Dict, List, Optional
 
 from namel3ss.ast.base import Node
 from namel3ss.ast.modules import CapsuleDecl, UseDecl
+from namel3ss.ast.expressions import Expression
+from namel3ss.ast.identity import IdentityDecl
 
 
 @dataclass
 class Flow(Node):
     name: str
     body: List["Statement"]
+    requires: Optional[Expression] = None
+    audited: bool = False
 
 
 @dataclass
@@ -28,3 +32,4 @@ class Program(Node):
     agents: List["AgentDecl"]
     uses: List[UseDecl]
     capsule: Optional[CapsuleDecl]
+    identity: Optional[IdentityDecl] = None

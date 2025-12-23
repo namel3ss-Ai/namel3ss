@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import List
 
 from namel3ss.ast.base import Node
+from namel3ss.ast.expressions import Expression
 
 
 @dataclass
@@ -74,3 +75,4 @@ class ImageItem(PageItem):
 class PageDecl(Node):
     name: str
     items: List[PageItem]
+    requires: Expression | None = None

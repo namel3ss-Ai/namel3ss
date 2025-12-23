@@ -1,0 +1,2 @@
+flow "local_flow":
+  return "local ok"

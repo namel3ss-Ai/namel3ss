@@ -19,3 +19,18 @@ def test_parse_record_declaration_with_constraints():
     assert user.fields[1].constraint.kind == "present"
     assert user.fields[2].constraint.kind == "gt"
 
+
+def test_parse_record_tenant_key_and_ttl():
+    source = '''record "Session":
+  field "token" is text
+  tenant_key is identity.org_id
+  persisted:
+    ttl_hours is 24
+'''
+    program = parse_program(source)
+    record = program.records[0]
+    assert isinstance(record.tenant_key, ast.AttrAccess)
+    assert record.tenant_key.base == "identity"
+    assert record.tenant_key.attrs == ["org_id"]
+    assert isinstance(record.ttl_hours, ast.Literal)
+    assert str(record.ttl_hours.value) == "24"

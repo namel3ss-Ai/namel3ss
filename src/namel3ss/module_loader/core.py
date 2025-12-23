@@ -66,6 +66,8 @@ def load_project(
         module_order,
     )
     program_ir = lower_program(combined)
+    setattr(program_ir, "project_root", root)
+    setattr(program_ir, "app_path", app_file)
 
     public_flows = _public_flow_names(app_ast, modules, exports_map)
     entry_flows = [flow.name for flow in app_ast.flows]
@@ -111,12 +113,22 @@ def _merge_programs(
     combined_ais = list(app_ast.ais)
     combined_tools = list(app_ast.tools)
     combined_agents = list(app_ast.agents)
+    identity_decl = app_ast.identity
 
     for name in module_order:
         info = modules[name]
         local_defs = module_defs[name]
         alias_map = _normalize_uses(info.uses, context_label=f"Module {name}")
         for program in info.programs:
+            if program.identity is not None:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Identity declarations are only allowed in app.ai.",
+                        why=f"Module '{name}' defines an identity block.",
+                        fix="Move the identity declaration to app.ai.",
+                        example='identity \"user\":',
+                    ),
+                )
             resolve_program(
                 program,
                 module_name=name,
@@ -146,6 +158,7 @@ def _merge_programs(
         agents=combined_agents,
         uses=[],
         capsule=None,
+        identity=identity_decl,
         line=app_ast.line,
         column=app_ast.column,
     )
@@ -185,17 +198,7 @@ def _load_module(
 ) -> None:
     if module_name in modules:
         return
-    module_dir = root / "modules" / module_name
-    capsule_path = module_dir / "capsule.ai"
-    if not capsule_path.exists():
-        raise Namel3ssError(
-            build_guidance_message(
-                what=f"Module '{module_name}' was not found.",
-                why=f"No capsule.ai exists at {capsule_path.as_posix()}.",
-                fix=f"Create modules/{module_name}/capsule.ai or remove the use statement.",
-                example=f'modules/{module_name}/capsule.ai',
-            )
-        )
+    module_dir, capsule_path = _resolve_module_dir(root, module_name)
     capsule_source = _read_source(capsule_path)
     sources[capsule_path] = capsule_source
     capsule_program = _parse_source(
@@ -264,6 +267,28 @@ def _load_module(
 
     for use in uses:
         _load_module(use.module, root, modules, sources, allow_legacy_type_aliases=allow_legacy_type_aliases)
+
+
+def _resolve_module_dir(root: Path, module_name: str) -> tuple[Path, Path]:
+    module_dir = root / "modules" / module_name
+    capsule_path = module_dir / "capsule.ai"
+    if capsule_path.exists():
+        return module_dir, capsule_path
+    package_dir = root / "packages" / module_name
+    package_capsule = package_dir / "capsule.ai"
+    if package_capsule.exists():
+        return package_dir, package_capsule
+    raise Namel3ssError(
+        build_guidance_message(
+            what=f"Module '{module_name}' was not found.",
+            why=(
+                f"No capsule.ai exists at {capsule_path.as_posix()} "
+                f"or {package_capsule.as_posix()}."
+            ),
+            fix=f"Create modules/{module_name}/capsule.ai or install the package.",
+            example=f'modules/{module_name}/capsule.ai',
+        )
+    )
 
 
 def _collect_module_files(module_dir: Path) -> List[Path]:

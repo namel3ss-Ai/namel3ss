@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Dict, List, Callable, Optional, Any
 
 from namel3ss.errors.base import Namel3ssError
-from namel3ss.schema.records import RecordSchema
+from namel3ss.schema.records import EXPIRES_AT_FIELD, SYSTEM_FIELDS, TENANT_KEY_FIELD, RecordSchema
 from namel3ss.runtime.storage.metadata import PersistenceMetadata
+from namel3ss.runtime.storage.base import RecordScope
+from namel3ss.utils.numbers import is_number, to_decimal
 
 
 class MemoryStore:
@@ -54,18 +57,38 @@ class MemoryStore:
             if value is None:
                 continue
             idx = self._unique_indexes[rec_name].setdefault(field, {})
-            idx[value] = record
+            idx[_unique_key(schema, record, value)] = record
 
         self._data[rec_name].append(record)
-        return record
+        return _strip_system_fields(record)
 
-    def find(self, schema: RecordSchema, predicate: Callable[[dict], bool] | dict[str, Any]) -> List[dict]:
+    def find(
+        self,
+        schema: RecordSchema,
+        predicate: Callable[[dict], bool] | dict[str, Any],
+        scope: RecordScope | None = None,
+    ) -> List[dict]:
+        scope = scope or RecordScope()
+        self._cleanup_expired(schema, scope)
         records = self._data.get(schema.name, [])
         if isinstance(predicate, dict):
-            return [rec for rec in records if _matches_filter(rec, predicate)]
-        return [rec for rec in records if predicate(rec)]
+            return [
+                _strip_system_fields(rec)
+                for rec in records
+                if _record_visible(schema, rec, scope) and _matches_filter(rec, predicate)
+            ]
+        results = []
+        for rec in records:
+            if not _record_visible(schema, rec, scope):
+                continue
+            clean = _strip_system_fields(rec)
+            if predicate(clean):
+                results.append(clean)
+        return results
 
-    def check_unique(self, schema: RecordSchema, record: dict) -> str | None:
+    def check_unique(self, schema: RecordSchema, record: dict, scope: RecordScope | None = None) -> str | None:
+        scope = scope or RecordScope()
+        self._cleanup_expired(schema, scope)
         rec_name = schema.name
         indexes = self._unique_indexes.setdefault(rec_name, {})
         for field in schema.unique_fields:
@@ -73,15 +96,34 @@ class MemoryStore:
             if value is None:
                 continue
             idx = indexes.setdefault(field, {})
-            if value in idx:
+            key = _unique_key(schema, record, value)
+            if key in idx:
                 return field
         return None
 
-    def list_records(self, schema: RecordSchema, limit: int = 20) -> List[dict]:
+    def list_records(self, schema: RecordSchema, limit: int = 20, scope: RecordScope | None = None) -> List[dict]:
+        scope = scope or RecordScope()
+        self._cleanup_expired(schema, scope)
         records = list(self._data.get(schema.name, []))
         key_order = "id" if "id" in schema.field_map else "_id"
         records.sort(key=lambda rec: rec.get(key_order, 0))
-        return records[:limit]
+        visible = [
+            _strip_system_fields(rec) for rec in records if _record_visible(schema, rec, scope)
+        ]
+        return visible[:limit]
+
+    def _cleanup_expired(self, schema: RecordSchema, scope: RecordScope) -> None:
+        if schema.ttl_hours is None or scope.now is None:
+            return
+        rec_name = schema.name
+        if rec_name not in self._data:
+            return
+        records = self._data[rec_name]
+        remaining = [rec for rec in records if not _is_expired(schema, rec, scope.now)]
+        if len(remaining) == len(records):
+            return
+        self._data[rec_name] = remaining
+        self._unique_indexes[rec_name] = _rebuild_indexes(schema, remaining)
 
     def clear(self) -> None:
         self._data.clear()
@@ -120,3 +162,48 @@ def _matches_filter(record: dict, filters: dict[str, Any]) -> bool:
 class Contains:
     def __init__(self, value: Any) -> None:
         self.value = "" if value is None else str(value)
+
+
+def _strip_system_fields(record: dict) -> dict:
+    return {key: value for key, value in record.items() if key not in SYSTEM_FIELDS}
+
+
+def _unique_key(schema: RecordSchema, record: dict, value: object) -> object:
+    if schema.tenant_key:
+        return (record.get(TENANT_KEY_FIELD), value)
+    return value
+
+
+def _record_visible(schema: RecordSchema, record: dict, scope: RecordScope) -> bool:
+    if schema.tenant_key and scope.tenant_value is not None:
+        if record.get(TENANT_KEY_FIELD) != scope.tenant_value:
+            return False
+    if _is_expired(schema, record, scope.now):
+        return False
+    return True
+
+
+def _is_expired(schema: RecordSchema, record: dict, now: Decimal | None) -> bool:
+    if schema.ttl_hours is None:
+        return False
+    if now is None:
+        return False
+    expires_at = record.get(EXPIRES_AT_FIELD)
+    if expires_at is None:
+        return True
+    if is_number(expires_at):
+        return to_decimal(expires_at) <= now
+    return True
+
+
+def _rebuild_indexes(schema: RecordSchema, records: list[dict]) -> dict[str, Dict[object, dict]]:
+    rebuilt: dict[str, Dict[object, dict]] = {}
+    for field in schema.unique_fields:
+        rebuilt[field] = {}
+    for record in records:
+        for field in schema.unique_fields:
+            value = record.get(field)
+            if value is None:
+                continue
+            rebuilt[field][_unique_key(schema, record, value)] = record
+    return rebuilt

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.render import format_error
 from namel3ss.lint.engine import lint_project
 from namel3ss.module_loader import load_project
+from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.ui.manifest import build_manifest
 
@@ -31,7 +33,9 @@ def run_check(path: str, allow_legacy_type_aliases: bool = True) -> int:
 
     manifest = None
     try:
-        manifest = build_manifest(program_ir, state={}, store=MemoryStore())
+        config = load_config(app_path=project.app_path, root=project.app_path.parent)
+        identity = resolve_identity(config, getattr(program_ir, "identity", None))
+        manifest = build_manifest(program_ir, state={}, store=MemoryStore(), identity=identity)
         sections.append("Manifest: OK")
     except Namel3ssError as err:
         sections.append(f"Manifest: FAIL\n{format_error(err, sources)}")

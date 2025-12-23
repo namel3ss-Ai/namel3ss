@@ -1,11 +1,18 @@
 from __future__ import annotations
 
+from namel3ss.config.loader import load_config
+from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.ui.manifest import build_manifest
 
 
 def list_actions(program_ir, json_mode: bool) -> tuple[dict | None, str | None]:
-    manifest = build_manifest(program_ir, state={}, store=MemoryStore())
+    config = load_config(
+        app_path=getattr(program_ir, "app_path", None),
+        root=getattr(program_ir, "project_root", None),
+    )
+    identity = resolve_identity(config, getattr(program_ir, "identity", None))
+    manifest = build_manifest(program_ir, state={}, store=MemoryStore(), identity=identity)
     actions = manifest.get("actions", {})
     sorted_ids = sorted(actions.keys())
     if json_mode:

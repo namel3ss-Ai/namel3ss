@@ -6,6 +6,7 @@ from namel3ss.ast import nodes as ast
 from namel3ss.ir.lowering.agents import _lower_agents
 from namel3ss.ir.lowering.ai import _lower_ai_decls
 from namel3ss.ir.lowering.flow import lower_flow
+from namel3ss.ir.lowering.identity import _lower_identity
 from namel3ss.ir.lowering.pages import _lower_page
 from namel3ss.ir.lowering.records import _lower_record
 from namel3ss.ir.lowering.tools import _lower_tools
@@ -41,6 +42,7 @@ def _flow_has_theme_change(flow: Flow) -> bool:
 
 def lower_program(program: ast.Program) -> Program:
     record_schemas = [_lower_record(record) for record in program.records]
+    identity_schema = _lower_identity(program.identity) if program.identity else None
     tool_map = _lower_tools(program.tools)
     ai_map = _lower_ai_decls(program.ais, tool_map)
     agent_map = _lower_agents(program.agents, ai_map)
@@ -63,6 +65,7 @@ def lower_program(program: ast.Program) -> Program:
         ais=ai_map,
         tools=tool_map,
         agents=agent_map,
+        identity=identity_schema,
         line=program.line,
         column=program.column,
     )

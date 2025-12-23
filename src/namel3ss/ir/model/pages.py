@@ -4,12 +4,14 @@ from dataclasses import dataclass
 from typing import List
 
 from namel3ss.ir.model.base import Node
+from namel3ss.ir.model.expressions import Expression
 
 
 @dataclass
 class Page(Node):
     name: str
     items: List["PageItem"]
+    requires: Expression | None = None
 
 
 @dataclass

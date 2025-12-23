@@ -110,6 +110,21 @@ class Lexer:
                 i += 1
                 column += 1
                 continue
+            if ch == "[":
+                tokens.append(Token("LBRACKET", "[", line_no, column))
+                i += 1
+                column += 1
+                continue
+            if ch == "]":
+                tokens.append(Token("RBRACKET", "]", line_no, column))
+                i += 1
+                column += 1
+                continue
+            if ch == ",":
+                tokens.append(Token("COMMA", ",", line_no, column))
+                i += 1
+                column += 1
+                continue
             if ch == '"':
                 value, consumed = self._read_string(text[i:], line_no, column)
                 tokens.append(Token("STRING", value, line_no, column))

@@ -15,17 +15,33 @@ from namel3ss.cli.ui_mode import render_manifest, run_action
 from namel3ss.cli.doctor import run_doctor
 from namel3ss.cli.studio_mode import run_studio
 from namel3ss.cli.check_mode import run_check
-from namel3ss.cli.persist_mode import run_persist
+from namel3ss.cli.persist_mode import run_data, run_persist
 from namel3ss.cli.graph_mode import run_graph
 from namel3ss.cli.exports_mode import run_exports
 from namel3ss.cli.test_mode import run_test_command
+from namel3ss.cli.pkg_mode import run_pkg
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.render import format_error
 from namel3ss.lint.engine import lint_source
 from namel3ss.ui.manifest import build_manifest
 from namel3ss.version import get_version
 
-RESERVED = {"check", "ui", "flow", "help", "format", "lint", "actions", "studio", "persist", "graph", "exports", "test"}
+RESERVED = {
+    "check",
+    "ui",
+    "flow",
+    "help",
+    "format",
+    "lint",
+    "actions",
+    "studio",
+    "persist",
+    "data",
+    "graph",
+    "exports",
+    "test",
+    "pkg",
+}
 
 
 def _allow_aliases_from_flags(flags: list[str]) -> bool:
@@ -50,12 +66,21 @@ def main(argv: list[str] | None = None) -> int:
         if args[0] == "--version":
             print(f"namel3ss {get_version()}")
             return 0
+        if args[0] in {"--help", "-h"}:
+            _print_usage()
+            return 0
         if args[0] == "doctor":
             json_mode = len(args) > 1 and args[1] == "--json"
             return run_doctor(json_mode=json_mode)
         if args[0] == "help":
             _print_usage()
             return 0
+        if args[0] == "data":
+            return run_data(None, args[1:])
+        if args[0] == "persist":
+            return run_persist(None, args[1:])
+        if args[0] == "pkg":
+            return run_pkg(args[1:])
         if args[0] == "new":
             return run_new(args[1:])
         if args[0] == "test":
@@ -126,6 +151,8 @@ def main(argv: list[str] | None = None) -> int:
                     continue
                 i += 1
             return run_studio(path, port, dry)
+        if remainder and remainder[0] == "data":
+            return run_data(path, remainder[1:])
         if remainder and remainder[0] == "persist":
             return run_persist(path, remainder[1:])
 
@@ -183,15 +210,20 @@ def _print_usage() -> None:
   n3 <app.ai> lint check           # lint, fail on findings
   n3 <app.ai> studio [--port N]    # start Studio viewer (use --dry to skip server in tests)
   n3 <app.ai> studio --dry         # dry run (prints URL)
-  n3 <app.ai> persist status       # show persistence mode/path
-  n3 <app.ai> persist reset --yes  # reset persisted data (SQLite only)
+  n3 data [status]                 # show data storage status (project root)
+  n3 data reset [--yes]            # reset persisted data (SQLite only)
+  n3 <app.ai> data [status]        # show data storage status
+  n3 <app.ai> data reset [--yes]   # reset persisted data (SQLite only)
   n3 <app.ai> actions              # list actions (plain text)
   n3 <app.ai> actions json         # list actions (JSON)
   n3 <app.ai> graph [--json]       # module dependency graph
   n3 <app.ai> exports [--json]     # module export list
   n3 test [--json]                 # run tests in ./tests
+  n3 pkg <cmd> [--json]            # package manager (run `n3 pkg help`)
   n3 <app.ai> <action_id> [json]   # execute UI action (payload optional)
   n3 <app.ai> help                 # this help
+  n3 <app.ai> persist status       # legacy alias for `n3 data status`
+  n3 <app.ai> persist reset --yes  # legacy alias for `n3 data reset`
 """
     print(usage.strip())
 

@@ -5,7 +5,7 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
-from namel3ss.runtime.records.service import save_record_or_raise
+from namel3ss.runtime.records.service import build_record_scope, save_record_or_raise
 from namel3ss.runtime.records.state_paths import get_state_record, record_state_path
 from namel3ss.schema.records import RecordSchema
 
@@ -26,6 +26,7 @@ def handle_save(ctx: ExecutionContext, stmt: ir.Save) -> None:
         ctx.schemas,
         ctx.state,
         ctx.store,
+        identity=ctx.identity,
         line=stmt.line,
         column=stmt.column,
     )
@@ -46,6 +47,7 @@ def handle_create(ctx: ExecutionContext, stmt: ir.Create) -> None:
         ctx.schemas,
         ctx.state,
         ctx.store,
+        identity=ctx.identity,
         line=stmt.line,
         column=stmt.column,
     )
@@ -71,7 +73,11 @@ def handle_find(ctx: ExecutionContext, stmt: ir.Find) -> None:
         finally:
             ctx.locals = backup_locals
 
-    results = ctx.store.find(schema, predicate)
+    try:
+        scope = build_record_scope(schema, ctx.identity)
+    except Namel3ssError as exc:
+        raise Namel3ssError(str(exc), line=stmt.line, column=stmt.column) from exc
+    results = ctx.store.find(schema, predicate, scope=scope)
     path = record_state_path(stmt.record_name)
     result_name = f"{'_'.join(path)}_results"
     ctx.locals[result_name] = results

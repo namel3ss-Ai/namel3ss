@@ -23,7 +23,14 @@ def lower_ir_program(code: str):
     return lower_program(parse_program(code))
 
 
-def run_flow(code: str, flow_name: str = "demo", initial_state=None, store=None):
+def run_flow(
+    code: str,
+    flow_name: str = "demo",
+    initial_state=None,
+    store=None,
+    identity=None,
+    input_data=None,
+):
     """Parse, lower, and execute a flow by name."""
     ir_program = lower_ir_program(code)
     flow = next((f for f in ir_program.flows if f.name == flow_name), None)
@@ -35,7 +42,10 @@ def run_flow(code: str, flow_name: str = "demo", initial_state=None, store=None)
         schemas=schemas,
         initial_state=initial_state,
         store=store,
+        input_data=input_data,
         runtime_theme=getattr(ir_program, "theme", None),
+        identity_schema=getattr(ir_program, "identity", None),
+        identity=identity,
     )
     return executor.run()
 

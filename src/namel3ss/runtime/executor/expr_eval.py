@@ -13,6 +13,8 @@ def evaluate_expression(ctx: ExecutionContext, expr: ir.Expression) -> object:
     if isinstance(expr, ir.Literal):
         return expr.value
     if isinstance(expr, ir.VarReference):
+        if expr.name == "identity":
+            return ctx.identity
         if expr.name not in ctx.locals:
             raise Namel3ssError(
                 f"Unknown variable '{expr.name}'",
@@ -21,16 +23,25 @@ def evaluate_expression(ctx: ExecutionContext, expr: ir.Expression) -> object:
             )
         return ctx.locals[expr.name]
     if isinstance(expr, ir.AttrAccess):
-        if expr.base not in ctx.locals:
-            raise Namel3ssError(
-                f"Unknown variable '{expr.base}'",
-                line=expr.line,
-                column=expr.column,
-            )
-        value = ctx.locals[expr.base]
+        if expr.base == "identity":
+            value = ctx.identity
+        else:
+            if expr.base not in ctx.locals:
+                raise Namel3ssError(
+                    f"Unknown variable '{expr.base}'",
+                    line=expr.line,
+                    column=expr.column,
+                )
+            value = ctx.locals[expr.base]
         for attr in expr.attrs:
             if isinstance(value, dict):
                 if attr not in value:
+                    if expr.base == "identity":
+                        raise Namel3ssError(
+                            _identity_attribute_message(attr),
+                            line=expr.line,
+                            column=expr.column,
+                        )
                     raise Namel3ssError(
                         f"Missing attribute '{attr}'",
                         line=expr.line,
@@ -241,4 +252,13 @@ def _boolean_operand_message(op: str, value: object) -> str:
         why=f"The operand is {_value_kind(value)}, but boolean logic only works with true/false.",
         fix="Use a boolean expression (comparisons return true/false).",
         example="if total is greater than 10: return true",
+    )
+
+
+def _identity_attribute_message(attr: str) -> str:
+    return build_guidance_message(
+        what=f"Identity is missing '{attr}'.",
+        why="The app referenced identity data that was not provided.",
+        fix="Provide the field via N3_IDENTITY_* or N3_IDENTITY_JSON.",
+        example="N3_IDENTITY_EMAIL=dev@example.com",
     )

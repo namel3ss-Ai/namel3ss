@@ -34,6 +34,7 @@ from namel3ss.ast.pages import (
     TitleItem,
 )
 from namel3ss.ast.program import Flow, Program
+from namel3ss.ast.identity import IdentityDecl
 from namel3ss.ast.statements import (
     AskAIStmt,
     Find,
@@ -104,6 +105,7 @@ __all__ = [
     "DividerItem",
     "ImageItem",
     "PageDecl",
+    "IdentityDecl",
     "AIDecl",
     "AIMemory",
     "ToolDecl",

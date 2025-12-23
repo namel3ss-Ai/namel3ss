@@ -4,7 +4,7 @@ Run any `.ai` app with the file-first CLI.
 
 ## Troubleshooting first
 
-- If something doesn’t run, start with `n3 doctor` (use `--json` for scripts/CI).
+- If something doesn't run, start with `n3 doctor` (use `--json` for scripts/CI).
 
 ## Create a project
 
@@ -23,6 +23,8 @@ Run any `.ai` app with the file-first CLI.
 - Run specific flow (CRUD template): `n3 app.ai flow "seed_customers"`
 - Run an action (CRUD template): `n3 app.ai page.home.form.customer '{"values":{"name":"Ada","email":"ada@example.com","age":23}}'`
 - Run tests: `n3 test`
+- Add a package: `n3 pkg add github:owner/repo@v0.1.0`
+- Install packages: `n3 pkg install`
 
 Formatter and linter:
 
@@ -45,11 +47,14 @@ Bundled demos under `examples/` you can run immediately:
 - `Reset` clears state/store (warns before clearing persisted data when SQLite is enabled).
 - Actions run via buttons and forms; traces and state update live.
 
-## Persistence (opt-in)
+## Persistence (dev/prod)
 
-- Set `N3_PERSIST=1` to persist locally to `.namel3ss/data.db` instead of memory.
-- Check status: `n3 app.ai persist status`.
-- Reset persisted data: `n3 app.ai persist reset --yes` (confirmation required, SQLite only).
+- Local dev uses SQLite by default (set `N3_PERSIST_TARGET=sqlite` in `.env` for existing projects).
+- Prod uses Postgres via env vars: `N3_PERSIST_TARGET=postgres` and `N3_DATABASE_URL=postgres://...`.
+- Edge is a placeholder target: `N3_PERSIST_TARGET=edge` and `N3_EDGE_KV_URL=...`.
+- Check status: `n3 data`.
+- Reset persisted data: `n3 data reset --yes` (confirmation required, SQLite only).
+- Run inside the project folder (where `app.ai` is). Otherwise use `n3 <app.ai> data`.
 
 ## Grammar note
 - Record fields use `is` for types and `must` for constraints, and canonical types are `text`, `number`, `boolean`, for example: `field "email" is text must be present`, `field "age" is number must be greater than 17`, `field "active" is boolean must be present`.
@@ -60,9 +65,11 @@ Bundled demos under `examples/` you can run immediately:
 - See [What you can build today](what-you-can-build-today.md) to understand supported use cases.
 - Learn expressions and conditionals in [Expressions & Conditionals](expressions-and-conditionals.md).
 - Learn Capsules + tests in [Modules and Tests](modules-and-tests.md).
+- Learn packages in [Packages](packages.md).
+- Learn identity + persistence in [Identity and Persistence](identity-and-persistence.md).
 - UI details live in the [UI DSL Spec](ui-dsl.md).
 
 ## Form payloads (CLI)
 
 - Canonical: `{"values":{"email":"ada@example.com","name":"Ada"}}`
-- Also accepted (auto-wrapped): `{"email":"ada@example.com","name":"Ada"}` — prefer the canonical shape in docs/scripts.
+- Also accepted (auto-wrapped): `{"email":"ada@example.com","name":"Ada"}` - prefer the canonical shape in docs/scripts.

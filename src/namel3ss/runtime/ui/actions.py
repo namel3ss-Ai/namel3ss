@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from typing import Dict, Optional
 
+from namel3ss.config.loader import load_config
+from namel3ss.config.model import AppConfig
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.executor import execute_program_flow
+from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.records.service import save_record_with_errors
 from namel3ss.runtime.records.state_paths import set_state_record
 from namel3ss.runtime.storage.base import Storage
@@ -27,14 +30,26 @@ def handle_action(
     preference_store=None,
     preference_key: str | None = None,
     allow_theme_override: bool | None = None,
+    config: AppConfig | None = None,
 ) -> dict:
     """Execute a UI action against the program."""
     if payload is not None and not isinstance(payload, dict):
         raise Namel3ssError(_action_payload_message())
 
-    store = resolve_store(store)
+    resolved_config = config or load_config(
+        app_path=getattr(program_ir, "app_path", None),
+        root=getattr(program_ir, "project_root", None),
+    )
+    store = resolve_store(store, config=resolved_config)
+    identity = resolve_identity(resolved_config, getattr(program_ir, "identity", None))
     working_state = store.load_state() if state is None else state
-    manifest = build_manifest(program_ir, state=working_state, store=store, runtime_theme=runtime_theme)
+    manifest = build_manifest(
+        program_ir,
+        state=working_state,
+        store=store,
+        runtime_theme=runtime_theme,
+        identity=identity,
+    )
     actions: Dict[str, dict] = manifest.get("actions", {})
     if action_id not in actions:
         raise Namel3ssError(_unknown_action_message(action_id, actions))
@@ -53,9 +68,20 @@ def handle_action(
             preference_store=preference_store,
             preference_key=preference_key,
             allow_theme_override=allow_theme_override,
+            config=resolved_config,
+            identity=identity,
         )
     if action_type == "submit_form":
-        return _handle_submit_form(program_ir, action, payload or {}, working_state, store, manifest, runtime_theme)
+        return _handle_submit_form(
+            program_ir,
+            action,
+            payload or {},
+            working_state,
+            store,
+            manifest,
+            runtime_theme,
+            identity=identity,
+        )
     raise Namel3ssError(f"Unsupported action type '{action_type}'")
 
 
@@ -77,6 +103,8 @@ def _handle_call_flow(
     preference_store=None,
     preference_key: str | None = None,
     allow_theme_override: bool | None = None,
+    config: AppConfig | None = None,
+    identity: dict | None = None,
 ) -> dict:
     flow_name = action.get("flow")
     if not isinstance(flow_name, str):
@@ -90,6 +118,8 @@ def _handle_call_flow(
         runtime_theme=runtime_theme,
         preference_store=preference_store,
         preference_key=preference_key,
+        config=config,
+        identity=identity,
     )
     traces = [_trace_to_dict(t) for t in result.traces]
     next_runtime_theme = result.runtime_theme if result.runtime_theme is not None else runtime_theme
@@ -105,6 +135,7 @@ def _handle_call_flow(
             store=store,
             runtime_theme=next_runtime_theme,
             persisted_theme=next_runtime_theme if allow_theme_override and preference_store else None,
+            identity=identity,
         ),
         "traces": traces,
     }
@@ -120,6 +151,7 @@ def _handle_submit_form(
     store: Storage,
     manifest: dict,
     runtime_theme: Optional[str],
+    identity: dict | None = None,
 ) -> dict:
     payload = _normalize_submit_payload(payload)
     record = action.get("record")
@@ -128,13 +160,19 @@ def _handle_submit_form(
     values = payload["values"]
     set_state_record(state, record, values)
     schemas = {schema.name: schema for schema in program_ir.records}
-    saved, errors = save_record_with_errors(record, values, schemas, state, store)
+    saved, errors = save_record_with_errors(record, values, schemas, state, store, identity=identity)
     if errors:
         response = {
             "ok": False,
             "state": state,
             "errors": errors,
-            "ui": build_manifest(program_ir, state=state, store=store, runtime_theme=runtime_theme),
+            "ui": build_manifest(
+                program_ir,
+                state=state,
+                store=store,
+                runtime_theme=runtime_theme,
+                identity=identity,
+            ),
             "traces": [],
         }
         _ensure_json_serializable(response)
@@ -146,7 +184,13 @@ def _handle_submit_form(
         "ok": True,
         "state": state,
         "result": {"record": record, "id": record_id},
-        "ui": build_manifest(program_ir, state=state, store=store, runtime_theme=runtime_theme),
+        "ui": build_manifest(
+            program_ir,
+            state=state,
+            store=store,
+            runtime_theme=runtime_theme,
+            identity=identity,
+        ),
         "traces": [],
     }
     _ensure_json_serializable(response)

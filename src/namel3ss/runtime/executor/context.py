@@ -18,6 +18,7 @@ class ExecutionContext:
     schemas: Dict[str, RecordSchema]
     state: Dict[str, object]
     locals: Dict[str, object]
+    identity: Dict[str, object]
     constants: set[str]
     last_value: Optional[object]
     store: Storage

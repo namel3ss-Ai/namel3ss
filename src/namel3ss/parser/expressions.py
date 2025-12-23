@@ -48,6 +48,10 @@ def parse_comparison(parser) -> ast.Expression:
                 pass
         right = parse_additive(parser)
         return ast.Comparison(kind="ne", left=left, right=right, line=is_tok.line, column=is_tok.column)
+    if _match_ident_value(parser, "one"):
+        _expect_ident_value(parser, "of")
+        values = _parse_literal_list(parser)
+        return _one_of_expression(left, values, is_tok.line, is_tok.column)
     if parser._match("GREATER"):
         parser._expect("THAN", "Expected 'than' after 'is greater'")
         right = parse_additive(parser)
@@ -157,3 +161,89 @@ def parse_state_path(parser) -> ast.StatePath:
     if not path:
         raise Namel3ssError("Expected state path after 'state'", line=state_tok.line, column=state_tok.column)
     return ast.StatePath(path=path, line=state_tok.line, column=state_tok.column)
+
+
+def _parse_literal_list(parser) -> List[ast.Expression]:
+    parser._expect("LBRACKET", "Expected '[' to start list")
+    items: List[ast.Expression] = []
+    if parser._match("RBRACKET"):
+        tok = parser._current()
+        raise Namel3ssError(
+            build_guidance_message(
+                what="One-of list cannot be empty.",
+                why="Membership checks need at least one literal value.",
+                fix="Add one or more literal values.",
+                example='requires identity.role is one of ["admin", "staff"]',
+            ),
+            line=tok.line,
+            column=tok.column,
+        )
+    while True:
+        tok = parser._current()
+        if tok.type == "STRING":
+            parser._advance()
+            items.append(ast.Literal(value=tok.value, line=tok.line, column=tok.column))
+        elif tok.type == "NUMBER":
+            parser._advance()
+            items.append(ast.Literal(value=tok.value, line=tok.line, column=tok.column))
+        elif tok.type == "BOOLEAN":
+            parser._advance()
+            items.append(ast.Literal(value=tok.value, line=tok.line, column=tok.column))
+        else:
+            raise Namel3ssError(
+                build_guidance_message(
+                    what="One-of list contains a non-literal value.",
+                    why="Only string, number, or boolean literals are allowed in one-of lists.",
+                    fix="Replace the value with a literal.",
+                    example='requires identity.role is one of ["admin", "staff"]',
+                ),
+                line=tok.line,
+                column=tok.column,
+            )
+        if parser._match("COMMA"):
+            continue
+        parser._expect("RBRACKET", "Expected ']' after list")
+        break
+    return items
+
+
+def _one_of_expression(
+    left: ast.Expression,
+    values: List[ast.Expression],
+    line: int,
+    column: int,
+) -> ast.Expression:
+    expr: ast.Expression | None = None
+    for value in values:
+        comparison = ast.Comparison(kind="eq", left=left, right=value, line=line, column=column)
+        if expr is None:
+            expr = comparison
+        else:
+            expr = ast.BinaryOp(op="or", left=expr, right=comparison, line=line, column=column)
+    if expr is None:
+        raise Namel3ssError("One-of list must contain at least one value", line=line, column=column)
+    return expr
+
+
+def _match_ident_value(parser, value: str) -> bool:
+    tok = parser._current()
+    if tok.type == "IDENT" and tok.value == value:
+        parser._advance()
+        return True
+    return False
+
+
+def _expect_ident_value(parser, value: str) -> None:
+    tok = parser._current()
+    if tok.type != "IDENT" or tok.value != value:
+        raise Namel3ssError(
+            build_guidance_message(
+                what=f"Expected '{value}' after 'is'.",
+                why="Membership checks use `is one of [..]` with the word sequence.",
+                fix=f"Add '{value}' in the membership clause.",
+                example='requires identity.role is one of ["admin", "staff"]',
+            ),
+            line=tok.line,
+            column=tok.column,
+        )
+    parser._advance()

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import List
+from typing import List, Tuple
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.lexer.tokens import Token
 from namel3ss.parser.constraints import parse_field_constraint
 from namel3ss.types import normalize_type_name
@@ -13,18 +14,106 @@ def parse_record(parser) -> ast.RecordDecl:
     rec_tok = parser._advance()
     name_tok = parser._expect("STRING", "Expected record name string")
     parser._expect("COLON", "Expected ':' after record name")
-    fields = parse_record_fields(parser)
-    return ast.RecordDecl(name=name_tok.value, fields=fields, line=rec_tok.line, column=rec_tok.column)
+    fields, tenant_key, ttl_hours = parse_record_body(parser)
+    return ast.RecordDecl(
+        name=name_tok.value,
+        fields=fields,
+        tenant_key=tenant_key,
+        ttl_hours=ttl_hours,
+        line=rec_tok.line,
+        column=rec_tok.column,
+    )
 
 
 def parse_record_fields(parser) -> List[ast.FieldDecl]:
+    fields, _, _ = parse_record_body(parser)
+    return fields
+
+
+def parse_record_body(
+    parser,
+) -> Tuple[List[ast.FieldDecl], ast.Expression | None, ast.Expression | None]:
     parser._expect("NEWLINE", "Expected newline after record header")
     parser._expect("INDENT", "Expected indented record body")
     fields: List[ast.FieldDecl] = []
+    tenant_key_expr: ast.Expression | None = None
+    ttl_hours_expr: ast.Expression | None = None
+    seen_persisted = False
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
         name_tok = parser._current()
+        if name_tok.type == "IDENT" and name_tok.value == "tenant_key":
+            if tenant_key_expr is not None:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Record declares tenant_key more than once.",
+                        why="Each record may only define a single tenant_key.",
+                        fix="Keep a single tenant_key declaration.",
+                        example='tenant_key is identity.organization_id',
+                    ),
+                    line=name_tok.line,
+                    column=name_tok.column,
+                )
+            parser._advance()
+            parser._expect("IS", "Expected 'is' after tenant_key")
+            tenant_key_expr = parser._parse_expression()
+            if parser._match("NEWLINE"):
+                continue
+            continue
+        if name_tok.type == "IDENT" and name_tok.value == "persisted":
+            if seen_persisted:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Record declares persisted block more than once.",
+                        why="Each record may only define a single persisted block.",
+                        fix="Keep a single persisted block.",
+                        example="persisted:\n  ttl_hours is 24",
+                    ),
+                    line=name_tok.line,
+                    column=name_tok.column,
+                )
+            seen_persisted = True
+            parser._advance()
+            parser._expect("COLON", "Expected ':' after persisted")
+            parser._expect("NEWLINE", "Expected newline after persisted")
+            parser._expect("INDENT", "Expected indented persisted block")
+            while parser._current().type != "DEDENT":
+                if parser._match("NEWLINE"):
+                    continue
+                setting_tok = parser._current()
+                if setting_tok.type == "IDENT" and setting_tok.value == "ttl_hours":
+                    if ttl_hours_expr is not None:
+                        raise Namel3ssError(
+                            build_guidance_message(
+                                what="ttl_hours is declared more than once.",
+                                why="Only one ttl_hours setting is allowed.",
+                                fix="Keep a single ttl_hours line.",
+                                example="ttl_hours is 24",
+                            ),
+                            line=setting_tok.line,
+                            column=setting_tok.column,
+                        )
+                    parser._advance()
+                    parser._expect("IS", "Expected 'is' after ttl_hours")
+                    ttl_hours_expr = parser._parse_expression()
+                    if parser._match("NEWLINE"):
+                        continue
+                    continue
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what=f"Unknown persisted setting '{setting_tok.value}'.",
+                        why="Only ttl_hours is supported in persisted blocks.",
+                        fix="Use ttl_hours or remove the line.",
+                        example="persisted:\n  ttl_hours is 24",
+                    ),
+                    line=setting_tok.line,
+                    column=setting_tok.column,
+                )
+            parser._expect("DEDENT", "Expected end of persisted block")
+            while parser._match("NEWLINE"):
+                pass
+            continue
         if name_tok.type not in {"IDENT", "TITLE", "TEXT", "FORM", "TABLE", "BUTTON", "PAGE"}:
             raise Namel3ssError("Expected field name", line=name_tok.line, column=name_tok.column)
         # Support canonical "field \"name\" is type" while keeping legacy "name type".
@@ -75,7 +164,7 @@ def parse_record_fields(parser) -> List[ast.FieldDecl]:
     parser._expect("DEDENT", "Expected end of record body")
     while parser._match("NEWLINE"):
         pass
-    return fields
+    return fields, tenant_key_expr, ttl_hours_expr
 
 
 def type_from_token(tok: Token) -> str:

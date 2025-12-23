@@ -1,0 +1,2 @@
+flow "shared_flow":
+  return "shared ok"

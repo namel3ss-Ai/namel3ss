@@ -1,12 +1,21 @@
 from __future__ import annotations
 
+from decimal import Decimal
+import time
 from typing import Dict, List, Optional, Tuple
 
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.storage.base import Storage
-from namel3ss.runtime.validators.constraints import collect_validation_errors, validate_record_instance
-from namel3ss.schema.records import RecordSchema
+from namel3ss.runtime.validators.constraints import collect_validation_errors
+from namel3ss.schema.records import (
+    EXPIRES_AT_FIELD,
+    SYSTEM_FIELDS,
+    TENANT_KEY_FIELD,
+    RecordSchema,
+)
+from namel3ss.runtime.storage.base import RecordScope
 from namel3ss.utils.numbers import decimal_is_int, is_number, to_decimal
 
 
@@ -16,10 +25,11 @@ def save_record_or_raise(
     schemas: Dict[str, RecordSchema],
     state: Dict[str, object],
     store: Storage,
+    identity: dict | None = None,
     line: int | None = None,
     column: int | None = None,
 ) -> dict:
-    saved, errors = save_record_with_errors(record_name, values, schemas, state, store)
+    saved, errors = save_record_with_errors(record_name, values, schemas, state, store, identity=identity)
     if errors:
         first = errors[0]
         raise Namel3ssError(first["message"], line=line, column=column)
@@ -32,8 +42,21 @@ def save_record_with_errors(
     schemas: Dict[str, RecordSchema],
     state: Dict[str, object],
     store: Storage,
+    identity: dict | None = None,
 ) -> Tuple[Optional[dict], List[Dict[str, str]]]:
     schema = _get_schema(record_name, schemas)
+    prepared = dict(values)
+    try:
+        scope = build_record_scope(schema, identity)
+        _apply_system_fields(schema, prepared, scope)
+    except Namel3ssError as exc:
+        return None, [
+            {
+                "field": "tenant_key",
+                "code": "tenant",
+                "message": str(exc),
+            }
+        ]
     type_errors = _type_errors(schema, values)
     if type_errors:
         return None, type_errors
@@ -42,7 +65,7 @@ def save_record_with_errors(
     if constraint_errors:
         return None, constraint_errors
 
-    conflict_field = store.check_unique(schema, values)
+    conflict_field = store.check_unique(schema, prepared, scope=scope)
     if conflict_field:
         return None, [
             {
@@ -52,8 +75,8 @@ def save_record_with_errors(
             }
         ]
     try:
-        saved = store.save(schema, values)
-        return saved, []
+        saved = store.save(schema, prepared)
+        return strip_system_fields(saved), []
     except Namel3ssError as exc:
         # Fallback for any residual unique enforcement
         return None, [
@@ -111,3 +134,73 @@ def _literal_eval(expr: ir.Expression | None) -> object:
     if isinstance(expr, ir.Literal):
         return expr.value
     raise Namel3ssError("Only literal expressions supported in schema constraints for forms")
+
+
+def build_record_scope(schema: RecordSchema, identity: dict | None, now: Decimal | None = None) -> RecordScope:
+    tenant_value = None
+    if schema.tenant_key:
+        tenant_value = _resolve_tenant_value(schema, identity)
+    if schema.ttl_hours is not None:
+        now = now or _now_decimal()
+    return RecordScope(tenant_value=tenant_value, now=now)
+
+
+def strip_system_fields(record: dict | None) -> dict | None:
+    if record is None:
+        return None
+    return {key: value for key, value in record.items() if key not in SYSTEM_FIELDS}
+
+
+def _apply_system_fields(schema: RecordSchema, values: dict, scope: RecordScope) -> None:
+    if schema.tenant_key:
+        values[TENANT_KEY_FIELD] = scope.tenant_value
+    if schema.ttl_hours is not None:
+        expires_at = _compute_expires_at(schema.ttl_hours, scope.now)
+        values[EXPIRES_AT_FIELD] = expires_at
+
+
+def _compute_expires_at(ttl_hours: Decimal, now: Decimal | None) -> Decimal:
+    current = now or _now_decimal()
+    return current + (ttl_hours * Decimal("3600"))
+
+
+def _resolve_tenant_value(schema: RecordSchema, identity: dict | None) -> str:
+    if identity is None:
+        raise Namel3ssError(_tenant_missing_message(schema))
+    current: object = identity
+    path = schema.tenant_key or []
+    for part in path:
+        if not isinstance(current, dict) or part not in current:
+            raise Namel3ssError(_tenant_missing_message(schema))
+        current = current.get(part)
+    if current is None:
+        raise Namel3ssError(_tenant_missing_message(schema))
+    if not isinstance(current, str):
+        raise Namel3ssError(_tenant_type_message(schema, current))
+    return current
+
+
+def _tenant_missing_message(schema: RecordSchema) -> str:
+    path = ".".join(schema.tenant_key or [])
+    field = path or "<field>"
+    return build_guidance_message(
+        what=f"Record '{schema.name}' requires a tenant identity.",
+        why=f"tenant_key is set to identity.{field}, but no tenant value was provided.",
+        fix="Provide the tenant field in identity defaults or runtime identity.",
+        example=f"N3_IDENTITY_{(schema.tenant_key or ['ORG_ID'])[-1].upper()}=acme",
+    )
+
+
+def _tenant_type_message(schema: RecordSchema, value: object) -> str:
+    path = ".".join(schema.tenant_key or [])
+    field = path or "<field>"
+    return build_guidance_message(
+        what=f"Record '{schema.name}' tenant_key must be text.",
+        why=f"identity.{field} resolved to {type(value).__name__}, but tenant_key expects text.",
+        fix="Provide a string identity value for the tenant key.",
+        example=f"N3_IDENTITY_{(schema.tenant_key or ['ORG_ID'])[-1].upper()}=acme",
+    )
+
+
+def _now_decimal() -> Decimal:
+    return Decimal(str(time.time()))

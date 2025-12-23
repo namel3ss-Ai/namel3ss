@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Dict, Optional
 
+from namel3ss.config.loader import load_config
+from namel3ss.config.model import AppConfig
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
@@ -44,6 +46,8 @@ def execute_program_flow(
     runtime_theme: Optional[str] = None,
     preference_store=None,
     preference_key: str | None = None,
+    config: AppConfig | None = None,
+    identity: dict | None = None,
 ) -> ExecutionResult:
     flow = next((f for f in program.flows if f.name == flow_name), None)
     if flow is None:
@@ -64,16 +68,23 @@ def execute_program_flow(
         system_available=False,
         system_value=None,
     )
+    resolved_config = config or load_config(
+        app_path=getattr(program, "app_path", None),
+        root=getattr(program, "project_root", None),
+    )
     result = Executor(
         flow,
         schemas=schemas,
         initial_state=state,
         input_data=input,
-        store=resolve_store(store),
+        store=resolve_store(store, config=resolved_config),
         ai_provider=ai_provider,
         ai_profiles=program.ais,
         agents=program.agents,
         runtime_theme=resolution.setting_used.value,
+        config=resolved_config,
+        identity_schema=getattr(program, "identity", None),
+        identity=identity,
     ).run()
     if allow_override and preference_store and preference_key and getattr(program, "theme_preference", {}).get("persist") == "file":
         if result.runtime_theme in {"light", "dark", "system"}:
