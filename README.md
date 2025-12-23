@@ -135,28 +135,38 @@ namel3ss is focused. Some things are not here yet — on purpose. Before using i
 
 ---
 
-## Core CLI (file-first)
-Run an app:
+## Core CLI (short, file-first)
+Run an app (auto-detects `app.ai` in the folder):
 ```bash
-n3 app.ai
+n3 run            # or n3 run app.ai
 ```
 Validate:
 ```bash
-n3 app.ai check
+n3 check          # or n3 app.ai check
 ```
 UI manifest and actions:
 ```bash
-n3 app.ai ui
-n3 app.ai actions
+n3 ui             # or n3 app.ai ui
+n3 actions        # or n3 app.ai actions
 ```
 Run Studio:
 ```bash
-n3 app.ai studio
+n3 studio         # or n3 app.ai studio
 ```
 Format and lint:
 ```bash
-n3 app.ai format
-n3 app.ai lint
+n3 fmt            # alias: n3 format
+n3 lint
+```
+Packages (capsules):
+```bash
+n3 deps <cmd>     # alias: n3 pkg <cmd>
+```
+Targets and promotion:
+```bash
+n3 pack --target service   # alias: n3 build
+n3 ship --to service       # alias: n3 promote
+n3 where                   # alias: n3 status
 ```
 
 ---
@@ -219,3 +229,10 @@ Join the conversation. Share ideas. Build together.
 - [Changelog](https://github.com/namel3ss-Ai/namel3ss/blob/main/CHANGELOG.md)
 - [Discord community](https://discord.gg/x8s6aEwdU)
 - [LinkedIn page](https://www.linkedin.com/company/namel3ss/)
+
+### Command map
+- ship (alias: promote)
+- pack (alias: build)
+- where (alias: status)
+- fmt (alias: format)
+- deps (alias: pkg)

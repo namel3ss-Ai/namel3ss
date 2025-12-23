@@ -60,9 +60,9 @@ def _parse_args(args: list[str]) -> str | None:
             raise Namel3ssError(
                 build_guidance_message(
                     what=f"Unknown flag '{arg}'.",
-                    why="Status does not take flags.",
+                    why="where/status does not take flags.",
                     fix="Remove the flag and run again.",
-                    example="n3 status",
+                    example="n3 where",
                 )
             )
         if app_arg is None:
@@ -71,9 +71,9 @@ def _parse_args(args: list[str]) -> str | None:
         raise Namel3ssError(
             build_guidance_message(
                 what="Too many positional arguments.",
-                why="Status accepts at most one app path.",
+                why="where/status accepts at most one app path.",
                 fix="Provide a single app.ai path or none.",
-                example="n3 status app.ai",
+                example="n3 where app.ai",
             )
         )
     return app_arg

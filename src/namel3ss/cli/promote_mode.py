@@ -22,7 +22,7 @@ def run_promote_command(args: list[str]) -> int:
                 what="Missing target for promotion.",
                 why="Use --to to pick local, service, or edge.",
                 fix="Pass a target to promote to.",
-                example="n3 promote --to service",
+                example="n3 ship --to service",
             )
         )
     target = parse_target(target_raw)
@@ -32,8 +32,8 @@ def run_promote_command(args: list[str]) -> int:
             build_guidance_message(
                 what=f"No build found for target '{target.name}'.",
                 why="Promotion needs a build snapshot.",
-                fix="Run `n3 build` for the target, then promote again.",
-                example="n3 build --target service",
+                fix="Run `n3 pack` for the target, then ship again.",
+                example="n3 pack --target service",
             )
         )
     build_path, metadata = load_build_metadata(project_root, target.name, selected_build)
@@ -44,7 +44,7 @@ def run_promote_command(args: list[str]) -> int:
                 what=f"Build '{selected_build}' was created for target '{meta_target}'.",
                 why="Targets cannot be mixed during promotion.",
                 fix="Build a snapshot for the requested target.",
-                example=f"n3 build --target {target.name}",
+                example=f"n3 pack --target {target.name}",
             )
         )
     record_promotion(project_root, target.name, selected_build)
@@ -69,7 +69,7 @@ def _perform_rollback(project_root: Path) -> None:
                 what="Nothing to roll back.",
                 why="No previous promotion is recorded.",
                 fix="Promote a build before rolling back.",
-                example="n3 promote --to local",
+                example="n3 ship --to local",
             )
         )
     new_state = record_rollback(project_root)
@@ -91,30 +91,30 @@ def _parse_args(args: list[str]) -> tuple[str | None, str | None, str | None, bo
         if arg == "--to":
             if i + 1 >= len(args):
                 raise Namel3ssError(
-                    build_guidance_message(
-                        what="--to flag is missing a value.",
-                        why="Promotion requires a target.",
-                        fix="Pass local, service, or edge after --to.",
-                        example="n3 promote --to service",
-                    )
+                build_guidance_message(
+                    what="--to flag is missing a value.",
+                    why="Promotion requires a target.",
+                    fix="Pass local, service, or edge after --to.",
+                    example="n3 ship --to service",
                 )
+            )
             target = args[i + 1]
             i += 2
             continue
         if arg == "--build":
             if i + 1 >= len(args):
                 raise Namel3ssError(
-                    build_guidance_message(
-                        what="--build flag is missing a value.",
-                        why="A build id must follow --build.",
-                        fix="Provide the build id.",
-                        example="n3 promote --to service --build service-abc123",
-                    )
+                build_guidance_message(
+                    what="--build flag is missing a value.",
+                    why="A build id must follow --build.",
+                    fix="Provide the build id.",
+                    example="n3 ship --to service --build service-abc123",
                 )
+            )
             build_id = args[i + 1]
             i += 2
             continue
-        if arg == "--rollback":
+        if arg in {"--rollback", "--back"}:
             rollback = True
             i += 1
             continue
@@ -124,7 +124,7 @@ def _parse_args(args: list[str]) -> tuple[str | None, str | None, str | None, bo
                     what=f"Unknown flag '{arg}'.",
                     why="Only --to, --build, and --rollback are supported.",
                     fix="Remove the unsupported flag.",
-                    example="n3 promote --to local",
+                    example="n3 ship --to local",
                 )
             )
         if app_arg is None:
@@ -136,7 +136,7 @@ def _parse_args(args: list[str]) -> tuple[str | None, str | None, str | None, bo
                 what="Too many positional arguments.",
                 why="Promotion accepts at most one app path.",
                 fix="Provide a single app.ai path or none.",
-                example="n3 promote app.ai --to service",
+                example="n3 ship app.ai --to service",
             )
         )
     if rollback and (target or build_id):
@@ -145,7 +145,7 @@ def _parse_args(args: list[str]) -> tuple[str | None, str | None, str | None, bo
                 what="Rollback cannot be combined with other flags.",
                 why="Rollback reverts the last promotion only.",
                 fix="Run rollback alone.",
-                example="n3 promote --rollback",
+                example="n3 ship --back",
             )
         )
     return app_arg, target, build_id, rollback

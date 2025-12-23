@@ -17,11 +17,11 @@ n3 run --target service    # service runner (default port 8787, /health + /versi
 n3 run --target edge       # edge simulator stub
 ```
 
-## Build
+## Build (pack)
 
 ```
-n3 build --target service          # deterministic artifacts
-n3 build app.ai --target local     # file-first
+n3 pack --target service          # deterministic artifacts (alias: build)
+n3 pack app.ai --target local     # file-first
 ```
 
 Artifacts live in `.namel3ss/build/<target>/<build-id>/` and include:
@@ -31,12 +31,12 @@ Artifacts live in `.namel3ss/build/<target>/<build-id>/` and include:
 - program summary,
 - target bundle (service README with health endpoint info; edge stub README).
 
-## Promote and rollback
+## Promote and rollback (ship)
 
 ```
-n3 promote --to service      # promote the latest service build (or pass --build)
-n3 status                    # show active target, build id, persistence target
-n3 promote --rollback        # revert the active build pointer
+n3 ship --to service      # promote the latest service build (or pass --build)
+n3 where                  # show active target, build id, persistence target (alias: status)
+n3 ship --back            # revert the active build pointer (alias: --rollback)
 ```
 
 Promotion updates pointers only; it’s safe and reversible. Database schema migrations are **not** auto-rolled back in this phase.
@@ -47,10 +47,15 @@ From a project folder:
 
 ```
 n3 run
-n3 build --target service
-n3 promote --to service
-n3 status
-n3 promote --rollback
+n3 pack --target service
+n3 ship --to service
+n3 where
+n3 ship --back
 ```
 
 `service` target runs at `http://127.0.0.1:8787/health` (default). Edge target is a simulator stub until the full runtime lands.
+
+## Command map
+- ship (alias: promote)
+- pack (alias: build)
+- where (alias: status)
