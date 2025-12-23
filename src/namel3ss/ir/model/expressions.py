@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import List, Union
 
 from namel3ss.ir.model.base import Expression
@@ -8,7 +9,7 @@ from namel3ss.ir.model.base import Expression
 
 @dataclass
 class Literal(Expression):
-    value: Union[str, int, bool]
+    value: Union[str, int, bool, Decimal]
 
 
 @dataclass

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from namel3ss.ast import nodes as ast_nodes
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.parser.names import parse_reference_name
+from namel3ss.utils.numbers import decimal_is_int, is_number, to_decimal
 
 
 def parse_ai_decl(parser) -> ast_nodes.AIDecl:
@@ -43,8 +45,8 @@ def parse_ai_decl(parser) -> ast_nodes.AIDecl:
                 if parser._match("NEWLINE"):
                     continue
                 if parser._match("EXPOSE"):
-                    tool_tok = parser._expect("STRING", "Expected tool name string")
-                    tool_name = tool_tok.value
+                    tool_tok = parser._current()
+                    tool_name = parse_reference_name(parser, context="tool")
                     if tool_name in exposed_tools:
                         raise Namel3ssError(f"Duplicate tool exposure '{tool_name}'", line=tool_tok.line, column=tool_tok.column)
                     exposed_tools.append(tool_name)
@@ -65,9 +67,12 @@ def parse_ai_decl(parser) -> ast_nodes.AIDecl:
                     parser._advance()
                     parser._expect("IS", "Expected 'is' after short_term")
                     value_tok = parser._expect("NUMBER", "short_term must be a number literal")
-                    if not isinstance(value_tok.value, int) or value_tok.value < 0:
+                    if not is_number(value_tok.value):
                         raise Namel3ssError("short_term must be a non-negative integer", line=value_tok.line, column=value_tok.column)
-                    memory.short_term = value_tok.value
+                    value_decimal = to_decimal(value_tok.value)
+                    if not decimal_is_int(value_decimal) or value_decimal < 0:
+                        raise Namel3ssError("short_term must be a non-negative integer", line=value_tok.line, column=value_tok.column)
+                    memory.short_term = int(value_decimal)
                 elif mem_key.type == "SEMANTIC":
                     parser._advance()
                     parser._expect("IS", "Expected 'is' after semantic")
@@ -103,11 +108,11 @@ def parse_ai_decl(parser) -> ast_nodes.AIDecl:
 def parse_ask_stmt(parser) -> ast_nodes.AskAIStmt:
     ask_tok = parser._advance()
     parser._expect("AI", "Expected 'ai' after 'ask'")
-    name_tok = parser._expect("STRING", "Expected AI name string")
+    ai_name = parse_reference_name(parser, context="AI profile")
     parser._expect("WITH", "Expected 'with' in ask ai statement")
     parser._expect("INPUT", "Expected 'input' in ask ai statement")
     parser._expect("COLON", "Expected ':' after input")
     input_expr = parser._parse_expression()
     parser._expect("AS", "Expected 'as' to bind AI result")
     target_tok = parser._expect("IDENT", "Expected target identifier after 'as'")
-    return ast_nodes.AskAIStmt(ai_name=name_tok.value, input_expr=input_expr, target=target_tok.value, line=ask_tok.line, column=ask_tok.column)
+    return ast_nodes.AskAIStmt(ai_name=ai_name, input_expr=input_expr, target=target_tok.value, line=ask_tok.line, column=ask_tok.column)

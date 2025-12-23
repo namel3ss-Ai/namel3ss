@@ -31,5 +31,4 @@ def test_invalid_comparison_type_errors():
 '''
     with pytest.raises(Namel3ssError) as exc:
         run_flow(source, flow_name="badcmp")
-    assert "require numbers" in str(exc.value).lower()
-
+    assert "comparison requires numbers" in str(exc.value).lower()

@@ -19,6 +19,7 @@ from namel3ss.studio.api import (
     get_ui_payload,
 )
 from namel3ss.studio.session import SessionState
+from namel3ss.utils.json_tools import dumps as json_dumps
 
 
 class StudioRequestHandler(SimpleHTTPRequestHandler):
@@ -33,7 +34,7 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
         return self.server.session_state  # type: ignore[attr-defined]
 
     def _respond_json(self, payload: dict, status: int = 200) -> None:
-        data = json.dumps(payload).encode("utf-8")
+        data = json_dumps(payload).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(data)))

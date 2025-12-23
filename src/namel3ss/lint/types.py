@@ -11,12 +11,16 @@ class Finding:
     line: Optional[int]
     column: Optional[int]
     severity: str = "error"
+    file: Optional[str] = None
 
     def to_dict(self) -> dict:
-        return {
+        data = {
             "code": self.code,
             "message": self.message,
             "line": self.line,
             "column": self.column,
             "severity": self.severity,
         }
+        if self.file:
+            data["file"] = self.file
+        return data

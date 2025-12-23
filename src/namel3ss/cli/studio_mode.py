@@ -9,14 +9,14 @@ from namel3ss.studio.server import start_server
 
 
 def run_studio(path: str, port: int, dry: bool) -> int:
-    source = ""
+    sources: dict = {}
     try:
-        program_ir, source = load_program(path)
+        program_ir, sources = load_program(path)
         if dry:
             print(f"Studio: http://127.0.0.1:{port}/")
             return 0
         start_server(path, port)
         return 0
     except Namel3ssError as err:
-        print(format_error(err, source), file=sys.stderr)
+        print(format_error(err, sources), file=sys.stderr)
         return 1

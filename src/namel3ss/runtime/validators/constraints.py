@@ -5,6 +5,7 @@ from typing import Callable, Dict, Optional
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.schema.records import FieldConstraint, FieldSchema, RecordSchema
+from namel3ss.utils.numbers import is_number, to_decimal
 
 
 def validate_record_instance(
@@ -35,26 +36,28 @@ def _field_error(
     if constraint.kind == "unique":
         return None
     if constraint.kind in {"gt", "lt"}:
-        if not isinstance(value, (int, float)):
+        if not is_number(value):
             return {
                 "field": field.name,
                 "code": "type",
                 "message": f"Field '{field.name}' in record '{record_name}' must be numeric",
             }
         compare_value = evaluate_expr(constraint.expression)
-        if not isinstance(compare_value, (int, float)):
+        if not is_number(compare_value):
             return {
                 "field": field.name,
                 "code": "type",
                 "message": f"Constraint for field '{field.name}' in record '{record_name}' must be numeric",
             }
-        if constraint.kind == "gt" and not (value > compare_value):
+        left = to_decimal(value)
+        right = to_decimal(compare_value)
+        if constraint.kind == "gt" and not (left > right):
             return {
                 "field": field.name,
                 "code": "gt",
                 "message": f"Field '{field.name}' in record '{record_name}' must be greater than {compare_value}",
             }
-        if constraint.kind == "lt" and not (value < compare_value):
+        if constraint.kind == "lt" and not (left < right):
             return {
                 "field": field.name,
                 "code": "lt",
@@ -77,19 +80,20 @@ def _field_error(
                 "message": f"Field '{field.name}' in record '{record_name}' must support length checks",
             }
         compare_value = evaluate_expr(constraint.expression)
-        if not isinstance(compare_value, (int, float)):
+        if not is_number(compare_value):
             return {
                 "field": field.name,
                 "code": "type",
                 "message": f"Constraint for field '{field.name}' in record '{record_name}' must be numeric",
             }
-        if constraint.kind == "len_min" and length < compare_value:
+        compare_decimal = to_decimal(compare_value)
+        if constraint.kind == "len_min" and to_decimal(length) < compare_decimal:
             return {
                 "field": field.name,
                 "code": "min_length",
                 "message": f"Field '{field.name}' in record '{record_name}' must have length at least {compare_value}",
             }
-        if constraint.kind == "len_max" and length > compare_value:
+        if constraint.kind == "len_max" and to_decimal(length) > compare_decimal:
             return {
                 "field": field.name,
                 "code": "max_length",

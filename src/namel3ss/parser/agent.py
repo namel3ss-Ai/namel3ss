@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.parser.names import parse_reference_name
 
 
 def parse_agent_decl(parser) -> ast.AgentDecl:
@@ -19,8 +20,7 @@ def parse_agent_decl(parser) -> ast.AgentDecl:
         if key_tok.type == "AI":
             parser._advance()
             parser._expect("IS", "Expected 'is' after ai")
-            ai_tok = parser._expect("STRING", "Expected AI profile name")
-            ai_name = ai_tok.value
+            ai_name = parse_reference_name(parser, context="AI profile")
         elif key_tok.type == "SYSTEM_PROMPT":
             parser._advance()
             parser._expect("IS", "Expected 'is' after system_prompt")
@@ -39,14 +39,15 @@ def parse_run_agent_stmt(parser) -> ast.RunAgentStmt:
     run_tok = parser._advance()
     if not parser._match("AGENT"):
         raise Namel3ssError("Expected 'agent' after run", line=run_tok.line, column=run_tok.column)
-    name_tok = parser._expect("STRING", "Expected agent name string")
+    name_tok = parser._current()
+    agent_name = parse_reference_name(parser, context="agent")
     parser._expect("WITH", "Expected 'with' in run agent")
     parser._expect("INPUT", "Expected 'input' in run agent")
     parser._expect("COLON", "Expected ':' after input")
     input_expr = parser._parse_expression()
     parser._expect("AS", "Expected 'as' to bind agent result")
     target_tok = parser._expect("IDENT", "Expected target identifier after 'as'")
-    return ast.RunAgentStmt(agent_name=name_tok.value, input_expr=input_expr, target=target_tok.value, line=run_tok.line, column=run_tok.column)
+    return ast.RunAgentStmt(agent_name=agent_name, input_expr=input_expr, target=target_tok.value, line=name_tok.line, column=name_tok.column)
 
 
 def parse_run_agents_parallel(parser) -> ast.RunAgentsParallelStmt:
@@ -63,12 +64,13 @@ def parse_run_agents_parallel(parser) -> ast.RunAgentsParallelStmt:
         if parser._match("NEWLINE"):
             continue
         parser._expect("AGENT", "Expected 'agent' in parallel block")
-        name_tok = parser._expect("STRING", "Expected agent name string")
+        name_tok = parser._current()
+        agent_name = parse_reference_name(parser, context="agent")
         parser._expect("WITH", "Expected 'with' in agent entry")
         parser._expect("INPUT", "Expected 'input' in agent entry")
         parser._expect("COLON", "Expected ':' after input")
         input_expr = parser._parse_expression()
-        entries.append(ast.ParallelAgentEntry(agent_name=name_tok.value, input_expr=input_expr, line=name_tok.line, column=name_tok.column))
+        entries.append(ast.ParallelAgentEntry(agent_name=agent_name, input_expr=input_expr, line=name_tok.line, column=name_tok.column))
         parser._match("NEWLINE")
     parser._expect("DEDENT", "Expected end of parallel agents block")
     if not entries:

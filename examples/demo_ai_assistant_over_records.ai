@@ -19,7 +19,7 @@ ai "assistant":
 flow "seed_notes":
   set state.note.heading is "Release plan"
   set state.note.content is "Ship in weekly iterations with clear changelog."
-  save Note
+  create "Note" with state.note as note
   return "seeded notes"
 
 flow "ask_assistant":

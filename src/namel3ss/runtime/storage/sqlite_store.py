@@ -3,13 +3,17 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
+from decimal import Decimal
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.schema.records import RecordSchema
 from namel3ss.runtime.storage.metadata import PersistenceMetadata
 from namel3ss.runtime.store.memory_store import Contains
+from namel3ss.runtime.storage.state_codec import decode_state, encode_state
+from namel3ss.utils.json_tools import dumps as json_dumps
+from namel3ss.utils.numbers import decimal_is_int, decimal_to_str, is_number, to_decimal
 
 
 SCHEMA_VERSION = 2
@@ -18,6 +22,11 @@ SCHEMA_VERSION = 2
 def _slug(name: str) -> str:
     slug = re.sub(r"[^a-zA-Z0-9_]", "_", name).lower()
     return slug or "unnamed"
+
+
+def _quote_ident(name: str) -> str:
+    escaped = name.replace('"', '""')
+    return f'"{escaped}"'
 
 
 class SQLiteStore:
@@ -47,7 +56,7 @@ class SQLiteStore:
         cursor = self.conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
         tables = [row["name"] for row in cursor.fetchall() if not row["name"].startswith("sqlite_")]
         for table in tables:
-            self.conn.execute(f"DROP TABLE IF EXISTS {table}")
+            self.conn.execute(f"DROP TABLE IF EXISTS {_quote_ident(table)}")
         self.conn.commit()
         self._prepared_tables.clear()
         self._prepared_indexes.clear()
@@ -102,15 +111,15 @@ class SQLiteStore:
         if table in self._prepared_tables:
             return
         id_col = "id" if "id" in schema.field_map else "_id"
-        columns = [f"{id_col} INTEGER PRIMARY KEY AUTOINCREMENT"]
+        columns = [f"{_quote_ident(id_col)} INTEGER PRIMARY KEY AUTOINCREMENT"]
         for field in schema.fields:
             col_name = _slug(field.name)
             col_type = self._sql_type(field.type_name)
             if col_name == id_col:
                 continue
-            columns.append(f"{col_name} {col_type}")
-        uniques = [f"UNIQUE({_slug(f)})" for f in schema.unique_fields]
-        stmt = f"CREATE TABLE IF NOT EXISTS {table} ({', '.join(columns + uniques)})"
+            columns.append(f"{_quote_ident(col_name)} {col_type}")
+        uniques = [f"UNIQUE({_quote_ident(_slug(f))})" for f in schema.unique_fields]
+        stmt = f"CREATE TABLE IF NOT EXISTS {_quote_ident(table)} ({', '.join(columns + uniques)})"
         self.conn.execute(stmt)
         self._prepared_tables.add(table)
         self._ensure_indexes(schema)
@@ -126,7 +135,10 @@ class SQLiteStore:
             index_name = self._index_name(table, col)
             if index_name in prepared:
                 continue
-            self.conn.execute(f"CREATE UNIQUE INDEX IF NOT EXISTS {index_name} ON {table} ({col})")
+            self.conn.execute(
+                f"CREATE UNIQUE INDEX IF NOT EXISTS {_quote_ident(index_name)} "
+                f"ON {_quote_ident(table)} ({_quote_ident(col)})"
+            )
             prepared.add(index_name)
 
     def _existing_indexes(self, table: str) -> set[str]:
@@ -145,7 +157,7 @@ class SQLiteStore:
         if name == "boolean" or name == "bool":
             return "INTEGER"
         if name == "number":
-            return "REAL"
+            return "TEXT"
         return "TEXT"
 
     def _serialize_value(self, type_name: str, value):
@@ -153,13 +165,23 @@ class SQLiteStore:
         if name in {"string", "str", "text"}:
             return value
         if name in {"int", "integer"}:
-            return int(value) if value is not None else None
+            if value is None:
+                return None
+            if isinstance(value, Decimal):
+                if not decimal_is_int(value):
+                    raise Namel3ssError(f"Expected integer value for {type_name}, got {value}")
+                return int(value)
+            return int(value)
         if name == "number":
-            return float(value) if value is not None else None
+            if value is None:
+                return None
+            if is_number(value):
+                return decimal_to_str(to_decimal(value))
+            return value
         if name in {"boolean", "bool"}:
             return 1 if value else 0 if value is not None else None
         if name == "json":
-            return json.dumps(value) if value is not None else None
+            return json_dumps(value) if value is not None else None
         return value
 
     def _deserialize_row(self, schema: RecordSchema, row: sqlite3.Row) -> dict:
@@ -171,17 +193,20 @@ class SQLiteStore:
             val = row[col]
             if field.type_name.lower() in {"boolean", "bool"}:
                 data[field.name] = bool(val)
-            elif field.type_name.lower() == "json" and val is not None:
+                continue
+            if field.type_name.lower() == "number":
+                data[field.name] = Decimal(str(val)) if val is not None else None
+                continue
+            if field.type_name.lower() == "json" and val is not None:
                 try:
                     data[field.name] = json.loads(val)
                 except Exception:
                     data[field.name] = val
-            elif field.type_name.lower() == "int" or field.type_name.lower() == "integer":
+                continue
+            if field.type_name.lower() in {"int", "integer"}:
                 data[field.name] = int(val) if val is not None else None
-            elif field.type_name.lower() == "number":
-                data[field.name] = float(val) if val is not None else None
-            else:
-                data[field.name] = val
+                continue
+            data[field.name] = val
         id_col = "id" if "id" in schema.field_map else "_id"
         if id_col in row.keys():
             data[id_col] = row[id_col]
@@ -195,11 +220,11 @@ class SQLiteStore:
         for field in schema.fields:
             if field.name == id_col:
                 continue
-            col_names.append(_slug(field.name))
+            col_names.append(_quote_ident(_slug(field.name)))
             values.append(self._serialize_value(field.type_name, record.get(field.name)))
         columns_clause = ", ".join(col_names)
         placeholders = ", ".join(["?"] * len(values))
-        stmt = f"INSERT INTO {_slug(schema.name)} ({columns_clause}) VALUES ({placeholders})"
+        stmt = f"INSERT INTO {_quote_ident(_slug(schema.name))} ({columns_clause}) VALUES ({placeholders})"
         try:
             self.conn.execute(stmt, values)
             if not self.conn.in_transaction:
@@ -214,7 +239,7 @@ class SQLiteStore:
         self._ensure_table(schema)
         if isinstance(predicate, dict):
             return self._find_by_filters(schema, predicate)
-        cursor = self.conn.execute(f"SELECT * FROM {_slug(schema.name)}")
+        cursor = self.conn.execute(f"SELECT * FROM {_quote_ident(_slug(schema.name))}")
         rows = cursor.fetchall()
         results: List[dict] = []
         for row in rows:
@@ -226,7 +251,10 @@ class SQLiteStore:
     def list_records(self, schema: RecordSchema, limit: int = 20) -> List[dict]:
         self._ensure_table(schema)
         id_col = "id" if "id" in schema.field_map else "_id"
-        cursor = self.conn.execute(f"SELECT * FROM {_slug(schema.name)} ORDER BY {id_col} ASC LIMIT ?", (limit,))
+        cursor = self.conn.execute(
+            f"SELECT * FROM {_quote_ident(_slug(schema.name))} ORDER BY {_quote_ident(id_col)} ASC LIMIT ?",
+            (limit,),
+        )
         return [self._deserialize_row(schema, row) for row in cursor.fetchall()]
 
     def check_unique(self, schema: RecordSchema, record: dict) -> str | None:
@@ -237,7 +265,7 @@ class SQLiteStore:
                 continue
             col = _slug(field)
             cursor = self.conn.execute(
-                f"SELECT 1 FROM {_slug(schema.name)} WHERE {col} = ? LIMIT 1",
+                f"SELECT 1 FROM {_quote_ident(_slug(schema.name))} WHERE {_quote_ident(col)} = ? LIMIT 1",
                 (self._serialize_value(schema.field_map[field].type_name, val),),
             )
             if cursor.fetchone():
@@ -246,7 +274,7 @@ class SQLiteStore:
 
     def _find_by_filters(self, schema: RecordSchema, filters: dict[str, Any]) -> List[dict]:
         where_clause, params = self._build_where_clause(schema, filters)
-        table = _slug(schema.name)
+        table = _quote_ident(_slug(schema.name))
         sql = f"SELECT * FROM {table}"
         if where_clause:
             sql += f" WHERE {where_clause}"
@@ -262,10 +290,10 @@ class SQLiteStore:
             if field_schema is None:
                 raise Namel3ssError(f"Unknown field '{field}' for record '{schema.name}'")
             if isinstance(expected, Contains):
-                parts.append(f"{col} LIKE ? ESCAPE '\\'")
+                parts.append(f"{_quote_ident(col)} LIKE ? ESCAPE '\\'")
                 params.append(f"%{_escape_like(expected.value)}%")
                 continue
-            parts.append(f"{col} = ?")
+            parts.append(f"{_quote_ident(col)} = ?")
             params.append(self._serialize_value(field_schema.type_name if field_schema else "text", expected))
         return " AND ".join(parts), params
 
@@ -274,12 +302,13 @@ class SQLiteStore:
         if row is None:
             return {}
         try:
-            return json.loads(row["payload"])
+            decoded = json.loads(row["payload"])
+            return decode_state(decoded)
         except Exception:
             return {}
 
     def save_state(self, state: dict) -> None:
-        payload = json.dumps(state)
+        payload = json.dumps(encode_state(state))
         self.conn.execute(
             "INSERT INTO app_state (id, payload) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload",
             (payload,),
@@ -296,7 +325,7 @@ class SQLiteStore:
         return PersistenceMetadata(
             enabled=True,
             kind="sqlite",
-            path=str(self.db_path),
+            path=self.db_path.as_posix(),
             schema_version=SCHEMA_VERSION,
         )
 

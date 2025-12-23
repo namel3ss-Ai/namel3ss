@@ -7,6 +7,7 @@ from namel3ss.ir import nodes as ir
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.validators.constraints import collect_validation_errors, validate_record_instance
 from namel3ss.schema.records import RecordSchema
+from namel3ss.utils.numbers import decimal_is_int, is_number, to_decimal
 
 
 def save_record_or_raise(
@@ -73,9 +74,17 @@ def _type_errors(schema: RecordSchema, data: Dict[str, object]) -> List[Dict[str
         expected = field.type_name
         if expected == "string" and not isinstance(value, str):
             errors.append(_type_error(field.name, schema.name, "string"))
-        elif expected == "int" and not isinstance(value, int):
-            errors.append(_type_error(field.name, schema.name, "int"))
-        elif expected == "number" and not isinstance(value, (int, float)):
+        elif expected == "int":
+            if isinstance(value, bool):
+                errors.append(_type_error(field.name, schema.name, "int"))
+            elif isinstance(value, int):
+                pass
+            elif is_number(value):
+                if not decimal_is_int(to_decimal(value)):
+                    errors.append(_type_error(field.name, schema.name, "int"))
+            else:
+                errors.append(_type_error(field.name, schema.name, "int"))
+        elif expected == "number" and not is_number(value):
             errors.append(_type_error(field.name, schema.name, "number"))
         elif expected == "boolean" and not isinstance(value, bool):
             errors.append(_type_error(field.name, schema.name, "boolean"))

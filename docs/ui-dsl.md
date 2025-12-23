@@ -29,9 +29,10 @@ Content:
 - `image is "https://..."` (optional `alt`)
 
 Data/UI bindings:
-- `form is "RecordName"` — auto-fields from record; submits as `submit_form` action.
-- `table is "RecordName"` — displays records.
-- `button "Label":` `calls flow "flow_name"` — creates `call_flow` action.
+- `form is "RecordName"` – auto-fields from record; submits as `submit_form` action.
+- `table is "RecordName"` – displays records.
+- `button "Label":` `calls flow "flow_name"` – creates `call_flow` action.
+- Record/flow names may be module-qualified (for example `inv.Product`, `inv.seed_item`) when using Capsules.
 
 Nesting rules:
 - `row` -> `column` only.

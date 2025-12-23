@@ -4,12 +4,14 @@ from typing import List
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.parser.agent import parse_agent_decl
 from namel3ss.parser.ai import parse_ai_decl
 from namel3ss.parser.app import parse_app
 from namel3ss.parser.flow import parse_flow
 from namel3ss.parser.pages import parse_page
 from namel3ss.parser.records import parse_record
+from namel3ss.parser.modules import parse_capsule_decl, parse_use_decl
 from namel3ss.parser.tool import parse_tool
 
 
@@ -24,10 +26,52 @@ def parse_program(parser) -> ast.Program:
     ais: List[ast.AIDecl] = []
     tools: List[ast.ToolDecl] = []
     agents: List[ast.AgentDecl] = []
+    uses: List[ast.UseDecl] = []
+    capsule: ast.CapsuleDecl | None = None
     theme_preference = {"allow_override": (False, None, None), "persist": ("none", None, None)}
     while parser._current().type != "EOF":
         if parser._match("NEWLINE"):
             continue
+        tok = parser._current()
+        if tok.type == "IDENT" and tok.value == "use":
+            uses.append(parse_use_decl(parser))
+            continue
+        if tok.type == "IDENT" and tok.value == "capsule":
+            if not parser.allow_capsule:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Capsule declaration found in a non-module file.",
+                        why="Capsules are only valid in modules/<name>/capsule.ai.",
+                        fix="Move the capsule declaration into a module capsule.ai file.",
+                        example='modules/inventory/capsule.ai',
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            if capsule is not None:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Capsule file declares more than one capsule.",
+                        why="Each module has a single capsule contract.",
+                        fix="Keep only one capsule declaration per file.",
+                        example='capsule "inventory":',
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            capsule = parse_capsule_decl(parser)
+            continue
+        if parser.allow_capsule:
+            raise Namel3ssError(
+                build_guidance_message(
+                    what="Unexpected declaration inside capsule.ai.",
+                    why="Capsule files only contain use statements and the capsule exports block.",
+                    fix="Move flows/records/pages into other module files.",
+                    example='modules/inventory/app.ai',
+                ),
+                line=tok.line,
+                column=tok.column,
+            )
         if parser._current().type == "APP":
             app_theme, app_line, app_column, theme_tokens, theme_preference = parse_app(parser)
             continue
@@ -49,8 +93,16 @@ def parse_program(parser) -> ast.Program:
         if parser._current().type == "PAGE":
             pages.append(parse_page(parser))
             continue
-        tok = parser._current()
         raise Namel3ssError("Unexpected top-level token", line=tok.line, column=tok.column)
+    if parser.allow_capsule and capsule is None:
+        raise Namel3ssError(
+            build_guidance_message(
+                what="Capsule file is missing a capsule declaration.",
+                why="Every module must declare its capsule and exports.",
+                fix='Add `capsule "<name>":` with an exports block.',
+                example='capsule "inventory":',
+            )
+        )
     return ast.Program(
         app_theme=app_theme,
         app_theme_line=app_line,
@@ -63,6 +115,8 @@ def parse_program(parser) -> ast.Program:
         ais=ais,
         tools=tools,
         agents=agents,
+        uses=uses,
+        capsule=capsule,
         line=None,
         column=None,
     )

@@ -9,6 +9,7 @@ EXAMPLES = [
     "examples/demo_crud_dashboard.ai",
     "examples/demo_onboarding_flow.ai",
     "examples/demo_ai_assistant_over_records.ai",
+    "examples/demo_order_totals.ai",
 ]
 
 

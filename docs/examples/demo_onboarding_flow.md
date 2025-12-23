@@ -1,7 +1,7 @@
 # Demo: Multi-step Onboarding Flow
 
 ## What it shows
-- Multi-section onboarding with form save + confirmation
+- Multi-section onboarding with form create + confirmation
 - State carried across steps (`step`, `profile`, `confirmed`)
 - Deterministic reset flow
 - Pure UI + logic (no AI)
@@ -15,12 +15,12 @@ n3 examples/demo_onboarding_flow.ai studio
 
 ## Key concepts
 - Record validation (`present`, `pattern`, `length`)
-- Flows: save profile, confirm, reset
+- Flows: create profile, confirm, reset
 - UI structure: sections + cards for steps
 - Deterministic flows without external services
 
 ## Explore in Studio
-- Fill the profile form and save; watch state update
+- Fill the profile form and create the record; watch state update
 - Confirm profile to mark completion; see traces
 - Reset to clear session state and repeat
 - Inspect actions list and UI manifest

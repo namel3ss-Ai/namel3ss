@@ -1,0 +1,9 @@
+use "inventory" as inv
+
+page "home":
+  title is "Inventory module demo"
+  text is "Add items or seed a sample from the module."
+  form is "inv.Item"
+  button "Seed sample":
+    calls flow "inv.seed_item"
+  table is "inv.Item"

@@ -15,7 +15,7 @@ n3 examples/demo_crud_dashboard.ai studio
 
 ## Key concepts
 - Record validation (`present`, `pattern`, `gt`)
-- `save` via form, actions for seed/reset
+- `create` via form, actions for seed/reset
 - UI structure: section, row/column, card, form, table
 - Theme-ready UI (uses default theme)
 

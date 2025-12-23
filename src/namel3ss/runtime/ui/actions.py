@@ -1,15 +1,19 @@
 from __future__ import annotations
 
-import json
 from typing import Dict, Optional
 
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.executor import execute_program_flow
 from namel3ss.runtime.records.service import save_record_with_errors
+from namel3ss.runtime.records.state_paths import set_state_record
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.storage.factory import resolve_store
 from namel3ss.ui.manifest import build_manifest
+from namel3ss.utils.json_tools import dumps as json_dumps
+
+SUBMIT_RESERVED_KEYS = {"values", "errors", "ok", "result", "state", "traces"}
 
 
 def handle_action(
@@ -26,14 +30,14 @@ def handle_action(
 ) -> dict:
     """Execute a UI action against the program."""
     if payload is not None and not isinstance(payload, dict):
-        raise Namel3ssError("Payload must be a dictionary")
+        raise Namel3ssError(_action_payload_message())
 
     store = resolve_store(store)
     working_state = store.load_state() if state is None else state
     manifest = build_manifest(program_ir, state=working_state, store=store, runtime_theme=runtime_theme)
     actions: Dict[str, dict] = manifest.get("actions", {})
     if action_id not in actions:
-        raise Namel3ssError(f"Unknown action '{action_id}'")
+        raise Namel3ssError(_unknown_action_message(action_id, actions))
 
     action = actions[action_id]
     action_type = action.get("type")
@@ -57,7 +61,7 @@ def handle_action(
 
 def _ensure_json_serializable(data: dict) -> None:
     try:
-        json.dumps(data)
+        json_dumps(data)
     except Exception as exc:  # pragma: no cover - guard rail
         raise Namel3ssError(f"Response is not JSON-serializable: {exc}")
 
@@ -117,14 +121,12 @@ def _handle_submit_form(
     manifest: dict,
     runtime_theme: Optional[str],
 ) -> dict:
-    if "values" not in payload or not isinstance(payload.get("values"), dict):
-        raise Namel3ssError("Submit form payload must include a 'values' dictionary")
+    payload = _normalize_submit_payload(payload)
     record = action.get("record")
     if not isinstance(record, str):
         raise Namel3ssError("Invalid record reference in form action")
     values = payload["values"]
-    state_key = record.lower()
-    state[state_key] = values
+    set_state_record(state, record, values)
     schemas = {schema.name: schema for schema in program_ir.records}
     saved, errors = save_record_with_errors(record, values, schemas, state, store)
     if errors:
@@ -155,3 +157,60 @@ def _trace_to_dict(trace) -> dict:
     if hasattr(trace, "__dict__"):
         return trace.__dict__
     return dict(trace)
+
+
+def _normalize_submit_payload(payload: dict | None) -> dict:
+    payload = payload or {}
+    if not isinstance(payload, dict):
+        raise Namel3ssError(_submit_payload_type_message())
+    if "values" in payload:
+        if not isinstance(payload.get("values"), dict):
+            raise Namel3ssError(_missing_values_message({"values"}))
+        return payload
+    reserved = {key for key in payload if key in SUBMIT_RESERVED_KEYS}
+    if reserved:
+        raise Namel3ssError(_missing_values_message(reserved))
+    return {"values": payload}
+
+
+def _submit_payload_type_message() -> str:
+    return build_guidance_message(
+        what="Submit form payload was not a JSON object.",
+        why="Form submissions need a dictionary of field values; numbers, strings, or lists cannot be mapped to fields.",
+        fix='Send {"values": {...}} or a flat object that can be wrapped automatically.',
+        example='{"values":{"email":"ada@example.com"}} (or {"email":"ada@example.com"})',
+    )
+
+
+def _missing_values_message(reserved_keys: set[str]) -> str:
+    reserved_note = f" Payload included reserved keys: {', '.join(sorted(reserved_keys))}." if reserved_keys else ""
+    return build_guidance_message(
+        what="Submit form payload is missing a 'values' object.",
+        why="Form submissions read values from the 'values' key; other top-level keys are ignored." + reserved_note,
+        fix='Send {"values": {...}} or pass a flat object so it can be wrapped automatically.',
+        example='{"values":{"email":"ada@example.com"}} (or {"email":"ada@example.com"})',
+    )
+
+
+def _action_payload_message() -> str:
+    return build_guidance_message(
+        what="Action payload was not a JSON object.",
+        why="UI actions expect a dictionary of inputs; arrays, numbers, or strings cannot be unpacked into fields.",
+        fix='Send {} for empty payloads or pass an object like {"values":{"name":"Ada"}}.',
+        example='n3 app.ai page.home.button.run "{}"',
+    )
+
+
+def _unknown_action_message(action_id: str, actions: Dict[str, dict]) -> str:
+    available = sorted(actions.keys())
+    sample = ", ".join(available[:5]) if available else "none"
+    if len(available) > 5:
+        sample += ", …"
+    why = f"The manifest exposes actions: {sample}." if available else "No actions were generated for this app."
+    example = f"n3 app.ai {available[0]} {{}}" if available else "n3 app.ai actions"
+    return build_guidance_message(
+        what=f"Unknown action '{action_id}'.",
+        why=why,
+        fix="Use an action id from `n3 app.ai actions` or define the action in app.ai.",
+        example=example,
+    )

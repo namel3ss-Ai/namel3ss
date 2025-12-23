@@ -1,0 +1,5 @@
+use "inventory" as inv
+
+test "seed flow":
+  run flow "inv.seed_item" with input: {} as result
+  expect value is "seeded"

@@ -2,6 +2,41 @@
 
 No breaking changes without an explicit changelog entry.
 
+## v0.1.0a5
+### Added
+- Capsules module system with `modules/<name>/capsule.ai`, explicit exports, and `use "<module>" as <alias>` imports.
+- Deterministic module loading with cycle detection.
+- CLI: `n3 <app.ai> graph` and `n3 <app.ai> exports` (plus `--json`).
+- Built-in test runner: `n3 test` with `tests/*_test.ai`.
+- Docs and example project for modules/tests.
+
+### Changed
+- Form/state record paths now namespace qualified record names (modules use `state.<module>.<record>`).
+
+### Fixed
+
+### Deprecated
+
+### Removed
+
+## v0.1.0a4
+### Added
+- Decimal literals and arithmetic (+ - * /) with deterministic evaluation.
+- If/else conditionals with `is not`, `is at least`, `is at most` comparisons.
+- Canonical record creation: `create "Record" with <values> as <var>`.
+- New examples and docs for expressions/conditionals (see `examples/demo_order_totals.ai`, `docs/expressions-and-conditionals.md`).
+
+### Changed
+- Numeric runtime values use Decimal internally; JSON output preserves decimals without rounding.
+- Lint warns on legacy `save Record` usage (still supported).
+
+### Fixed
+
+### Deprecated
+- Legacy `save Record` (warning only in v0.1.x; use `create` instead).
+
+### Removed
+
 ## v0.1.0a1
 ### Added
 - PyPI metadata polish (URLs, authors, license), no functional changes.

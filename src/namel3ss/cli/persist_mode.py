@@ -6,6 +6,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.storage.factory import DEFAULT_DB_PATH, create_store
 from namel3ss.runtime.storage.metadata import PersistenceMetadata
 
+DEFAULT_DB_PATH_POSIX = DEFAULT_DB_PATH.as_posix()
 
 def run_persist(app_path: str, args: list[str]) -> int:
     if not Path(app_path).exists():
@@ -53,13 +54,14 @@ def _reset(confirmed: bool) -> int:
 def _print_status(meta: PersistenceMetadata) -> None:
     enabled = "true" if meta.enabled else "false"
     schema = meta.schema_version if meta.schema_version is not None else "n/a"
-    path = meta.path or "none"
+    path_raw = meta.path or "none"
+    path = Path(path_raw).as_posix() if path_raw not in {"none"} else path_raw
     print(f"Persistence enabled: {enabled}")
     print(f"Store kind: {meta.kind}")
     print(f"Path: {path}")
     print(f"Schema version: {schema}")
     if not meta.enabled:
-        print(f"Guidance: set N3_PERSIST=1 to enable SQLite at {DEFAULT_DB_PATH}.")
+        print(f"Guidance: set N3_PERSIST=1 to enable SQLite at {DEFAULT_DB_PATH_POSIX}.")
 
 
 def _print_disabled_message(meta: PersistenceMetadata) -> None:
@@ -67,7 +69,7 @@ def _print_disabled_message(meta: PersistenceMetadata) -> None:
         print("Persistence is enabled but not using SQLite. Nothing to reset.")
         return
     print("Persistence disabled (memory store). Nothing to reset.")
-    print(f"Guidance: set N3_PERSIST=1 to enable SQLite at {DEFAULT_DB_PATH}.")
+    print(f"Guidance: set N3_PERSIST=1 to enable SQLite at {DEFAULT_DB_PATH_POSIX}.")
 
 
 def _close_store(store) -> None:

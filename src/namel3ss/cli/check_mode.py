@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from namel3ss.cli.app_loader import load_program
-from namel3ss.cli.json_io import dumps_pretty
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.render import format_error
-from namel3ss.lint.engine import lint_source
+from namel3ss.lint.engine import lint_project
+from namel3ss.module_loader import load_project
 from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.ui.manifest import build_manifest
 
@@ -12,14 +11,16 @@ from namel3ss.ui.manifest import build_manifest
 def run_check(path: str, allow_legacy_type_aliases: bool = True) -> int:
     sections: list[str] = []
     try:
-        program_ir, source = load_program(path, allow_legacy_type_aliases=allow_legacy_type_aliases)
+        project = load_project(path, allow_legacy_type_aliases=allow_legacy_type_aliases)
+        program_ir = project.program
+        sources = project.sources
         sections.append("Parse: OK")
     except Namel3ssError as err:
-        sections.append(f"Parse: FAIL\n{format_error(err, locals().get('source', ''))}")
+        sections.append(f"Parse: FAIL\n{format_error(err, locals().get('sources', ''))}")
         print("\n".join(sections))
         return 1
 
-    findings = lint_source(source, allow_legacy_type_aliases=allow_legacy_type_aliases)
+    findings = lint_project(project)
     if findings:
         sections.append(f"Lint: FAIL ({len(findings)} findings)")
         for f in findings:
@@ -33,7 +34,7 @@ def run_check(path: str, allow_legacy_type_aliases: bool = True) -> int:
         manifest = build_manifest(program_ir, state={}, store=MemoryStore())
         sections.append("Manifest: OK")
     except Namel3ssError as err:
-        sections.append(f"Manifest: FAIL\n{format_error(err, source)}")
+        sections.append(f"Manifest: FAIL\n{format_error(err, sources)}")
 
     if manifest and manifest.get("actions") is not None:
         sections.append(f"Actions: {len(manifest.get('actions', {}))} discovered")

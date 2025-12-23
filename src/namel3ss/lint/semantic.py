@@ -42,4 +42,42 @@ def lint_semantic(program_ir: ir.Program) -> List[Finding]:
                             column=item.column,
                         )
                     )
+    findings.extend(_lint_legacy_save(program_ir.flows))
+    return findings
+
+
+def _lint_legacy_save(flows: list[ir.Flow]) -> List[Finding]:
+    findings: List[Finding] = []
+
+    def walk(stmts: list[ir.Statement]):
+        for stmt in stmts:
+            if isinstance(stmt, ir.Save):
+                findings.append(
+                    Finding(
+                        code="N3LINT_SAVE_LEGACY",
+                        message='Prefer `create "Record" with <values> as <var>` over legacy `save Record`.',
+                        line=stmt.line,
+                        column=stmt.column,
+                        severity="warning",
+                    )
+                )
+                continue
+            if isinstance(stmt, ir.If):
+                walk(stmt.then_body)
+                walk(stmt.else_body)
+            elif isinstance(stmt, ir.Repeat):
+                walk(stmt.body)
+            elif isinstance(stmt, ir.ForEach):
+                walk(stmt.body)
+            elif isinstance(stmt, ir.Match):
+                for case in stmt.cases:
+                    walk(case.body)
+                if stmt.otherwise:
+                    walk(stmt.otherwise)
+            elif isinstance(stmt, ir.TryCatch):
+                walk(stmt.try_body)
+                walk(stmt.catch_body)
+
+    for flow in flows:
+        walk(flow.body)
     return findings

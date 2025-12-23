@@ -12,7 +12,7 @@ from namel3ss.parser.statements.control_flow import (
     parse_return,
     parse_try,
 )
-from namel3ss.parser.statements.data import parse_find, parse_save
+from namel3ss.parser.statements.data import parse_create, parse_find, parse_save
 from namel3ss.parser.statements.letset import parse_let, parse_set, parse_set_theme
 
 
@@ -48,6 +48,8 @@ def parse_statement(parser) -> ast.Statement:
         return parse_try(parser)
     if tok.type == "SAVE":
         return parse_save(parser)
+    if tok.type == "CREATE":
+        return parse_create(parser)
     if tok.type == "FIND":
         return parse_find(parser)
     raise Namel3ssError(f"Unexpected token '{tok.type}' in statement", line=tok.line, column=tok.column)

@@ -102,6 +102,13 @@ class Save(Statement):
 
 
 @dataclass
+class Create(Statement):
+    record_name: str
+    values: Expression
+    target: str
+
+
+@dataclass
 class Find(Statement):
     record_name: str
     predicate: Expression

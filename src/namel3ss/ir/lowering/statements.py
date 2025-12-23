@@ -5,6 +5,7 @@ from namel3ss.ir.lowering.expressions import _lower_assignable, _lower_expressio
 from namel3ss.ir.model.agents import ParallelAgentEntry, RunAgentStmt, RunAgentsParallelStmt
 from namel3ss.ir.model.ai import AskAIStmt
 from namel3ss.ir.model.statements import (
+    Create,
     Find,
     ForEach,
     If,
@@ -100,6 +101,14 @@ def _lower_statement(stmt: ast.Statement, agents) -> IRStatement:
         )
     if isinstance(stmt, ast.Save):
         return Save(record_name=stmt.record_name, line=stmt.line, column=stmt.column)
+    if isinstance(stmt, ast.Create):
+        return Create(
+            record_name=stmt.record_name,
+            values=_lower_expression(stmt.values),
+            target=stmt.target,
+            line=stmt.line,
+            column=stmt.column,
+        )
     if isinstance(stmt, ast.Find):
         return Find(record_name=stmt.record_name, predicate=_lower_expression(stmt.predicate), line=stmt.line, column=stmt.column)
     if isinstance(stmt, ast.ThemeChange):

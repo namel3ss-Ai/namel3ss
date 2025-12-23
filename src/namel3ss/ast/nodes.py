@@ -17,6 +17,7 @@ from namel3ss.ast.expressions import (
     UnaryOp,
     VarReference,
 )
+from namel3ss.ast.modules import CapsuleDecl, CapsuleExport, UseDecl
 from namel3ss.ast.pages import (
     ButtonItem,
     CardItem,
@@ -47,6 +48,7 @@ from namel3ss.ast.statements import (
     Return,
     RunAgentStmt,
     RunAgentsParallelStmt,
+    Create,
     Save,
     Set,
     Statement,
@@ -74,6 +76,7 @@ __all__ = [
     "MatchCase",
     "Match",
     "TryCatch",
+    "Create",
     "Save",
     "Find",
     "Expression",
@@ -105,4 +108,7 @@ __all__ = [
     "AIMemory",
     "ToolDecl",
     "AgentDecl",
+    "UseDecl",
+    "CapsuleExport",
+    "CapsuleDecl",
 ]

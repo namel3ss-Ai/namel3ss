@@ -13,7 +13,7 @@ flow "save_profile":
   set state.applicant.name is input.values.name
   set state.applicant.role is input.values.role
   set state.applicant.bio is input.values.bio
-  save Applicant
+  create "Applicant" with state.applicant as applicant
   set state.step is "review"
   return "profile saved"
 

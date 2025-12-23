@@ -9,12 +9,12 @@ flow "seed_customers":
   set state.customer.email is "alice@example.com"
   set state.customer.plan is "Starter"
   set state.customer.age is 21
-  save Customer
+  create "Customer" with state.customer as customer
   set state.customer.name is "Bob"
   set state.customer.email is "bob@example.com"
   set state.customer.plan is "Pro"
   set state.customer.age is 30
-  save Customer
+  create "Customer" with state.customer as customer
   return "seeded"
 
 flow "hello":

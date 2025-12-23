@@ -1,5 +1,6 @@
 # First 5 minutes
 
+0. If anything fails to run, start with `n3 doctor` for setup checks.
 1. Run a demo in Studio
    - `n3 examples/demo_product_dashboard.ai studio`
    - Open the URL shown and select the "home" page.

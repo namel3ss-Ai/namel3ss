@@ -1,0 +1,4 @@
+capsule "inventory":
+  exports:
+    record "Item"
+    flow "seed_item"

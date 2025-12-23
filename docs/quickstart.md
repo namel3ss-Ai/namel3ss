@@ -2,11 +2,16 @@
 
 Run any `.ai` app with the file-first CLI.
 
+## Troubleshooting first
+
+- If something doesn’t run, start with `n3 doctor` (use `--json` for scripts/CI).
+
 ## Create a project
 
 - Scaffold: `n3 new <template> [project_name]` (templates: `crud`, `ai-assistant`, `multi-agent`)
 - Example: `n3 new crud my_app` then `cd my_app`
 - The app file lives at `app.ai`; commands below assume you are in the project directory.
+- Multi-file apps use modules under `modules/<name>/capsule.ai`.
 
 ## Core commands
 
@@ -17,6 +22,7 @@ Run any `.ai` app with the file-first CLI.
 - Run default flow (when only one flow): `n3 app.ai`
 - Run specific flow (CRUD template): `n3 app.ai flow "seed_customers"`
 - Run an action (CRUD template): `n3 app.ai page.home.form.customer '{"values":{"name":"Ada","email":"ada@example.com","age":23}}'`
+- Run tests: `n3 test`
 
 Formatter and linter:
 
@@ -52,4 +58,11 @@ Bundled demos under `examples/` you can run immediately:
 - Read [First 5 minutes](first-5-minutes.md) for a guided win.
 - Run the [CRUD dashboard example](examples/demo_crud_dashboard.ai) after your first project.
 - See [What you can build today](what-you-can-build-today.md) to understand supported use cases.
+- Learn expressions and conditionals in [Expressions & Conditionals](expressions-and-conditionals.md).
+- Learn Capsules + tests in [Modules and Tests](modules-and-tests.md).
 - UI details live in the [UI DSL Spec](ui-dsl.md).
+
+## Form payloads (CLI)
+
+- Canonical: `{"values":{"email":"ada@example.com","name":"Ada"}}`
+- Also accepted (auto-wrapped): `{"email":"ada@example.com","name":"Ada"}` — prefer the canonical shape in docs/scripts.

@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from namel3ss.format.formatter import format_source
 from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.ui.manifest import build_manifest
@@ -33,21 +35,21 @@ def test_record_fields_with_is_and_constraints_parse_and_lower():
 
     assert fields["bio"].type_name == "text"
     assert fields["bio"].constraint.kind == "len_min"
-    assert fields["bio"].constraint.expression.value == 3
+    assert fields["bio"].constraint.expression.value == Decimal("3")
 
     assert fields["summary"].type_name == "text"
     assert fields["summary"].constraint.kind == "len_max"
-    assert fields["summary"].constraint.expression.value == 12
+    assert fields["summary"].constraint.expression.value == Decimal("12")
 
     assert fields["code"].type_name == "text"
     assert fields["code"].constraint.kind == "pattern"
     assert fields["code"].constraint.pattern == "^[A-Z]{3}-[0-9]{2}$"
 
     assert fields["age"].constraint.kind == "gt"
-    assert fields["age"].constraint.expression.value == 17
+    assert fields["age"].constraint.expression.value == Decimal("17")
 
     assert fields["score"].constraint.kind == "lt"
-    assert fields["score"].constraint.expression.value == 101
+    assert fields["score"].constraint.expression.value == Decimal("101")
 
     manifest = build_manifest(program, state={}, store=MemoryStore())
     assert any(el["type"] == "form" for el in manifest["pages"][0]["elements"])

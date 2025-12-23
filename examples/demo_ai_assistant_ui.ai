@@ -11,11 +11,11 @@ flow "send_message":
   set state.error is "Set NAMEL3SS_OPENAI_API_KEY to use a real provider; mock is active."
   set state.message.content is input.values.content
   set state.message.from is "user"
-  save Message
+  create "Message" with state.message as message
   ask ai "assistant" with input: input.values.content as reply
   set state.message.content is reply
   set state.message.from is "assistant"
-  save Message
+  create "Message" with state.message as message
   set state.error is null
   return reply
 

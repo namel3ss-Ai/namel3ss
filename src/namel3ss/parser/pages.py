@@ -4,6 +4,7 @@ from typing import List
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.parser.names import parse_reference_name
 
 
 def _parse_block(parser, *, columns_only: bool = False) -> List[ast.PageItem]:
@@ -51,13 +52,13 @@ def parse_page_item(parser) -> ast.PageItem:
     if tok.type == "FORM":
         parser._advance()
         parser._expect("IS", "Expected 'is' after 'form'")
-        value_tok = parser._expect("STRING", "Expected form record name")
-        return ast.FormItem(record_name=value_tok.value, line=tok.line, column=tok.column)
+        record_name = parse_reference_name(parser, context="record")
+        return ast.FormItem(record_name=record_name, line=tok.line, column=tok.column)
     if tok.type == "TABLE":
         parser._advance()
         parser._expect("IS", "Expected 'is' after 'table'")
-        value_tok = parser._expect("STRING", "Expected table record name")
-        return ast.TableItem(record_name=value_tok.value, line=tok.line, column=tok.column)
+        record_name = parse_reference_name(parser, context="record")
+        return ast.TableItem(record_name=record_name, line=tok.line, column=tok.column)
     if tok.type == "BUTTON":
         parser._advance()
         label_tok = parser._expect("STRING", "Expected button label string")
@@ -70,20 +71,20 @@ def parse_page_item(parser) -> ast.PageItem:
         parser._expect("COLON", "Expected ':' after button label")
         parser._expect("NEWLINE", "Expected newline after button header")
         parser._expect("INDENT", "Expected indented button body")
-        flow_tok = None
+        flow_name = None
         while parser._current().type != "DEDENT":
             if parser._match("NEWLINE"):
                 continue
             parser._expect("CALLS", "Expected 'calls' in button action")
             parser._expect("FLOW", "Expected 'flow' keyword in button action")
-            flow_tok = parser._expect("STRING", "Expected flow name string")
+            flow_name = parse_reference_name(parser, context="flow")
             if parser._match("NEWLINE"):
                 continue
             break
         parser._expect("DEDENT", "Expected end of button body")
-        if flow_tok is None:
+        if flow_name is None:
             raise Namel3ssError("Button body must include 'calls flow \"<name>\"'", line=tok.line, column=tok.column)
-        return ast.ButtonItem(label=label_tok.value, flow_name=flow_tok.value, line=tok.line, column=tok.column)
+        return ast.ButtonItem(label=label_tok.value, flow_name=flow_name, line=tok.line, column=tok.column)
     if tok.type == "SECTION":
         parser._advance()
         label_tok = parser._current() if parser._current().type == "STRING" else None

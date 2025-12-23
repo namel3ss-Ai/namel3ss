@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import List
 
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.lexer.tokens import KEYWORDS, Token
 
 
@@ -78,6 +80,26 @@ class Lexer:
                 i += 1
                 column += 1
                 continue
+            if ch == "+":
+                tokens.append(Token("PLUS", "+", line_no, column))
+                i += 1
+                column += 1
+                continue
+            if ch == "-":
+                tokens.append(Token("MINUS", "-", line_no, column))
+                i += 1
+                column += 1
+                continue
+            if ch == "*":
+                tokens.append(Token("STAR", "*", line_no, column))
+                i += 1
+                column += 1
+                continue
+            if ch == "/":
+                tokens.append(Token("SLASH", "/", line_no, column))
+                i += 1
+                column += 1
+                continue
             if ch == "(":
                 tokens.append(Token("LPAREN", "(", line_no, column))
                 i += 1
@@ -110,17 +132,8 @@ class Lexer:
                 continue
 
             if ch in {"{", "}"}:
-                raise Namel3ssError(
-                    "Object literals (`{}`) are not supported in namel3ss. "
-                    "Use records, forms, or state assignments instead.",
-                    line=line_no,
-                    column=column,
-                )
-            raise Namel3ssError(
-                f"Unexpected character '{ch}'. Fix: remove the character or rewrite in namel3ss syntax.",
-                line=line_no,
-                column=column,
-            )
+                raise Namel3ssError(_object_literal_message(), line=line_no, column=column)
+            raise Namel3ssError(_unsupported_character_message(ch), line=line_no, column=column)
 
         return tokens
 
@@ -138,13 +151,19 @@ class Lexer:
         raise Namel3ssError("Unterminated string literal", line=line, column=column)
 
     @staticmethod
-    def _read_number(text: str) -> tuple[int, int]:
+    def _read_number(text: str) -> tuple[Decimal, int]:
         i = 0
         digits = []
         while i < len(text) and text[i].isdigit():
             digits.append(text[i])
             i += 1
-        return int("".join(digits)), i
+        if i < len(text) and text[i] == "." and i + 1 < len(text) and text[i + 1].isdigit():
+            digits.append(".")
+            i += 1
+            while i < len(text) and text[i].isdigit():
+                digits.append(text[i])
+                i += 1
+        return Decimal("".join(digits)), i
 
     @staticmethod
     def _read_identifier(text: str) -> tuple[str, int]:
@@ -160,3 +179,21 @@ class Lexer:
         if token_type == "BOOLEAN":
             return raw.lower() == "true"
         return raw
+
+
+def _unsupported_character_message(ch: str) -> str:
+    return build_guidance_message(
+        what=f"Unsupported character '{ch}' in namel3ss source.",
+        why="Only supported operators are +, -, *, / and comparison words like `is greater than`.",
+        fix="Remove the character or rewrite using supported arithmetic/comparison syntax.",
+        example="Use `total + 2.5` or `if price is greater than 10:`.",
+    )
+
+
+def _object_literal_message() -> str:
+    return build_guidance_message(
+        what="Found '{' or '}' (object literal syntax).",
+        why="Inline JSON/dictionary literals are not supported; structure comes from records, forms, and state.",
+        fix='Define a record and submit form values instead of embedding `{}`.',
+        example='record "User": name text  # then submit {"values":{"name":"Ada"}}',
+    )

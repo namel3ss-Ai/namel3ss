@@ -64,9 +64,23 @@ def test_unique_constraint_violation_returns_error():
     assert any(err["code"] == "unique" for err in response["errors"])
 
 
+def test_submit_form_accepts_flat_payload():
+    program = lower_ir_program(PROGRAM)
+    store = MemoryStore()
+    response = handle_action(
+        program,
+        action_id="page.home.form.user",
+        payload={"email": "a@b.com", "name": "Ann"},
+        store=store,
+    )
+    assert response["ok"] is True
+    records = store.list_records(program.records[0])
+    assert records[0]["email"] == "a@b.com"
+
+
 def test_malformed_payload_raises_error():
     program = lower_ir_program(PROGRAM)
     store = MemoryStore()
     with pytest.raises(Exception) as exc:
-        handle_action(program, action_id="page.home.form.user", payload={"bad": {}}, store=store)
-    assert "payload must include a 'values'" in str(exc.value).lower()
+        handle_action(program, action_id="page.home.form.user", payload="bad", store=store)
+    assert "payload was not a json object" in str(exc.value).lower()

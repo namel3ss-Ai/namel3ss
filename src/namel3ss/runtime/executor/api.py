@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Dict, Optional
 
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.ai.provider import AIProvider
 from namel3ss.runtime.executor.executor import Executor
@@ -46,7 +47,7 @@ def execute_program_flow(
 ) -> ExecutionResult:
     flow = next((f for f in program.flows if f.name == flow_name), None)
     if flow is None:
-        raise Namel3ssError(f"Unknown flow '{flow_name}'")
+        raise Namel3ssError(_unknown_flow_message(flow_name, program.flows))
     schemas = {schema.name: schema for schema in program.records}
     pref_policy = getattr(program, "theme_preference", {}) or {}
     allow_override = pref_policy.get("allow_override", False)
@@ -83,3 +84,20 @@ def execute_program_flow(
     if result.runtime_theme is None:
         result.runtime_theme = resolution.setting_used.value
     return result
+
+
+def _unknown_flow_message(flow_name: str, flows: list[ir.Flow]) -> str:
+    available = [f.name for f in flows]
+    sample = ", ".join(available[:5]) if available else "none defined"
+    if len(available) > 5:
+        sample += ", …"
+    why = f"The app defines flows: {sample}."
+    if not available:
+        why = "The app does not define any flows."
+    example = f'n3 app.ai flow "{available[0]}"' if available else 'flow "demo": return "ok"'
+    return build_guidance_message(
+        what=f"Unknown flow '{flow_name}'.",
+        why=why,
+        fix="Call an existing flow or add it to your app.ai file.",
+        example=example,
+    )

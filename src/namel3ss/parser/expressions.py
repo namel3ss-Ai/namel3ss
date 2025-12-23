@@ -4,6 +4,7 @@ from typing import List
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.errors.guidance import build_guidance_message
 
 
 def parse_expression(parser) -> ast.Expression:
@@ -37,25 +38,78 @@ def parse_not(parser) -> ast.Expression:
 
 
 def parse_comparison(parser) -> ast.Expression:
-    left = parse_primary(parser)
+    left = parse_additive(parser)
     if not parser._match("IS"):
         return left
     is_tok = parser.tokens[parser.position - 1]
+    if parser._match("NOT"):
+        if parser._match("EQUAL"):
+            if parser._match("TO"):
+                pass
+        right = parse_additive(parser)
+        return ast.Comparison(kind="ne", left=left, right=right, line=is_tok.line, column=is_tok.column)
     if parser._match("GREATER"):
         parser._expect("THAN", "Expected 'than' after 'is greater'")
-        right = parse_primary(parser)
+        right = parse_additive(parser)
         return ast.Comparison(kind="gt", left=left, right=right, line=is_tok.line, column=is_tok.column)
     if parser._match("LESS"):
         parser._expect("THAN", "Expected 'than' after 'is less'")
-        right = parse_primary(parser)
+        right = parse_additive(parser)
         return ast.Comparison(kind="lt", left=left, right=right, line=is_tok.line, column=is_tok.column)
+    if parser._match("AT"):
+        if parser._match("LEAST"):
+            right = parse_additive(parser)
+            return ast.Comparison(kind="gte", left=left, right=right, line=is_tok.line, column=is_tok.column)
+        if parser._match("MOST"):
+            right = parse_additive(parser)
+            return ast.Comparison(kind="lte", left=left, right=right, line=is_tok.line, column=is_tok.column)
+        tok = parser._current()
+        raise Namel3ssError(
+            build_guidance_message(
+                what="Incomplete comparison after 'is at'.",
+                why="`is at` must be followed by `least` or `most` to form a comparison.",
+                fix="Use `is at least` or `is at most` with a number.",
+                example="if total is at least 10:",
+            ),
+            line=tok.line,
+            column=tok.column,
+        )
     if parser._match("EQUAL"):
         if parser._match("TO"):
             pass
-        right = parse_primary(parser)
+        right = parse_additive(parser)
         return ast.Comparison(kind="eq", left=left, right=right, line=is_tok.line, column=is_tok.column)
-    right = parse_primary(parser)
+    right = parse_additive(parser)
     return ast.Comparison(kind="eq", left=left, right=right, line=is_tok.line, column=is_tok.column)
+
+
+def parse_additive(parser) -> ast.Expression:
+    expr = parse_multiplicative(parser)
+    while parser._match("PLUS", "MINUS"):
+        op_tok = parser.tokens[parser.position - 1]
+        right = parse_multiplicative(parser)
+        op = "+" if op_tok.type == "PLUS" else "-"
+        expr = ast.BinaryOp(op=op, left=expr, right=right, line=op_tok.line, column=op_tok.column)
+    return expr
+
+
+def parse_multiplicative(parser) -> ast.Expression:
+    expr = parse_unary(parser)
+    while parser._match("STAR", "SLASH"):
+        op_tok = parser.tokens[parser.position - 1]
+        right = parse_unary(parser)
+        op = "*" if op_tok.type == "STAR" else "/"
+        expr = ast.BinaryOp(op=op, left=expr, right=right, line=op_tok.line, column=op_tok.column)
+    return expr
+
+
+def parse_unary(parser) -> ast.Expression:
+    if parser._match("PLUS", "MINUS"):
+        tok = parser.tokens[parser.position - 1]
+        op = "+" if tok.type == "PLUS" else "-"
+        operand = parse_unary(parser)
+        return ast.UnaryOp(op=op, operand=operand, line=tok.line, column=tok.column)
+    return parse_primary(parser)
 
 
 def parse_primary(parser) -> ast.Expression:

@@ -48,6 +48,7 @@ KEYWORDS = {
     "calls": "CALLS",
     "record": "RECORD",
     "save": "SAVE",
+    "create": "CREATE",
     "find": "FIND",
     "where": "WHERE",
     "let": "LET",

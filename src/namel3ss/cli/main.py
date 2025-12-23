@@ -16,13 +16,16 @@ from namel3ss.cli.doctor import run_doctor
 from namel3ss.cli.studio_mode import run_studio
 from namel3ss.cli.check_mode import run_check
 from namel3ss.cli.persist_mode import run_persist
+from namel3ss.cli.graph_mode import run_graph
+from namel3ss.cli.exports_mode import run_exports
+from namel3ss.cli.test_mode import run_test_command
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.render import format_error
 from namel3ss.lint.engine import lint_source
 from namel3ss.ui.manifest import build_manifest
 from namel3ss.version import get_version
 
-RESERVED = {"check", "ui", "flow", "help", "format", "lint", "actions", "studio", "persist"}
+RESERVED = {"check", "ui", "flow", "help", "format", "lint", "actions", "studio", "persist", "graph", "exports", "test"}
 
 
 def _allow_aliases_from_flags(flags: list[str]) -> bool:
@@ -55,6 +58,9 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args[0] == "new":
             return run_new(args[1:])
+        if args[0] == "test":
+            json_mode = len(args) > 1 and args[1] == "--json"
+            return run_test_command(json_mode=json_mode)
 
         path = args[0]
         remainder = args[1:]
@@ -78,10 +84,26 @@ def main(argv: list[str] | None = None) -> int:
         if remainder and remainder[0] == "actions":
             json_mode = len(remainder) > 1 and remainder[1] == "json"
             allow_aliases = _allow_aliases_from_flags(remainder)
-            program_ir, source = load_program(path, allow_legacy_type_aliases=allow_aliases)
+            program_ir, sources = load_program(path, allow_legacy_type_aliases=allow_aliases)
             json_payload, text_output = list_actions(program_ir, json_mode)
             if json_mode:
                 print(dumps_pretty(json_payload))
+            else:
+                print(text_output or "")
+            return 0
+        if remainder and remainder[0] == "graph":
+            json_mode = len(remainder) > 1 and remainder[1] == "--json"
+            payload, text_output = run_graph(path, json_mode=json_mode)
+            if json_mode:
+                print(dumps_pretty(payload))
+            else:
+                print(text_output or "")
+            return 0
+        if remainder and remainder[0] == "exports":
+            json_mode = len(remainder) > 1 and remainder[1] == "--json"
+            payload, text_output = run_exports(path, json_mode=json_mode)
+            if json_mode:
+                print(dumps_pretty(payload))
             else:
                 print(text_output or "")
             return 0
@@ -107,7 +129,7 @@ def main(argv: list[str] | None = None) -> int:
         if remainder and remainder[0] == "persist":
             return run_persist(path, remainder[1:])
 
-        program_ir, source = load_program(path, allow_legacy_type_aliases=_allow_aliases_from_flags([]))
+        program_ir, sources = load_program(path, allow_legacy_type_aliases=_allow_aliases_from_flags([]))
         if not remainder:
             return _run_default(program_ir)
         cmd = remainder[0]
@@ -138,7 +160,7 @@ def main(argv: list[str] | None = None) -> int:
         print(dumps_pretty(response))
         return 0
     except Namel3ssError as err:
-        print(format_error(err, locals().get("source", "")), file=sys.stderr)
+        print(format_error(err, locals().get("sources", "")), file=sys.stderr)
         return 1
 
 
@@ -165,6 +187,9 @@ def _print_usage() -> None:
   n3 <app.ai> persist reset --yes  # reset persisted data (SQLite only)
   n3 <app.ai> actions              # list actions (plain text)
   n3 <app.ai> actions json         # list actions (JSON)
+  n3 <app.ai> graph [--json]       # module dependency graph
+  n3 <app.ai> exports [--json]     # module export list
+  n3 test [--json]                 # run tests in ./tests
   n3 <app.ai> <action_id> [json]   # execute UI action (payload optional)
   n3 <app.ai> help                 # this help
 """

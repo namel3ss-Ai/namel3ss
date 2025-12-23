@@ -1,0 +1,28 @@
+record "Order":
+  price number must be greater than 0
+  quantity number must be greater than 0
+
+record "OrderSummary":
+  total number must be greater than 0
+  tier text
+
+flow "compute_total":
+  let base is state.order.price * state.order.quantity
+  if base is at least 100:
+    let final is base * 0.9
+    let tier is "discount"
+  else:
+    let final is base
+    let tier is "standard"
+  set state.summary.total is final
+  set state.summary.tier is tier
+  create "OrderSummary" with state.summary as summary
+  return summary
+
+page "home":
+  title is "Order totals"
+  text is "Submit an order, then compute the total (10% off at 100+)."
+  form is "Order"
+  button "Compute total":
+    calls flow "compute_total"
+  table is "OrderSummary"

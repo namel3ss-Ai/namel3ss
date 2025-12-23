@@ -10,6 +10,7 @@ from namel3ss.lint.types import Finding
 from namel3ss.types import normalize_type_name
 from namel3ss.parser.core import parse
 from namel3ss.ast import nodes as ast
+from namel3ss.module_loader.types import ProjectLoadResult
 
 
 def lint_source(source: str, strict: bool = True, allow_legacy_type_aliases: bool = True) -> list[Finding]:
@@ -54,6 +55,34 @@ def lint_source(source: str, strict: bool = True, allow_legacy_type_aliases: boo
         return findings
 
     findings.extend(lint_semantic(program_ir))
+    return findings
+
+
+def lint_project(project: ProjectLoadResult, strict: bool = True) -> list[Finding]:
+    findings: list[Finding] = []
+    for path, source in project.sources.items():
+        for finding in scan_text(source.splitlines()):
+            finding.file = path.as_posix()
+            findings.append(finding)
+
+    def _tag(findings_list: list[Finding], path: str) -> None:
+        for finding in findings_list:
+            finding.file = path
+        findings.extend(findings_list)
+
+    app_path = project.app_path.as_posix()
+    _tag(_lint_reserved_identifiers(project.app_ast), app_path)
+    _tag(_lint_theme(project.app_ast), app_path)
+    _tag(_lint_theme_preference(project.app_ast), app_path)
+    _tag(_lint_record_types(project.app_ast, strict=strict), app_path)
+
+    for module in project.modules.values():
+        for program, path in zip(module.programs, module.files):
+            file_path = path.as_posix()
+            _tag(_lint_reserved_identifiers(program), file_path)
+            _tag(_lint_record_types(program, strict=strict), file_path)
+
+    findings.extend(lint_semantic(project.program))
     return findings
 
 

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Dict
+from typing import Dict, List, Optional
 
 from namel3ss.ast.base import Node
+from namel3ss.ast.modules import CapsuleDecl, UseDecl
 
 
 @dataclass
@@ -25,3 +26,5 @@ class Program(Node):
     ais: List["AIDecl"]
     tools: List["ToolDecl"]
     agents: List["AgentDecl"]
+    uses: List[UseDecl]
+    capsule: Optional[CapsuleDecl]

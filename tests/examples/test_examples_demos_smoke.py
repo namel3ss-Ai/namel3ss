@@ -34,3 +34,9 @@ def test_ai_assistant_manifest_actions():
     mf = _manifest_for(Path("examples/demo_ai_assistant_over_records.ai"))
     assert mf["pages"]
     assert any(action.get("type") == "call_flow" for action in mf["actions"].values())
+
+
+def test_order_totals_manifest_actions():
+    mf = _manifest_for(Path("examples/demo_order_totals.ai"))
+    assert mf["pages"]
+    assert any(action.get("type") == "call_flow" for action in mf["actions"].values())

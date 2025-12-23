@@ -29,6 +29,7 @@ from namel3ss.parser.statements import (
     parse_repeat,
     parse_return,
     parse_save,
+    parse_create,
     parse_set,
     parse_statement,
     parse_target,
@@ -38,16 +39,29 @@ from namel3ss.parser.statements import (
 
 
 class Parser:
-    def __init__(self, tokens: List[Token], allow_legacy_type_aliases: bool = True) -> None:
+    def __init__(
+        self,
+        tokens: List[Token],
+        allow_legacy_type_aliases: bool = True,
+        *,
+        allow_capsule: bool = False,
+    ) -> None:
         self.tokens = tokens
         self.position = 0
         self.allow_legacy_type_aliases = allow_legacy_type_aliases
+        self.allow_capsule = allow_capsule
 
     @classmethod
-    def parse(cls, source: str, allow_legacy_type_aliases: bool = True) -> ast.Program:
+    def parse(
+        cls,
+        source: str,
+        allow_legacy_type_aliases: bool = True,
+        *,
+        allow_capsule: bool = False,
+    ) -> ast.Program:
         lexer = Lexer(source)
         tokens = lexer.tokenize()
-        parser = cls(tokens, allow_legacy_type_aliases=allow_legacy_type_aliases)
+        parser = cls(tokens, allow_legacy_type_aliases=allow_legacy_type_aliases, allow_capsule=allow_capsule)
         program = parser._parse_program()
         parser._expect("EOF")
         return program
@@ -110,6 +124,9 @@ class Parser:
     def _parse_save(self) -> ast.Save:
         return parse_save(self)
 
+    def _parse_create(self) -> ast.Create:
+        return parse_create(self)
+
     def _parse_find(self) -> ast.Find:
         return parse_find(self)
 
@@ -163,5 +180,10 @@ class Parser:
         return parse_page_item(self)
 
 
-def parse(source: str, allow_legacy_type_aliases: bool = True) -> ast.Program:
-    return Parser.parse(source, allow_legacy_type_aliases=allow_legacy_type_aliases)
+def parse(
+    source: str,
+    allow_legacy_type_aliases: bool = True,
+    *,
+    allow_capsule: bool = False,
+) -> ast.Program:
+    return Parser.parse(source, allow_legacy_type_aliases=allow_legacy_type_aliases, allow_capsule=allow_capsule)

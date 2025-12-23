@@ -5,6 +5,8 @@ namel3ss is in early alpha. We keep core behavior predictable while we iterate.
 ## Stable now
 - CLI entrypoints: `n3 <app.ai>`, `check`, `ui`, `actions`, `studio`, `format`, `lint`.
 - Core grammar: flows, records, pages, AI profiles, agents, layout primitives (section/card/row/column/divider/image).
+- Expressions: decimal literals, arithmetic (+ - * /), and if/else conditionals with comparisons.
+- Record creation: `create "Record" with <values> as <var>` (legacy `save Record` still supported).
 - Studio API endpoints (`/api/summary`, `/api/ui`, `/api/actions`, `/api/lint`, `/api/action`, `/api/edit`).
 - UI manifest shape (element types, ids, page/slug/index metadata).
 - UI manifest `theme.schema_version` is `1`. Bump only on breaking manifest changes; additive fields do not bump the schema version.
@@ -14,6 +16,7 @@ namel3ss is in early alpha. We keep core behavior predictable while we iterate.
 - Experimental UI DSL details (new primitives may be added).
 - Formatting details and lint rules.
 - Templates and examples as we learn.
+- Capsules (modules) and the built-in `n3 test` runner while the ecosystem matures.
 
 ## Breaking changes policy
 - No silent breaks: breaking changes are recorded in the changelog.

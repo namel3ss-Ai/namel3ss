@@ -4,6 +4,7 @@ from typing import List
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.errors.guidance import build_guidance_message
 
 
 def parse_if(parser) -> ast.If:
@@ -11,7 +12,10 @@ def parse_if(parser) -> ast.If:
     condition = parser._parse_expression()
     parser._expect("COLON", "Expected ':' after condition")
     parser._expect("NEWLINE", "Expected newline after condition")
-    parser._expect("INDENT", "Expected indented block for if body")
+    if parser._current().type != "INDENT":
+        tok = parser._current()
+        raise Namel3ssError(_indentation_message("if"), line=tok.line, column=tok.column)
+    parser._advance()
     then_body = parser._parse_statements(until={"DEDENT"})
     parser._expect("DEDENT", "Expected block end")
     else_body: List[ast.Statement] = []
@@ -20,7 +24,10 @@ def parse_if(parser) -> ast.If:
     if parser._match("ELSE"):
         parser._expect("COLON", "Expected ':' after else")
         parser._expect("NEWLINE", "Expected newline after else")
-        parser._expect("INDENT", "Expected indented block for else body")
+        if parser._current().type != "INDENT":
+            tok = parser._current()
+            raise Namel3ssError(_indentation_message("else"), line=tok.line, column=tok.column)
+        parser._advance()
         else_body = parser._parse_statements(until={"DEDENT"})
         parser._expect("DEDENT", "Expected block end")
         while parser._match("NEWLINE"):
@@ -114,3 +121,12 @@ def parse_try(parser) -> ast.TryCatch:
     parser._expect("COLON", "Expected ':' after catch clause")
     catch_body = parser._parse_block()
     return ast.TryCatch(try_body=try_body, catch_var=var_tok.value, catch_body=catch_body, line=try_tok.line, column=try_tok.column)
+
+
+def _indentation_message(keyword: str) -> str:
+    return build_guidance_message(
+        what=f"Expected an indented block after '{keyword}'.",
+        why="Blocks in namel3ss are defined by indentation after a ':' header.",
+        fix="Indent the statements under the block (two spaces is typical).",
+        example='if total is greater than 10:\n  set state.tier is "pro"',
+    )

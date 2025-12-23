@@ -9,17 +9,17 @@ flow "seed_orders":
   set state.order.customer is "Acme Corp"
   set state.order.total is 240
   set state.order.status is "processing"
-  save Order
+  create "Order" with state.order as order
   set state.order.id is 102
   set state.order.customer is "Bright Traders"
   set state.order.total is 120
   set state.order.status is "shipped"
-  save Order
+  create "Order" with state.order as order
   set state.order.id is 103
   set state.order.customer is "Northwind"
   set state.order.total is 86
   set state.order.status is "processing"
-  save Order
+  create "Order" with state.order as order
   return "seeded"
 
 flow "clear_orders":

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.utils.json_tools import dumps_pretty as json_dumps_pretty
 
 
 def parse_json(text: str) -> dict:
@@ -16,4 +17,4 @@ def parse_json(text: str) -> dict:
 
 
 def dumps_pretty(obj: object) -> str:
-    return json.dumps(obj, indent=2, ensure_ascii=False)
+    return json_dumps_pretty(obj)

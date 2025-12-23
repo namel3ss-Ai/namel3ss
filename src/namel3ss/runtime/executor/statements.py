@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.executor.ai_runner import execute_ask_ai
 from namel3ss.runtime.executor.agents import execute_run_agent, execute_run_agents_parallel
 from namel3ss.runtime.executor.assign import assign
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
-from namel3ss.runtime.executor.records_ops import handle_find, handle_save
+from namel3ss.runtime.executor.records_ops import handle_create, handle_find, handle_save
 from namel3ss.runtime.executor.signals import _ReturnSignal
+from namel3ss.utils.numbers import decimal_is_int, is_number, to_decimal
 
 
 def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
@@ -28,7 +30,7 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
         condition_value = evaluate_expression(ctx, stmt.condition)
         if not isinstance(condition_value, bool):
             raise Namel3ssError(
-                "Condition must evaluate to a boolean",
+                _condition_type_message(condition_value),
                 line=stmt.line,
                 column=stmt.column,
             )
@@ -41,11 +43,14 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
         raise _ReturnSignal(value)
     if isinstance(stmt, ir.Repeat):
         count_value = evaluate_expression(ctx, stmt.count)
-        if not isinstance(count_value, int):
+        if not is_number(count_value):
             raise Namel3ssError("Repeat count must be an integer", line=stmt.line, column=stmt.column)
-        if count_value < 0:
+        count_decimal = to_decimal(count_value)
+        if not decimal_is_int(count_decimal):
+            raise Namel3ssError("Repeat count must be an integer", line=stmt.line, column=stmt.column)
+        if count_decimal < 0:
             raise Namel3ssError("Repeat count cannot be negative", line=stmt.line, column=stmt.column)
-        for _ in range(count_value):
+        for _ in range(int(count_decimal)):
             for child in stmt.body:
                 execute_statement(ctx, child)
         return
@@ -93,6 +98,9 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
     if isinstance(stmt, ir.Save):
         handle_save(ctx, stmt)
         return
+    if isinstance(stmt, ir.Create):
+        handle_create(ctx, stmt)
+        return
     if isinstance(stmt, ir.Find):
         handle_find(ctx, stmt)
         return
@@ -104,3 +112,31 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
         ctx.last_value = stmt.value
         return
     raise Namel3ssError(f"Unsupported statement type: {type(stmt)}", line=stmt.line, column=stmt.column)
+
+
+def _condition_type_message(value: object) -> str:
+    kind = _value_kind(value)
+    return build_guidance_message(
+        what="If condition did not evaluate to true/false.",
+        why=f"The condition evaluated to {kind}, but if/else requires a boolean.",
+        fix="Use a comparison so the condition is boolean.",
+        example="if total is greater than 10:\n  return true",
+    )
+
+
+def _value_kind(value: object) -> str:
+    from namel3ss.utils.numbers import is_number
+
+    if isinstance(value, bool):
+        return "boolean"
+    if is_number(value):
+        return "number"
+    if isinstance(value, str):
+        return "text"
+    if value is None:
+        return "null"
+    if isinstance(value, dict):
+        return "object"
+    if isinstance(value, list):
+        return "list"
+    return type(value).__name__
