@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import copy
+import hashlib
 from pathlib import Path
-from typing import Dict, Iterable, List
+from typing import Dict, Iterable, List, Tuple
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
@@ -16,14 +18,20 @@ from namel3ss.parser.core import parse
 ROOT_NODE = "(app)"
 
 
+ParseCache = Dict[Path, Tuple[str, ast.Program]]
+SourceOverrides = Dict[Path, str]
+
+
 def load_project(
     app_path: str | Path,
     *,
     allow_legacy_type_aliases: bool = True,
     extra_uses: Iterable[ast.UseDecl] | None = None,
+    source_overrides: SourceOverrides | None = None,
+    parse_cache: ParseCache | None = None,
 ) -> ProjectLoadResult:
     app_file = Path(app_path)
-    if not app_file.exists():
+    if not app_file.exists() and not _has_override(app_file, source_overrides):
         raise Namel3ssError(
             build_guidance_message(
                 what=f"App file not found: {app_file.as_posix()}",
@@ -35,9 +43,14 @@ def load_project(
     root = app_file.parent
     sources: Dict[Path, str] = {}
 
-    app_source = _read_source(app_file)
+    app_source = _read_source(app_file, source_overrides)
     sources[app_file] = app_source
-    app_ast = parse(app_source, allow_legacy_type_aliases=allow_legacy_type_aliases)
+    app_ast = _parse_source(
+        app_source,
+        app_file,
+        allow_legacy_type_aliases=allow_legacy_type_aliases,
+        parse_cache=parse_cache,
+    )
 
     app_uses = list(app_ast.uses)
     app_aliases = _normalize_uses(app_uses, context_label="App")
@@ -47,7 +60,15 @@ def load_project(
 
     modules: Dict[str, ModuleInfo] = {}
     for use in load_uses:
-        _load_module(use.module, root, modules, sources, allow_legacy_type_aliases=allow_legacy_type_aliases)
+        _load_module(
+            use.module,
+            root,
+            modules,
+            sources,
+            allow_legacy_type_aliases=allow_legacy_type_aliases,
+            source_overrides=source_overrides,
+            parse_cache=parse_cache,
+        )
 
     edges = [(name, dep) for name, info in modules.items() for dep in _module_dependencies(info)]
     graph = build_graph(modules.keys(), edges)
@@ -195,17 +216,20 @@ def _load_module(
     sources: Dict[Path, str],
     *,
     allow_legacy_type_aliases: bool,
+    source_overrides: SourceOverrides | None,
+    parse_cache: ParseCache | None,
 ) -> None:
     if module_name in modules:
         return
-    module_dir, capsule_path = _resolve_module_dir(root, module_name)
-    capsule_source = _read_source(capsule_path)
+    module_dir, capsule_path = _resolve_module_dir(root, module_name, source_overrides)
+    capsule_source = _read_source(capsule_path, source_overrides)
     sources[capsule_path] = capsule_source
     capsule_program = _parse_source(
         capsule_source,
         capsule_path,
         allow_legacy_type_aliases=allow_legacy_type_aliases,
         allow_capsule=True,
+        parse_cache=parse_cache,
     )
     if capsule_program.capsule is None:
         raise Namel3ssError(
@@ -229,11 +253,16 @@ def _load_module(
             column=capsule_decl.column,
         )
     programs = []
-    files = _collect_module_files(module_dir)
+    files = _collect_module_files(module_dir, source_overrides)
     for path in files:
-        source = _read_source(path)
+        source = _read_source(path, source_overrides)
         sources[path] = source
-        program = _parse_source(source, path, allow_legacy_type_aliases=allow_legacy_type_aliases)
+        program = _parse_source(
+            source,
+            path,
+            allow_legacy_type_aliases=allow_legacy_type_aliases,
+            parse_cache=parse_cache,
+        )
         if program.app_theme_line is not None:
             raise Namel3ssError(
                 build_guidance_message(
@@ -266,17 +295,25 @@ def _load_module(
     )
 
     for use in uses:
-        _load_module(use.module, root, modules, sources, allow_legacy_type_aliases=allow_legacy_type_aliases)
+        _load_module(
+            use.module,
+            root,
+            modules,
+            sources,
+            allow_legacy_type_aliases=allow_legacy_type_aliases,
+            source_overrides=source_overrides,
+            parse_cache=parse_cache,
+        )
 
 
-def _resolve_module_dir(root: Path, module_name: str) -> tuple[Path, Path]:
+def _resolve_module_dir(root: Path, module_name: str, source_overrides: SourceOverrides | None) -> tuple[Path, Path]:
     module_dir = root / "modules" / module_name
     capsule_path = module_dir / "capsule.ai"
-    if capsule_path.exists():
+    if capsule_path.exists() or _has_override(capsule_path, source_overrides):
         return module_dir, capsule_path
     package_dir = root / "packages" / module_name
     package_capsule = package_dir / "capsule.ai"
-    if package_capsule.exists():
+    if package_capsule.exists() or _has_override(package_capsule, source_overrides):
         return package_dir, package_capsule
     raise Namel3ssError(
         build_guidance_message(
@@ -291,7 +328,7 @@ def _resolve_module_dir(root: Path, module_name: str) -> tuple[Path, Path]:
     )
 
 
-def _collect_module_files(module_dir: Path) -> List[Path]:
+def _collect_module_files(module_dir: Path, source_overrides: SourceOverrides | None) -> List[Path]:
     files = []
     for path in module_dir.rglob("*.ai"):
         if path.name == "capsule.ai":
@@ -302,6 +339,17 @@ def _collect_module_files(module_dir: Path) -> List[Path]:
         if "tests" in relative_parts:
             continue
         files.append(path)
+    if source_overrides:
+        for path in source_overrides.keys():
+            if path.name == "capsule.ai" or path.suffix != ".ai":
+                continue
+            try:
+                rel_parts = {part.lower() for part in path.relative_to(module_dir).parts}
+            except ValueError:
+                continue
+            if "tests" in rel_parts or path.name.endswith("_test.ai"):
+                continue
+            files.append(path)
     return sorted(files, key=lambda p: p.relative_to(module_dir).as_posix())
 
 
@@ -362,7 +410,9 @@ def _normalize_uses(uses: Iterable[ast.UseDecl], *, context_label: str) -> Dict[
     return alias_map
 
 
-def _read_source(path: Path) -> str:
+def _read_source(path: Path, source_overrides: SourceOverrides | None) -> str:
+    if _has_override(path, source_overrides):
+        return source_overrides[path]  # type: ignore[index]
     try:
         return path.read_text(encoding="utf-8")
     except FileNotFoundError as err:
@@ -375,13 +425,22 @@ def _parse_source(
     *,
     allow_legacy_type_aliases: bool,
     allow_capsule: bool = False,
+    parse_cache: ParseCache | None = None,
 ) -> ast.Program:
+    digest = _source_digest(source)
+    if parse_cache is not None:
+        cached = parse_cache.get(path)
+        if cached and cached[0] == digest:
+            return copy.deepcopy(cached[1])
     try:
-        return parse(
+        parsed = parse(
             source,
             allow_legacy_type_aliases=allow_legacy_type_aliases,
             allow_capsule=allow_capsule,
         )
+        if parse_cache is not None:
+            parse_cache[path] = (digest, copy.deepcopy(parsed))
+        return parsed
     except Namel3ssError as err:
         raise Namel3ssError(
             err.message,
@@ -391,3 +450,13 @@ def _parse_source(
             end_column=err.end_column,
             details={"file": path.as_posix()},
         ) from err
+
+
+def _has_override(path: Path, source_overrides: SourceOverrides | None) -> bool:
+    if not source_overrides:
+        return False
+    return path in source_overrides
+
+
+def _source_digest(source: str) -> str:
+    return hashlib.sha256(source.encode("utf-8")).hexdigest()

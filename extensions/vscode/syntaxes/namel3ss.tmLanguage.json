@@ -1,0 +1,45 @@
+{
+  "scopeName": "source.namel3ss",
+  "patterns": [
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#numbers"
+    }
+  ],
+  "repository": {
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.namel3ss",
+          "match": "\\b(flow|page|record|ai|tool|agent|agents|app|use|capsule|identity|return|create|save|find|ask|run|with|input|as|requires|audited|form|table|button|title|text|section|card|row|column|divider|image|theme|provider|model|system_prompt|tools|expose|memory|short_term|semantic|profile)\\b"
+        },
+        {
+          "name": "constant.language.namel3ss",
+          "match": "\\b(true|false)\\b"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.namel3ss",
+          "begin": "\"",
+          "end": "\""
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.namel3ss",
+          "match": "\\b\\d+(?:\\.\\d+)?\\b"
+        }
+      ]
+    }
+  }
+}

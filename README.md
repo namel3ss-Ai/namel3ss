@@ -10,6 +10,7 @@ Start here:
 - [First 5 minutes](docs/first-5-minutes.md)
 - [What you can build today](docs/what-you-can-build-today.md)
 - [UI DSL Spec](docs/ui-dsl.md)
+- [Editor](docs/editor.md)
 - [Examples](examples/)
 - [Stability](docs/stability.md)
 - [Known limitations](resources/limitations.md)

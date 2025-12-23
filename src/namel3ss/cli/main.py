@@ -10,6 +10,7 @@ from namel3ss.cli.app_loader import load_program
 from namel3ss.cli.build_mode import run_build_command
 from namel3ss.cli.check_mode import run_check
 from namel3ss.cli.doctor import run_doctor
+from namel3ss.cli.editor_mode import run_editor_command
 from namel3ss.cli.exports_mode import run_exports
 from namel3ss.cli.format_mode import run_format
 from namel3ss.cli.graph_mode import run_graph
@@ -63,6 +64,7 @@ RESERVED = {
     "secrets",
     "observe",
     "explain",
+    "editor",
     "run",
 }
 
@@ -122,6 +124,8 @@ def main(argv: list[str] | None = None) -> int:
             return run_observe_command(args[1:])
         if cmd == "explain":
             return run_explain_command(args[1:])
+        if cmd == "editor":
+            return run_editor_command(args[1:])
         if cmd in {"data", "persist"}:
             return run_data(None, args[1:]) if cmd == "data" else run_persist(None, args[1:])
         if cmd in {"pkg", "deps"}:
@@ -250,6 +254,8 @@ def _handle_app_commands(path: str, remainder: list[str], context: dict | None =
         return run_observe_command([path, *tail])
     if cmd == "explain":
         return run_explain_command([path, *tail])
+    if cmd == "editor":
+        return run_editor_command([path, *tail])
     if cmd in RESERVED:
         raise Namel3ssError(
             f"Unknown command: '{remainder[0]}'.\nWhy: command is reserved or out of place.\nFix: run `n3 help` for usage."
@@ -274,6 +280,7 @@ def _print_usage() -> None:
   n3 secrets [app.ai]              # secret status/audit (subcommands: status, audit)
   n3 observe [app.ai] [--since T]  # engine observability stream (use --json for details)
   n3 explain [app.ai] [--json]     # explain the active engine state
+  n3 editor [app.ai] [--port N]    # start the editor service (use --json for details)
   n3 check [app.ai]                # validate (alias: n3 <app.ai> check)
   n3 ui [app.ai]                   # print UI manifest
   n3 actions [app.ai] [json]       # list actions

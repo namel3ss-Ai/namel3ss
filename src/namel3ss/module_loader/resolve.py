@@ -361,6 +361,7 @@ def _resolve_name(
                 ),
                 line=line,
                 column=column,
+                details={"module": target_module, "kind": kind, "name": rest},
             )
         return qualify(target_module, rest)
     if raw in local_defs.get(kind, set()):

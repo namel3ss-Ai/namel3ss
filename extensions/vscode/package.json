@@ -1,0 +1,48 @@
+{
+  "name": "namel3ss-editor",
+  "displayName": "namel3ss Editor",
+  "description": "Editor support for namel3ss (.ai) files.",
+  "version": "0.1.0",
+  "publisher": "namel3ss",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:namel3ss"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "namel3ss",
+        "aliases": [
+          "namel3ss"
+        ],
+        "extensions": [
+          ".ai"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "namel3ss",
+        "scopeName": "source.namel3ss",
+        "path": "./syntaxes/namel3ss.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "title": "namel3ss Editor",
+      "properties": {
+        "n3.editor.serverPort": {
+          "type": "number",
+          "default": 7333,
+          "description": "Port for the local n3 editor server."
+        }
+      }
+    }
+  }
+}
