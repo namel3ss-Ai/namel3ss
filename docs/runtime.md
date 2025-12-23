@@ -1,4 +1,6 @@
-# Runtime Model
+# Engine Model
+
+**Engine**: the system that runs a namel3ss app and enforces its rules.
 
 ## Execution model
 - **state**: shared mutable dictionary (`ExecutionResult.state`) for persisted values (records, outputs).
@@ -13,12 +15,12 @@
 - `if`, `repeat`, `foreach`, `match`, `try/catch` mirror language control flow.
 - Assignments target locals or `state.<path>`.
 
-## Records runtime
+## Records engine
 - `save`: validates current `state.<record_name>` dict against schema and writes to store.
 - Validation errors raise `namel3ssError` with context; uniqueness is checked via store lookup.
 - `find`: runs a predicate over records in store, binding `<record>_results`.
 
-## UI runtime actions
+## UI engine actions
 - `call_flow`: triggers a named flow (used by UI manifests).
 - `submit_form`: validates incoming form data against record schema, returns structured errors on failure (`field`, `code`, `message`).
 - Manifest regeneration: UI actions can rebuild manifests after state changes.
@@ -31,7 +33,7 @@
   ```
 - One-line form (`button "Run" calls flow "demo"`) is rejected to avoid grammar chaos.
 
-## AI runtime
+## AI engine
 - Explicit boundary: AI calls use profiles with model + system prompt.
 - Tool loop guardrails: max tool calls per AI response; only exposed tools callable.
 - Tracing: `AITrace` captures system prompt, input, output, memory context, tool calls/results.

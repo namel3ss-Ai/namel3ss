@@ -14,6 +14,7 @@ Start here:
 - [Stability](docs/stability.md)
 - [Known limitations](resources/limitations.md)
 - [Targets & promotion](docs/targets-and-promotion.md)
+- [Trust & governance](docs/trust-and-governance.md)
 
 ---
 
@@ -24,7 +25,7 @@ One stack for the backend.
 Another for the UI.  
 A separate pile for prompts, agents, memory, tool calling, orchestration, tracing.
 
-namel3ss removes the glue. It keeps the program **readable**, the runtime **deterministic**, and AI **explicit and inspectable**.
+namel3ss removes the glue. It keeps the program **readable**, the engine **deterministic**, and AI **explicit and inspectable**.
 
 ---
 
@@ -37,7 +38,7 @@ namel3ss removes the glue. It keeps the program **readable**, the runtime **dete
 
 ---
 
-## Language · Runtime · Memory · Studio
+## Language · Engine · Memory · Studio
 
 ### Language
 Intent-driven syntax that reads like thought.
@@ -48,8 +49,9 @@ page "home":
 ```
 Record fields use `is` for types and `must` for constraints; canonical types are `text`, `number`, and `boolean` (e.g. `field "email" is text must be present`).
 
-### Runtime
-A unified runtime that behaves consistently across AI providers.
+### Engine
+**Engine**: the system that runs a namel3ss app and enforces its rules.
+It behaves consistently across AI providers.
 ```ai
 ai "assistant":
   provider is "openai"
@@ -202,7 +204,7 @@ If you like testing early systems and giving honest, technical feedback, we want
 
 **Try these three things**
 1. Run the simplest example (or scaffold `n3 new crud`) and note anything unclear or broken.
-2. Change a small flow or syntax and see how the runtime responds; report surprises.
+2. Change a small flow or syntax and see how the engine responds; report surprises.
 3. Call an AI profile with a basic prompt and share any errors or friction you hit.
 
 ---

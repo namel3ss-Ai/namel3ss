@@ -12,6 +12,8 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.errors.render import format_error
 from namel3ss.runtime.service_runner import DEFAULT_SERVICE_PORT, ServiceRunner
 from namel3ss.utils.json_tools import dumps_pretty
+from namel3ss.cli.redaction import redact_cli_text
+from namel3ss.secrets import set_audit_root, set_engine_target
 
 
 def run_run_command(args: list[str]) -> int:
@@ -21,6 +23,8 @@ def run_run_command(args: list[str]) -> int:
         target = parse_target(params.target_raw)
         app_path = resolve_app_path(params.app_arg)
         project_root = app_path.parent
+        set_engine_target(target.name)
+        set_audit_root(project_root)
         run_path, build_id = _resolve_run_path(target.name, project_root, app_path, params.build_id)
         if target.name == "local":
             program_ir, sources = load_program(run_path.as_posix())
@@ -41,7 +45,7 @@ def run_run_command(args: list[str]) -> int:
             return 0
         if target.name == "edge":
             print("Edge simulator mode (stub).")
-            print("This target is limited in the alpha; build artifacts record inputs, runtime is stubbed.")
+            print("This target is limited in the alpha; build artifacts record inputs, engine is stubbed.")
             return 0
         raise Namel3ssError(
             build_guidance_message(
@@ -52,7 +56,8 @@ def run_run_command(args: list[str]) -> int:
             )
         )
     except Namel3ssError as err:
-        print(format_error(err, sources), file=sys.stderr)
+        message = format_error(err, sources)
+        print(redact_cli_text(message), file=sys.stderr)
         return 1
 
 

@@ -18,15 +18,21 @@ from namel3ss.cli.lint_mode import run_lint
 from namel3ss.cli.new_mode import run_new
 from namel3ss.cli.persist_mode import run_data, run_persist
 from namel3ss.cli.promote_mode import run_promote_command
+from namel3ss.cli.proof_mode import run_proof_command
 from namel3ss.cli.run_mode import run_run_command
 from namel3ss.cli.runner import run_flow
+from namel3ss.cli.secrets_mode import run_secrets_command
+from namel3ss.cli.observe_mode import run_observe_command
+from namel3ss.cli.explain_mode import run_explain_command
 from namel3ss.cli.status_mode import run_status_command
 from namel3ss.cli.studio_mode import run_studio
 from namel3ss.cli.test_mode import run_test_command
 from namel3ss.cli.ui_mode import render_manifest, run_action
 from namel3ss.cli.pkg_mode import run_pkg
+from namel3ss.cli.verify_mode import run_verify_command
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.render import format_error
+from namel3ss.cli.redaction import redact_cli_text
 from namel3ss.version import get_version
 
 RESERVED = {
@@ -52,6 +58,11 @@ RESERVED = {
     "promote",
     "where",
     "status",
+    "proof",
+    "verify",
+    "secrets",
+    "observe",
+    "explain",
     "run",
 }
 
@@ -101,6 +112,16 @@ def main(argv: list[str] | None = None) -> int:
             return run_promote_command(args[1:])
         if cmd == "where":
             return run_status_command(args[1:])
+        if cmd == "proof":
+            return run_proof_command(args[1:])
+        if cmd == "verify":
+            return run_verify_command(args[1:])
+        if cmd == "secrets":
+            return run_secrets_command(args[1:])
+        if cmd == "observe":
+            return run_observe_command(args[1:])
+        if cmd == "explain":
+            return run_explain_command(args[1:])
         if cmd in {"data", "persist"}:
             return run_data(None, args[1:]) if cmd == "data" else run_persist(None, args[1:])
         if cmd in {"pkg", "deps"}:
@@ -118,7 +139,8 @@ def main(argv: list[str] | None = None) -> int:
         remainder = args[1:]
         return _handle_app_commands(path, remainder, context)
     except Namel3ssError as err:
-        print(format_error(err, context.get("sources", "")), file=sys.stderr)
+        message = format_error(err, context.get("sources", ""))
+        print(redact_cli_text(message), file=sys.stderr)
         return 1
 
 
@@ -218,6 +240,16 @@ def _handle_app_commands(path: str, remainder: list[str], context: dict | None =
     if cmd == "help":
         _print_usage()
         return 0
+    if cmd == "proof":
+        return run_proof_command([path, *tail])
+    if cmd == "verify":
+        return run_verify_command([path, *tail])
+    if cmd == "secrets":
+        return run_secrets_command([path, *tail])
+    if cmd == "observe":
+        return run_observe_command([path, *tail])
+    if cmd == "explain":
+        return run_explain_command([path, *tail])
     if cmd in RESERVED:
         raise Namel3ssError(
             f"Unknown command: '{remainder[0]}'.\nWhy: command is reserved or out of place.\nFix: run `n3 help` for usage."
@@ -237,6 +269,11 @@ def _print_usage() -> None:
   n3 pack [app.ai] [--target T]    # build artifacts (alias: build)
   n3 ship [--to T|--back]          # promote build (alias: promote; --rollback alias of --back)
   n3 where [app.ai]                # show active target/build (alias: status)
+  n3 proof [app.ai] [--json]       # write engine proof for the target
+  n3 verify [app.ai] [--prod]      # governance checks (use --json for details)
+  n3 secrets [app.ai]              # secret status/audit (subcommands: status, audit)
+  n3 observe [app.ai] [--since T]  # engine observability stream (use --json for details)
+  n3 explain [app.ai] [--json]     # explain the active engine state
   n3 check [app.ai]                # validate (alias: n3 <app.ai> check)
   n3 ui [app.ai]                   # print UI manifest
   n3 actions [app.ai] [json]       # list actions

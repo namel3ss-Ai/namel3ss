@@ -58,11 +58,11 @@ Nesting rules:
   - `persist is "none"|"local"|"file"`
 - Precedence (initial resolution):
   1. persisted preference (allow_override=true, persist="file")
-  2. session runtime theme
+  2. session engine theme
   3. app.theme
   4. system pref (only when app.theme is "system")
   5. fallback "light"
-- Studio preview override is preview-only; not runtime, not persisted.
+- Studio preview override is preview-only; not engine, not persisted.
 
 ### Type canon
 - Canonical field types: `text`, `number`, `boolean` (and `json` if already supported).
@@ -88,7 +88,7 @@ record "User":
 - `flow is "demo"` ❌ (must be `flow "demo"`)
 - `theme is "#121212"` ❌ (only light/dark/system)
 - `theme_tokens: foo is "bar"` ❌ (unknown token)
-- `set theme to "dark"` when `allow_override` is false ❌ (lint/runtime error)
+- `set theme to "dark"` when `allow_override` is false ❌ (lint/engine error)
 
 ## 8) Compatibility promise
 - Spec is frozen for v0.1.x → v1.x; changes must be additive and documented.

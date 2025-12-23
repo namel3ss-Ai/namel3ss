@@ -3,6 +3,7 @@ from __future__ import annotations
 from urllib.error import HTTPError, URLError
 
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.secrets import record_secret_access
 
 
 def require_env(provider_name: str, env_var: str, value: str | None) -> str:
@@ -11,6 +12,7 @@ def require_env(provider_name: str, env_var: str, value: str | None) -> str:
         raise Namel3ssError(
             f"Missing {short_var}. Fix: set {env_var} in .env or export it, then re-run."
         )
+    record_secret_access(env_var, caller=f"provider:{provider_name}", source="env")
     return value
 
 

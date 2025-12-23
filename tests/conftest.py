@@ -1,6 +1,8 @@
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
 if str(ROOT) not in sys.path:
@@ -48,6 +50,11 @@ def run_flow(
         identity=identity,
     )
     return executor.run()
+
+
+@pytest.fixture(autouse=True)
+def _secret_audit_path(tmp_path, monkeypatch):
+    monkeypatch.setenv("N3_SECRET_AUDIT_PATH", str(tmp_path / "secret_audit.jsonl"))
 
 
 __all__ = ["parse_program", "lower_ir_program", "run_flow"]

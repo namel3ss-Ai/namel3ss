@@ -111,7 +111,7 @@ def execute_action(source: str, session: SessionState | None, action_id: str, pa
                 session.runtime_theme = ui_theme.get("current")
         return response
     except Namel3ssError as err:
-        return build_error_from_exception(err, kind="runtime", source=source)
+        return build_error_from_exception(err, kind="engine", source=source)
 
 
 def apply_edit(app_path: str, op: str, target: dict, value: str, session: SessionState) -> dict:

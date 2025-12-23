@@ -30,7 +30,7 @@ flow "admin_report": requires identity.role is "admin"
 page "admin": requires identity.role is one of ["admin", "staff"]
 ```
 
-If the requirement fails, the runtime returns a clear guidance error.
+If the requirement fails, the engine returns a clear guidance error.
 
 ## Persistence targets
 

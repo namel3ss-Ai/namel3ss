@@ -8,7 +8,7 @@ namel3ss is an English-first, AI-native, full-stack programming language, built 
 
 - **English-first, strict grammar** (no free-form English)
 - **AI is explicit, inspectable, and bounded**
-- **Deterministic runtime** (AI is the only non-deterministic boundary)
+- **Deterministic engine** (AI is the only non-deterministic boundary)
 - **Full-stack in one language** (UI + backend + AI)
 - **Discipline is non-negotiable**
   - `< 500 LOC` per file (split at ~400)
@@ -106,7 +106,7 @@ namel3ss is an English-first, AI-native, full-stack programming language, built 
 
 ### Phase 12 — Providers + Secrets UX ✅
 - Provider field in AI profiles (default `mock`)
-- Provider registry + runtime selection
+- Provider registry + engine selection
 - Tier-1 providers implemented:
   - Ollama, OpenAI, Anthropic, Gemini, Mistral
 - Config system (env/file/default)

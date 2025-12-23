@@ -19,6 +19,7 @@ from namel3ss.runtime.memory.manager import MemoryManager
 from namel3ss.runtime.storage.factory import resolve_store
 from namel3ss.schema.identity import IdentitySchema
 from namel3ss.schema.records import RecordSchema
+from namel3ss.secrets import collect_secret_values
 
 
 class Executor:
@@ -37,6 +38,7 @@ class Executor:
         runtime_theme: Optional[str] = None,
         identity_schema: IdentitySchema | None = None,
         identity: dict | None = None,
+        project_root: str | None = None,
     ) -> None:
         resolved_config = config or load_config()
         default_ai_provider = ai_provider or MockProvider()
@@ -62,6 +64,8 @@ class Executor:
             config=resolved_config,
             provider_cache=provider_cache,
             runtime_theme=runtime_theme,
+            project_root=project_root,
+            record_changes=[],
         )
         self.flow = self.ctx.flow
         self.schemas = self.ctx.schemas
@@ -98,12 +102,16 @@ class Executor:
             except _ReturnSignal as signal:
                 self.ctx.last_value = signal.value
             if audit_before is not None:
+                secret_values = collect_secret_values(self.ctx.config)
                 record_audit_entry(
                     self.ctx.store,
                     flow_name=self.ctx.flow.name,
                     identity=self.ctx.identity,
                     before=audit_before,
                     after=self.ctx.state,
+                    record_changes=self.ctx.record_changes,
+                    project_root=self.ctx.project_root,
+                    secret_values=secret_values,
                 )
             self.ctx.store.save_state(self.ctx.state)
             self.ctx.store.commit()

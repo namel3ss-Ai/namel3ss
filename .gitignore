@@ -36,6 +36,7 @@ Thumbs.db
 logs/
 .env
 .env.*
+.namel3ss/
 
 # Temp / lock files
 *.tmp

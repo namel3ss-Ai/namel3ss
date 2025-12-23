@@ -11,6 +11,8 @@ from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.cli.io.json_io import dumps_pretty
 from namel3ss.cli.io.read_source import read_source
 from namel3ss.runtime.preferences.factory import preference_store_for_app, app_pref_key
+from namel3ss.cli.redaction import redact_cli_text
+from namel3ss.secrets import collect_secret_values, redact_payload
 
 
 def run(args) -> int:
@@ -37,10 +39,11 @@ def run(args) -> int:
         )
         traces = [_trace_to_dict(t) for t in result.traces]
         output = {"ok": True, "state": result.state, "result": result.last_value, "traces": traces}
-        print(dumps_pretty(output))
+        redacted = redact_payload(output, collect_secret_values())
+        print(dumps_pretty(redacted))
         return 0
     except Namel3ssError as err:
-        print(format_error(err, source), file=sys.stderr)
+        print(redact_cli_text(format_error(err, source)), file=sys.stderr)
         return 1
 
 

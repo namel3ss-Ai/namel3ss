@@ -5,6 +5,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.executor import execute_program_flow
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.preferences.factory import preference_store_for_app, app_pref_key
+from namel3ss.secrets import collect_secret_values, redact_payload
 
 
 def run_flow(program_ir, flow_name: str | None = None) -> dict:
@@ -26,7 +27,9 @@ def run_flow(program_ir, flow_name: str | None = None) -> dict:
         config=config,
     )
     traces = [_trace_to_dict(t) for t in result.traces]
-    return {"ok": True, "state": result.state, "result": result.last_value, "traces": traces}
+    payload = {"ok": True, "state": result.state, "result": result.last_value, "traces": traces}
+    secret_values = collect_secret_values(config)
+    return redact_payload(payload, secret_values)  # type: ignore[return-value]
 
 
 def _select_flow(program_ir, flow_name: str | None) -> str:

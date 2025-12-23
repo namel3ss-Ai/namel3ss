@@ -82,7 +82,7 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
         try:
             source = self._read_source()
         except Exception as err:  # pragma: no cover - IO error edge
-            payload = build_error_payload(f"Cannot read source: {err}", kind="runtime")
+            payload = build_error_payload(f"Cannot read source: {err}", kind="engine")
             self._respond_json(payload, status=500)
             return
         if self.path == "/api/summary":
@@ -138,7 +138,7 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
         try:
             source = self._read_source()
         except Exception as err:  # pragma: no cover
-            payload = build_error_payload(f"Cannot read source: {err}", kind="runtime")
+            payload = build_error_payload(f"Cannot read source: {err}", kind="engine")
             self._respond_json(payload, status=500)
             return
         if self.path == "/api/edit":
@@ -170,15 +170,15 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
                 return
         if self.path == "/api/action":
             if not isinstance(body, dict):
-                self._respond_json(build_error_payload("Body must be a JSON object", kind="runtime"), status=400)
+                self._respond_json(build_error_payload("Body must be a JSON object", kind="engine"), status=400)
                 return
             action_id = body.get("id")
             payload = body.get("payload") or {}
             if not isinstance(action_id, str):
-                self._respond_json(build_error_payload("Action id is required", kind="runtime"), status=400)
+                self._respond_json(build_error_payload("Action id is required", kind="engine"), status=400)
                 return
             if not isinstance(payload, dict):
-                self._respond_json(build_error_payload("Payload must be an object", kind="runtime"), status=400)
+                self._respond_json(build_error_payload("Payload must be an object", kind="engine"), status=400)
                 return
             try:
                 resp = execute_action(source, self._get_session(), action_id, payload, self.server.app_path)  # type: ignore[attr-defined]
@@ -186,19 +186,19 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
                 self._respond_json(resp, status=status)
                 return
             except Namel3ssError as err:
-                payload = build_error_from_exception(err, kind="runtime", source=source)
+                payload = build_error_from_exception(err, kind="engine", source=source)
                 self._respond_json(payload, status=400)
                 return
             except Exception as err:  # pragma: no cover
-                self._respond_json(build_error_payload(str(err), kind="runtime"), status=500)
+                self._respond_json(build_error_payload(str(err), kind="engine"), status=500)
                 return
         if self.path == "/api/theme":
             if not isinstance(body, dict) or "value" not in body:
-                self._respond_json(build_error_payload("Theme value required", kind="runtime"), status=400)
+                self._respond_json(build_error_payload("Theme value required", kind="engine"), status=400)
                 return
             value = body.get("value")
             if value not in {"light", "dark", "system"}:
-                self._respond_json(build_error_payload("Theme must be light, dark, or system.", kind="runtime"), status=400)
+                self._respond_json(build_error_payload("Theme must be light, dark, or system.", kind="engine"), status=400)
                 return
             session = self._get_session()
             try:
@@ -208,7 +208,7 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
                 self._respond_json(resp, status=200)
                 return
             except Namel3ssError as err:
-                payload = build_error_from_exception(err, kind="runtime", source=source)
+                payload = build_error_from_exception(err, kind="engine", source=source)
                 self._respond_json(payload, status=400)
                 return
         if self.path == "/api/reset":
@@ -218,7 +218,7 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
                 try:
                     store.clear()
                 except Exception as err:  # pragma: no cover - defensive
-                    payload = build_error_payload(f"Unable to reset store: {err}", kind="runtime")
+                    payload = build_error_payload(f"Unable to reset store: {err}", kind="engine")
                     self._respond_json(payload, status=500)
                     return
                 self.server.session_state = SessionState(store=store)  # type: ignore[attr-defined]

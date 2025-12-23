@@ -2,9 +2,9 @@
 
 ## Preface
 
-Welcome to Learning namel3ss 0.1.0, your comprehensive guide to namel3ss (pronounced nameless), the world’s first English‑first, AI‑native, full‑stack programming language, built from the ground up to support AI. namel3ss lets you build real applications by describing your intent in clear, structured English. Instead of juggling multiple languages, frameworks, prompts and orchestration libraries, you define your entire app in a single .ai file. namel3ss then compiles it into a validated intermediate representation (IR) and runs it in a deterministic runtime where AI boundaries are explicit and inspectable.
+Welcome to Learning namel3ss 0.1.0, your comprehensive guide to namel3ss (pronounced nameless), the world’s first English‑first, AI‑native, full‑stack programming language, built from the ground up to support AI. namel3ss lets you build real applications by describing your intent in clear, structured English. Instead of juggling multiple languages, frameworks, prompts and orchestration libraries, you define your entire app in a single .ai file. namel3ss then compiles it into a validated intermediate representation (IR) and runs it in a deterministic engine where AI boundaries are explicit and inspectable.
 
-As you’ll see, namel3ss is a fundamentally new way to build software. Throughout this guide you will learn the language grammar, explore its full‑stack capabilities, write flows, define records, create pages, integrate AI, orchestrate multiple agents, and work with the CLI and Studio tools. This book also defines every term used in the language and its runtime.
+As you’ll see, namel3ss is a fundamentally new way to build software. Throughout this guide you will learn the language grammar, explore its full‑stack capabilities, write flows, define records, create pages, integrate AI, orchestrate multiple agents, and work with the CLI and Studio tools. This book also defines every term used in the language and its engine.
 
 This book covers namel3ss version 0.1.0. Future versions may introduce new features, but the core concepts you learn here will remain valuable.
 
@@ -20,7 +20,7 @@ namel3ss is an English‑first DSL (domain‑specific language) designed to buil
 - User interfaces (pages) — declarative UIs containing titles, text, forms, tables and buttons that connect to your flows and records.
 - AI behaviour — profiles describing models, memory, tools and system prompts, and statements ( ask ai ) to call them.
 - Multi‑agent orchestration — structures for running multiple agents sequentially or in parallel, with guardrails and tracing.
-- Validation and explainable errors — comprehensive compile‑time and runtime validation with human‑friendly error messages.
+- Validation and explainable errors — comprehensive compile‑time and engine validation with human‑friendly error messages.
 
 Everything lives in a single .ai file that reads like a well‑structured specification. namel3ss is to the AI era what Python was to the web era — a language that makes building complex systems accessible to many.
 
@@ -30,9 +30,9 @@ namel3ss is built on a few key principles:
 
 - English‑first — The language uses plain English keywords and statements. You shouldn’t need to learn obscure symbols to express logic.
 - AI is explicit, inspectable and bounded — AI calls, memory and tool usage are never hidden. You always see what’s happening, and the system enforces limits on calls to prevent runaway behaviour.
-- Deterministic runtime — The only non‑deterministic component is the AI model itself. Everything else is fully deterministic, so you can reason about state, loops and branches without surprises.
+- Deterministic engine — The only non‑deterministic component is the AI model itself. Everything else is fully deterministic, so you can reason about state, loops and branches without surprises.
 - Full‑stack in one language — namel3ss covers backend logic, data modelling, user interfaces and AI integration in one coherent DSL. There is no need to switch languages or coordinate between layers.
-- Strong validation — Mistakes are caught early. The compiler checks grammar, naming, references and types; the runtime validates data and returns structured errors; the linter warns about violations of best practices.
+- Strong validation — Mistakes are caught early. The compiler checks grammar, naming, references and types; the engine validates data and returns structured errors; the linter warns about violations of best practices.
 - Tooling — A robust CLI, formatter, linter and Studio provide professional developer workflows. You can parse, validate, run, format, lint, inspect and even visually edit your code safely.
 
 ### How namel3ss differs from other approaches
@@ -150,7 +150,7 @@ Provider configuration and secrets live outside your .ai file. Use a .env file n
 OPENAI_API_KEY=sk-xxxxxx
 ```
 
-The .ai file refers to this key via env "OPENAI_API_KEY" in the AI profile. The runtime loads .env automatically and falls back to ~/.namel3ss/config.json . Real environment variables take precedence over values in .env .
+The .ai file refers to this key via env "OPENAI_API_KEY" in the AI profile. The engine loads .env automatically and falls back to ~/.namel3ss/config.json . Real environment variables take precedence over values in .env .
 
 ## Part IV: Language Grammar
 
@@ -277,7 +277,7 @@ match status:
   set message is "Unknown"
 ```
 
-- try / catch — Handle runtime errors gracefully.
+- try / catch — Handle engine errors gracefully.
 
 ```
 try:
@@ -314,9 +314,9 @@ Pages support the following items (each optional):
 
 namel3ss enforces that pages remain declarative: no variables or control flow inside pages.
 
-### UI Runtime Actions
+### UI Engine Actions
 
-The runtime supports deterministic actions with unique IDs:
+The engine supports deterministic actions with unique IDs:
 
 - call_flow — Executes a backend flow.
 - submit_form — Validates and saves a record from a form submission, returning structured validation errors if needed.
@@ -325,7 +325,7 @@ When you build a UI manifest, each button and form becomes an action with a uniq
 
 ## Part V: Data Modelling & Persistence
 
-Records define data schemas, constraints and runtime behaviour. They look similar to database table definitions but live entirely in your program.
+Records define data schemas, constraints and engine behaviour. They look similar to database table definitions but live entirely in your program.
 
 ### Declaring a Record
 
@@ -342,7 +342,7 @@ record "User":
 - Types — text , int , float , bool , date , datetime .
 - Constraints — present (required), unique , gt , lt , pattern , length (min/max), etc.
 
-Constraints are validated at runtime. For example, the email field must match a regex and be unique across all User records. Attempting to save a record with duplicate email will return a structured error.
+Constraints are validated at engine. For example, the email field must match a regex and be unique across all User records. Attempting to save a record with duplicate email will return a structured error.
 
 ### Saving and Finding Records
 
@@ -356,7 +356,7 @@ save User {
 }
 ```
 
-The save operation validates data against field constraints and inserts it into an in‑memory store. If validation fails, the runtime throws an error or returns structured validation errors in form submissions.
+The save operation validates data against field constraints and inserts it into an in‑memory store. If validation fails, the engine throws an error or returns structured validation errors in form submissions.
 
 To retrieve records, use the find statement:
 
@@ -372,7 +372,7 @@ At present, find operations support simple comparisons (equal, less than, greate
 
 By default, namel3ss stores records in an in‑memory store for the duration of program execution (i.e. while your CLI or Studio process runs). If you restart the process, data resets. Future versions may introduce persistent backends (e.g. SQLite) with minimal changes to the language. Meanwhile, you can rely on the deterministic state when building prototypes and demos.
 
-Uniqueness constraints ensure that no two records share the same value in a unique field. When saving a record, if a value already exists, the runtime returns a structured error with code unique . You can catch and handle this error in a flow or display it as form validation in the UI.
+Uniqueness constraints ensure that no two records share the same value in a unique field. When saving a record, if a value already exists, the engine returns a structured error with code unique . You can catch and handle this error in a flow or display it as form validation in the UI.
 
 ## Part VI: Full‑Stack UI
 
@@ -380,14 +380,14 @@ namel3ss generates user interfaces directly from your .ai code. Pages combine fo
 
 ### Forms
 
-A form bound to a record auto‑generates input fields for each record field. When a user submits a form, the runtime validates each field against the record’s constraints and returns structured errors if any exist. For example:
+A form bound to a record auto‑generates input fields for each record field. When a user submits a form, the engine validates each field against the record’s constraints and returns structured errors if any exist. For example:
 
 ```
 page "signup":
  form is "User"
 ```
 
-When submitted, the runtime returns errors like:
+When submitted, the engine returns errors like:
 
 ```
 {
@@ -470,11 +470,11 @@ flow "chat":
 - with input: <expression> — Specifies the message to send to the model.
 - as <variable> — Binds the reply to a variable.
 
-namel3ss supports only one input: per call and no additional parameters. Inside the AI block, you define the model, provider, memory settings, system prompt and tools. The runtime collects the AI input, invokes the provider and returns a reply. The reply always becomes a string (or list of strings for multi‑agent results). Tools are called only if the AI output triggers a tool_call object, subject to guardrails.
+namel3ss supports only one input: per call and no additional parameters. Inside the AI block, you define the model, provider, memory settings, system prompt and tools. The engine collects the AI input, invokes the provider and returns a reply. The reply always becomes a string (or list of strings for multi‑agent results). Tools are called only if the AI output triggers a tool_call object, subject to guardrails.
 
 ### Tools
 
-Tools allow the AI to call functions in your runtime. You expose tools via an AI profile:
+Tools allow the AI to call functions in your engine. You expose tools via an AI profile:
 
 ```
 ai "assistant":
@@ -487,7 +487,7 @@ tool "echo":
  # This is defined in Python outside the `.ai` file
 ```
 
-When the AI triggers a tool call (e.g. {"name":"echo", "arguments": {...}} ), the runtime executes the tool and returns its result back to the AI as a message. The tool loop includes guardrails: a maximum number of tool calls per AI call to prevent infinite loops. The default guardrail is usually 3 or 5 calls. Tools must be explicitly exposed; otherwise, AI cannot call them.
+When the AI triggers a tool call (e.g. {"name":"echo", "arguments": {...}} ), the engine executes the tool and returns its result back to the AI as a message. The tool loop includes guardrails: a maximum number of tool calls per AI call to prevent infinite loops. The default guardrail is usually 3 or 5 calls. Tools must be explicitly exposed; otherwise, AI cannot call them.
 
 ### Memory
 
@@ -509,11 +509,11 @@ ai "assistant":
   profile is true
 ```
 
-During each ask ai , the runtime recalls relevant memory and prepends it to the prompt. After receiving a reply, the runtime records the interaction. Memory scopes by state.user.id if present; otherwise, it defaults to a common key.
+During each ask ai , the engine recalls relevant memory and prepends it to the prompt. After receiving a reply, the engine records the interaction. Memory scopes by state.user.id if present; otherwise, it defaults to a common key.
 
 ### Try/Catch and Validation
 
-Flows may throw runtime errors or receive validation errors from record operations. Use try / catch to handle them:
+Flows may throw engine errors or receive validation errors from record operations. Use try / catch to handle them:
 
 ```
 try:
@@ -578,15 +578,15 @@ Each provider requires specific environment variables for authentication:
 - NAMEL3SS_MISTRAL_API_KEY
 - NAMEL3SS_OLLAMA_HOST , NAMEL3SS_OLLAMA_TIMEOUT_SECONDS (optional)
 
-You can specify them in .env or export them in your shell. When missing, the runtime raises a friendly error like Missing OPENAI_API_KEY (set it in .env or export it) .
+You can specify them in .env or export them in your shell. When missing, the engine raises a friendly error like Missing OPENAI_API_KEY (set it in .env or export it) .
 
 ### Provider Adapter Internals
 
-Each provider implements ask() using Python’s standard urllib.request . No third‑party HTTP libraries are used. The provider constructs a request body with fields: model, system prompt, input messages, memory context and tools. It sends an HTTP request to the provider’s endpoint with proper headers (e.g. Authorization: Bearer <key> ). The response is parsed into an AIResponse object with the output string. Errors such as missing keys, invalid HTTP responses and timeouts raise Namel3ssError with consistent messages. By standardising inputs and outputs, the runtime remains predictable.
+Each provider implements ask() using Python’s standard urllib.request . No third‑party HTTP libraries are used. The provider constructs a request body with fields: model, system prompt, input messages, memory context and tools. It sends an HTTP request to the provider’s endpoint with proper headers (e.g. Authorization: Bearer <key> ). The response is parsed into an AIResponse object with the output string. Errors such as missing keys, invalid HTTP responses and timeouts raise Namel3ssError with consistent messages. By standardising inputs and outputs, the engine remains predictable.
 
 ### Tools and AI Integration
 
-When a provider returns a tool_call result (OpenAI tool calling feature), the runtime decodes the tool name and arguments, looks up the tool in the registry and executes it. The result is returned back to the AI profile, which may continue the conversation or finish. The runtime limits the number of tool calls per AI call to avoid infinite loops.
+When a provider returns a tool_call result (OpenAI tool calling feature), the engine decodes the tool name and arguments, looks up the tool in the registry and executes it. The result is returned back to the AI profile, which may continue the conversation or finish. The engine limits the number of tool calls per AI call to avoid infinite loops.
 
 ## Part IX: Multi‑Agent Orchestration
 
@@ -609,7 +609,7 @@ You run an agent in a flow via the statement:
 run agent "planner" with input: task as plan
 ```
 
-This executes the AI call and binds the result to plan . The runtime adds an AITrace entry to the trace list with fields: agent name, AI name, input, output, tool calls, memory used. The trace appears in the final program response and in Studio’s Traces panel.
+This executes the AI call and binds the result to plan . The engine adds an AITrace entry to the trace list with fields: agent name, AI name, input, output, tool calls, memory used. The trace appears in the final program response and in Studio’s Traces panel.
 
 ### Running Agents in Parallel
 
@@ -624,7 +624,7 @@ as results
 
 This executes each agent sequentially under the hood but wraps their traces in a single parallel_agents trace with a list of child traces. It binds the outputs to a list variable results in the same order as defined. Guardrails limit the number of parallel agents (e.g. 3) and the total agent calls per flow.
 
-When one agent fails (e.g. due to provider error), the runtime fails the entire statement and returns a clear error like Agent 'critic' failed: Provider 'openai' unreachable .
+When one agent fails (e.g. due to provider error), the engine fails the entire statement and returns a clear error like Agent 'critic' failed: Provider 'openai' unreachable .
 
 ## Part X: Tooling & CLI
 
@@ -666,7 +666,7 @@ ai "assistant":
   api_key is env "OPENAI_API_KEY"
 ```
 
-If the key is missing, the runtime raises an error with a clear message.
+If the key is missing, the engine raises an error with a clear message.
 
 ## Part XI: Examples & Demos
 
@@ -807,14 +807,14 @@ A quick reference to all the key terms in namel3ss:
 - expression — A value or operation used on the right side of is . Includes literals, variables, state paths, arithmetic, comparisons and boolean logic.
 - control flow — Constructs like if , repeat up to , for each , match , try , return used to control flow of a program.
 - UI manifest — A JSON description of pages, elements, actions and previews. Generated by the compiler.
-- traces — A list of runtime events, particularly AI calls and agent calls, including inputs, outputs, tools and memory used.
+- traces — A list of engine events, particularly AI calls and agent calls, including inputs, outputs, tools and memory used.
 - formatter — A tool that rewrites code into canonical form.
 - linter — A tool that analyses code for best practices and potential issues.
 - Studio — A web interface for viewing pages, executing actions, inspecting state and traces, and making safe edits.
 - template — A predefined project scaffold (crud, ai assistant, multi‑agent) used by n3 new .
 - test — Python or .ai tests that verify correctness. Tests mirror the src directory.
-- error — A structured error with message, code and context. Errors come from validation, runtime or parsing.
-- guardrail — A runtime limit (e.g. maximum number of agent calls) to prevent misuse.
+- error — A structured error with message, code and context. Errors come from validation, engine or parsing.
+- guardrail — A engine limit (e.g. maximum number of agent calls) to prevent misuse.
 - wow moment — A feature that demonstrates namel3ss’s value: record → UI, AI calls with trace, multi‑agent orchestration, safe edits, provider integration.
 
 ## Part XIII: Appendices
@@ -828,7 +828,7 @@ namel3ss defines several error codes:
 | Parser | parser_error | Raised when .ai source contains invalid syntax or unknown tokens. |
 | Lexer | lexer_error | Raised when unexpected characters are encountered. |
 | Validation | validation_error | Raised when record constraints fail. Fields include field , code and message . |
-| Runtime | runtime_error | Raised for logic errors such as undefined variables or invalid operations. |
+| Engine | engine_error | Raised for logic errors such as undefined variables or invalid operations. |
 | AI | ai_error | Raised when AI calls fail (missing key, unreachable provider, timeout, invalid response). |
 | Tool | tool_error | Raised when a tool call fails. |
 
@@ -860,7 +860,7 @@ If you prefer not to use .env , you can create ~/.namel3ss/config.json :
 }
 ```
 
-The runtime merges config from this file with environment variables. Use environment variables to override config values.
+The engine merges config from this file with environment variables. Use environment variables to override config values.
 
 ### Appendix C: Studio API Endpoints
 
@@ -878,7 +878,7 @@ These endpoints make Studio interactive and enable integration with other fronte
 
 ## Afterword
 
-namel3ss  0.1.0 is a revolutionary step towards building AI‑native applications in plain English. By integrating full‑stack development, AI orchestration, deterministic runtime semantics and robust tooling, namel3ss eliminates friction and reduces cognitive load for developers. In this book you learned the grammar, features, tooling and best practices of namel3ss. You should now feel comfortable creating records, flows, pages, AI profiles and agents, exploring the UI and Studio, running and testing applications, and scaffolding new projects with templates.
+namel3ss  0.1.0 is a revolutionary step towards building AI‑native applications in plain English. By integrating full‑stack development, AI orchestration, deterministic engine semantics and robust tooling, namel3ss eliminates friction and reduces cognitive load for developers. In this book you learned the grammar, features, tooling and best practices of namel3ss. You should now feel comfortable creating records, flows, pages, AI profiles and agents, exploring the UI and Studio, running and testing applications, and scaffolding new projects with templates.
 
 We are just at the beginning of this journey. Future versions of namel3ss will introduce persistent storage backends, user authentication, additional providers and more advanced agent capabilities — but the foundation of structured English for deterministic full‑stack AI development remains. Join the community, build amazing apps, and help shape the future of software development.
 

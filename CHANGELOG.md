@@ -43,7 +43,7 @@ No breaking changes without an explicit changelog entry.
 - New examples and docs for expressions/conditionals (see `examples/demo_order_totals.ai`, `docs/expressions-and-conditionals.md`).
 
 ### Changed
-- Numeric runtime values use Decimal internally; JSON output preserves decimals without rounding.
+- Numeric engine values use Decimal internally; JSON output preserves decimals without rounding.
 - Lint warns on legacy `save Record` usage (still supported).
 
 ### Fixed
@@ -70,7 +70,7 @@ No breaking changes without an explicit changelog entry.
 
 ### Added
 - Language core (Phases 1–3): Stable keywords, parser/AST/IR contracts, deterministic defaults.
-- Full-stack UI + actions (Phase 4): Pages, actions, and runtime wiring for forms/buttons/tables.
+- Full-stack UI + actions (Phase 4): Pages, actions, and engine wiring for forms/buttons/tables.
 - AI + memory + tools (Phase 5): AI declarations with memory profiles and tool exposure.
 - Multi-agent workflows (Phase 6): Agent declarations plus sequential/parallel agent execution.
 - CLI, formatter, linter (Phase 7): File-first CLI, formatting rules, linting for grammar/safety.

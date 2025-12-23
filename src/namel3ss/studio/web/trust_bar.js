@@ -23,7 +23,7 @@ function renderTruthBar(manifest) {
   const source = theme.source || "app";
   const persisted = theme.persisted_current || "none";
   const overrideActive = !!themeOverride;
-  if (runtimeEl) runtimeEl.textContent = `Runtime: ${runtime} (source: ${source})`;
+  if (runtimeEl) runtimeEl.textContent = `Engine: ${runtime} (source: ${source})`;
   if (effectiveEl) effectiveEl.textContent = `Effective: ${effective}`;
   if (persistedEl) persistedEl.textContent = `Persisted: ${persisted}`;
   if (overrideEl) {
@@ -35,11 +35,11 @@ function renderTruthBar(manifest) {
     if (!preferencePolicy.allow_override) {
       label.textContent = "Theme (preview only)";
     } else if (preferencePolicy.persist === "local") {
-      label.textContent = "Theme (runtime, Studio local preference)";
+      label.textContent = "Theme (engine, Studio local preference)";
     } else if (preferencePolicy.persist === "file") {
-      label.textContent = "Theme (runtime, persisted)";
+      label.textContent = "Theme (engine, persisted)";
     } else {
-      label.textContent = "Theme (runtime)";
+      label.textContent = "Theme (engine)";
     }
   }
 }

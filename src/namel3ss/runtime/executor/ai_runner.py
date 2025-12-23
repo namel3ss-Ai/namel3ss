@@ -16,6 +16,9 @@ from namel3ss.traces.builders import (
     build_ai_call_failed,
     build_ai_call_started,
 )
+from namel3ss.observe import record_event, summarize_value
+from namel3ss.secrets import collect_secret_values
+from pathlib import Path
 
 
 def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
@@ -65,6 +68,7 @@ def run_ai_with_tools(
     call_id = uuid.uuid4().hex
     canonical_events: list[dict] = []
     ai_start = time.monotonic()
+    wall_start = time.time()
     ai_failed_emitted = False
     memory_enabled = bool(
         getattr(profile, "memory", None)
@@ -111,6 +115,17 @@ def run_ai_with_tools(
                     tokens_out=None,
                 )
             )
+            _record_ai_event(
+                ctx,
+                profile.name,
+                provider_name,
+                profile.model,
+                status="ok",
+                input_text=user_input,
+                output_text=output_text,
+                started_at=wall_start,
+                duration_ms=duration_ms,
+            )
             return output_text, canonical_events
 
         from namel3ss.runtime.tool_calls.model import ToolCallPolicy, ToolDeclaration
@@ -131,6 +146,17 @@ def run_ai_with_tools(
                     tokens_in=None,
                     tokens_out=None,
                 )
+            )
+            _record_ai_event(
+                ctx,
+                profile.name,
+                provider_name,
+                profile.model,
+                status="ok",
+                input_text=user_input,
+                output_text=output_text,
+                started_at=wall_start,
+                duration_ms=duration_ms,
             )
             return output_text, canonical_events
 
@@ -167,6 +193,17 @@ def run_ai_with_tools(
                 tokens_out=None,
             )
         )
+        _record_ai_event(
+            ctx,
+            profile.name,
+            provider_name,
+            profile.model,
+            status="ok",
+            input_text=user_input,
+            output_text=output_text,
+            started_at=wall_start,
+            duration_ms=duration_ms,
+        )
         return output_text, canonical_events
     except Exception as err:
         if not ai_failed_emitted:
@@ -182,6 +219,18 @@ def run_ai_with_tools(
                 )
             )
             ai_failed_emitted = True
+        _record_ai_event(
+            ctx,
+            profile.name,
+            provider_name,
+            profile.model,
+            status="error",
+            input_text=user_input,
+            output_text=None,
+            started_at=wall_start,
+            duration_ms=int((time.monotonic() - ai_start) * 1000),
+            error=err,
+        )
         raise
 
 
@@ -193,3 +242,38 @@ def _resolve_provider(ctx: ExecutionContext, provider_name: str):
     provider = get_provider(key, ctx.config)
     ctx.provider_cache[key] = provider
     return provider
+
+
+def _record_ai_event(
+    ctx: ExecutionContext,
+    ai_name: str,
+    provider: str,
+    model: str,
+    *,
+    status: str,
+    input_text: str,
+    output_text: str | None,
+    started_at: float,
+    duration_ms: int,
+    error: Exception | None = None,
+) -> None:
+    if not ctx.project_root:
+        return
+    secret_values = collect_secret_values(ctx.config)
+    event = {
+        "type": "ai_call",
+        "flow_name": getattr(ctx.flow, "name", None),
+        "ai_name": ai_name,
+        "provider": provider,
+        "model": model,
+        "status": status,
+        "time_start": started_at,
+        "time_end": started_at + (duration_ms / 1000.0),
+        "duration_ms": duration_ms,
+        "redacted_input_summary": summarize_value(input_text, secret_values=secret_values),
+        "redacted_output_summary": summarize_value(output_text or "", secret_values=secret_values),
+    }
+    if error:
+        event["error_type"] = error.__class__.__name__
+        event["error_message"] = str(error)
+    record_event(Path(ctx.project_root), event, secret_values=secret_values)

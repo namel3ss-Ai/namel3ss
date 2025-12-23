@@ -4,7 +4,7 @@ Targets describe how an app should run, using the same `.ai` file and capsules:
 
 - `local` — dev mode (preferred persistence: SQLite).
 - `service` — long-running server with `/health` and `/version` (preferred persistence: Postgres).
-- `edge` — latency-sensitive, limited runtime (simulated stub in this alpha).
+- `edge` — latency-sensitive, limited engine (simulated stub in this alpha).
 
 Targets are picked in the CLI, not inside `.ai`.
 
@@ -53,7 +53,7 @@ n3 where
 n3 ship --back
 ```
 
-`service` target runs at `http://127.0.0.1:8787/health` (default). Edge target is a simulator stub until the full runtime lands.
+`service` target runs at `http://127.0.0.1:8787/health` (default). Edge target is a simulator stub until the full engine lands.
 
 ## Command map
 - ship (alias: promote)

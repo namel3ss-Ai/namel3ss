@@ -21,6 +21,7 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.pkg.lockfile import LOCKFILE_FILENAME
 from namel3ss.utils.json_tools import dumps_pretty
 from namel3ss.version import get_version
+from namel3ss.secrets import set_engine_target, set_audit_root
 
 
 def run_build_command(args: list[str]) -> int:
@@ -28,6 +29,8 @@ def run_build_command(args: list[str]) -> int:
     target = parse_target(target_raw)
     app_path = resolve_app_path(app_arg)
     project_root = app_path.resolve().parent
+    set_engine_target(target.name)
+    set_audit_root(project_root)
     config = load_config(app_path=app_path)
     program_ir, sources = load_program(app_path.as_posix())
     lock_snapshot, lock_digest = _load_lock_snapshot(project_root)

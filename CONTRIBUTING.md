@@ -62,7 +62,7 @@ n3 <your_app.ai> format
 n3 <your_app.ai> lint
 ```
 
-If you change language/runtime/parsing, update examples and integration tests accordingly.
+If you change language/engine/parsing, update examples and integration tests accordingly.
 
 Quick reminders:
 - File size: ≤500 LOC; split near 400 with folder-first naming.
@@ -86,7 +86,7 @@ Quick reminders:
 - Breaking changes.  
 - Big architectural refactors.  
 - Adding providers beyond Tier-1.  
-- Feature bloat (styling DSL, GraphQL, distributed runtime).
+- Feature bloat (styling DSL, GraphQL, distributed engine).
 
 Open an issue first if unsure.
 
@@ -95,7 +95,7 @@ Open an issue first if unsure.
 ## Commit Style
 - Use clear, scoped messages:  
   - `parser: enforce block-only buttons`  
-  - `runtime(ai): add provider registry`  
+  - `engine(ai): add provider registry`  
   - `studio: add /api/action endpoint`  
   - `docs: add quickstart`
 - Keep commits small and descriptive.

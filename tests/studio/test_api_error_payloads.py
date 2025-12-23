@@ -34,5 +34,5 @@ def test_execute_action_unknown_returns_error_payload():
     source = 'flow "demo":\n  return "ok"\n'
     payload = execute_action(source, session=None, action_id="unknown", payload={})
     assert payload["ok"] is False
-    assert payload.get("kind") == "runtime"
+    assert payload.get("kind") == "engine"
     assert "Unknown action" in payload.get("error", "")

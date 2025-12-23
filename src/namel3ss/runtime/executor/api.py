@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Dict, Optional
+from pathlib import Path
 
 from namel3ss.config.loader import load_config
 from namel3ss.config.model import AppConfig
@@ -14,6 +15,9 @@ from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.storage.factory import resolve_store
 from namel3ss.schema.records import RecordSchema
 from namel3ss.runtime.theme.resolution import resolve_initial_theme
+from namel3ss.observe import actor_summary, record_event, summarize_value
+from namel3ss.secrets import collect_secret_values
+import time
 
 
 def execute_flow(
@@ -32,6 +36,7 @@ def execute_flow(
         ai_provider=ai_provider,
         ai_profiles=ai_profiles,
         store=resolve_store(None),
+        project_root=None,
     ).run()
 
 
@@ -72,7 +77,11 @@ def execute_program_flow(
         app_path=getattr(program, "app_path", None),
         root=getattr(program, "project_root", None),
     )
-    result = Executor(
+    project_root = getattr(program, "project_root", None)
+    resolved_root = project_root if isinstance(project_root, (str, type(None))) else str(project_root)
+    secret_values = collect_secret_values(resolved_config)
+    start_time = time.time()
+    executor = Executor(
         flow,
         schemas=schemas,
         initial_state=state,
@@ -85,7 +94,48 @@ def execute_program_flow(
         config=resolved_config,
         identity_schema=getattr(program, "identity", None),
         identity=identity,
-    ).run()
+        project_root=resolved_root,
+    )
+    actor = actor_summary(executor.ctx.identity)
+    status = "ok"
+    result: ExecutionResult | None = None
+    error: Exception | None = None
+    try:
+        result = executor.run()
+    except Exception as err:
+        status = "error"
+        error = err
+        if resolved_root:
+            record_event(
+                Path(resolved_root),
+                {
+                    "type": "engine_error",
+                    "kind": err.__class__.__name__,
+                    "message": str(err),
+                    "flow_name": flow_name,
+                    "actor": actor,
+                    "time": time.time(),
+                },
+                secret_values=secret_values,
+            )
+    finally:
+        if resolved_root:
+            record_event(
+                Path(resolved_root),
+                {
+                    "type": "flow_run",
+                    "flow_name": flow_name,
+                    "status": status,
+                    "time_start": start_time,
+                    "time_end": time.time(),
+                    "actor": actor,
+                    "input_summary": summarize_value(input or {}, secret_values=secret_values),
+                    "output_summary": summarize_value(result.last_value if result else None, secret_values=secret_values),
+                },
+                secret_values=secret_values,
+            )
+    if error:
+        raise error
     if allow_override and preference_store and preference_key and getattr(program, "theme_preference", {}).get("persist") == "file":
         if result.runtime_theme in {"light", "dark", "system"}:
             preference_store.save_theme(preference_key, result.runtime_theme)

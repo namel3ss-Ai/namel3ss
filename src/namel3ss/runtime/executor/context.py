@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, Optional
 
 from namel3ss.config.model import AppConfig
@@ -31,3 +31,5 @@ class ExecutionContext:
     config: AppConfig
     provider_cache: Dict[str, AIProvider]
     runtime_theme: str | None
+    project_root: str | None = None
+    record_changes: list[dict] = field(default_factory=list)

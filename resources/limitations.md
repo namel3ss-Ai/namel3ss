@@ -149,7 +149,7 @@ namel3ss runs:
 
 There is no:
 
-- distributed runtime
+- distributed engine
 - clustering
 - load balancing
 - orchestration layer
@@ -163,7 +163,7 @@ There is no plugin system.
 You cannot install:
 
 - third-party extensions
-- runtime add-ons
+- engine add-ons
 - marketplace packages
 
 This is deliberate.

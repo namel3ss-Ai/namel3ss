@@ -1,18 +1,26 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.cli.builds import app_path_from_metadata, load_build_metadata, read_latest_build_id
+from namel3ss.cli.proofs import record_active_proof, record_proof_rollback, write_proof
 from namel3ss.cli.promotion_state import load_state, record_promotion, record_rollback
 from namel3ss.cli.targets import parse_target
+from namel3ss.cli.targets_store import write_json
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.governance.verify import run_verify
+from namel3ss.proofs import build_engine_proof
+from namel3ss.secrets import set_audit_root, set_engine_target
 
 
 def run_promote_command(args: list[str]) -> int:
     app_arg, target_raw, build_id, rollback = _parse_args(args)
     project_root = resolve_app_path(app_arg).parent
+    set_engine_target(target_raw or "local")
+    set_audit_root(project_root)
     if rollback:
         _perform_rollback(project_root)
         return 0
@@ -47,14 +55,26 @@ def run_promote_command(args: list[str]) -> int:
                 example=f"n3 pack --target {target.name}",
             )
         )
-    record_promotion(project_root, target.name, selected_build)
     app_snapshot = app_path_from_metadata(build_path, metadata)
+    lock_snapshot = _load_build_lock_snapshot(build_path)
+    _maybe_verify_on_ship(app_snapshot, project_root, target.name)
+    proof_id, proof = build_engine_proof(
+        app_snapshot,
+        target=target.name,
+        build_id=selected_build,
+        lock_snapshot_override=lock_snapshot,
+    )
+    proof_path = write_proof(project_root, proof_id, proof)
+    record_promotion(project_root, target.name, selected_build)
+    record_active_proof(project_root, proof_id, target.name, selected_build)
     print(f"Promoted build {selected_build} to target '{target.name}'.")
     print(f"Snapshot: {app_snapshot.parent.as_posix()}")
+    print(f"Engine proof: {proof_id}")
+    print(f"Proof stored: {proof_path.as_posix()}")
     if target.name == "service":
         print("Next: n3 run --target service --build {id}".format(id=selected_build))
     if target.name == "edge":
-        print("Edge runtime is simulated; run `n3 run --target edge` for the stub.")
+        print("Edge engine is simulated; run `n3 run --target edge` for the stub.")
     print("Note: database migrations are not auto-rolled back in this phase.")
     return 0
 
@@ -73,11 +93,48 @@ def _perform_rollback(project_root: Path) -> None:
             )
         )
     new_state = record_rollback(project_root)
+    record_proof_rollback(project_root)
     active_after = new_state.get("active") or {}
     target = active_after.get("target") or "none"
     build = active_after.get("build_id") or "none"
     print(f"Rolled back. Active target: {target}. Active build: {build}.")
     print("Database schema changes are not automatically rolled back.")
+
+
+def _maybe_verify_on_ship(app_snapshot: Path, project_root: Path, target: str) -> None:
+    enabled = os.getenv("N3_VERIFY_ON_SHIP", "").strip().lower() in {"1", "true", "yes", "on"}
+    if not enabled:
+        return
+    report = run_verify(
+        app_snapshot,
+        target=target,
+        prod=True,
+        config_root=project_root,
+        project_root_override=project_root,
+    )
+    write_json(project_root / ".namel3ss" / "verify.json", report)
+    if report.get("status") != "ok":
+        raise Namel3ssError(
+            build_guidance_message(
+                what="Verify failed for promotion.",
+                why="One or more governance checks failed.",
+                fix="Run `n3 verify --prod` and address the failures before shipping.",
+                example="n3 verify --prod --json",
+            )
+        )
+
+
+def _load_build_lock_snapshot(build_path: Path) -> dict | None:
+    path = build_path / "lock_snapshot.json"
+    if not path.exists():
+        return None
+    try:
+        import json
+
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    return data if isinstance(data, dict) else None
 
 
 def _parse_args(args: list[str]) -> tuple[str | None, str | None, str | None, bool]:
@@ -91,26 +148,26 @@ def _parse_args(args: list[str]) -> tuple[str | None, str | None, str | None, bo
         if arg == "--to":
             if i + 1 >= len(args):
                 raise Namel3ssError(
-                build_guidance_message(
-                    what="--to flag is missing a value.",
-                    why="Promotion requires a target.",
-                    fix="Pass local, service, or edge after --to.",
-                    example="n3 ship --to service",
+                    build_guidance_message(
+                        what="--to flag is missing a value.",
+                        why="Promotion requires a target.",
+                        fix="Pass local, service, or edge after --to.",
+                        example="n3 ship --to service",
+                    )
                 )
-            )
             target = args[i + 1]
             i += 2
             continue
         if arg == "--build":
             if i + 1 >= len(args):
                 raise Namel3ssError(
-                build_guidance_message(
-                    what="--build flag is missing a value.",
-                    why="A build id must follow --build.",
-                    fix="Provide the build id.",
-                    example="n3 ship --to service --build service-abc123",
+                    build_guidance_message(
+                        what="--build flag is missing a value.",
+                        why="A build id must follow --build.",
+                        fix="Provide the build id.",
+                        example="n3 ship --to service --build service-abc123",
+                    )
                 )
-            )
             build_id = args[i + 1]
             i += 2
             continue

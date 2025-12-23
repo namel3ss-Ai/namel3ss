@@ -110,7 +110,7 @@ function renderSummary(data) {
     const row = document.createElement("div");
     row.className = "kv-row";
     const overrideLabel = themeOverride ? " (preview override)" : "";
-    row.innerHTML = `<div class="kv-label">theme</div><div class="kv-value">setting: ${setting}, runtime: ${runtime}, effective: ${effective}${overrideLabel}</div>`;
+    row.innerHTML = `<div class="kv-label">theme</div><div class="kv-value">setting: ${setting}, engine: ${runtime}, effective: ${effective}${overrideLabel}</div>`;
     kv.appendChild(row);
     const tokensRow = document.createElement("div");
     tokensRow.className = "kv-row";

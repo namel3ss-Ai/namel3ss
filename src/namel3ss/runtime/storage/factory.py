@@ -9,6 +9,7 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.runtime.storage.postgres_store import PostgresStore
 from namel3ss.runtime.storage.sqlite_store import SQLiteStore
+from namel3ss.secrets import record_secret_access
 
 
 DEFAULT_DB_PATH = Path(".namel3ss/data.db")
@@ -26,6 +27,7 @@ def create_store(db_path: Path | None = None, config: AppConfig | None = None):
         url = cfg.persistence.database_url or ""
         if not url:
             raise Namel3ssError(_missing_postgres_url_message())
+        record_secret_access("N3_DATABASE_URL", caller="persistence:postgres", source="env")
         return PostgresStore(url)
     if target == "edge":
         raise Namel3ssError(_edge_stub_message())

@@ -186,7 +186,7 @@ def _tenant_missing_message(schema: RecordSchema) -> str:
     return build_guidance_message(
         what=f"Record '{schema.name}' requires a tenant identity.",
         why=f"tenant_key is set to identity.{field}, but no tenant value was provided.",
-        fix="Provide the tenant field in identity defaults or runtime identity.",
+        fix="Provide the tenant field in identity defaults or engine identity.",
         example=f"N3_IDENTITY_{(schema.tenant_key or ['ORG_ID'])[-1].upper()}=acme",
     )
 

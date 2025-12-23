@@ -15,6 +15,10 @@ from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.storage.factory import resolve_store
 from namel3ss.ui.manifest import build_manifest
 from namel3ss.utils.json_tools import dumps as json_dumps
+from namel3ss.secrets import collect_secret_values, redact_payload
+from namel3ss.observe import actor_summary, record_event, summarize_value
+import time
+from pathlib import Path
 
 SUBMIT_RESERVED_KEYS = {"values", "errors", "ok", "result", "state", "traces"}
 
@@ -33,6 +37,7 @@ def handle_action(
     config: AppConfig | None = None,
 ) -> dict:
     """Execute a UI action against the program."""
+    start_time = time.time()
     if payload is not None and not isinstance(payload, dict):
         raise Namel3ssError(_action_payload_message())
 
@@ -40,8 +45,11 @@ def handle_action(
         app_path=getattr(program_ir, "app_path", None),
         root=getattr(program_ir, "project_root", None),
     )
+    secret_values = collect_secret_values(resolved_config)
     store = resolve_store(store, config=resolved_config)
     identity = resolve_identity(resolved_config, getattr(program_ir, "identity", None))
+    actor = actor_summary(identity)
+    project_root = getattr(program_ir, "project_root", None)
     working_state = store.load_state() if state is None else state
     manifest = build_manifest(
         program_ir,
@@ -56,33 +64,74 @@ def handle_action(
 
     action = actions[action_id]
     action_type = action.get("type")
-    if action_type == "call_flow":
-        return _handle_call_flow(
-            program_ir,
-            action,
-            payload or {},
-            working_state,
-            store,
-            manifest,
-            runtime_theme,
-            preference_store=preference_store,
-            preference_key=preference_key,
-            allow_theme_override=allow_theme_override,
-            config=resolved_config,
-            identity=identity,
-        )
-    if action_type == "submit_form":
-        return _handle_submit_form(
-            program_ir,
-            action,
-            payload or {},
-            working_state,
-            store,
-            manifest,
-            runtime_theme,
-            identity=identity,
-        )
-    raise Namel3ssError(f"Unsupported action type '{action_type}'")
+    try:
+        if action_type == "call_flow":
+            response = _handle_call_flow(
+                program_ir,
+                action,
+                payload or {},
+                working_state,
+                store,
+                manifest,
+                runtime_theme,
+                preference_store=preference_store,
+                preference_key=preference_key,
+                allow_theme_override=allow_theme_override,
+                config=resolved_config,
+                identity=identity,
+                secret_values=secret_values,
+            )
+        elif action_type == "submit_form":
+            response = _handle_submit_form(
+                program_ir,
+                action,
+                payload or {},
+                working_state,
+                store,
+                manifest,
+                runtime_theme,
+                identity=identity,
+                secret_values=secret_values,
+            )
+        else:
+            raise Namel3ssError(f"Unsupported action type '{action_type}'")
+    except Exception as err:
+        if project_root:
+            record_event(
+                Path(str(project_root)),
+                {
+                    "type": "engine_error",
+                    "kind": err.__class__.__name__,
+                    "message": str(err),
+                    "action_id": action_id,
+                    "actor": actor,
+                    "time": time.time(),
+                },
+                secret_values=secret_values,
+            )
+        raise
+    finally:
+        if project_root:
+            resp = locals().get("response")
+            if isinstance(resp, dict):
+                status = "ok" if resp.get("ok", True) else "fail"
+            else:
+                status = "error"
+            record_event(
+                Path(str(project_root)),
+                {
+                    "type": "action_run",
+                    "action_id": action_id,
+                    "action_type": action_type,
+                    "status": status,
+                    "time_start": start_time,
+                    "time_end": time.time(),
+                    "actor": actor,
+                    "input_summary": summarize_value(payload or {}, secret_values=secret_values),
+                },
+                secret_values=secret_values,
+            )
+    return response
 
 
 def _ensure_json_serializable(data: dict) -> None:
@@ -105,6 +154,7 @@ def _handle_call_flow(
     allow_theme_override: bool | None = None,
     config: AppConfig | None = None,
     identity: dict | None = None,
+    secret_values: list[str] | None = None,
 ) -> dict:
     flow_name = action.get("flow")
     if not isinstance(flow_name, str):
@@ -140,6 +190,8 @@ def _handle_call_flow(
         "traces": traces,
     }
     _ensure_json_serializable(response)
+    if secret_values:
+        response = redact_payload(response, secret_values)  # type: ignore[assignment]
     return response
 
 
@@ -152,6 +204,7 @@ def _handle_submit_form(
     manifest: dict,
     runtime_theme: Optional[str],
     identity: dict | None = None,
+    secret_values: list[str] | None = None,
 ) -> dict:
     payload = _normalize_submit_payload(payload)
     record = action.get("record")
@@ -176,6 +229,8 @@ def _handle_submit_form(
             "traces": [],
         }
         _ensure_json_serializable(response)
+        if secret_values:
+            response = redact_payload(response, secret_values)  # type: ignore[assignment]
         return response
 
     record_id = saved.get("id") if isinstance(saved, dict) else None
@@ -194,6 +249,8 @@ def _handle_submit_form(
         "traces": [],
     }
     _ensure_json_serializable(response)
+    if secret_values:
+        response = redact_payload(response, secret_values)  # type: ignore[assignment]
     return response
 
 

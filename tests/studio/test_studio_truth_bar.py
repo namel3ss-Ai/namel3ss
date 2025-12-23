@@ -21,5 +21,5 @@ def test_theme_labels_present():
     trust_js = Path("src/namel3ss/studio/web/trust_bar.js").read_text(encoding="utf-8")
     assert "Store:" in trust_js
     assert "Theme (preview only)" in trust_js
-    assert "Theme (runtime, Studio local preference)" in trust_js
+    assert "Theme (engine, Studio local preference)" in trust_js
     assert "Preview override: ON" in trust_js

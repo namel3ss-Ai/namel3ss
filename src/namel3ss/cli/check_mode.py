@@ -8,6 +8,7 @@ from namel3ss.module_loader import load_project
 from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.ui.manifest import build_manifest
+from namel3ss.cli.redaction import redact_cli_text
 
 
 def run_check(path: str, allow_legacy_type_aliases: bool = True) -> int:
@@ -18,7 +19,7 @@ def run_check(path: str, allow_legacy_type_aliases: bool = True) -> int:
         sources = project.sources
         sections.append("Parse: OK")
     except Namel3ssError as err:
-        sections.append(f"Parse: FAIL\n{format_error(err, locals().get('sources', ''))}")
+        sections.append(f"Parse: FAIL\n{redact_cli_text(format_error(err, locals().get('sources', '')))}")
         print("\n".join(sections))
         return 1
 
@@ -38,7 +39,7 @@ def run_check(path: str, allow_legacy_type_aliases: bool = True) -> int:
         manifest = build_manifest(program_ir, state={}, store=MemoryStore(), identity=identity)
         sections.append("Manifest: OK")
     except Namel3ssError as err:
-        sections.append(f"Manifest: FAIL\n{format_error(err, sources)}")
+        sections.append(f"Manifest: FAIL\n{redact_cli_text(format_error(err, sources))}")
 
     if manifest and manifest.get("actions") is not None:
         sections.append(f"Actions: {len(manifest.get('actions', {}))} discovered")

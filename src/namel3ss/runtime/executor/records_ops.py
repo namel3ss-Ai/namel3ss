@@ -30,6 +30,7 @@ def handle_save(ctx: ExecutionContext, stmt: ir.Save) -> None:
         line=stmt.line,
         column=stmt.column,
     )
+    _record_change(ctx, stmt.record_name, saved)
     ctx.last_value = saved
 
 
@@ -51,6 +52,7 @@ def handle_create(ctx: ExecutionContext, stmt: ir.Create) -> None:
         line=stmt.line,
         column=stmt.column,
     )
+    _record_change(ctx, stmt.record_name, saved)
     ctx.locals[stmt.target] = saved
     ctx.last_value = saved
 
@@ -119,3 +121,12 @@ def _value_kind(value: object) -> str:
     if value is None:
         return "null"
     return type(value).__name__
+
+
+def _record_change(ctx: ExecutionContext, record_name: str, saved: dict) -> None:
+    if not isinstance(saved, dict):
+        return
+    record_id = saved.get("id") if "id" in saved else saved.get("_id")
+    if record_id is None:
+        return
+    ctx.record_changes.append({"record": record_name, "id": record_id})

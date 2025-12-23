@@ -1,7 +1,7 @@
 # IR Reference
 
 ## Overview
-- Pipeline: **AST → IR → Runtime**. The parser builds AST nodes, lowering converts AST to IR (in `src/namel3ss/ir/lowering/`), and the runtime executes IR flows.
+- Pipeline: **AST → IR → Engine**. The parser builds AST nodes, lowering converts AST to IR (in `src/namel3ss/ir/lowering/`), and the engine executes IR flows.
 - IR lives in `src/namel3ss/ir/model/` and mirrors the language surface with deterministic shapes for execution.
 
 ## Program shape (`ir.model.program.Program`)
@@ -45,7 +45,7 @@
 - Location: `src/namel3ss/ir/lowering/`.
 - Converts AST (`namel3ss.ast.nodes`) into IR model nodes.
 - Responsibilities split by domain: `expressions.py`, `statements.py`, `ai.py`, `records.py`, `pages.py`, `agents.py`, `program.py`.
-- Guarantees deterministic IR shapes and preserves source locations for runtime errors.
+- Guarantees deterministic IR shapes and preserves source locations for engine errors.
 
 ## Tiny .ai example (conceptual)
 ```

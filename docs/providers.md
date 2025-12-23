@@ -1,6 +1,6 @@
 # Provider capabilities (Phase 10A)
 
-This registry documents what each AI provider supports so Studio and the runtime can make consistent choices. It is read-only in this phase; tool calling is not implemented for real providers yet.
+This registry documents what each AI provider supports so Studio and the engine can make consistent choices. It is read-only in this phase; tool calling is not implemented for real providers yet.
 
 ## Implemented now
 | Provider | Tools | JSON mode | Streaming | System prompt | Vision | Notes |

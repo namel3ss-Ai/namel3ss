@@ -65,6 +65,10 @@ def test_ship_where_and_back(tmp_path, capsys, monkeypatch):
     state = json.loads((tmp_path / ".namel3ss" / "promotion.json").read_text(encoding="utf-8"))
     assert state["active"]["target"] == "service"
     assert state["active"]["build_id"] == build_id
+    active_proof = json.loads((tmp_path / ".namel3ss" / "active_proof.json").read_text(encoding="utf-8"))
+    assert active_proof["target"] == "service"
+    assert active_proof["build_id"] == build_id
+    assert active_proof["proof_id"]
 
     code = main(["where"])
     out = capsys.readouterr().out.lower()
@@ -78,6 +82,8 @@ def test_ship_where_and_back(tmp_path, capsys, monkeypatch):
     assert code == 0
     assert state_after["active"]["target"] is None
     assert "rolled back" in out
+    active_after = json.loads((tmp_path / ".namel3ss" / "active_proof.json").read_text(encoding="utf-8"))
+    assert active_after.get("proof_id") in {None, ""}
 
 
 def test_legacy_build_promote_status_aliases(tmp_path, capsys, monkeypatch):

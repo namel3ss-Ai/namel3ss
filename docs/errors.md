@@ -4,7 +4,7 @@
 - **lexer_error**: invalid characters or tokens during lexing (e.g., `Unexpected character '@'`).
 - **parser_error**: syntax issues while building the AST (e.g., `Expected IDENT, got EOF`).
 - **validation_error**: schema or data validation failures (records/forms), often structured.
-- **runtime_error**: execution-time issues (bad types, unknown variables, limits exceeded).
+- **engine_error**: execution-time issues (bad types, unknown variables, limits exceeded).
 - **ai_error**: AI-related failures (unknown AI profile, tool misuse, call limits).
 - **tool_error**: problems invoking tools (bad args, unexposed tool).
 
@@ -30,7 +30,7 @@ let x is
 - lexer_error: `Unexpected character '@'`
 - parser_error: `Expected ':' after condition`
 - validation_error: `Field 'age' must be present`
-- runtime_error: `Cannot set undeclared variable 'x'`
+- engine_error: `Cannot set undeclared variable 'x'`
 - ai_error: `Unknown AI 'assistant'`
 - tool_error: `AI requested unexposed tool 'search'`
 
