@@ -6,6 +6,17 @@ from namel3ss.ir.model.base import Node
 
 
 @dataclass
+class ToolField(Node):
+    name: str
+    type_name: str
+    required: bool = True
+
+
+@dataclass
 class ToolDecl(Node):
     name: str
     kind: str
+    input_fields: list[ToolField]
+    output_fields: list[ToolField]
+    purity: str = "impure"
+    timeout_seconds: int | None = None

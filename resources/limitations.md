@@ -170,6 +170,8 @@ This is deliberate.
 
 We will not add extensibility until the core language is unshakable.
 
+Python is optional. For advanced logic today, use Python tools with explicit dependencies (`pyproject.toml` or `requirements.txt`) and a per-app `.venv` via `n3 deps install`. For common tasks, built-in tool packs are available without extra dependencies.
+
 ## Why These Limitations Exist
 
 Every limitation serves a purpose:

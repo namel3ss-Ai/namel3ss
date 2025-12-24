@@ -25,6 +25,7 @@ class ExecutionContext:
     ai_provider: AIProvider
     ai_profiles: Dict[str, ir.AIDecl]
     agents: Dict[str, ir.AgentDecl]
+    tools: Dict[str, ir.ToolDecl]
     traces: list[AITrace]
     memory_manager: MemoryManager
     agent_calls: int

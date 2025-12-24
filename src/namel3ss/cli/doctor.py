@@ -6,11 +6,13 @@ import os
 import platform
 import shutil
 import sys
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
 from urllib.parse import urlsplit, urlunsplit
 
+from namel3ss.cli.doctor_models import DoctorCheck
+from namel3ss.cli.doctor_python_tools import build_python_tool_checks
 from namel3ss.config.loader import resolve_config, ConfigSource
 from namel3ss.config.model import AppConfig
 from namel3ss.version import get_version
@@ -29,14 +31,6 @@ STUDIO_ASSETS = ["index.html", "app.js", "styles.css"]
 STATUS_ICONS = {"ok": "✅", "warning": "⚠️", "error": "❌"}
 RESERVED_TRUE_VALUES = {"1", "true", "yes", "on"}
 SUPPORTED_TARGETS = {"memory", "sqlite", "postgres", "edge"}
-
-
-@dataclass
-class DoctorCheck:
-    id: str
-    status: str
-    message: str
-    fix: str
 
 
 def _status_icon(status: str) -> str:
@@ -286,6 +280,7 @@ def build_report() -> Dict[str, Any]:
         config_check or _config_sources_check(config_sources),
         _persistence_check(config),
         _project_check(),
+        *build_python_tool_checks(),
         _studio_assets_check(),
         _cli_path_check(),
     ]
@@ -297,6 +292,14 @@ def _print_human(report: Dict[str, Any]) -> None:
         "Environment": {"python_version", "import_path", "optional_dependencies"},
         "Project": {"project_file", "config_sources", "persistence", "cli_entrypoint"},
         "AI providers": {"provider_envs"},
+        "Python tools": {
+            "python_app_root",
+            "python_tools",
+            "python_tool_entries",
+            "python_deps",
+            "python_venv",
+            "python_lockfile",
+        },
         "Studio": {"studio_assets"},
     }
     checks_by_id = {c["id"]: c for c in report["checks"]}

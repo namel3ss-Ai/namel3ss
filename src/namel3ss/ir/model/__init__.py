@@ -1,7 +1,18 @@
 from namel3ss.ir.model.base import Expression, Node, Statement
 from namel3ss.ir.model.program import Flow, Program
 from namel3ss.ir.model.statements import Create, Find, ForEach, If, Let, Match, MatchCase, Repeat, Return, Save, Set, ThemeChange, TryCatch
-from namel3ss.ir.model.expressions import AttrAccess, BinaryOp, Comparison, Literal, StatePath, UnaryOp, VarReference, Assignable
+from namel3ss.ir.model.expressions import (
+    Assignable,
+    AttrAccess,
+    BinaryOp,
+    Comparison,
+    Literal,
+    StatePath,
+    ToolCallArg,
+    ToolCallExpr,
+    UnaryOp,
+    VarReference,
+)
 from namel3ss.ir.model.ai import AIDecl, AIMemory, AskAIStmt
 from namel3ss.ir.model.agents import AgentDecl, ParallelAgentEntry, RunAgentStmt, RunAgentsParallelStmt
 from namel3ss.ir.model.pages import (
@@ -19,7 +30,7 @@ from namel3ss.ir.model.pages import (
     TextItem,
     TitleItem,
 )
-from namel3ss.ir.model.tools import ToolDecl
+from namel3ss.ir.model.tools import ToolDecl, ToolField
 
 __all__ = [
     "Expression",
@@ -45,6 +56,8 @@ __all__ = [
     "Comparison",
     "Literal",
     "StatePath",
+    "ToolCallArg",
+    "ToolCallExpr",
     "UnaryOp",
     "VarReference",
     "Assignable",
@@ -69,4 +82,5 @@ __all__ = [
     "TextItem",
     "TitleItem",
     "ToolDecl",
+    "ToolField",
 ]

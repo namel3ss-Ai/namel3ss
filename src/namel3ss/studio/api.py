@@ -15,6 +15,7 @@ from namel3ss.runtime.ui.actions import handle_action
 from namel3ss.runtime.preferences.factory import preference_store_for_app, app_pref_key
 from namel3ss.studio.edit import apply_edit_to_source
 from namel3ss.studio.session import SessionState
+from namel3ss.studio.tool_wizard import run_tool_wizard
 from namel3ss.ui.manifest import build_manifest
 from namel3ss.version import get_version
 
@@ -128,6 +129,10 @@ def apply_edit(app_path: str, op: str, target: dict, value: str, session: Sessio
         "lint": lint_payload,
         "summary": summary,
     }
+
+
+def apply_tool_wizard(app_path: str, payload: dict) -> dict:
+    return run_tool_wizard(Path(app_path), payload)
 
 
 def _actions_from_manifest(manifest: dict) -> list[dict]:

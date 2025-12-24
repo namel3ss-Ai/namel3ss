@@ -1,5 +1,11 @@
 tool "echo":
-  kind is "builtin"
+  implemented using builtin
+
+  input:
+    value is json
+
+  output:
+    echo is json
 
 ai "assistant":
   model is "gpt-4.1"

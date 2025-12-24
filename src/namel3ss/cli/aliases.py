@@ -29,7 +29,6 @@ ALIAS_MAP: Dict[str, str] = {
     "persist": "data",
     # Packages
     "pkg": "pkg",
-    "deps": "pkg",
 }
 
 

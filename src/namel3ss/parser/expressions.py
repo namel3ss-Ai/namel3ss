@@ -5,6 +5,7 @@ from typing import List
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.parser.tool import _old_tool_syntax_message
 
 
 def parse_expression(parser) -> ast.Expression:
@@ -131,8 +132,8 @@ def parse_primary(parser) -> ast.Expression:
         parser._advance()
         attrs: List[str] = []
         while parser._match("DOT"):
-            attr_tok = parser._expect("IDENT", "Expected identifier after '.'")
-            attrs.append(attr_tok.value)
+            attr_name = _read_attr_name(parser, context="identifier after '.'")
+            attrs.append(attr_name)
         if attrs:
             return ast.AttrAccess(base=tok.value, attrs=attrs, line=tok.line, column=tok.column)
         return ast.VarReference(name=tok.value, line=tok.line, column=tok.column)
@@ -143,6 +144,8 @@ def parse_primary(parser) -> ast.Expression:
         expr = parse_expression(parser)
         parser._expect("RPAREN", "Expected ')'")
         return expr
+    if tok.type == "CALL":
+        raise Namel3ssError(_old_tool_syntax_message(), line=tok.line, column=tok.column)
     if tok.type == "ASK":
         raise Namel3ssError(
             'AI calls are statements. Use: ask ai "name" with input: <expr> as <target>.',
@@ -156,11 +159,111 @@ def parse_state_path(parser) -> ast.StatePath:
     state_tok = parser._expect("STATE", "Expected 'state'")
     path: List[str] = []
     while parser._match("DOT"):
-        ident_tok = parser._expect("IDENT", "Expected identifier after '.'")
-        path.append(ident_tok.value)
+        path.append(_read_attr_name(parser, context="identifier after '.'"))
     if not path:
         raise Namel3ssError("Expected state path after 'state'", line=state_tok.line, column=state_tok.column)
     return ast.StatePath(path=path, line=state_tok.line, column=state_tok.column)
+
+
+def parse_tool_call_expr(parser) -> ast.ToolCallExpr:
+    name, line, column = _read_phrase_until(parser, stop_type="COLON", context="tool name")
+    parser._expect("COLON", "Expected ':' after tool name")
+    parser._expect("NEWLINE", "Expected newline after tool call")
+    if not parser._match("INDENT"):
+        return ast.ToolCallExpr(tool_name=name, arguments=[], line=line, column=column)
+    arguments: List[ast.ToolCallArg] = []
+    seen = set()
+    while parser._current().type != "DEDENT":
+        if parser._match("NEWLINE"):
+            continue
+        arg_name, arg_line, arg_column = _read_phrase_until(parser, stop_type="IS", context="tool field name")
+        parser._expect("IS", "Expected 'is' after tool field name")
+        value_expr = parser._parse_expression()
+        if arg_name in seen:
+            raise Namel3ssError(
+                build_guidance_message(
+                    what=f"Duplicate tool field '{arg_name}'.",
+                    why="Tool call fields must be unique.",
+                    fix="Remove or rename the duplicate field.",
+                    example='let result is summarize a csv file:\n  file path is \"sales.csv\"',
+                ),
+                line=arg_line,
+                column=arg_column,
+            )
+        seen.add(arg_name)
+        arguments.append(ast.ToolCallArg(name=arg_name, value=value_expr, line=arg_line, column=arg_column))
+        parser._match("NEWLINE")
+    parser._expect("DEDENT", "Expected end of tool call")
+    while parser._match("NEWLINE"):
+        pass
+    return ast.ToolCallExpr(tool_name=name, arguments=arguments, line=line, column=column)
+
+
+def looks_like_tool_call(parser) -> bool:
+    if parser._current().type in {"ASK", "CALL"}:
+        return False
+    pos = parser.position
+    while pos < len(parser.tokens):
+        tok = parser.tokens[pos]
+        if tok.type == "COLON":
+            return True
+        if tok.type in {"NEWLINE", "EOF", "DEDENT"}:
+            return False
+        pos += 1
+    return False
+
+
+def _read_phrase_until(parser, *, stop_type: str, context: str) -> tuple[str, int, int]:
+    tokens = []
+    while True:
+        tok = parser._current()
+        if tok.type == stop_type:
+            break
+        if tok.type in {"NEWLINE", "INDENT", "DEDENT"}:
+            raise Namel3ssError(f"Expected {context}", line=tok.line, column=tok.column)
+        if stop_type != "COLON" and tok.type == "COLON":
+            raise Namel3ssError(f"Expected {context}", line=tok.line, column=tok.column)
+        if tok.type in {"COMMA", "LPAREN", "RPAREN", "LBRACKET", "RBRACKET", "PLUS", "MINUS", "STAR", "SLASH"}:
+            raise Namel3ssError(f"Expected {context}", line=tok.line, column=tok.column)
+        tokens.append(tok)
+        parser._advance()
+    if not tokens:
+        tok = parser._current()
+        raise Namel3ssError(f"Expected {context}", line=tok.line, column=tok.column)
+    return _phrase_text(tokens), tokens[0].line, tokens[0].column
+
+
+def _read_attr_name(parser, *, context: str) -> str:
+    tok = parser._current()
+    if not isinstance(tok.value, str) or tok.type == "STRING":
+        raise Namel3ssError(f"Expected {context}", line=tok.line, column=tok.column)
+    parser._advance()
+    return tok.value
+
+
+def _phrase_text(tokens) -> str:
+    parts: List[str] = []
+    for tok in tokens:
+        if tok.type == "DOT":
+            if parts:
+                parts[-1] = f"{parts[-1]}."
+            else:
+                parts.append(".")
+            continue
+        value = tok.value
+        if isinstance(value, bool):
+            text = "true" if value else "false"
+        elif value is None:
+            text = ""
+        else:
+            text = str(value)
+        if not text:
+            continue
+        if parts and parts[-1].endswith("."):
+            parts[-1] = f"{parts[-1]}{text}"
+        else:
+            parts.append(text)
+    return " ".join(parts).strip()
 
 
 def _parse_literal_list(parser) -> List[ast.Expression]:

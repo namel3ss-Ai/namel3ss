@@ -9,7 +9,7 @@
 - `flows`: list of `Flow` entries (control logic).
 - `pages`: list of UI pages.
 - `ais`: mapping of AI profiles.
-- `tools`: mapping of tool declarations.
+- `tools`: mapping of tool declarations (name/kind/input_fields/output_fields/purity/timeout_seconds).
 - `agents`: mapping of agent declarations.
 
 ## Flow
@@ -39,7 +39,11 @@
 - `UnaryOp`: unary ops (e.g., `not`).
 - `BinaryOp`: binary logical ops (`and`, `or`).
 - `Comparison`: `eq`, `gt`, `lt`.
+- `ToolCallExpr`: call a declared tool with an input payload.
 - `Assignable`: alias for `VarReference | StatePath`.
+
+## Tool declarations (IR)
+- `ToolDecl`: `name`, `kind`, `input_fields`, `output_fields`, `purity`, `timeout_seconds`.
 
 ## Lowering
 - Location: `src/namel3ss/ir/lowering/`.

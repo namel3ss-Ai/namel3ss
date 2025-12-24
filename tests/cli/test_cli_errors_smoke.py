@@ -26,8 +26,8 @@ def test_curly_brace_parse_error_message(capsys):
     rc = cli_main([path, "check"])
     assert rc == 1
     out = capsys.readouterr().out
-    assert "{}" in out
-    assert "not supported" in out
+    assert "object literal syntax" in out
+    assert "English field blocks" in out
 
 
 def test_strict_alias_rejection_message():

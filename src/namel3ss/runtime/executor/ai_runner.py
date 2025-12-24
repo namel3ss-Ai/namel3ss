@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 import uuid
+from pathlib import Path
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
@@ -10,6 +11,7 @@ from namel3ss.runtime.ai.trace import AITrace
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
 from namel3ss.runtime.providers.capabilities import get_provider_capabilities
+from namel3ss.runtime.tools.field_schema import build_json_schema
 from namel3ss.runtime.tools.registry import execute_tool
 from namel3ss.traces.builders import (
     build_ai_call_completed,
@@ -18,7 +20,6 @@ from namel3ss.traces.builders import (
 )
 from namel3ss.observe import record_event, summarize_value
 from namel3ss.secrets import collect_secret_values
-from pathlib import Path
 
 
 def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
@@ -164,10 +165,20 @@ def run_ai_with_tools(
         if profile.system_prompt:
             messages.append({"role": "system", "content": profile.system_prompt})
         messages.append({"role": "user", "content": user_input})
-        tool_decls = [
-            ToolDeclaration(name=name, description=None, input_schema={}, output_schema=None, strict=False)
-            for name in profile.exposed_tools
-        ]
+        tool_decls = []
+        for name in profile.exposed_tools:
+            tool_decl = ctx.tools.get(name)
+            input_schema = build_json_schema(tool_decl.input_fields) if tool_decl else {"type": "object", "properties": {}}
+            output_schema = build_json_schema(tool_decl.output_fields) if tool_decl else None
+            tool_decls.append(
+                ToolDeclaration(
+                    name=name,
+                    description=None,
+                    input_schema=input_schema,
+                    output_schema=output_schema,
+                    strict=False,
+                )
+            )
         policy = ToolCallPolicy(allow_tools=True, max_calls=3, strict_json=True, retry_on_parse_error=False, max_total_turns=6)
         output_text = run_ai_tool_pipeline(
             adapter=adapter,

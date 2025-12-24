@@ -10,6 +10,8 @@ Start here:
 - [First 5 minutes](docs/first-5-minutes.md)
 - [What you can build today](docs/what-you-can-build-today.md)
 - [UI DSL Spec](docs/ui-dsl.md)
+- [Python tools](docs/python-tools.md)
+- [Tool packs](docs/tool-packs.md)
 - [Editor](docs/editor.md)
 - [Examples](examples/)
 - [Stability](docs/stability.md)
@@ -74,6 +76,77 @@ ai "assistant":
     short_term is 10
     semantic is true
     profile is true
+```
+
+### Tools
+Tools are explicit, local functions with schema-validated inputs/outputs. Python code lives in `tools/*.py` (no inline Python). The `.ai` file stays intent-only; Python wiring lives in `.namel3ss/tools.yaml`.
+```ai
+tool "greet someone":
+  implemented using python
+  purity is "pure"
+
+  input:
+    name is text
+
+  output:
+    message is text
+
+flow "hello":
+  let result is greet someone:
+    name is "Ada"
+  return result
+```
+Bind the tool entry once:
+```bash
+n3 tools bind "greet someone" --entry "tools.sample_tool:greet"
+```
+Install dependencies per app:
+```bash
+n3 deps install
+```
+
+### No wiring pain
+Define tools in English, then let namel3ss wire them up:
+```ai
+tool "summarize a csv file":
+  implemented using python
+
+  input:
+    file path is text
+
+  output:
+    rows is number
+    columns is number
+```
+```bash
+n3 tools bind --from-app
+n3 run app.ai
+```
+
+### No Python required
+Zero Python required: use built-in tool packs for common tasks. Example:
+```ai
+tool "current time":
+  implemented using python
+
+  input:
+    timezone is optional text
+
+  output:
+    iso is text
+
+flow "demo":
+  let result is current time:
+    timezone is "utc"
+  return result
+```
+Bind it to the built-in pack once:
+```bash
+n3 tools bind "current time" --entry "namel3ss.tool_packs.datetime:now"
+```
+10-second demo:
+```bash
+n3 run app.ai
 ```
 
 ### Studio
@@ -161,9 +234,13 @@ Format and lint:
 n3 fmt            # alias: n3 format
 n3 lint
 ```
+Python deps:
+```bash
+n3 deps <cmd>     # status/install/sync/lock/clean
+```
 Packages (capsules):
 ```bash
-n3 deps <cmd>     # alias: n3 pkg <cmd>
+n3 pkg <cmd>
 ```
 Targets and promotion:
 ```bash
@@ -238,4 +315,5 @@ Join the conversation. Share ideas. Build together.
 - pack (alias: build)
 - where (alias: status)
 - fmt (alias: format)
-- deps (alias: pkg)
+- pkg
+- deps

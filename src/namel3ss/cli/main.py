@@ -20,6 +20,7 @@ from namel3ss.cli.new_mode import run_new
 from namel3ss.cli.persist_mode import run_data, run_persist
 from namel3ss.cli.promote_mode import run_promote_command
 from namel3ss.cli.proof_mode import run_proof_command
+from namel3ss.cli.deps_mode import run_deps
 from namel3ss.cli.run_mode import run_run_command
 from namel3ss.cli.runner import run_flow
 from namel3ss.cli.secrets_mode import run_secrets_command
@@ -28,6 +29,7 @@ from namel3ss.cli.explain_mode import run_explain_command
 from namel3ss.cli.status_mode import run_status_command
 from namel3ss.cli.studio_mode import run_studio
 from namel3ss.cli.test_mode import run_test_command
+from namel3ss.cli.tools_mode import run_tools
 from namel3ss.cli.ui_mode import render_manifest, run_action
 from namel3ss.cli.pkg_mode import run_pkg
 from namel3ss.cli.verify_mode import run_verify_command
@@ -53,6 +55,7 @@ RESERVED = {
     "test",
     "pkg",
     "deps",
+    "tools",
     "pack",
     "build",
     "ship",
@@ -128,8 +131,12 @@ def main(argv: list[str] | None = None) -> int:
             return run_editor_command(args[1:])
         if cmd in {"data", "persist"}:
             return run_data(None, args[1:]) if cmd == "data" else run_persist(None, args[1:])
-        if cmd in {"pkg", "deps"}:
+        if cmd == "pkg":
             return run_pkg(args[1:])
+        if cmd == "deps":
+            return run_deps(args[1:])
+        if cmd == "tools":
+            return run_tools(args[1:])
         if cmd == "new":
             return run_new(args[1:])
         if cmd == "test":
@@ -290,7 +297,9 @@ def _print_usage() -> None:
   n3 graph [app.ai] [--json]       # module dependency graph
   n3 exports [app.ai] [--json]     # module export list
   n3 data [app.ai] <cmd>           # data store status/reset (alias: persist)
-  n3 deps <cmd> [--json]           # packages (capsules) (alias: pkg)
+  n3 deps <cmd> [--json]           # python env/deps (status/install/sync/lock/clean)
+  n3 tools <cmd> [--json]          # tool bindings (status/bind/unbind/format)
+  n3 pkg <cmd> [--json]            # packages (capsules)
   n3 <app.ai>                      # run default flow
   n3 <app.ai> <action_id> [json]   # execute UI action (payload optional)
   n3 help                          # this help

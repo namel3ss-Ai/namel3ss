@@ -208,7 +208,14 @@ def _unsupported_character_message(ch: str) -> str:
 def _object_literal_message() -> str:
     return build_guidance_message(
         what="Found '{' or '}' (object literal syntax).",
-        why="Inline JSON/dictionary literals are not supported; structure comes from records, forms, and state.",
-        fix='Define a record and submit form values instead of embedding `{}`.',
-        example='record "User": name text  # then submit {"values":{"name":"Ada"}}',
+        why="Inline JSON/dictionary literals are not supported; tool schemas and calls now use English field blocks.",
+        fix="Rewrite tool declarations and tool calls using input/output blocks instead of JSON literals.",
+        example=(
+            "tool \"get data from a web address\":\n"
+            "  implemented using python\n\n"
+            "  input:\n"
+            "    web address is text\n\n"
+            "  output:\n"
+            "    data is json"
+        ),
     )

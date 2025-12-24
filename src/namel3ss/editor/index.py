@@ -13,8 +13,6 @@ from namel3ss.editor.workspace import normalize_path
 
 
 TRIVIA_TOKENS = {"NEWLINE", "INDENT", "DEDENT", "EOF"}
-
-
 @dataclass(frozen=True)
 class TextSpan:
     line: int
@@ -26,8 +24,6 @@ class TextSpan:
         if line != self.line or line != self.end_line:
             return False
         return self.column <= column < self.end_column
-
-
 @dataclass(frozen=True)
 class TokenSpan:
     type: str
@@ -35,8 +31,6 @@ class TokenSpan:
     line: int
     column: int
     end_column: int
-
-
 @dataclass(frozen=True)
 class SymbolDefinition:
     kind: str
@@ -46,8 +40,6 @@ class SymbolDefinition:
     span: TextSpan
     origin: str
     exported: bool
-
-
 @dataclass(frozen=True)
 class SymbolReference:
     kind: str
@@ -56,8 +48,6 @@ class SymbolReference:
     span: TextSpan
     replace_span: TextSpan
     is_string: bool
-
-
 @dataclass(frozen=True)
 class FileIndex:
     path: Path
@@ -66,8 +56,6 @@ class FileIndex:
     uses: Dict[str, str]
     definitions: List[SymbolDefinition]
     references: List[SymbolReference]
-
-
 @dataclass(frozen=True)
 class ProjectIndex:
     root: Path

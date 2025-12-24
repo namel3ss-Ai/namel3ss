@@ -34,6 +34,7 @@ class Executor:
         ai_profiles: Optional[Dict[str, ir.AIDecl]] = None,
         memory_manager: Optional[MemoryManager] = None,
         agents: Optional[Dict[str, ir.AgentDecl]] = None,
+        tools: Optional[Dict[str, ir.ToolDecl]] = None,
         config: Optional[AppConfig] = None,
         runtime_theme: Optional[str] = None,
         identity_schema: IdentitySchema | None = None,
@@ -58,6 +59,7 @@ class Executor:
             ai_provider=default_ai_provider,
             ai_profiles=ai_profiles or {},
             agents=agents or {},
+            tools=tools or {},
             traces=[],
             memory_manager=memory_manager or MemoryManager(),
             agent_calls=0,
@@ -77,6 +79,7 @@ class Executor:
         self.ai_provider = self.ctx.ai_provider
         self.ai_profiles = self.ctx.ai_profiles
         self.agents = self.ctx.agents
+        self.tools = self.ctx.tools
         self.traces = self.ctx.traces
         self.memory_manager = self.ctx.memory_manager
         self.agent_calls = self.ctx.agent_calls

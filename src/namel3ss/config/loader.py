@@ -74,6 +74,7 @@ def _apply_toml_config(config: AppConfig, data: Dict[str, Any]) -> None:
     _apply_provider_toml(config, data.get("mistral"), provider="mistral")
     _apply_persistence_toml(config, data.get("persistence"))
     _apply_identity_toml(config, data.get("identity"))
+    _apply_python_tools_toml(config, data.get("python_tools") or data.get("python"))
 
 
 def _apply_ollama_toml(config: AppConfig, table: Any) -> None:
@@ -128,6 +129,17 @@ def _apply_identity_toml(config: AppConfig, table: Any) -> None:
         config.identity.defaults[str(key)] = value
 
 
+def _apply_python_tools_toml(config: AppConfig, table: Any) -> None:
+    if not isinstance(table, dict):
+        return
+    timeout = table.get("timeout_seconds")
+    if timeout is not None:
+        try:
+            config.python_tools.timeout_seconds = int(timeout)
+        except (TypeError, ValueError) as err:
+            raise Namel3ssError("python_tools.timeout_seconds must be an integer") from err
+
+
 def _apply_env_overrides(config: AppConfig) -> bool:
     used = False
     host = os.getenv("NAMEL3SS_OLLAMA_HOST")
@@ -179,6 +191,13 @@ def _apply_env_overrides(config: AppConfig) -> bool:
     edge_kv_url = os.getenv("N3_EDGE_KV_URL")
     if edge_kv_url:
         config.persistence.edge_kv_url = edge_kv_url
+        used = True
+    tool_timeout = os.getenv("N3_PYTHON_TOOL_TIMEOUT_SECONDS")
+    if tool_timeout:
+        try:
+            config.python_tools.timeout_seconds = int(tool_timeout)
+        except ValueError as err:
+            raise Namel3ssError("N3_PYTHON_TOOL_TIMEOUT_SECONDS must be an integer") from err
         used = True
     used = _apply_identity_env(config) or used
     return used

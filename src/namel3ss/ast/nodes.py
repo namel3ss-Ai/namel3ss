@@ -14,6 +14,8 @@ from namel3ss.ast.expressions import (
     Expression,
     Literal,
     StatePath,
+    ToolCallArg,
+    ToolCallExpr,
     UnaryOp,
     VarReference,
 )
@@ -55,7 +57,7 @@ from namel3ss.ast.statements import (
     Statement,
     TryCatch,
 )
-from namel3ss.ast.tool import ToolDecl
+from namel3ss.ast.tool import ToolDecl, ToolField
 from namel3ss.ast.records import FieldConstraint, FieldDecl, RecordDecl
 
 __all__ = [
@@ -88,6 +90,8 @@ __all__ = [
     "UnaryOp",
     "BinaryOp",
     "Comparison",
+    "ToolCallArg",
+    "ToolCallExpr",
     "Assignable",
     "FieldConstraint",
     "FieldDecl",
@@ -109,6 +113,7 @@ __all__ = [
     "AIDecl",
     "AIMemory",
     "ToolDecl",
+    "ToolField",
     "AgentDecl",
     "UseDecl",
     "CapsuleExport",

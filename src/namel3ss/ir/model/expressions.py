@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import List, Union
 
-from namel3ss.ir.model.base import Expression
+from namel3ss.ir.model.base import Expression, Node
 
 
 @dataclass
@@ -46,6 +46,18 @@ class Comparison(Expression):
     kind: str
     left: Expression
     right: Expression
+
+
+@dataclass
+class ToolCallExpr(Expression):
+    tool_name: str
+    arguments: List["ToolCallArg"]
+
+
+@dataclass
+class ToolCallArg(Node):
+    name: str
+    value: Expression
 
 
 Assignable = Union[VarReference, StatePath]

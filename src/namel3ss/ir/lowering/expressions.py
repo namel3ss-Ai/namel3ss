@@ -1,7 +1,18 @@
 from __future__ import annotations
 
 from namel3ss.ast import nodes as ast
-from namel3ss.ir.model.expressions import AttrAccess, BinaryOp, Comparison, Literal, StatePath, UnaryOp, VarReference, Assignable
+from namel3ss.ir.model.expressions import (
+    Assignable,
+    AttrAccess,
+    BinaryOp,
+    Comparison,
+    Literal,
+    StatePath,
+    ToolCallArg,
+    ToolCallExpr,
+    UnaryOp,
+    VarReference,
+)
 
 
 def _lower_assignable(expr: ast.Assignable) -> Assignable:
@@ -43,6 +54,17 @@ def _lower_expression(expr: ast.Expression | None):
             kind=expr.kind,
             left=_lower_expression(expr.left),
             right=_lower_expression(expr.right),
+            line=expr.line,
+            column=expr.column,
+        )
+    if isinstance(expr, ast.ToolCallExpr):
+        args = [
+            ToolCallArg(name=arg.name, value=_lower_expression(arg.value), line=arg.line, column=arg.column)
+            for arg in expr.arguments
+        ]
+        return ToolCallExpr(
+            tool_name=expr.tool_name,
+            arguments=args,
             line=expr.line,
             column=expr.column,
         )

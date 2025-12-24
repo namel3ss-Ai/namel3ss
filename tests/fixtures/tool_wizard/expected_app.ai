@@ -1,0 +1,15 @@
+flow "demo":
+  return "ok"
+
+tool "greeter":
+  implemented using python
+  purity is "pure"
+  timeout_seconds is 12
+
+  input:
+    age is optional number
+    name is text
+
+  output:
+    message is text
+    ok is boolean

@@ -11,6 +11,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.render import format_error
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
 from namel3ss.studio.api import (
+    apply_tool_wizard,
     apply_edit,
     execute_action,
     get_actions_payload,
@@ -191,6 +192,21 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
                 return
             except Exception as err:  # pragma: no cover
                 self._respond_json(build_error_payload(str(err), kind="engine"), status=500)
+                return
+        if self.path == "/api/tool-wizard":
+            if not isinstance(body, dict):
+                self._respond_json(build_error_payload("Body must be a JSON object", kind="tool_wizard"), status=400)
+                return
+            try:
+                resp = apply_tool_wizard(self.server.app_path, body)  # type: ignore[attr-defined]
+                self._respond_json(resp, status=200)
+                return
+            except Namel3ssError as err:
+                payload = build_error_from_exception(err, kind="tool_wizard", source=source)
+                self._respond_json(payload, status=400)
+                return
+            except Exception as err:  # pragma: no cover
+                self._respond_json(build_error_payload(str(err), kind="tool_wizard"), status=500)
                 return
         if self.path == "/api/theme":
             if not isinstance(body, dict) or "value" not in body:

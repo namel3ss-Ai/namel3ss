@@ -44,6 +44,11 @@ class IdentityConfig:
 
 
 @dataclass
+class PythonToolsConfig:
+    timeout_seconds: int = 10
+
+
+@dataclass
 class AppConfig:
     ollama: OllamaConfig = field(default_factory=OllamaConfig)
     openai: OpenAIConfig = field(default_factory=OpenAIConfig)
@@ -52,6 +57,7 @@ class AppConfig:
     mistral: MistralConfig = field(default_factory=MistralConfig)
     persistence: PersistenceConfig = field(default_factory=PersistenceConfig)
     identity: IdentityConfig = field(default_factory=IdentityConfig)
+    python_tools: PythonToolsConfig = field(default_factory=PythonToolsConfig)
 
 
 __all__ = [
@@ -63,4 +69,5 @@ __all__ = [
     "MistralConfig",
     "PersistenceConfig",
     "IdentityConfig",
+    "PythonToolsConfig",
 ]

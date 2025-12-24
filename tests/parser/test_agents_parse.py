@@ -3,7 +3,13 @@ from tests.conftest import lower_ir_program
 
 
 SOURCE = '''tool "echo":
-  kind is "mock"
+  implemented using mock
+
+  input:
+    value is json
+
+  output:
+    echo is json
 
 ai "assistant":
   model is "gpt-4.1"

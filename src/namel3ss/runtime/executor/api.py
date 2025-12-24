@@ -27,6 +27,7 @@ def execute_flow(
     input_data: Optional[Dict[str, object]] = None,
     ai_provider: Optional[AIProvider] = None,
     ai_profiles: Optional[Dict[str, ir.AIDecl]] = None,
+    tools: Optional[Dict[str, ir.ToolDecl]] = None,
 ) -> ExecutionResult:
     return Executor(
         flow,
@@ -35,6 +36,7 @@ def execute_flow(
         input_data=input_data,
         ai_provider=ai_provider,
         ai_profiles=ai_profiles,
+        tools=tools,
         store=resolve_store(None),
         project_root=None,
     ).run()
@@ -90,6 +92,7 @@ def execute_program_flow(
         ai_provider=ai_provider,
         ai_profiles=program.ais,
         agents=program.agents,
+        tools=program.tools,
         runtime_theme=resolution.setting_used.value,
         config=resolved_config,
         identity_schema=getattr(program, "identity", None),

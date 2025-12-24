@@ -53,4 +53,16 @@ class Comparison(Expression):
     right: Expression
 
 
+@dataclass
+class ToolCallExpr(Expression):
+    tool_name: str
+    arguments: List["ToolCallArg"]
+
+
+@dataclass
+class ToolCallArg(Node):
+    name: str
+    value: Expression
+
+
 Assignable = Union[VarReference, StatePath]

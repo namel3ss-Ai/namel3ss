@@ -6,6 +6,7 @@
   <title>Namel3ss Studio</title>
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/theme_tokens.css">
+  <link rel="stylesheet" href="/tool_wizard.css">
 </head>
 <body class="studio-root">
   <div class="studio-shell">
@@ -20,6 +21,7 @@
       <div class="topbar-actions">
         <button class="btn primary" id="refresh" title="Reload UI and actions (non-destructive)">Refresh</button>
         <button class="btn secondary" id="reset" title="Clear state and store">Reset</button>
+        <button class="btn secondary" id="toolWizardButton" title="Generate a Python tool skeleton">Tool Wizard</button>
         <button class="btn secondary hidden" id="seed">Seed</button>
         <label for="themeSelect" id="themeLabel">Theme</label>
         <select id="themeSelect" class="theme-select">
@@ -50,6 +52,58 @@
           <p><a href="docs/what-you-can-build-today.md" target="_blank">What you can build today</a></p>
           <p><a href="examples/README.md" target="_blank">Examples</a></p>
           <p>Debug tip: run <code>n3 app.ai lint</code> or <code>n3 app.ai check</code> if something feels off.</p>
+        </div>
+      </div>
+    </div>
+    <div id="toolWizardModal" class="modal hidden tool-wizard-modal" role="dialog" aria-modal="true" aria-labelledby="toolWizardTitle">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div id="toolWizardTitle" class="section-title">Tool Wizard</div>
+          <button class="btn ghost small" id="toolWizardClose">Close</button>
+        </div>
+        <div class="modal-body">
+          <form id="toolWizardForm" class="ui-form">
+            <label>
+              Tool name
+              <input id="toolWizardName" type="text" placeholder="greeter">
+            </label>
+            <label>
+              Module name
+              <input id="toolWizardModule" type="text" placeholder="sample_tool">
+            </label>
+            <label>
+              Function name
+              <input id="toolWizardFunction" type="text" placeholder="greet">
+            </label>
+            <label>
+              Purity
+              <select id="toolWizardPurity">
+                <option value="impure">impure</option>
+                <option value="pure">pure</option>
+              </select>
+            </label>
+            <label>
+              Timeout seconds (optional)
+              <input id="toolWizardTimeout" type="number" min="1" placeholder="10">
+            </label>
+            <label>
+              Input fields (one per line, name:type, optional with ?)
+              <textarea id="toolWizardInput" rows="4" placeholder="name:text&#10;age?:number"></textarea>
+            </label>
+            <label>
+              Output fields (one per line, name:type, optional with ?)
+              <textarea id="toolWizardOutput" rows="4" placeholder="message:text&#10;ok:boolean"></textarea>
+            </label>
+            <div id="toolWizardStatus" class="tool-wizard-status"></div>
+            <div id="toolWizardConflict" class="tool-wizard-conflict hidden">
+              <div id="toolWizardConflictMessage"></div>
+              <button class="btn secondary small" id="toolWizardUseSuggestion" type="button">Use suggested names</button>
+            </div>
+            <div class="tool-wizard-actions">
+              <button class="btn primary" type="submit">Generate</button>
+              <button class="btn ghost" type="button" id="toolWizardCancel">Cancel</button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -153,5 +207,6 @@
   <script src="/trace_utils.js"></script>
   <script src="/app.js"></script>
   <script src="/ui_controls.js"></script>
+  <script src="/tool_wizard.js"></script>
 </body>
 </html>

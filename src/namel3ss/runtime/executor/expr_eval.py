@@ -7,6 +7,7 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.utils.numbers import is_number, to_decimal
+from namel3ss.runtime.tools.python_runtime import execute_python_tool_call
 
 
 def evaluate_expression(ctx: ExecutionContext, expr: ir.Expression) -> object:
@@ -170,6 +171,23 @@ def evaluate_expression(ctx: ExecutionContext, expr: ir.Expression) -> object:
                 return to_decimal(left) != to_decimal(right)
             return left != right
         raise Namel3ssError(f"Unsupported comparison '{expr.kind}'", line=expr.line, column=expr.column)
+    if isinstance(expr, ir.ToolCallExpr):
+        payload = {}
+        for arg in expr.arguments:
+            if arg.name in payload:
+                raise Namel3ssError(
+                    f"Duplicate tool input '{arg.name}'",
+                    line=arg.line,
+                    column=arg.column,
+                )
+            payload[arg.name] = evaluate_expression(ctx, arg.value)
+        return execute_python_tool_call(
+            ctx,
+            tool_name=expr.tool_name,
+            payload=payload,
+            line=expr.line,
+            column=expr.column,
+        )
 
     raise Namel3ssError(f"Unsupported expression type: {type(expr)}", line=expr.line, column=expr.column)
 

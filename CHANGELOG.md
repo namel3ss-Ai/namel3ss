@@ -8,9 +8,44 @@ No breaking changes without an explicit changelog entry.
 - GitHub-backed package installs into `packages/` with checksum and license verification.
 - `n3 pkg` commands: add/install/plan/tree/why/verify/licenses (+ `--json`).
 - Packages docs and demo example (`docs/packages.md`, `examples/demo_packages/`).
+- Python tool venv support with per-app `.venv`, dependency detection, and `n3 deps` commands.
+- Tool traces now include python env metadata and dependency source.
+- Studio Tool Wizard for generating python tool skeletons.
+- Built-in python tool packs (http, datetime, text, file, math) with no extra deps.
+- `n3 doctor` now checks python tool declarations, deps, venv, and lockfile status.
+- Python tool subprocess protocol v1 documentation.
 
 ### Changed
 - Module resolution now checks `packages/<name>/` after `modules/<name>/`.
+- Breaking change: removed the old technical tool syntax in favor of English-first tool blocks and calls.
+
+Before:
+```ai
+tool "greeter":
+  kind is "python"
+  entry is "tools.sample_tool:greet"
+  input_schema is json
+  output_schema is json
+
+flow "hello":
+  let result is call tool "greeter" with input: input
+```
+
+After:
+```ai
+tool "greet someone":
+  implemented using python
+
+  input:
+    name is text
+
+  output:
+    message is text
+
+flow "hello":
+  let result is greet someone:
+    name is "Ada"
+```
 
 ### Fixed
 

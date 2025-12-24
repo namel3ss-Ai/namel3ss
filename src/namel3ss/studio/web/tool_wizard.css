@@ -1,0 +1,38 @@
+.tool-wizard-modal .modal-content {
+  width: 420px;
+  max-height: 80vh;
+  overflow: auto;
+}
+
+.tool-wizard-modal textarea {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #eaeaea;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+}
+
+.tool-wizard-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.tool-wizard-status {
+  font-size: 12px;
+}
+
+.tool-wizard-conflict {
+  border: 1px solid #f0c2c2;
+  background: #fff5f5;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tool-wizard-conflict.hidden {
+  display: none;
+}

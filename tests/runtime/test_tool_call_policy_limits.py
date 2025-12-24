@@ -8,7 +8,13 @@ from tests.conftest import lower_ir_program
 
 
 SOURCE = '''tool "echo":
-  kind is "builtin"
+  implemented using builtin
+
+  input:
+    value is json
+
+  output:
+    echo is json
 
 ai "assistant":
   provider is "mock"
