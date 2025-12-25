@@ -1,7 +1,7 @@
 # Python tool protocol
 
-Namel3ss runs Python tools in a subprocess using a small JSON protocol. This keeps
-execution explicit, traceable, and easy to evolve.
+Namel3ss runs Python tools using a small JSON protocol (local subprocess and service runner).
+This keeps execution explicit, traceable, and easy to evolve.
 
 ## Protocol version
 
@@ -9,7 +9,7 @@ execution explicit, traceable, and easy to evolve.
 protocol_version: 1
 ```
 
-## Stdin schema (tool runner input)
+## Local subprocess schema (stdin)
 
 ```json
 {
@@ -26,7 +26,7 @@ Fields:
 - `entry` (string): module:function entry point.
 - `payload` (object): JSON payload for the tool.
 
-## Stdout schema (tool runner output)
+## Local subprocess schema (stdout)
 
 Success:
 ```json
@@ -56,10 +56,40 @@ Error:
 Tools are terminated after their timeout (default 10 seconds). Configure per-tool
 with `timeout_seconds`, or set a global default in `namel3ss.toml`.
 
+## Service runner schema (HTTP)
+
+Request (POST JSON):
+```json
+{
+  "protocol_version": 1,
+  "tool_name": "greeter",
+  "kind": "python",
+  "entry": "tools.sample_tool:greet",
+  "payload": { "name": "Ada" },
+  "timeout_ms": 10000,
+  "trace_id": "uuid",
+  "project": { "app_root": "/path/to/app", "flow": "demo" }
+}
+```
+
+Response (success):
+```json
+{ "ok": true, "result": { "message": "Hello Ada" } }
+```
+
+Response (error):
+```json
+{ "ok": false, "error": { "type": "ValueError", "message": "Missing input" } }
+```
+
 ## Trace fields
 
 Tool call traces include:
-- `python_env`: `system` or `venv`
-- `python_path`: interpreter path
-- `deps_source`: `pyproject`, `requirements`, or `none`
+- `runner`: `local`, `service`, or `container`
+- `resolved_source`: `builtin_pack`, `installed_pack`, or `binding`
+- `timeout_ms` and `duration_ms`
 - `protocol_version`: current tool protocol version
+- local runner: `python_env`, `python_path`, `deps_source`
+- service runner: `service_url`
+- container runner: `container_runtime`, `image`, `command`
+- pack tools: `pack_id`, `pack_name`, `pack_version`

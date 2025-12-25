@@ -17,7 +17,14 @@ from namel3ss.studio.api import (
     get_actions_payload,
     get_lint_payload,
     get_summary_payload,
+    get_tools_payload,
+    get_packs_payload,
     get_ui_payload,
+    apply_tools_auto_bind,
+    apply_pack_add,
+    apply_pack_verify,
+    apply_pack_enable,
+    apply_pack_disable,
 )
 from namel3ss.studio.session import SessionState
 from namel3ss.utils.json_tools import dumps as json_dumps
@@ -119,6 +126,21 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
         if self.path == "/api/lint":
             payload = get_lint_payload(source)
             self._respond_json(payload, status=200)
+            return
+        if self.path == "/api/tools":
+            try:
+                payload = get_tools_payload(source, self.server.app_path)  # type: ignore[attr-defined]
+                status = 200 if payload.get("ok", True) else 400
+                self._respond_json(payload, status=status)
+                return
+            except Namel3ssError as err:
+                payload = build_error_from_exception(err, kind="tools", source=source)
+                self._respond_json(payload, status=400)
+                return
+        if self.path == "/api/packs":
+            payload = get_packs_payload(self.server.app_path)  # type: ignore[attr-defined]
+            status = 200 if payload.get("ok", True) else 400
+            self._respond_json(payload, status=status)
             return
         if self.path == "/api/version":
             from namel3ss.studio.api import get_version_payload
@@ -241,6 +263,42 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
             else:
                 self.server.session_state = SessionState()  # type: ignore[attr-defined]
             self._respond_json({"ok": True}, status=200)
+            return
+        if self.path == "/api/tools/auto-bind":
+            if not isinstance(body, dict):
+                self._respond_json(build_error_payload("Body must be a JSON object", kind="tools"), status=400)
+                return
+            try:
+                resp = apply_tools_auto_bind(source, self.server.app_path)  # type: ignore[attr-defined]
+                status = 200 if resp.get("ok", True) else 400
+                self._respond_json(resp, status=status)
+                return
+            except Namel3ssError as err:
+                payload = build_error_from_exception(err, kind="tools", source=source)
+                self._respond_json(payload, status=400)
+                return
+            except Exception as err:  # pragma: no cover
+                self._respond_json(build_error_payload(str(err), kind="tools"), status=500)
+                return
+        if self.path == "/api/packs/add":
+            resp = apply_pack_add(self.server.app_path, body)  # type: ignore[attr-defined]
+            status = 200 if resp.get("ok", True) else 400
+            self._respond_json(resp, status=status)
+            return
+        if self.path == "/api/packs/verify":
+            resp = apply_pack_verify(self.server.app_path, body)  # type: ignore[attr-defined]
+            status = 200 if resp.get("ok", True) else 400
+            self._respond_json(resp, status=status)
+            return
+        if self.path == "/api/packs/enable":
+            resp = apply_pack_enable(self.server.app_path, body)  # type: ignore[attr-defined]
+            status = 200 if resp.get("ok", True) else 400
+            self._respond_json(resp, status=status)
+            return
+        if self.path == "/api/packs/disable":
+            resp = apply_pack_disable(self.server.app_path, body)  # type: ignore[attr-defined]
+            status = 200 if resp.get("ok", True) else 400
+            self._respond_json(resp, status=status)
             return
         self.send_error(404)
 

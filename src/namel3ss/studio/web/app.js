@@ -3,9 +3,13 @@ let cachedState = {};
 let cachedActions = {};
 let cachedTraces = [];
 let cachedLint = {};
+let cachedTools = {};
+let cachedPacks = {};
 let cachedManifest = null;
 let traceFilterText = "";
 let traceFilterTimer = null;
+let toolsFilterText = "";
+let toolsFilterTimer = null;
 let selectedTrace = null;
 let selectedElementId = null;
 let selectedElement = null;
@@ -179,6 +183,188 @@ function renderLint(data) {
   }
   updateCopyButton("lintCopy", () => JSON.stringify(data, null, 2));
 }
+function renderTools(data) {
+  cachedTools = data || {};
+  const container = document.getElementById("tools"); if (!container) return; container.innerHTML = "";
+  const fixPanel = document.getElementById("toolsFixPanel");
+  if (!data || data.ok === false) {
+    showEmpty(container, data && data.error ? data.error : "Unable to load tools");
+    updateCopyButton("toolsCopy", () => "");
+    if (fixPanel) fixPanel.classList.add("hidden");
+    return;
+  }
+  renderToolFixes(data, fixPanel);
+  const summary = data.summary || {};
+  const summaryLine = document.createElement("div");
+  summaryLine.className = "list-meta";
+  summaryLine.textContent =
+    `Summary: ok=${summary.ok || 0}, missing=${summary.missing || 0}, ` +
+    `unused=${summary.unused || 0}, collisions=${summary.collisions || 0}, invalid=${summary.invalid || 0}.`;
+  container.appendChild(summaryLine);
+
+  if (data.bindings_valid === false && data.bindings_error) {
+    const errorBox = document.createElement("div");
+    errorBox.className = "empty-state";
+    errorBox.textContent = data.bindings_error;
+    container.appendChild(errorBox);
+  }
+
+  const filter = toolsFilterText.trim().toLowerCase();
+  const filterItems = (items) => {
+    if (!filter) return items || [];
+    return (items || []).filter((item) => (item.name || "").toLowerCase().includes(filter));
+  };
+
+  renderToolSection(container, "Pack tools", filterItems(data.packs));
+  renderToolSection(container, "Declared tools", filterItems(data.declared));
+  renderToolSection(container, "Bound tools", filterItems(data.bindings));
+
+  updateCopyButton("toolsCopy", () => JSON.stringify(data, null, 2));
+}
+function renderPacks(data) {
+  cachedPacks = data || {};
+  const container = document.getElementById("packs"); if (!container) return; container.innerHTML = "";
+  if (!data || data.ok === false) {
+    showEmpty(container, data && data.error ? data.error : "Unable to load packs");
+    updateCopyButton("packsCopy", () => "");
+    return;
+  }
+  const packs = data.packs || [];
+  if (!packs.length) {
+    showEmpty(container, "No packs installed.");
+    updateCopyButton("packsCopy", () => JSON.stringify(data, null, 2));
+    return;
+  }
+  const list = document.createElement("div");
+  list.className = "list";
+  packs.sort((a, b) => (a.pack_id || "").localeCompare(b.pack_id || "")).forEach((pack) => {
+    const item = document.createElement("div");
+    item.className = "list-item";
+    const title = document.createElement("div");
+    title.className = "list-title";
+    title.textContent = `${pack.pack_id || "pack"} (${pack.version || "?"})`;
+    const meta = document.createElement("div");
+    meta.className = "list-meta";
+    const status = pack.enabled ? "enabled" : "disabled";
+    const verify = pack.verified ? "verified" : "unverified";
+    meta.textContent = `${status} · ${verify} · ${pack.source || "installed"}`;
+    item.appendChild(title);
+    item.appendChild(meta);
+    const actions = document.createElement("div");
+    actions.className = "control-actions";
+    if (!pack.verified) {
+      const btn = document.createElement("button");
+      btn.className = "btn ghost small";
+      btn.textContent = "Verify";
+      btn.onclick = () => packAction("/api/packs/verify", pack.pack_id);
+      actions.appendChild(btn);
+    }
+    if (pack.verified && !pack.enabled) {
+      const btn = document.createElement("button");
+      btn.className = "btn ghost small";
+      btn.textContent = "Enable";
+      btn.onclick = () => packAction("/api/packs/enable", pack.pack_id);
+      actions.appendChild(btn);
+    }
+    if (pack.enabled) {
+      const btn = document.createElement("button");
+      btn.className = "btn ghost small";
+      btn.textContent = "Disable";
+      btn.onclick = () => packAction("/api/packs/disable", pack.pack_id);
+      actions.appendChild(btn);
+    }
+    item.appendChild(actions);
+    list.appendChild(item);
+  });
+  container.appendChild(list);
+  updateCopyButton("packsCopy", () => JSON.stringify(data, null, 2));
+}
+async function packAction(path, packId) {
+  try {
+    const resp = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pack_id: packId }),
+    });
+    const data = await resp.json();
+    if (!data.ok) {
+      showToast(data.error || "Pack action failed.");
+      return;
+    }
+    showToast("Pack updated.");
+    refreshAll();
+  } catch (err) {
+    showToast("Pack action failed.");
+  }
+}
+function renderToolFixes(data, panel) {
+  if (!panel) return;
+  panel.innerHTML = "";
+  const issues = data.issues || [];
+  if (!issues.length) {
+    panel.classList.add("hidden");
+    return;
+  }
+  panel.classList.remove("hidden");
+  const heading = document.createElement("div");
+  heading.className = "inline-label";
+  heading.textContent = "Fix suggestions";
+  panel.appendChild(heading);
+  const list = document.createElement("div");
+  list.className = "list";
+  issues.forEach((issue) => {
+    const item = document.createElement("div");
+    item.className = "list-item";
+    const title = document.createElement("div");
+    title.className = "list-title";
+    const toolLabel = issue.tool_name ? ` (${issue.tool_name})` : "";
+    title.textContent = `${issue.severity} ${issue.code}${toolLabel}`;
+    const meta = document.createElement("div");
+    meta.className = "list-meta";
+    meta.textContent = issue.message || "See details.";
+    item.appendChild(title);
+    item.appendChild(meta);
+    list.appendChild(item);
+  });
+  panel.appendChild(list);
+}
+function renderToolSection(container, title, items) {
+  const heading = document.createElement("div");
+  heading.className = "inline-label";
+  heading.textContent = title;
+  container.appendChild(heading);
+  if (!items || items.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.textContent = "No tools found.";
+    container.appendChild(empty);
+    return;
+  }
+  const list = document.createElement("div");
+  list.className = "list";
+  items.forEach((item) => {
+    const row = document.createElement("div");
+    row.className = "list-item";
+    const titleEl = document.createElement("div");
+    titleEl.className = "list-title";
+    titleEl.textContent = `${item.name} [${item.status}]`;
+    const meta = document.createElement("div");
+    meta.className = "list-meta";
+    const parts = [];
+    if (item.pack_id) parts.push(`pack: ${item.pack_id}`);
+    if (item.source) parts.push(item.source);
+    if (item.verified === false) parts.push("unverified");
+    if (item.enabled === false) parts.push("disabled");
+    if (item.entry) parts.push(`entry: ${item.entry}`);
+    if (item.runner) parts.push(`runner: ${item.runner}`);
+    if (item.kind) parts.push(`kind: ${item.kind}`);
+    meta.textContent = parts.join(" · ");
+    row.appendChild(titleEl);
+    if (parts.length) row.appendChild(meta);
+    list.appendChild(row);
+  });
+  container.appendChild(list);
+}
 function renderState(data) {
   cachedState = data || {};
   const container = document.getElementById("state"); if (!container) return; container.innerHTML = "";
@@ -329,15 +515,19 @@ async function performEdit(op, elementId, pageName, value, targetExtras = {}) {
   reselectElement();
 }
 async function refreshAll() {
-  const [summary, ui, actions, lint] = await Promise.all([
+  const [summary, ui, actions, lint, tools, packs] = await Promise.all([
     fetchJson("/api/summary"),
     fetchJson("/api/ui"),
     fetchJson("/api/actions"),
     fetchJson("/api/lint"),
+    fetchJson("/api/tools"),
+    fetchJson("/api/packs"),
   ]);
   renderSummary(summary);
   renderActions(actions);
   renderLint(lint);
+  renderTools(tools);
+  renderPacks(packs);
   renderState({});
   renderTraces([]);
   if (ui.ok !== false) {
@@ -387,6 +577,17 @@ function setupTraceFilter() {
     traceFilterTimer = setTimeout(() => {
       traceFilterText = input.value.trim().toLowerCase();
       renderTraces(cachedTraces);
+    }, 120);
+  });
+}
+function setupToolsFilter() {
+  const input = document.getElementById("toolsFilter");
+  if (!input) return;
+  input.addEventListener("input", () => {
+    if (toolsFilterTimer) clearTimeout(toolsFilterTimer);
+    toolsFilterTimer = setTimeout(() => {
+      toolsFilterText = input.value.trim().toLowerCase();
+      renderTools(cachedTools);
     }, 120);
   });
 }
@@ -483,6 +684,7 @@ if (themeSelect) {
 }
 setupTabs();
 setupTraceFilter();
+setupToolsFilter();
 loadVersion();
 const helpButton = document.getElementById("helpButton");
 const helpModal = document.getElementById("helpModal");
@@ -495,5 +697,70 @@ if (helpButton && helpModal && helpClose) {
       helpModal.classList.add("hidden");
     }
   });
+}
+const toolsAutoBind = document.getElementById("toolsAutoBind");
+if (toolsAutoBind) {
+  toolsAutoBind.onclick = async () => {
+    try {
+      const resp = await fetch("/api/tools/auto-bind", { method: "POST", body: "{}" });
+      const data = await resp.json();
+      if (data.ok) {
+        const count = (data.missing_bound || []).length;
+        showToast(count ? `Auto-bound ${count} tools.` : "No missing bindings.");
+        refreshAll();
+        return;
+      }
+      showToast(data.error || "Auto-bind failed.");
+    } catch (err) {
+      showToast("Auto-bind failed.");
+    }
+  };
+}
+const toolsOpenWizard = document.getElementById("toolsOpenWizard");
+if (toolsOpenWizard) {
+  toolsOpenWizard.onclick = () => {
+    const btn = document.getElementById("toolWizardButton");
+    if (btn) btn.click();
+  };
+}
+const toolsFixToggle = document.getElementById("toolsFixToggle");
+if (toolsFixToggle) {
+  toolsFixToggle.onclick = () => {
+    const panel = document.getElementById("toolsFixPanel");
+    if (!panel) return;
+    panel.classList.toggle("hidden");
+  };
+}
+const packsRefresh = document.getElementById("packsRefresh");
+if (packsRefresh) {
+  packsRefresh.onclick = () => refreshAll();
+}
+const packsAdd = document.getElementById("packsAdd");
+if (packsAdd) {
+  packsAdd.onclick = async () => {
+    const input = document.getElementById("packsPath");
+    const path = input ? input.value.trim() : "";
+    if (!path) {
+      showToast("Pack path required.");
+      return;
+    }
+    try {
+      const resp = await fetch("/api/packs/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path }),
+      });
+      const data = await resp.json();
+      if (!data.ok) {
+        showToast(data.error || "Pack add failed.");
+        return;
+      }
+      if (input) input.value = "";
+      showToast("Pack installed.");
+      refreshAll();
+    } catch (err) {
+      showToast("Pack add failed.");
+    }
+  };
 }
 refreshAll();

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+import uuid
 from pathlib import Path
 
 from namel3ss.errors.base import Namel3ssError
@@ -8,11 +9,11 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
 from namel3ss.observe import summarize_value
 from namel3ss.runtime.executor.context import ExecutionContext
-from namel3ss.runtime.tools.bindings import resolve_tool_binding
+from namel3ss.runtime.tools.resolution import resolve_tool_binding
 from namel3ss.runtime.tools.entry_validation import validate_python_tool_entry
-from namel3ss.runtime.tools.python_env import detect_dependency_info, resolve_python_env
 from namel3ss.runtime.tools.schema_validate import validate_tool_fields
-from namel3ss.runtime.tools.python_subprocess import PROTOCOL_VERSION, run_tool_subprocess
+from namel3ss.runtime.tools.runners.base import ToolRunnerRequest
+from namel3ss.runtime.tools.runners.registry import get_runner
 from namel3ss.secrets import collect_secret_values, redact_text
 
 DEFAULT_TOOL_TIMEOUT_SECONDS = 10
@@ -78,7 +79,12 @@ def _execute_python_tool(
         trace_event["purity"] = tool.purity
     start_time = time.monotonic()
     timeout_seconds = _resolve_timeout_seconds(ctx, tool, line=line, column=column)
-    trace_event["timeout_seconds"] = timeout_seconds
+    resolved_source = "binding"
+    trace_event["resolved_source"] = resolved_source
+    pack_id = None
+    pack_name = None
+    pack_version = None
+    trace_id = str(uuid.uuid4())
     try:
         validate_tool_fields(
             fields=tool.input_fields,
@@ -89,23 +95,52 @@ def _execute_python_tool(
             column=column,
         )
         app_root = _resolve_project_root(ctx.project_root, tool.name, line=line, column=column)
-        binding = resolve_tool_binding(app_root, tool.name, line=line, column=column)
+        resolved = resolve_tool_binding(app_root, tool.name, ctx.config, line=line, column=column)
+        binding = resolved.binding
+        resolved_source = resolved.source
+        pack_id = resolved.pack_id
+        pack_name = resolved.pack_name
+        pack_version = resolved.pack_version
         entry = binding.entry
-        validate_python_tool_entry(entry, tool.name, line=line, column=column)
-        dep_info = detect_dependency_info(app_root)
-        env_info = resolve_python_env(app_root)
-        trace_event["python_env"] = env_info.env_kind
-        trace_event["python_path"] = str(env_info.python_path)
-        trace_event["deps_source"] = dep_info.kind
-        trace_event["protocol_version"] = PROTOCOL_VERSION
-        result = run_tool_subprocess(
-            python_path=env_info.python_path,
-            tool_name=tool.name,
-            entry=entry,
-            payload=payload,
-            app_root=app_root,
-            timeout_seconds=timeout_seconds,
+        allow_external = resolved_source in {"installed_pack"}
+        validate_python_tool_entry(entry, tool.name, line=line, column=column, allow_external=allow_external)
+        timeout_ms = binding.timeout_ms if binding.timeout_ms is not None else timeout_seconds * 1000
+        trace_event["timeout_ms"] = timeout_ms
+        trace_event["resolved_source"] = resolved_source
+        if resolved_source == "binding":
+            trace_event["entry"] = entry
+        runner_name = binding.runner or "local"
+        trace_event["runner"] = runner_name
+        if runner_name == "service" and binding.url:
+            trace_event["service_url"] = binding.url
+        if runner_name == "container":
+            if binding.image:
+                trace_event["image"] = binding.image
+            if binding.command:
+                trace_event["command"] = " ".join(binding.command)
+        if resolved_source in {"builtin_pack", "installed_pack"} and pack_id:
+            trace_event["pack_id"] = pack_id
+            if pack_name:
+                trace_event["pack_name"] = pack_name
+            trace_event["pack_version"] = pack_version
+        runner = get_runner(runner_name)
+        result = runner.execute(
+            ToolRunnerRequest(
+                tool_name=tool.name,
+                kind=tool.kind,
+                entry=entry,
+                payload=payload,
+                timeout_ms=timeout_ms,
+                trace_id=trace_id,
+                app_root=app_root,
+                flow_name=getattr(ctx.flow, "name", None),
+                binding=binding,
+                config=ctx.config,
+                pack_paths=resolved.pack_paths,
+            )
         )
+        if result.metadata:
+            trace_event.update(result.metadata)
         if not result.ok:
             raise ToolExecutionError(result.error_type or "ToolError", result.error_message or "Tool error")
         validate_tool_fields(
@@ -132,12 +167,18 @@ def _execute_python_tool(
             raise
         if isinstance(err, ToolExecutionError):
             redacted_message = redact_text(err.error_message or "The tool returned an error.", secret_values)
+            if resolved_source in {"builtin_pack", "installed_pack"} and pack_id:
+                fix = "Review the tool inputs or upgrade namel3ss if the issue persists."
+                example = _tool_pack_example(tool.name)
+            else:
+                fix = "Fix the tool implementation in tools/ and try again."
+                example = _tool_example(tool.name)
             raise Namel3ssError(
                 build_guidance_message(
                     what=f'Python tool "{tool.name}" failed with {err.error_type}.',
                     why=redacted_message,
-                    fix="Fix the tool implementation in tools/ and try again.",
-                    example=_tool_example(tool.name),
+                    fix=fix,
+                    example=example,
                 ),
                 line=line,
                 column=column,
@@ -146,8 +187,12 @@ def _execute_python_tool(
             build_guidance_message(
                 what=f'Python tool "{tool.name}" failed with {err.__class__.__name__}.',
                 why="The tool function raised an exception during execution.",
-                fix="Fix the tool implementation in tools/ and try again.",
-                example=_tool_example(tool.name),
+                fix="Fix the tool implementation in tools/ and try again."
+                if resolved_source not in {"builtin_pack", "installed_pack"}
+                else "Review the tool inputs or upgrade namel3ss if the issue persists.",
+                example=_tool_example(tool.name)
+                if resolved_source not in {"builtin_pack", "installed_pack"}
+                else _tool_pack_example(tool.name),
             ),
             line=line,
             column=column,
@@ -214,6 +259,17 @@ def _tool_example(tool_name: str) -> str:
         "    web address is text\n\n"
         "  output:\n"
         "    data is json"
+    )
+
+
+def _tool_pack_example(tool_name: str) -> str:
+    return (
+        f'tool "{tool_name}":\n'
+        "  implemented using python\n\n"
+        "  input:\n"
+        "    text is text\n\n"
+        "  output:\n"
+        "    text is text"
     )
 
 

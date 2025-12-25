@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from pathlib import Path
 
 from namel3ss.errors.base import Namel3ssError
@@ -9,12 +10,18 @@ from namel3ss.errors.guidance import build_guidance_message
 
 SUPPORTED_BINDING_KIND = "python"
 SUPPORTED_PURITY = {"pure", "impure"}
+SUPPORTED_RUNNERS = {"local", "service", "container"}
 
 
 @dataclass(frozen=True)
 class ToolBinding:
     kind: str
     entry: str
+    runner: str | None = None
+    url: str | None = None
+    image: str | None = None
+    command: list[str] | None = None
+    env: dict[str, str] | None = None
     purity: str | None = None
     timeout_ms: int | None = None
 
@@ -51,13 +58,11 @@ def parse_bindings_yaml(text: str, path: Path) -> dict[str, ToolBinding]:
                 raise Namel3ssError(_invalid_bindings_message(path))
             value = value_part.strip()
             if value:
-                entry = _unquote(value)
-                _add_binding(bindings, tool_name, ToolBinding(kind=SUPPORTED_BINDING_KIND, entry=entry), path, line_no)
-            else:
-                if tool_name in bindings:
-                    raise Namel3ssError(_duplicate_tool_message(tool_name))
-                current_tool = tool_name
-                current_fields = {}
+                raise Namel3ssError(_inline_binding_message(tool_name))
+            if tool_name in bindings:
+                raise Namel3ssError(_duplicate_tool_message(tool_name))
+            current_tool = tool_name
+            current_fields = {}
             continue
         if indent == 4:
             if not current_tool or current_fields is None:
@@ -71,7 +76,7 @@ def parse_bindings_yaml(text: str, path: Path) -> dict[str, ToolBinding]:
                 raise Namel3ssError(_invalid_bindings_message(path))
             if key in current_fields:
                 raise Namel3ssError(_duplicate_field_message(current_tool, key))
-            if key not in {"kind", "entry", "purity", "timeout_ms"}:
+            if key not in {"kind", "entry", "runner", "url", "image", "command", "env", "purity", "timeout_ms"}:
                 raise Namel3ssError(_invalid_field_message(current_tool, key))
             current_fields[key] = _parse_value(key, value, path)
             continue
@@ -92,6 +97,16 @@ def render_bindings_yaml(bindings: dict[str, ToolBinding]) -> str:
         lines.append(f"  {_quote(name)}:")
         lines.append(f"    kind: {_quote(binding.kind)}")
         lines.append(f"    entry: {_quote(binding.entry)}")
+        if binding.runner is not None:
+            lines.append(f"    runner: {_quote(binding.runner)}")
+        if binding.url is not None:
+            lines.append(f"    url: {_quote(binding.url)}")
+        if binding.image is not None:
+            lines.append(f"    image: {_quote(binding.image)}")
+        if binding.command is not None:
+            lines.append(f"    command: {json.dumps(binding.command)}")
+        if binding.env is not None:
+            lines.append(f"    env: {json.dumps(binding.env, sort_keys=True)}")
         if binding.purity is not None:
             lines.append(f"    purity: {_quote(binding.purity)}")
         if binding.timeout_ms is not None:
@@ -114,6 +129,23 @@ def _finalize_binding(
         raise Namel3ssError(_invalid_kind_message(path, tool_name, kind))
     if not isinstance(entry, str) or not entry:
         raise Namel3ssError(_missing_field_message(path, tool_name, "entry", line_no))
+    runner = fields.get("runner")
+    if runner is not None and (not isinstance(runner, str) or not runner):
+        raise Namel3ssError(_invalid_runner_message(path, tool_name))
+    url = fields.get("url")
+    if url is not None and (not isinstance(url, str) or not url):
+        raise Namel3ssError(_invalid_url_message(path, tool_name))
+    image = fields.get("image")
+    if image is not None and (not isinstance(image, str) or not image):
+        raise Namel3ssError(_invalid_image_message(path, tool_name))
+    command = fields.get("command")
+    if command is not None:
+        if not isinstance(command, list) or not all(isinstance(item, str) for item in command):
+            raise Namel3ssError(_invalid_command_message(path, tool_name))
+    env = fields.get("env")
+    if env is not None:
+        if not isinstance(env, dict) or not all(isinstance(k, str) and isinstance(v, str) for k, v in env.items()):
+            raise Namel3ssError(_invalid_env_message(path, tool_name))
     purity = fields.get("purity")
     if purity is not None and (not isinstance(purity, str) or purity not in SUPPORTED_PURITY):
         raise Namel3ssError(_invalid_purity_message(path, tool_name))
@@ -123,7 +155,17 @@ def _finalize_binding(
     _add_binding(
         bindings,
         tool_name,
-        ToolBinding(kind=kind, entry=entry, purity=purity, timeout_ms=timeout_ms),
+        ToolBinding(
+            kind=kind,
+            entry=entry,
+            runner=runner,
+            url=url,
+            image=image,
+            command=command,
+            env=env,
+            purity=purity,
+            timeout_ms=timeout_ms,
+        ),
         path,
         line_no,
     )
@@ -136,6 +178,8 @@ def _parse_value(key: str, value: str, path: Path) -> object:
         except ValueError:
             raise Namel3ssError(_invalid_timeout_message(path, "<unknown>"))
         return parsed
+    if key in {"command", "env"}:
+        return _parse_inline_json(value, path)
     return _unquote(value)
 
 
@@ -195,7 +239,7 @@ def _duplicate_field_message(tool_name: str, field_name: str) -> str:
 def _invalid_field_message(tool_name: str, field_name: str) -> str:
     return build_guidance_message(
         what=f"Unsupported binding field '{field_name}' for '{tool_name}'.",
-        why="Bindings only support kind, entry, purity, and timeout_ms.",
+        why="Bindings only support kind, entry, runner, url, image, command, env, purity, and timeout_ms.",
         fix="Remove the unsupported field.",
         example=_bindings_example(tool_name),
     )
@@ -243,6 +287,74 @@ def _bindings_example(tool_name: str) -> str:
         f'  "{tool_name}":\n'
         '    kind: "python"\n'
         '    entry: "tools.my_tool:run"'
+    )
+
+
+def _invalid_runner_message(path: Path, tool_name: str) -> str:
+    return build_guidance_message(
+        what=f"Tool binding '{tool_name}' has invalid runner.",
+        why=f"runner must be one of: {', '.join(sorted(SUPPORTED_RUNNERS))}.",
+        fix="Update runner or remove the field.",
+        example=_bindings_example(tool_name),
+    )
+
+
+def _invalid_url_message(path: Path, tool_name: str) -> str:
+    return build_guidance_message(
+        what=f"Tool binding '{tool_name}' has invalid url.",
+        why="url must be a non-empty string.",
+        fix="Update url or remove the field.",
+        example=_bindings_example(tool_name),
+    )
+
+
+def _invalid_image_message(path: Path, tool_name: str) -> str:
+    return build_guidance_message(
+        what=f"Tool binding '{tool_name}' has invalid image.",
+        why="image must be a non-empty string.",
+        fix="Update image or remove the field.",
+        example=_bindings_example(tool_name),
+    )
+
+
+def _invalid_command_message(path: Path, tool_name: str) -> str:
+    return build_guidance_message(
+        what=f"Tool binding '{tool_name}' has invalid command.",
+        why="command must be an array of strings.",
+        fix="Update command to an inline JSON array.",
+        example='command: ["python", "-m", "namel3ss_tools.runner"]',
+    )
+
+
+def _invalid_env_message(path: Path, tool_name: str) -> str:
+    return build_guidance_message(
+        what=f"Tool binding '{tool_name}' has invalid env.",
+        why="env must be a mapping of string keys to string values.",
+        fix="Update env to an inline JSON object.",
+        example='env: {"LOG_LEVEL": "info"}',
+    )
+
+
+def _parse_inline_json(value: str, path: Path) -> object:
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError as err:
+        raise Namel3ssError(
+            build_guidance_message(
+                what="Inline JSON in tools.yaml is invalid.",
+                why=str(err),
+                fix="Use a JSON array/object inline.",
+                example='command: ["python", "-m", "namel3ss_tools.runner"]',
+            )
+        ) from err
+
+
+def _inline_binding_message(tool_name: str) -> str:
+    return build_guidance_message(
+        what=f"Tool binding '{tool_name}' must be an object.",
+        why="Inline string bindings are no longer supported.",
+        fix="Use a mapping with kind and entry fields.",
+        example=_bindings_example(tool_name),
     )
 
 

@@ -91,6 +91,7 @@ def run_tool_subprocess(
     payload: dict,
     app_root: Path,
     timeout_seconds: int,
+    extra_paths: list[Path] | None = None,
 ) -> ToolSubprocessResult:
     request = {
         "protocol_version": PROTOCOL_VERSION,
@@ -99,7 +100,7 @@ def run_tool_subprocess(
         "payload": payload,
     }
     input_text = json_dumps(request)
-    env = _build_env(app_root)
+    env = _build_env(app_root, extra_paths=extra_paths)
     try:
         result = subprocess.run(
             [str(python_path), "-c", _RUNNER],
@@ -181,11 +182,12 @@ def run_tool_subprocess(
     return ToolSubprocessResult(ok=True, output=result, error_type=None, error_message=None)
 
 
-def _build_env(app_root: Path) -> dict[str, str]:
+def _build_env(app_root: Path, *, extra_paths: list[Path] | None) -> dict[str, str]:
     env = os.environ.copy()
     python_path = env.get("PYTHONPATH", "")
     package_root = Path(__file__).resolve().parents[3]
-    parts = [str(app_root), str(package_root)]
+    parts = [str(path) for path in (extra_paths or []) if path.exists()]
+    parts.extend([str(app_root), str(package_root)])
     if python_path:
         parts.append(python_path)
     env["PYTHONPATH"] = os.pathsep.join(parts)

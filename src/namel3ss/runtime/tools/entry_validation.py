@@ -10,7 +10,14 @@ from namel3ss.errors.guidance import build_guidance_message
 BUILTIN_TOOL_PACK_PREFIX = "namel3ss.tool_packs"
 
 
-def validate_python_tool_entry(entry: str, tool_name: str, *, line: int | None, column: int | None) -> tuple[str, str]:
+def validate_python_tool_entry(
+    entry: str,
+    tool_name: str,
+    *,
+    line: int | None,
+    column: int | None,
+    allow_external: bool = False,
+) -> tuple[str, str]:
     if ":" not in entry:
         raise Namel3ssError(
             build_guidance_message(
@@ -36,7 +43,7 @@ def validate_python_tool_entry(entry: str, tool_name: str, *, line: int | None, 
             line=line,
             column=column,
         )
-    if not _module_allowed(module_path):
+    if not allow_external and not _module_allowed(module_path):
         raise Namel3ssError(
             build_guidance_message(
                 what=f'Tool "{tool_name}" entry must point inside tools/ or built-in packs.',
@@ -132,8 +139,10 @@ def _tool_example(tool_name: str, entry: str | None) -> str:
     entry_value = entry or "tools.my_tool:run"
     return (
         "tools:\n"
-        f'  \"{tool_name}\": \"{entry_value}\"'
+        f'  "{tool_name}":\n'
+        '    kind: "python"\n'
+        f'    entry: "{entry_value}"'
     )
 
 
-__all__ = ["BUILTIN_TOOL_PACK_PREFIX", "validate_python_tool_entry"]
+__all__ = ["BUILTIN_TOOL_PACK_PREFIX", "validate_python_tool_entry", "validate_python_tool_entry_exists"]

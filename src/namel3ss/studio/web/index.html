@@ -68,14 +68,6 @@
               <input id="toolWizardName" type="text" placeholder="greeter">
             </label>
             <label>
-              Module name
-              <input id="toolWizardModule" type="text" placeholder="sample_tool">
-            </label>
-            <label>
-              Function name
-              <input id="toolWizardFunction" type="text" placeholder="greet">
-            </label>
-            <label>
               Purity
               <select id="toolWizardPurity">
                 <option value="impure">impure</option>
@@ -94,13 +86,19 @@
               Output fields (one per line, name:type, optional with ?)
               <textarea id="toolWizardOutput" rows="4" placeholder="message:text&#10;ok:boolean"></textarea>
             </label>
+            <div class="tool-wizard-preview">
+              <div class="tool-wizard-preview-title">Preview</div>
+              <pre id="toolWizardPreview" class="tool-wizard-preview-body"></pre>
+            </div>
             <div id="toolWizardStatus" class="tool-wizard-status"></div>
             <div id="toolWizardConflict" class="tool-wizard-conflict hidden">
               <div id="toolWizardConflictMessage"></div>
               <button class="btn secondary small" id="toolWizardUseSuggestion" type="button">Use suggested names</button>
+              <button class="btn secondary small" id="toolWizardReuseExisting" type="button">Reuse existing</button>
             </div>
             <div class="tool-wizard-actions">
-              <button class="btn primary" type="submit">Generate</button>
+              <button class="btn secondary" type="button" id="toolWizardPreviewButton">Preview</button>
+              <button class="btn primary" type="submit">Create tool</button>
               <button class="btn ghost" type="button" id="toolWizardCancel">Cancel</button>
             </div>
           </form>
@@ -120,6 +118,8 @@
           <button class="tab active" data-tab="summary">Summary</button>
           <button class="tab" data-tab="state">State</button>
           <button class="tab" data-tab="actions">Actions</button>
+          <button class="tab" data-tab="tools">Tools</button>
+          <button class="tab" data-tab="packs">Packs</button>
           <button class="tab" data-tab="traces">Traces</button>
           <button class="tab" data-tab="lint">Lint Findings</button>
         </div>
@@ -144,6 +144,36 @@
               <button class="btn ghost small" id="actionsCopy">Copy JSON</button>
             </div>
             <div id="actions" class="panel-body"></div>
+          </div>
+          <div class="panel" data-tab="tools">
+            <div class="panel-header">
+              <div class="section-title">Tools</div>
+              <div class="panel-actions">
+                <button class="btn ghost small" id="toolsAutoBind">Auto-bind missing tools</button>
+                <button class="btn ghost small" id="toolsOpenWizard">Tool Wizard</button>
+                <button class="btn ghost small" id="toolsFixToggle">Fixes</button>
+                <button class="btn ghost small" id="toolsCopy">Copy JSON</button>
+              </div>
+            </div>
+            <div class="control-row">
+              <input id="toolsFilter" type="text" placeholder="Filter tools…" aria-label="Filter tools">
+            </div>
+            <div id="toolsFixPanel" class="panel-body hidden"></div>
+            <div id="tools" class="panel-body"></div>
+          </div>
+          <div class="panel" data-tab="packs">
+            <div class="panel-header">
+              <div class="section-title">Packs</div>
+              <div class="panel-actions">
+                <button class="btn ghost small" id="packsRefresh">Refresh</button>
+                <button class="btn ghost small" id="packsCopy">Copy JSON</button>
+              </div>
+            </div>
+            <div class="control-row">
+              <input id="packsPath" type="text" placeholder="Add pack path…" aria-label="Pack path">
+              <button class="btn secondary small" id="packsAdd">Add pack</button>
+            </div>
+            <div id="packs" class="panel-body"></div>
           </div>
           <div class="panel" data-tab="traces">
           <div class="panel-header">

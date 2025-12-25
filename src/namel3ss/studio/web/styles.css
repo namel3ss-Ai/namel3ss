@@ -40,6 +40,9 @@
   white-space: nowrap;
   border: 0;
 }
+.hidden {
+  display: none;
+}
 .file-name {
   font-size: 12px;
   color: #222;
@@ -156,6 +159,13 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+.panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 .section-title {
   font-size: 16px;

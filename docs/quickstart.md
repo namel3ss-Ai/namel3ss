@@ -37,7 +37,7 @@ Formatter and linter:
 
 - Add Python code in `tools/*.py`.
 - Declare the tool in `app.ai` with `implemented using python` plus `input`/`output` blocks.
-- Bind the tool with `n3 tools bind --from-app` (or `n3 tools bind "<name>" --entry ...`) or use **Tool Wizard**.
+- Bind the tool with `n3 tools bind --auto` (or `n3 tools bind "<name>" --entry ...`) or use **Tool Wizard**.
 - Add dependencies in `pyproject.toml` or `requirements.txt`.
 - Install deps: `n3 deps install`
 - Run your flow: `n3 app.ai run` or `n3 app.ai studio`

@@ -1,4 +1,4 @@
 tools:
   "greeter":
     kind: "python"
-    entry: "tools.sample_tool:greet"
+    entry: "tools.greeter:run"

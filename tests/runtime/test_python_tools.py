@@ -47,11 +47,13 @@ flow "demo":
     assert tool_event["status"] == "ok"
     assert tool_event["kind"] == "python"
     assert tool_event["purity"] == "impure"
+    assert tool_event["runner"] == "local"
     assert tool_event["python_env"] == "system"
     assert tool_event["deps_source"] == "none"
     assert tool_event["python_path"] == sys.executable
-    assert tool_event["timeout_seconds"] == 10
+    assert tool_event["timeout_ms"] == 10000
     assert isinstance(tool_event["duration_ms"], int)
+    assert tool_event["resolved_source"] == "binding"
     assert "input_summary" in tool_event
     assert "output_summary" in tool_event
 
@@ -179,11 +181,11 @@ flow "demo":
     seen = {}
     write_tool_bindings(tmp_path, {"greeter": ToolBinding(kind="python", entry="tools.sample_tool:greet")})
 
-    def fake_run_tool_subprocess(*, python_path, tool_name, entry, payload, app_root, timeout_seconds):
+    def fake_run_tool_subprocess(*, python_path, tool_name, entry, payload, app_root, timeout_seconds, extra_paths=None):
         seen["python_path"] = python_path
         return ToolSubprocessResult(ok=True, output={"ok": True}, error_type=None, error_message=None)
 
-    monkeypatch.setattr("namel3ss.runtime.tools.python_runtime.run_tool_subprocess", fake_run_tool_subprocess)
+    monkeypatch.setattr("namel3ss.runtime.tools.runners.local_runner.run_tool_subprocess", fake_run_tool_subprocess)
     executor = Executor(
         program.flows[0],
         schemas={},
@@ -195,6 +197,7 @@ flow "demo":
     assert result.last_value == {"ok": True}
     assert seen["python_path"] == venv_python
     tool_event = next(event for event in result.traces if event.get("type") == "tool_call")
+    assert tool_event["runner"] == "local"
     assert tool_event["python_env"] == "venv"
 
 
@@ -225,11 +228,11 @@ flow "demo":
     seen = {}
     write_tool_bindings(tmp_path, {"greeter": ToolBinding(kind="python", entry="tools.sample_tool:greet")})
 
-    def fake_run_tool_subprocess(*, python_path, tool_name, entry, payload, app_root, timeout_seconds):
+    def fake_run_tool_subprocess(*, python_path, tool_name, entry, payload, app_root, timeout_seconds, extra_paths=None):
         seen["python_path"] = python_path
         return ToolSubprocessResult(ok=True, output={"ok": True}, error_type=None, error_message=None)
 
-    monkeypatch.setattr("namel3ss.runtime.tools.python_runtime.run_tool_subprocess", fake_run_tool_subprocess)
+    monkeypatch.setattr("namel3ss.runtime.tools.runners.local_runner.run_tool_subprocess", fake_run_tool_subprocess)
     executor = Executor(
         program.flows[0],
         schemas={},
@@ -241,6 +244,7 @@ flow "demo":
     assert result.last_value == {"ok": True}
     assert str(seen["python_path"]) == sys.executable
     tool_event = next(event for event in result.traces if event.get("type") == "tool_call")
+    assert tool_event["runner"] == "local"
     assert tool_event["python_env"] == "system"
 
 
@@ -266,10 +270,10 @@ flow "demo":
     program = lower_ir_program(source)
     write_tool_bindings(tmp_path, {"greeter": ToolBinding(kind="python", entry="tools.sample_tool:greet")})
 
-    def fake_run_tool_subprocess(*, python_path, tool_name, entry, payload, app_root, timeout_seconds):
+    def fake_run_tool_subprocess(*, python_path, tool_name, entry, payload, app_root, timeout_seconds, extra_paths=None):
         return ToolSubprocessResult(ok=False, output=None, error_type="ValueError", error_message="boom")
 
-    monkeypatch.setattr("namel3ss.runtime.tools.python_runtime.run_tool_subprocess", fake_run_tool_subprocess)
+    monkeypatch.setattr("namel3ss.runtime.tools.runners.local_runner.run_tool_subprocess", fake_run_tool_subprocess)
     executor = Executor(
         program.flows[0],
         schemas={},

@@ -9,7 +9,13 @@ from namel3ss.module_loader import load_project
 from namel3ss.utils.json_tools import dumps_pretty
 
 
-def run_lint(path_str: str, check_only: bool, strict: bool = True, allow_legacy_type_aliases: bool = True) -> int:
+def run_lint(
+    path_str: str,
+    check_only: bool,
+    strict: bool = True,
+    allow_legacy_type_aliases: bool = True,
+    strict_tools: bool = False,
+) -> int:
     path = Path(path_str)
     if path.suffix != ".ai":
         raise Namel3ssError("Input file must have .ai extension")
@@ -31,12 +37,24 @@ def run_lint(path_str: str, check_only: bool, strict: bool = True, allow_legacy_
                 file=file_path,
             )
         ]
+    ok = not _has_fatal_findings(findings, strict_tools=strict_tools)
     output = {
-        "ok": len(findings) == 0,
+        "ok": ok,
         "count": len(findings),
         "findings": [f.to_dict() for f in findings],
     }
     print(dumps_pretty(output))
-    if check_only and findings:
+    if check_only and not ok:
         return 1
     return 0
+
+
+def _has_fatal_findings(findings: list[Finding], *, strict_tools: bool) -> bool:
+    for finding in findings:
+        if finding.severity == "error":
+            return True
+        if finding.severity == "warning":
+            if finding.code.startswith("tools.") and not strict_tools:
+                continue
+            return True
+    return False

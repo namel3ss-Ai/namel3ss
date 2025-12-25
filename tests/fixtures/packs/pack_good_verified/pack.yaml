@@ -1,0 +1,8 @@
+id: "sample.greeter"
+name: "Sample Greeter Pack"
+version: "0.1.0"
+description: "Greeter tools for tests."
+author: "namel3ss"
+license: "MIT"
+tools:
+  - "say hello"

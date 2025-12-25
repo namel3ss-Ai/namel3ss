@@ -11,8 +11,13 @@ const wizardStatus = wizardEl("toolWizardStatus");
 const wizardConflict = wizardEl("toolWizardConflict");
 const wizardConflictMessage = wizardEl("toolWizardConflictMessage");
 const wizardUseSuggestion = wizardEl("toolWizardUseSuggestion");
+const wizardReuseExisting = wizardEl("toolWizardReuseExisting");
+const wizardPreview = wizardEl("toolWizardPreview");
+const wizardPreviewButton = wizardEl("toolWizardPreviewButton");
 
 let wizardSuggestion = null;
+let wizardHasPreview = false;
+let wizardReuse = false;
 
 function setWizardStatus(message, isError = false) {
   if (!wizardStatus) return;
@@ -20,10 +25,24 @@ function setWizardStatus(message, isError = false) {
   wizardStatus.style.color = isError ? "#b00020" : "#333";
 }
 
+function setWizardPreview(content) {
+  if (!wizardPreview) return;
+  wizardPreview.textContent = content || "";
+}
+
+function markPreviewStale() {
+  wizardHasPreview = false;
+  wizardReuse = false;
+  setWizardPreview("");
+}
+
 function showWizardModal() {
   if (!wizardModal) return;
   wizardModal.classList.remove("hidden");
   setWizardStatus("");
+  setWizardPreview("");
+  wizardHasPreview = false;
+  wizardReuse = false;
   hideWizardConflict();
 }
 
@@ -31,6 +50,9 @@ function hideWizardModal() {
   if (!wizardModal) return;
   wizardModal.classList.add("hidden");
   setWizardStatus("");
+  setWizardPreview("");
+  wizardHasPreview = false;
+  wizardReuse = false;
   hideWizardConflict();
 }
 
@@ -51,12 +73,16 @@ function showWizardConflict(message, suggestion) {
 async function submitWizard() {
   const payload = buildWizardPayload();
   if (!payload) return;
-  setWizardStatus("Generating tool...");
+  if (!wizardHasPreview) {
+    await requestWizardPreview(payload);
+    return;
+  }
+  setWizardStatus("Creating tool...");
   try {
     const resp = await fetch("/api/tool-wizard", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...payload, reuse_existing: wizardReuse }),
     });
     const data = await resp.json();
     if (data.ok) {
@@ -86,22 +112,57 @@ async function submitWizard() {
   }
 }
 
+async function requestWizardPreview(payload) {
+  setWizardStatus("Building preview...");
+  try {
+    const resp = await fetch("/api/tool-wizard", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...payload, preview: true }),
+    });
+    const data = await resp.json();
+    if (data.ok && data.status === "preview") {
+      const preview = data.preview || {};
+      const stub = preview.stub || {};
+      const binding = preview.binding || {};
+      const lines = [];
+      lines.push(preview.tool_block || "");
+      lines.push("");
+      lines.push(`binding: ${binding.entry || "(unknown)"}`);
+      lines.push(`stub: ${stub.path || "(unknown)"}`);
+      setWizardPreview(lines.join("\n"));
+      wizardHasPreview = true;
+      if (data.conflicts && data.conflicts.length) {
+        showWizardConflict("Conflicts detected. Choose reuse or rename to continue.", data.suggested);
+        setWizardStatus("Preview ready (conflicts found).", true);
+      } else {
+        hideWizardConflict();
+        setWizardStatus("Preview ready.");
+      }
+      return;
+    }
+    if (data.error) {
+      setWizardStatus(data.error, true);
+      return;
+    }
+    setWizardStatus("Preview failed.", true);
+  } catch (err) {
+    setWizardStatus("Preview failed.", true);
+  }
+}
+
 function buildWizardPayload() {
   const toolName = wizardEl("toolWizardName").value.trim();
-  const moduleName = wizardEl("toolWizardModule").value.trim();
-  const functionName = wizardEl("toolWizardFunction").value.trim();
   const purity = wizardEl("toolWizardPurity").value.trim();
   const timeoutValue = wizardEl("toolWizardTimeout").value.trim();
   const inputFields = wizardEl("toolWizardInput").value;
   const outputFields = wizardEl("toolWizardOutput").value;
-  if (!toolName || !moduleName || !functionName || !purity) {
-    setWizardStatus("Tool name, module name, function name, and purity are required.", true);
+  if (!toolName || !purity) {
+    setWizardStatus("Tool name and purity are required.", true);
     return null;
   }
   return {
     tool_name: toolName,
-    module_name: moduleName,
-    function_name: functionName,
     purity,
     timeout_seconds: timeoutValue || null,
     input_fields: inputFields || "",
@@ -127,7 +188,30 @@ if (wizardUseSuggestion) {
   wizardUseSuggestion.addEventListener("click", () => {
     if (!wizardSuggestion) return;
     if (wizardSuggestion.tool_name) wizardEl("toolWizardName").value = wizardSuggestion.tool_name;
-    if (wizardSuggestion.module_name) wizardEl("toolWizardModule").value = wizardSuggestion.module_name;
+    wizardHasPreview = false;
+    wizardReuse = false;
     submitWizard();
+  });
+}
+if (wizardReuseExisting) {
+  wizardReuseExisting.addEventListener("click", () => {
+    wizardReuse = true;
+    submitWizard();
+  });
+}
+if (wizardPreviewButton) {
+  wizardPreviewButton.addEventListener("click", async () => {
+    const payload = buildWizardPayload();
+    if (!payload) return;
+    await requestWizardPreview(payload);
+  });
+}
+
+if (wizardForm) {
+  const inputs = wizardForm.querySelectorAll("input, textarea, select");
+  inputs.forEach((input) => {
+    input.addEventListener("input", () => {
+      markPreviewStale();
+    });
   });
 }

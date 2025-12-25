@@ -1,0 +1,4 @@
+tools:
+  "say hello":
+    kind: "python"
+    entry: "tools.greeter:run"

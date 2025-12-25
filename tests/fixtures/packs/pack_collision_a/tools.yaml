@@ -1,0 +1,4 @@
+tools:
+  "collision tool":
+    kind: "python"
+    entry: "tools.collision:run"

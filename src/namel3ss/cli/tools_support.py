@@ -5,9 +5,12 @@ from pathlib import Path
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.config.loader import load_config
+from namel3ss.runtime.packs.registry import load_pack_registry
 from namel3ss.runtime.tools.bindings import bindings_path
-from namel3ss.runtime.tools.bindings_yaml import ToolBinding
+from namel3ss.runtime.tools.bindings_yaml import ToolBinding, render_bindings_yaml
 from namel3ss.templates.tools import ToolField, render_tool_module
+from namel3ss.utils.slugify import slugify_tool_name
 
 
 DEFAULT_CONVENTION = "slug-run"
@@ -29,6 +32,15 @@ class FromAppConfig:
     convention: str
     dry: bool
     allow_overwrite: bool
+
+
+@dataclass(frozen=True)
+class BindingsPlan:
+    missing: list[str]
+    proposed: dict[str, ToolBinding]
+    stubs: list[StubPlan]
+    conflicts: list[Path]
+    preview: str
 
 
 def parse_from_app_args(args: list[str]) -> FromAppConfig:
@@ -94,12 +106,55 @@ def plan_stub(app_root: Path, tool_decl, tool_name: str, slug: str) -> StubPlan:
     return StubPlan(tool_name=tool_name, entry=f"tools.{slug}:run", path=module_path, content=content, exists=exists)
 
 
+def build_bindings_plan(app_root: Path, program, bindings: dict[str, ToolBinding]) -> BindingsPlan:
+    pack_tools = _active_pack_tools(app_root)
+    python_tools = {
+        name: tool
+        for name, tool in program.tools.items()
+        if tool.kind == "python" and name not in pack_tools
+    }
+    missing = sorted(name for name in python_tools if name not in bindings)
+    proposed = dict(bindings)
+    stubs: list[StubPlan] = []
+    for name in missing:
+        slug = slugify_tool_name(name)
+        entry = f"tools.{slug}:run"
+        proposed[name] = ToolBinding(kind="python", entry=entry)
+        stubs.append(plan_stub(app_root, python_tools[name], name, slug))
+    conflicts = [stub.path for stub in stubs if stub.exists]
+    preview = render_bindings_yaml(proposed)
+    return BindingsPlan(
+        missing=missing,
+        proposed=proposed,
+        stubs=stubs,
+        conflicts=conflicts,
+        preview=preview,
+    )
+
+
+def _active_pack_tools(app_root: Path) -> set[str]:
+    config = load_config(root=app_root)
+    registry = load_pack_registry(app_root, config)
+    active: set[str] = set()
+    for name, providers in registry.tools.items():
+        for provider in providers:
+            if provider.source == "builtin_pack" or (provider.verified and provider.enabled):
+                active.add(name)
+                break
+    return active
+
+
 def bindings_payload(bindings: dict[str, ToolBinding]) -> dict[str, dict]:
     payload = {}
     for name, binding in sorted(bindings.items()):
         payload[name] = {
             "kind": binding.kind,
             "entry": binding.entry,
+            "runner": binding.runner,
+            "url": binding.url,
+            "image": binding.image,
+            "command": binding.command,
+            "env": binding.env,
             "purity": binding.purity,
             "timeout_ms": binding.timeout_ms,
         }
@@ -203,13 +258,22 @@ def unknown_convention_message(convention: str) -> str:
     )
 
 
+def extract_app_path(args: list[str]) -> tuple[str | None, list[str]]:
+    if args and args[0].endswith(".ai"):
+        return args[0], args[1:]
+    return None, args
+
+
 __all__ = [
     "DEFAULT_CONVENTION",
     "SUPPORTED_CONVENTIONS",
+    "BindingsPlan",
     "FromAppConfig",
     "StubPlan",
+    "build_bindings_plan",
     "bindings_payload",
     "build_dry_payload",
+    "extract_app_path",
     "missing_convention_message",
     "missing_entry_message",
     "missing_tool_message",

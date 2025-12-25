@@ -12,6 +12,30 @@
   font-size: 12px;
 }
 
+.tool-wizard-preview {
+  border: 1px solid #ececec;
+  border-radius: 8px;
+  padding: 8px;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tool-wizard-preview-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+}
+
+.tool-wizard-preview-body {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  color: #222;
+}
+
 .tool-wizard-actions {
   display: flex;
   gap: 8px;

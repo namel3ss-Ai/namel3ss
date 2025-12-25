@@ -155,22 +155,23 @@ There is no:
 - orchestration layer
 
 This keeps debugging human and predictable.
+Tool runners can execute remotely (service/container), but the core runtime remains local and single-process.
 
-### 8. No Plugins or Marketplace (Yet)
+### 8. No Public Registry (Yet)
 
-There is no plugin system.
+There is no public marketplace or remote registry in v0.1.0-alpha.
 
-You cannot install:
+What exists today:
+- local packs installed from disk
+- pack verification with v1 signatures
+- explicit enable/disable via `namel3ss.toml`
 
-- third-party extensions
-- engine add-ons
-- marketplace packages
+What does not exist yet:
+- a hosted registry
+- auto-updates
+- remote discovery
 
-This is deliberate.
-
-We will not add extensibility until the core language is unshakable.
-
-Python is optional. For advanced logic today, use Python tools with explicit dependencies (`pyproject.toml` or `requirements.txt`) and a per-app `.venv` via `n3 deps install`. For common tasks, built-in tool packs are available without extra dependencies.
+Python is optional for most users. For advanced logic, use Python tools with explicit dependencies (`pyproject.toml` or `requirements.txt`) and a per-app `.venv` via `n3 deps install`. For common tasks, built-in tool packs are available without extra dependencies. Pack tools require no bindings; app-defined tools still require `.namel3ss/tools.yaml` bindings.
 
 ## Why These Limitations Exist
 

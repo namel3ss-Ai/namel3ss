@@ -1,0 +1,4 @@
+tools:
+  "unverified tool":
+    kind: "python"
+    entry: "tools.sample:run"

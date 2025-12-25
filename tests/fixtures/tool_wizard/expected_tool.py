@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-def greet(payload: dict) -> dict:
+def run(payload: dict) -> dict:
     """Generated tool: greeter."""
     # Input schema:
     # - age: number (optional)

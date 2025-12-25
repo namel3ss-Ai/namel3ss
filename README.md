@@ -119,14 +119,34 @@ tool "summarize a csv file":
     columns is number
 ```
 ```bash
-n3 tools bind --from-app
+n3 tools bind --auto
 n3 run app.ai
+```
+
+### Deploy tools remotely
+Run tools via a service runner:
+```bash
+n3 tools set-runner "greet someone" --runner service --url http://127.0.0.1:8787/tools
+n3 run app.ai
+```
+
+### Find and use tools
+Discover available tools and search by intent:
+```bash
+n3 tools list
+n3 tools search "date"
+```
+
+### Tool health
+Catch collisions and binding issues early:
+```bash
+n3 lint --strict-tools
 ```
 
 ### No Python required
 Zero Python required: use built-in tool packs for common tasks. Example:
 ```ai
-tool "current time":
+tool "get current date and time":
   implemented using python
 
   input:
@@ -136,18 +156,24 @@ tool "current time":
     iso is text
 
 flow "demo":
-  let result is current time:
+  let result is get current date and time:
     timezone is "utc"
   return result
 ```
-Bind it to the built-in pack once:
-```bash
-n3 tools bind "current time" --entry "namel3ss.tool_packs.datetime:now"
-```
+Built-in packs are pre-bound — no wiring required.
 10-second demo:
 ```bash
 n3 run app.ai
 ```
+
+### Marketplace (local)
+Install and enable local tool packs (verified + trusted):
+```bash
+n3 packs add ./my_pack
+n3 packs verify my.pack
+n3 packs enable my.pack
+```
+Then declare the tool in English in `app.ai` and call it in a flow.
 
 ### Studio
 A visual environment for inspecting and interacting with namel3ss programs. An early Studio ships with v0.1.0a1/a2 — usable for state inspection, traces, and interaction. It is intentionally minimal and evolving.

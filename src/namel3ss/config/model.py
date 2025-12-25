@@ -46,6 +46,14 @@ class IdentityConfig:
 @dataclass
 class PythonToolsConfig:
     timeout_seconds: int = 10
+    service_url: str | None = None
+
+
+@dataclass
+class ToolPacksConfig:
+    enabled_packs: list[str] = field(default_factory=list)
+    disabled_packs: list[str] = field(default_factory=list)
+    pinned_tools: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -58,6 +66,7 @@ class AppConfig:
     persistence: PersistenceConfig = field(default_factory=PersistenceConfig)
     identity: IdentityConfig = field(default_factory=IdentityConfig)
     python_tools: PythonToolsConfig = field(default_factory=PythonToolsConfig)
+    tool_packs: ToolPacksConfig = field(default_factory=ToolPacksConfig)
 
 
 __all__ = [
@@ -70,4 +79,5 @@ __all__ = [
     "PersistenceConfig",
     "IdentityConfig",
     "PythonToolsConfig",
+    "ToolPacksConfig",
 ]

@@ -19,18 +19,60 @@ tool "greet someone":
 
 ## Tool bindings (`.namel3ss/tools.yaml`)
 
-Bindings map English tool names to Python entry points (with optional metadata):
+Bindings map English tool names to Python entry points, plus runner metadata:
 
 ```yaml
 tools:
   "greet someone":
     kind: "python"
     entry: "tools.sample_tool:greet"
+    runner: "local"
+    timeout_ms: 10000
 ```
 
-Optional fields include `purity` and `timeout_ms`.
+Optional fields include `runner`, `url`, `image`, `command`, `env`, `purity`, and `timeout_ms`.
 
-Generate bindings with Studio Tool Wizard or `n3 tools bind --from-app`.
+Generate bindings with Studio Tool Wizard or `n3 tools bind --auto`.
+Built-in tool packs require no bindings.
+Installed packs also provide their own bindings once verified and enabled.
+
+## Tool runners
+
+Runners determine where tool code executes:
+
+- local (default): runs the Python subprocess locally (uses `.venv` if present).
+- service: sends JSON to an HTTP tool service.
+- container: runs the tool in a container (docker/podman required).
+
+Service runner binding example:
+
+```yaml
+tools:
+  "greet someone":
+    kind: "python"
+    entry: "tools.sample_tool:greet"
+    runner: "service"
+    url: "http://127.0.0.1:8787/tools"
+```
+
+Container runner binding example:
+
+```yaml
+tools:
+  "greet someone":
+    kind: "python"
+    entry: "tools.sample_tool:greet"
+    runner: "container"
+    image: "ghcr.io/namel3ss/tools:latest"
+    command: ["python", "-m", "namel3ss_tools.runner"]
+    env: {"LOG_LEVEL": "info"}
+```
+
+You can also set a default service URL with `N3_TOOL_SERVICE_URL` or in `namel3ss.toml`:
+```toml
+[python_tools]
+service_url = "http://127.0.0.1:8787/tools"
+```
 
 ## Tool kinds
 
@@ -42,6 +84,15 @@ Generate bindings with Studio Tool Wizard or `n3 tools bind --from-app`.
 ### builtin (AI tool calls)
 - Used for model tool calls (e.g., `echo`).
 - Not directly callable from flows.
+
+## Tool packs
+
+Tools can also come from packs:
+- built-in packs ship with namel3ss (pre-bound).
+- installed packs live under `.namel3ss/packs/<pack_id>` and require verification + enable.
+
+Use `n3 packs status` to see installed packs and `n3 packs enable <pack_id>` to activate a verified pack.
+Pack tools show up in `n3 tools list` and `n3 tools search` with pack metadata.
 
 ## Tool calls
 
@@ -57,12 +108,25 @@ flow "demo":
 - Tool payloads must be JSON objects; fields must match the declaration.
 - Optional fields use `optional`, e.g. `age is optional number`.
 
+## Tool status meanings
+- ok: declared and bound (or provided by a built-in pack).
+- missing binding: declared but not bound in `.namel3ss/tools.yaml`.
+- unused binding: bound but not declared in `app.ai`.
+- collision: binding conflicts with a pack tool name (or multiple packs provide the same tool).
+- invalid binding: malformed entry or invalid runner configuration.
+- unverified: installed pack is present but not verified.
+- disabled: installed pack is verified but not enabled.
+
 ## n3 tools commands
 
 ```bash
-n3 tools status [app.ai]           # inspect bindings + missing/unused
+n3 tools status [app.ai]           # inspect bindings + summary
+n3 tools list [app.ai]             # list packs, declarations, bindings
+n3 tools search "<query>" [app.ai] # search by tool name
 n3 tools bind "<tool name>" --entry "module:function"
 n3 tools bind --from-app [app.ai]  # generate bindings + stubs
+n3 tools bind --auto [app.ai]      # alias of --from-app
+n3 tools set-runner "<tool name>" --runner local|service|container
 n3 tools unbind "<tool name>"
 n3 tools format                    # normalize tools.yaml
 ```

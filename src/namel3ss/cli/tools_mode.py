@@ -1,30 +1,31 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 from namel3ss.cli.app_loader import load_program
 from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.cli.tools_support import (
     SUPPORTED_CONVENTIONS,
+    build_bindings_plan,
     bindings_payload,
     build_dry_payload,
+    extract_app_path,
     missing_entry_message,
     missing_tool_message,
     parse_from_app_args,
-    plan_stub,
     print_dry_run,
     stub_conflict_message,
-    unknown_args_message,
     unknown_convention_message,
+    unknown_args_message,
     unknown_flag_message,
 )
+from namel3ss.module_loader import load_project
 from namel3ss.runtime.tools.bindings import bindings_path, load_tool_bindings, write_tool_bindings
-from namel3ss.runtime.tools.bindings_yaml import ToolBinding, render_bindings_yaml
+from namel3ss.runtime.tools.bindings_yaml import ToolBinding
 from namel3ss.runtime.tools.entry_validation import validate_python_tool_entry_exists
+from namel3ss.runtime.tools.tool_pack_registry import is_tool_pack_tool
+from namel3ss.tools.health.analyze import analyze_tool_health
 from namel3ss.utils.json_tools import dumps_pretty
-from namel3ss.utils.slugify import slugify_tool_name
 
 def run_tools(args: list[str]) -> int:
     if not args or args[0] in {"help", "-h", "--help"}:
@@ -38,8 +39,22 @@ def run_tools(args: list[str]) -> int:
 
     if cmd == "status":
         return _run_status(tail, json_mode=json_mode)
+    if cmd == "list":
+        from namel3ss.cli.tools_list_mode import run_tools_list
+
+        return run_tools_list(tail, json_mode=json_mode)
+    if cmd == "search":
+        from namel3ss.cli.tools_search_mode import run_tools_search
+
+        return run_tools_search(tail, json_mode=json_mode)
     if cmd == "bind":
+        if "--auto" in tail:
+            tail = ["--from-app" if item == "--auto" else item for item in tail]
         return _run_bind(tail, json_mode=json_mode)
+    if cmd == "set-runner":
+        from namel3ss.cli.tools_runner_mode import run_tools_set_runner
+
+        return run_tools_set_runner(tail, json_mode=json_mode)
     if cmd == "unbind":
         return _run_unbind(tail, json_mode=json_mode)
     if cmd == "format":
@@ -48,7 +63,7 @@ def run_tools(args: list[str]) -> int:
     raise Namel3ssError(
         build_guidance_message(
             what=f"Unknown tools command '{cmd}'.",
-            why="Supported commands are status, bind, unbind, and format.",
+            why="Supported commands are status, list, search, bind, unbind, and format.",
             fix="Run `n3 tools help` to see usage.",
             example="n3 tools status",
         )
@@ -56,39 +71,72 @@ def run_tools(args: list[str]) -> int:
 
 
 def _run_status(args: list[str], *, json_mode: bool) -> int:
-    app_path, extra = _extract_app_path(args)
+    app_path, extra = extract_app_path(args)
     if extra:
         raise Namel3ssError(unknown_args_message(extra))
     app_path = resolve_app_path(app_path)
-    program, _ = load_program(str(app_path))
+    project = load_project(app_path)
     app_root = app_path.parent
     bindings_file = bindings_path(app_root)
     bindings_present = bindings_file.exists()
-    bindings_error = None
-    bindings_valid = True
-    try:
-        bindings = load_tool_bindings(app_root)
-    except Namel3ssError as err:
-        bindings = {}
-        bindings_valid = False
-        bindings_error = str(err)
-
-    tool_names = sorted(program.tools.keys())
-    python_tools = sorted(name for name, tool in program.tools.items() if tool.kind == "python")
-    missing = sorted(name for name in python_tools if name not in bindings)
-    unused = sorted(name for name in bindings if name not in program.tools)
-
+    report = analyze_tool_health(project)
+    tool_names = sorted(tool.name for tool in report.declared_tools)
+    python_tools = sorted(name for name in tool_names if report.declared_tools and _is_python_tool(report, name))
+    builtin_tools = sorted(
+        name for name, providers in report.pack_tools.items() if any(item.source == "builtin_pack" for item in providers)
+    )
+    installed_pack_tools = sorted(
+        name
+        for name, providers in report.pack_tools.items()
+        if any(item.source == "installed_pack" for item in providers)
+    )
+    missing = report.missing_bindings
+    unused = report.unused_bindings
+    collisions = report.collisions
+    pack_collisions = report.pack_collisions
+    invalid_names = sorted(
+        set(
+            report.invalid_bindings
+            + report.invalid_runners
+            + report.service_missing_urls
+            + report.container_missing_images
+            + report.container_missing_runtime
+        )
+    )
+    ok_count = len(
+        [name for name in python_tools if name not in missing and name not in collisions and name not in invalid_names]
+    )
+    summary = {
+        "ok": max(ok_count, 0),
+        "missing": len(missing),
+        "unused": len(unused),
+        "collisions": len(collisions) + len(pack_collisions),
+        "invalid": len(invalid_names),
+    }
     payload = {
         "app_root": str(app_root),
         "bindings_path": str(bindings_file),
         "bindings_present": bindings_present,
-        "bindings_valid": bindings_valid,
-        "bindings_error": bindings_error,
+        "bindings_valid": report.bindings_valid,
+        "bindings_error": report.bindings_error,
         "tools_declared": tool_names,
         "python_tools": python_tools,
+        "builtin_tools": builtin_tools,
+        "installed_pack_tools": installed_pack_tools,
         "missing_bindings": missing,
         "unused_bindings": unused,
-        "bindings": bindings_payload(bindings),
+        "collisions": collisions,
+        "invalid_bindings": report.invalid_bindings,
+        "pack_collisions": report.pack_collisions,
+        "packs": [pack.__dict__ for pack in report.packs],
+        "invalid": invalid_names,
+        "invalid_runners": report.invalid_runners,
+        "service_missing_urls": report.service_missing_urls,
+        "container_missing_images": report.container_missing_images,
+        "container_missing_runtime": report.container_missing_runtime,
+        "summary": summary,
+        "bindings": bindings_payload(report.bindings),
+        "issues": [issue.__dict__ for issue in report.issues],
     }
     if json_mode:
         print(dumps_pretty(payload))
@@ -96,12 +144,39 @@ def _run_status(args: list[str], *, json_mode: bool) -> int:
 
     print(f"App root: {payload['app_root']}")
     print(f"Bindings: {payload['bindings_path']} ({'present' if bindings_present else 'missing'})")
-    if not bindings_valid and bindings_error:
+    if not report.bindings_valid and report.bindings_error:
         print("Bindings file invalid:")
-        print(bindings_error)
+        print(report.bindings_error)
     print(f"Declared tools: {len(tool_names)}")
     if python_tools:
         print(f"Python tools: {len(python_tools)}")
+    if builtin_tools:
+        print(f"Built-in tool pack tools: {len(builtin_tools)}")
+    if installed_pack_tools:
+        print(f"Installed pack tools: {len(installed_pack_tools)}")
+    print(
+        "Summary: "
+        f"ok={summary['ok']}, missing={summary['missing']}, unused={summary['unused']}, "
+        f"collisions={summary['collisions']}, invalid={summary['invalid']}."
+    )
+    if summary["missing"]:
+        print(f"{summary['missing']} tools missing bindings. Run `n3 tools bind --auto`.")
+    elif summary["collisions"] or summary["invalid"]:
+        print("Bindings need attention.")
+    else:
+        print("All tools bound.")
+    if collisions:
+        print("Collisions:")
+        for name in collisions:
+            print(f"- {name}")
+    if pack_collisions:
+        print("Pack collisions:")
+        for name in pack_collisions:
+            print(f"- {name}")
+    if invalid_names:
+        print("Invalid bindings:")
+        for name in invalid_names:
+            print(f"- {name}")
     if missing:
         print("Missing bindings:")
         for name in missing:
@@ -110,6 +185,12 @@ def _run_status(args: list[str], *, json_mode: bool) -> int:
         print("Unused bindings:")
         for name in unused:
             print(f"- {name}")
+    if report.bindings:
+        print("Bindings:")
+        for name in sorted(report.bindings):
+            binding = report.bindings[name]
+            runner = binding.runner or "local"
+            print(f"- {name} (runner: {runner})")
     return 0
 
 
@@ -140,6 +221,15 @@ def _run_bind_single(args: list[str], *, json_mode: bool) -> int:
                 why=f"Tool kind is '{tool_decl.kind}'.",
                 fix="Bind entries only for python tools.",
                 example=f'tool "{tool_name}":\n  implemented using python',
+            )
+        )
+    if is_tool_pack_tool(tool_name):
+        raise Namel3ssError(
+            build_guidance_message(
+                what=f'Tool "{tool_name}" is a built-in pack tool.',
+                why="Built-in packs are already bound and cannot be overridden.",
+                fix="Rename the tool or remove the custom binding attempt.",
+                example=f'n3 tools status',
             )
         )
     app_root = app_path.parent
@@ -182,24 +272,11 @@ def _run_bind_from_app(args: list[str], *, json_mode: bool) -> int:
 
     if config.convention not in SUPPORTED_CONVENTIONS:
         raise Namel3ssError(unknown_convention_message(config.convention))
-
-    python_tools = {name: tool for name, tool in program.tools.items() if tool.kind == "python"}
-    missing = sorted(name for name in python_tools if name not in bindings)
-    proposed = dict(bindings)
-    stubs: list[StubPlan] = []
-    for name in missing:
-        slug = slugify_tool_name(name)
-        entry = f"tools.{slug}:run"
-        proposed[name] = ToolBinding(kind="python", entry=entry)
-        stub = plan_stub(app_root, python_tools[name], name, slug)
-        if stub:
-            stubs.append(stub)
-
-    conflicts = [stub.path for stub in stubs if stub.exists and not config.allow_overwrite]
-    preview = render_bindings_yaml(proposed)
+    plan = build_bindings_plan(app_root, program, bindings)
+    conflicts = [path for path in plan.conflicts if not config.allow_overwrite]
 
     if config.dry:
-        payload = build_dry_payload(app_root, missing, stubs, preview, conflicts)
+        payload = build_dry_payload(app_root, plan.missing, plan.stubs, plan.preview, conflicts)
         if json_mode:
             print(dumps_pretty(payload))
         else:
@@ -209,30 +286,30 @@ def _run_bind_from_app(args: list[str], *, json_mode: bool) -> int:
     if conflicts:
         raise Namel3ssError(stub_conflict_message(conflicts))
 
-    for stub in stubs:
+    for stub in plan.stubs:
         if stub.exists and config.allow_overwrite:
             stub.path.write_text(stub.content, encoding="utf-8")
         elif not stub.exists:
             stub.path.parent.mkdir(parents=True, exist_ok=True)
             stub.path.write_text(stub.content, encoding="utf-8")
 
-    path = write_tool_bindings(app_root, proposed)
+    path = write_tool_bindings(app_root, plan.proposed)
     payload = {
         "status": "ok",
         "bindings_path": str(path),
-        "missing_bound": missing,
-        "stubs_written": [str(stub.path) for stub in stubs if (stub.exists is False) or config.allow_overwrite],
+        "missing_bound": plan.missing,
+        "stubs_written": [str(stub.path) for stub in plan.stubs if (stub.exists is False) or config.allow_overwrite],
     }
     if json_mode:
         print(dumps_pretty(payload))
         return 0
-    if missing:
-        print(f"Bound {len(missing)} tools from app.ai.")
+    if plan.missing:
+        print(f"Bound {len(plan.missing)} tools from app.ai.")
     else:
         print("No missing bindings found.")
-    if stubs:
+    if plan.stubs:
         print("Tool stubs:")
-        for stub in stubs:
+        for stub in plan.stubs:
             status = "overwritten" if stub.exists and config.allow_overwrite else "created" if not stub.exists else "skipped"
             print(f"- {stub.path} ({status})")
     print(f"Bindings file: {path}")
@@ -269,7 +346,7 @@ def _run_unbind(args: list[str], *, json_mode: bool) -> int:
 
 
 def _run_format(args: list[str], *, json_mode: bool) -> int:
-    app_path, extra = _extract_app_path(args)
+    app_path, extra = extract_app_path(args)
     if extra:
         raise Namel3ssError(unknown_args_message(extra))
     app_path = resolve_app_path(app_path)
@@ -331,17 +408,22 @@ def _parse_bind_args(args: list[str]) -> tuple[str, str]:
     return tool_name, entry
 
 
-def _extract_app_path(args: list[str]) -> tuple[str | None, list[str]]:
-    if args and args[0].endswith(".ai"):
-        return args[0], args[1:]
-    return None, args
+def _is_python_tool(report, name: str) -> bool:
+    for tool in report.declared_tools:
+        if tool.name == name:
+            return tool.kind == "python"
+    return False
 
 
 def _print_usage() -> None:
     usage = """Usage:
   n3 tools status [app.ai] [--json]
+  n3 tools list [app.ai] [--json]
+  n3 tools search "<query>" [app.ai] [--json]
   n3 tools bind "<tool name>" --entry "module:function" [--json]
   n3 tools bind --from-app [app.ai] [--convention slug-run] [--dry] [--yes] [--overwrite] [--json]
+  n3 tools bind --auto [app.ai] [--dry] [--yes] [--overwrite] [--json]
+  n3 tools set-runner "<tool name>" --runner local|service|container [--url ...] [--image ...] [--command ...] [--env ...] [--json]
   n3 tools unbind "<tool name>" [--json]
   n3 tools format [app.ai] [--json]
 """

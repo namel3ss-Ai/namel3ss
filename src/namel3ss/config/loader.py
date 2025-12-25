@@ -75,6 +75,7 @@ def _apply_toml_config(config: AppConfig, data: Dict[str, Any]) -> None:
     _apply_persistence_toml(config, data.get("persistence"))
     _apply_identity_toml(config, data.get("identity"))
     _apply_python_tools_toml(config, data.get("python_tools") or data.get("python"))
+    _apply_tool_packs_toml(config, data.get("tool_packs") or data.get("packs"))
 
 
 def _apply_ollama_toml(config: AppConfig, table: Any) -> None:
@@ -138,7 +139,35 @@ def _apply_python_tools_toml(config: AppConfig, table: Any) -> None:
             config.python_tools.timeout_seconds = int(timeout)
         except (TypeError, ValueError) as err:
             raise Namel3ssError("python_tools.timeout_seconds must be an integer") from err
+    service_url = table.get("service_url")
+    if service_url is not None:
+        config.python_tools.service_url = str(service_url)
 
+
+def _apply_tool_packs_toml(config: AppConfig, table: Any) -> None:
+    if not isinstance(table, dict):
+        return
+    enabled = table.get("enabled_packs")
+    if enabled is not None:
+        config.tool_packs.enabled_packs = _ensure_str_list(enabled, "tool_packs.enabled_packs")
+    disabled = table.get("disabled_packs")
+    if disabled is not None:
+        config.tool_packs.disabled_packs = _ensure_str_list(disabled, "tool_packs.disabled_packs")
+    pinned = table.get("pinned_tools")
+    if pinned is not None:
+        config.tool_packs.pinned_tools = _ensure_str_map(pinned, "tool_packs.pinned_tools")
+
+
+def _ensure_str_list(value: Any, label: str) -> list[str]:
+    if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
+        raise Namel3ssError(f"{label} must be a list of strings")
+    return [str(item) for item in value]
+
+
+def _ensure_str_map(value: Any, label: str) -> dict[str, str]:
+    if not isinstance(value, dict) or any(not isinstance(k, str) or not isinstance(v, str) for k, v in value.items()):
+        raise Namel3ssError(f"{label} must be a mapping of strings to strings")
+    return {str(k): str(v) for k, v in value.items()}
 
 def _apply_env_overrides(config: AppConfig) -> bool:
     used = False
@@ -198,6 +227,10 @@ def _apply_env_overrides(config: AppConfig) -> bool:
             config.python_tools.timeout_seconds = int(tool_timeout)
         except ValueError as err:
             raise Namel3ssError("N3_PYTHON_TOOL_TIMEOUT_SECONDS must be an integer") from err
+        used = True
+    service_url = os.getenv("N3_TOOL_SERVICE_URL")
+    if service_url:
+        config.python_tools.service_url = service_url
         used = True
     used = _apply_identity_env(config) or used
     return used
@@ -312,14 +345,40 @@ def _parse_toml_minimal(text: str, path: Path) -> Dict[str, Any]:
 def _parse_toml_value(value: str, line_num: int, path: Path) -> Any:
     if value.startswith('"') and value.endswith('"'):
         return value[1:-1]
+    if value.startswith("[") and value.endswith("]"):
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError as err:
+            raise Namel3ssError(
+                build_guidance_message(
+                    what=f"Unsupported array value in {path.name}.",
+                    why=f"Array parsing failed: {err}.",
+                    fix="Use a JSON-style array of strings.",
+                    example='enabled_packs = ["pack.slug"]',
+                ),
+                line=line_num,
+                column=1,
+            ) from err
+        if not isinstance(parsed, list) or any(not isinstance(item, str) for item in parsed):
+            raise Namel3ssError(
+                build_guidance_message(
+                    what=f"Unsupported array value in {path.name}.",
+                    why="Only arrays of strings are supported.",
+                    fix="Provide a list of quoted strings.",
+                    example='enabled_packs = ["pack.slug"]',
+                ),
+                line=line_num,
+                column=1,
+            )
+        return parsed
     if value.startswith("{") and value.endswith("}"):
         return _parse_inline_table(value, line_num, path)
     raise Namel3ssError(
         build_guidance_message(
             what=f"Unsupported value in {path.name}.",
-            why="Only quoted strings and inline tables are supported.",
-            fix="Wrap values in quotes or use inline tables.",
-            example='target = "sqlite"',
+            why="Only quoted strings, arrays of strings, and inline tables are supported.",
+            fix="Wrap values in quotes, use arrays, or use inline tables.",
+            example='enabled_packs = ["pack.slug"]',
         ),
         line=line_num,
         column=1,

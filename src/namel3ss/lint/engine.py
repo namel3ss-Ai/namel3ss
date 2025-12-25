@@ -7,6 +7,8 @@ from namel3ss.lexer.tokens import KEYWORDS
 from namel3ss.lint.semantic import lint_semantic
 from namel3ss.lint.text_scan import scan_text
 from namel3ss.lint.types import Finding
+from namel3ss.runtime.tools.bindings import bindings_path
+from namel3ss.tools.health.analyze import analyze_tool_health
 from namel3ss.types import normalize_type_name
 from namel3ss.parser.core import parse
 from namel3ss.ast import nodes as ast
@@ -83,6 +85,43 @@ def lint_project(project: ProjectLoadResult, strict: bool = True) -> list[Findin
             _tag(_lint_record_types(program, strict=strict), file_path)
 
     findings.extend(lint_semantic(project.program))
+    findings.extend(_lint_tool_health(project))
+    return findings
+
+
+def _lint_tool_health(project: ProjectLoadResult) -> list[Finding]:
+    report = analyze_tool_health(project)
+    app_path = project.app_path.as_posix()
+    bindings_file = bindings_path(project.app_path.parent).as_posix()
+    findings: list[Finding] = []
+    for issue in report.issues:
+        file_path = issue.file
+        if issue.line is not None:
+            file_path = app_path
+        elif file_path is None and (
+            issue.code.startswith("tools.binding")
+            or issue.code.startswith("tools.bindings")
+            or issue.code in {
+                "tools.invalid_binding",
+                "tools.unused_binding",
+                "tools.collision",
+                "tools.invalid_runner",
+                "tools.service_url_missing",
+                "tools.container_image_missing",
+                "tools.container_runtime_missing",
+            }
+        ):
+            file_path = bindings_file
+        findings.append(
+            Finding(
+                code=issue.code,
+                message=issue.message,
+                line=issue.line,
+                column=issue.column,
+                severity=issue.severity,
+                file=file_path,
+            )
+        )
     return findings
 
 

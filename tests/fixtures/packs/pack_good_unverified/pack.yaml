@@ -1,0 +1,8 @@
+id: "sample.unverified"
+name: "Unverified Pack"
+version: "0.1.0"
+description: "Pack without signature."
+author: "namel3ss"
+license: "MIT"
+tools:
+  - "unverified tool"

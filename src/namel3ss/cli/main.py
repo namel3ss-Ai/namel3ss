@@ -32,6 +32,7 @@ from namel3ss.cli.test_mode import run_test_command
 from namel3ss.cli.tools_mode import run_tools
 from namel3ss.cli.ui_mode import render_manifest, run_action
 from namel3ss.cli.pkg_mode import run_pkg
+from namel3ss.cli.packs_mode import run_packs
 from namel3ss.cli.verify_mode import run_verify_command
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.render import format_error
@@ -56,6 +57,7 @@ RESERVED = {
     "pkg",
     "deps",
     "tools",
+    "packs",
     "pack",
     "build",
     "ship",
@@ -137,6 +139,8 @@ def main(argv: list[str] | None = None) -> int:
             return run_deps(args[1:])
         if cmd == "tools":
             return run_tools(args[1:])
+        if cmd == "packs":
+            return run_packs(args[1:])
         if cmd == "new":
             return run_new(args[1:])
         if cmd == "test":
@@ -177,8 +181,9 @@ def _handle_app_commands(path: str, remainder: list[str], context: dict | None =
             strict_types = False
         if "strict" in tail_flags:
             strict_types = True
+        strict_tools = "--strict-tools" in remainder[1:]
         allow_aliases = _allow_aliases_from_flags(remainder[1:])
-        return run_lint(path, check_only, strict_types, allow_aliases)
+        return run_lint(path, check_only, strict_types, allow_aliases, strict_tools)
     if remainder and canonical_first == "actions":
         json_mode = len(remainder) > 1 and remainder[1] == "json"
         allow_aliases = _allow_aliases_from_flags(remainder)
@@ -293,12 +298,12 @@ def _print_usage() -> None:
   n3 actions [app.ai] [json]       # list actions
   n3 studio [app.ai] [--port N]    # start Studio viewer (use --dry to skip server in tests)
   n3 fmt [app.ai] [check]          # format in place (alias: format)
-  n3 lint [app.ai] [check]         # lint
+  n3 lint [app.ai] [check]         # lint (use --strict-tools for tool warnings)
   n3 graph [app.ai] [--json]       # module dependency graph
   n3 exports [app.ai] [--json]     # module export list
   n3 data [app.ai] <cmd>           # data store status/reset (alias: persist)
   n3 deps <cmd> [--json]           # python env/deps (status/install/sync/lock/clean)
-  n3 tools <cmd> [--json]          # tool bindings (status/bind/unbind/format)
+  n3 tools <cmd> [--json]          # tool bindings (status/list/search/bind/unbind/format)
   n3 pkg <cmd> [--json]            # packages (capsules)
   n3 <app.ai>                      # run default flow
   n3 <app.ai> <action_id> [json]   # execute UI action (payload optional)

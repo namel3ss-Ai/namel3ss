@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from namel3ss.errors.base import Namel3ssError
-from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.tools.bindings_yaml import ToolBinding, parse_bindings_yaml, render_bindings_yaml
-from namel3ss.utils.slugify import slugify_tool_name
 
 BINDINGS_DIR = ".namel3ss"
 BINDINGS_FILE = "tools.yaml"
@@ -22,6 +19,9 @@ def load_tool_bindings(app_root: Path) -> dict[str, ToolBinding]:
     try:
         text = path.read_text(encoding="utf-8")
     except Exception as err:
+        from namel3ss.errors.base import Namel3ssError
+        from namel3ss.errors.guidance import build_guidance_message
+
         raise Namel3ssError(
             build_guidance_message(
                 what="Unable to read tool bindings.",
@@ -41,28 +41,6 @@ def write_tool_bindings(app_root: Path, bindings: dict[str, ToolBinding]) -> Pat
     return path
 
 
-def resolve_tool_binding(app_root: Path, tool_name: str, *, line: int | None, column: int | None) -> ToolBinding:
-    bindings = load_tool_bindings(app_root)
-    binding = bindings.get(tool_name)
-    if not binding:
-        slug = slugify_tool_name(tool_name)
-        raise Namel3ssError(
-            build_guidance_message(
-                what=f'Tool "{tool_name}" is not bound to a python entry.',
-                why="Tool declarations no longer include module paths; bindings live in .namel3ss/tools.yaml.",
-                fix=(
-                    "Check bindings with `n3 tools status`, then run "
-                    f'`n3 tools bind "{tool_name}" --entry "tools.{slug}:run"` '
-                    "or `n3 tools bind --from-app`."
-                ),
-                example=_bindings_example(tool_name),
-            ),
-            line=line,
-            column=column,
-        )
-    return binding
-
-
 def _bindings_example(tool_name: str) -> str:
     return (
         "tools:\n"
@@ -72,4 +50,4 @@ def _bindings_example(tool_name: str) -> str:
     )
 
 
-__all__ = ["bindings_path", "load_tool_bindings", "resolve_tool_binding", "write_tool_bindings"]
+__all__ = ["bindings_path", "load_tool_bindings", "write_tool_bindings"]

@@ -1,0 +1,8 @@
+id: "pack.collision.a"
+name: "Collision Pack A"
+version: "0.1.0"
+description: "Collision pack A."
+author: "namel3ss"
+license: "MIT"
+tools:
+  - "collision tool"
