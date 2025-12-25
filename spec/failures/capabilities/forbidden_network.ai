@@ -1,0 +1,15 @@
+tool "get json from web":
+  implemented using python
+
+  input:
+    url is text
+
+  output:
+    status is number
+    headers is json
+    data is json
+
+flow "demo":
+  let response is get json from web:
+    url is "https://example.com/data"
+  return response

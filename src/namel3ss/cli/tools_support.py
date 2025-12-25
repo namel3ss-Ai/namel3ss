@@ -157,6 +157,8 @@ def bindings_payload(bindings: dict[str, ToolBinding]) -> dict[str, dict]:
             "env": binding.env,
             "purity": binding.purity,
             "timeout_ms": binding.timeout_ms,
+            "sandbox": binding.sandbox,
+            "enforcement": binding.enforcement,
         }
     return payload
 

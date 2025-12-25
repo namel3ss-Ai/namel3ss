@@ -104,7 +104,7 @@ def _load_builtin_packs() -> list[PackRecord]:
         for tool_name in tools:
             binding = get_tool_pack_binding(tool_name)
             if binding:
-                bindings[tool_name] = ToolBinding(kind="python", entry=binding.entry)
+                bindings[tool_name] = ToolBinding(kind="python", entry=binding.entry, sandbox=True)
         records.append(
             PackRecord(
                 pack_id=pack_id,
@@ -210,10 +210,14 @@ def _apply_manifest_defaults(bindings: dict[str, ToolBinding], manifest: PackMan
         image = binding.image
         command = binding.command
         env = binding.env
+        sandbox = binding.sandbox
+        enforcement = binding.enforcement
         if runner == "service" and not url:
             url = manifest.service_url
         if runner == "container" and not image:
             image = manifest.container_image
+        if runner == "local" and sandbox is None:
+            sandbox = True
         bindings[name] = ToolBinding(
             kind=binding.kind,
             entry=binding.entry,
@@ -224,6 +228,8 @@ def _apply_manifest_defaults(bindings: dict[str, ToolBinding], manifest: PackMan
             env=env,
             purity=binding.purity,
             timeout_ms=binding.timeout_ms,
+            sandbox=sandbox,
+            enforcement=enforcement,
         )
 
 

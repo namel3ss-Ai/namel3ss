@@ -3,7 +3,9 @@ from __future__ import annotations
 from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.runtime.packs.capabilities import capabilities_summary, load_pack_capabilities
 from namel3ss.runtime.packs.registry import load_pack_registry, pack_payload
+from namel3ss.runtime.packs.source_meta import read_pack_source
 from namel3ss.runtime.packs.config import read_pack_config
 from namel3ss.utils.json_tools import dumps_pretty
 
@@ -18,7 +20,7 @@ def run_packs_status(args: list[str], *, json_mode: bool) -> int:
     packs = [pack for pack in registry.packs.values()]
     payload = {
         "app_root": str(app_root),
-        "packs": [pack_payload(pack) for pack in packs],
+        "packs": [_pack_status_payload(pack) for pack in packs],
         "enabled_packs": config.enabled_packs,
         "disabled_packs": config.disabled_packs,
         "pinned_tools": config.pinned_tools,
@@ -32,7 +34,12 @@ def run_packs_status(args: list[str], *, json_mode: bool) -> int:
     for pack in sorted(packs, key=lambda item: item.pack_id):
         status = "enabled" if pack.enabled else "disabled"
         verify = "verified" if pack.verified else "unverified"
-        print(f"- {pack.pack_id} ({status}, {verify})")
+        source_info = _pack_source_info(pack)
+        caps = _pack_capabilities_summary(pack)
+        summary = _caps_summary_text(caps)
+        source_label = f", source={source_info.get('source_type')}" if source_info else ""
+        caps_label = f", caps={summary}" if summary else ""
+        print(f"- {pack.pack_id} ({status}, {verify}{source_label}{caps_label})")
     if payload["collisions"]:
         print("Pack tool collisions:")
         for tool_name in payload["collisions"]:
@@ -50,6 +57,49 @@ def _config_from_app(config):
         pinned_tools=config.pinned_tools,
     )
     return app
+
+
+def _pack_source_info(pack) -> dict[str, object]:
+    if not pack.pack_root:
+        return {"source_type": "builtin", "path": None}
+    info = read_pack_source(pack.pack_root)
+    if info is None:
+        return {"source_type": "installed", "path": str(pack.pack_root)}
+    return {"source_type": info.source_type, "path": info.path}
+
+
+def _pack_capabilities_summary(pack) -> dict[str, object]:
+    if not pack.pack_root:
+        return {}
+    try:
+        capabilities = load_pack_capabilities(pack.pack_root)
+    except Namel3ssError:
+        return {}
+    if not capabilities:
+        return {}
+    return capabilities_summary(capabilities)
+
+
+def _pack_status_payload(pack) -> dict[str, object]:
+    payload = pack_payload(pack)
+    payload["source_info"] = _pack_source_info(pack)
+    payload["capabilities_summary"] = _pack_capabilities_summary(pack)
+    return payload
+
+
+def _caps_summary_text(summary: dict[str, object]) -> str:
+    levels = summary.get("levels") if summary else None
+    if not isinstance(levels, dict):
+        return ""
+    secrets = summary.get("secrets") if summary else []
+    secret_count = len(secrets) if isinstance(secrets, list) else 0
+    return (
+        f'fs={levels.get("filesystem", "none")},'
+        f'net={levels.get("network", "none")},'
+        f'env={levels.get("env", "none")},'
+        f'sub={levels.get("subprocess", "none")},'
+        f'secrets={secret_count}'
+    )
 
 
 def _unknown_args_message(args: list[str]) -> str:

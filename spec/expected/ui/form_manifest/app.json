@@ -1,0 +1,95 @@
+{
+  "pages": [
+    {
+      "name": "Customers",
+      "slug": "customers",
+      "elements": [
+        {
+          "type": "title",
+          "value": "Customers",
+          "element_id": "page.customers.title.0",
+          "page": "Customers",
+          "page_slug": "customers",
+          "index": 0,
+          "line": 6,
+          "column": 3
+        },
+        {
+          "type": "form",
+          "element_id": "page.customers.form_item.1",
+          "id": "page.customers.form.customer",
+          "action_id": "page.customers.form.customer",
+          "record": "Customer",
+          "fields": [
+            {
+              "name": "name",
+              "type": "text",
+              "constraints": []
+            },
+            {
+              "name": "age",
+              "type": "number",
+              "constraints": []
+            }
+          ],
+          "page": "Customers",
+          "page_slug": "customers",
+          "index": 1,
+          "line": 7,
+          "column": 3
+        },
+        {
+          "type": "table",
+          "id": "page.customers.table.customer",
+          "record": "Customer",
+          "columns": [
+            {
+              "name": "name",
+              "type": "text"
+            },
+            {
+              "name": "age",
+              "type": "number"
+            }
+          ],
+          "rows": [],
+          "element_id": "page.customers.table.2",
+          "page": "Customers",
+          "page_slug": "customers",
+          "index": 2,
+          "line": 8,
+          "column": 3
+        }
+      ]
+    }
+  ],
+  "actions": {
+    "page.customers.form.customer": {
+      "id": "page.customers.form.customer",
+      "type": "submit_form",
+      "record": "Customer"
+    }
+  },
+  "theme": {
+    "schema_version": "1",
+    "setting": "system",
+    "current": "system",
+    "persisted_current": null,
+    "effective": "light",
+    "source": "app",
+    "runtime_supported": false,
+    "tokens": {},
+    "preference": {
+      "allow_override": false,
+      "persist": "none"
+    }
+  },
+  "ui": {
+    "persistence": {
+      "enabled": false,
+      "kind": "memory",
+      "path": null,
+      "schema_version": null
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "what": "Edge persistence target is not implemented yet.",
+  "why": "The edge adapter is a placeholder in this alpha release.",
+  "fix": "Use sqlite for local dev or postgres for production.",
+  "example": "N3_PERSIST_TARGET=sqlite"
+}

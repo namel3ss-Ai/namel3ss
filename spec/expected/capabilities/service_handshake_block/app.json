@@ -1,0 +1,44 @@
+{
+  "ok": true,
+  "state": {},
+  "result": "blocked",
+  "traces": [
+    {
+      "type": "capability_check",
+      "tool_name": "service tool",
+      "runner": "service",
+      "resolved_source": "binding",
+      "capability": "filesystem_write",
+      "allowed": false,
+      "guarantee_source": "user",
+      "reason": "coverage_missing",
+      "protocol_version": 1
+    },
+    {
+      "type": "tool_call",
+      "tool": "service tool",
+      "tool_name": "service tool",
+      "kind": "python",
+      "input_summary": {
+        "type": "object",
+        "keys": [
+          "name"
+        ],
+        "count": 1
+      },
+      "purity": "impure",
+      "resolved_source": "binding",
+      "timeout_ms": 10000,
+      "runner": "service",
+      "entry": "tools.service:run",
+      "service_url": "http://127.0.0.1:<port>/tools",
+      "protocol_version": 1,
+      "service_handshake": true,
+      "enforcement_level": "none",
+      "status": "error",
+      "error_type": "CapabilityViolation",
+      "error_message": "What happened: Tool \"service tool\" cannot run on the service runner.\nWhy: Service enforcement is none. Missing guarantees: filesystem_write.\nFix: Update the service to enforce the guarantees or switch runners.\nExample: n3 tools set-runner \"service tool\" --runner local",
+      "duration_ms": 0
+    }
+  ]
+}

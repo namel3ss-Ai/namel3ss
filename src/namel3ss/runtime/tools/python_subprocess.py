@@ -22,6 +22,16 @@ import io
 import contextlib
 from decimal import Decimal
 
+try:
+    import namel3ss_safeio as _safeio
+except Exception:
+    _safeio = None
+
+try:
+    from namel3ss.runtime.tools.python_sandbox import bootstrap as _sandbox
+except Exception:
+    _sandbox = None
+
 
 def _json_default(value):
     if isinstance(value, Decimal):
@@ -32,40 +42,89 @@ def _json_default(value):
     raise TypeError(f"Object of type {type(value)} is not JSON serializable")
 
 
-def _main():
-    try:
-        payload = json.load(sys.stdin)
-    except Exception as err:
-        sys.stdout.write(json.dumps({"ok": False, "error": {"type": err.__class__.__name__, "message": str(err)}, "protocol_version": 1}))
-        return 1
+def _error_payload(err, protocol_version, checks):
+    error = {"type": err.__class__.__name__, "message": str(err)}
+    reason = getattr(getattr(err, "check", None), "reason", None)
+    if isinstance(reason, str):
+        error["reason_code"] = reason
+    return {
+        "ok": False,
+        "error": error,
+        "protocol_version": protocol_version,
+        "capability_checks": checks,
+    }
+
+
+def _run_plain(payload):
     entry = payload.get("entry")
     args = payload.get("payload")
     protocol_version = payload.get("protocol_version", 1)
     if not isinstance(entry, str):
-        sys.stdout.write(json.dumps({"ok": False, "error": {"type": "ValueError", "message": "Missing entry"}, "protocol_version": protocol_version}))
-        return 1
+        return _error_payload(ValueError("Missing entry"), protocol_version, [])
     try:
         module_path, function_name = entry.split(":", 1)
     except ValueError:
-        sys.stdout.write(json.dumps({"ok": False, "error": {"type": "ValueError", "message": "Invalid entry"}, "protocol_version": protocol_version}))
-        return 1
+        return _error_payload(ValueError("Invalid entry"), protocol_version, [])
     try:
         module = importlib.import_module(module_path)
         func = getattr(module, function_name)
         if not callable(func):
             raise TypeError("Entry target is not callable")
+        if _safeio is not None:
+            context = payload.get("capability_context")
+            if isinstance(context, dict):
+                _safeio.configure(context)
         stdout_buf = io.StringIO()
         stderr_buf = io.StringIO()
         with contextlib.redirect_stdout(stdout_buf), contextlib.redirect_stderr(stderr_buf):
             result = func(args)
-        output = {"ok": True, "result": result, "protocol_version": protocol_version}
+        checks = _safeio.drain_checks() if _safeio is not None else []
+        return {
+            "ok": True,
+            "result": result,
+            "protocol_version": protocol_version,
+            "capability_checks": checks,
+        }
     except Exception as err:
-        output = {"ok": False, "error": {"type": err.__class__.__name__, "message": str(err)}, "protocol_version": protocol_version}
+        checks = _safeio.drain_checks() if _safeio is not None else []
+        return _error_payload(err, protocol_version, checks)
+
+
+def _run_payload(payload):
+    protocol_version = payload.get("protocol_version", 1)
+    if payload.get("sandbox"):
+        if _sandbox is None:
+            return _error_payload(RuntimeError("Sandbox bootstrap unavailable"), protocol_version, [])
+        return _sandbox.run(payload)
+    return _run_plain(payload)
+
+
+def _main():
+    try:
+        payload = json.load(sys.stdin)
+    except Exception as err:
+        sys.stdout.write(
+            json.dumps(
+                {"ok": False, "error": {"type": err.__class__.__name__, "message": str(err)}, "protocol_version": 1}
+            )
+        )
+        return 1
+    output = _run_payload(payload)
+    if not isinstance(output, dict) or "ok" not in output:
+        output = {
+            "ok": False,
+            "error": {"type": "ValueError", "message": "Invalid tool response"},
+            "protocol_version": payload.get("protocol_version", 1),
+        }
     try:
         sys.stdout.write(json.dumps(output, default=_json_default))
         return 0
     except Exception as err:
-        fallback = {"ok": False, "error": {"type": err.__class__.__name__, "message": str(err)}, "protocol_version": protocol_version}
+        fallback = {
+            "ok": False,
+            "error": {"type": err.__class__.__name__, "message": str(err)},
+            "protocol_version": payload.get("protocol_version", 1),
+        }
         sys.stdout.write(json.dumps(fallback))
         return 1
 
@@ -81,6 +140,7 @@ class ToolSubprocessResult:
     output: object | None
     error_type: str | None
     error_message: str | None
+    capability_checks: list[dict[str, object]] | None = None
 
 
 def run_tool_subprocess(
@@ -92,6 +152,9 @@ def run_tool_subprocess(
     app_root: Path,
     timeout_seconds: int,
     extra_paths: list[Path] | None = None,
+    capability_context: dict[str, object] | None = None,
+    sandbox: bool = False,
+    trace_id: str | None = None,
 ) -> ToolSubprocessResult:
     request = {
         "protocol_version": PROTOCOL_VERSION,
@@ -99,6 +162,12 @@ def run_tool_subprocess(
         "entry": entry,
         "payload": payload,
     }
+    if capability_context:
+        request["capability_context"] = capability_context
+    if sandbox:
+        request["sandbox"] = True
+    if trace_id:
+        request["trace_id"] = trace_id
     input_text = json_dumps(request)
     env = _build_env(app_root, extra_paths=extra_paths)
     try:
@@ -170,6 +239,8 @@ def run_tool_subprocess(
                 example="return {\"value\": 1}",
             )
         )
+    checks = parsed.get("capability_checks")
+    checks_list = checks if isinstance(checks, list) else None
     if not parsed.get("ok"):
         error = parsed.get("error") or {}
         return ToolSubprocessResult(
@@ -177,9 +248,16 @@ def run_tool_subprocess(
             output=None,
             error_type=str(error.get("type") or parsed.get("error_type") or "ToolError"),
             error_message=str(error.get("message") or parsed.get("error_message") or "Tool error"),
+            capability_checks=checks_list,
         )
     result = parsed.get("result", parsed.get("output"))
-    return ToolSubprocessResult(ok=True, output=result, error_type=None, error_message=None)
+    return ToolSubprocessResult(
+        ok=True,
+        output=result,
+        error_type=None,
+        error_message=None,
+        capability_checks=checks_list,
+    )
 
 
 def _build_env(app_root: Path, *, extra_paths: list[Path] | None) -> dict[str, str]:

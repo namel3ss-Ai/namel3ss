@@ -1,0 +1,6 @@
+{
+  "what": "Tool \"pack echo\" is provided by an installed pack but is unavailable.",
+  "why": "Pack tool is not verified or enabled (packs: enabled.pack).",
+  "fix": "Run `n3 packs verify enabled.pack` then `n3 packs enable enabled.pack`.",
+  "example": "n3 packs status"
+}

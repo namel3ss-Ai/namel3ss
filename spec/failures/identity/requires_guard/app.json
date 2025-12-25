@@ -1,0 +1,6 @@
+{
+  "what": "flow \"admin\" access is not permitted.",
+  "why": "The requires condition evaluated to false.",
+  "fix": "Provide an identity that satisfies the requirement or update the requires clause.",
+  "example": "requires identity.role is \"admin\""
+}

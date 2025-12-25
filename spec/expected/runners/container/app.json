@@ -1,0 +1,42 @@
+{
+  "ok": true,
+  "state": {},
+  "result": {
+    "result": {
+      "ok": true
+    }
+  },
+  "traces": [
+    {
+      "type": "tool_call",
+      "tool": "runner echo",
+      "tool_name": "runner echo",
+      "kind": "python",
+      "input_summary": {
+        "type": "object",
+        "keys": [
+          "payload"
+        ],
+        "count": 1
+      },
+      "purity": "impure",
+      "resolved_source": "binding",
+      "timeout_ms": 10000,
+      "entry": "tools.echo:run",
+      "runner": "container",
+      "image": "ghcr.io/namel3ss/tools:latest",
+      "command": "python -m namel3ss_tools.runner",
+      "container_runtime": "docker",
+      "protocol_version": 1,
+      "status": "ok",
+      "output_summary": {
+        "type": "object",
+        "keys": [
+          "result"
+        ],
+        "count": 1
+      },
+      "duration_ms": 0
+    }
+  ]
+}

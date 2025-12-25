@@ -9,6 +9,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.packs.layout import pack_manifest_path, pack_path, packs_root
 from namel3ss.runtime.packs.manifest import parse_pack_manifest
+from namel3ss.runtime.packs.source_meta import PackSourceInfo, write_pack_source
 from namel3ss.runtime.packs.verification import verify_pack as verify_pack_signature
 from namel3ss.runtime.packs.config import read_pack_config, write_pack_config
 from namel3ss.runtime.tools.bindings_yaml import parse_bindings_yaml
@@ -23,6 +24,8 @@ def install_pack(app_root: Path, source_path: Path) -> str:
         raise Namel3ssError(_pack_exists_message(manifest.pack_id))
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(source, target)
+    source_type = "bundle" if source_path.suffix == ".zip" else "directory"
+    write_pack_source(target, PackSourceInfo(source_type=source_type, path=str(source_path.resolve())))
     return manifest.pack_id
 
 
@@ -142,7 +145,7 @@ def _pack_unknown_source_message(source: Path) -> str:
         what="Unsupported pack source.",
         why=f"Pack source must be a directory or .zip (got {source}).",
         fix="Point to a pack folder or zip file.",
-        example="n3 packs add ./my_pack",
+        example="n3 packs add ./bundle.n3pack.zip",
     )
 
 

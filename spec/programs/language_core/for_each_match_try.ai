@@ -1,0 +1,19 @@
+record "Item":
+  field "name" is text
+
+flow "demo":
+  create "Item" with input as item
+  find "Item" where name is input.name
+  let count is 0
+  for each result in item_results:
+    set count is count + 1
+  try:
+    set missing is 1
+  with catch err:
+    set count is count + 1
+  match count:
+    with:
+      when 2:
+        return "ok"
+      otherwise:
+        return "bad"

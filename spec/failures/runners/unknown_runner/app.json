@@ -1,0 +1,6 @@
+{
+  "what": "Unknown tool runner 'bogus'.",
+  "why": "Supported runners are local, service, and container.",
+  "fix": "Update the binding runner or remove the runner field.",
+  "example": "runner: \"local\""
+}

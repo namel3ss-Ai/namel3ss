@@ -1,0 +1,12 @@
+{
+  "language_core": 1,
+  "tool_dsl": 1,
+  "tool_protocol": 1,
+  "pack_manifest": 1,
+  "bindings_schema": 1,
+  "runner_contract": 1,
+  "ui_manifest": 1,
+  "identity_schema": 1,
+  "persistence_contract": 1,
+  "trace_schema": 1
+}

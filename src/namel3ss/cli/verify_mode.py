@@ -20,6 +20,7 @@ class _VerifyParams:
     prod: bool
     json_mode: bool
     write: bool
+    allow_unsafe: bool
 
 
 def run_verify_command(args: list[str]) -> int:
@@ -29,7 +30,7 @@ def run_verify_command(args: list[str]) -> int:
     target = _resolve_target(params.target_raw, project_root)
     set_engine_target(target)
     set_audit_root(project_root)
-    report = run_verify(app_path, target=target, prod=params.prod)
+    report = run_verify(app_path, target=target, prod=params.prod, allow_unsafe=params.allow_unsafe)
     if params.write:
         write_json(project_root / ".namel3ss" / "verify.json", report)
     if params.json_mode:
@@ -45,6 +46,7 @@ def _parse_args(args: list[str]) -> _VerifyParams:
     prod = False
     json_mode = False
     write = True
+    allow_unsafe = False
     i = 0
     while i < len(args):
         arg = args[i]
@@ -54,6 +56,10 @@ def _parse_args(args: list[str]) -> _VerifyParams:
             continue
         if arg == "--json":
             json_mode = True
+            i += 1
+            continue
+        if arg == "--allow-unsafe":
+            allow_unsafe = True
             i += 1
             continue
         if arg == "--write":
@@ -81,7 +87,7 @@ def _parse_args(args: list[str]) -> _VerifyParams:
             raise Namel3ssError(
                 build_guidance_message(
                     what=f"Unknown flag '{arg}'.",
-                    why="Supported flags: --prod, --json, --target, --write.",
+                    why="Supported flags: --prod, --json, --allow-unsafe, --target, --write.",
                     fix="Remove the unsupported flag.",
                     example="n3 verify --prod --json",
                 )
@@ -98,7 +104,7 @@ def _parse_args(args: list[str]) -> _VerifyParams:
                 example="n3 verify app.ai",
             )
         )
-    return _VerifyParams(app_arg, target, prod, json_mode, write)
+    return _VerifyParams(app_arg, target, prod, json_mode, write, allow_unsafe)
 
 
 def _resolve_target(target_raw: str | None, project_root) -> str:

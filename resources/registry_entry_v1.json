@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Namel3ss Registry Entry v1",
+  "type": "object",
+  "required": [
+    "entry_version",
+    "pack_id",
+    "pack_name",
+    "pack_version",
+    "pack_digest",
+    "verified_by",
+    "tools",
+    "intent_tags",
+    "intent_phrases",
+    "capabilities",
+    "runner",
+    "source"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "entry_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "pack_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "pack_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "pack_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "pack_digest": {
+      "type": "string",
+      "minLength": 1
+    },
+    "signer_id": {
+      "type": ["string", "null"]
+    },
+    "verified_by": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "tools": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "intent_tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "intent_phrases": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "capabilities": {
+      "type": "object",
+      "required": ["filesystem", "network", "env", "subprocess", "secrets"],
+      "additionalProperties": false,
+      "properties": {
+        "filesystem": { "type": "string", "enum": ["none", "read", "write"] },
+        "network": { "type": "string", "enum": ["none", "outbound"] },
+        "env": { "type": "string", "enum": ["none", "read"] },
+        "subprocess": { "type": "string", "enum": ["none", "allow"] },
+        "secrets": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "guarantees": {
+      "type": "object",
+      "required": [
+        "no_filesystem_write",
+        "no_filesystem_read",
+        "no_network",
+        "no_subprocess",
+        "no_env_read",
+        "no_env_write"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "no_filesystem_write": { "type": "boolean" },
+        "no_filesystem_read": { "type": "boolean" },
+        "no_network": { "type": "boolean" },
+        "no_subprocess": { "type": "boolean" },
+        "no_env_read": { "type": "boolean" },
+        "no_env_write": { "type": "boolean" },
+        "secrets_allowed": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "runner": {
+      "type": "object",
+      "required": ["default"],
+      "additionalProperties": false,
+      "properties": {
+        "default": { "type": "string", "enum": ["local", "service", "container"] },
+        "service_url": { "type": ["string", "null"] },
+        "container_image": { "type": ["string", "null"] }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["kind", "uri"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "type": "string", "enum": ["local_file", "registry_url"] },
+        "uri": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

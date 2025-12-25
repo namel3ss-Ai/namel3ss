@@ -1,0 +1,6 @@
+{
+  "what": "Tool \"write text file\" cannot write to the filesystem.",
+  "why": "Effective guarantees forbid filesystem access",
+  "fix": "Remove the restriction or choose a tool that does not need the capability.",
+  "example": "[capability_overrides]\\n\"write text file\" = { no_filesystem_write = true }"
+}

@@ -159,17 +159,18 @@ Tool runners can execute remotely (service/container), but the core runtime rema
 
 ### 8. No Public Registry (Yet)
 
-There is no public marketplace or remote registry in v0.1.0-alpha.
+There is no public marketplace or global registry in v0.1.0-alpha.
 
 What exists today:
-- local packs installed from disk
+- local registry index (`.namel3ss/registry`)
+- optional team registries (HTTP, opt-in)
 - pack verification with v1 signatures
-- explicit enable/disable via `namel3ss.toml`
+- explicit install/verify/enable (no auto-updates)
 
 What does not exist yet:
-- a hosted registry
-- auto-updates
-- remote discovery
+- a hosted public registry
+- auto-updates or background upgrades
+- popularity-based ranking (no stars, no trending)
 
 Python is optional for most users. For advanced logic, use Python tools with explicit dependencies (`pyproject.toml` or `requirements.txt`) and a per-app `.venv` via `n3 deps install`. For common tasks, built-in tool packs are available without extra dependencies. Pack tools require no bindings; app-defined tools still require `.namel3ss/tools.yaml` bindings.
 

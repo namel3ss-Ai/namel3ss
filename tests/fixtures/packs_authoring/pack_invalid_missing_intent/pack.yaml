@@ -1,0 +1,13 @@
+id: "sample.no_intent"
+name: "Sample Missing Intent"
+version: "0.1.0"
+description: "Missing intent"
+author: "namel3ss"
+license: "MIT"
+tools:
+  - "say hello"
+entrypoints:
+  "say hello":
+    kind: "python"
+    entry: "tools.say_hello:run"
+    purity: "pure"

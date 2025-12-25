@@ -76,6 +76,8 @@ def _apply_toml_config(config: AppConfig, data: Dict[str, Any]) -> None:
     _apply_identity_toml(config, data.get("identity"))
     _apply_python_tools_toml(config, data.get("python_tools") or data.get("python"))
     _apply_tool_packs_toml(config, data.get("tool_packs") or data.get("packs"))
+    _apply_registries_toml(config, data.get("registries"))
+    _apply_capability_overrides_toml(config, data.get("capability_overrides"))
 
 
 def _apply_ollama_toml(config: AppConfig, table: Any) -> None:
@@ -142,6 +144,11 @@ def _apply_python_tools_toml(config: AppConfig, table: Any) -> None:
     service_url = table.get("service_url")
     if service_url is not None:
         config.python_tools.service_url = str(service_url)
+    handshake_required = table.get("service_handshake_required")
+    if handshake_required is not None:
+        if not isinstance(handshake_required, bool):
+            raise Namel3ssError("python_tools.service_handshake_required must be true or false")
+        config.python_tools.service_handshake_required = handshake_required
 
 
 def _apply_tool_packs_toml(config: AppConfig, table: Any) -> None:
@@ -156,6 +163,55 @@ def _apply_tool_packs_toml(config: AppConfig, table: Any) -> None:
     pinned = table.get("pinned_tools")
     if pinned is not None:
         config.tool_packs.pinned_tools = _ensure_str_map(pinned, "tool_packs.pinned_tools")
+
+
+def _apply_registries_toml(config: AppConfig, table: Any) -> None:
+    from namel3ss.config.model import RegistrySourceConfig, RegistriesConfig
+
+    if not isinstance(table, dict):
+        return
+    sources = table.get("sources")
+    default = table.get("default")
+    parsed_sources: list[RegistrySourceConfig] = []
+    if sources is not None:
+        if not isinstance(sources, list):
+            raise Namel3ssError("registries.sources must be a list of registry source entries")
+        for raw in sources:
+            if not isinstance(raw, dict):
+                raise Namel3ssError("registries.sources entries must be tables")
+            source_id = raw.get("id")
+            kind = raw.get("kind")
+            if not isinstance(source_id, str) or not source_id:
+                raise Namel3ssError("registries.sources entries require id")
+            if not isinstance(kind, str) or not kind:
+                raise Namel3ssError("registries.sources entries require kind")
+            parsed_sources.append(
+                RegistrySourceConfig(
+                    id=source_id,
+                    kind=kind,
+                    path=str(raw.get("path")) if raw.get("path") is not None else None,
+                    url=str(raw.get("url")) if raw.get("url") is not None else None,
+                )
+            )
+    parsed_default: list[str] = []
+    if default is not None:
+        parsed_default = _ensure_str_list(default, "registries.default")
+    config.registries = RegistriesConfig(sources=parsed_sources, default=parsed_default)
+
+
+def _apply_capability_overrides_toml(config: AppConfig, table: Any) -> None:
+    if table is None:
+        return
+    if not isinstance(table, dict):
+        raise Namel3ssError("capability_overrides must be a table mapping tool names to overrides")
+    overrides: dict[str, dict[str, object]] = {}
+    from namel3ss.runtime.capabilities.validate import normalize_overrides
+
+    for key, value in table.items():
+        if not isinstance(key, str) or not key:
+            raise Namel3ssError("capability_overrides keys must be tool names")
+        overrides[key] = normalize_overrides(value, label=f'"{key}"')
+    config.capability_overrides = overrides
 
 
 def _ensure_str_list(value: Any, label: str) -> list[str]:
@@ -343,6 +399,9 @@ def _parse_toml_minimal(text: str, path: Path) -> Dict[str, Any]:
 
 
 def _parse_toml_value(value: str, line_num: int, path: Path) -> Any:
+    lowered = value.lower()
+    if lowered in {"true", "false"}:
+        return lowered == "true"
     if value.startswith('"') and value.endswith('"'):
         return value[1:-1]
     if value.startswith("[") and value.endswith("]"):
@@ -406,18 +465,7 @@ def _parse_inline_table(value: str, line_num: int, path: Path) -> Dict[str, Any]
         key, raw_value = part.split("=", 1)
         key = key.strip()
         raw_value = raw_value.strip()
-        if not raw_value.startswith('"') or not raw_value.endswith('"'):
-            raise Namel3ssError(
-                build_guidance_message(
-                    what=f"Inline table value is invalid in {path.name}.",
-                    why="Inline table values must be quoted strings.",
-                    fix="Wrap the value in double quotes.",
-                    example='{ api_key = "token" }',
-                ),
-                line=line_num,
-                column=1,
-            )
-        table[key] = raw_value[1:-1]
+        table[key] = _parse_toml_value(raw_value, line_num, path)
     return table
 
 

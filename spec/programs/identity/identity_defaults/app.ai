@@ -1,0 +1,5 @@
+identity "User":
+  field "email" is text
+
+flow "demo":
+  return identity.email

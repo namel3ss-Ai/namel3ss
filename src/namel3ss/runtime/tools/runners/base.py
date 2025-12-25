@@ -21,6 +21,8 @@ class ToolRunnerRequest:
     binding: ToolBinding
     config: AppConfig
     pack_paths: list[Path] | None = None
+    capability_context: dict[str, object] | None = None
+    allow_unsafe: bool = False
 
 
 @dataclass(frozen=True)
@@ -30,6 +32,7 @@ class ToolRunnerResult:
     error_type: str | None
     error_message: str | None
     metadata: dict[str, object] = field(default_factory=dict)
+    capability_checks: list[dict[str, object]] | None = None
 
 
 class ToolRunner(Protocol):

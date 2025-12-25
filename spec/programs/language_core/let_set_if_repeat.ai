@@ -1,0 +1,8 @@
+flow "demo":
+  let total is 0
+  repeat up to 3 times:
+    set total is total + 2
+  if total is greater than 4:
+    return total
+  else:
+    return 0

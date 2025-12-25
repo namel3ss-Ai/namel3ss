@@ -1,0 +1,7 @@
+tools:
+  "echo service":
+    kind: "python"
+    entry: "service.echo:run"
+    runner: "service"
+    url: "http://127.0.0.1:8787/tools"
+    purity: "impure"

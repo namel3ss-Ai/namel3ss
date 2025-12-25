@@ -1,0 +1,11 @@
+id: "sample.missingcaps"
+name: "Sample Missing Capabilities"
+version: "0.1.0"
+description: "Missing capabilities"
+author: "namel3ss"
+license: "MIT"
+tools:
+  - "echo service"
+runners:
+  default: "service"
+service_url: "http://127.0.0.1:8787/tools"

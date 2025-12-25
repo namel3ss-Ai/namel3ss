@@ -1,0 +1,2 @@
+[tool_packs]
+enabled_packs = ["collision.a", "collision.b"]

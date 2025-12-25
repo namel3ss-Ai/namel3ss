@@ -1,0 +1,8 @@
+page "Home":
+  title is "Welcome"
+  text is "Hello"
+  button "Run":
+    calls flow "demo"
+
+flow "demo":
+  return "ok"

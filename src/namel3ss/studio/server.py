@@ -26,6 +26,13 @@ from namel3ss.studio.api import (
     apply_pack_enable,
     apply_pack_disable,
 )
+from namel3ss.studio.registry_api import (
+    get_registry_status_payload,
+    apply_registry_add_bundle,
+    apply_discover,
+    apply_pack_install,
+)
+from namel3ss.studio.security_api import apply_security_override, apply_security_sandbox, get_security_payload
 from namel3ss.studio.session import SessionState
 from namel3ss.utils.json_tools import dumps as json_dumps
 
@@ -139,6 +146,16 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
                 return
         if self.path == "/api/packs":
             payload = get_packs_payload(self.server.app_path)  # type: ignore[attr-defined]
+            status = 200 if payload.get("ok", True) else 400
+            self._respond_json(payload, status=status)
+            return
+        if self.path == "/api/registry/status":
+            payload = get_registry_status_payload(self.server.app_path)  # type: ignore[attr-defined]
+            status = 200 if payload.get("ok", True) else 400
+            self._respond_json(payload, status=status)
+            return
+        if self.path == "/api/security":
+            payload = get_security_payload(self.server.app_path)  # type: ignore[attr-defined]
             status = 200 if payload.get("ok", True) else 400
             self._respond_json(payload, status=status)
             return
@@ -297,6 +314,31 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
             return
         if self.path == "/api/packs/disable":
             resp = apply_pack_disable(self.server.app_path, body)  # type: ignore[attr-defined]
+            status = 200 if resp.get("ok", True) else 400
+            self._respond_json(resp, status=status)
+            return
+        if self.path == "/api/registry/add_bundle":
+            resp = apply_registry_add_bundle(self.server.app_path, body)  # type: ignore[attr-defined]
+            status = 200 if resp.get("ok", True) else 400
+            self._respond_json(resp, status=status)
+            return
+        if self.path == "/api/discover":
+            resp = apply_discover(self.server.app_path, body)  # type: ignore[attr-defined]
+            status = 200 if resp.get("ok", True) else 400
+            self._respond_json(resp, status=status)
+            return
+        if self.path == "/api/packs/install":
+            resp = apply_pack_install(self.server.app_path, body)  # type: ignore[attr-defined]
+            status = 200 if resp.get("ok", True) else 400
+            self._respond_json(resp, status=status)
+            return
+        if self.path == "/api/security/override":
+            resp = apply_security_override(self.server.app_path, body)  # type: ignore[attr-defined]
+            status = 200 if resp.get("ok", True) else 400
+            self._respond_json(resp, status=status)
+            return
+        if self.path == "/api/security/sandbox":
+            resp = apply_security_sandbox(self.server.app_path, body)  # type: ignore[attr-defined]
             status = 200 if resp.get("ok", True) else 400
             self._respond_json(resp, status=status)
             return

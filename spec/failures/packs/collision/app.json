@@ -1,0 +1,6 @@
+{
+  "what": "Tool \"pack echo\" is provided by multiple packs.",
+  "why": "Conflicting packs: collision.a, collision.b.",
+  "fix": "Disable one pack or pin the tool to a specific pack.",
+  "example": "pinned_tools = { \"pack echo\" = \"collision.a\" }"
+}

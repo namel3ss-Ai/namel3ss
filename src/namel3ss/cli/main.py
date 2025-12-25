@@ -33,6 +33,8 @@ from namel3ss.cli.tools_mode import run_tools
 from namel3ss.cli.ui_mode import render_manifest, run_action
 from namel3ss.cli.pkg_mode import run_pkg
 from namel3ss.cli.packs_mode import run_packs
+from namel3ss.cli.registry_mode import run_registry
+from namel3ss.cli.discover_mode import run_discover
 from namel3ss.cli.verify_mode import run_verify_command
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.render import format_error
@@ -71,6 +73,8 @@ RESERVED = {
     "explain",
     "editor",
     "run",
+    "registry",
+    "discover",
 }
 
 ROOT_APP_COMMANDS = {"check", "ui", "actions", "studio", "fmt", "format", "lint", "graph", "exports", "data", "persist"}
@@ -141,6 +145,12 @@ def main(argv: list[str] | None = None) -> int:
             return run_tools(args[1:])
         if cmd == "packs":
             return run_packs(args[1:])
+        if cmd == "registry":
+            return run_registry(args[1:])
+        if cmd == "discover":
+            json_mode = "--json" in args[1:]
+            tail = [item for item in args[1:] if item != "--json"]
+            return run_discover(tail, json_mode=json_mode)
         if cmd == "new":
             return run_new(args[1:])
         if cmd == "test":
@@ -304,6 +314,9 @@ def _print_usage() -> None:
   n3 data [app.ai] <cmd>           # data store status/reset (alias: persist)
   n3 deps <cmd> [--json]           # python env/deps (status/install/sync/lock/clean)
   n3 tools <cmd> [--json]          # tool bindings (status/list/search/bind/unbind/format)
+  n3 packs <cmd> [--json]          # tool packs (add/init/validate/review/bundle/sign/status/verify/enable)
+  n3 registry <cmd> [--json]       # registry index (add/build)
+  n3 discover "<phrase>" [--json]  # discover packs by intent
   n3 pkg <cmd> [--json]            # packages (capsules)
   n3 <app.ai>                      # run default flow
   n3 <app.ai> <action_id> [json]   # execute UI action (payload optional)

@@ -166,6 +166,27 @@ def test_tools_list_includes_runner(tmp_path: Path, monkeypatch, capsys) -> None
     data = json.loads(capsys.readouterr().out)
     binding = next(item for item in data["bindings"] if item["name"] == "get data")
     assert binding["runner"] == "service"
+    assert "sandbox" in binding
+    assert "enforcement" in binding
+
+
+def test_tools_status_includes_sandbox(tmp_path: Path, monkeypatch, capsys) -> None:
+    (tmp_path / "app.ai").write_text(TOOL_SOURCE, encoding="utf-8")
+    tools_dir = tmp_path / ".namel3ss"
+    tools_dir.mkdir()
+    (tools_dir / "tools.yaml").write_text(
+        'tools:\n'
+        '  "get data":\n'
+        '    kind: "python"\n'
+        '    entry: "tools.http:run"\n'
+        '    sandbox: true\n',
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+    assert cli_main(["tools", "status", "--json"]) == 0
+    data = json.loads(capsys.readouterr().out)
+    binding = data["bindings"]["get data"]
+    assert binding["sandbox"] is True
 
 
 def test_tools_search_finds_pack_tool(tmp_path: Path, monkeypatch, capsys) -> None:

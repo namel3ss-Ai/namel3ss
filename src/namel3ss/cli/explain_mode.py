@@ -8,6 +8,8 @@ from namel3ss.cli.promotion_state import load_state
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.module_loader import load_project
+from namel3ss.runtime.capabilities.report import collect_tool_reports
 from namel3ss.utils.json_tools import dumps_pretty
 
 
@@ -72,6 +74,7 @@ def _parse_args(args: list[str]) -> _ExplainParams:
 def _build_explain_payload(app_path, active: dict, proof: dict) -> dict:
     project_root = app_path.parent
     config = load_config(app_path=app_path, root=project_root)
+    project = load_project(app_path)
     promotion = load_state(project_root)
     target = active.get("target") if isinstance(active, dict) else None
     if not target:
@@ -87,6 +90,7 @@ def _build_explain_payload(app_path, active: dict, proof: dict) -> dict:
         "tenant_scoping": proof.get("identity", {}).get("tenant_scoping", {}),
         "capsules": _summarize_capsules(proof),
         "governance": proof.get("governance") or _load_governance(project_root),
+        "tools": collect_tool_reports(project_root, config, project.program.tools),
     }
 
 

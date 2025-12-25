@@ -22,6 +22,9 @@ class LocalRunner:
             app_root=request.app_root,
             timeout_seconds=timeout_seconds,
             extra_paths=request.pack_paths,
+            capability_context=request.capability_context,
+            sandbox=bool(getattr(request.binding, "sandbox", False)),
+            trace_id=request.trace_id,
         )
         metadata = {
             "runner": self.name,
@@ -29,6 +32,7 @@ class LocalRunner:
             "python_path": str(env_info.python_path),
             "deps_source": dep_info.kind,
             "protocol_version": PROTOCOL_VERSION,
+            "sandbox": bool(getattr(request.binding, "sandbox", False)),
         }
         return ToolRunnerResult(
             ok=result.ok,
@@ -36,6 +40,7 @@ class LocalRunner:
             error_type=result.error_type,
             error_message=result.error_message,
             metadata=metadata,
+            capability_checks=result.capability_checks,
         )
 
 

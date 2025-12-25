@@ -1,0 +1,13 @@
+tool "echo payload":
+  implemented using python
+
+  input:
+    payload is json
+
+  output:
+    result is json
+
+flow "demo":
+  let output is echo payload:
+    payload is input.payload
+  return output

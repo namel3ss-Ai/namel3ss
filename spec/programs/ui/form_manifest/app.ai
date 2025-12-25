@@ -1,0 +1,11 @@
+record "Customer":
+  field "name" is text
+  field "age" is number
+
+page "Customers":
+  title is "Customers"
+  form is "Customer"
+  table is "Customer"
+
+flow "noop":
+  return "ok"

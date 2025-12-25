@@ -1,0 +1,45 @@
+{
+  "ok": true,
+  "state": {},
+  "result": "blocked",
+  "traces": [
+    {
+      "type": "capability_check",
+      "tool_name": "user writes file",
+      "runner": "local",
+      "resolved_source": "binding",
+      "capability": "filesystem_write",
+      "allowed": false,
+      "guarantee_source": "user",
+      "reason": "guarantee_blocked",
+      "protocol_version": 1
+    },
+    {
+      "type": "tool_call",
+      "tool": "user writes file",
+      "tool_name": "user writes file",
+      "kind": "python",
+      "input_summary": {
+        "type": "object",
+        "keys": [
+          "path"
+        ],
+        "count": 1
+      },
+      "purity": "impure",
+      "resolved_source": "binding",
+      "timeout_ms": 10000,
+      "runner": "local",
+      "entry": "tools.user_file:run",
+      "python_env": "system",
+      "python_path": "<python_path>",
+      "deps_source": "none",
+      "protocol_version": 1,
+      "sandbox": true,
+      "status": "error",
+      "error_type": "CapabilityViolation",
+      "error_message": "What happened: Tool \"user writes file\" cannot write to the filesystem.\nWhy: Effective guarantees forbid filesystem access (blocked.txt).\nFix: Remove the restriction or choose a tool that does not need the capability.\nExample: [capability_overrides]\\n\"user writes file\" = { no_filesystem_write = true }",
+      "duration_ms": 0
+    }
+  ]
+}

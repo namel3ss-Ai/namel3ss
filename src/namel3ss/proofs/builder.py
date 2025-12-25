@@ -14,6 +14,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.module_loader import load_project
 from namel3ss.pkg.lockfile import LOCKFILE_FILENAME, lockfile_to_dict, read_lockfile
+from namel3ss.runtime.capabilities.report import collect_tool_reports
 PROOF_SCHEMA_VERSION = 1
 OBSERVE_SCHEMA_VERSION = 1
 
@@ -53,6 +54,7 @@ def build_engine_proof(
         },
         "persistence": _persistence_summary(config, project_root),
         "capsules": _capsule_summary(project, lock_snapshot.get("lockfile")),
+        "capabilities": {"tools": collect_tool_reports(project_root, config, project.program.tools)},
         "packages": lock_snapshot,
         "identity": identity_summary,
         "governance": governance_summary,

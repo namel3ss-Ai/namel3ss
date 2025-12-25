@@ -1,0 +1,6 @@
+flow "demo":
+  try:
+    set state.counter is state.counter + 1
+  with catch err:
+    set state.counter is 1
+  return state.counter

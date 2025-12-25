@@ -114,27 +114,40 @@ namel3ss is an English-first, AI-native, full-stack programming language, built 
 - Friendly missing-key errors
 - Comprehensive provider/config tests
 
----
-
-## 🔜 Next (post v0.1.0-alpha)
-
-The next phases are intentionally based on real user demand. We do not ship “big features” without real usage pressure.
-
-### Phase 13 — Persistence v1 (SQLite)
+### Phase 13 — Persistence v1 (SQLite) ✅
 Goal: records survive restarts.
 - SQLite-backed store
 - minimal migrations story
 - preserve structured validation errors
 - Studio/CLI support remains unchanged
 
-### Phase 14 — Auth & Users (Minimal)
-Goal: enable per-user apps and meaningful memory scopes.
-- `record "User"` conventions
-- login/logout flows
-- `state.user` consistency
-- simple guard: “require user”
+---
 
-### Phase 15 — Tool Calling for Tier-1 Providers
+## ✅ Phase 14 — Spec Freeze + Executable Spec + Invariant CI
+Goal: freeze v1 contracts and prevent regressions.
+- Canonical spec version map (single source of truth)
+- Executable spec suite with snapshots + golden failures
+- Invariant catalog (pass + fail fixtures)
+- CI enforcement for legacy syntax, trace schema keys, and error stability
+
+---
+
+## ⏱️ Now (Phase 15)
+
+### Phase 15 — Extraordinary Pack Authoring + Publishing (Local-First, Trust-First)
+Goal: make pack authoring and publishing explicit, explainable, and local-first.
+- Pack init/review/validate/bundle/sign workflows
+- Capabilities declarations and review surfaces
+- Deterministic bundling and trust metadata
+- Installed pack status with source + capability summary
+
+---
+
+## 🔜 Next (post v0.1.0-alpha)
+
+The next phases are intentionally based on real user demand. We do not ship “big features” without real usage pressure.
+
+### Phase 16 — Tool Calling for Tier-1 Providers
 Goal: feature parity with real providers.
 - OpenAI tool calling
 - Anthropic tool calling
@@ -142,7 +155,14 @@ Goal: feature parity with real providers.
 - Mistral tool calling
 - unified tool-call trace shape
 
-### Phase 16 — Standard Library v1
+### Phase 17 — Auth & Users (Minimal)
+Goal: enable per-user apps and meaningful memory scopes.
+- `record "User"` conventions
+- login/logout flows
+- `state.user` consistency
+- simple guard: “require user”
+
+### Phase 18 — Standard Library v1
 Goal: small, deterministic helpers (no bloat).
 - `time.*`, `math.*`, `string.*`, `json.*`
 - deterministic, testable utilities only

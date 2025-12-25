@@ -1,0 +1,14 @@
+{
+  "use_real_runners": true,
+  "service_fixture": {
+    "handshake": {
+      "ok": true,
+      "enforcement": "none",
+      "supported_guarantees": {}
+    },
+    "response": {
+      "ok": true,
+      "result": {"ok": true}
+    }
+  }
+}

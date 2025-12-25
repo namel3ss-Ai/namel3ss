@@ -1,0 +1,3 @@
+[capability_overrides]
+"get json from web" = { no_network = true }
+"write text file" = { no_filesystem_write = true }

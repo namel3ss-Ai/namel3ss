@@ -10,6 +10,7 @@ class TraceEventType:
     TOOL_CALL_REQUESTED = "tool_call_requested"
     TOOL_CALL_COMPLETED = "tool_call_completed"
     TOOL_CALL_FAILED = "tool_call_failed"
+    CAPABILITY_CHECK = "capability_check"
 
 
 __all__ = ["TRACE_VERSION", "TraceEventType"]

@@ -40,6 +40,9 @@ _register("write text file", "namel3ss.tool_packs.file:write_text", "file")
 _register("read json file", "namel3ss.tool_packs.file:read_json", "file")
 _register("write json file", "namel3ss.tool_packs.file:write_json", "file")
 
+_register("get json from web", "namel3ss.tool_packs.http:get_json", "http")
+_register("post json to web", "namel3ss.tool_packs.http:post_json", "http")
+
 
 def get_tool_pack_binding(tool_name: str) -> ToolPackBinding | None:
     return _PACKS.get(tool_name)

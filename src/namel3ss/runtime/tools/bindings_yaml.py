@@ -11,6 +11,7 @@ from namel3ss.errors.guidance import build_guidance_message
 SUPPORTED_BINDING_KIND = "python"
 SUPPORTED_PURITY = {"pure", "impure"}
 SUPPORTED_RUNNERS = {"local", "service", "container"}
+SUPPORTED_ENFORCEMENT = {"declared", "verified"}
 
 
 @dataclass(frozen=True)
@@ -24,6 +25,8 @@ class ToolBinding:
     env: dict[str, str] | None = None
     purity: str | None = None
     timeout_ms: int | None = None
+    sandbox: bool | None = None
+    enforcement: str | None = None
 
 
 def parse_bindings_yaml(text: str, path: Path) -> dict[str, ToolBinding]:
@@ -76,7 +79,19 @@ def parse_bindings_yaml(text: str, path: Path) -> dict[str, ToolBinding]:
                 raise Namel3ssError(_invalid_bindings_message(path))
             if key in current_fields:
                 raise Namel3ssError(_duplicate_field_message(current_tool, key))
-            if key not in {"kind", "entry", "runner", "url", "image", "command", "env", "purity", "timeout_ms"}:
+            if key not in {
+                "kind",
+                "entry",
+                "runner",
+                "url",
+                "image",
+                "command",
+                "env",
+                "purity",
+                "timeout_ms",
+                "sandbox",
+                "enforcement",
+            }:
                 raise Namel3ssError(_invalid_field_message(current_tool, key))
             current_fields[key] = _parse_value(key, value, path)
             continue
@@ -111,6 +126,10 @@ def render_bindings_yaml(bindings: dict[str, ToolBinding]) -> str:
             lines.append(f"    purity: {_quote(binding.purity)}")
         if binding.timeout_ms is not None:
             lines.append(f"    timeout_ms: {binding.timeout_ms}")
+        if binding.sandbox is not None:
+            lines.append(f"    sandbox: {'true' if binding.sandbox else 'false'}")
+        if binding.enforcement is not None:
+            lines.append(f"    enforcement: {_quote(binding.enforcement)}")
     return "\n".join(lines) + "\n"
 
 
@@ -152,6 +171,12 @@ def _finalize_binding(
     timeout_ms = fields.get("timeout_ms")
     if timeout_ms is not None and (not isinstance(timeout_ms, int) or timeout_ms <= 0):
         raise Namel3ssError(_invalid_timeout_message(path, tool_name))
+    sandbox = fields.get("sandbox")
+    if sandbox is not None and not isinstance(sandbox, bool):
+        raise Namel3ssError(_invalid_sandbox_message(path, tool_name))
+    enforcement = fields.get("enforcement")
+    if enforcement is not None and (not isinstance(enforcement, str) or enforcement not in SUPPORTED_ENFORCEMENT):
+        raise Namel3ssError(_invalid_enforcement_message(path, tool_name))
     _add_binding(
         bindings,
         tool_name,
@@ -165,6 +190,8 @@ def _finalize_binding(
             env=env,
             purity=purity,
             timeout_ms=timeout_ms,
+            sandbox=sandbox,
+            enforcement=enforcement,
         ),
         path,
         line_no,
@@ -178,6 +205,8 @@ def _parse_value(key: str, value: str, path: Path) -> object:
         except ValueError:
             raise Namel3ssError(_invalid_timeout_message(path, "<unknown>"))
         return parsed
+    if key == "sandbox":
+        return _parse_bool(value, path)
     if key in {"command", "env"}:
         return _parse_inline_json(value, path)
     return _unquote(value)
@@ -239,7 +268,10 @@ def _duplicate_field_message(tool_name: str, field_name: str) -> str:
 def _invalid_field_message(tool_name: str, field_name: str) -> str:
     return build_guidance_message(
         what=f"Unsupported binding field '{field_name}' for '{tool_name}'.",
-        why="Bindings only support kind, entry, runner, url, image, command, env, purity, and timeout_ms.",
+        why=(
+            "Bindings only support kind, entry, runner, url, image, command, env, purity, "
+            "timeout_ms, sandbox, and enforcement."
+        ),
         fix="Remove the unsupported field.",
         example=_bindings_example(tool_name),
     )
@@ -278,6 +310,24 @@ def _invalid_timeout_message(path: Path, tool_name: str) -> str:
         why="timeout_ms must be a positive integer.",
         fix="Update timeout_ms or remove the field.",
         example=_bindings_example(tool_name),
+    )
+
+
+def _invalid_sandbox_message(path: Path, tool_name: str) -> str:
+    return build_guidance_message(
+        what=f"Tool binding '{tool_name}' has invalid sandbox value.",
+        why=f"Sandbox must be true or false in {path.as_posix()}.",
+        fix="Set sandbox to true or false.",
+        example="sandbox: true",
+    )
+
+
+def _invalid_enforcement_message(path: Path, tool_name: str) -> str:
+    return build_guidance_message(
+        what=f"Tool binding '{tool_name}' has invalid enforcement value.",
+        why=f"Enforcement must be declared or verified in {path.as_posix()}.",
+        fix="Set enforcement to declared or verified.",
+        example='enforcement: "verified"',
     )
 
 
@@ -347,6 +397,20 @@ def _parse_inline_json(value: str, path: Path) -> object:
                 example='command: ["python", "-m", "namel3ss_tools.runner"]',
             )
         ) from err
+
+
+def _parse_bool(value: str, path: Path) -> bool:
+    lowered = value.strip().lower()
+    if lowered in {"true", "false"}:
+        return lowered == "true"
+    raise Namel3ssError(
+        build_guidance_message(
+            what="Tool bindings file is invalid.",
+            why=f"Expected true or false for sandbox in {path.as_posix()}.",
+            fix="Set sandbox to true or false.",
+            example="sandbox: false",
+        )
+    )
 
 
 def _inline_binding_message(tool_name: str) -> str:

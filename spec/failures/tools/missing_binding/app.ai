@@ -1,0 +1,13 @@
+tool "unbound":
+  implemented using python
+
+  input:
+    value is text
+
+  output:
+    result is text
+
+flow "demo":
+  let output is unbound:
+    value is "hi"
+  return output

@@ -181,7 +181,17 @@ flow "demo":
     seen = {}
     write_tool_bindings(tmp_path, {"greeter": ToolBinding(kind="python", entry="tools.sample_tool:greet")})
 
-    def fake_run_tool_subprocess(*, python_path, tool_name, entry, payload, app_root, timeout_seconds, extra_paths=None):
+    def fake_run_tool_subprocess(
+        *,
+        python_path,
+        tool_name,
+        entry,
+        payload,
+        app_root,
+        timeout_seconds,
+        extra_paths=None,
+        capability_context=None,
+    ):
         seen["python_path"] = python_path
         return ToolSubprocessResult(ok=True, output={"ok": True}, error_type=None, error_message=None)
 
@@ -228,7 +238,17 @@ flow "demo":
     seen = {}
     write_tool_bindings(tmp_path, {"greeter": ToolBinding(kind="python", entry="tools.sample_tool:greet")})
 
-    def fake_run_tool_subprocess(*, python_path, tool_name, entry, payload, app_root, timeout_seconds, extra_paths=None):
+    def fake_run_tool_subprocess(
+        *,
+        python_path,
+        tool_name,
+        entry,
+        payload,
+        app_root,
+        timeout_seconds,
+        extra_paths=None,
+        capability_context=None,
+    ):
         seen["python_path"] = python_path
         return ToolSubprocessResult(ok=True, output={"ok": True}, error_type=None, error_message=None)
 
@@ -270,7 +290,17 @@ flow "demo":
     program = lower_ir_program(source)
     write_tool_bindings(tmp_path, {"greeter": ToolBinding(kind="python", entry="tools.sample_tool:greet")})
 
-    def fake_run_tool_subprocess(*, python_path, tool_name, entry, payload, app_root, timeout_seconds, extra_paths=None):
+    def fake_run_tool_subprocess(
+        *,
+        python_path,
+        tool_name,
+        entry,
+        payload,
+        app_root,
+        timeout_seconds,
+        extra_paths=None,
+        capability_context=None,
+    ):
         return ToolSubprocessResult(ok=False, output=None, error_type="ValueError", error_message="boom")
 
     monkeypatch.setattr("namel3ss.runtime.tools.runners.local_runner.run_tool_subprocess", fake_run_tool_subprocess)

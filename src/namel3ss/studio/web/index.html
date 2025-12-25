@@ -120,6 +120,8 @@
           <button class="tab" data-tab="actions">Actions</button>
           <button class="tab" data-tab="tools">Tools</button>
           <button class="tab" data-tab="packs">Packs</button>
+          <button class="tab" data-tab="discover">Discover</button>
+          <button class="tab" data-tab="security">Security</button>
           <button class="tab" data-tab="traces">Traces</button>
           <button class="tab" data-tab="lint">Lint Findings</button>
         </div>
@@ -174,6 +176,45 @@
               <button class="btn secondary small" id="packsAdd">Add pack</button>
             </div>
             <div id="packs" class="panel-body"></div>
+          </div>
+          <div class="panel" data-tab="discover">
+            <div class="panel-header">
+              <div class="section-title">Discover</div>
+              <div class="panel-actions">
+                <button class="btn ghost small" id="discoverCopy">Copy JSON</button>
+              </div>
+            </div>
+            <div class="control-row">
+              <input id="discoverPhrase" type="text" placeholder="Intent phrase…" aria-label="Intent phrase">
+            </div>
+            <div class="control-row">
+              <select id="discoverCapability" aria-label="Capability filter">
+                <option value="">Capability (any)</option>
+                <option value="network">network</option>
+                <option value="filesystem">filesystem</option>
+                <option value="secrets">secrets</option>
+                <option value="subprocess">subprocess</option>
+                <option value="env">env</option>
+              </select>
+              <select id="discoverRisk" aria-label="Risk filter">
+                <option value="">Risk (any)</option>
+                <option value="low">low</option>
+                <option value="medium">medium</option>
+                <option value="high">high</option>
+              </select>
+              <button class="btn secondary small" id="discoverSearch">Search</button>
+            </div>
+            <div id="discoverResults" class="panel-body"></div>
+          </div>
+          <div class="panel" data-tab="security">
+            <div class="panel-header">
+              <div class="section-title">Security Lens</div>
+              <div class="panel-actions">
+                <button class="btn ghost small" id="securityRefresh">Refresh</button>
+                <button class="btn ghost small" id="securityCopy">Copy JSON</button>
+              </div>
+            </div>
+            <div id="security" class="panel-body"></div>
           </div>
           <div class="panel" data-tab="traces">
           <div class="panel-header">
@@ -236,6 +277,7 @@
   <script src="/trust_bar.js"></script>
   <script src="/trace_utils.js"></script>
   <script src="/app.js"></script>
+  <script src="/registry.js"></script>
   <script src="/ui_controls.js"></script>
   <script src="/tool_wizard.js"></script>
 </body>

@@ -1,0 +1,16 @@
+tool "service tool":
+  implemented using python
+
+  input:
+    name is text
+
+  output:
+    ok is boolean
+
+flow "demo":
+  try:
+    let result is service tool:
+      name is "Ada"
+    return "unexpected"
+  with catch err:
+    return "blocked"

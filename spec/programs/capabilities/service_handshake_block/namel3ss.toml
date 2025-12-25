@@ -1,0 +1,5 @@
+[capability_overrides]
+"service tool" = { no_filesystem_write = true }
+
+[python_tools]
+service_handshake_required = true

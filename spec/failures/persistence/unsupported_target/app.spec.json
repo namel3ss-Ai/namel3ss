@@ -1,0 +1,3 @@
+{
+  "env": {"N3_PERSIST_TARGET": "edge"}
+}

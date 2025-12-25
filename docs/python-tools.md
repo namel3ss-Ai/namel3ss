@@ -74,6 +74,17 @@ tools:
     runner: "local"
 ```
 
+Sandboxed local runner (enforced guarantees):
+```yaml
+tools:
+  "greet someone":
+    kind: "python"
+    entry: "tools.sample_tool:greet"
+    runner: "local"
+    sandbox: true
+```
+Sandbox is required to enforce capability guarantees for user-defined tools.
+
 Service runner:
 ```yaml
 tools:
@@ -87,7 +98,10 @@ You can also set a default URL with `N3_TOOL_SERVICE_URL` or in `namel3ss.toml`:
 ```toml
 [python_tools]
 service_url = "http://127.0.0.1:8787/tools"
+service_handshake_required = true
 ```
+Service runners should implement the capability handshake endpoint in
+`/capabilities/handshake` to prove enforcement coverage.
 
 Container runner:
 ```yaml
@@ -99,6 +113,7 @@ tools:
     image: "ghcr.io/namel3ss/tools:latest"
     command: ["python", "-m", "namel3ss_tools.runner"]
     env: {"LOG_LEVEL": "info"}
+    enforcement: "declared"  # or "verified"
 ```
 
 ## Auto-bind via Studio

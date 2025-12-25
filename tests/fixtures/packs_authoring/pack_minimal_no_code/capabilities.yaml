@@ -1,0 +1,7 @@
+capabilities:
+  "echo service":
+    filesystem: "none"
+    network: "outbound"
+    env: "none"
+    subprocess: "none"
+    secrets: []

@@ -56,6 +56,10 @@
 .truth-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; padding: 8px 12px; border-bottom: 1px solid #eaeaea; background: #fafafa; }
 .truth-item { font-size: 12px; text-transform: uppercase; letter-spacing: 0.02em; }
 .badge { display: inline-block; padding: 2px 6px; border: 1px solid #000; border-radius: 8px; font-size: 11px; font-weight: 600; }
+.badge.ok { border-color: #1b5e20; color: #1b5e20; }
+.badge.warn { border-color: #8a6d1d; color: #8a6d1d; }
+.badge.bad { border-color: #a11; color: #a11; }
+.badge-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
 .btn {
   border: 1px solid #e0e0e0;
   background: #fff;
@@ -231,6 +235,40 @@
   border-radius: 10px;
   padding: 12px;
   background: #fff;
+}
+.security-overrides {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.security-override-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 6px 12px;
+}
+.security-override-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #222;
+}
+.security-override-field.warning {
+  color: #8a1f1f;
+}
+.security-override-field.wide {
+  flex-direction: column;
+  align-items: flex-start;
+}
+.security-override-field input[type="text"] {
+  width: 100%;
+  border: 1px solid #e0e0e0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 12px;
 }
 .list-title {
   font-weight: 600;

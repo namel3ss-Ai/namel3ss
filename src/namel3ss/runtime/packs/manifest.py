@@ -25,6 +25,9 @@ class PackManifest:
     service_url: str | None = None
     container_image: str | None = None
     entrypoints: dict[str, ToolBinding] | None = None
+    signer_id: str | None = None
+    signed_at: str | None = None
+    digest: str | None = None
 
 
 def parse_pack_manifest(path: Path) -> PackManifest:
@@ -66,6 +69,9 @@ def parse_pack_manifest_text(text: str, path: Path) -> PackManifest:
         service_url=_string_or_none(data.get("service_url")),
         container_image=_string_or_none(data.get("container_image")),
         entrypoints=entrypoints,
+        signer_id=_string_or_none(data.get("signer_id")),
+        signed_at=_string_or_none(data.get("signed_at")),
+        digest=_string_or_none(data.get("digest")),
     )
 
 
@@ -85,7 +91,18 @@ def _parse_manifest(text: str, path: Path) -> dict:
         key, value = stripped.split(":", 1)
         key = key.strip()
         value = value.strip()
-        if key in {"id", "name", "version", "description", "author", "license", "service_url"}:
+        if key in {
+            "id",
+            "name",
+            "version",
+            "description",
+            "author",
+            "license",
+            "service_url",
+            "signer_id",
+            "signed_at",
+            "digest",
+        }:
             if not value:
                 raise Namel3ssError(_invalid_manifest(path))
             data[key] = _unquote(value)

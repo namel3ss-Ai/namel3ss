@@ -1,0 +1,17 @@
+tool "user writes file":
+  implemented using python
+
+  input:
+    path is text
+
+  output:
+    ok is boolean
+    path is text
+
+flow "demo":
+  try:
+    let result is user writes file:
+      path is "blocked.txt"
+    return "unexpected"
+  with catch err:
+    return "blocked"

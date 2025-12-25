@@ -1,0 +1,10 @@
+{
+  "env": {
+    "N3_PERSIST_TARGET": "sqlite",
+    "N3_DB_PATH": "{app_root}/.namel3ss/data.db"
+  },
+  "runs": [
+    {"flow": "demo"},
+    {"flow": "demo"}
+  ]
+}

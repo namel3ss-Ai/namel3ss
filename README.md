@@ -12,12 +12,21 @@ Start here:
 - [UI DSL Spec](docs/ui-dsl.md)
 - [Python tools](docs/python-tools.md)
 - [Tool packs](docs/tool-packs.md)
+- [Capabilities](docs/capabilities.md)
+- [Publishing packs](docs/publishing-packs.md)
+- [Registry](docs/registry.md)
 - [Editor](docs/editor.md)
 - [Examples](examples/)
 - [Stability](docs/stability.md)
 - [Known limitations](resources/limitations.md)
 - [Targets & promotion](docs/targets-and-promotion.md)
 - [Trust & governance](docs/trust-and-governance.md)
+
+---
+
+## Contracts frozen
+- [Spec freeze v1](docs/spec-freeze-v1.md)
+- [Canonical version map](resources/spec_versions.json)
 
 ---
 
@@ -103,6 +112,49 @@ n3 tools bind "greet someone" --entry "tools.sample_tool:greet"
 Install dependencies per app:
 ```bash
 n3 deps install
+```
+
+### Provable safety (capability enforcement)
+Downgrade capabilities per tool:
+```toml
+[capability_overrides]
+"get json from web" = { no_network = true }
+```
+```ai
+flow "demo":
+  let data is get json from web:
+    url is "https://example.com/data"
+  return data
+```
+The engine blocks the call, emits a `capability_check` trace, and `n3 explain --json`
+shows the effective guarantees.
+
+### Provable sandbox (user tools)
+Enforce guarantees even for arbitrary Python:
+```yaml
+tools:
+  "greet someone":
+    kind: "python"
+    entry: "tools.sample_tool:greet"
+    sandbox: true
+```
+If the tool attempts a forbidden IO operation, the sandbox blocks it and emits a
+`capability_check` trace.
+
+### Publish a pack locally in 60 seconds
+```bash
+n3 packs init team.pack
+n3 packs validate ./team.pack --strict
+n3 packs sign ./team.pack --key-id "maintainer.alice" --private-key ./alice.key
+n3 packs bundle ./team.pack --out ./dist
+n3 packs add ./dist/team.pack-0.1.0.n3pack.zip
+```
+
+### Discover packs by intent
+```bash
+n3 registry add ./dist/team.pack-0.1.0.n3pack.zip
+n3 discover "send email securely"
+n3 packs add team.pack@0.1.0
 ```
 
 ### No wiring pain

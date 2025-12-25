@@ -64,3 +64,36 @@ def test_bindings_yaml_allows_unknown_runner_string(tmp_path: Path) -> None:
     )
     bindings = load_tool_bindings(tmp_path)
     assert bindings["greeter"].runner == "bogus"
+
+
+def test_bindings_yaml_parses_sandbox_and_enforcement(tmp_path: Path) -> None:
+    tools_dir = tmp_path / ".namel3ss"
+    tools_dir.mkdir()
+    (tools_dir / "tools.yaml").write_text(
+        'tools:\n'
+        '  "greeter":\n'
+        '    kind: "python"\n'
+        '    entry: "tools.greeter:run"\n'
+        '    sandbox: true\n'
+        '    enforcement: "verified"\n',
+        encoding="utf-8",
+    )
+    bindings = load_tool_bindings(tmp_path)
+    binding = bindings["greeter"]
+    assert binding.sandbox is True
+    assert binding.enforcement == "verified"
+
+
+def test_bindings_yaml_rejects_invalid_enforcement(tmp_path: Path) -> None:
+    tools_dir = tmp_path / ".namel3ss"
+    tools_dir.mkdir()
+    (tools_dir / "tools.yaml").write_text(
+        'tools:\n'
+        '  "greeter":\n'
+        '    kind: "python"\n'
+        '    entry: "tools.greeter:run"\n'
+        '    enforcement: "nope"\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(Namel3ssError):
+        load_tool_bindings(tmp_path)

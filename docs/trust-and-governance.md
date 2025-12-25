@@ -20,7 +20,33 @@ Run CI-friendly checks before shipping.
 ```bash
 n3 verify --prod --json
 ```
-Verify enforces secrets redaction, access control safety, package integrity, engine readiness, and determinism.
+Verify enforces secrets redaction, access control safety, package integrity, pack capability review, engine readiness, and determinism.
+It also checks tool guarantee coverage (runners must be able to enforce declared guarantees).
+In production mode it additionally requires:
+- local tools use sandbox (unless pure),
+- service runners require capability handshake,
+- container runners declare verified enforcement.
+
+Unsafe overrides are blocked by default:
+```bash
+n3 verify --prod --allow-unsafe --json
+```
+
+## Pack review (local)
+Packs are reviewed before bundling and signing.
+```bash
+n3 packs review ./my_pack --json
+```
+Review surfaces tool names, runners, capabilities, collision risks, and intent coverage.
+
+Trust policy can gate pack installs/enables:
+```toml
+allow_unverified_installs = false
+max_risk = "medium"
+allowed_capabilities = { network = "outbound", filesystem = "read", subprocess = "none" }
+```
+
+Policy restrictions are enforced at runtime; denied operations emit `capability_check` traces.
 
 ---
 

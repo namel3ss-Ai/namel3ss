@@ -1,0 +1,13 @@
+tool "convert text to lowercase":
+  implemented using python
+
+  input:
+    text is text
+
+  output:
+    result is json
+
+flow "demo":
+  let output is convert text to lowercase:
+    text is input.text
+  return output

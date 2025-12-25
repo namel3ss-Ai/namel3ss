@@ -1,0 +1,75 @@
+{
+  "pages": [
+    {
+      "name": "Home",
+      "slug": "home",
+      "elements": [
+        {
+          "type": "title",
+          "value": "Welcome",
+          "element_id": "page.home.title.0",
+          "page": "Home",
+          "page_slug": "home",
+          "index": 0,
+          "line": 2,
+          "column": 3
+        },
+        {
+          "type": "text",
+          "value": "Hello",
+          "element_id": "page.home.text.1",
+          "page": "Home",
+          "page_slug": "home",
+          "index": 1,
+          "line": 3,
+          "column": 3
+        },
+        {
+          "type": "button",
+          "label": "Run",
+          "id": "page.home.button.run",
+          "action_id": "page.home.button.run",
+          "action": {
+            "type": "call_flow",
+            "flow": "demo"
+          },
+          "element_id": "page.home.button_item.2",
+          "page": "Home",
+          "page_slug": "home",
+          "index": 2,
+          "line": 4,
+          "column": 3
+        }
+      ]
+    }
+  ],
+  "actions": {
+    "page.home.button.run": {
+      "id": "page.home.button.run",
+      "type": "call_flow",
+      "flow": "demo"
+    }
+  },
+  "theme": {
+    "schema_version": "1",
+    "setting": "system",
+    "current": "system",
+    "persisted_current": null,
+    "effective": "light",
+    "source": "app",
+    "runtime_supported": false,
+    "tokens": {},
+    "preference": {
+      "allow_override": false,
+      "persist": "none"
+    }
+  },
+  "ui": {
+    "persistence": {
+      "enabled": false,
+      "kind": "memory",
+      "path": null,
+      "schema_version": null
+    }
+  }
+}

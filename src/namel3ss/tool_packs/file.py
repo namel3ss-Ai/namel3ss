@@ -3,11 +3,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from namel3ss_safeio import safe_open
+
 
 def read_text(payload: dict) -> dict:
     path = _safe_path(payload)
     encoding = _read_encoding(payload)
-    return {"text": path.read_text(encoding=encoding)}
+    with safe_open(path, "r", encoding=encoding) as handle:
+        return {"text": handle.read()}
 
 
 def write_text(payload: dict) -> dict:
@@ -16,15 +19,17 @@ def write_text(payload: dict) -> dict:
     if not isinstance(text, str):
         raise ValueError("payload.text must be a string")
     encoding = _read_encoding(payload)
-    _ensure_parent(path, payload)
-    path.write_text(text, encoding=encoding)
+    create_dirs = bool(payload.get("create_dirs", False))
+    with safe_open(path, "w", encoding=encoding, create_dirs=create_dirs) as handle:
+        handle.write(text)
     return {"ok": True, "path": str(path)}
 
 
 def read_json(payload: dict) -> dict:
     path = _safe_path(payload)
     encoding = _read_encoding(payload)
-    raw = path.read_text(encoding=encoding)
+    with safe_open(path, "r", encoding=encoding) as handle:
+        raw = handle.read()
     return {"data": json.loads(raw)}
 
 
@@ -32,8 +37,9 @@ def write_json(payload: dict) -> dict:
     path = _safe_path(payload)
     data = payload.get("data", {})
     encoding = _read_encoding(payload)
-    _ensure_parent(path, payload)
-    path.write_text(json.dumps(data, indent=2, sort_keys=True), encoding=encoding)
+    create_dirs = bool(payload.get("create_dirs", False))
+    with safe_open(path, "w", encoding=encoding, create_dirs=create_dirs) as handle:
+        handle.write(json.dumps(data, indent=2, sort_keys=True))
     return {"ok": True, "path": str(path)}
 
 
@@ -50,12 +56,6 @@ def _safe_path(payload: dict) -> Path:
     if not resolved.is_relative_to(base):
         raise ValueError("payload.path must stay within the app directory")
     return resolved
-
-
-def _ensure_parent(path: Path, payload: dict) -> None:
-    create_dirs = payload.get("create_dirs", False)
-    if create_dirs:
-        path.parent.mkdir(parents=True, exist_ok=True)
 
 
 def _read_encoding(payload: dict) -> str:

@@ -4,6 +4,8 @@ import json
 from typing import Any
 from urllib import request
 
+from namel3ss_safeio import safe_urlopen
+
 
 def get_json(payload: dict) -> dict:
     url = _require_text(payload, "url")
@@ -26,7 +28,7 @@ def post_json(payload: dict) -> dict:
 
 def _request_json(method: str, url: str, *, headers: dict[str, str], data: bytes | None, timeout_seconds: int) -> dict:
     req = request.Request(url, method=method, headers=headers, data=data)
-    with request.urlopen(req, timeout=timeout_seconds) as resp:
+    with safe_urlopen(req, timeout=timeout_seconds) as resp:
         status = getattr(resp, "status", None) or resp.getcode()
         raw = resp.read().decode("utf-8")
         try:

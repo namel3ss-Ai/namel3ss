@@ -1,0 +1,6 @@
+{
+  "what": "Tool \"unbound\" is not bound to a python entry.",
+  "why": "Tool declarations no longer include module paths; bindings live in .namel3ss/tools.yaml.",
+  "fix": "Check bindings with `n3 tools status`, then run `n3 tools bind \"unbound\" --entry \"tools.unbound:run\"` or `n3 tools bind --auto`.",
+  "example": "tools:\n  \"unbound\":\n    kind: \"python\"\n    entry: \"tools.my_tool:run\""
+}

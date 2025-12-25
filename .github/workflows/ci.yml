@@ -24,6 +24,15 @@ jobs:
       - name: Compile check
         run: python -m compileall src -q
 
+      - name: Executable spec suite
+        run: python -m pytest -q tests/spec
+
+      - name: Invariant catalog + legacy syntax scan
+        run: python -m pytest -q tests/invariants/test_invariant_catalog.py tests/invariants/test_legacy_syntax_scan.py
+
+      - name: Trace schema v1
+        run: python -m pytest -q tests/traces/test_trace_schema_v1.py
+
       - name: Run tests
         run: python -m pytest -q
 

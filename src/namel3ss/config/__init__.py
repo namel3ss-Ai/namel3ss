@@ -1,5 +1,5 @@
 from namel3ss.config.loader import load_config, resolve_config, ConfigSource
-from namel3ss.config.model import AppConfig, OllamaConfig, PersistenceConfig, IdentityConfig
+from namel3ss.config.model import AppConfig, OllamaConfig, PersistenceConfig, IdentityConfig, RegistriesConfig, RegistrySourceConfig
 
 __all__ = [
     "load_config",
@@ -9,4 +9,6 @@ __all__ = [
     "OllamaConfig",
     "PersistenceConfig",
     "IdentityConfig",
+    "RegistriesConfig",
+    "RegistrySourceConfig",
 ]

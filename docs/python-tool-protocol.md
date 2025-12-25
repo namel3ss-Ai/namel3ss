@@ -9,6 +9,8 @@ This keeps execution explicit, traceable, and easy to evolve.
 protocol_version: 1
 ```
 
+Tool protocol is frozen at `tool_protocol` v1 (see `resources/spec_versions.json`).
+
 ## Local subprocess schema (stdin)
 
 ```json
@@ -16,7 +18,10 @@ protocol_version: 1
   "protocol_version": 1,
   "tool": "greeter",
   "entry": "tools.sample_tool:greet",
-  "payload": { "name": "Ada" }
+  "payload": { "name": "Ada" },
+  "sandbox": true,
+  "trace_id": "uuid",
+  "capability_context": { "guarantees": { "no_network": true } }
 }
 ```
 
@@ -25,6 +30,9 @@ Fields:
 - `tool` (string): tool name from the `.ai` declaration.
 - `entry` (string): module:function entry point.
 - `payload` (object): JSON payload for the tool.
+- `sandbox` (boolean, optional): enable sandboxed execution.
+- `trace_id` (string, optional): trace correlation id.
+- `capability_context` (object, optional): guarantees + sources for enforcement.
 
 ## Local subprocess schema (stdout)
 
@@ -42,7 +50,7 @@ Error:
 {
   "ok": false,
   "protocol_version": 1,
-  "error": { "type": "ValueError", "message": "Missing input" }
+  "error": { "type": "ValueError", "message": "Missing input", "reason_code": "guarantee_blocked" }
 }
 ```
 
@@ -82,6 +90,33 @@ Response (error):
 { "ok": false, "error": { "type": "ValueError", "message": "Missing input" } }
 ```
 
+## Service capability handshake (HTTP)
+
+Request (POST `/capabilities/handshake`):
+```json
+{
+  "protocol_version": 1,
+  "tool_name": "greeter",
+  "runner": "service",
+  "required_guarantees": { "no_network": true }
+}
+```
+
+Response:
+```json
+{
+  "ok": true,
+  "enforcement": "enforced",
+  "supported_guarantees": { "no_network": true },
+  "service_version": "1.0.0"
+}
+```
+
+## Pack runners
+Bundled packs reference runners via `tools.yaml` or `entrypoints` in `pack.yaml`.
+Runner selection (`local`, `service`, `container`) is resolved at load time and
+surfaced in tool call traces.
+
 ## Trace fields
 
 Tool call traces include:
@@ -93,3 +128,7 @@ Tool call traces include:
 - service runner: `service_url`
 - container runner: `container_runtime`, `image`, `command`
 - pack tools: `pack_id`, `pack_name`, `pack_version`
+- local sandbox: `sandbox`
+- service handshake: `service_handshake`, `enforcement_level`
+- container enforcement: `container_enforcement`
+- unsafe overrides: `unsafe_override`

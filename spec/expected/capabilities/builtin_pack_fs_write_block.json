@@ -1,0 +1,48 @@
+{
+  "ok": true,
+  "state": {},
+  "result": "blocked",
+  "traces": [
+    {
+      "type": "capability_check",
+      "tool_name": "write text file",
+      "runner": "local",
+      "resolved_source": "builtin_pack",
+      "capability": "filesystem_write",
+      "allowed": false,
+      "guarantee_source": "user",
+      "reason": "guarantee_blocked",
+      "protocol_version": 1
+    },
+    {
+      "type": "tool_call",
+      "tool": "write text file",
+      "tool_name": "write text file",
+      "kind": "python",
+      "input_summary": {
+        "type": "object",
+        "keys": [
+          "path",
+          "text"
+        ],
+        "count": 2
+      },
+      "purity": "impure",
+      "resolved_source": "builtin_pack",
+      "timeout_ms": 10000,
+      "runner": "local",
+      "python_env": "system",
+      "python_path": "<python_path>",
+      "deps_source": "none",
+      "sandbox": true,
+      "pack_id": "builtin.file",
+      "pack_name": "file",
+      "pack_version": "v1",
+      "protocol_version": 1,
+      "status": "error",
+      "error_type": "CapabilityViolation",
+      "error_message": "What happened: Tool \"write text file\" cannot write to the filesystem.\nWhy: Effective guarantees forbid filesystem access (<repo_root>/spec/programs/capabilities/blocked.txt).\nFix: Remove the restriction or choose a tool that does not need the capability.\nExample: [capability_overrides]\\n\"write text file\" = { no_filesystem_write = true }",
+      "duration_ms": 0
+    }
+  ]
+}

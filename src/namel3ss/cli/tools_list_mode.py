@@ -49,6 +49,8 @@ def run_tools_list(args: list[str], *, json_mode: bool) -> int:
             "name": name,
             "entry": binding.entry,
             "runner": binding.runner or "local",
+            "sandbox": binding.sandbox,
+            "enforcement": binding.enforcement,
             "source": "binding",
             "status": _status_for_binding(report, name),
         }

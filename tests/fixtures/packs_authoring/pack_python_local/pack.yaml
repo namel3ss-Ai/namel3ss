@@ -1,0 +1,13 @@
+id: "sample.local"
+name: "Sample Local Pack"
+version: "0.1.0"
+description: "Local tools"
+author: "namel3ss"
+license: "MIT"
+tools:
+  - "say hello"
+entrypoints:
+  "say hello":
+    kind: "python"
+    entry: "tools.say_hello:run"
+    purity: "pure"

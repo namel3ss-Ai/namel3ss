@@ -4,7 +4,6 @@ import hashlib
 import json
 import os
 import time
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 from urllib.request import urlopen
@@ -13,6 +12,8 @@ from namel3ss.cli.builds import load_build_metadata, read_latest_build_id
 from namel3ss.cli.targets import parse_target
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.governance.verify_capabilities import check_pack_capabilities, check_tool_guarantees
+from namel3ss.governance.verify_types import VerifyCheck, check_to_dict
 from namel3ss.ir import nodes as ir
 from namel3ss.module_loader import load_project
 from namel3ss.pkg.lockfile import LOCKFILE_FILENAME, read_lockfile
@@ -25,20 +26,12 @@ from namel3ss.secrets import collect_secret_values
 VERIFY_SCHEMA_VERSION = 1
 
 
-@dataclass(frozen=True)
-class VerifyCheck:
-    id: str
-    status: str
-    message: str
-    fix: str
-    details: dict | None = None
-
-
 def run_verify(
     app_path: Path,
     *,
     target: str,
     prod: bool,
+    allow_unsafe: bool = False,
     config_root: Path | None = None,
     project_root_override: Path | None = None,
 ) -> dict:
@@ -51,6 +44,8 @@ def run_verify(
         _check_access_control(project.program, prod),
         _check_audit_policy(project.program, prod),
         _check_package_integrity(project_root),
+        check_pack_capabilities(project_root, config, prod),
+        check_tool_guarantees(project_root, config, project.program.tools, prod, allow_unsafe=allow_unsafe),
         _check_engine_readiness(app_path, target, config, prod),
         _check_determinism(project_root, target, prod),
     ]
@@ -60,7 +55,7 @@ def run_verify(
         "schema_version": VERIFY_SCHEMA_VERSION,
         "status": status,
         "engine_target": parse_target(target).name,
-        "checks": [_check_to_dict(check) for check in checks],
+        "checks": [check_to_dict(check) for check in checks],
     }
     return payload
 
@@ -335,13 +330,6 @@ def _find_leaks(text: str, secret_values: Iterable[str]) -> list[str]:
         if secret and len(secret) >= 4 and secret in text:
             leaks.append(secret)
     return leaks
-
-
-def _check_to_dict(check: VerifyCheck) -> dict:
-    payload = {"id": check.id, "status": check.status, "message": check.message, "fix": check.fix}
-    if check.details:
-        payload["details"] = check.details
-    return payload
 
 
 __all__ = ["VERIFY_SCHEMA_VERSION", "run_verify"]

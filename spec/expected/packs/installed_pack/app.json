@@ -1,0 +1,44 @@
+{
+  "ok": true,
+  "state": {},
+  "result": {
+    "result": {
+      "ok": true
+    }
+  },
+  "traces": [
+    {
+      "type": "tool_call",
+      "tool": "pack echo",
+      "tool_name": "pack echo",
+      "kind": "python",
+      "input_summary": {
+        "type": "object",
+        "keys": [
+          "payload"
+        ],
+        "count": 1
+      },
+      "purity": "impure",
+      "resolved_source": "installed_pack",
+      "timeout_ms": 10000,
+      "runner": "local",
+      "python_env": "system",
+      "python_path": "<python_path>",
+      "deps_source": "none",
+      "pack_id": "spec.pack",
+      "pack_name": "Spec Pack",
+      "pack_version": "1.0.0",
+      "protocol_version": 1,
+      "status": "ok",
+      "output_summary": {
+        "type": "object",
+        "keys": [
+          "result"
+        ],
+        "count": 1
+      },
+      "duration_ms": 0
+    }
+  ]
+}

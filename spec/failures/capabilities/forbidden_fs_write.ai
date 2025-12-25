@@ -1,0 +1,16 @@
+tool "write text file":
+  implemented using python
+
+  input:
+    path is text
+    text is text
+
+  output:
+    ok is boolean
+    path is text
+
+flow "demo":
+  let result is write text file:
+    path is "blocked.txt"
+    text is "nope"
+  return result

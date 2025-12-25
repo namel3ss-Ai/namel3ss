@@ -23,7 +23,7 @@ class PackVerification:
 
 
 def compute_pack_digest(manifest_text: str, tools_text: str | None) -> str:
-    normalized = _normalize_text(manifest_text)
+    normalized = _normalize_text(_strip_signing_fields(manifest_text))
     if tools_text is not None:
         normalized = f"{normalized}\n{_normalize_text(tools_text)}"
     digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
@@ -133,6 +133,26 @@ def _write_verification(pack_dir: Path, verification: PackVerification) -> None:
 
 def _normalize_text(text: str) -> str:
     return "\n".join(line.rstrip() for line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n")).strip()
+
+
+def _strip_signing_fields(text: str) -> str:
+    lines: list[str] = []
+    for raw in text.splitlines():
+        stripped = raw.strip()
+        if not stripped or stripped.startswith("#"):
+            lines.append(raw)
+            continue
+        if raw.lstrip() != raw:
+            lines.append(raw)
+            continue
+        if ":" not in stripped:
+            lines.append(raw)
+            continue
+        key = stripped.split(":", 1)[0].strip()
+        if key in {"signer_id", "signed_at", "digest"}:
+            continue
+        lines.append(raw)
+    return "\n".join(lines)
 
 
 def _missing_signature_message(pack_id: str) -> str:

@@ -1,0 +1,5 @@
+identity "User":
+  field "role" is text
+
+flow "admin": requires identity.role is "admin"
+  return "ok"

@@ -16,6 +16,26 @@ def run_packs(args: list[str]) -> int:
         from namel3ss.cli.packs_add_mode import run_packs_add
 
         return run_packs_add(tail, json_mode=json_mode)
+    if cmd == "init":
+        from namel3ss.cli.packs_init_mode import run_packs_init
+
+        return run_packs_init(tail, json_mode=json_mode)
+    if cmd == "validate":
+        from namel3ss.cli.packs_validate_mode import run_packs_validate
+
+        return run_packs_validate(tail, json_mode=json_mode)
+    if cmd == "review":
+        from namel3ss.cli.packs_review_mode import run_packs_review
+
+        return run_packs_review(tail, json_mode=json_mode)
+    if cmd == "bundle":
+        from namel3ss.cli.packs_bundle_mode import run_packs_bundle
+
+        return run_packs_bundle(tail, json_mode=json_mode)
+    if cmd == "sign":
+        from namel3ss.cli.packs_sign_mode import run_packs_sign
+
+        return run_packs_sign(tail, json_mode=json_mode)
     if cmd == "remove":
         from namel3ss.cli.packs_remove_mode import run_packs_remove
 
@@ -43,22 +63,28 @@ def run_packs(args: list[str]) -> int:
     raise Namel3ssError(
         build_guidance_message(
             what=f"Unknown packs command '{cmd}'.",
-            why="Supported commands are add, remove, status, verify, enable, disable, and keys.",
-            fix="Run `n3 packs help` to see usage.",
-            example="n3 packs status",
-        )
+        why="Supported commands are add, init, validate, review, bundle, sign, remove, status, verify, enable, disable, and keys.",
+        fix="Run `n3 packs help` to see usage.",
+        example="n3 packs status",
+    )
     )
 
 
 def _print_usage() -> None:
     usage = """Usage:
-  n3 packs add <path_or_zip> [--json]
+  n3 packs add <path_or_zip|pack_id@version> [--from <registry_id>] [--json]
+  n3 packs init <pack_id> [--dir <path>] [--no-code] [--json]
+  n3 packs validate <path_or_pack_id> [--strict] [--json]
+  n3 packs review <path_or_pack_id> [--json]
+  n3 packs bundle <path_or_pack_id> [--out <dir>] [--json]
+  n3 packs sign <path_or_pack_id> --key-id <id> --private-key <path> [--json]
   n3 packs remove <pack_id> --yes [--json]
   n3 packs status [--json]
   n3 packs verify <pack_id> [--json]
   n3 packs enable <pack_id> [--json]
   n3 packs disable <pack_id> [--json]
   n3 packs keys add --id <id> --public-key <path> [--json]
+  n3 packs keys list [--json]
 """
     print(usage.strip())
 

@@ -1,0 +1,2 @@
+[capability_overrides]
+"user writes file" = { no_filesystem_write = true }

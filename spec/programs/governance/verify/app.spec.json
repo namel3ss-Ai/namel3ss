@@ -1,0 +1,5 @@
+{
+  "mode": "verify",
+  "target": "local",
+  "prod": false
+}

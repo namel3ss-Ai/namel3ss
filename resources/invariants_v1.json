@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "invariants": [
+    {
+      "id": "INV-001-old-tool-syntax-forbidden",
+      "description": "Old tool syntax is forbidden and rejected by the parser.",
+      "enforcement_location": "parser",
+      "pass_fixture": "spec/programs/tools/tool_call_binding/app.ai",
+      "fail_fixture": "tests/parser/test_tool_old_syntax_rejected.py"
+    },
+    {
+      "id": "INV-002-tool-call-traced",
+      "description": "Tool calls always emit a tool_call trace event.",
+      "enforcement_location": "runtime",
+      "pass_fixture": "spec/programs/tools/tool_call_binding/app.ai",
+      "fail_fixture": "resources/invariants/tool_trace_missing.md"
+    },
+    {
+      "id": "INV-003-tool-resolution-precedence",
+      "description": "Tool resolution precedence is deterministic: builtin_pack > installed_pack > binding.",
+      "enforcement_location": "runtime",
+      "pass_fixture": "spec/programs/packs/builtin_pack/app.ai",
+      "fail_fixture": "spec/failures/packs/collision/app.ai"
+    },
+    {
+      "id": "INV-004-collisions-hard-error",
+      "description": "Tool collisions never shadow; they fail with a hard error.",
+      "enforcement_location": "runtime",
+      "pass_fixture": "spec/programs/packs/installed_pack/app.ai",
+      "fail_fixture": "spec/failures/packs/collision/app.ai"
+    },
+    {
+      "id": "INV-005-unverified-pack-blocked",
+      "description": "Unverified packs cannot execute tools.",
+      "enforcement_location": "runtime",
+      "pass_fixture": "spec/programs/packs/installed_pack/app.ai",
+      "fail_fixture": "spec/failures/packs/unverified_pack/app.ai"
+    },
+    {
+      "id": "INV-006-enabled-unverified-pack-blocked",
+      "description": "Enabled but unverified packs are still blocked.",
+      "enforcement_location": "runtime",
+      "pass_fixture": "spec/programs/packs/installed_pack/app.ai",
+      "fail_fixture": "spec/failures/packs/enabled_unverified_pack/app.ai"
+    },
+    {
+      "id": "INV-007-runner-no-silent-fallback",
+      "description": "Runner selection has no silent fallback; unknown runners hard error.",
+      "enforcement_location": "runtime",
+      "pass_fixture": "spec/programs/runners/local/app.ai",
+      "fail_fixture": "spec/failures/runners/unknown_runner/app.ai"
+    },
+    {
+      "id": "INV-008-tool-protocol-version-present",
+      "description": "Tool protocol version is present in tool traces and runner requests.",
+      "enforcement_location": "runtime",
+      "pass_fixture": "spec/programs/runners/local/app.ai",
+      "fail_fixture": "resources/invariants/tool_protocol_missing.md"
+    },
+    {
+      "id": "INV-009-secrets-redacted",
+      "description": "Secrets are redacted in proofs and observe logs.",
+      "enforcement_location": "governance",
+      "pass_fixture": "spec/programs/governance/proof/app.ai",
+      "fail_fixture": "resources/invariants/secrets_redaction_fail.md"
+    },
+    {
+      "id": "INV-010-intent-only-ai",
+      "description": ".ai remains intent-only; no module:function or JSON schema blobs.",
+      "enforcement_location": "lint",
+      "pass_fixture": "spec/programs/language_core/let_set_if_repeat.ai",
+      "fail_fixture": "resources/invariants/intent_only_fail.ai"
+    },
+    {
+      "id": "INV-011-no-network-blocks",
+      "description": "no_network blocks any network operation.",
+      "enforcement_location": "runtime",
+      "pass_fixture": "spec/programs/capabilities/builtin_pack_network_block.ai",
+      "fail_fixture": "spec/failures/capabilities/forbidden_network.ai"
+    },
+    {
+      "id": "INV-012-no-filesystem-write-blocks",
+      "description": "no_filesystem_write blocks any filesystem write.",
+      "enforcement_location": "runtime",
+      "pass_fixture": "spec/programs/capabilities/builtin_pack_fs_write_block.ai",
+      "fail_fixture": "spec/failures/capabilities/forbidden_fs_write.ai"
+    },
+    {
+      "id": "INV-013-policy-downgrades-enforced",
+      "description": "Policy downgrades are enforced for effective guarantees.",
+      "enforcement_location": "runtime",
+      "pass_fixture": "tests/runtime/test_capability_policy.py",
+      "fail_fixture": "resources/invariants/policy_downgrade_fail.md"
+    },
+    {
+      "id": "INV-014-sandbox-blocks-user-writes",
+      "description": "Sandboxed user tools cannot write to the filesystem.",
+      "enforcement_location": "runtime",
+      "pass_fixture": "spec/programs/capabilities/user_tool_sandbox_block/app.ai",
+      "fail_fixture": "resources/invariants/sandbox_user_write_fail.md"
+    },
+    {
+      "id": "INV-015-service-handshake-blocks-unsafe",
+      "description": "Service runner handshakes block unenforced guarantees.",
+      "enforcement_location": "runtime",
+      "pass_fixture": "spec/programs/capabilities/service_handshake_block/app.ai",
+      "fail_fixture": "resources/invariants/service_handshake_fail.md"
+    }
+  ]
+}

@@ -5,7 +5,7 @@ from pathlib import Path
 from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
-from namel3ss.runtime.packs.trust_store import TrustedKey, add_trusted_key
+from namel3ss.runtime.packs.trust_store import TrustedKey, add_trusted_key, load_trusted_keys
 from namel3ss.utils.json_tools import dumps_pretty
 
 
@@ -15,21 +15,35 @@ def run_packs_keys(args: list[str], *, json_mode: bool) -> int:
         return 0
     cmd = args[0]
     tail = args[1:]
-    if cmd != "add":
-        raise Namel3ssError(_unknown_command_message(cmd))
-    key_id, key_path = _parse_add_args(tail)
-    app_path = resolve_app_path(None)
-    app_root = app_path.parent
-    key_text = Path(key_path).read_text(encoding="utf-8").strip()
-    if not key_text:
-        raise Namel3ssError(_invalid_key_file_message(key_path))
-    path = add_trusted_key(app_root, TrustedKey(key_id=key_id, public_key=key_text))
-    payload = {"status": "ok", "key_id": key_id, "keys_path": str(path)}
-    if json_mode:
-        print(dumps_pretty(payload))
+    if cmd == "add":
+        key_id, key_path = _parse_add_args(tail)
+        app_path = resolve_app_path(None)
+        app_root = app_path.parent
+        key_text = Path(key_path).read_text(encoding="utf-8").strip()
+        if not key_text:
+            raise Namel3ssError(_invalid_key_file_message(key_path))
+        path = add_trusted_key(app_root, TrustedKey(key_id=key_id, public_key=key_text))
+        payload = {"status": "ok", "key_id": key_id, "keys_path": str(path)}
+        if json_mode:
+            print(dumps_pretty(payload))
+            return 0
+        print(f"Added trusted key '{key_id}'.")
         return 0
-    print(f"Added trusted key '{key_id}'.")
-    return 0
+    if cmd == "list":
+        if tail:
+            raise Namel3ssError(_unknown_args_message(tail))
+        app_path = resolve_app_path(None)
+        app_root = app_path.parent
+        keys = load_trusted_keys(app_root)
+        payload = {"status": "ok", "trusted_keys": [key.__dict__ for key in keys]}
+        if json_mode:
+            print(dumps_pretty(payload))
+            return 0
+        print(f"Trusted keys: {len(keys)}")
+        for key in keys:
+            print(f"- {key.key_id}: {key.public_key}")
+        return 0
+    raise Namel3ssError(_unknown_command_message(cmd))
 
 
 def _parse_add_args(args: list[str]) -> tuple[str, str]:
@@ -67,6 +81,7 @@ def _parse_add_args(args: list[str]) -> tuple[str, str]:
 def _print_usage() -> None:
     usage = """Usage:
   n3 packs keys add --id <id> --public-key <path> [--json]
+  n3 packs keys list [--json]
 """
     print(usage.strip())
 
@@ -74,9 +89,9 @@ def _print_usage() -> None:
 def _unknown_command_message(cmd: str) -> str:
     return build_guidance_message(
         what=f"Unknown packs keys command '{cmd}'.",
-        why="Supported command is add.",
-        fix="Use `n3 packs keys add`.",
-        example='n3 packs keys add --id "maintainer.alice" --public-key ./alice.pub',
+        why="Supported commands are add and list.",
+        fix="Use `n3 packs keys add` or `n3 packs keys list`.",
+        example="n3 packs keys list",
     )
 
 

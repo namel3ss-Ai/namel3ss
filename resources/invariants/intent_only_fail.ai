@@ -1,0 +1,4 @@
+flow "demo":
+  let entry is "tools.echo:run"
+  let schema is "{\"type\": \"object\"}"
+  return entry

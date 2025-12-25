@@ -1,0 +1,13 @@
+tool "pack echo":
+  implemented using python
+
+  input:
+    payload is json
+
+  output:
+    result is json
+
+flow "demo":
+  let output is pack echo:
+    payload is input.payload
+  return output
