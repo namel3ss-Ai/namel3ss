@@ -1,0 +1,4 @@
+capsule "assistant":
+  exports:
+    flow "log_message"
+    flow "summarize"

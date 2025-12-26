@@ -1,0 +1,4 @@
+capsule "admin-ui":
+  exports:
+    flow "seed_item"
+    flow "status"

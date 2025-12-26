@@ -1,0 +1,5 @@
+use "service" as svc
+
+test "queue job":
+  run flow "svc.queue_job" with input: {} as result
+  expect value is "queued"

@@ -15,6 +15,7 @@ from namel3ss.proofs.builder import build_engine_proof
 from namel3ss.runtime.executor.api import execute_program_flow
 from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.runtime.tools.runners.base import ToolRunnerResult
+from namel3ss.secrets.redaction import _KNOWN_ENV_VARS
 from namel3ss.ui.manifest import build_manifest
 
 
@@ -24,6 +25,11 @@ FAILURES_ROOT = SPEC_ROOT / "failures"
 EXPECTED_ROOT = SPEC_ROOT / "expected"
 
 _TIME_KEYS = {"timestamp", "time", "time_start", "time_end"}
+
+
+def _clear_secret_env(env_ctx: pytest.MonkeyPatch) -> None:
+    for key in _KNOWN_ENV_VARS:
+        env_ctx.delenv(key, raising=False)
 
 
 class StubRunner:
@@ -287,6 +293,7 @@ def test_executable_spec_programs(monkeypatch: pytest.MonkeyPatch, spec_path: Pa
     if expanded_env:
         _reset_db(expanded_env)
     with monkeypatch.context() as env_ctx:
+        _clear_secret_env(env_ctx)
         for key, value in expanded_env.items():
             env_ctx.setenv(key, value)
         server = None
@@ -331,6 +338,7 @@ def test_executable_spec_failures(monkeypatch: pytest.MonkeyPatch, spec_path: Pa
         _reset_db(expanded_env)
     err = None
     with monkeypatch.context() as env_ctx:
+        _clear_secret_env(env_ctx)
         for key, value in expanded_env.items():
             env_ctx.setenv(key, value)
         try:

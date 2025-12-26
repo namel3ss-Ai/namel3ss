@@ -1,0 +1,20 @@
+identity "User":
+  field "email" is text must be present
+  field "role" is text must be present
+
+use "agents" as agents
+
+page "home": requires identity.role is "operator"
+  title is "Multi-agent workflow"
+  text is "Run planner, critic, and researcher steps independently."
+  section "Agent runs":
+    row:
+      column:
+        button "Plan":
+          calls flow "agents.plan_step"
+      column:
+        button "Critic":
+          calls flow "agents.critic_step"
+      column:
+        button "Research":
+          calls flow "agents.research_step"

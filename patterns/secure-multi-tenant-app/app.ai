@@ -1,0 +1,14 @@
+identity "User":
+  field "email" is text must be present
+  field "role" is text must be present
+  field "tenant_id" is text must be present
+
+use "tenant" as tenant
+
+page "home": requires identity.role is "admin"
+  title is "Secure tenant app"
+  text is "Tenant-scoped records with admin access."
+  form is "tenant.Account"
+  button "Create demo account":
+    calls flow "tenant.create_account"
+  table is "tenant.Account"

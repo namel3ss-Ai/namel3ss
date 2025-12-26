@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "name": "demo",
+      "description": "Demo package.",
+      "source": "owner/demo",
+      "recommended": "v0.1.0",
+      "license": "MIT",
+      "checksums": "verified by lock",
+      "tags": ["demo"],
+      "trust_tier": "official"
+    }
+  ]
+}

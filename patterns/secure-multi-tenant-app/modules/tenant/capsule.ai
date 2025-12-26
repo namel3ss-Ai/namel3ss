@@ -1,0 +1,3 @@
+capsule "tenant":
+  exports:
+    flow "create_account"

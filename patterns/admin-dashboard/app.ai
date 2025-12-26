@@ -1,0 +1,13 @@
+identity "User":
+  field "email" is text must be present
+  field "role" is text must be present
+
+use "admin" as admin
+
+page "home": requires identity.role is "admin"
+  title is "Admin dashboard"
+  text is "Manage customer records and review activity."
+  form is "admin.Customer"
+  button "Seed demo customers":
+    calls flow "admin.seed_customers"
+  table is "admin.Customer"

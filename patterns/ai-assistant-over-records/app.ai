@@ -1,0 +1,13 @@
+identity "User":
+  field "email" is text must be present
+  field "role" is text must be present
+
+use "assistant" as assistant
+
+page "home": requires identity.role is "member"
+  title is "Assistant over records"
+  text is "Capture prompts and summarize stored messages."
+  form is "assistant.Message"
+  button "Summarize messages":
+    calls flow "assistant.summarize"
+  table is "assistant.Message"

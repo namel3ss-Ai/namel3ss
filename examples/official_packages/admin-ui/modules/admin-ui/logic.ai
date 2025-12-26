@@ -1,0 +1,12 @@
+record "AdminItem":
+  label text must be present
+  state text
+
+flow "seed_item":
+  set state.item.label is "Sample"
+  set state.item.state is "active"
+  create "AdminItem" with state.item as item
+  return "seeded"
+
+flow "status":
+  return "ready"

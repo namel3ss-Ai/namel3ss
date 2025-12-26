@@ -1,0 +1,8 @@
+flow "plan_step": requires identity.role is "operator"
+  return "plan ready"
+
+flow "critic_step": requires identity.role is "operator"
+  return "critique ready"
+
+flow "research_step": requires identity.role is "operator"
+  return "research ready"

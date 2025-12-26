@@ -1,0 +1,48 @@
+name: Package CI
+
+on:
+  push:
+    paths:
+      - "resources/pkg_index_v1.json"
+      - "examples/official_packages/**"
+      - "src/namel3ss/pkg/**"
+      - "docs/packages.md"
+      - "ECOSYSTEM.md"
+  pull_request:
+    paths:
+      - "resources/pkg_index_v1.json"
+      - "examples/official_packages/**"
+      - "src/namel3ss/pkg/**"
+      - "docs/packages.md"
+      - "ECOSYSTEM.md"
+
+jobs:
+  packages:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package (editable)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+
+      - name: Validate package index schema
+        run: python -m pytest -q tests/pkg/test_pkg_index.py
+
+      - name: Validate official packages
+        run: |
+          for pkg in examples/official_packages/*; do
+            if [ -d "$pkg" ]; then
+              echo "Validating $pkg"
+              (cd "$pkg" && n3 pkg validate .)
+              (cd "$pkg" && n3 test)
+              (cd "$pkg" && n3 verify --prod)
+            fi
+          done

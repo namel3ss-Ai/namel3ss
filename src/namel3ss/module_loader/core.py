@@ -331,23 +331,23 @@ def _resolve_module_dir(root: Path, module_name: str, source_overrides: SourceOv
 def _collect_module_files(module_dir: Path, source_overrides: SourceOverrides | None) -> List[Path]:
     files = []
     for path in module_dir.rglob("*.ai"):
-        if path.name == "capsule.ai":
+        if path.name in {"capsule.ai", "app.ai"}:
             continue
         if path.name.endswith("_test.ai"):
             continue
         relative_parts = {part.lower() for part in path.relative_to(module_dir).parts}
-        if "tests" in relative_parts:
+        if "tests" in relative_parts or "examples" in relative_parts or "example" in relative_parts:
             continue
         files.append(path)
     if source_overrides:
         for path in source_overrides.keys():
-            if path.name == "capsule.ai" or path.suffix != ".ai":
+            if path.name in {"capsule.ai", "app.ai"} or path.suffix != ".ai":
                 continue
             try:
                 rel_parts = {part.lower() for part in path.relative_to(module_dir).parts}
             except ValueError:
                 continue
-            if "tests" in rel_parts or path.name.endswith("_test.ai"):
+            if "tests" in rel_parts or "examples" in rel_parts or "example" in rel_parts or path.name.endswith("_test.ai"):
                 continue
             files.append(path)
     return sorted(files, key=lambda p: p.relative_to(module_dir).as_posix())

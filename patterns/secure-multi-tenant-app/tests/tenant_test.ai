@@ -1,0 +1,5 @@
+use "tenant" as tenant
+
+test "create account":
+  run flow "tenant.create_account" with input: {} as result
+  expect value is "created"

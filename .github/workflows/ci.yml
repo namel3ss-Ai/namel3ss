@@ -36,6 +36,16 @@ jobs:
       - name: Run tests
         run: python -m pytest -q
 
+      - name: Patterns suite
+        run: |
+          for pattern in patterns/*; do
+            if [ -d "$pattern" ]; then
+              echo "Pattern $pattern"
+              (cd "$pattern" && n3 test)
+              (cd "$pattern" && n3 verify --prod)
+            fi
+          done
+
       - name: Enforce line limit
         run: python tools/line_limit_check.py
 

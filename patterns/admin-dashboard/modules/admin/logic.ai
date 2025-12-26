@@ -1,0 +1,15 @@
+record "Customer":
+  field "name" is text must be present
+  field "email" is text must match pattern ".+@.+"
+  field "plan" is text must be present
+
+flow "seed_customers": requires identity.role is "admin"
+  set state.customer.name is "Ada Lovelace"
+  set state.customer.email is "ada@example.com"
+  set state.customer.plan is "Pro"
+  create "Customer" with state.customer as customer
+  set state.customer.name is "Ben Lee"
+  set state.customer.email is "ben@example.com"
+  set state.customer.plan is "Starter"
+  create "Customer" with state.customer as customer
+  return "seeded"

@@ -1,0 +1,1 @@
+"""Pattern catalog and loaders."""

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.cli.proofs import load_active_proof, read_proof
 from namel3ss.cli.promotion_state import load_state
+from namel3ss.cli.why_mode import build_why_lines, build_why_payload
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
@@ -17,11 +18,20 @@ from namel3ss.utils.json_tools import dumps_pretty
 class _ExplainParams:
     app_arg: str | None
     json_mode: bool
+    mode: str
 
 
 def run_explain_command(args: list[str]) -> int:
     params = _parse_args(args)
     app_path = resolve_app_path(params.app_arg)
+    if params.mode != "default":
+        payload = build_why_payload(app_path)
+        if params.json_mode:
+            print(dumps_pretty(payload))
+            return 0
+        lines = build_why_lines(payload, audience="non_technical" if params.mode == "non_technical" else "default")
+        print("\n".join(lines))
+        return 0
     project_root = app_path.parent
     active = load_active_proof(project_root)
     proof_id = active.get("proof_id") if isinstance(active, dict) else None
@@ -37,10 +47,19 @@ def run_explain_command(args: list[str]) -> int:
 def _parse_args(args: list[str]) -> _ExplainParams:
     app_arg = None
     json_mode = False
+    mode = "default"
     i = 0
     while i < len(args):
         arg = args[i]
         if arg == "prod":
+            i += 1
+            continue
+        if arg == "--why":
+            mode = "why"
+            i += 1
+            continue
+        if arg == "--non-technical":
+            mode = "non_technical"
             i += 1
             continue
         if arg == "--json":
@@ -51,7 +70,7 @@ def _parse_args(args: list[str]) -> _ExplainParams:
             raise Namel3ssError(
                 build_guidance_message(
                     what=f"Unknown flag '{arg}'.",
-                    why="Supported flags: --json.",
+                    why="Supported flags: --json, --why, --non-technical.",
                     fix="Remove the unsupported flag.",
                     example="n3 explain --json",
                 )
@@ -68,7 +87,7 @@ def _parse_args(args: list[str]) -> _ExplainParams:
                 example="n3 explain app.ai",
             )
         )
-    return _ExplainParams(app_arg, json_mode)
+    return _ExplainParams(app_arg, json_mode, mode)
 
 
 def _build_explain_payload(app_path, active: dict, proof: dict) -> dict:

@@ -1,0 +1,3 @@
+capsule "admin":
+  exports:
+    flow "seed_customers"

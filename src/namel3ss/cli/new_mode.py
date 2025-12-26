@@ -8,6 +8,7 @@ from pathlib import Path
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.format import format_source
 from namel3ss.lint.engine import lint_source
+from namel3ss.pkg.scaffold import scaffold_package
 
 
 @dataclass(frozen=True)
@@ -46,6 +47,16 @@ TEMPLATES: tuple[TemplateSpec, ...] = (
 def run_new(args: list[str]) -> int:
     if not args:
         print(render_templates_list())
+        return 0
+    if args[0] in {"pkg", "package"}:
+        if len(args) < 2:
+            raise Namel3ssError("Usage: n3 new pkg <name>")
+        target = scaffold_package(args[1], Path.cwd())
+        print(f"Created package at {target}")
+        print("Next steps:")
+        print(f"  cd {target.name}")
+        print("  n3 pkg validate .")
+        print("  n3 test")
         return 0
     if len(args) > 2:
         raise Namel3ssError("Usage: n3 new <template> [project_name]")

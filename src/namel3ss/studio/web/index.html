@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Namel3ss Studio</title>
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/studio_panels.css">
   <link rel="stylesheet" href="/theme_tokens.css">
   <link rel="stylesheet" href="/tool_wizard.css">
 </head>
@@ -29,6 +30,7 @@
           <option value="light">Light</option>
           <option value="dark">Dark</option>
         </select>
+        <button class="btn ghost small" id="learnToggle" aria-pressed="false">Learn</button>
         <button class="btn ghost small" id="helpButton">Help</button>
         <div class="version" id="versionLabel"></div>
       </div>
@@ -116,10 +118,15 @@
         </div>
         <div class="tabs" role="tablist">
           <button class="tab active" data-tab="summary">Summary</button>
+          <button class="tab" data-tab="graph">Graph</button>
+          <button class="tab" data-tab="trust">Trust</button>
+          <button class="tab" data-tab="data">Data</button>
+          <button class="tab" data-tab="fix">Fix</button>
           <button class="tab" data-tab="state">State</button>
           <button class="tab" data-tab="actions">Actions</button>
           <button class="tab" data-tab="tools">Tools</button>
           <button class="tab" data-tab="packs">Packs</button>
+          <button class="tab" data-tab="packages">Packages</button>
           <button class="tab" data-tab="discover">Discover</button>
           <button class="tab" data-tab="security">Security</button>
           <button class="tab" data-tab="traces">Traces</button>
@@ -132,6 +139,65 @@
               <button class="btn ghost small" id="summaryCopy">Copy JSON</button>
             </div>
             <div id="summary" class="panel-body"></div>
+          </div>
+          <div class="panel" data-tab="graph">
+            <div class="panel-header">
+              <div class="section-title">Graph</div>
+              <button class="btn ghost small" id="graphRefresh">Refresh</button>
+            </div>
+            <div class="graph-layout">
+              <div class="panel-body graph-wrap">
+                <div id="graphCanvas" class="graph-canvas"></div>
+              </div>
+              <div class="panel-body graph-details" id="graphDetails"></div>
+            </div>
+          </div>
+          <div class="panel" data-tab="trust">
+            <div class="panel-header">
+              <div class="section-title">Trust</div>
+              <button class="btn ghost small" id="trustRefresh">Refresh</button>
+            </div>
+            <div class="trust-grid">
+              <div class="panel-body" id="trustStatus"></div>
+              <div class="panel-body" id="trustProof"></div>
+              <div class="panel-body" id="trustVerify"></div>
+              <div class="panel-body" id="trustSecrets"></div>
+              <div class="panel-body" id="trustObserve"></div>
+              <div class="panel-body" id="trustExplain"></div>
+              <div class="panel-body" id="trustWhy"></div>
+            </div>
+          </div>
+          <div class="panel" data-tab="data">
+            <div class="panel-header">
+              <div class="section-title">Data & Identity</div>
+              <button class="btn ghost small" id="dataRefresh">Refresh</button>
+            </div>
+            <div class="data-grid">
+              <div class="panel-body" id="dataSummary"></div>
+              <div class="panel-body" id="auditTimeline">
+                <div class="audit-controls">
+                  <select id="auditFilterKind" aria-label="Audit filter type">
+                    <option value="">Filter (any)</option>
+                    <option value="flow">Flow</option>
+                    <option value="action">Action</option>
+                  </select>
+                  <input id="auditFilterText" type="text" placeholder="Search…" aria-label="Audit filter text">
+                  <button class="btn secondary small" id="auditFilterApply">Apply</button>
+                </div>
+                <div id="auditEvents"></div>
+              </div>
+            </div>
+          </div>
+          <div class="panel" data-tab="fix">
+            <div class="panel-header">
+              <div class="section-title">Guided Fixes</div>
+              <button class="btn ghost small" id="fixRefresh">Refresh</button>
+            </div>
+            <div class="fix-grid">
+              <div class="panel-body" id="fixDiagnostics"></div>
+              <div class="panel-body" id="fixPreview"></div>
+              <div class="panel-body" id="fixRename"></div>
+            </div>
           </div>
           <div class="panel" data-tab="state">
             <div class="panel-header">
@@ -176,6 +242,19 @@
               <button class="btn secondary small" id="packsAdd">Add pack</button>
             </div>
             <div id="packs" class="panel-body"></div>
+          </div>
+          <div class="panel" data-tab="packages">
+            <div class="panel-header">
+              <div class="section-title">Packages</div>
+              <div class="panel-actions">
+                <button class="btn ghost small" id="packagesCopy">Copy JSON</button>
+              </div>
+            </div>
+            <div class="control-row">
+              <input id="packagesQuery" type="text" placeholder="Search packages…" aria-label="Package search query">
+              <button class="btn secondary small" id="packagesSearch">Search</button>
+            </div>
+            <div id="packagesResults" class="panel-body"></div>
           </div>
           <div class="panel" data-tab="discover">
             <div class="panel-header">
@@ -276,7 +355,13 @@
   <script src="/theme_preference.js"></script>
   <script src="/trust_bar.js"></script>
   <script src="/trace_utils.js"></script>
+  <script src="/learning_overlay.js"></script>
   <script src="/app.js"></script>
+  <script src="/graph_panel.js"></script>
+  <script src="/trust_panel.js"></script>
+  <script src="/data_panel.js"></script>
+  <script src="/fix_panel.js"></script>
+  <script src="/pkg_panel.js"></script>
   <script src="/registry.js"></script>
   <script src="/ui_controls.js"></script>
   <script src="/tool_wizard.js"></script>

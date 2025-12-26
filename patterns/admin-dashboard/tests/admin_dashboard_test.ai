@@ -1,0 +1,5 @@
+use "admin" as admin
+
+test "seed customers":
+  run flow "admin.seed_customers" with input: {} as result
+  expect value is "seeded"

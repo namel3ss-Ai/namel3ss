@@ -21,7 +21,12 @@ Clarity beats cleverness. Every change should make the language easier to unders
 4) Tests Mirror Source  
 - If you change `src/namel3ss/<area>/`, add or update tests under `tests/<area>/`.
 
-5) `.ai` Is the Extension  
+5) Package Safety  
+- Packages must ship `capsule.ai` with explicit exports.  
+- LICENSE + checksums are required; no install scripts or hooks.  
+- Run `n3 pkg validate`, `n3 test`, and `n3 verify --prod` where applicable.
+
+6) `.ai` Is the Extension  
 - Examples and templates use `.ai` only. Do not add `.n3` or other extensions.
 
 ---

@@ -1,38 +1,12 @@
 from __future__ import annotations
 
-import json
 import os
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
-from namel3ss.errors.base import Namel3ssError
-from namel3ss.errors.render import format_error
-from namel3ss.errors.payload import build_error_from_exception, build_error_payload
-from namel3ss.studio.api import (
-    apply_tool_wizard,
-    apply_edit,
-    execute_action,
-    get_actions_payload,
-    get_lint_payload,
-    get_summary_payload,
-    get_tools_payload,
-    get_packs_payload,
-    get_ui_payload,
-    apply_tools_auto_bind,
-    apply_pack_add,
-    apply_pack_verify,
-    apply_pack_enable,
-    apply_pack_disable,
-)
-from namel3ss.studio.registry_api import (
-    get_registry_status_payload,
-    apply_registry_add_bundle,
-    apply_discover,
-    apply_pack_install,
-)
-from namel3ss.studio.security_api import apply_security_override, apply_security_sandbox, get_security_payload
+from namel3ss.studio.api_routes import handle_api_get, handle_api_post
 from namel3ss.studio.session import SessionState
 from namel3ss.utils.json_tools import dumps as json_dumps
 
@@ -77,6 +51,8 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
         else:
             file_path = web_root / path_only.lstrip("/")
         if not file_path.exists():
+            file_path = _resolve_repo_static(path_only, file_path)
+        if not file_path.exists():
             self.send_error(404)
             return
         content = file_path.read_bytes()
@@ -87,6 +63,8 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
             content_type = "text/css"
         if file_path.suffix == ".svg":
             content_type = "image/svg+xml"
+        if file_path.suffix == ".json":
+            content_type = "application/json"
         self.send_response(200)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(content)))
@@ -94,255 +72,18 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
         self.wfile.write(content)
 
     def handle_api(self) -> None:
-        try:
-            source = self._read_source()
-        except Exception as err:  # pragma: no cover - IO error edge
-            payload = build_error_payload(f"Cannot read source: {err}", kind="engine")
-            self._respond_json(payload, status=500)
-            return
-        if self.path == "/api/summary":
-            try:
-                payload = get_summary_payload(source, self.server.app_path)  # type: ignore[attr-defined]
-                status = 200 if payload.get("ok") else 400
-                self._respond_json(payload, status=status)
-                return
-            except Namel3ssError as err:
-                payload = build_error_from_exception(err, kind="parse", source=source)
-                self._respond_json(payload, status=400)
-                return
-        if self.path == "/api/ui":
-            try:
-                payload = get_ui_payload(source, self._get_session(), self.server.app_path)  # type: ignore[attr-defined]
-                status = 200 if payload.get("ok", True) else 400
-                self._respond_json(payload, status=status)
-                return
-            except Namel3ssError as err:
-                payload = build_error_from_exception(err, kind="manifest", source=source)
-                self._respond_json(payload, status=400)
-                return
-        if self.path == "/api/actions":
-            try:
-                payload = get_actions_payload(source)
-                status = 200 if payload.get("ok") else 400
-                self._respond_json(payload, status=status)
-                return
-            except Namel3ssError as err:
-                payload = build_error_from_exception(err, kind="manifest", source=source)
-                self._respond_json(payload, status=400)
-                return
-        if self.path == "/api/lint":
-            payload = get_lint_payload(source)
-            self._respond_json(payload, status=200)
-            return
-        if self.path == "/api/tools":
-            try:
-                payload = get_tools_payload(source, self.server.app_path)  # type: ignore[attr-defined]
-                status = 200 if payload.get("ok", True) else 400
-                self._respond_json(payload, status=status)
-                return
-            except Namel3ssError as err:
-                payload = build_error_from_exception(err, kind="tools", source=source)
-                self._respond_json(payload, status=400)
-                return
-        if self.path == "/api/packs":
-            payload = get_packs_payload(self.server.app_path)  # type: ignore[attr-defined]
-            status = 200 if payload.get("ok", True) else 400
-            self._respond_json(payload, status=status)
-            return
-        if self.path == "/api/registry/status":
-            payload = get_registry_status_payload(self.server.app_path)  # type: ignore[attr-defined]
-            status = 200 if payload.get("ok", True) else 400
-            self._respond_json(payload, status=status)
-            return
-        if self.path == "/api/security":
-            payload = get_security_payload(self.server.app_path)  # type: ignore[attr-defined]
-            status = 200 if payload.get("ok", True) else 400
-            self._respond_json(payload, status=status)
-            return
-        if self.path == "/api/version":
-            from namel3ss.studio.api import get_version_payload
-
-            payload = get_version_payload()
-            self._respond_json(payload, status=200)
-            return
-        self.send_error(404)
+        handle_api_get(self)
 
     def handle_api_post(self) -> None:
-        length = int(self.headers.get("Content-Length", "0"))
-        raw_body = self.rfile.read(length) if length else b""
-        try:
-            body = json.loads(raw_body.decode("utf-8") or "{}")
-        except json.JSONDecodeError:
-            self._respond_json(build_error_payload("Invalid JSON body", kind="parse"), status=400)
-            return
-        try:
-            source = self._read_source()
-        except Exception as err:  # pragma: no cover
-            payload = build_error_payload(f"Cannot read source: {err}", kind="engine")
-            self._respond_json(payload, status=500)
-            return
-        if self.path == "/api/edit":
-            if not isinstance(body, dict):
-                self._respond_json(build_error_payload("Body must be a JSON object", kind="edit"), status=400)
-                return
-            op = body.get("op")
-            target = body.get("target")
-            value = body.get("value", "")
-            if not isinstance(op, str):
-                self._respond_json(build_error_payload("Edit op is required", kind="edit"), status=400)
-                return
-            if not isinstance(target, dict):
-                self._respond_json(build_error_payload("Edit target is required", kind="edit"), status=400)
-                return
-            if op in {"set_title", "set_text", "set_button_label"} and not isinstance(value, str):
-                self._respond_json(build_error_payload("Edit value must be a string", kind="edit"), status=400)
-                return
-            try:
-                resp = apply_edit(self.server.app_path, op, target, value, self._get_session())  # type: ignore[attr-defined]
-                self._respond_json(resp, status=200)
-                return
-            except Namel3ssError as err:
-                payload = build_error_from_exception(err, kind="edit", source=source)
-                self._respond_json(payload, status=400)
-                return
-            except Exception as err:  # pragma: no cover
-                self._respond_json(build_error_payload(str(err), kind="edit"), status=500)
-                return
-        if self.path == "/api/action":
-            if not isinstance(body, dict):
-                self._respond_json(build_error_payload("Body must be a JSON object", kind="engine"), status=400)
-                return
-            action_id = body.get("id")
-            payload = body.get("payload") or {}
-            if not isinstance(action_id, str):
-                self._respond_json(build_error_payload("Action id is required", kind="engine"), status=400)
-                return
-            if not isinstance(payload, dict):
-                self._respond_json(build_error_payload("Payload must be an object", kind="engine"), status=400)
-                return
-            try:
-                resp = execute_action(source, self._get_session(), action_id, payload, self.server.app_path)  # type: ignore[attr-defined]
-                status = 200 if resp.get("ok", True) else 200
-                self._respond_json(resp, status=status)
-                return
-            except Namel3ssError as err:
-                payload = build_error_from_exception(err, kind="engine", source=source)
-                self._respond_json(payload, status=400)
-                return
-            except Exception as err:  # pragma: no cover
-                self._respond_json(build_error_payload(str(err), kind="engine"), status=500)
-                return
-        if self.path == "/api/tool-wizard":
-            if not isinstance(body, dict):
-                self._respond_json(build_error_payload("Body must be a JSON object", kind="tool_wizard"), status=400)
-                return
-            try:
-                resp = apply_tool_wizard(self.server.app_path, body)  # type: ignore[attr-defined]
-                self._respond_json(resp, status=200)
-                return
-            except Namel3ssError as err:
-                payload = build_error_from_exception(err, kind="tool_wizard", source=source)
-                self._respond_json(payload, status=400)
-                return
-            except Exception as err:  # pragma: no cover
-                self._respond_json(build_error_payload(str(err), kind="tool_wizard"), status=500)
-                return
-        if self.path == "/api/theme":
-            if not isinstance(body, dict) or "value" not in body:
-                self._respond_json(build_error_payload("Theme value required", kind="engine"), status=400)
-                return
-            value = body.get("value")
-            if value not in {"light", "dark", "system"}:
-                self._respond_json(build_error_payload("Theme must be light, dark, or system.", kind="engine"), status=400)
-                return
-            session = self._get_session()
-            try:
-                from namel3ss.studio.theme import apply_runtime_theme
+        handle_api_post(self)
 
-                resp = apply_runtime_theme(source, session, value, self.server.app_path)  # type: ignore[attr-defined]
-                self._respond_json(resp, status=200)
-                return
-            except Namel3ssError as err:
-                payload = build_error_from_exception(err, kind="engine", source=source)
-                self._respond_json(payload, status=400)
-                return
-        if self.path == "/api/reset":
-            session = self._get_session()
-            store = getattr(session, "store", None)
-            if store is not None:
-                try:
-                    store.clear()
-                except Exception as err:  # pragma: no cover - defensive
-                    payload = build_error_payload(f"Unable to reset store: {err}", kind="engine")
-                    self._respond_json(payload, status=500)
-                    return
-                self.server.session_state = SessionState(store=store)  # type: ignore[attr-defined]
-            else:
-                self.server.session_state = SessionState()  # type: ignore[attr-defined]
-            self._respond_json({"ok": True}, status=200)
-            return
-        if self.path == "/api/tools/auto-bind":
-            if not isinstance(body, dict):
-                self._respond_json(build_error_payload("Body must be a JSON object", kind="tools"), status=400)
-                return
-            try:
-                resp = apply_tools_auto_bind(source, self.server.app_path)  # type: ignore[attr-defined]
-                status = 200 if resp.get("ok", True) else 400
-                self._respond_json(resp, status=status)
-                return
-            except Namel3ssError as err:
-                payload = build_error_from_exception(err, kind="tools", source=source)
-                self._respond_json(payload, status=400)
-                return
-            except Exception as err:  # pragma: no cover
-                self._respond_json(build_error_payload(str(err), kind="tools"), status=500)
-                return
-        if self.path == "/api/packs/add":
-            resp = apply_pack_add(self.server.app_path, body)  # type: ignore[attr-defined]
-            status = 200 if resp.get("ok", True) else 400
-            self._respond_json(resp, status=status)
-            return
-        if self.path == "/api/packs/verify":
-            resp = apply_pack_verify(self.server.app_path, body)  # type: ignore[attr-defined]
-            status = 200 if resp.get("ok", True) else 400
-            self._respond_json(resp, status=status)
-            return
-        if self.path == "/api/packs/enable":
-            resp = apply_pack_enable(self.server.app_path, body)  # type: ignore[attr-defined]
-            status = 200 if resp.get("ok", True) else 400
-            self._respond_json(resp, status=status)
-            return
-        if self.path == "/api/packs/disable":
-            resp = apply_pack_disable(self.server.app_path, body)  # type: ignore[attr-defined]
-            status = 200 if resp.get("ok", True) else 400
-            self._respond_json(resp, status=status)
-            return
-        if self.path == "/api/registry/add_bundle":
-            resp = apply_registry_add_bundle(self.server.app_path, body)  # type: ignore[attr-defined]
-            status = 200 if resp.get("ok", True) else 400
-            self._respond_json(resp, status=status)
-            return
-        if self.path == "/api/discover":
-            resp = apply_discover(self.server.app_path, body)  # type: ignore[attr-defined]
-            status = 200 if resp.get("ok", True) else 400
-            self._respond_json(resp, status=status)
-            return
-        if self.path == "/api/packs/install":
-            resp = apply_pack_install(self.server.app_path, body)  # type: ignore[attr-defined]
-            status = 200 if resp.get("ok", True) else 400
-            self._respond_json(resp, status=status)
-            return
-        if self.path == "/api/security/override":
-            resp = apply_security_override(self.server.app_path, body)  # type: ignore[attr-defined]
-            status = 200 if resp.get("ok", True) else 400
-            self._respond_json(resp, status=status)
-            return
-        if self.path == "/api/security/sandbox":
-            resp = apply_security_sandbox(self.server.app_path, body)  # type: ignore[attr-defined]
-            status = 200 if resp.get("ok", True) else 400
-            self._respond_json(resp, status=status)
-            return
-        self.send_error(404)
+
+def _resolve_repo_static(path_only: str, fallback: Path) -> Path:
+    if path_only.startswith("/docs/") or path_only.startswith("/examples/"):
+        repo_root = Path(__file__).resolve().parents[3]
+        candidate = repo_root / path_only.lstrip("/")
+        return candidate if candidate.exists() else fallback
+    return fallback
 
 
 def start_server(app_path: str, port: int) -> None:
@@ -355,3 +96,6 @@ def start_server(app_path: str, port: int) -> None:
         server.serve_forever()
     finally:
         server.server_close()
+
+
+__all__ = ["StudioRequestHandler", "start_server"]

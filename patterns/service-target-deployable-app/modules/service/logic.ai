@@ -1,0 +1,9 @@
+record "Job":
+  field "name" is text must be present
+  field "status" is text must be present
+
+flow "queue_job": requires identity.role is "operator"
+  set state.job.name is "Deploy"
+  set state.job.status is "queued"
+  create "Job" with state.job as job
+  return "queued"

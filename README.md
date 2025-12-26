@@ -228,7 +228,7 @@ n3 packs enable my.pack
 Then declare the tool in English in `app.ai` and call it in a flow.
 
 ### Studio
-A visual environment for inspecting and interacting with namel3ss programs. An early Studio ships with v0.1.0a1/a2 — usable for state inspection, traces, and interaction. It is intentionally minimal and evolving.
+A visual command center for inspecting and interacting with namel3ss programs. Studio now includes the Graph view, Trust dashboard, Data & Identity cockpit, and Guided Fixes powered by the editor service. See `docs/studio.md` for the full tour.
 ```bash
 n3 app.ai studio
 ```
@@ -307,6 +307,10 @@ Run Studio:
 ```bash
 n3 studio         # or n3 app.ai studio
 ```
+Why mode:
+```bash
+n3 why            # or n3 explain --why
+```
 Format and lint:
 ```bash
 n3 fmt            # alias: n3 format
@@ -318,7 +322,19 @@ n3 deps <cmd>     # status/install/sync/lock/clean
 ```
 Packages (capsules):
 ```bash
-n3 pkg <cmd>
+n3 pkg search auth
+n3 pkg info auth-basic
+n3 pkg add auth-basic
+```
+Scaffold a package:
+```bash
+n3 new pkg my_capsule
+```
+Patterns and kits:
+```bash
+n3 pattern list
+n3 pattern new admin-dashboard my_admin
+n3 kit --format md
 ```
 Targets and promotion:
 ```bash
@@ -367,6 +383,7 @@ If you like testing early systems and giving honest, technical feedback, we want
 
 ## Contributing
 Read the [contributing guidelines](CONTRIBUTING.md). Keep files small, focused, and disciplined. namel3ss stays readable by design.
+See the ecosystem rules in [ECOSYSTEM.md](ECOSYSTEM.md) before publishing packages.
 
 ---
 

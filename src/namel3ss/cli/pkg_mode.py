@@ -6,6 +6,7 @@ from typing import List
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.pkg.graph import tree_lines, why_paths
+from namel3ss.pkg.index import get_entry, load_index, search_index
 from namel3ss.pkg.install import FetchSession, install_from_resolution, lockfile_from_resolution
 from namel3ss.pkg.lockfile import read_lockfile, write_lockfile
 from namel3ss.pkg.manager import resolve_project
@@ -13,6 +14,7 @@ from namel3ss.pkg.manifest import load_manifest_optional, write_manifest
 from namel3ss.pkg.plan import diff_lockfiles, plan_to_dict
 from namel3ss.pkg.specs import parse_source_spec
 from namel3ss.pkg.types import DependencySpec
+from namel3ss.pkg.validate import validate_package
 from namel3ss.pkg.verify import verify_installation
 from namel3ss.utils.json_tools import dumps_pretty
 
@@ -23,21 +25,48 @@ def run_pkg(args: List[str]) -> int:
         return 0
     cmd = args[0]
     json_mode = "--json" in args
-    args = [arg for arg in args if arg != "--json"]
+    strict_mode = "--strict" in args
+    args = [arg for arg in args if arg not in {"--json", "--strict"}]
     root = Path.cwd()
-    _require_project_root(root)
+    if cmd in {"add", "install", "plan", "tree", "why", "verify", "licenses"}:
+        _require_project_root(root)
 
     if cmd == "add":
         if len(args) < 2:
             raise Namel3ssError(
                 build_guidance_message(
                     what="Package spec is missing.",
-                    why="`n3 pkg add` requires a GitHub source spec.",
-                    fix="Provide a github:owner/repo@ref spec.",
-                    example="n3 pkg add github:owner/repo@v0.1.0",
+                    why="`n3 pkg add` requires a GitHub source spec or index name.",
+                    fix="Provide github:owner/repo@ref or a known package name.",
+                    example="n3 pkg add auth-basic",
                 )
             )
         return _run_add(root, args[1], json_mode)
+    if cmd == "search":
+        if len(args) < 2:
+            raise Namel3ssError(
+                build_guidance_message(
+                    what="Search query is missing.",
+                    why="`n3 pkg search` needs a query string.",
+                    fix="Provide a keyword to search the index.",
+                    example="n3 pkg search auth",
+                )
+            )
+        return _run_search(args[1], json_mode)
+    if cmd == "info":
+        if len(args) < 2:
+            raise Namel3ssError(
+                build_guidance_message(
+                    what="Package name is missing.",
+                    why="`n3 pkg info` needs a package name.",
+                    fix="Provide the package name from the index.",
+                    example="n3 pkg info auth-basic",
+                )
+            )
+        return _run_info(args[1], json_mode)
+    if cmd == "validate":
+        target = args[1] if len(args) > 1 else "."
+        return _run_validate(target, json_mode, strict_mode)
     if cmd == "install":
         return _run_install(root, json_mode)
     if cmd == "plan":
@@ -82,7 +111,7 @@ def _require_project_root(root: Path) -> None:
 
 
 def _run_add(root: Path, spec_text: str, json_mode: bool) -> int:
-    source = parse_source_spec(spec_text)
+    source = _resolve_source_spec(spec_text)
     manifest = load_manifest_optional(root)
     session = FetchSession()
     try:
@@ -117,6 +146,75 @@ def _run_add(root: Path, spec_text: str, json_mode: bool) -> int:
     _print_changes(changes)
     print(f"Added {dep_name} from {source.as_string()}.")
     return 0
+
+
+def _run_search(query: str, json_mode: bool) -> int:
+    entries = load_index()
+    results = search_index(query, entries)
+    if json_mode:
+        payload = {
+            "status": "ok",
+            "query": query,
+            "count": len(results),
+            "results": [result.to_dict() for result in results],
+        }
+        print(dumps_pretty(payload))
+        return 0
+    if not results:
+        print("No matching packages.")
+        return 0
+    for result in results:
+        entry = result.entry
+        tags = ", ".join(entry.tags)
+        print(f"{entry.name} ({entry.trust_tier}) - {entry.description}")
+        if tags:
+            print(f"  tags: {tags}")
+        print(f"  install: n3 pkg add {entry.source_spec()}")
+    return 0
+
+
+def _run_info(name: str, json_mode: bool) -> int:
+    entries = load_index()
+    entry = get_entry(name, entries)
+    if entry is None:
+        raise Namel3ssError(
+            build_guidance_message(
+                what=f"Package '{name}' is not in the index.",
+                why="The official index does not include that name.",
+                fix="Check the spelling or use a GitHub source spec.",
+                example="n3 pkg add github:owner/repo@v0.1.0",
+            )
+        )
+    payload = entry.to_dict()
+    payload["install"] = f"n3 pkg add {entry.source_spec()}"
+    if json_mode:
+        print(dumps_pretty(payload))
+        return 0
+    print(f"{entry.name} ({entry.trust_tier})")
+    print(entry.description)
+    print(f"source: {entry.source}")
+    print(f"recommended: {entry.recommended}")
+    print(f"license: {entry.license}")
+    if entry.tags:
+        print(f"tags: {', '.join(entry.tags)}")
+    print(f"install: n3 pkg add {entry.source_spec()}")
+    return 0
+
+
+def _run_validate(target: str, json_mode: bool, strict_mode: bool) -> int:
+    report = validate_package(target, strict=strict_mode)
+    if json_mode:
+        payload = report.to_dict()
+        print(dumps_pretty(payload))
+        return 0 if report.status == "ok" else 1
+    if not report.issues:
+        print("Package validated successfully.")
+        return 0
+    for issue in report.issues:
+        prefix = "ERROR" if issue.severity == "error" else "WARN"
+        location = f" ({issue.path})" if issue.path else ""
+        print(f"{prefix}: {issue.message}{location}")
+    return 0 if report.status == "ok" else 1
 
 
 def _run_install(root: Path, json_mode: bool) -> int:
@@ -250,7 +348,10 @@ def _print_changes(changes) -> None:
 
 def _print_usage() -> None:
     usage = """Usage:
-  n3 pkg add <spec>       # add dependency from source
+  n3 pkg add <spec|name>  # add dependency from source or index
+  n3 pkg search <query>   # search the official index
+  n3 pkg info <name>      # show index entry details
+  n3 pkg validate <path>  # validate a package folder or github spec
   n3 pkg install          # install from manifest/lockfile
   n3 pkg plan             # preview changes
   n3 pkg tree             # show dependency tree
@@ -258,6 +359,7 @@ def _print_usage() -> None:
   n3 pkg verify           # verify checksums and licenses
   n3 pkg licenses         # list package licenses
   n3 pkg <cmd> --json     # JSON output for any command
+  n3 pkg validate --strict # fail on warnings
 """
     print(usage.strip())
 
@@ -284,3 +386,21 @@ def _fetch_metadata_for_source(session: FetchSession, source) -> object:
             )
         )
     return metadata
+
+
+def _resolve_source_spec(value: str):
+    try:
+        return parse_source_spec(value)
+    except Namel3ssError:
+        entries = load_index()
+        entry = get_entry(value, entries)
+        if entry is None:
+            raise Namel3ssError(
+                build_guidance_message(
+                    what="Package spec is not valid.",
+                    why="The value is not a GitHub source and was not found in the index.",
+                    fix="Use github:owner/repo@ref or a known package name.",
+                    example="n3 pkg add auth-basic",
+                )
+            )
+        return parse_source_spec(entry.source_spec())

@@ -1,0 +1,12 @@
+identity "User":
+  field "email" is text must be present
+  field "role" is text must be present
+
+use "service" as svc
+
+page "home": requires identity.role is "operator"
+  title is "Service deployable app"
+  text is "Prepare builds, ship to service, and track proof."
+  button "Queue job":
+    calls flow "svc.queue_job"
+  table is "svc.Job"

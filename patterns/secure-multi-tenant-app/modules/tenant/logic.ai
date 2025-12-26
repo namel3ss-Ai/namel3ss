@@ -1,0 +1,8 @@
+record "Account":
+  tenant_key is identity.tenant_id
+  field "name" is text must be present
+
+flow "create_account": requires identity.role is "admin"
+  set state.account.name is "Tenant demo"
+  create "Account" with state.account as account
+  return "created"

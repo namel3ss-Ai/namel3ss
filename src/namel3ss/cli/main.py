@@ -26,12 +26,15 @@ from namel3ss.cli.runner import run_flow
 from namel3ss.cli.secrets_mode import run_secrets_command
 from namel3ss.cli.observe_mode import run_observe_command
 from namel3ss.cli.explain_mode import run_explain_command
+from namel3ss.cli.why_mode import run_why_command
 from namel3ss.cli.status_mode import run_status_command
 from namel3ss.cli.studio_mode import run_studio
 from namel3ss.cli.test_mode import run_test_command
 from namel3ss.cli.tools_mode import run_tools
 from namel3ss.cli.ui_mode import render_manifest, run_action
 from namel3ss.cli.pkg_mode import run_pkg
+from namel3ss.cli.pattern_mode import run_pattern
+from namel3ss.cli.kit_mode import run_kit_command
 from namel3ss.cli.packs_mode import run_packs
 from namel3ss.cli.registry_mode import run_registry
 from namel3ss.cli.discover_mode import run_discover
@@ -71,10 +74,13 @@ RESERVED = {
     "secrets",
     "observe",
     "explain",
+    "why",
+    "kit",
     "editor",
     "run",
     "registry",
     "discover",
+    "pattern",
 }
 
 ROOT_APP_COMMANDS = {"check", "ui", "actions", "studio", "fmt", "format", "lint", "graph", "exports", "data", "persist"}
@@ -133,6 +139,10 @@ def main(argv: list[str] | None = None) -> int:
             return run_observe_command(args[1:])
         if cmd == "explain":
             return run_explain_command(args[1:])
+        if cmd == "why":
+            return run_why_command(args[1:])
+        if cmd == "kit":
+            return run_kit_command(args[1:])
         if cmd == "editor":
             return run_editor_command(args[1:])
         if cmd in {"data", "persist"}:
@@ -151,6 +161,8 @@ def main(argv: list[str] | None = None) -> int:
             json_mode = "--json" in args[1:]
             tail = [item for item in args[1:] if item != "--json"]
             return run_discover(tail, json_mode=json_mode)
+        if cmd == "pattern":
+            return run_pattern(args[1:])
         if cmd == "new":
             return run_new(args[1:])
         if cmd == "test":
@@ -302,6 +314,8 @@ def _print_usage() -> None:
   n3 secrets [app.ai]              # secret status/audit (subcommands: status, audit)
   n3 observe [app.ai] [--since T]  # engine observability stream (use --json for details)
   n3 explain [app.ai] [--json]     # explain the active engine state
+  n3 why [app.ai] [--json]         # plain-English explanation of the app
+  n3 kit [app.ai] [--format md]    # adoption kit summary (writes .namel3ss/kit)
   n3 editor [app.ai] [--port N]    # start the editor service (use --json for details)
   n3 check [app.ai]                # validate (alias: n3 <app.ai> check)
   n3 ui [app.ai]                   # print UI manifest
@@ -317,7 +331,8 @@ def _print_usage() -> None:
   n3 packs <cmd> [--json]          # tool packs (add/init/validate/review/bundle/sign/status/verify/enable)
   n3 registry <cmd> [--json]       # registry index (add/build)
   n3 discover "<phrase>" [--json]  # discover packs by intent
-  n3 pkg <cmd> [--json]            # packages (capsules)
+  n3 pkg <cmd> [--json]            # packages (search/info/add/validate/install)
+  n3 pattern <cmd> [--json]        # patterns (list/new/verify/run)
   n3 <app.ai>                      # run default flow
   n3 <app.ai> <action_id> [json]   # execute UI action (payload optional)
   n3 help                          # this help

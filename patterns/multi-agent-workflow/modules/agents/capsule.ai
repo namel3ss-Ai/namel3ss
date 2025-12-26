@@ -1,0 +1,5 @@
+capsule "agents":
+  exports:
+    flow "plan_step"
+    flow "critic_step"
+    flow "research_step"

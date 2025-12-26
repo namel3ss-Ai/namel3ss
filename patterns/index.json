@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "patterns": [
+    {
+      "id": "admin-dashboard",
+      "description": "Admin dashboard with protected mutations and record views.",
+      "path": "admin-dashboard"
+    },
+    {
+      "id": "ai-assistant-over-records",
+      "description": "Assistant-inspired flows over stored records (offline-safe).",
+      "path": "ai-assistant-over-records"
+    },
+    {
+      "id": "multi-agent-workflow",
+      "description": "Planner/critic/research flows with clear separation.",
+      "path": "multi-agent-workflow"
+    },
+    {
+      "id": "secure-multi-tenant-app",
+      "description": "Tenant-keyed records with identity-based access rules.",
+      "path": "secure-multi-tenant-app"
+    },
+    {
+      "id": "service-target-deployable-app",
+      "description": "Service-target project with proof/ship workflow notes.",
+      "path": "service-target-deployable-app"
+    }
+  ]
+}

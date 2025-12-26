@@ -1,0 +1,3 @@
+capsule "service":
+  exports:
+    flow "queue_job"

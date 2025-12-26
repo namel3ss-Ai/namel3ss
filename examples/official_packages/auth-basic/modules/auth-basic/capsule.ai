@@ -1,0 +1,4 @@
+capsule "auth-basic":
+  exports:
+    flow "set_user"
+    flow "current_user"

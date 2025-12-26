@@ -1,0 +1,5 @@
+use "agents" as agents
+
+test "plan step":
+  run flow "agents.plan_step" with input: {} as result
+  expect value is "plan ready"

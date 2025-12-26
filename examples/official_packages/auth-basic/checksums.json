@@ -1,0 +1,14 @@
+{
+  "files": {
+    "LICENSE": "sha256:4cf6f440a9ce7b3a1fa34b6aaa8b4a008e639cce95340972fa7fd3b729cc6e1f",
+    "README.md": "sha256:e1f1d9008a34a0be6241dd700315969afbd74dfad8acecc1cb3024fbe6f81195",
+    "app.ai": "sha256:a2768f2c5d9a057709b1eedb3242e382ac1e2ae58aaad880e1aa8fca6e0c619e",
+    "capsule.ai": "sha256:9829e95ff35e20e1edd711910bf77e5fe43d636d3f20953619d863543f6e83b1",
+    "docs/README.md": "sha256:66075a21f7ef930fa32c66ee3f08a4039db88e5a56a5652f1c7929b7c0400c24",
+    "modules/auth-basic/capsule.ai": "sha256:9829e95ff35e20e1edd711910bf77e5fe43d636d3f20953619d863543f6e83b1",
+    "modules/auth-basic/logic.ai": "sha256:4d7d4e557e9a3b485984b007ffa3b79d25689a44bc66df768e739a22e7726814",
+    "namel3ss.package.json": "sha256:367385099ee0a60b1e9f66a369a836568d295d2455e6f59ff4b561144a78c70b",
+    "namel3ss.toml": "sha256:5d53bc858f4a246dc9d726276d5b5c80873edf9996f793e36b0aae78431fe3a5",
+    "tests/auth_basic_test.ai": "sha256:724c9daca725f85754ce646a98a4e83812a85c718d257dae595a816be84df0fc"
+  }
+}

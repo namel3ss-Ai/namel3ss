@@ -806,6 +806,10 @@ async function refreshAll() {
   applyLocalPreferenceIfNeeded();
   renderTruthBar(cachedManifest);
   reselectElement();
+  if (window.refreshGraphPanel) window.refreshGraphPanel();
+  if (window.refreshTrustPanel) window.refreshTrustPanel();
+  if (window.refreshDataPanel) window.refreshDataPanel();
+  if (window.refreshFixPanel) window.refreshFixPanel();
 }
 function setupTabs() {
   const tabs = Array.from(document.querySelectorAll(".tab"));

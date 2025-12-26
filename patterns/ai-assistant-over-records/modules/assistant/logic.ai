@@ -1,0 +1,12 @@
+record "Message":
+  field "role" is text must be present
+  field "text" is text must be present
+
+flow "log_message": requires identity.role is "member"
+  set state.message.role is "user"
+  set state.message.text is "Hello"
+  create "Message" with state.message as message
+  return "logged"
+
+flow "summarize":
+  return "summary pending"

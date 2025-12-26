@@ -191,6 +191,8 @@ flow "demo":
         timeout_seconds,
         extra_paths=None,
         capability_context=None,
+        sandbox=None,
+        trace_id=None,
     ):
         seen["python_path"] = python_path
         return ToolSubprocessResult(ok=True, output={"ok": True}, error_type=None, error_message=None)
@@ -248,6 +250,8 @@ flow "demo":
         timeout_seconds,
         extra_paths=None,
         capability_context=None,
+        sandbox=None,
+        trace_id=None,
     ):
         seen["python_path"] = python_path
         return ToolSubprocessResult(ok=True, output={"ok": True}, error_type=None, error_message=None)
@@ -300,6 +304,8 @@ flow "demo":
         timeout_seconds,
         extra_paths=None,
         capability_context=None,
+        sandbox=None,
+        trace_id=None,
     ):
         return ToolSubprocessResult(ok=False, output=None, error_type="ValueError", error_message="boom")
 

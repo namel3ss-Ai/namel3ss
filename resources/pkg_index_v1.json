@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "updated_at": "2025-01-01",
+  "entries": [
+    {
+      "name": "auth-basic",
+      "description": "Identity + requires patterns for small apps.",
+      "source": "namel3ss-ai/auth-basic",
+      "recommended": "v0.1.0",
+      "license": "MIT",
+      "checksums": "verified by lock",
+      "tags": ["auth", "identity", "requires"],
+      "trust_tier": "official"
+    },
+    {
+      "name": "audit-trail",
+      "description": "Audit helpers, log views, and tamper-evident history.",
+      "source": "namel3ss-ai/audit-trail",
+      "recommended": "v0.1.0",
+      "license": "MIT",
+      "checksums": "verified by lock",
+      "tags": ["audit", "governance", "records"],
+      "trust_tier": "official"
+    },
+    {
+      "name": "admin-ui",
+      "description": "Admin pages, table views, and basic actions.",
+      "source": "namel3ss-ai/admin-ui",
+      "recommended": "v0.1.0",
+      "license": "MIT",
+      "checksums": "verified by lock",
+      "tags": ["admin", "ui", "records"],
+      "trust_tier": "official"
+    }
+  ]
+}

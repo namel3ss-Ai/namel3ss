@@ -23,8 +23,15 @@ Run any `.ai` app with the file-first CLI.
 - Run specific flow (CRUD template): `n3 app.ai flow "seed_customers"`
 - Run an action (CRUD template): `n3 app.ai page.home.form.customer '{"values":{"name":"Ada","email":"ada@example.com","age":23}}'`
 - Run tests: `n3 test`
+- Why mode: `n3 why` or `n3 explain --why`
+- Pattern list: `n3 pattern list`
+- Scaffold a pattern: `n3 pattern new admin-dashboard my_admin`
+- Search packages: `n3 pkg search auth`
+- Package info: `n3 pkg info auth-basic`
 - Add a package: `n3 pkg add github:owner/repo@v0.1.0`
 - Install packages: `n3 pkg install`
+- Scaffold a package: `n3 new pkg my_capsule`
+- Adoption kit: `n3 kit --format md`
 
 Formatter and linter:
 

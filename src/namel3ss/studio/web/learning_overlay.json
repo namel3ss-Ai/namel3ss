@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "items": [
+    {
+      "id": "graph",
+      "title": "What is a capsule?",
+      "body": "Capsules package flows and records. Use the graph to see how modules and packages connect.",
+      "doc": "docs/models/capsule.md",
+      "selector": "[data-tab='graph'] .panel-header"
+    },
+    {
+      "id": "trust",
+      "title": "Why proof matters",
+      "body": "Proof is the engine snapshot used to verify trust posture. Keep it current.",
+      "doc": "docs/models/proof.md",
+      "selector": "[data-tab='trust'] .panel-header"
+    },
+    {
+      "id": "verify",
+      "title": "Why verify fails",
+      "body": "Verify highlights missing access rules, unsafe packs, or policy gaps.",
+      "doc": "docs/models/verify.md",
+      "selector": "#trustVerify"
+    },
+    {
+      "id": "data",
+      "title": "Where data lives",
+      "body": "The data panel shows the active persistence target and audit trail.",
+      "doc": "docs/models/engine.md",
+      "selector": "[data-tab='data'] .panel-header"
+    },
+    {
+      "id": "fix",
+      "title": "Guided fixes",
+      "body": "Fix uses the Editor to preview and apply safe patches.",
+      "doc": "docs/models/engine.md",
+      "selector": "[data-tab='fix'] .panel-header"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+use "assistant" as assistant
+
+test "log message":
+  run flow "assistant.log_message" with input: {} as result
+  expect value is "logged"

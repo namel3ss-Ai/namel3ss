@@ -1,0 +1,12 @@
+record "AuditEntry":
+  action text must be present
+  detail text
+
+flow "record_event":
+  set state.audit.action is "demo"
+  set state.audit.detail is "Recorded event."
+  create "AuditEntry" with state.audit as entry
+  return "recorded"
+
+flow "last_action":
+  return state.audit.action

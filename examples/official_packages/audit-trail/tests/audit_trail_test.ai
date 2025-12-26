@@ -1,0 +1,5 @@
+use "audit-trail" as audit
+
+test "record event returns recorded":
+  run flow "audit.record_event" with input: {} as result
+  expect value is "recorded"
