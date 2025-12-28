@@ -18,7 +18,7 @@ page "home":
 def test_default_run_single_flow(tmp_path, capsys):
     path = tmp_path / "app.ai"
     path.write_text(SOURCE, encoding="utf-8")
-    code = main([str(path)])
+    code = main([str(path), "--json"])
     out = capsys.readouterr().out
     assert code == 0
     payload = json.loads(out)

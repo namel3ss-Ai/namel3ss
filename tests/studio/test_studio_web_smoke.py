@@ -22,6 +22,10 @@ def test_studio_html_structure():
     assert 'id="traces"' in html
     assert 'id="tracesFilter"' in html
     assert "Filter traces…" in html
+    assert 'id="traceFormatPlain"' in html
+    assert 'id="traceFormatJson"' in html
+    assert 'id="tracePhaseCurrent"' in html
+    assert 'id="tracePhaseHistory"' in html
     assert 'id="addElementButton"' in html
     assert 'id="inspectorBody"' in html
     assert 'id="learnToggle"' in html

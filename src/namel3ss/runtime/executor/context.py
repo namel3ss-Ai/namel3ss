@@ -33,4 +33,5 @@ class ExecutionContext:
     provider_cache: Dict[str, AIProvider]
     runtime_theme: str | None
     project_root: str | None = None
+    app_path: str | None = None
     record_changes: list[dict] = field(default_factory=list)

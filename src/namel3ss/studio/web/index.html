@@ -296,18 +296,24 @@
             <div id="security" class="panel-body"></div>
           </div>
           <div class="panel" data-tab="traces">
-          <div class="panel-header">
-            <div class="section-title">Traces</div>
-            <button class="btn ghost small" id="tracesCopy">Copy JSON</button>
-          </div>
-          <div class="control-row">
-            <input id="tracesFilter" type="text" placeholder="Filter traces…" aria-label="Filter traces">
-            <div class="control-actions">
-              <button class="btn ghost small" id="traceCopyOutput">Copy output</button>
-              <button class="btn ghost small" id="traceCopyJson">Copy trace JSON</button>
+            <div class="panel-header">
+              <div class="section-title">Traces</div>
+              <div class="panel-actions">
+                <button class="btn ghost small" id="traceFormatPlain" aria-pressed="true">Plain</button>
+                <button class="btn ghost small" id="traceFormatJson" aria-pressed="false">JSON</button>
+                <button class="btn ghost small" id="tracePhaseCurrent" aria-pressed="true">Phase: current</button>
+                <button class="btn ghost small" id="tracePhaseHistory" aria-pressed="false">Show history</button>
+                <button class="btn ghost small" id="tracesCopy">Copy JSON</button>
+              </div>
             </div>
-          </div>
-          <div id="traces" class="panel-body"></div>
+            <div class="control-row">
+              <input id="tracesFilter" type="text" placeholder="Filter traces…" aria-label="Filter traces">
+              <div class="control-actions">
+                <button class="btn ghost small" id="traceCopyOutput">Copy output</button>
+                <button class="btn ghost small" id="traceCopyJson">Copy trace JSON</button>
+              </div>
+            </div>
+            <div id="traces" class="panel-body"></div>
           </div>
           <div class="panel" data-tab="lint">
             <div class="panel-header">

@@ -14,6 +14,7 @@ from namel3ss.runtime.service_runner import DEFAULT_SERVICE_PORT, ServiceRunner
 from namel3ss.utils.json_tools import dumps_pretty
 from namel3ss.cli.redaction import redact_cli_text
 from namel3ss.secrets import set_audit_root, set_engine_target
+from namel3ss.traces.plain import format_plain
 
 
 def run_run_command(args: list[str]) -> int:
@@ -29,7 +30,10 @@ def run_run_command(args: list[str]) -> int:
         if target.name == "local":
             program_ir, sources = load_program(run_path.as_posix())
             output = run_flow(program_ir, None)
-            print(dumps_pretty(output))
+            if params.json_mode:
+                print(dumps_pretty(output))
+            else:
+                print(format_plain(output))
             return 0
         if target.name == "service":
             port = params.port or DEFAULT_SERVICE_PORT
@@ -62,12 +66,21 @@ def run_run_command(args: list[str]) -> int:
 
 
 class _RunParams:
-    def __init__(self, app_arg: str | None, target_raw: str | None, port: int | None, build_id: str | None, dry: bool):
+    def __init__(
+        self,
+        app_arg: str | None,
+        target_raw: str | None,
+        port: int | None,
+        build_id: str | None,
+        dry: bool,
+        json_mode: bool,
+    ):
         self.app_arg = app_arg
         self.target_raw = target_raw
         self.port = port
         self.build_id = build_id
         self.dry = dry
+        self.json_mode = json_mode
 
 
 def _parse_args(args: list[str]) -> _RunParams:
@@ -76,6 +89,7 @@ def _parse_args(args: list[str]) -> _RunParams:
     port: int | None = None
     build_id = None
     dry = False
+    json_mode = False
     i = 0
     while i < len(args):
         arg = args[i]
@@ -128,6 +142,10 @@ def _parse_args(args: list[str]) -> _RunParams:
             build_id = args[i + 1]
             i += 2
             continue
+        if arg == "--json":
+            json_mode = True
+            i += 1
+            continue
         if arg == "--dry":
             dry = True
             i += 1
@@ -136,7 +154,7 @@ def _parse_args(args: list[str]) -> _RunParams:
             raise Namel3ssError(
                 build_guidance_message(
                     what=f"Unknown flag '{arg}'.",
-                    why="Supported flags: --target, --port, --build, --dry.",
+                    why="Supported flags: --target, --port, --build, --dry, --json.",
                     fix="Remove the unsupported flag.",
                     example="n3 run --target local",
                 )
@@ -153,7 +171,7 @@ def _parse_args(args: list[str]) -> _RunParams:
                 example="n3 run app.ai --target local",
             )
         )
-    return _RunParams(app_arg, target, port, build_id, dry)
+    return _RunParams(app_arg, target, port, build_id, dry, json_mode)
 
 
 def _resolve_run_path(target: str, project_root: Path, app_path: Path, build_id: str | None) -> tuple[Path, str | None]:

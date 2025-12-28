@@ -63,4 +63,5 @@ def test_pipeline_not_used_when_capability_false(monkeypatch):
     trace = result.traces[0]
     types = [event["type"] for event in trace.canonical_events]
     assert "tool_call_requested" not in types
-    assert types[-1] == "ai_call_completed"
+    assert "ai_call_completed" in types
+    assert "memory_write" in types

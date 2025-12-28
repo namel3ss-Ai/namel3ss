@@ -57,6 +57,6 @@ def test_mistral_pipeline_offline(monkeypatch):
     types = [event["type"] for event in trace.canonical_events]
     assert "tool_call_requested" in types
     assert "tool_call_completed" in types
-    assert types[-1] == "ai_call_completed"
-    call_ids = {event["call_id"] for event in trace.canonical_events}
+    assert "ai_call_completed" in types
+    call_ids = {event["call_id"] for event in trace.canonical_events if "call_id" in event}
     assert len(call_ids) == 1

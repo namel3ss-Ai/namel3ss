@@ -98,6 +98,7 @@ def execute_program_flow(
         identity_schema=getattr(program, "identity", None),
         identity=identity,
         project_root=resolved_root,
+        app_path=getattr(program, "app_path", None),
     )
     actor = actor_summary(executor.ctx.identity)
     status = "ok"

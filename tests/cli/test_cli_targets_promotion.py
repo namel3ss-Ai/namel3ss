@@ -21,7 +21,7 @@ def _write_app(tmp_path):
 def test_run_command_local_default(tmp_path, capsys, monkeypatch):
     _write_app(tmp_path)
     monkeypatch.chdir(tmp_path)
-    code = main(["run"])
+    code = main(["run", "--json"])
     out = capsys.readouterr().out
     payload = json.loads(out)
     assert code == 0

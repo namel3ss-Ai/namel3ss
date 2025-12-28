@@ -40,6 +40,7 @@ class Executor:
         identity_schema: IdentitySchema | None = None,
         identity: dict | None = None,
         project_root: str | None = None,
+        app_path: str | None = None,
     ) -> None:
         resolved_config = config or load_config()
         default_ai_provider = ai_provider or MockProvider()
@@ -67,6 +68,7 @@ class Executor:
             provider_cache=provider_cache,
             runtime_theme=runtime_theme,
             project_root=project_root,
+            app_path=app_path,
             record_changes=[],
         )
         self.flow = self.ctx.flow

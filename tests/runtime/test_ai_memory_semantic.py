@@ -10,8 +10,8 @@ SOURCE = '''ai "assistant":
     semantic is true
 
 flow "demo":
-  ask ai "assistant" with input: "Hello world" as first
-  ask ai "assistant" with input: "world" as second
+  ask ai "assistant" with input: "We decided to use weekly releases." as first
+  ask ai "assistant" with input: "weekly" as second
 '''
 
 

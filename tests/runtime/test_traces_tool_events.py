@@ -47,7 +47,7 @@ def test_tool_trace_events_include_ids_and_order():
     assert TraceEventType.TOOL_CALL_REQUESTED in types
     assert TraceEventType.TOOL_CALL_COMPLETED in types
     # Ensure call_id is reused across tool events
-    call_ids = {event["call_id"] for event in events}
+    call_ids = {event["call_id"] for event in events if "call_id" in event}
     assert len(call_ids) == 1
     tool_ids = {event.get("tool_call_id") for event in events if "tool_call_id" in event}
     assert len(tool_ids) == 1

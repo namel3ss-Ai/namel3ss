@@ -1,0 +1,400 @@
+[
+  {
+    "type": "memory_recall",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "query": "Hello",
+    "recalled": [
+      {
+        "id": "session:anonymous:short_term:1",
+        "kind": "short_term",
+        "text": "Hello",
+        "source": "user",
+        "created_at": 2,
+        "importance": 2,
+        "scope": "session",
+        "meta": {
+          "event_type": "context",
+          "importance_reason": [
+            "event:context",
+            "source:user"
+          ],
+          "dedup_key": "context:hello",
+          "authority": "user_asserted",
+          "authority_reason": "source:user",
+          "space": "session",
+          "owner": "anonymous",
+          "phase_id": "phase-1",
+          "phase_started_at": 1,
+          "phase_reason": "auto",
+          "policy_tags": [
+            "allowed_by:privacy",
+            "allowed_by:promotion_rule"
+          ],
+          "recall_reason": [
+            "recency",
+            "space:session"
+          ]
+        }
+      },
+      {
+        "id": "session:anonymous:short_term:2",
+        "kind": "short_term",
+        "text": "[mock-model] Hello | mem:st=0",
+        "source": "ai",
+        "created_at": 3,
+        "importance": 1,
+        "scope": "session",
+        "meta": {
+          "event_type": "context",
+          "importance_reason": [
+            "event:context"
+          ],
+          "dedup_key": "context:mock model hello mem st 0",
+          "authority": "ai_inferred",
+          "authority_reason": "source:ai",
+          "space": "session",
+          "owner": "anonymous",
+          "phase_id": "phase-1",
+          "phase_started_at": 1,
+          "phase_reason": "auto",
+          "policy_tags": [
+            "allowed_by:privacy",
+            "allowed_by:promotion_rule"
+          ],
+          "recall_reason": [
+            "recency",
+            "space:session"
+          ]
+        }
+      }
+    ],
+    "policy": {
+      "short_term": 2,
+      "semantic": true,
+      "profile": false,
+      "short_term_max_turns": 2,
+      "short_term_token_budget": null,
+      "semantic_top_k": 3,
+      "write_policy": "normal",
+      "forget_policy": "decay",
+      "dedupe_enabled": true,
+      "phase_mode": "current_only",
+      "allow_cross_phase_recall": false,
+      "phase_enabled": true,
+      "phase_max_phases": null,
+      "phase_diff_enabled": true,
+      "allow_event_types": [],
+      "deny_event_types": [],
+      "retention": {
+        "short_term": {
+          "context": {
+            "mode": "never",
+            "ttl_ticks": null
+          },
+          "correction": {
+            "mode": "never",
+            "ttl_ticks": null
+          },
+          "decision": {
+            "mode": "never",
+            "ttl_ticks": null
+          },
+          "execution": {
+            "mode": "never",
+            "ttl_ticks": null
+          },
+          "fact": {
+            "mode": "never",
+            "ttl_ticks": null
+          },
+          "preference": {
+            "mode": "never",
+            "ttl_ticks": null
+          }
+        },
+        "semantic": {
+          "context": {
+            "mode": "decay",
+            "ttl_ticks": 12
+          },
+          "correction": {
+            "mode": "decay",
+            "ttl_ticks": 45
+          },
+          "decision": {
+            "mode": "decay",
+            "ttl_ticks": 40
+          },
+          "execution": {
+            "mode": "decay",
+            "ttl_ticks": 18
+          },
+          "fact": {
+            "mode": "decay",
+            "ttl_ticks": 60
+          },
+          "preference": {
+            "mode": "decay",
+            "ttl_ticks": 40
+          }
+        },
+        "profile": {
+          "context": {
+            "mode": "never",
+            "ttl_ticks": null
+          },
+          "correction": {
+            "mode": "never",
+            "ttl_ticks": null
+          },
+          "decision": {
+            "mode": "never",
+            "ttl_ticks": null
+          },
+          "execution": {
+            "mode": "never",
+            "ttl_ticks": null
+          },
+          "fact": {
+            "mode": "never",
+            "ttl_ticks": null
+          },
+          "preference": {
+            "mode": "never",
+            "ttl_ticks": null
+          }
+        }
+      },
+      "promotion": {
+        "short_term": {
+          "allowed_event_types": [
+            "context",
+            "correction",
+            "decision",
+            "execution",
+            "fact",
+            "preference"
+          ]
+        },
+        "semantic": {
+          "allowed_event_types": [
+            "context",
+            "correction",
+            "decision",
+            "execution",
+            "fact",
+            "preference"
+          ]
+        },
+        "profile": {
+          "allowed_event_types": [
+            "fact",
+            "correction"
+          ]
+        }
+      },
+      "privacy": {
+        "deny_patterns": [
+          "password",
+          "secret",
+          "token",
+          "api key",
+          "apikey",
+          "credit card",
+          "ssn",
+          "social security",
+          "private key"
+        ],
+        "allow_profile_keys": [
+          "name",
+          "timezone",
+          "language",
+          "project",
+          "editor",
+          "units"
+        ],
+        "deny_sensitive": true
+      },
+      "authority_order": [
+        "system_imposed",
+        "tool_verified",
+        "user_asserted",
+        "ai_inferred"
+      ],
+      "spaces": {
+        "read_order": [
+          "session",
+          "user",
+          "project",
+          "system"
+        ],
+        "write_spaces": [
+          "session"
+        ],
+        "promotions": [
+          {
+            "from_space": "session",
+            "to_space": "user",
+            "allowed_event_types": [
+              "preference",
+              "decision",
+              "fact",
+              "correction"
+            ],
+            "min_authority": "user_asserted",
+            "decision_override": false
+          },
+          {
+            "from_space": "session",
+            "to_space": "project",
+            "allowed_event_types": [
+              "preference",
+              "decision",
+              "fact",
+              "correction"
+            ],
+            "min_authority": "tool_verified",
+            "decision_override": true
+          },
+          {
+            "from_space": "user",
+            "to_space": "project",
+            "allowed_event_types": [
+              "preference",
+              "decision",
+              "fact",
+              "correction"
+            ],
+            "min_authority": "user_asserted",
+            "decision_override": false
+          }
+        ]
+      },
+      "phase": {
+        "enabled": true,
+        "mode": "current_only",
+        "allow_cross_phase_recall": false,
+        "max_phases": null,
+        "diff_enabled": true
+      }
+    },
+    "deterministic_hash": "59a23a2b3dd701bd3c809295dd00c755c984e5bbe6ecc3c5860a02ae333fc977",
+    "spaces_consulted": [
+      "session",
+      "user",
+      "project",
+      "system"
+    ],
+    "recall_counts": {
+      "session": 2,
+      "user": 0,
+      "project": 0,
+      "system": 0
+    },
+    "phase_counts": {
+      "session": {
+        "phase-1": 2
+      }
+    },
+    "current_phase": {
+      "phase_id": "phase-1",
+      "phase_index": 1,
+      "phase_started_at": 1,
+      "phase_reason": "auto"
+    }
+  },
+  {
+    "type": "memory_write",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "written": [
+      {
+        "id": "session:anonymous:short_term:3",
+        "kind": "short_term",
+        "text": "Hello",
+        "source": "user",
+        "created_at": 4,
+        "importance": 2,
+        "scope": "session",
+        "meta": {
+          "event_type": "context",
+          "importance_reason": [
+            "event:context",
+            "source:user"
+          ],
+          "dedup_key": "context:hello",
+          "authority": "user_asserted",
+          "authority_reason": "source:user",
+          "space": "session",
+          "owner": "anonymous",
+          "phase_id": "phase-1",
+          "phase_started_at": 1,
+          "phase_reason": "auto",
+          "policy_tags": [
+            "allowed_by:privacy",
+            "allowed_by:promotion_rule"
+          ]
+        }
+      },
+      {
+        "id": "session:anonymous:short_term:4",
+        "kind": "short_term",
+        "text": "[mock-model] Hello | mem:st=2",
+        "source": "ai",
+        "created_at": 5,
+        "importance": 1,
+        "scope": "session",
+        "meta": {
+          "event_type": "context",
+          "importance_reason": [
+            "event:context"
+          ],
+          "dedup_key": "context:mock model hello mem st 2",
+          "authority": "ai_inferred",
+          "authority_reason": "source:ai",
+          "space": "session",
+          "owner": "anonymous",
+          "phase_id": "phase-1",
+          "phase_started_at": 1,
+          "phase_reason": "auto",
+          "policy_tags": [
+            "allowed_by:privacy",
+            "allowed_by:promotion_rule"
+          ]
+        }
+      },
+      {
+        "id": "session:anonymous:short_term:5",
+        "kind": "short_term",
+        "text": "user: Hello | ai: [mock-model] Hello | mem:st=0",
+        "source": "system",
+        "created_at": 6,
+        "importance": 1,
+        "scope": "session",
+        "meta": {
+          "event_type": "context",
+          "summary_of": [
+            "session:anonymous:short_term:1",
+            "session:anonymous:short_term:2"
+          ],
+          "importance_reason": [
+            "event:context",
+            "summary"
+          ],
+          "dedup_key": "context:user hello ai mock model hello mem st 0",
+          "authority": "system_imposed",
+          "authority_reason": "summary",
+          "space": "session",
+          "owner": "anonymous",
+          "phase_id": "phase-1",
+          "phase_started_at": 1,
+          "phase_reason": "auto"
+        }
+      }
+    ],
+    "reason": "interaction_recorded"
+  }
+]

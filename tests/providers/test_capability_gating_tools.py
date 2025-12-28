@@ -48,5 +48,7 @@ def test_pipeline_skipped_when_provider_not_tool_capable(monkeypatch):
     trace = result.traces[0]
     event_types = [event["type"] for event in trace.canonical_events]
     assert "tool_call_requested" not in event_types
-    assert event_types[0] == "ai_call_started"
-    assert event_types[-1] == "ai_call_completed"
+    assert event_types[0] == "memory_recall"
+    assert "ai_call_started" in event_types
+    assert "ai_call_completed" in event_types
+    assert "memory_write" in event_types

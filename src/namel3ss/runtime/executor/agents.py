@@ -5,7 +5,10 @@ from namel3ss.ir import nodes as ir
 from namel3ss.runtime.ai.trace import AITrace
 from namel3ss.runtime.executor.ai_runner import run_ai_with_tools
 from namel3ss.runtime.executor.context import ExecutionContext
+from namel3ss.runtime.memory.manager import MemoryManager
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
+from namel3ss.traces.builders import build_memory_recall, build_memory_write
+from namel3ss.traces.redact import redact_memory_context
 
 
 def execute_run_agent(ctx: ExecutionContext, stmt: ir.RunAgentStmt) -> None:
@@ -57,9 +60,61 @@ def run_agent_call(ctx: ExecutionContext, agent_name: str, input_expr, line: int
         line=ai_profile.line,
         column=ai_profile.column,
     )
-    memory_context = ctx.memory_manager.recall_context(profile_override, user_input, ctx.state)
+    memory_context, recall_events, recall_meta = ctx.memory_manager.recall_context_with_events(
+        profile_override,
+        user_input,
+        ctx.state,
+        identity=ctx.identity,
+        project_root=ctx.project_root,
+        app_path=getattr(ctx, "app_path", None),
+    )
+    recalled = _flatten_memory_context(memory_context)
+    canonical_events: list[dict] = []
+    canonical_events.append(
+        build_memory_recall(
+            ai_profile=profile_override.name,
+            session=ctx.memory_manager.session_id(ctx.state),
+            query=user_input,
+            recalled=recalled,
+            policy=_memory_policy(profile_override, ctx.memory_manager),
+            deterministic_hash=ctx.memory_manager.recall_hash(recalled),
+            spaces_consulted=recall_meta.get("spaces_consulted"),
+            recall_counts=recall_meta.get("recall_counts"),
+            phase_counts=recall_meta.get("phase_counts"),
+            current_phase=recall_meta.get("current_phase"),
+        )
+    )
+    if recall_events:
+        canonical_events.extend(recall_events)
     tool_events: list[dict] = []
-    response_output, canonical_events = run_ai_with_tools(ctx, profile_override, user_input, memory_context, tool_events)
+    response_output, canonical_events = run_ai_with_tools(
+        ctx,
+        profile_override,
+        user_input,
+        memory_context,
+        tool_events,
+        canonical_events=canonical_events,
+    )
+    written, governance_events = ctx.memory_manager.record_interaction_with_events(
+        profile_override,
+        ctx.state,
+        user_input,
+        response_output,
+        tool_events,
+        identity=ctx.identity,
+        project_root=ctx.project_root,
+        app_path=getattr(ctx, "app_path", None),
+    )
+    canonical_events.append(
+        build_memory_write(
+            ai_profile=profile_override.name,
+            session=ctx.memory_manager.session_id(ctx.state),
+            written=written,
+            reason="interaction_recorded",
+        )
+    )
+    if governance_events:
+        canonical_events.extend(governance_events)
     trace = AITrace(
         ai_name=profile_override.name,
         ai_profile_name=profile_override.name,
@@ -68,12 +123,11 @@ def run_agent_call(ctx: ExecutionContext, agent_name: str, input_expr, line: int
         system_prompt=profile_override.system_prompt,
         input=user_input,
         output=response_output,
-        memory=memory_context,
+        memory=redact_memory_context(memory_context),
         tool_calls=[e for e in tool_events if e.get("type") == "call"],
         tool_results=[e for e in tool_events if e.get("type") == "result"],
         canonical_events=canonical_events,
     )
-    ctx.memory_manager.record_interaction(profile_override, ctx.state, user_input, response_output, tool_events)
     return response_output, trace
 
 
@@ -91,3 +145,14 @@ def _trace_to_dict(trace: AITrace) -> dict:
         "tool_results": trace.tool_results,
         "canonical_events": getattr(trace, "canonical_events", []),
     }
+
+
+def _flatten_memory_context(context: dict) -> list[dict]:
+    ordered: list[dict] = []
+    for key in ("short_term", "semantic", "profile"):
+        ordered.extend(context.get(key, []))
+    return ordered
+
+
+def _memory_policy(profile: ir.AIDecl, memory_manager: MemoryManager) -> dict:
+    return memory_manager.policy_snapshot(profile)

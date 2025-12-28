@@ -37,4 +37,4 @@
 - Explicit boundary: AI calls use profiles with model + system prompt.
 - Tool loop guardrails: max tool calls per AI response; only exposed tools callable.
 - Tracing: `AITrace` captures system prompt, input, output, memory context, tool calls/results.
-- Memory: `MemoryManager` recalls context and records interactions (short/semantic/profile memory depending on profile).
+- Memory: governed `MemoryItem` contract with space-aware recall/write, phase timeline, and explicit deletion/diff events (`memory_recall`, `memory_write`, `memory_denied`, `memory_conflict`, `memory_forget`, `memory_border_check`, `memory_promoted`, `memory_promotion_denied`, `memory_phase_started`, `memory_deleted`, `memory_phase_diff`). See `docs/memory.md`, `docs/memory-policy.md`, `docs/memory-spaces.md`, and `docs/memory-phases.md`.

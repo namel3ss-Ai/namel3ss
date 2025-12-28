@@ -33,9 +33,28 @@ def test_text_only_traces_for_all_providers(monkeypatch):
         )
         trace = result.traces[0]
         events = trace.canonical_events
-        assert events[0]["type"] == "ai_call_started"
-        assert events[-1]["type"] in {"ai_call_completed", "ai_call_failed"}
+        types = [event["type"] for event in events]
+        assert types[0] == "memory_recall"
+        assert "memory_write" in types
+        assert "ai_call_started" in types
+        assert types[-1] in {
+            "memory_write",
+            "memory_denied",
+            "memory_forget",
+            "memory_conflict",
+            "memory_border_check",
+            "memory_promoted",
+            "memory_promotion_denied",
+            "memory_phase_started",
+            "memory_deleted",
+            "memory_phase_diff",
+            "ai_call_completed",
+            "ai_call_failed",
+        }
+        assert types.index("ai_call_started") > types.index("memory_recall")
         for event in events:
             assert "trace_version" in event
-            assert event["provider"] == name
-            assert "call_id" in event
+        for event in events:
+            if "call_id" in event:
+                assert event["provider"] == name
+                assert "call_id" in event

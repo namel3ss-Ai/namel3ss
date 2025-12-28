@@ -9,6 +9,8 @@ let cachedSecurity = {};
 let cachedManifest = null;
 let traceFilterText = "";
 let traceFilterTimer = null;
+let traceRenderMode = "plain";
+let tracePhaseMode = "current";
 let toolsFilterText = "";
 let toolsFilterTimer = null;
 let selectedTrace = null;
@@ -624,7 +626,7 @@ function renderState(data) {
   }
   updateCopyButton("stateCopy", () => JSON.stringify(data || {}, null, 2));
 }
-function appendTraceSection(details, label, value, copyable = false) {
+function appendTraceSection(details, label, value, copyable = false, renderMode = "json") {
   if (value === undefined || value === null || (typeof value === "object" && Object.keys(value).length === 0)) {
     return;
   }
@@ -640,8 +642,38 @@ function appendTraceSection(details, label, value, copyable = false) {
     heading.appendChild(copyBtn);
   }
   wrapper.appendChild(heading);
-  wrapper.appendChild(createCodeBlock(value));
+  const content = renderMode === "plain" ? renderPlainTraceValue(value) : value;
+  wrapper.appendChild(createCodeBlock(content));
   details.appendChild(wrapper);
+}
+function renderPlainTraceValue(value) {
+  if (Array.isArray(value) || (value && typeof value === "object")) {
+    return formatPlainTrace(value);
+  }
+  return formatPlainScalar(value);
+}
+function currentPhaseIdForTrace(trace) {
+  const events = trace.canonical_events || [];
+  const recall = events.find((event) => event && event.type === "memory_recall");
+  if (recall && recall.current_phase && recall.current_phase.phase_id) {
+    return recall.current_phase.phase_id;
+  }
+  const phaseEvent = events.find((event) => event && event.type === "memory_phase_started");
+  if (phaseEvent && phaseEvent.phase_id) {
+    return phaseEvent.phase_id;
+  }
+  return null;
+}
+function filterMemoryEventForPhase(event, phaseId, mode) {
+  if (!event || mode !== "current" || !phaseId) return event;
+  if (event.type === "memory_recall" && Array.isArray(event.recalled)) {
+    const filtered = event.recalled.filter((item) => item && item.meta && item.meta.phase_id === phaseId);
+    if (filtered.length === event.recalled.length) return event;
+    const next = { ...event, recalled: filtered };
+    return next;
+  }
+  if (event.phase_id && event.phase_id !== phaseId) return null;
+  return event;
 }
   function matchTrace(trace, needle) {
     if (!needle) return true;
@@ -685,13 +717,33 @@ function appendTraceSection(details, label, value, copyable = false) {
     const details = document.createElement("div");
     details.className = "trace-details";
     if (trace.type === "parallel_agents" && Array.isArray(trace.agents)) {
-      appendTraceSection(details, "Agents", trace.agents);
+      appendTraceSection(details, "Agents", trace.agents, false, traceRenderMode);
     } else {
-      appendTraceSection(details, "Input", trace.input);
-      appendTraceSection(details, "Memory", trace.memory);
-      appendTraceSection(details, "Tool calls", trace.tool_calls);
-      appendTraceSection(details, "Tool results", trace.tool_results);
-      appendTraceSection(details, "Output", trace.output ?? trace.result, true);
+      appendTraceSection(details, "Input", trace.input, false, traceRenderMode);
+      appendTraceSection(details, "Memory", trace.memory, false, traceRenderMode);
+      const phaseId = currentPhaseIdForTrace(trace);
+      const memoryEvents = (trace.canonical_events || [])
+        .filter(
+          (event) =>
+            event &&
+            (event.type === "memory_recall" ||
+              event.type === "memory_write" ||
+              event.type === "memory_denied" ||
+              event.type === "memory_forget" ||
+              event.type === "memory_conflict" ||
+              event.type === "memory_border_check" ||
+              event.type === "memory_promoted" ||
+              event.type === "memory_promotion_denied" ||
+              event.type === "memory_phase_started" ||
+              event.type === "memory_deleted" ||
+              event.type === "memory_phase_diff")
+        )
+        .map((event) => filterMemoryEventForPhase(event, phaseId, tracePhaseMode))
+        .filter(Boolean);
+      appendTraceSection(details, "Memory events", memoryEvents, false, traceRenderMode);
+      appendTraceSection(details, "Tool calls", trace.tool_calls, false, traceRenderMode);
+      appendTraceSection(details, "Tool results", trace.tool_results, false, traceRenderMode);
+      appendTraceSection(details, "Output", trace.output ?? trace.result, true, traceRenderMode);
     }
     row.appendChild(header);
     row.appendChild(details);
@@ -834,6 +886,38 @@ function setupTraceFilter() {
     }, 120);
   });
 }
+function setupTraceFormatToggle() {
+  const plainBtn = document.getElementById("traceFormatPlain");
+  const jsonBtn = document.getElementById("traceFormatJson");
+  if (!plainBtn || !jsonBtn) return;
+  const applyMode = (mode) => {
+    traceRenderMode = mode;
+    plainBtn.classList.toggle("toggle-active", mode === "plain");
+    jsonBtn.classList.toggle("toggle-active", mode === "json");
+    plainBtn.setAttribute("aria-pressed", mode === "plain");
+    jsonBtn.setAttribute("aria-pressed", mode === "json");
+    renderTraces(cachedTraces);
+  };
+  plainBtn.onclick = () => applyMode("plain");
+  jsonBtn.onclick = () => applyMode("json");
+  applyMode(traceRenderMode || "plain");
+}
+function setupTracePhaseToggle() {
+  const currentBtn = document.getElementById("tracePhaseCurrent");
+  const historyBtn = document.getElementById("tracePhaseHistory");
+  if (!currentBtn || !historyBtn) return;
+  const applyMode = (mode) => {
+    tracePhaseMode = mode;
+    currentBtn.classList.toggle("toggle-active", mode === "current");
+    historyBtn.classList.toggle("toggle-active", mode === "history");
+    currentBtn.setAttribute("aria-pressed", mode === "current");
+    historyBtn.setAttribute("aria-pressed", mode === "history");
+    renderTraces(cachedTraces);
+  };
+  currentBtn.onclick = () => applyMode("current");
+  historyBtn.onclick = () => applyMode("history");
+  applyMode(tracePhaseMode || "current");
+}
 function setupToolsFilter() {
   const input = document.getElementById("toolsFilter");
   if (!input) return;
@@ -938,6 +1022,8 @@ if (themeSelect) {
 }
 setupTabs();
 setupTraceFilter();
+setupTraceFormatToggle();
+setupTracePhaseToggle();
 setupToolsFilter();
 loadVersion();
 const helpButton = document.getElementById("helpButton");

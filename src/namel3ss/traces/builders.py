@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from namel3ss.traces.redact import summarize_payload, summarize_text
+from namel3ss.traces.redact import redact_memory_item, redact_memory_items, summarize_payload, summarize_text
 from namel3ss.traces.schema import TRACE_VERSION, TraceEventType
 
 
@@ -146,10 +146,312 @@ def build_tool_call_failed(
     return event
 
 
+def build_memory_recall(
+    *,
+    ai_profile: str,
+    session: str,
+    query: str,
+    recalled: list[dict],
+    policy: dict,
+    deterministic_hash: str,
+    spaces_consulted: list[str] | None = None,
+    recall_counts: dict | None = None,
+    phase_counts: dict | None = None,
+    current_phase: dict | None = None,
+) -> dict:
+    event = {
+        "type": TraceEventType.MEMORY_RECALL,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "query": summarize_text(query),
+        "recalled": redact_memory_items(recalled),
+        "policy": policy,
+        "deterministic_hash": deterministic_hash,
+    }
+    if spaces_consulted is not None:
+        event["spaces_consulted"] = list(spaces_consulted)
+    if recall_counts is not None:
+        event["recall_counts"] = dict(recall_counts)
+    if phase_counts is not None:
+        event["phase_counts"] = dict(phase_counts)
+    if current_phase is not None:
+        event["current_phase"] = dict(current_phase)
+    return event
+
+
+def build_memory_write(
+    *,
+    ai_profile: str,
+    session: str,
+    written: list[dict],
+    reason: str,
+) -> dict:
+    return {
+        "type": TraceEventType.MEMORY_WRITE,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "written": redact_memory_items(written),
+        "reason": reason,
+    }
+
+
+def build_memory_denied(
+    *,
+    ai_profile: str,
+    session: str,
+    attempted: dict,
+    reason: str,
+    policy_snapshot: dict,
+    explanation: dict | None = None,
+) -> dict:
+    event = {
+        "type": TraceEventType.MEMORY_DENIED,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "attempted": redact_memory_item(attempted),
+        "reason": reason,
+        "policy_snapshot": policy_snapshot,
+    }
+    if explanation is not None:
+        event["explanation"] = explanation
+    return event
+
+
+def build_memory_forget(
+    *,
+    ai_profile: str,
+    session: str,
+    memory_id: str,
+    reason: str,
+    policy_snapshot: dict,
+    explanation: dict | None = None,
+) -> dict:
+    event = {
+        "type": TraceEventType.MEMORY_FORGET,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "memory_id": memory_id,
+        "reason": reason,
+        "policy_snapshot": policy_snapshot,
+    }
+    if explanation is not None:
+        event["explanation"] = explanation
+    return event
+
+
+def build_memory_conflict(
+    *,
+    ai_profile: str,
+    session: str,
+    winner_id: str,
+    loser_id: str,
+    rule: str,
+    dedup_key: str,
+    explanation: dict | None = None,
+) -> dict:
+    event = {
+        "type": TraceEventType.MEMORY_CONFLICT,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "winner_id": winner_id,
+        "loser_id": loser_id,
+        "rule": rule,
+        "dedup_key": dedup_key,
+    }
+    if explanation is not None:
+        event["explanation"] = explanation
+    return event
+
+
+def build_memory_border_check(
+    *,
+    ai_profile: str,
+    session: str,
+    action: str,
+    from_space: str,
+    to_space: str | None,
+    allowed: bool,
+    reason: str,
+    policy_snapshot: dict,
+    subject_id: str | None = None,
+) -> dict:
+    event = {
+        "type": TraceEventType.MEMORY_BORDER_CHECK,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "action": action,
+        "from_space": from_space,
+        "allowed": bool(allowed),
+        "reason": reason,
+        "policy_snapshot": policy_snapshot,
+    }
+    if to_space is not None:
+        event["to_space"] = to_space
+    if subject_id is not None:
+        event["subject_id"] = subject_id
+    return event
+
+
+def build_memory_promoted(
+    *,
+    ai_profile: str,
+    session: str,
+    from_space: str,
+    to_space: str,
+    from_id: str,
+    to_id: str,
+    authority_used: str,
+    reason: str,
+    policy_snapshot: dict,
+) -> dict:
+    return {
+        "type": TraceEventType.MEMORY_PROMOTED,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "from_space": from_space,
+        "to_space": to_space,
+        "from_id": from_id,
+        "to_id": to_id,
+        "authority_used": authority_used,
+        "reason": reason,
+        "policy_snapshot": policy_snapshot,
+    }
+
+
+def build_memory_promotion_denied(
+    *,
+    ai_profile: str,
+    session: str,
+    from_space: str,
+    to_space: str,
+    memory_id: str,
+    allowed: bool,
+    reason: str,
+    policy_snapshot: dict,
+) -> dict:
+    return {
+        "type": TraceEventType.MEMORY_PROMOTION_DENIED,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "from_space": from_space,
+        "to_space": to_space,
+        "memory_id": memory_id,
+        "allowed": bool(allowed),
+        "reason": reason,
+        "policy_snapshot": policy_snapshot,
+    }
+
+
+def build_memory_phase_started(
+    *,
+    ai_profile: str,
+    session: str,
+    space: str,
+    owner: str,
+    phase_id: str,
+    phase_name: str | None,
+    reason: str,
+    policy_snapshot: dict,
+) -> dict:
+    event = {
+        "type": TraceEventType.MEMORY_PHASE_STARTED,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "space": space,
+        "owner": owner,
+        "phase_id": phase_id,
+        "reason": reason,
+        "policy_snapshot": policy_snapshot,
+    }
+    if phase_name:
+        event["phase_name"] = phase_name
+    return event
+
+
+def build_memory_deleted(
+    *,
+    ai_profile: str,
+    session: str,
+    space: str,
+    owner: str,
+    phase_id: str,
+    memory_id: str,
+    reason: str,
+    policy_snapshot: dict,
+    replaced_by: str | None = None,
+) -> dict:
+    event = {
+        "type": TraceEventType.MEMORY_DELETED,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "space": space,
+        "owner": owner,
+        "phase_id": phase_id,
+        "memory_id": memory_id,
+        "reason": reason,
+        "policy_snapshot": policy_snapshot,
+    }
+    if replaced_by:
+        event["replaced_by"] = replaced_by
+    return event
+
+
+def build_memory_phase_diff(
+    *,
+    ai_profile: str,
+    session: str,
+    space: str,
+    owner: str,
+    from_phase_id: str,
+    to_phase_id: str,
+    added_count: int,
+    deleted_count: int,
+    replaced_count: int,
+    top_changes: list[dict],
+    summary_lines: list[str],
+) -> dict:
+    return {
+        "type": TraceEventType.MEMORY_PHASE_DIFF,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "space": space,
+        "owner": owner,
+        "from_phase_id": from_phase_id,
+        "to_phase_id": to_phase_id,
+        "added_count": added_count,
+        "deleted_count": deleted_count,
+        "replaced_count": replaced_count,
+        "top_changes": list(top_changes),
+        "summary_lines": list(summary_lines),
+    }
+
+
 __all__ = [
     "build_ai_call_completed",
     "build_ai_call_failed",
     "build_ai_call_started",
+    "build_memory_recall",
+    "build_memory_write",
+    "build_memory_denied",
+    "build_memory_forget",
+    "build_memory_conflict",
+    "build_memory_border_check",
+    "build_memory_deleted",
+    "build_memory_promoted",
+    "build_memory_promotion_denied",
+    "build_memory_phase_diff",
+    "build_memory_phase_started",
     "build_tool_call_completed",
     "build_tool_call_failed",
     "build_tool_call_requested",

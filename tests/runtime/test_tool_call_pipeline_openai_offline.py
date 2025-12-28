@@ -62,6 +62,6 @@ def test_openai_pipeline_offline_tool_call(monkeypatch):
     event_types = [event["type"] for event in trace.canonical_events]
     assert "tool_call_requested" in event_types
     assert "tool_call_completed" in event_types
-    assert event_types[-1] == "ai_call_completed"
-    call_ids = {event["call_id"] for event in trace.canonical_events}
+    assert "ai_call_completed" in event_types
+    call_ids = {event["call_id"] for event in trace.canonical_events if "call_id" in event}
     assert len(call_ids) == 1

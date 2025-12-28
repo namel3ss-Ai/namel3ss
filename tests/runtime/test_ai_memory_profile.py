@@ -18,7 +18,7 @@ def test_profile_recall():
     program = lower_ir_program(SOURCE)
     flow = program.flows[0]
     memory = MemoryManager()
-    memory.profile.set_fact("anonymous", "name", "Alice")
+    memory.record_interaction(program.ais["assistant"], {}, "My name is Alice.", "ok", [])
     executor = Executor(flow, schemas={}, ai_profiles=program.ais, ai_provider=MockProvider(), memory_manager=memory)
     result = executor.run()
     trace = result.traces[-1]

@@ -13,11 +13,15 @@ from namel3ss.runtime.executor.expr_eval import evaluate_expression
 from namel3ss.runtime.providers.capabilities import get_provider_capabilities
 from namel3ss.runtime.tools.field_schema import build_json_schema
 from namel3ss.runtime.tools.registry import execute_tool
+from namel3ss.runtime.memory.manager import MemoryManager
 from namel3ss.traces.builders import (
     build_ai_call_completed,
     build_ai_call_failed,
     build_ai_call_started,
+    build_memory_recall,
+    build_memory_write,
 )
+from namel3ss.traces.redact import redact_memory_context
 from namel3ss.observe import record_event, summarize_value
 from namel3ss.secrets import collect_secret_values
 
@@ -33,9 +37,61 @@ def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
     user_input = evaluate_expression(ctx, expr.input_expr)
     if not isinstance(user_input, str):
         raise Namel3ssError("AI input must be a string", line=expr.line, column=expr.column)
-    memory_context = ctx.memory_manager.recall_context(profile, user_input, ctx.state)
+    memory_context, recall_events, recall_meta = ctx.memory_manager.recall_context_with_events(
+        profile,
+        user_input,
+        ctx.state,
+        identity=ctx.identity,
+        project_root=ctx.project_root,
+        app_path=getattr(ctx, "app_path", None),
+    )
+    recalled = _flatten_memory_context(memory_context)
+    canonical_events: list[dict] = []
+    canonical_events.append(
+        build_memory_recall(
+            ai_profile=profile.name,
+            session=ctx.memory_manager.session_id(ctx.state),
+            query=user_input,
+            recalled=recalled,
+            policy=_memory_policy(profile, ctx.memory_manager),
+            deterministic_hash=ctx.memory_manager.recall_hash(recalled),
+            spaces_consulted=recall_meta.get("spaces_consulted"),
+            recall_counts=recall_meta.get("recall_counts"),
+            phase_counts=recall_meta.get("phase_counts"),
+            current_phase=recall_meta.get("current_phase"),
+        )
+    )
+    if recall_events:
+        canonical_events.extend(recall_events)
     tool_events: list[dict] = []
-    response_output, canonical_events = run_ai_with_tools(ctx, profile, user_input, memory_context, tool_events)
+    response_output, canonical_events = run_ai_with_tools(
+        ctx,
+        profile,
+        user_input,
+        memory_context,
+        tool_events,
+        canonical_events=canonical_events,
+    )
+    written, governance_events = ctx.memory_manager.record_interaction_with_events(
+        profile,
+        ctx.state,
+        user_input,
+        response_output,
+        tool_events,
+        identity=ctx.identity,
+        project_root=ctx.project_root,
+        app_path=getattr(ctx, "app_path", None),
+    )
+    canonical_events.append(
+        build_memory_write(
+            ai_profile=profile.name,
+            session=ctx.memory_manager.session_id(ctx.state),
+            written=written,
+            reason="interaction_recorded",
+        )
+    )
+    if governance_events:
+        canonical_events.extend(governance_events)
     trace = AITrace(
         ai_name=expr.ai_name,
         ai_profile_name=expr.ai_name,
@@ -44,7 +100,7 @@ def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
         system_prompt=profile.system_prompt,
         input=user_input,
         output=response_output,
-        memory=memory_context,
+        memory=redact_memory_context(memory_context),
         tool_calls=[e for e in tool_events if e.get("type") == "call"],
         tool_results=[e for e in tool_events if e.get("type") == "result"],
         canonical_events=canonical_events,
@@ -54,7 +110,6 @@ def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
         raise Namel3ssError(f"Cannot assign to constant '{expr.target}'", line=expr.line, column=expr.column)
     ctx.locals[expr.target] = response_output
     ctx.last_value = response_output
-    ctx.memory_manager.record_interaction(profile, ctx.state, user_input, response_output, tool_events)
     return response_output
 
 
@@ -64,10 +119,12 @@ def run_ai_with_tools(
     user_input: str,
     memory_context: dict,
     tool_events: list[dict],
+    *,
+    canonical_events: list[dict] | None = None,
 ) -> tuple[str, list[dict]]:
     provider_name = (getattr(profile, "provider", "mock") or "mock").lower()
     call_id = uuid.uuid4().hex
-    canonical_events: list[dict] = []
+    canonical_events = canonical_events or []
     ai_start = time.monotonic()
     wall_start = time.time()
     ai_failed_emitted = False
@@ -243,6 +300,17 @@ def run_ai_with_tools(
             error=err,
         )
         raise
+
+
+def _flatten_memory_context(context: dict) -> list[dict]:
+    ordered: list[dict] = []
+    for key in ("short_term", "semantic", "profile"):
+        ordered.extend(context.get(key, []))
+    return ordered
+
+
+def _memory_policy(profile: ir.AIDecl, memory_manager: MemoryManager) -> dict:
+    return memory_manager.policy_snapshot(profile)
 
 
 def _resolve_provider(ctx: ExecutionContext, provider_name: str):

@@ -91,6 +91,14 @@
 }
 .btn.secondary { background: #f6f6f6; }
 .btn.ghost { background: transparent; }
+.btn.toggle-active {
+  border-color: #000;
+  background: #000;
+  color: #fff;
+}
+.btn.toggle-active:hover {
+  background: #1a1a1a;
+}
 .btn.small {
   padding: 6px 10px;
   font-size: 12px;

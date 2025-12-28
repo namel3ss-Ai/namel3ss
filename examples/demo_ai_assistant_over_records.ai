@@ -34,6 +34,27 @@ flow "ask_assistant":
   set state.reply is reply
   return reply
 
+flow "memory_tour":
+  ask ai "assistant" with input: "Remember this for me: I prefer concise, bullet summaries." as pref
+  ask ai "assistant" with input: "My name is Ada." as fact
+  ask ai "assistant" with input: "Actually, my name is Ada Lovelace." as correction
+  ask ai "assistant" with input: "Remember this for everyone: We release weekly." as denied_promo
+  ask ai "assistant" with input: "my password is 123" as denied
+  set state._memory_phase_token is "phase-2"
+  set state._memory_phase_name is "Phase 2"
+  set state._memory_phase_reason is "manual"
+  ask ai "assistant" with input: "We decided to ship weekly." as decision
+  ask ai "assistant" with input: "Actually, my name is Ada Byron." as correction2
+  set state._memory_phase_diff_from is "phase-1"
+  set state._memory_phase_diff_to is "phase-2"
+  set state._memory_phase_diff_space is "session"
+  ask ai "assistant" with input: "Show me the memory changes between phases." as diff
+  set state._memory_phase_diff_from is ""
+  set state._memory_phase_diff_to is ""
+  set state._memory_phase_diff_space is ""
+  set state.reply is diff
+  return diff
+
 page "notes":
   title is "Notes Assistant"
   text is "Save notes and ask the assistant for help."
@@ -47,3 +68,5 @@ page "notes":
   card "Assistant":
     button "Ask assistant":
       calls flow "ask_assistant"
+    button "Memory tour":
+      calls flow "memory_tour"

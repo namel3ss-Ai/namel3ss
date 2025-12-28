@@ -62,10 +62,12 @@ def test_tool_trace_contract(monkeypatch):
         trace = result.traces[0]
         events = trace.canonical_events
         types = [event["type"] for event in events]
+        assert types[0] == "memory_recall"
         assert "tool_call_requested" in types
         assert "tool_call_completed" in types
-        assert types[-1] == "ai_call_completed"
-        call_ids = {event["call_id"] for event in events}
+        assert "ai_call_completed" in types
+        assert "memory_write" in types
+        call_ids = {event["call_id"] for event in events if "call_id" in event}
         assert len(call_ids) == 1
         tool_ids = {event.get("tool_call_id") for event in events if "tool_call_id" in event}
         assert len(tool_ids) == 1

@@ -1,0 +1,109 @@
+[
+  {
+    "type": "memory_phase_started",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "space": "session",
+    "owner": "anonymous",
+    "phase_id": "phase-1",
+    "reason": "auto",
+    "policy_snapshot": {
+      "phase": {
+        "enabled": true,
+        "mode": "current_only",
+        "allow_cross_phase_recall": false,
+        "max_phases": null,
+        "diff_enabled": true
+      }
+    }
+  },
+  {
+    "type": "memory_phase_started",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "space": "session",
+    "owner": "anonymous",
+    "phase_id": "phase-2",
+    "reason": "manual",
+    "policy_snapshot": {
+      "phase": {
+        "enabled": true,
+        "mode": "current_only",
+        "allow_cross_phase_recall": false,
+        "max_phases": null,
+        "diff_enabled": true
+      }
+    }
+  },
+  {
+    "type": "memory_deleted",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "space": "session",
+    "owner": "anonymous",
+    "phase_id": "phase-2",
+    "memory_id": "session:anonymous:profile:1",
+    "reason": "superseded",
+    "policy_snapshot": {
+      "phase": {
+        "enabled": true,
+        "mode": "current_only",
+        "allow_cross_phase_recall": false,
+        "max_phases": null,
+        "diff_enabled": true
+      }
+    },
+    "replaced_by": "session:anonymous:profile:2"
+  },
+  {
+    "type": "memory_phase_diff",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "space": "session",
+    "owner": "anonymous",
+    "from_phase_id": "phase-1",
+    "to_phase_id": "phase-2",
+    "added_count": 4,
+    "deleted_count": 0,
+    "replaced_count": 1,
+    "top_changes": [
+      {
+        "change": "replaced",
+        "dedupe_key": "fact:name",
+        "from_id": "session:anonymous:profile:1",
+        "to_id": "session:anonymous:profile:2",
+        "from_kind": "profile",
+        "to_kind": "profile"
+      },
+      {
+        "change": "added",
+        "memory_id": "session:anonymous:short_term:3",
+        "kind": "short_term"
+      },
+      {
+        "change": "added",
+        "memory_id": "session:anonymous:short_term:4",
+        "kind": "short_term"
+      },
+      {
+        "change": "added",
+        "memory_id": "session:anonymous:short_term:5",
+        "kind": "short_term"
+      },
+      {
+        "change": "added",
+        "memory_id": "session:anonymous:short_term:6",
+        "kind": "short_term"
+      }
+    ],
+    "summary_lines": [
+      "Added 4 items",
+      "Deleted 0 items",
+      "Replaced 1 items"
+    ]
+  }
+]

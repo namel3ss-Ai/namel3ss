@@ -39,6 +39,10 @@ When the tool resolves from an app binding, traces must also include:
 ## AI call traces
 AI call traces are versioned separately by `TRACE_VERSION` and may evolve.
 When frozen, they will receive a dedicated version key.
+Memory trace events (`memory_recall`, `memory_write`, `memory_denied`, `memory_conflict`, `memory_forget`,
+`memory_border_check`, `memory_promoted`, `memory_promotion_denied`, `memory_phase_started`,
+`memory_deleted`, `memory_phase_diff`)
+are part of the AI trace stream and are defined in `docs/memory.md` and `docs/memory-policy.md`.
 
 ## Capability check traces (v1)
 

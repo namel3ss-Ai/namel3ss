@@ -43,6 +43,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.render import format_error
 from namel3ss.cli.redaction import redact_cli_text
 from namel3ss.version import get_version
+from namel3ss.traces.plain import format_plain
 
 RESERVED = {
     "check",
@@ -181,9 +182,16 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
 
-def _run_default(program_ir) -> int:
+def _print_payload(payload: object, json_mode: bool) -> None:
+    if json_mode:
+        print(dumps_pretty(payload))
+    else:
+        print(format_plain(payload))
+
+
+def _run_default(program_ir, *, json_mode: bool) -> int:
     output = run_flow(program_ir, None)
-    print(dumps_pretty(output))
+    _print_payload(output, json_mode)
     return 0
 
 
@@ -261,7 +269,9 @@ def _handle_app_commands(path: str, remainder: list[str], context: dict | None =
     if context is not None:
         context["sources"] = sources
     if not remainder:
-        return _run_default(program_ir)
+        return _run_default(program_ir, json_mode=False)
+    if remainder[0] == "--json" and len(remainder) == 1:
+        return _run_default(program_ir, json_mode=True)
     cmd = canonical_command(remainder[0])
     tail = remainder[1:]
     if cmd == "ui":
@@ -269,11 +279,13 @@ def _handle_app_commands(path: str, remainder: list[str], context: dict | None =
         print(dumps_pretty(manifest))
         return 0
     if cmd == "flow":
+        json_mode = "--json" in tail
+        tail = [item for item in tail if item != "--json"]
         if not tail:
             raise Namel3ssError('Missing flow name. Use: n3 <app.ai> flow "<name>"')
         flow_name = tail[0]
         output = run_flow(program_ir, flow_name)
-        print(dumps_pretty(output))
+        _print_payload(output, json_mode)
         return 0
     if cmd == "help":
         _print_usage()
@@ -295,17 +307,19 @@ def _handle_app_commands(path: str, remainder: list[str], context: dict | None =
             f"Unknown command: '{remainder[0]}'.\nWhy: command is reserved or out of place.\nFix: run `n3 help` for usage."
         )
     action_id = remainder[0]
+    json_mode = "--json" in tail
+    tail = [item for item in tail if item != "--json"]
     payload_text = tail[0] if tail else "{}"
     payload = parse_payload(payload_text)
     response = run_action(program_ir, action_id, payload)
-    print(dumps_pretty(response))
+    _print_payload(response, json_mode)
     return 0
 
 
 def _print_usage() -> None:
     usage = """Usage:
   n3 new [template] [name]         # scaffold from a template (omit args to list)
-  n3 run [app.ai] [--target T]     # run app.ai (auto-detects app.ai)
+  n3 run [app.ai] [--target T] [--json]  # run app.ai (auto-detects app.ai)
   n3 pack [app.ai] [--target T]    # build artifacts (alias: build)
   n3 ship [--to T|--back]          # promote build (alias: promote; --rollback alias of --back)
   n3 where [app.ai]                # show active target/build (alias: status)
@@ -333,8 +347,8 @@ def _print_usage() -> None:
   n3 discover "<phrase>" [--json]  # discover packs by intent
   n3 pkg <cmd> [--json]            # packages (search/info/add/validate/install)
   n3 pattern <cmd> [--json]        # patterns (list/new/verify/run)
-  n3 <app.ai>                      # run default flow
-  n3 <app.ai> <action_id> [json]   # execute UI action (payload optional)
+  n3 <app.ai> [--json]             # run default flow
+  n3 <app.ai> <action_id> [payload] [--json]   # execute UI action (payload optional)
   n3 help                          # this help
   Aliases/legacy: build, promote, status, persist, format, pkg
 """

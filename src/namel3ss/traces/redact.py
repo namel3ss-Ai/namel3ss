@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, Iterable, Mapping
 
 SUMMARY_MAX_LENGTH = 200
 _SENSITIVE_KEYS = ("key", "secret", "token", "password", "authorization")
@@ -36,4 +36,31 @@ def summarize_payload(value: Any, *, max_length: int = SUMMARY_MAX_LENGTH) -> st
     return _truncate(_sanitize(serialized), max_length)
 
 
-__all__ = ["SUMMARY_MAX_LENGTH", "summarize_payload", "summarize_text"]
+def redact_memory_item(item: Mapping[str, Any]) -> dict:
+    data = dict(item)
+    if "text" in data:
+        data["text"] = summarize_text(data.get("text"))
+    kind = data.get("kind")
+    if hasattr(kind, "value"):
+        data["kind"] = getattr(kind, "value")
+    if data.get("meta") is None:
+        data["meta"] = {}
+    return data
+
+
+def redact_memory_items(items: Iterable[Mapping[str, Any]]) -> list[dict]:
+    return [redact_memory_item(item) for item in items]
+
+
+def redact_memory_context(context: Mapping[str, Any]) -> dict:
+    return {key: redact_memory_items(context.get(key, [])) for key in ("short_term", "semantic", "profile")}
+
+
+__all__ = [
+    "SUMMARY_MAX_LENGTH",
+    "redact_memory_context",
+    "redact_memory_item",
+    "redact_memory_items",
+    "summarize_payload",
+    "summarize_text",
+]

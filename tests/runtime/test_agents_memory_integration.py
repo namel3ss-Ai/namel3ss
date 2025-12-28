@@ -39,7 +39,7 @@ def test_agent_call_records_short_term_memory_with_user_id():
         ai_provider=MockProvider(),
     )
     executor.run()
-    messages = executor.memory_manager.short_term.recall("1", 10)
-    roles = [m["role"] for m in messages]
-    assert "user" in roles
-    assert "ai" in roles
+    messages = executor.memory_manager.short_term.recall("session:1", 10)
+    sources = [m.source for m in messages]
+    assert "user" in sources
+    assert "ai" in sources

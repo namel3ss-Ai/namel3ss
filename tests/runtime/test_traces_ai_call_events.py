@@ -22,8 +22,11 @@ def test_canonical_ai_trace_events_present_and_grouped():
     response = handle_action(program, action_id="page.home.button.ask")
     trace = response["traces"][0]
     events = trace["canonical_events"]
-    assert events[0]["type"] == TraceEventType.AI_CALL_STARTED
-    assert events[-1]["type"] in {TraceEventType.AI_CALL_COMPLETED, TraceEventType.AI_CALL_FAILED}
-    call_ids = {event["call_id"] for event in events}
+    types = [event["type"] for event in events]
+    assert types[0] == TraceEventType.MEMORY_RECALL
+    assert TraceEventType.AI_CALL_STARTED in types
+    assert TraceEventType.MEMORY_WRITE in types
+    assert types.index(TraceEventType.AI_CALL_STARTED) > types.index(TraceEventType.MEMORY_RECALL)
+    call_ids = {event["call_id"] for event in events if "call_id" in event}
     assert len(call_ids) == 1
     assert all(event["trace_version"] for event in events)

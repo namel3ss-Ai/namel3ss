@@ -18,7 +18,7 @@ page "home":
 def test_action_call_flow(tmp_path, capsys):
     path = tmp_path / "app.ai"
     path.write_text(SOURCE, encoding="utf-8")
-    code = main([str(path), "page.home.button.run", "{}"])
+    code = main([str(path), "page.home.button.run", "{}", "--json"])
     out = capsys.readouterr().out
     assert code == 0
     payload = json.loads(out)
@@ -53,7 +53,7 @@ page "home":
 def test_form_action_accepts_canonical_payload(tmp_path, capsys):
     path = tmp_path / "app.ai"
     path.write_text(FORM_SOURCE, encoding="utf-8")
-    code = main([str(path), "page.home.form.user", '{"values":{"name":"Ada","email":"ada@example.com"}}'])
+    code = main([str(path), "page.home.form.user", '{"values":{"name":"Ada","email":"ada@example.com"}}', "--json"])
     out = capsys.readouterr().out
     payload = json.loads(out)
     assert code == 0
@@ -64,7 +64,7 @@ def test_form_action_accepts_canonical_payload(tmp_path, capsys):
 def test_form_action_accepts_flat_payload(tmp_path, capsys):
     path = tmp_path / "app.ai"
     path.write_text(FORM_SOURCE, encoding="utf-8")
-    code = main([str(path), "page.home.form.user", '{"name":"Ada","email":"ada@example.com"}'])
+    code = main([str(path), "page.home.form.user", '{"name":"Ada","email":"ada@example.com"}', "--json"])
     out = capsys.readouterr().out
     payload = json.loads(out)
     assert code == 0
