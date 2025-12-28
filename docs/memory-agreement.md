@@ -11,6 +11,11 @@ Rejecting removes the proposal.
 - approved
 - rejected
 
+## Rules and agreement
+Rules are proposed like other team memory.
+Approving a rule replaces older rules with the same key.
+Rule changes emit memory_rule_changed.
+
 ## How to approve or reject
 - Open Studio
 - Open Traces
@@ -23,6 +28,7 @@ Rejecting removes the proposal.
 - memory_approved
 - memory_rejected
 - memory_agreement_summary
+- memory_rule_changed
 
 ## Determinism
 Proposals and decisions are deterministic and trace backed.

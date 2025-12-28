@@ -1,6 +1,11 @@
 from pathlib import Path
 
 
+def _app_bundle():
+    app_root = Path("src/namel3ss/studio/web/app")
+    return "\n".join(path.read_text(encoding="utf-8") for path in sorted(app_root.rglob("*.js")))
+
+
 def test_truth_bar_present():
     html = Path("src/namel3ss/studio/web/index.html").read_text(encoding="utf-8")
     assert 'id="truthBar"' in html
@@ -12,7 +17,7 @@ def test_truth_bar_present():
 
 
 def test_reset_confirmation_copy_present():
-    js = Path("src/namel3ss/studio/web/app.js").read_text(encoding="utf-8")
+    js = _app_bundle()
     assert "Reset will clear state" in js
     assert "Reset will clear persisted records/state" in js
 

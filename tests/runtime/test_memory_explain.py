@@ -5,6 +5,7 @@ from namel3ss.runtime.memory_explain import (
     explain_memory_denied,
     explain_memory_forget,
     explain_memory_phase_diff,
+    explain_memory_rule_applied,
     explain_memory_recall,
 )
 
@@ -120,6 +121,24 @@ def test_explain_memory_phase_diff():
         "Added a1 kind semantic.",
         "Deleted b1 kind profile.",
         "Replaced c1 with c2.",
+    ]
+
+
+def test_explain_memory_rule_applied():
+    event = {
+        "type": "memory_rule_applied",
+        "rule_text": "Only approvers can approve team proposals",
+        "action": "approve_team_memory",
+        "allowed": False,
+        "reason": "rule_level_required",
+    }
+    explanation = explain_memory_rule_applied(event)
+    assert explanation.title == "Memory rule applied"
+    assert explanation.lines == [
+        "Rule text is Only approvers can approve team proposals.",
+        "Action is approve team memory.",
+        "Allowed is no.",
+        "Rule needs a higher trust level.",
     ]
 
 

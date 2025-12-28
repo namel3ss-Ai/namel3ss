@@ -5,6 +5,7 @@ from typing import Iterable, Mapping
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.memory.contract import MemoryItem, MemoryItemFactory, MemoryKind
+from namel3ss.runtime.memory.semantic import SemanticMemory
 from namel3ss.runtime.memory.events import EVENT_RULE
 from namel3ss.runtime.memory.helpers import authority_for_source, build_meta
 from namel3ss.runtime.memory.importance import importance_for_event
@@ -19,7 +20,7 @@ from namel3ss.runtime.memory_rules.model import (
     RuleSpec,
 )
 from namel3ss.runtime.memory_rules.parse import parse_rule_text
-from namel3ss.runtime.memory_spacer import SPACE_PROJECT, SPACE_SYSTEM
+from namel3ss.runtime.memory.spaces import SPACE_PROJECT, SPACE_SYSTEM, SpaceContext
 from namel3ss.runtime.memory_timeline.versioning import apply_phase_meta
 
 
@@ -143,6 +144,16 @@ def active_rules_for_store(items: Iterable[MemoryItem]) -> list[Rule]:
     return rules
 
 
+def active_rules_for_scope(
+    *,
+    semantic: SemanticMemory,
+    space_ctx: SpaceContext,
+    scope: str,
+) -> list[Rule]:
+    store_key = space_ctx.store_key_for(rule_space_for_scope(scope), lane=rule_lane_for_scope(scope))
+    return active_rules_for_store(semantic.items_for_store(store_key))
+
+
 def pending_rules_from_proposals(proposals: Iterable, *, scope: str) -> list[Rule]:
     pending: list[Rule] = []
     for proposal in proposals:
@@ -249,6 +260,7 @@ def _rule_from_proposal(proposal) -> Rule:
         created_by=str(meta.get("rule_created_by") or proposal.proposed_by),
         created_at=int(item.created_at),
         priority=int(meta.get("rule_priority") or 0),
+        proposal_id=str(proposal.proposal_id) if proposal.proposal_id else None,
     )
 
 
@@ -280,6 +292,7 @@ __all__ = [
     "RuleRequest",
     "RulesSnapshotRequest",
     "active_rules_for_store",
+    "active_rules_for_scope",
     "apply_active_rule_meta",
     "build_rule_item",
     "is_rule_item",

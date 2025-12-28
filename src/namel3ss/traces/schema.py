@@ -35,6 +35,9 @@ class TraceEventType:
     MEMORY_TRUST_CHECK = "memory_trust_check"
     MEMORY_APPROVAL_RECORDED = "memory_approval_recorded"
     MEMORY_TRUST_RULES = "memory_trust_rules"
+    MEMORY_RULE_APPLIED = "memory_rule_applied"
+    MEMORY_RULES_SNAPSHOT = "memory_rules_snapshot"
+    MEMORY_RULE_CHANGED = "memory_rule_changed"
 
 
 __all__ = ["TRACE_VERSION", "TraceEventType"]

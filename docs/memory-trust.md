@@ -25,6 +25,10 @@ Blocked actions emit a trust check event.
 The event says the required level and the actor level.
 It also says why the action was blocked.
 
+## Rules and trust
+Rules can require higher levels.
+Rule checks emit memory_rule_applied.
+
 ## Studio
 Open Studio and select the Team lane.
 The trust panel shows your level and the rules.

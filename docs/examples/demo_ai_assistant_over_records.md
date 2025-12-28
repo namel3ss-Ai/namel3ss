@@ -28,6 +28,8 @@ n3 examples/demo_ai_assistant_over_records.ai studio
 - Use the lane selector to view My, Team, and System memory
 - Find memory_team_summary after the team lane phase diff
 - In Team lane, review proposals and approve or reject
+- Open Rules to see active and pending rules
+- Propose a rule sentence and approve it
 - Use the Trust buttons to run trust flows
 - In Team lane, check the trust panel and blocked action notices
 
@@ -35,7 +37,7 @@ n3 examples/demo_ai_assistant_over_records.ai studio
 Run Studio with an identity trust level.
 Contributor lets you propose.
 Approver lets you approve.
-Owner can change rules.
+Owner can change trust rules and system rules.
 
 Example commands
 ```
@@ -64,8 +66,11 @@ N3_IDENTITY_TRUST_LEVEL=owner n3 examples/demo_ai_assistant_over_records.ai stud
 17. Confirm memory_trust_check shows allowed and blocked actions
 18. Confirm memory_approval_recorded shows approval counts
 19. Confirm memory_trust_rules shows the trust rules
-20. Pick a memory event and click Explain
-21. Click Links for a memory event
-22. Click Path to see the because trail
-23. Click Impact to see impact lines and impact path
-24. Look for memory_change_preview before memory_deleted or memory_promoted
+20. Confirm memory_rule_applied shows a rule decision
+21. Confirm memory_rules_snapshot shows the active rule list
+22. Open Rules and confirm the rule sentence is active
+23. Pick a memory event and click Explain
+24. Click Links for a memory event
+25. Click Path to see the because trail
+26. Click Impact to see impact lines and impact path
+27. Look for memory_change_preview before memory_deleted or memory_promoted

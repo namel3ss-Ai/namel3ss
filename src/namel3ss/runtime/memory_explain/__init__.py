@@ -5,6 +5,7 @@ from namel3ss.runtime.memory_explain.explain import (
     explain_memory_denied,
     explain_memory_forget,
     explain_memory_phase_diff,
+    explain_memory_rule_applied,
     explain_memory_recall,
     explain_trace_event,
 )
@@ -19,6 +20,7 @@ __all__ = [
     "explain_memory_denied",
     "explain_memory_forget",
     "explain_memory_phase_diff",
+    "explain_memory_rule_applied",
     "explain_memory_recall",
     "explain_trace_event",
 ]

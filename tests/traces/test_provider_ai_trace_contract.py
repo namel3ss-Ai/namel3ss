@@ -61,6 +61,9 @@ def test_text_only_traces_for_all_providers(monkeypatch):
             "memory_trust_check",
             "memory_approval_recorded",
             "memory_trust_rules",
+            "memory_rule_applied",
+            "memory_rules_snapshot",
+            "memory_rule_changed",
             "ai_call_completed",
             "ai_call_failed",
         }

@@ -16,6 +16,8 @@ from namel3ss.runtime.memory_explain.templates import (
     denied_reason_line,
     forget_reason_line,
     recall_reason_line,
+    rule_action_line,
+    rule_reason_line,
 )
 from namel3ss.traces.builders import build_memory_explanation
 
@@ -34,6 +36,8 @@ def explain_trace_event(event: Mapping[str, object], context: Mapping[str, objec
         return explain_memory_conflict(event)
     if event_type == "memory_phase_diff":
         return explain_memory_phase_diff(event)
+    if event_type == "memory_rule_applied":
+        return explain_memory_rule_applied(event)
     return None
 
 
@@ -196,6 +200,33 @@ def explain_memory_phase_diff(event: Mapping[str, object]) -> Explanation:
     return Explanation(title="Memory phase diff", lines=lines)
 
 
+def explain_memory_rule_applied(event: Mapping[str, object]) -> Explanation:
+    lines: list[str] = []
+    rule_text = event.get("rule_text")
+    if rule_text:
+        lines.append(f"Rule text is {rule_text}.")
+    action = event.get("action")
+    if action:
+        action_line = rule_action_line(str(action))
+        if action_line:
+            lines.append(f"Action is {action_line}.")
+        else:
+            lines.append(f"Action is {action}.")
+    allowed = event.get("allowed")
+    if allowed is True:
+        lines.append("Allowed is yes.")
+    elif allowed is False:
+        lines.append("Allowed is no.")
+    reason = event.get("reason")
+    if reason:
+        reason_line = rule_reason_line(str(reason))
+        if reason_line:
+            lines.append(reason_line)
+        else:
+            lines.append(f"Reason is {reason}.")
+    return Explanation(title="Memory rule applied", lines=lines)
+
+
 def _collect_recall_reasons(recalled: list[object]) -> list[str]:
     reasons: list[str] = []
     for item in recalled:
@@ -262,6 +293,7 @@ __all__ = [
     "explain_memory_denied",
     "explain_memory_forget",
     "explain_memory_phase_diff",
+    "explain_memory_rule_applied",
     "explain_memory_recall",
     "explain_trace_event",
 ]

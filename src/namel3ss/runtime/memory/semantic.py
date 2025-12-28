@@ -117,6 +117,11 @@ class SemanticMemory:
         items.sort(key=lambda item: item.id)
         return items
 
+    def items_for_store(self, store_key: str) -> List[MemoryItem]:
+        items = list(self._snippets.get(store_key, []))
+        items.sort(key=lambda item: item.id)
+        return items
+
     def delete_item(self, store_key: str, memory_id: str) -> MemoryItem | None:
         items = self._snippets.get(store_key, [])
         for idx, item in enumerate(items):

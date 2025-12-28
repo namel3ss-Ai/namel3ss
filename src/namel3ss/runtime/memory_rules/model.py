@@ -45,6 +45,7 @@ class Rule:
     created_by: str
     created_at: int
     priority: int = 0
+    proposal_id: str | None = None
 
 
 @dataclass(frozen=True)

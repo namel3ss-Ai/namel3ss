@@ -112,6 +112,7 @@ def _rule_payload(rule) -> dict:
         "created_by": rule.created_by,
         "created_at": rule.created_at,
         "priority": rule.priority,
+        "proposal_id": rule.proposal_id,
     }
 
 

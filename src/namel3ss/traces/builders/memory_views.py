@@ -1,0 +1,150 @@
+from __future__ import annotations
+
+from namel3ss.traces.schema import TRACE_VERSION, TraceEventType
+
+
+def build_memory_explanation(
+    *,
+    for_event_index: int,
+    title: str,
+    lines: list[str],
+    related_ids: list[str] | None = None,
+) -> dict:
+    event = {
+        "type": TraceEventType.MEMORY_EXPLANATION,
+        "trace_version": TRACE_VERSION,
+        "for_event_index": int(for_event_index),
+        "title": title,
+        "lines": list(lines),
+    }
+    if related_ids:
+        event["related_ids"] = list(related_ids)
+    return event
+
+
+def build_memory_links(
+    *,
+    ai_profile: str,
+    session: str,
+    memory_id: str,
+    phase_id: str,
+    space: str,
+    owner: str,
+    link_count: int,
+    lines: list[str],
+    lane: str | None = None,
+) -> dict:
+    event = {
+        "type": TraceEventType.MEMORY_LINKS,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "memory_id": memory_id,
+        "phase_id": phase_id,
+        "space": space,
+        "owner": owner,
+        "link_count": int(link_count),
+        "lines": list(lines),
+    }
+    if lane is not None:
+        event["lane"] = lane
+    return event
+
+
+def build_memory_path(
+    *,
+    ai_profile: str,
+    session: str,
+    memory_id: str,
+    phase_id: str,
+    space: str,
+    owner: str,
+    title: str,
+    lines: list[str],
+    lane: str | None = None,
+) -> dict:
+    event = {
+        "type": TraceEventType.MEMORY_PATH,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "memory_id": memory_id,
+        "phase_id": phase_id,
+        "space": space,
+        "owner": owner,
+        "title": title,
+        "lines": list(lines),
+    }
+    if lane is not None:
+        event["lane"] = lane
+    return event
+
+
+def build_memory_impact(
+    *,
+    ai_profile: str,
+    session: str,
+    memory_id: str,
+    space: str,
+    owner: str,
+    phase_id: str,
+    depth_used: int,
+    item_count: int,
+    title: str,
+    lines: list[str],
+    path_lines: list[str] | None = None,
+    lane: str | None = None,
+) -> dict:
+    event = {
+        "type": TraceEventType.MEMORY_IMPACT,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "memory_id": memory_id,
+        "space": space,
+        "owner": owner,
+        "phase_id": phase_id,
+        "depth_used": int(depth_used),
+        "item_count": int(item_count),
+        "title": title,
+        "lines": list(lines),
+    }
+    if path_lines is not None:
+        event["path_lines"] = list(path_lines)
+    if lane is not None:
+        event["lane"] = lane
+    return event
+
+
+def build_memory_change_preview(
+    *,
+    ai_profile: str,
+    session: str,
+    memory_id: str,
+    change_kind: str,
+    title: str,
+    lines: list[str],
+    space: str | None = None,
+    owner: str | None = None,
+    phase_id: str | None = None,
+    lane: str | None = None,
+) -> dict:
+    event = {
+        "type": TraceEventType.MEMORY_CHANGE_PREVIEW,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "memory_id": memory_id,
+        "change_kind": change_kind,
+        "title": title,
+        "lines": list(lines),
+    }
+    if space is not None:
+        event["space"] = space
+    if owner is not None:
+        event["owner"] = owner
+    if phase_id is not None:
+        event["phase_id"] = phase_id
+    if lane is not None:
+        event["lane"] = lane
+    return event

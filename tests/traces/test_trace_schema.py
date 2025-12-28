@@ -1,101 +1,33 @@
 from namel3ss.traces.builders import (
-    build_ai_call_completed,
-    build_ai_call_failed,
-    build_ai_call_started,
     build_memory_border_check,
+    build_memory_change_preview,
     build_memory_conflict,
-    build_memory_denied,
-    build_memory_forget,
-    build_memory_recall,
-    build_memory_explanation,
     build_memory_deleted,
+    build_memory_denied,
+    build_memory_explanation,
+    build_memory_forget,
+    build_memory_impact,
     build_memory_links,
     build_memory_path,
-    build_memory_change_preview,
-    build_memory_agreement_summary,
-    build_memory_approved,
-    build_memory_approval_recorded,
-    build_memory_team_summary,
-    build_memory_impact,
-    build_memory_promoted,
-    build_memory_proposed,
     build_memory_phase_diff,
     build_memory_phase_started,
+    build_memory_promoted,
+    build_memory_proposed,
     build_memory_promotion_denied,
+    build_memory_recall,
     build_memory_rejected,
+    build_memory_rule_applied,
+    build_memory_rule_changed,
+    build_memory_rules_snapshot,
+    build_memory_team_summary,
     build_memory_trust_check,
     build_memory_trust_rules,
     build_memory_write,
-    build_tool_call_completed,
-    build_tool_call_failed,
-    build_tool_call_requested,
+    build_memory_agreement_summary,
+    build_memory_approved,
+    build_memory_approval_recorded,
 )
-from namel3ss.traces.redact import SUMMARY_MAX_LENGTH
 from namel3ss.traces.schema import TRACE_VERSION, TraceEventType
-
-
-def test_ai_call_event_keys_and_version():
-    event = build_ai_call_started(
-        call_id="call-123",
-        provider="mock",
-        model="gpt-4.1",
-        input_text="hello world",
-        tools_declared_count=1,
-        memory_enabled=True,
-    )
-    assert event["type"] == TraceEventType.AI_CALL_STARTED
-    assert event["trace_version"] == TRACE_VERSION
-    assert "timestamp" in event
-    assert event["call_id"] == "call-123"
-    assert event["provider"] == "mock"
-    assert event["model"] == "gpt-4.1"
-    assert event["memory_enabled"] is True
-
-    failed = build_ai_call_failed(
-        call_id="call-123",
-        provider="mock",
-        model="gpt-4.1",
-        error_type="TestError",
-        error_message="something went wrong",
-        duration_ms=42,
-    )
-    assert failed["type"] == TraceEventType.AI_CALL_FAILED
-    assert failed["duration_ms"] == 42
-
-
-def test_redaction_and_truncation():
-    long_text = "x" * (SUMMARY_MAX_LENGTH + 50)
-    completed = build_ai_call_completed(
-        call_id="call-999",
-        provider="mock",
-        model="demo",
-        output_text=long_text,
-        duration_ms=10,
-    )
-    assert len(completed["output_summary"]) <= SUMMARY_MAX_LENGTH + len("... (truncated)")
-
-    requested = build_tool_call_requested(
-        call_id="call-999",
-        tool_call_id="tool-1",
-        provider="mock",
-        model="demo",
-        tool_name="echo",
-        arguments={"api_key": "secret-value"},
-    )
-    assert requested["type"] == TraceEventType.TOOL_CALL_REQUESTED
-    assert requested["arguments_summary"] == "(redacted)"
-
-    failed = build_tool_call_failed(
-        call_id="call-999",
-        tool_call_id="tool-1",
-        provider="mock",
-        model="demo",
-        tool_name="echo",
-        error_type="Boom",
-        error_message="super long " + ("z" * (SUMMARY_MAX_LENGTH + 10)),
-        duration_ms=5,
-    )
-    assert len(failed["error_message"]) <= SUMMARY_MAX_LENGTH + len("... (truncated)")
 
 
 def test_memory_trace_schema_and_redaction():
@@ -342,6 +274,45 @@ def test_memory_space_trace_events():
     )
     assert trust_rules["type"] == TraceEventType.MEMORY_TRUST_RULES
     assert trust_rules["team_id"] == "team-1"
+
+
+def test_memory_rule_trace_events():
+    applied = build_memory_rule_applied(
+        ai_profile="assistant",
+        session="sess-1",
+        rule_id="rule-1",
+        rule_text="Only approvers can approve team proposals",
+        action="approve_team_memory",
+        allowed=False,
+        reason="rule_level_required",
+        title="Memory rule applied",
+        lines=["Rule applied."],
+    )
+    assert applied["type"] == TraceEventType.MEMORY_RULE_APPLIED
+    assert applied["rule_id"] == "rule-1"
+
+    snapshot = build_memory_rules_snapshot(
+        ai_profile="assistant",
+        session="sess-1",
+        team_id="team-1",
+        phase_id="phase-1",
+        title="Memory rules snapshot",
+        lines=["Only approvers can approve team proposals"],
+    )
+    assert snapshot["type"] == TraceEventType.MEMORY_RULES_SNAPSHOT
+    assert snapshot["team_id"] == "team-1"
+
+    changed = build_memory_rule_changed(
+        ai_profile="assistant",
+        session="sess-1",
+        team_id="team-1",
+        phase_from="phase-1",
+        phase_to="phase-2",
+        title="Memory rule changed",
+        lines=["Rule added: Only approvers can approve team proposals."],
+    )
+    assert changed["type"] == TraceEventType.MEMORY_RULE_CHANGED
+    assert changed["phase_to"] == "phase-2"
 
 
 def test_memory_phase_trace_events():

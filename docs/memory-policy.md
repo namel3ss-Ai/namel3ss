@@ -54,6 +54,14 @@ System lane is read only for normal flows.
 Border checks emit `memory_border_check` with space and lane details.
 Team lane writes create proposals that require approval.
 
+## Rules
+Rules are stored as memory items.
+Rules live in the team lane or system lane.
+Rules are enforced before proposals and promotions.
+Rule decisions emit `memory_rule_applied`.
+Rule snapshots emit `memory_rules_snapshot`.
+Rule changes emit `memory_rule_changed`.
+
 ## Trace events
 Governance trace events include:
 - `memory_denied`
@@ -73,6 +81,9 @@ Governance trace events include:
 - `memory_trust_check`
 - `memory_approval_recorded`
 - `memory_trust_rules`
+- `memory_rule_applied`
+- `memory_rules_snapshot`
+- `memory_rule_changed`
 - `memory_explanation`
 - `memory_links`
 - `memory_path`

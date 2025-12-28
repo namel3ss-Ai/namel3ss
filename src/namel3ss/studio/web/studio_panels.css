@@ -198,3 +198,29 @@
   text-decoration: underline;
   font-weight: 600;
 }
+
+.rules-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.rules-form input,
+.rules-form select {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  background: #fff;
+}
+.rules-form input[type="text"] {
+  flex: 1 1 240px;
+}
+.rules-form input[type="number"] {
+  width: 120px;
+}
+.rules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}

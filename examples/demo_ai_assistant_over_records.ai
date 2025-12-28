@@ -39,6 +39,10 @@ flow "memory_tour":
   ask ai "assistant" with input: "My name is Ada." as fact
   ask ai "assistant" with input: "Actually, my name is Ada Lovelace." as correction
   ask ai "assistant" with input: "Remember this for the project: We decided to ship weekly." as team_decision
+  ask ai "assistant" with input: "Remember this for the project: I prefer daily standups." as team_pref
+  set state._memory_rules_snapshot is "team"
+  ask ai "assistant" with input: "Show rule snapshot." as rule_snapshot
+  set state._memory_rules_snapshot is ""
   set state._memory_agreement_action is "approve"
   ask ai "assistant" with input: "Approve team memory." as team_approve
   set state._memory_agreement_action is ""

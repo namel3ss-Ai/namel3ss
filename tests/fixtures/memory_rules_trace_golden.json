@@ -1,0 +1,48 @@
+[
+  {
+    "type": "memory_rule_changed",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "team_id": "unknown",
+    "phase_from": "phase-1",
+    "phase_to": "phase-1",
+    "title": "Memory rule changed",
+    "lines": [
+      "Rule added: Only approvers can approve team proposals."
+    ]
+  },
+  {
+    "type": "memory_rule_applied",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "rule_id": "project:unknown:team:semantic:1",
+    "rule_text": "Only approvers can approve team proposals",
+    "action": "approve_team_memory",
+    "allowed": false,
+    "reason": "rule_level_required",
+    "title": "Memory rule applied",
+    "lines": [
+      "Rule applied.",
+      "Rule id is project:unknown:team:semantic:1.",
+      "Rule text is Only approvers can approve team proposals.",
+      "Action is approve team memory.",
+      "Allowed is no.",
+      "Rule checks the trust level.",
+      "Required level is approver."
+    ]
+  },
+  {
+    "type": "memory_rules_snapshot",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "team_id": "unknown",
+    "phase_id": "phase-1",
+    "title": "Memory rules snapshot",
+    "lines": [
+      "Only approvers can approve team proposals"
+    ]
+  }
+]

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Namel3ss Studio</title>
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/studio_ui.css">
   <link rel="stylesheet" href="/studio_panels.css">
   <link rel="stylesheet" href="/theme_tokens.css">
   <link rel="stylesheet" href="/tool_wizard.css">
@@ -120,6 +121,7 @@
           <button class="tab active" data-tab="summary">Summary</button>
           <button class="tab" data-tab="graph">Graph</button>
           <button class="tab" data-tab="trust">Trust</button>
+          <button class="tab" data-tab="rules">Rules</button>
           <button class="tab" data-tab="data">Data</button>
           <button class="tab" data-tab="fix">Fix</button>
           <button class="tab" data-tab="state">State</button>
@@ -165,6 +167,55 @@
               <div class="panel-body" id="trustObserve"></div>
               <div class="panel-body" id="trustExplain"></div>
               <div class="panel-body" id="trustWhy"></div>
+            </div>
+          </div>
+          <div class="panel" data-tab="rules">
+            <div class="panel-header">
+              <div class="section-title">Rules</div>
+              <button class="btn ghost small" id="rulesRefresh">Refresh</button>
+            </div>
+            <div id="rulesPanel" class="panel-body">
+              <div class="panel-stack">
+                <div class="panel-section">
+                  <div class="panel-section-title">Propose rule</div>
+                </div>
+                <div class="rules-form">
+                  <input id="rulesText" type="text" placeholder="Only approvers can approve team proposals">
+                  <select id="rulesScope" aria-label="Rule scope">
+                    <option value="team">Team scope</option>
+                    <option value="system">System scope</option>
+                  </select>
+                  <input id="rulesPriority" type="number" min="0" placeholder="Priority">
+                  <button class="btn primary" id="rulesPropose">Propose</button>
+                </div>
+                <div class="panel-section">
+                  <div class="panel-section-title">Active rules</div>
+                </div>
+                <div class="rules-grid">
+                  <div>
+                    <div class="panel-section-title">Team</div>
+                    <div id="rulesActiveTeam"></div>
+                  </div>
+                  <div>
+                    <div class="panel-section-title">System</div>
+                    <div id="rulesActiveSystem"></div>
+                  </div>
+                </div>
+                <div class="panel-section">
+                  <div class="panel-section-title">Pending rules</div>
+                </div>
+                <div class="rules-grid">
+                  <div>
+                    <div class="panel-section-title">Team</div>
+                    <div id="rulesPendingTeam"></div>
+                  </div>
+                  <div>
+                    <div class="panel-section-title">System</div>
+                    <div id="rulesPendingSystem"></div>
+                  </div>
+                </div>
+                <div class="status-banner">See Traces for rule decisions and explain.</div>
+              </div>
             </div>
           </div>
           <div class="panel" data-tab="data">

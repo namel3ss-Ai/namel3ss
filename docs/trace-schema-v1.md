@@ -62,6 +62,9 @@ Memory events include:
 - memory_trust_check
 - memory_approval_recorded
 - memory_trust_rules
+- memory_rule_applied
+- memory_rules_snapshot
+- memory_rule_changed
 - memory_explanation
 - memory_links
 - memory_path

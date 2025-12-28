@@ -100,6 +100,8 @@ Memory lanes separate my, team, and system memory.
 Team lane writes happen only by promotion and are summarized by memory_team_summary.
 Team lane changes require agreement before they become active.
 Team memory actions follow trust levels for propose and approve.
+Rules are short sentences stored in team or system lane.
+Rule decisions emit memory_rule_applied.
 
 Memory is phase based with deterministic deletion of superseded or expired items.
 Each AI call emits memory_recall and memory_write, plus governance and border events.
@@ -118,6 +120,7 @@ current_phase.phase_id: phase-1
 ```
 
 Memory trust docs at docs/memory-trust.md.
+Memory rules docs at docs/memory-rules.md.
 See [Memory contract](docs/memory.md), [Memory policy](docs/memory-policy.md), [Memory lanes](docs/memory-lanes.md), [Memory agreement](docs/memory-agreement.md), [Memory spaces](docs/memory-spaces.md), and [Memory phases](docs/memory-phases.md) for the full schema and governance rules.
 
 ### Tools

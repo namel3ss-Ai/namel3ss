@@ -1,6 +1,11 @@
 from pathlib import Path
 
 
+def _app_bundle():
+    app_root = Path("src/namel3ss/studio/web/app")
+    return "\n".join(path.read_text(encoding="utf-8") for path in sorted(app_root.rglob("*.js")))
+
+
 def test_studio_html_structure():
     html = Path("src/namel3ss/studio/web/index.html").read_text(encoding="utf-8")
     assert "Namel3ss Studio" in html
@@ -8,6 +13,7 @@ def test_studio_html_structure():
         "Summary",
         "Graph",
         "Trust",
+        "Rules",
         "Data & Identity",
         "Guided Fixes",
         "Packages",
@@ -35,10 +41,15 @@ def test_studio_html_structure():
     assert 'id="teamTrust"' in html
     assert 'id="teamTrustLines"' in html
     assert 'id="teamTrustNotice"' in html
+    assert 'id="rulesPanel"' in html
+    assert 'id="rulesActiveTeam"' in html
+    assert 'id="rulesActiveSystem"' in html
+    assert 'id="rulesPendingTeam"' in html
+    assert 'id="rulesPendingSystem"' in html
     assert 'id="addElementButton"' in html
     assert 'id="inspectorBody"' in html
     assert 'id="learnToggle"' in html
-    app_js = Path("src/namel3ss/studio/web/app.js").read_text(encoding="utf-8")
+    app_js = _app_bundle()
     assert "memory_explanation" in app_js
     assert "memory_links" in app_js
     assert "memory_path" in app_js
@@ -52,6 +63,9 @@ def test_studio_html_structure():
     assert "memory_trust_check" in app_js
     assert "memory_approval_recorded" in app_js
     assert "memory_trust_rules" in app_js
+    assert "memory_rule_applied" in app_js
+    assert "memory_rules_snapshot" in app_js
+    assert "memory_rule_changed" in app_js
     assert "Explain" in app_js
     assert "Links" in app_js
     assert "Path" in app_js

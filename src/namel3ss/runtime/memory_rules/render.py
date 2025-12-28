@@ -1,6 +1,21 @@
 from __future__ import annotations
 
-from namel3ss.runtime.memory_rules.model import AppliedRule, Rule
+from namel3ss.runtime.memory_rules.evaluate import (
+    REASON_APPROVAL_COUNT,
+    REASON_DENY_EVENT,
+    REASON_LEVEL_REQUIRED,
+)
+from namel3ss.runtime.memory_rules.model import (
+    ACTION_APPROVE_TEAM_MEMORY,
+    ACTION_DELETE_TEAM_MEMORY,
+    ACTION_PROMOTE_TO_SYSTEM_LANE,
+    ACTION_PROMOTE_TO_TEAM_LANE,
+    ACTION_PROPOSE_TEAM_MEMORY,
+    ACTION_REJECT_TEAM_MEMORY,
+    ACTION_WRITE_TEAM_LANE_DIRECT,
+    AppliedRule,
+    Rule,
+)
 
 
 def rule_applied_lines(applied: AppliedRule) -> list[str]:
@@ -8,11 +23,18 @@ def rule_applied_lines(applied: AppliedRule) -> list[str]:
         "Rule applied.",
         f"Rule id is {applied.rule_id}.",
         f"Rule text is {applied.rule_text}.",
-        f"Action is {applied.action}.",
+        f"Action is {_action_line(applied.action)}.",
         "Allowed is yes." if applied.allowed else "Allowed is no.",
     ]
-    if applied.reason:
-        lines.append(f"Reason is {applied.reason}.")
+    reason_line = _reason_line(applied.reason)
+    if reason_line:
+        lines.append(reason_line)
+    if applied.required_level:
+        lines.append(f"Required level is {applied.required_level}.")
+    if applied.required_count is not None:
+        lines.append(f"Required approvals count is {int(applied.required_count)}.")
+    if applied.event_type:
+        lines.append(f"Blocked event type is {applied.event_type}.")
     return lines
 
 
@@ -38,6 +60,33 @@ def rule_changed_lines(added: list[Rule], removed: list[Rule]) -> list[str]:
 
 def _ordered_rules(rules: list[Rule]) -> list[Rule]:
     return sorted(rules, key=lambda rule: (-int(rule.priority), rule.rule_id))
+
+
+_ACTION_LINES = {
+    ACTION_PROPOSE_TEAM_MEMORY: "propose team memory",
+    ACTION_APPROVE_TEAM_MEMORY: "approve team memory",
+    ACTION_REJECT_TEAM_MEMORY: "reject team memory",
+    ACTION_PROMOTE_TO_TEAM_LANE: "promote memory to team lane",
+    ACTION_PROMOTE_TO_SYSTEM_LANE: "promote memory to system lane",
+    ACTION_WRITE_TEAM_LANE_DIRECT: "write memory to team lane",
+    ACTION_DELETE_TEAM_MEMORY: "delete team memory",
+}
+
+
+def _action_line(action: str) -> str:
+    return _ACTION_LINES.get(action, action)
+
+
+def _reason_line(reason: str | None) -> str | None:
+    if reason == REASON_LEVEL_REQUIRED:
+        return "Rule checks the trust level."
+    if reason == REASON_APPROVAL_COUNT:
+        return "Rule sets the approval count."
+    if reason == REASON_DENY_EVENT:
+        return "Rule blocks this event type."
+    if reason:
+        return f"Reason is {reason}."
+    return None
 
 
 __all__ = ["rule_applied_lines", "rule_changed_lines", "rules_snapshot_lines"]
