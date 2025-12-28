@@ -1,10 +1,16 @@
 from namel3ss.runtime.memory.events import EVENT_DECISION, EVENT_PREFERENCE
 from namel3ss.runtime.memory_lanes.context import resolve_team_id
+import pytest
+
+from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.memory_lanes.model import (
+    LANE_AGENT,
     LANE_MY,
     LANE_SYSTEM,
     LANE_TEAM,
+    agent_lane_key,
     ensure_lane_meta,
+    is_agent_lane_item,
     lane_can_change,
     lane_for_space,
     lane_visibility,
@@ -13,7 +19,7 @@ from namel3ss.runtime.memory_lanes.model import (
 from namel3ss.runtime.memory_lanes.summary import build_team_summary
 from namel3ss.runtime.memory_policy.defaults import default_contract
 from namel3ss.runtime.memory_policy.evaluation import evaluate_lane_promotion
-from namel3ss.runtime.memory.spaces import SPACE_PROJECT, SPACE_SESSION, SPACE_SYSTEM, store_key
+from namel3ss.runtime.memory.spaces import SPACE_PROJECT, SPACE_SESSION, SPACE_SYSTEM, SpaceContext, store_key
 from namel3ss.runtime.memory_timeline.diff import PhaseDiff
 from namel3ss.runtime.memory_timeline.snapshot import SnapshotItem
 
@@ -23,6 +29,7 @@ def test_lane_defaults_and_visibility():
     assert lane_for_space(SPACE_PROJECT) == LANE_TEAM
     assert lane_for_space(SPACE_SYSTEM) == LANE_SYSTEM
     assert lane_visibility(LANE_MY) == "me"
+    assert lane_visibility(LANE_AGENT) == "me"
     assert lane_visibility(LANE_TEAM) == "team"
     assert lane_visibility(LANE_SYSTEM) == "all"
     assert lane_can_change(LANE_SYSTEM) is False
@@ -31,6 +38,22 @@ def test_lane_defaults_and_visibility():
     assert lane == LANE_TEAM
     assert visible_to == "team"
     assert can_change is True
+
+
+def test_agent_lane_requires_agent_id():
+    meta = ensure_lane_meta({}, lane=LANE_AGENT, agent_id="agent-a")
+    lane, visible_to, can_change = validate_lane_rules({"meta": meta})
+    assert lane == LANE_AGENT
+    assert visible_to == "me"
+    assert can_change is True
+    assert is_agent_lane_item({"meta": meta}) is True
+    with pytest.raises(Namel3ssError):
+        validate_lane_rules({"meta": ensure_lane_meta({}, lane=LANE_AGENT)})
+
+
+def test_agent_lane_key_is_deterministic():
+    ctx = SpaceContext(session_id="session", user_id="user", project_id="proj")
+    assert agent_lane_key(ctx, space=SPACE_PROJECT, agent_id="agent one") == "project:proj:agent:agent_one"
 
 
 def test_store_key_includes_lane():

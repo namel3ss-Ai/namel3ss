@@ -24,6 +24,8 @@ Links are created only from real events.
 - each link stores a short preview of the target text
 - previews are redacted and stable
 - previews remove bracket characters
+Compaction summaries store link preview text for replaced items.
+This keeps paths and impact usable after compaction.
 
 ## Paths
 - a path is a short because trail for one item

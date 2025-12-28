@@ -14,6 +14,7 @@ def test_studio_html_structure():
         "Graph",
         "Trust",
         "Rules",
+        "Handoff",
         "Data & Identity",
         "Guided Fixes",
         "Packages",
@@ -46,6 +47,12 @@ def test_studio_html_structure():
     assert 'id="rulesActiveSystem"' in html
     assert 'id="rulesPendingTeam"' in html
     assert 'id="rulesPendingSystem"' in html
+    assert 'id="handoffPanel"' in html
+    assert 'id="handoffAgents"' in html
+    assert 'id="handoffPackets"' in html
+    assert 'id="handoffFrom"' in html
+    assert 'id="handoffTo"' in html
+    assert 'id="handoffCreate"' in html
     assert 'id="addElementButton"' in html
     assert 'id="inspectorBody"' in html
     assert 'id="learnToggle"' in html

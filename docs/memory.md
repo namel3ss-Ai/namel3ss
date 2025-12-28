@@ -24,7 +24,8 @@ This doc describes the memory contract and trace events.
 - `recall_reason` list of recall reasons
 - `space` session, user, project, system
 - `owner` stable owner id
-- `lane` my, team, system
+- `lane` my, team, system, agent
+- `agent_id` agent id for agent lane items
 - `visible_to` me, team, all
 - `can_change` true or false
 - `agreement_status` pending, approved, rejected
@@ -46,13 +47,19 @@ This doc describes the memory contract and trace events.
 - `phase_reason` stable reason code
 - `links` list of link records
 - `link_preview_text` map of id to preview
+- `handoff_packet_id` handoff packet id
+- `handoff_from_agent` agent id that sent the handoff
+- `handoff_to_agent` agent id that received the handoff
+- `handoff_link_previews` list of preview lines
 
 ## Memory lanes
 - My lane holds personal memory for the current user
+- Agent lane holds private memory for one agent
 - Team lane holds shared memory for the project
 - System lane holds system rules and is read only
 - Team lane writes are only allowed by explicit promotion
 - Team lane writes create proposals that must be approved
+Agent lanes do not share memory without a handoff.
 
 ## Memory policy contract
 Policies are enforced and recorded under `policy` in traces.
@@ -68,6 +75,12 @@ Key fields:
 - `phase` enabled, mode, allow_cross_phase_recall, max_phases, diff_enabled
 - `privacy` deny patterns and allowlisted profile keys
 - `authority_order` overwrite order
+
+## Memory budgets
+Budgets keep memory fast and small.
+Budgets apply per space, lane, and phase.
+Soft limit actions use compaction, low value removal, or deny write.
+See docs/memory-budgets.md for details.
 
 ## Trace events
 Memory emits canonical events on every AI call.
@@ -99,6 +112,10 @@ Memory emits canonical events on every AI call.
 - `memory_border_check`
 - `memory_promoted`
 - `memory_promotion_denied`
+- `memory_budget`
+- `memory_compaction`
+- `memory_cache_hit`
+- `memory_cache_miss`
 - `memory_phase_started`
 - `memory_deleted`
 - `memory_phase_diff`
@@ -110,6 +127,13 @@ Memory emits canonical events on every AI call.
 - `memory_trust_check`
 - `memory_approval_recorded`
 - `memory_trust_rules`
+- `memory_rule_applied`
+- `memory_rules_snapshot`
+- `memory_rule_changed`
+- `memory_handoff_created`
+- `memory_handoff_applied`
+- `memory_handoff_rejected`
+- `memory_agent_briefing`
 
 ### Explanation and links
 - `memory_explanation`
@@ -122,6 +146,7 @@ Memory emits canonical events on every AI call.
 Studio shows a bracketless Plain view for memory traces.
 Each line uses key: value with dot notation for nested fields.
 Lists use count and indexed keys.
+Studio also shows a Memory budget section in the Traces panel.
 
 ## Testing approach
 - Unit tests enforce policy evaluation and conflict rules

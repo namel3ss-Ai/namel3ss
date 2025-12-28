@@ -1,30 +1,27 @@
 from __future__ import annotations
 
-from dataclasses import replace
-
 from namel3ss.runtime.memory.contract import MemoryItem, MemoryItemFactory, MemoryKind
 from namel3ss.runtime.memory.events import EVENT_CONTEXT
 from namel3ss.runtime.memory.helpers import (
     build_border_event,
     build_conflict_event,
     build_deleted_event,
-    build_deleted_events,
-    build_forget_events,
 )
 from namel3ss.runtime.memory_lanes.model import (
+    LANE_AGENT,
     LANE_MY,
     LANE_SYSTEM,
     LANE_TEAM,
+    agent_lane_key,
     ensure_lane_meta,
     lane_for_space,
-    lanes_for_space,
 )
 from namel3ss.runtime.memory.policy import MemoryPolicy
 from namel3ss.runtime.memory.promotion import promotion_request_for_item
 from namel3ss.runtime.memory.profile import ProfileMemory
 from namel3ss.runtime.memory.semantic import SemanticMemory
 from namel3ss.runtime.memory.short_term import ShortTermMemory
-from namel3ss.runtime.memory.spaces import SPACE_SESSION, SpaceContext
+from namel3ss.runtime.memory.spaces import SPACE_PROJECT, SPACE_SESSION, SpaceContext
 from namel3ss.runtime.memory_links import (
     LINK_TYPE_CONFLICTS_WITH,
     LINK_TYPE_PROMOTED_FROM,
@@ -33,35 +30,27 @@ from namel3ss.runtime.memory_links import (
     build_link_record,
     build_preview_for_item,
 )
-from namel3ss.runtime.memory_agreement import ProposalStore, build_proposed_event, proposal_required
+from namel3ss.runtime.memory_agreement import ProposalStore
 from namel3ss.runtime.memory_policy.evaluation import evaluate_lane_promotion, evaluate_promotion
 from namel3ss.runtime.memory_policy.model import MemoryPolicyContract
 from namel3ss.runtime.memory_rules import (
-    ACTION_APPROVE_TEAM_MEMORY,
     ACTION_PROMOTE_TO_SYSTEM_LANE,
     ACTION_PROMOTE_TO_TEAM_LANE,
-    ACTION_PROPOSE_TEAM_MEMORY,
     RULE_SCOPE_SYSTEM,
     RULE_SCOPE_TEAM,
     enforce_action,
-    merge_required_approvals,
 )
 from namel3ss.runtime.memory_rules.store import active_rules_for_scope
 from namel3ss.runtime.memory_rules.traces import build_rule_applied_event
 from namel3ss.runtime.memory_timeline.phase import PhaseRegistry, PhaseRequest
 from namel3ss.runtime.memory_timeline.snapshot import PhaseLedger
 from namel3ss.runtime.memory_timeline.versioning import apply_phase_meta
-from namel3ss.runtime.memory_trust import (
-    build_trust_check_event,
-    build_trust_rules_event,
-    can_propose,
-    required_approvals,
-)
-from namel3ss.runtime.memory_trust.model import TRUST_OWNER
 from namel3ss.traces.builders import build_memory_promoted, build_memory_promotion_denied
 
 from .analytics import _build_change_preview_event
+from .budget_guard import budget_allows
 from .phases import _ensure_phase_for_store
+from .promotions_proposals import _maybe_propose_promotion
 from .utils import _phase_id_for_item
 
 
@@ -87,6 +76,8 @@ def _promote_items(
     phase_request: PhaseRequest | None,
     session_phase,
     link_tracker: LinkTracker,
+    agent_id: str | None,
+    budget_enforcer,
 ) -> tuple[list[MemoryItem], list[dict]]:
     promoted: list[MemoryItem] = []
     events: list[dict] = []
@@ -109,6 +100,8 @@ def _promote_items(
         from_lane = item.meta.get("lane", LANE_MY)
         to_space = request.target_space
         target_lane = lane_for_space(to_space)
+        if to_space == SPACE_PROJECT and agent_id:
+            target_lane = LANE_AGENT
         if from_space == to_space:
             continue
         decision = evaluate_promotion(
@@ -187,7 +180,10 @@ def _promote_items(
             )
             continue
         target_owner = space_ctx.owner_for(to_space)
-        target_key = space_ctx.store_key_for(to_space, lane=target_lane)
+        if target_lane == LANE_AGENT:
+            target_key = agent_lane_key(space_ctx, space=to_space, agent_id=agent_id or "")
+        else:
+            target_key = space_ctx.store_key_for(to_space, lane=target_lane)
         target_phase, phase_events = _ensure_phase_for_store(
             ai_profile=ai_profile,
             session=session,
@@ -202,91 +198,24 @@ def _promote_items(
             lane=target_lane,
         )
         events.extend(phase_events)
-        if proposal_required(target_lane):
-            event_type = item.meta.get("event_type", EVENT_CONTEXT)
-            rule_check = enforce_action(
-                rules=team_rules,
-                action=ACTION_PROPOSE_TEAM_MEMORY,
-                actor_level=actor_level,
-                event_type=event_type,
-            )
-            if rule_check.applied:
-                for applied in rule_check.applied:
-                    events.append(
-                        build_rule_applied_event(
-                            ai_profile=ai_profile,
-                            session=session,
-                            applied=applied,
-                        )
-                    )
-            if not rule_check.allowed:
-                continue
-            if not trust_rules_emitted and team_id:
-                events.append(
-                    build_trust_rules_event(
-                        ai_profile=ai_profile,
-                        session=session,
-                        team_id=team_id,
-                        rules=trust_rules,
-                    )
-                )
-                trust_rules_emitted = True
-            proposal_actor_id = actor_id if actor_id != "anonymous" else str(item.source)
-            decision = can_propose(actor_level, trust_rules)
-            events.append(
-                build_trust_check_event(
-                    ai_profile=ai_profile,
-                    session=session,
-                    action="propose",
-                    actor_id=proposal_actor_id,
-                    actor_level=decision.actor_level,
-                    required_level=decision.required_level,
-                    allowed=decision.allowed,
-                    reason=decision.reason,
-                )
-            )
-            if not decision.allowed:
-                continue
-            proposal_meta = dict(item.meta)
-            proposal_meta["lane"] = target_lane
-            proposal_meta["visible_to"] = "team"
-            proposal_meta["can_change"] = False
-            proposal_meta = ensure_lane_meta(
-                proposal_meta,
-                lane=target_lane,
-                visible_to="team",
-                can_change=False,
-                allow_team_change=contract.lanes.team_can_change,
-            )
-            proposal_item = replace(item, meta=proposal_meta)
-            rule_approval_check = enforce_action(
-                rules=team_rules,
-                action=ACTION_APPROVE_TEAM_MEMORY,
-                actor_level=TRUST_OWNER,
-                event_type=event_type,
-            )
-            approvals_required = merge_required_approvals(
-                required_approvals(trust_rules), rule_approval_check.required_approvals
-            )
-            proposal = agreements.create_proposal(
-                team_id=team_id or "unknown",
-                phase_id=target_phase.phase_id,
-                memory_item=proposal_item,
-                proposed_by=proposal_actor_id,
-                reason_code=request.reason,
-                approval_count_required=approvals_required,
-                owner_override=trust_rules.owner_override,
-                ai_profile=ai_profile,
-            )
-            events.append(
-                build_proposed_event(
-                    ai_profile=ai_profile,
-                    session=session,
-                    proposal=proposal,
-                    memory_id=item.id,
-                    lane=target_lane,
-                )
-            )
+        handled, trust_rules_emitted = _maybe_propose_promotion(
+            ai_profile=ai_profile,
+            session=session,
+            item=item,
+            reason=request.reason,
+            target_lane=target_lane,
+            target_phase=target_phase,
+            team_id=team_id,
+            actor_id=actor_id,
+            actor_level=actor_level,
+            trust_rules=trust_rules,
+            team_rules=team_rules,
+            contract=contract,
+            agreements=agreements,
+            events=events,
+            trust_rules_emitted=trust_rules_emitted,
+        )
+        if handled:
             continue
         if target_lane == LANE_TEAM:
             event_type = item.meta.get("event_type", EVENT_CONTEXT)
@@ -338,6 +267,7 @@ def _promote_items(
             promoted_meta,
             lane=target_lane,
             allow_team_change=contract.lanes.team_can_change,
+            agent_id=agent_id if target_lane == LANE_AGENT else None,
         )
         promoted_meta = apply_phase_meta(promoted_meta, target_phase)
         promoted_item = factory.create(
@@ -348,6 +278,16 @@ def _promote_items(
             importance=item.importance,
             meta=promoted_meta,
         )
+        if not budget_allows(
+            budget_enforcer,
+            store_key=target_key,
+            space=to_space,
+            owner=target_owner,
+            lane=target_lane,
+            phase=target_phase,
+            kind=promoted_item.kind.value,
+        ):
+            continue
         conflict = None
         deleted = None
         stored_item = None
@@ -489,82 +429,3 @@ def _promote_items(
                     preview=build_preview_for_item(removed),
                 )
     return promoted, events
-
-
-def _retention_spaces(read_order: list[str], promoted_items: list[MemoryItem]) -> list[str]:
-    ordered = list(read_order or [SPACE_SESSION])
-    extras: list[str] = []
-    for item in promoted_items:
-        space = item.meta.get("space")
-        if isinstance(space, str) and space not in ordered and space not in extras:
-            extras.append(space)
-    if extras:
-        ordered.extend(sorted(extras))
-    return ordered
-
-
-def _apply_retention(
-    *,
-    ai_profile: str,
-    session: str,
-    policy: MemoryPolicy,
-    contract: MemoryPolicyContract,
-    space_ctx: SpaceContext,
-    phase_registry: PhaseRegistry,
-    phase_ledger: PhaseLedger,
-    semantic: SemanticMemory,
-    profile: ProfileMemory,
-    promoted_items: list[MemoryItem],
-    now_tick: int,
-    phase_policy_snapshot: dict,
-) -> list[dict]:
-    events: list[dict] = []
-    spaces_for_retention = _retention_spaces(contract.spaces.read_order, promoted_items)
-    for space in spaces_for_retention:
-        for lane in lanes_for_space(space, read_order=contract.lanes.read_order):
-            store_key = space_ctx.store_key_for(space, lane=lane)
-            owner = space_ctx.owner_for(space)
-            phase = phase_registry.current(store_key)
-            if lane == LANE_SYSTEM:
-                continue
-            if policy.semantic_enabled:
-                forgotten = semantic.apply_retention(store_key, contract, now_tick)
-                events.extend(build_forget_events(ai_profile, session, forgotten, contract))
-                if forgotten and phase:
-                    removed = [item for item, _ in forgotten]
-                    events.extend(
-                        build_deleted_events(
-                            ai_profile,
-                            session,
-                            space=space,
-                            owner=owner,
-                            phase=phase,
-                            removed=removed,
-                            reason="expired",
-                            policy_snapshot=phase_policy_snapshot,
-                            replaced_by=None,
-                        )
-                    )
-                    for item in removed:
-                        phase_ledger.record_delete(store_key, phase=phase, memory_id=item.id)
-            if policy.profile_enabled:
-                forgotten = profile.apply_retention(store_key, contract, now_tick)
-                events.extend(build_forget_events(ai_profile, session, forgotten, contract))
-                if forgotten and phase:
-                    removed = [item for item, _ in forgotten]
-                    events.extend(
-                        build_deleted_events(
-                            ai_profile,
-                            session,
-                            space=space,
-                            owner=owner,
-                            phase=phase,
-                            removed=removed,
-                            reason="expired",
-                            policy_snapshot=phase_policy_snapshot,
-                            replaced_by=None,
-                        )
-                    )
-                    for item in removed:
-                        phase_ledger.record_delete(store_key, phase=phase, memory_id=item.id)
-    return events

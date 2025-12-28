@@ -37,7 +37,7 @@ from namel3ss.runtime.memory_policy.model import (
     SpacePromotionRule,
     TrustRules,
 )
-from namel3ss.runtime.memory_lanes.model import LANE_MY, LANE_SYSTEM, LANE_TEAM
+from namel3ss.runtime.memory_lanes.model import LANE_AGENT, LANE_MY, LANE_SYSTEM, LANE_TEAM
 
 
 DEFAULT_AUTHORITY_ORDER = [AUTHORITY_SYSTEM, AUTHORITY_TOOL, AUTHORITY_USER, AUTHORITY_AI]
@@ -106,10 +106,11 @@ def default_contract(*, write_policy: str, forget_policy: str, phase: PhasePolic
         diff_enabled=True,
     )
     lane_rules = LanePolicy(
-        read_order=[LANE_MY, LANE_TEAM, LANE_SYSTEM],
-        write_lanes=[LANE_MY],
+        read_order=[LANE_MY, LANE_AGENT, LANE_TEAM, LANE_SYSTEM],
+        write_lanes=[LANE_MY, LANE_AGENT],
         team_enabled=True,
         system_enabled=True,
+        agent_enabled=True,
         team_event_types=[EVENT_DECISION, EVENT_RULE, EVENT_EXECUTION],
         team_can_change=True,
     )

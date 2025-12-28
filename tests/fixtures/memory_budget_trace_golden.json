@@ -1,0 +1,15 @@
+{
+  "type": "memory_budget",
+  "trace_version": "2024-10-01",
+  "ai_profile": "assistant",
+  "session": "sess-1",
+  "space": "session",
+  "lane": "my",
+  "phase_id": "phase-1",
+  "owner": "owner",
+  "title": "Memory budget",
+  "lines": [
+    "Short term memory is near its limit.",
+    "Short term items are 10 of 12."
+  ]
+}

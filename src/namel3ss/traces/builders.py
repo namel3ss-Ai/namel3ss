@@ -38,6 +38,12 @@ from namel3ss.traces.builders.memory_rules import (
     build_memory_rule_changed,
     build_memory_rules_snapshot,
 )
+from namel3ss.traces.builders.memory_handoff import (
+    build_memory_agent_briefing,
+    build_memory_handoff_applied,
+    build_memory_handoff_created,
+    build_memory_handoff_rejected,
+)
 from namel3ss.traces.builders.memory_views import (
     build_memory_change_preview,
     build_memory_explanation,
@@ -77,6 +83,10 @@ __all__ = [
     "build_memory_rule_applied",
     "build_memory_rules_snapshot",
     "build_memory_rule_changed",
+    "build_memory_handoff_created",
+    "build_memory_handoff_applied",
+    "build_memory_handoff_rejected",
+    "build_memory_agent_briefing",
     "build_tool_call_completed",
     "build_tool_call_failed",
     "build_tool_call_requested",

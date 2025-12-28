@@ -12,8 +12,11 @@ Trust is simple and deterministic.
 ## What each level can do
 Viewer can read team memory.
 Contributor can propose team memory.
+Contributor can create handoff packets.
 Approver can approve and reject proposals.
+Approver can apply handoff packets.
 Owner can override when override is enabled.
+Owner can reject any handoff.
 
 ## Approval rules
 Proposals need one or two approvals.

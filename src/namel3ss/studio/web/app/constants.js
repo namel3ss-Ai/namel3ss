@@ -28,6 +28,14 @@
     "memory_rule_applied",
     "memory_rules_snapshot",
     "memory_rule_changed",
+    "memory_budget",
+    "memory_compaction",
+    "memory_cache_hit",
+    "memory_cache_miss",
+    "memory_handoff_created",
+    "memory_handoff_applied",
+    "memory_handoff_rejected",
+    "memory_agent_briefing",
   ]);
   constants.PREFERRED_SEED_ACTIONS = [
     "seed",

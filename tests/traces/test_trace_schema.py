@@ -1,6 +1,10 @@
 from namel3ss.traces.builders import (
     build_memory_border_check,
+    build_memory_budget,
+    build_memory_cache_hit,
+    build_memory_cache_miss,
     build_memory_change_preview,
+    build_memory_compaction,
     build_memory_conflict,
     build_memory_deleted,
     build_memory_denied,
@@ -359,6 +363,62 @@ def test_memory_phase_trace_events():
     )
     assert diff["type"] == TraceEventType.MEMORY_PHASE_DIFF
     assert diff["from_phase_id"] == "phase-1"
+
+
+def test_memory_budget_and_cache_trace_events():
+    budget = build_memory_budget(
+        ai_profile="assistant",
+        session="sess-1",
+        space="session",
+        lane="my",
+        phase_id="phase-1",
+        owner="owner",
+        title="Memory budget",
+        lines=["Short term memory is near its limit."],
+    )
+    assert budget["type"] == TraceEventType.MEMORY_BUDGET
+    assert budget["space"] == "session"
+
+    compaction = build_memory_compaction(
+        ai_profile="assistant",
+        session="sess-1",
+        space="session",
+        lane="my",
+        phase_id="phase-1",
+        owner="owner",
+        action="compact",
+        items_removed_count=2,
+        summary_written=True,
+        reason="short_term_limit",
+        title="Memory compaction",
+        lines=["Action is compact."],
+    )
+    assert compaction["type"] == TraceEventType.MEMORY_COMPACTION
+    assert compaction["items_removed_count"] == 2
+
+    cache_hit = build_memory_cache_hit(
+        ai_profile="assistant",
+        session="sess-1",
+        space="session",
+        lane="my",
+        phase_id="phase-1",
+        title="Memory cache hit",
+        lines=["Cache was used for recall."],
+    )
+    assert cache_hit["type"] == TraceEventType.MEMORY_CACHE_HIT
+    assert cache_hit["lane"] == "my"
+
+    cache_miss = build_memory_cache_miss(
+        ai_profile="assistant",
+        session="sess-1",
+        space="session",
+        lane="my",
+        phase_id="phase-1",
+        title="Memory cache miss",
+        lines=["Cache was not used for recall."],
+    )
+    assert cache_miss["type"] == TraceEventType.MEMORY_CACHE_MISS
+    assert cache_miss["phase_id"] == "phase-1"
 
 
 def test_memory_explanation_trace_event():

@@ -199,6 +199,28 @@
   font-weight: 600;
 }
 
+.handoff-form {
+  display: grid;
+  gap: 8px;
+}
+.handoff-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+.handoff-form select {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+  background: #fff;
+}
+.handoff-item .handoff-summary,
+.handoff-item .handoff-preview {
+  margin-top: 8px;
+}
+
 .rules-form {
   display: flex;
   flex-wrap: wrap;

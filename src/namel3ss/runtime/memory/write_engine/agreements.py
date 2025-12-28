@@ -8,6 +8,7 @@ from namel3ss.runtime.memory.profile import ProfileMemory
 from namel3ss.runtime.memory.semantic import SemanticMemory
 from namel3ss.runtime.memory.short_term import ShortTermMemory
 from namel3ss.runtime.memory.spaces import SpaceContext
+from namel3ss.runtime.memory_budget.model import BudgetConfig
 from namel3ss.runtime.memory_lanes.model import LANE_SYSTEM, LANE_TEAM, lane_for_space
 from namel3ss.runtime.memory_links import LinkTracker
 from namel3ss.runtime.memory_agreement import (
@@ -45,6 +46,7 @@ from namel3ss.runtime.memory_rules import (
 from namel3ss.runtime.memory_rules.store import active_rules_for_scope
 from namel3ss.runtime.memory_rules.traces import build_rule_applied_event
 from .agreements_flow import _approve_proposal_impl, _reject_proposal_impl
+from .budget import BudgetEnforcer
 from .links import _build_link_events
 
 
@@ -69,8 +71,11 @@ def _apply_agreement_actions(
     phase_request: PhaseRequest | None,
     session_phase,
     link_tracker: LinkTracker,
+    budget_enforcer,
+    events: list[dict] | None = None,
 ) -> list[dict]:
-    events: list[dict] = []
+    if events is None:
+        events = []
     if request is None or not team_id:
         return events
     trust_rules = rules_from_contract(contract)
@@ -249,6 +254,7 @@ def _apply_agreement_actions(
                     phase_request=phase_request,
                     session_phase=session_phase,
                     link_tracker=link_tracker,
+                    budget_enforcer=budget_enforcer,
                 )
             )
             return events
@@ -273,6 +279,7 @@ def _apply_agreement_actions(
                 phase_request=phase_request,
                 session_phase=session_phase,
                 link_tracker=link_tracker,
+                budget_enforcer=budget_enforcer,
             )
         )
         return events
@@ -325,6 +332,7 @@ def _approve_proposal(
     phase_request: PhaseRequest | None,
     session_phase,
     link_tracker: LinkTracker,
+    budget_enforcer,
 ) -> list[dict]:
     return _approve_proposal_impl(
         ai_profile=ai_profile,
@@ -344,6 +352,7 @@ def _approve_proposal(
         phase_request=phase_request,
         session_phase=session_phase,
         link_tracker=link_tracker,
+        budget_enforcer=budget_enforcer,
     )
 
 
@@ -374,8 +383,26 @@ def apply_agreement_action(
     session_phase,
     identity: dict | None,
     state: dict | None,
+    budget_configs: list[BudgetConfig] | None = None,
 ) -> list[dict]:
     link_tracker = LinkTracker(short_term=short_term, semantic=semantic, profile=profile)
+    events: list[dict] = []
+    budget_enforcer = BudgetEnforcer(
+        budgets=budget_configs or [],
+        short_term=short_term,
+        semantic=semantic,
+        profile=profile,
+        factory=factory,
+        phase_registry=phase_registry,
+        phase_ledger=phase_ledger,
+        policy_snapshot=contract.as_dict(),
+        phase_policy_snapshot={"phase": contract.phase.as_dict()},
+        contract=contract,
+        ai_profile=ai_profile,
+        session=session,
+        events=events,
+        written=[],
+    )
     events = _apply_agreement_actions(
         ai_profile=ai_profile,
         session=session,
@@ -396,6 +423,8 @@ def apply_agreement_action(
         session_phase=session_phase,
         link_tracker=link_tracker,
         identity=identity,
+        events=events,
+        budget_enforcer=budget_enforcer,
     )
     link_updates = link_tracker.updated_items()
     if link_updates:

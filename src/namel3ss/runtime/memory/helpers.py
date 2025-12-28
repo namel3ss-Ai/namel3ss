@@ -74,6 +74,7 @@ def build_meta(
     visible_to: str | None = None,
     can_change: bool | None = None,
     allow_team_change: bool = True,
+    agent_id: str | None = None,
 ) -> dict:
     meta = {
         "event_type": event_type,
@@ -90,6 +91,7 @@ def build_meta(
         visible_to=visible_to,
         can_change=can_change,
         allow_team_change=allow_team_change,
+        agent_id=agent_id,
     )
     if phase is not None:
         meta = apply_phase_meta(meta, phase)

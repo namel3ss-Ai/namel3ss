@@ -11,6 +11,9 @@ Only approvers can approve team proposals.
 Only owners can change system memory.
 Two approvals are needed for team changes.
 Team memory cannot store personal preferences.
+Only contributors can create handoff packets.
+Only approvers can apply handoff packets.
+Only owners can reject handoff packets.
 
 ## How rules are approved
 Open Studio.
@@ -24,6 +27,7 @@ Rule checks emit memory_rule_applied.
 Rule snapshots emit memory_rules_snapshot.
 Rule changes emit memory_rule_changed.
 Traces include the rule text and a clear decision.
+Rules can also control handoff actions.
 
 ## Studio view
 Rules shows active and pending rules.

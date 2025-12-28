@@ -5,6 +5,8 @@
 - Deterministic AI with the mock provider
 - Seed and ask flows to drive traces
 - Memory tour with preference, decision, fact, promotion, conflict, denial, phases, diff, lanes, and agreements
+- Memory budgets, compaction, and recall cache events
+- Agent lanes and handoff board
 - UI with cards, form, table, and assistant action
 
 ## Try it in 60 seconds
@@ -19,12 +21,17 @@ n3 examples/demo_ai_assistant_over_records.ai studio
 - Deterministic AI with stable replies
 - Flows for seed notes and ask assistant
 - UI structure with sections, cards, form, table, and assistant button
+- Agent lane privacy with handoff
 
 ## Explore in Studio
 - Seed the example note, then add your own notes via the form
 - Click Ask assistant to see traces for the AI call
 - Click Memory tour to generate memory writes, promotions, conflicts, denials, phase starts, deletions, phase diffs, and lane events
+- Click Budget demo to generate memory budget and compaction events
+- Click Cache demo to generate cache miss and cache hit events
 - In Traces, switch to Plain view and expand memory events
+- In Traces, open the Memory budget section for budget lines
+- Use the memory filters to show budget, compaction, and cache events
 - Use the lane selector to view My, Team, and System memory
 - Find memory_team_summary after the team lane phase diff
 - In Team lane, review proposals and approve or reject
@@ -32,6 +39,11 @@ n3 examples/demo_ai_assistant_over_records.ai studio
 - Propose a rule sentence and approve it
 - Use the Trust buttons to run trust flows
 - In Team lane, check the trust panel and blocked action notices
+- Click Agent A seed to create agent memory
+- Open Handoff to see agent list and packets
+- Create a handoff from agent-a to agent-b
+- Apply the handoff
+- Click Agent B follow up to use the handed off memory
 
 ## Trust demo
 Run Studio with an identity trust level.
@@ -74,3 +86,11 @@ N3_IDENTITY_TRUST_LEVEL=owner n3 examples/demo_ai_assistant_over_records.ai stud
 25. Click Path to see the because trail
 26. Click Impact to see impact lines and impact path
 27. Look for memory_change_preview before memory_deleted or memory_promoted
+28. Open Handoff and create a packet from agent-a to agent-b
+29. Confirm memory_handoff_created appears in Traces
+30. Apply the handoff and confirm memory_handoff_applied appears
+31. Confirm memory_agent_briefing shows the briefing lines
+32. Run Budget demo and confirm memory_budget appears
+33. Confirm memory_compaction appears with action and reason
+34. Run Cache demo and confirm memory_cache_miss then memory_cache_hit
+35. Open the Memory budget section and read the budget lines

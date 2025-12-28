@@ -3,14 +3,23 @@ from __future__ import annotations
 from typing import Mapping
 
 from namel3ss.errors.base import Namel3ssError
-from namel3ss.runtime.memory.spaces import SPACE_PROJECT, SPACE_SESSION, SPACE_SYSTEM, SPACE_USER
+from namel3ss.runtime.memory.spaces import (
+    SPACE_PROJECT,
+    SPACE_SESSION,
+    SPACE_SYSTEM,
+    SPACE_USER,
+    SpaceContext,
+    normalize_owner,
+    store_key,
+)
 
 
 LANE_MY = "my"
 LANE_TEAM = "team"
 LANE_SYSTEM = "system"
+LANE_AGENT = "agent"
 
-LANES = {LANE_MY, LANE_TEAM, LANE_SYSTEM}
+LANES = {LANE_MY, LANE_TEAM, LANE_SYSTEM, LANE_AGENT}
 
 VISIBLE_ME = "me"
 VISIBLE_TEAM = "team"
@@ -21,7 +30,7 @@ VISIBILITY = {VISIBLE_ME, VISIBLE_TEAM, VISIBLE_ALL}
 LANE_BY_SPACE = {
     SPACE_SESSION: [LANE_MY],
     SPACE_USER: [LANE_MY],
-    SPACE_PROJECT: [LANE_TEAM],
+    SPACE_PROJECT: [LANE_TEAM, LANE_AGENT],
     SPACE_SYSTEM: [LANE_SYSTEM],
 }
 
@@ -66,6 +75,7 @@ def ensure_lane_meta(
     visible_to: str | None = None,
     can_change: bool | None = None,
     allow_team_change: bool = True,
+    agent_id: str | None = None,
 ) -> dict:
     payload = dict(meta or {})
     payload.setdefault("lane", lane)
@@ -74,6 +84,9 @@ def ensure_lane_meta(
         payload.setdefault("can_change", lane_can_change(lane, allow_team_change=allow_team_change))
     else:
         payload.setdefault("can_change", bool(can_change))
+    if lane == LANE_AGENT:
+        if agent_id:
+            payload["agent_id"] = str(agent_id)
     return payload
 
 
@@ -88,9 +101,16 @@ def validate_lane_rules(item: object) -> tuple[str, str, bool]:
     can_change = meta.get("can_change")
     if lane not in LANES:
         raise Namel3ssError(
-            "Invalid memory lane. Expected one of: my, team, system.",
+            "Invalid memory lane. Expected one of: my, team, system, agent.",
             details={"lane": lane},
         )
+    if lane == LANE_AGENT:
+        agent_id = meta.get("agent_id")
+        if not isinstance(agent_id, str) or not agent_id.strip():
+            raise Namel3ssError(
+                "Agent lane items must include agent_id.",
+                details={"agent_id": agent_id},
+            )
     if visible_to not in VISIBILITY:
         raise Namel3ssError(
             "Memory visible_to must be one of: me, team, all.",
@@ -109,8 +129,28 @@ def validate_lane_rules(item: object) -> tuple[str, str, bool]:
     return lane, visible_to, can_change
 
 
+def is_agent_lane_item(item: object) -> bool:
+    meta = {}
+    if hasattr(item, "meta"):
+        meta = getattr(item, "meta") or {}
+    elif isinstance(item, dict):
+        meta = item.get("meta") or {}
+    if meta.get("lane") != LANE_AGENT:
+        return False
+    agent_id = meta.get("agent_id")
+    return isinstance(agent_id, str) and bool(agent_id.strip())
+
+
+def agent_lane_key(space_ctx: SpaceContext, *, space: str, agent_id: str) -> str:
+    if not isinstance(agent_id, str) or not agent_id.strip():
+        raise Namel3ssError("Agent id is required for agent lane.")
+    lane = f"{LANE_AGENT}:{normalize_owner(agent_id, default='agent')}"
+    return store_key(space, space_ctx.owner_for(space), lane)
+
+
 __all__ = [
     "LANE_BY_SPACE",
+    "LANE_AGENT",
     "LANE_MY",
     "LANE_SYSTEM",
     "LANE_TEAM",
@@ -119,7 +159,9 @@ __all__ = [
     "VISIBLE_ME",
     "VISIBLE_TEAM",
     "VISIBILITY",
+    "agent_lane_key",
     "ensure_lane_meta",
+    "is_agent_lane_item",
     "lane_allowed_in_space",
     "lane_can_change",
     "lane_for_space",

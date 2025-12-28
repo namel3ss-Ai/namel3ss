@@ -6,6 +6,7 @@ from namel3ss.runtime.memory_lanes.context import (
 )
 from namel3ss.runtime.memory_lanes.model import (
     LANE_BY_SPACE,
+    LANE_AGENT,
     LANE_MY,
     LANE_SYSTEM,
     LANE_TEAM,
@@ -14,7 +15,9 @@ from namel3ss.runtime.memory_lanes.model import (
     VISIBLE_ME,
     VISIBLE_TEAM,
     VISIBILITY,
+    agent_lane_key,
     ensure_lane_meta,
+    is_agent_lane_item,
     lane_allowed_in_space,
     lane_can_change,
     lane_for_space,
@@ -26,6 +29,7 @@ from namel3ss.runtime.memory_lanes.summary import TeamSummary, build_team_summar
 
 __all__ = [
     "LANE_BY_SPACE",
+    "LANE_AGENT",
     "LANE_MY",
     "LANE_SYSTEM",
     "LANE_TEAM",
@@ -38,7 +42,9 @@ __all__ = [
     "VISIBLE_TEAM",
     "VISIBILITY",
     "build_team_summary",
+    "agent_lane_key",
     "ensure_lane_meta",
+    "is_agent_lane_item",
     "lane_allowed_in_space",
     "lane_can_change",
     "lane_for_space",

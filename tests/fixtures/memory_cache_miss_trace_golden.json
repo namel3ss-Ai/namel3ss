@@ -1,0 +1,14 @@
+{
+  "type": "memory_cache_miss",
+  "trace_version": "2024-10-01",
+  "ai_profile": "assistant",
+  "session": "sess-1",
+  "space": "session",
+  "lane": "my",
+  "phase_id": "phase-1",
+  "title": "Memory cache miss",
+  "lines": [
+    "Cache was not used for recall.",
+    "Result was stored for reuse."
+  ]
+}

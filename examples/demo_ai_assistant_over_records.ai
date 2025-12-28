@@ -22,6 +22,23 @@ ai "assistant":
     semantic is true
     profile is true
 
+ai "cache_assistant":
+  provider is "mock"
+  model is "mock-model"
+  system_prompt is "You are a concise assistant."
+  memory:
+    short_term is 0
+    semantic is true
+    profile is false
+
+agent "agent-a":
+  ai is "assistant"
+  system_prompt is "Capture key decisions for follow up."
+
+agent "agent-b":
+  ai is "assistant"
+  system_prompt is "Use the latest decisions to answer follow up questions."
+
 flow "seed_notes":
   set state.note.heading is "Release plan"
   set state.note.content is "Ship in weekly iterations with clear changelog."
@@ -82,6 +99,36 @@ flow "memory_tour":
   set state._memory_impact_id is ""
   set state.reply is diff
   return diff
+
+flow "budget_demo":
+  ask ai "assistant" with input: "Quick check one." as one
+  ask ai "assistant" with input: "Quick check two." as two
+  ask ai "assistant" with input: "Quick check three." as three
+  ask ai "assistant" with input: "Quick check four." as four
+  ask ai "assistant" with input: "Quick check five." as five
+  ask ai "assistant" with input: "Quick check six." as six
+  ask ai "assistant" with input: "Quick check seven." as seven
+  ask ai "assistant" with input: "Quick check eight." as eight
+  ask ai "assistant" with input: "Quick check nine." as nine
+  ask ai "assistant" with input: "Quick check ten." as ten
+  ask ai "assistant" with input: "Quick check eleven." as eleven
+  ask ai "assistant" with input: "Quick check twelve." as twelve
+  ask ai "assistant" with input: "Quick check thirteen." as thirteen
+  ask ai "assistant" with input: "Quick check fourteen." as fourteen
+  return fourteen
+
+flow "cache_demo":
+  ask ai "cache_assistant" with input: "Just checking in." as first
+  ask ai "cache_assistant" with input: "Just checking in." as second
+  return second
+
+flow "agent_a_seed":
+  run agent "agent-a" with input: "Remember this for the project: We decided to ship weekly." as agent_a_note
+  return agent_a_note
+
+flow "agent_b_follow_up":
+  run agent "agent-b" with input: "What is the latest decision for the team?" as agent_b_reply
+  return agent_b_reply
 
 flow "trust_proposal_contributor":
   ask ai "assistant" with input: "Remember this for the project: We decided to ship weekly." as proposal
@@ -150,6 +197,14 @@ page "notes":
       calls flow "ask_assistant"
     button "Memory tour":
       calls flow "memory_tour"
+    button "Budget demo":
+      calls flow "budget_demo"
+    button "Cache demo":
+      calls flow "cache_demo"
+    button "Agent A seed":
+      calls flow "agent_a_seed"
+    button "Agent B follow up":
+      calls flow "agent_b_follow_up"
     button "Trust proposal":
       calls flow "trust_proposal_contributor"
     button "Trust approve":

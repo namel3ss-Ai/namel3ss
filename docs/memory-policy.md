@@ -17,6 +17,10 @@ Key fields:
 - `phase` enabled, mode, allow_cross_phase_recall, max_phases, diff_enabled
 - `privacy` deny patterns and allowlisted profile keys
 - `authority_order` overwrite order
+Budget defaults are recorded under budget in policy snapshots.
+Budgets define soft limits for memory.
+Compaction and low value removal are used when limits are hit.
+Cache settings are part of the budget config.
 
 ## Authority
 Authority controls overwrites in conflicts.
@@ -70,6 +74,10 @@ Governance trace events include:
 - `memory_border_check`
 - `memory_promoted`
 - `memory_promotion_denied`
+- `memory_budget`
+- `memory_compaction`
+- `memory_cache_hit`
+- `memory_cache_miss`
 - `memory_phase_started`
 - `memory_deleted`
 - `memory_phase_diff`

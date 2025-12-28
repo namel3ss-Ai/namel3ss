@@ -68,6 +68,7 @@ def run_agent_call(ctx: ExecutionContext, agent_name: str, input_expr, line: int
         identity=ctx.identity,
         project_root=ctx.project_root,
         app_path=getattr(ctx, "app_path", None),
+        agent_id=agent.name,
     )
     recalled = _flatten_memory_context(memory_context)
     canonical_events: list[dict] = []
@@ -105,6 +106,7 @@ def run_agent_call(ctx: ExecutionContext, agent_name: str, input_expr, line: int
         identity=ctx.identity,
         project_root=ctx.project_root,
         app_path=getattr(ctx, "app_path", None),
+        agent_id=agent.name,
     )
     canonical_events.append(
         build_memory_write(

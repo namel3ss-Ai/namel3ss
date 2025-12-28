@@ -59,7 +59,40 @@
     applyMode(state.getTraceLaneMode() || "my");
   }
 
+  function setupTraceMemoryFilters() {
+    const entries = [
+      { id: "traceMemoryBudget", type: "memory_budget" },
+      { id: "traceMemoryCompaction", type: "memory_compaction" },
+      { id: "traceMemoryCacheHit", type: "memory_cache_hit" },
+      { id: "traceMemoryCacheMiss", type: "memory_cache_miss" },
+    ];
+    const buttons = entries
+      .map((entry) => ({ entry, btn: document.getElementById(entry.id) }))
+      .filter((entry) => entry.btn);
+    if (!buttons.length) return;
+
+    const updateButtons = () => {
+      const filters = state.getMemoryBudgetFilters() || {};
+      buttons.forEach(({ entry, btn }) => {
+        const enabled = filters[entry.type] !== false;
+        btn.classList.toggle("toggle-active", enabled);
+        btn.setAttribute("aria-pressed", enabled ? "true" : "false");
+      });
+    };
+    buttons.forEach(({ entry, btn }) => {
+      btn.onclick = () => {
+        const filters = state.getMemoryBudgetFilters() || {};
+        const enabled = filters[entry.type] !== false;
+        state.setMemoryBudgetFilter(entry.type, !enabled);
+        updateButtons();
+        if (window.renderTraces) window.renderTraces(state.getCachedTraces());
+      };
+    });
+    updateButtons();
+  }
+
   setup.setupTraceFormatToggle = setupTraceFormatToggle;
   setup.setupTracePhaseToggle = setupTracePhaseToggle;
   setup.setupTraceLaneToggle = setupTraceLaneToggle;
+  setup.setupTraceMemoryFilters = setupTraceMemoryFilters;
 })();

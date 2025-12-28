@@ -148,3 +148,107 @@ def build_memory_change_preview(
     if lane is not None:
         event["lane"] = lane
     return event
+
+
+def build_memory_budget(
+    *,
+    ai_profile: str,
+    session: str,
+    space: str,
+    lane: str,
+    phase_id: str,
+    owner: str,
+    title: str,
+    lines: list[str],
+) -> dict:
+    return {
+        "type": TraceEventType.MEMORY_BUDGET,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "space": space,
+        "lane": lane,
+        "phase_id": phase_id,
+        "owner": owner,
+        "title": title,
+        "lines": list(lines),
+    }
+
+
+def build_memory_compaction(
+    *,
+    ai_profile: str,
+    session: str,
+    space: str,
+    lane: str,
+    phase_id: str,
+    owner: str,
+    action: str,
+    items_removed_count: int,
+    summary_written: bool,
+    reason: str,
+    title: str,
+    lines: list[str],
+) -> dict:
+    return {
+        "type": TraceEventType.MEMORY_COMPACTION,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "space": space,
+        "lane": lane,
+        "phase_id": phase_id,
+        "owner": owner,
+        "action": action,
+        "items_removed_count": int(items_removed_count),
+        "summary_written": bool(summary_written),
+        "reason": reason,
+        "title": title,
+        "lines": list(lines),
+    }
+
+
+def build_memory_cache_hit(
+    *,
+    ai_profile: str,
+    session: str,
+    space: str,
+    lane: str,
+    phase_id: str,
+    title: str,
+    lines: list[str],
+) -> dict:
+    return {
+        "type": TraceEventType.MEMORY_CACHE_HIT,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "space": space,
+        "lane": lane,
+        "phase_id": phase_id,
+        "title": title,
+        "lines": list(lines),
+    }
+
+
+def build_memory_cache_miss(
+    *,
+    ai_profile: str,
+    session: str,
+    space: str,
+    lane: str,
+    phase_id: str,
+    title: str,
+    lines: list[str],
+) -> dict:
+    return {
+        "type": TraceEventType.MEMORY_CACHE_MISS,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "space": space,
+        "lane": lane,
+        "phase_id": phase_id,
+        "title": title,
+        "lines": list(lines),
+    }

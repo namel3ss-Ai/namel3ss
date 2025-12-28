@@ -42,6 +42,12 @@ Approvals required can be one or two.
 Owner override can approve immediately when enabled.
 See docs/memory-trust.md for full trust rules.
 
+## Handoff and trust
+Handoff actions use trust rules.
+Create needs contributor or higher.
+Apply needs approver or higher.
+Reject needs owner.
+
 ## Trust traces
 - memory_trust_check
 - memory_approval_recorded

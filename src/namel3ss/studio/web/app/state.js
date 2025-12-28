@@ -9,12 +9,19 @@
     cachedTraces: [],
     cachedAgreements: {},
     cachedRules: {},
+    cachedHandoffs: {},
     cachedLint: {},
     cachedTools: {},
     cachedPacks: {},
     cachedSecurity: {},
     cachedManifest: null,
     traceFilterText: "",
+    memoryBudgetFilters: {
+      memory_budget: true,
+      memory_compaction: true,
+      memory_cache_hit: true,
+      memory_cache_miss: true,
+    },
     traceRenderMode: "plain",
     tracePhaseMode: "current",
     traceLaneMode: "my",
@@ -82,6 +89,13 @@
     global.cachedRules = value;
     return global.cachedRules;
   }
+  function getCachedHandoffs() {
+    return global.cachedHandoffs;
+  }
+  function setCachedHandoffs(value) {
+    global.cachedHandoffs = value;
+    return global.cachedHandoffs;
+  }
   function getCachedLint() {
     return global.cachedLint;
   }
@@ -123,6 +137,17 @@
   function setTraceFilterText(value) {
     global.traceFilterText = value;
     return global.traceFilterText;
+  }
+  function getMemoryBudgetFilters() {
+    return global.memoryBudgetFilters;
+  }
+  function setMemoryBudgetFilters(value) {
+    global.memoryBudgetFilters = value || defaults.memoryBudgetFilters;
+    return global.memoryBudgetFilters;
+  }
+  function setMemoryBudgetFilter(type, enabled) {
+    const next = { ...getMemoryBudgetFilters(), [type]: enabled };
+    return setMemoryBudgetFilters(next);
   }
   function getTraceFilterTimer() {
     return traceFilterTimer;
@@ -259,6 +284,8 @@
   state.setCachedAgreements = setCachedAgreements;
   state.getCachedRules = getCachedRules;
   state.setCachedRules = setCachedRules;
+  state.getCachedHandoffs = getCachedHandoffs;
+  state.setCachedHandoffs = setCachedHandoffs;
   state.getCachedLint = getCachedLint;
   state.setCachedLint = setCachedLint;
   state.getCachedTools = getCachedTools;
@@ -271,6 +298,9 @@
   state.setCachedManifest = setCachedManifest;
   state.getTraceFilterText = getTraceFilterText;
   state.setTraceFilterText = setTraceFilterText;
+  state.getMemoryBudgetFilters = getMemoryBudgetFilters;
+  state.setMemoryBudgetFilters = setMemoryBudgetFilters;
+  state.setMemoryBudgetFilter = setMemoryBudgetFilter;
   state.getTraceFilterTimer = getTraceFilterTimer;
   state.setTraceFilterTimer = setTraceFilterTimer;
   state.getTraceRenderMode = getTraceRenderMode;

@@ -13,6 +13,10 @@ No guessing is used.
 - Impact summary lists affected items and reasons
 - Impact path shows the chain by depth
 
+## Compaction ledger
+Impact includes ledger entries from compaction summaries.
+This keeps impact visible after compaction.
+
 ## Lane context
 Impact follows the lane of the selected memory item.
 Use the lane selector in Studio to focus on my lane or team lane.

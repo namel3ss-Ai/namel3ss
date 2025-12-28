@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import replace
 
 from namel3ss.runtime.memory.contract import MemoryClock, MemoryItem, normalize_memory_item, validate_memory_item
+from namel3ss.runtime.memory_budget import BudgetConfig, select_budget
+from namel3ss.runtime.memory_cache import build_cache_event, build_cache_key, fingerprint_policy, fingerprint_query, use_cache
 from namel3ss.runtime.memory.helpers import (
     apply_recall_policy_tags,
     build_border_event,
@@ -15,8 +17,10 @@ from namel3ss.runtime.memory.semantic import SemanticMemory
 from namel3ss.runtime.memory.short_term import ShortTermMemory
 from namel3ss.runtime.memory.spaces import SPACE_SESSION, SpaceContext, ensure_space_meta, validate_space_rules
 from namel3ss.runtime.memory_lanes.model import (
+    LANE_AGENT,
     LANE_MY,
     LANE_SYSTEM,
+    agent_lane_key,
     ensure_lane_meta,
     lanes_for_space,
     validate_lane_rules,
@@ -47,6 +51,11 @@ def recall_context_with_events(
     phase_registry: PhaseRegistry,
     phase_ledger: PhaseLedger,
     phase_request: PhaseRequest | None,
+    budget_configs: list[BudgetConfig] | None = None,
+    cache_store=None,
+    cache_version_for=None,
+    cache_bump=None,
+    agent_id: str | None = None,
 ) -> tuple[dict, list[dict], dict]:
     events: list[dict] = []
     context = {"short_term": [], "semantic": [], "profile": []}
@@ -54,6 +63,10 @@ def recall_context_with_events(
     spaces_consulted = list(contract.spaces.read_order or [SPACE_SESSION])
     recall_counts: dict[str, int] = {}
     phase_counts: dict[str, dict[str, int]] = {}
+    budget_configs = budget_configs or []
+    policy_snapshot = _policy_snapshot_for_cache(policy, contract)
+    query_fingerprint = fingerprint_query(user_input)
+    policy_fingerprint = fingerprint_policy(policy_snapshot)
     if phase_request is not None:
         _, phase_events = _ensure_phase_for_recall(
             ai_profile=ai_profile,
@@ -88,6 +101,8 @@ def recall_context_with_events(
         count = 0
         space_items: list[MemoryItem] = []
         for lane in lanes_for_space(space, read_order=contract.lanes.read_order):
+            if lane == LANE_AGENT and not agent_id:
+                continue
             lane_decision = evaluate_lane_read(contract, lane=lane, space=space)
             events.append(
                 build_border_event(
@@ -106,7 +121,10 @@ def recall_context_with_events(
             )
             if not lane_decision.allowed:
                 continue
-            store_key = space_ctx.store_key_for(space, lane=lane)
+            if lane == LANE_AGENT:
+                store_key = agent_lane_key(space_ctx, space=space, agent_id=agent_id or "")
+            else:
+                store_key = space_ctx.store_key_for(space, lane=lane)
             owner = space_ctx.owner_for(space)
             current_phase = phase_registry.current(store_key)
             phase_ids = _phase_ids_for_recall(phase_registry, store_key, policy)
@@ -130,6 +148,8 @@ def recall_context_with_events(
                     )
                     for item in removed:
                         phase_ledger.record_delete(store_key, phase=current_phase, memory_id=item.id)
+                if forgotten and cache_bump:
+                    cache_bump(store_key, "semantic")
             if policy.profile_enabled and lane != LANE_SYSTEM:
                 forgotten = profile.apply_retention(store_key, contract, now_tick)
                 events.extend(build_forget_events(ai_profile, session, forgotten, contract))
@@ -150,23 +170,76 @@ def recall_context_with_events(
                     )
                     for item in removed:
                         phase_ledger.record_delete(store_key, phase=current_phase, memory_id=item.id)
+                if forgotten and cache_bump:
+                    cache_bump(store_key, "profile")
+            phase_id = current_phase.phase_id if current_phase else "phase-unknown"
+            config = select_budget(budget_configs, space=space, lane=lane, phase=phase_id, owner=owner)
+            cache_enabled = bool(config.cache_enabled) if config else False
+            if cache_store and config and config.cache_max_entries is not None:
+                cache_store.set_max_entries(config.cache_max_entries)
+            kinds_for_cache: list[str] = []
             if policy.short_term_max_turns > 0:
-                items = short_term.recall(store_key, policy.short_term_max_turns, phase_ids=phase_ids)
-                items = [_with_space_recall(item, space=space, owner=owner, lane=lane) for item in items]
-                context["short_term"].extend(items)
-                count += len(items)
-                space_items.extend(items)
+                kinds_for_cache.append("short_term")
             if policy.semantic_enabled:
-                items = semantic.recall(store_key, user_input, top_k=policy.semantic_top_k, phase_ids=phase_ids)
-                items = [_with_space_recall(item, space=space, owner=owner, lane=lane) for item in items]
-                context["semantic"].extend(items)
-                count += len(items)
-                space_items.extend(items)
+                kinds_for_cache.append("semantic")
             if policy.profile_enabled:
-                items = profile.recall(store_key, phase_ids=phase_ids)
-                items = [_with_space_recall(item, space=space, owner=owner, lane=lane) for item in items]
-                context["profile"].extend(items)
-                count += len(items)
+                kinds_for_cache.append("profile")
+            cache_version = cache_version_for(store_key, kinds_for_cache) if cache_version_for else 0
+            cache_key = build_cache_key(
+                space=space,
+                lane=lane,
+                phase_id=phase_id,
+                ai_profile=ai_profile,
+                store_key=store_key,
+                query_fingerprint=query_fingerprint,
+                policy_fingerprint=policy_fingerprint,
+            )
+
+            def _compute_lane():
+                lane_result = {"short_term": [], "semantic": [], "profile": []}
+                if policy.short_term_max_turns > 0:
+                    items = short_term.recall(store_key, policy.short_term_max_turns, phase_ids=phase_ids)
+                    lane_result["short_term"] = [
+                        _with_space_recall(item, space=space, owner=owner, lane=lane, agent_id=agent_id)
+                        for item in items
+                    ]
+                if policy.semantic_enabled:
+                    items = semantic.recall(store_key, user_input, top_k=policy.semantic_top_k, phase_ids=phase_ids)
+                    lane_result["semantic"] = [
+                        _with_space_recall(item, space=space, owner=owner, lane=lane, agent_id=agent_id)
+                        for item in items
+                    ]
+                if policy.profile_enabled:
+                    items = profile.recall(store_key, phase_ids=phase_ids)
+                    lane_result["profile"] = [
+                        _with_space_recall(item, space=space, owner=owner, lane=lane, agent_id=agent_id)
+                        for item in items
+                    ]
+                return lane_result
+
+            lane_result, cache_hit = use_cache(
+                cache=cache_store,
+                cache_enabled=cache_enabled,
+                cache_key=cache_key,
+                cache_version=cache_version,
+                compute=_compute_lane,
+            )
+            if cache_hit is not None:
+                events.append(
+                    build_cache_event(
+                        ai_profile=ai_profile,
+                        session=session,
+                        space=space,
+                        lane=lane,
+                        phase_id=phase_id,
+                        hit=cache_hit,
+                    )
+                )
+            for key, items in lane_result.items():
+                if items:
+                    context[key].extend(items)
+                    count += len(items)
+                    space_items.extend(items)
         recall_counts[space] = count
         if space_items:
             phase_counts[space] = _count_by_phase(space_items)
@@ -186,9 +259,9 @@ def recall_context_with_events(
     }
 
 
-def _with_space_recall(item: MemoryItem, *, space: str, owner: str, lane: str) -> MemoryItem:
+def _with_space_recall(item: MemoryItem, *, space: str, owner: str, lane: str, agent_id: str | None) -> MemoryItem:
     meta = ensure_space_meta(item.meta, space=space, owner=owner)
-    meta = ensure_lane_meta(meta, lane=lane)
+    meta = ensure_lane_meta(meta, lane=lane, agent_id=agent_id if lane == LANE_AGENT else None)
     reasons = list(meta.get("recall_reason", []))
     space_tag = f"space:{space}"
     if space_tag not in reasons:
@@ -286,6 +359,12 @@ def _phase_meta(phase) -> dict | None:
     if phase.name:
         payload["phase_name"] = phase.name
     return payload
+
+
+def _policy_snapshot_for_cache(policy: MemoryPolicy, contract: MemoryPolicyContract) -> dict:
+    snapshot = policy.as_trace_dict()
+    snapshot.update(contract.as_dict())
+    return snapshot
 
 
 __all__ = ["recall_context_with_events"]

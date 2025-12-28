@@ -6,6 +6,9 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.memory.events import EVENT_PREFERENCE
 from namel3ss.runtime.memory_rules.model import (
     ACTION_APPROVE_TEAM_MEMORY,
+    ACTION_HANDOFF_APPLY,
+    ACTION_HANDOFF_CREATE,
+    ACTION_HANDOFF_REJECT,
     ACTION_PROMOTE_TO_SYSTEM_LANE,
     ACTION_PROMOTE_TO_TEAM_LANE,
     ACTION_PROPOSE_TEAM_MEMORY,
@@ -23,6 +26,9 @@ _SUPPORTED_RULES = [
     "Only owners can change system memory",
     "Two approvals are needed for team changes",
     "Team memory cannot store personal preferences",
+    "Only contributors can create handoff packets",
+    "Only approvers can apply handoff packets",
+    "Only owners can reject handoff packets",
 ]
 
 _MIN_LEVEL_RULES = {
@@ -30,6 +36,12 @@ _MIN_LEVEL_RULES = {
     "only approvers can approve team proposals": ("approver", ACTION_APPROVE_TEAM_MEMORY),
     "only owner can change system memory": ("owner", ACTION_PROMOTE_TO_SYSTEM_LANE),
     "only owners can change system memory": ("owner", ACTION_PROMOTE_TO_SYSTEM_LANE),
+    "only contributor can create handoff packets": ("contributor", ACTION_HANDOFF_CREATE),
+    "only contributors can create handoff packets": ("contributor", ACTION_HANDOFF_CREATE),
+    "only approver can apply handoff packets": ("approver", ACTION_HANDOFF_APPLY),
+    "only approvers can apply handoff packets": ("approver", ACTION_HANDOFF_APPLY),
+    "only owner can reject handoff packets": ("owner", ACTION_HANDOFF_REJECT),
+    "only owners can reject handoff packets": ("owner", ACTION_HANDOFF_REJECT),
 }
 
 _APPROVAL_COUNT_RULES = {

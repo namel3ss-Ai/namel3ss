@@ -122,6 +122,7 @@
           <button class="tab" data-tab="graph">Graph</button>
           <button class="tab" data-tab="trust">Trust</button>
           <button class="tab" data-tab="rules">Rules</button>
+          <button class="tab" data-tab="handoff">Handoff</button>
           <button class="tab" data-tab="data">Data</button>
           <button class="tab" data-tab="fix">Fix</button>
           <button class="tab" data-tab="state">State</button>
@@ -215,6 +216,39 @@
                   </div>
                 </div>
                 <div class="status-banner">See Traces for rule decisions and explain.</div>
+              </div>
+            </div>
+          </div>
+          <div class="panel" data-tab="handoff">
+            <div class="panel-header">
+              <div class="section-title">Handoff</div>
+              <button class="btn ghost small" id="handoffRefresh">Refresh</button>
+            </div>
+            <div id="handoffPanel" class="panel-body">
+              <div class="panel-stack">
+                <div class="panel-section">
+                  <div class="panel-section-title">Create handoff</div>
+                </div>
+                <div class="handoff-form">
+                  <label>
+                    From agent
+                    <select id="handoffFrom" aria-label="From agent"></select>
+                  </label>
+                  <label>
+                    To agent
+                    <select id="handoffTo" aria-label="To agent"></select>
+                  </label>
+                  <button class="btn primary" id="handoffCreate">Create handoff</button>
+                </div>
+                <div class="panel-section">
+                  <div class="panel-section-title">Agents</div>
+                </div>
+                <div id="handoffAgents"></div>
+                <div class="panel-section">
+                  <div class="panel-section-title">Packets</div>
+                </div>
+                <div id="handoffPackets"></div>
+                <div class="status-banner">See Traces for handoff decisions and briefing.</div>
               </div>
             </div>
           </div>
@@ -366,6 +400,13 @@
                 <button class="btn ghost small" id="traceCopyOutput">Copy output</button>
                 <button class="btn ghost small" id="traceCopyJson">Copy trace JSON</button>
               </div>
+            </div>
+            <div class="control-row trace-budget-filters">
+              <div class="inline-label">Memory filters</div>
+              <button class="btn ghost small" id="traceMemoryBudget" aria-pressed="true">Budget</button>
+              <button class="btn ghost small" id="traceMemoryCompaction" aria-pressed="true">Compaction</button>
+              <button class="btn ghost small" id="traceMemoryCacheHit" aria-pressed="true">Cache hit</button>
+              <button class="btn ghost small" id="traceMemoryCacheMiss" aria-pressed="true">Cache miss</button>
             </div>
             <div id="teamAgreements" class="panel-body team-agreements hidden">
               <div class="inline-label">Team agreements</div>

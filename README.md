@@ -96,16 +96,23 @@ Writes are categorized as preference, decision, fact, correction, execution, rul
 Importance and conflicts are resolved by deterministic rules.
 
 Memory is spatial and owned across session, user, project, and system.
-Memory lanes separate my, team, and system memory.
+Memory lanes separate my, team, agent, and system memory.
+Agent lane is private to one agent.
+Handoff copies selected items to another agent lane.
 Team lane writes happen only by promotion and are summarized by memory_team_summary.
 Team lane changes require agreement before they become active.
 Team memory actions follow trust levels for propose and approve.
 Rules are short sentences stored in team or system lane.
 Rule decisions emit memory_rule_applied.
+Handoff emits memory_handoff_created, memory_handoff_applied, memory_handoff_rejected, and memory_agent_briefing.
 
 Memory is phase based with deterministic deletion of superseded or expired items.
 Each AI call emits memory_recall and memory_write, plus governance and border events.
 Studio shows a bracketless Plain view by default and can show explanations, links, and impact.
+Memory budgets keep memory fast and small.
+Soft limits trigger compaction or low value removal with clear reasons.
+Recall caching is deterministic per phase and lane.
+Studio shows a Memory budget section in the Traces panel.
 
 Plain trace example:
 ```
@@ -121,7 +128,9 @@ current_phase.phase_id: phase-1
 
 Memory trust docs at docs/memory-trust.md.
 Memory rules docs at docs/memory-rules.md.
-See [Memory contract](docs/memory.md), [Memory policy](docs/memory-policy.md), [Memory lanes](docs/memory-lanes.md), [Memory agreement](docs/memory-agreement.md), [Memory spaces](docs/memory-spaces.md), and [Memory phases](docs/memory-phases.md) for the full schema and governance rules.
+Memory handoff docs at docs/memory-handoff.md.
+Memory budgets docs at docs/memory-budgets.md.
+See docs/memory.md, docs/memory-policy.md, docs/memory-lanes.md, docs/memory-agreement.md, docs/memory-spaces.md, and docs/memory-phases.md for the full schema and governance rules.
 
 ### Tools
 Tools are explicit, local functions with schema-validated inputs/outputs. Python code lives in `tools/*.py` (no inline Python). The `.ai` file stays intent-only; Python wiring lives in `.namel3ss/tools.yaml`.

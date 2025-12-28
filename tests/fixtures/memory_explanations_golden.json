@@ -31,7 +31,7 @@
       "No items were recalled from user.",
       "No items were recalled from project.",
       "No items were recalled from system.",
-      "Phase phase-1 count in session is 3.",
+      "Phase phase-1 count in session is 4.",
       "Recall reason is it matches your question.",
       "Recall reason is it is recent.",
       "Recall reason is it is marked important.",
@@ -42,7 +42,7 @@
   {
     "type": "memory_explanation",
     "trace_version": "2024-10-01",
-    "for_event_index": 17,
+    "for_event_index": 21,
     "title": "Memory forgotten",
     "lines": [
       "Forgotten id is session:anonymous:my:short_term:1.",
@@ -55,7 +55,7 @@
   {
     "type": "memory_explanation",
     "trace_version": "2024-10-01",
-    "for_event_index": 19,
+    "for_event_index": 23,
     "title": "Memory forgotten",
     "lines": [
       "Forgotten id is session:anonymous:my:short_term:2.",
@@ -68,7 +68,7 @@
   {
     "type": "memory_explanation",
     "trace_version": "2024-10-01",
-    "for_event_index": 21,
+    "for_event_index": 25,
     "title": "Memory deleted",
     "lines": [
       "Deleted id is session:anonymous:my:short_term:1.",
@@ -81,7 +81,7 @@
   {
     "type": "memory_explanation",
     "trace_version": "2024-10-01",
-    "for_event_index": 23,
+    "for_event_index": 27,
     "title": "Memory deleted",
     "lines": [
       "Deleted id is session:anonymous:my:short_term:2.",
@@ -94,7 +94,7 @@
   {
     "type": "memory_explanation",
     "trace_version": "2024-10-01",
-    "for_event_index": 29,
+    "for_event_index": 33,
     "title": "Memory conflict",
     "lines": [
       "Conflict detected.",
@@ -110,7 +110,7 @@
   {
     "type": "memory_explanation",
     "trace_version": "2024-10-01",
-    "for_event_index": 32,
+    "for_event_index": 36,
     "title": "Memory deleted",
     "lines": [
       "Deleted id is session:anonymous:my:profile:1.",
@@ -142,7 +142,7 @@
   {
     "type": "memory_explanation",
     "trace_version": "2024-10-01",
-    "for_event_index": 18,
+    "for_event_index": 22,
     "title": "Memory denied",
     "lines": [
       "Write was blocked.",
@@ -155,7 +155,7 @@
   {
     "type": "memory_explanation",
     "trace_version": "2024-10-01",
-    "for_event_index": 22,
+    "for_event_index": 26,
     "title": "Memory denied",
     "lines": [
       "Write was blocked.",
@@ -185,7 +185,7 @@
   {
     "type": "memory_explanation",
     "trace_version": "2024-10-01",
-    "for_event_index": 21,
+    "for_event_index": 25,
     "title": "Memory phase diff",
     "lines": [
       "Phase diff from phase-1 to phase-2.",

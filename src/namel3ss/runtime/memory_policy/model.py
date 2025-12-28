@@ -93,6 +93,7 @@ class LanePolicy:
     write_lanes: List[str] = field(default_factory=list)
     team_enabled: bool = True
     system_enabled: bool = True
+    agent_enabled: bool = True
     team_event_types: List[str] = field(default_factory=list)
     team_can_change: bool = True
 
@@ -102,6 +103,7 @@ class LanePolicy:
             "write_lanes": list(self.write_lanes),
             "team_enabled": bool(self.team_enabled),
             "system_enabled": bool(self.system_enabled),
+            "agent_enabled": bool(self.agent_enabled),
             "team_event_types": list(self.team_event_types),
             "team_can_change": bool(self.team_can_change),
         }

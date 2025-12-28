@@ -173,6 +173,58 @@
         "user_asserted",
         "ai_inferred"
       ],
+      "budget": {
+        "defaults": [
+          {
+            "space": "any",
+            "lane": "team",
+            "phase": "any",
+            "owner": "any",
+            "max_items_short_term": null,
+            "max_items_semantic": null,
+            "max_items_profile": null,
+            "max_items_team": 30,
+            "max_items_agent": null,
+            "max_links_per_item": 10,
+            "max_phases_per_lane": 6,
+            "cache_enabled": true,
+            "cache_max_entries": 50,
+            "compaction_enabled": true
+          },
+          {
+            "space": "any",
+            "lane": "agent",
+            "phase": "any",
+            "owner": "any",
+            "max_items_short_term": null,
+            "max_items_semantic": null,
+            "max_items_profile": null,
+            "max_items_team": null,
+            "max_items_agent": 20,
+            "max_links_per_item": 10,
+            "max_phases_per_lane": 6,
+            "cache_enabled": true,
+            "cache_max_entries": 50,
+            "compaction_enabled": true
+          },
+          {
+            "space": "any",
+            "lane": "any",
+            "phase": "any",
+            "owner": "any",
+            "max_items_short_term": 12,
+            "max_items_semantic": 20,
+            "max_items_profile": 10,
+            "max_items_team": null,
+            "max_items_agent": null,
+            "max_links_per_item": 10,
+            "max_phases_per_lane": 6,
+            "cache_enabled": true,
+            "cache_max_entries": 50,
+            "compaction_enabled": true
+          }
+        ]
+      },
       "spaces": {
         "read_order": [
           "session",
@@ -232,14 +284,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -492,14 +547,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -738,14 +796,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -985,14 +1046,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -1231,14 +1295,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -1478,14 +1545,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -1724,14 +1794,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -1971,14 +2044,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -2217,14 +2293,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -2484,14 +2563,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -2734,14 +2816,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -2984,14 +3069,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -3234,14 +3322,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -3484,14 +3575,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -3734,14 +3828,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -3984,14 +4081,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -4234,14 +4334,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -4506,14 +4609,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -4841,6 +4947,58 @@
         "user_asserted",
         "ai_inferred"
       ],
+      "budget": {
+        "defaults": [
+          {
+            "space": "any",
+            "lane": "team",
+            "phase": "any",
+            "owner": "any",
+            "max_items_short_term": null,
+            "max_items_semantic": null,
+            "max_items_profile": null,
+            "max_items_team": 30,
+            "max_items_agent": null,
+            "max_links_per_item": 10,
+            "max_phases_per_lane": 6,
+            "cache_enabled": true,
+            "cache_max_entries": 50,
+            "compaction_enabled": true
+          },
+          {
+            "space": "any",
+            "lane": "agent",
+            "phase": "any",
+            "owner": "any",
+            "max_items_short_term": null,
+            "max_items_semantic": null,
+            "max_items_profile": null,
+            "max_items_team": null,
+            "max_items_agent": 20,
+            "max_links_per_item": 10,
+            "max_phases_per_lane": 6,
+            "cache_enabled": true,
+            "cache_max_entries": 50,
+            "compaction_enabled": true
+          },
+          {
+            "space": "any",
+            "lane": "any",
+            "phase": "any",
+            "owner": "any",
+            "max_items_short_term": 12,
+            "max_items_semantic": 20,
+            "max_items_profile": 10,
+            "max_items_team": null,
+            "max_items_agent": null,
+            "max_links_per_item": 10,
+            "max_phases_per_lane": 6,
+            "cache_enabled": true,
+            "cache_max_entries": 50,
+            "compaction_enabled": true
+          }
+        ]
+      },
       "spaces": {
         "read_order": [
           "session",
@@ -4900,14 +5058,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -5173,14 +5334,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -5419,14 +5583,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -5666,14 +5833,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -5912,14 +6082,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -6159,14 +6332,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -6405,14 +6581,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -6652,14 +6831,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -6898,14 +7080,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -7145,14 +7330,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -7395,14 +7583,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -7645,14 +7836,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -7895,14 +8089,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -8145,14 +8342,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -8395,14 +8595,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -8645,14 +8848,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -8895,14 +9101,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -9353,6 +9562,58 @@
         "user_asserted",
         "ai_inferred"
       ],
+      "budget": {
+        "defaults": [
+          {
+            "space": "any",
+            "lane": "team",
+            "phase": "any",
+            "owner": "any",
+            "max_items_short_term": null,
+            "max_items_semantic": null,
+            "max_items_profile": null,
+            "max_items_team": 30,
+            "max_items_agent": null,
+            "max_links_per_item": 10,
+            "max_phases_per_lane": 6,
+            "cache_enabled": true,
+            "cache_max_entries": 50,
+            "compaction_enabled": true
+          },
+          {
+            "space": "any",
+            "lane": "agent",
+            "phase": "any",
+            "owner": "any",
+            "max_items_short_term": null,
+            "max_items_semantic": null,
+            "max_items_profile": null,
+            "max_items_team": null,
+            "max_items_agent": 20,
+            "max_links_per_item": 10,
+            "max_phases_per_lane": 6,
+            "cache_enabled": true,
+            "cache_max_entries": 50,
+            "compaction_enabled": true
+          },
+          {
+            "space": "any",
+            "lane": "any",
+            "phase": "any",
+            "owner": "any",
+            "max_items_short_term": 12,
+            "max_items_semantic": 20,
+            "max_items_profile": 10,
+            "max_items_team": null,
+            "max_items_agent": null,
+            "max_links_per_item": 10,
+            "max_phases_per_lane": 6,
+            "cache_enabled": true,
+            "cache_max_entries": 50,
+            "compaction_enabled": true
+          }
+        ]
+      },
       "spaces": {
         "read_order": [
           "session",
@@ -9412,14 +9673,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -9685,14 +9949,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -9931,14 +10198,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -10178,14 +10448,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -10424,14 +10697,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -10671,14 +10947,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -10917,14 +11196,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -11164,14 +11446,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -11410,14 +11695,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -11657,14 +11945,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -11907,14 +12198,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -12157,14 +12451,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",
@@ -12407,14 +12704,17 @@
       "lanes": {
         "read_order": [
           "my",
+          "agent",
           "team",
           "system"
         ],
         "write_lanes": [
-          "my"
+          "my",
+          "agent"
         ],
         "team_enabled": true,
         "system_enabled": true,
+        "agent_enabled": true,
         "team_event_types": [
           "decision",
           "rule",

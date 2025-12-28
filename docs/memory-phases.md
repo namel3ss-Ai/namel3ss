@@ -22,6 +22,11 @@ By default, recall uses **current phase only**.
 If `policy.phase.allow_cross_phase_recall` is enabled, recall consults current phase
 first, then older phases in descending order.
 
+## Budgets and cache
+Budgets are tracked per phase and lane.
+Compaction keeps a summary item in the same phase.
+Recall cache keys include the phase id.
+
 ## Phase diff
 Phase diff compares two phases within a space/owner and reports:
 - added items

@@ -52,6 +52,10 @@ Memory events include:
 - memory_promoted
 - memory_promotion_denied
 - memory_phase_started
+- memory_budget
+- memory_compaction
+- memory_cache_hit
+- memory_cache_miss
 - memory_deleted
 - memory_phase_diff
 - memory_team_summary
@@ -65,11 +69,20 @@ Memory events include:
 - memory_rule_applied
 - memory_rules_snapshot
 - memory_rule_changed
+- memory_handoff_created
+- memory_handoff_applied
+- memory_handoff_rejected
+- memory_agent_briefing
 - memory_explanation
 - memory_links
 - memory_path
 - memory_impact
 - memory_change_preview
+
+### Memory budget and cache events
+Memory budget events include type, space, lane, phase_id, owner, title, and lines.
+Memory compaction events include action, items_removed_count, summary_written, reason, title, and lines.
+Memory cache events include type, space, lane, phase_id, title, and lines.
 
 ## Capability check traces v1
 Every denied capability check must include:

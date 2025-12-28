@@ -1,0 +1,23 @@
+{
+  "type": "memory_compaction",
+  "trace_version": "2024-10-01",
+  "ai_profile": "assistant",
+  "session": "sess-1",
+  "space": "session",
+  "lane": "my",
+  "phase_id": "phase-1",
+  "owner": "owner",
+  "action": "compact",
+  "items_removed_count": 3,
+  "summary_written": true,
+  "reason": "short_term_limit",
+  "title": "Memory compaction",
+  "lines": [
+    "Action is compact.",
+    "Reason is short_term_limit.",
+    "Items removed are 3.",
+    "Summary was written.",
+    "Summary line one.",
+    "Summary line two."
+  ]
+}

@@ -1,0 +1,72 @@
+[
+  {
+    "type": "memory_handoff_created",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "sess-1",
+    "packet_id": "handoff-1",
+    "from_agent_id": "agent-a",
+    "to_agent_id": "agent-b",
+    "team_id": "team-1",
+    "phase_id": "phase-1",
+    "title": "Memory handoff created",
+    "lines": [
+      "Handoff packet created.",
+      "Packet id is handoff-1.",
+      "From agent is agent-a.",
+      "To agent is agent-b.",
+      "Item count is 2."
+    ]
+  },
+  {
+    "type": "memory_handoff_applied",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "sess-1",
+    "packet_id": "handoff-1",
+    "from_agent_id": "agent-a",
+    "to_agent_id": "agent-b",
+    "item_count": 2,
+    "title": "Memory handoff applied",
+    "lines": [
+      "Handoff packet applied.",
+      "Packet id is handoff-1.",
+      "From agent is agent-a.",
+      "To agent is agent-b.",
+      "Item count is 2."
+    ]
+  },
+  {
+    "type": "memory_handoff_rejected",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "sess-1",
+    "packet_id": "handoff-1",
+    "from_agent_id": "agent-a",
+    "to_agent_id": "agent-b",
+    "title": "Memory handoff rejected",
+    "lines": [
+      "Handoff packet rejected.",
+      "Packet id is handoff-1.",
+      "From agent is agent-a.",
+      "To agent is agent-b."
+    ]
+  },
+  {
+    "type": "memory_agent_briefing",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "sess-1",
+    "packet_id": "handoff-1",
+    "to_agent_id": "agent-b",
+    "title": "Agent briefing",
+    "lines": [
+      "Here is what you need to know.",
+      "Decision items count is 1.",
+      "Pending proposals count is 1.",
+      "Conflicts count is 0.",
+      "Active rules count is 2.",
+      "Impact warnings count is 1."
+    ]
+  }
+]

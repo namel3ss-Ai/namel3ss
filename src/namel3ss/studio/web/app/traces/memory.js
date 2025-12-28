@@ -3,103 +3,59 @@
   const traces = root.traces || (root.traces = {});
   const utils = root.utils;
   const state = root.state;
-  const constants = root.constants;
+  const budgetEventTypes = new Set([
+    "memory_budget",
+    "memory_compaction",
+    "memory_cache_hit",
+    "memory_cache_miss",
+  ]);
 
-  function buildMemoryEventEntries(trace) {
+  function buildBudgetEventEntries(trace) {
     const entries = [];
     const events = trace.canonical_events || [];
     events.forEach((event, index) => {
-      if (event && constants.MEMORY_EVENT_TYPES.has(event.type)) {
+      if (event && budgetEventTypes.has(event.type)) {
         entries.push({ event, index });
       }
     });
     return entries;
   }
-  function buildMemoryExplanationMap(trace) {
-    const map = new Map();
-    const events = trace.canonical_events || [];
-    events.forEach((event) => {
-      if (event && event.type === "memory_explanation") {
-        const index = event.for_event_index;
-        if (typeof index === "number") {
-          map.set(index, event);
-        }
+  function compactionSummaryLine(event) {
+    const reason = event.reason || "";
+    if (reason === "short_term_limit") return "Short term memory was compacted.";
+    if (reason === "semantic_limit") return "Semantic memory was compacted.";
+    if (reason === "profile_limit") return "Profile memory was compacted.";
+    if (reason === "team_limit") return "Team memory was compacted.";
+    if (reason === "agent_limit") return "Agent memory was compacted.";
+    if (reason === "phase_limit") return "Phase memory was compacted.";
+    if (event.action === "delete_low_value") return "Low value memory was removed.";
+    if (event.action === "deny_write") return "Memory write was denied.";
+    return "Memory was compacted.";
+  }
+  function budgetLinesForEvent(event) {
+    if (!event || typeof event !== "object") return [];
+    if (event.type === "memory_budget") {
+      return Array.isArray(event.lines) ? event.lines : [];
+    }
+    if (event.type === "memory_cache_hit" || event.type === "memory_cache_miss") {
+      return Array.isArray(event.lines) ? event.lines : [];
+    }
+    if (event.type === "memory_compaction") {
+      const lines = [];
+      const summary = compactionSummaryLine(event);
+      if (summary) lines.push(summary);
+      if (typeof event.items_removed_count === "number") {
+        lines.push(`Items removed are ${event.items_removed_count}.`);
       }
-    });
-    return map;
-  }
-  function buildMemoryLinksMap(trace) {
-    const map = new Map();
-    const events = trace.canonical_events || [];
-    events.forEach((event) => {
-      if (event && event.type === "memory_links") {
-        const memoryId = event.memory_id;
-        if (typeof memoryId === "string") {
-          map.set(memoryId, event);
-        }
+      if (event.summary_written === true) {
+        lines.push("Summary was written.");
       }
-    });
-    return map;
-  }
-  function buildMemoryPathMap(trace) {
-    const map = new Map();
-    const events = trace.canonical_events || [];
-    events.forEach((event) => {
-      if (event && event.type === "memory_path") {
-        const memoryId = event.memory_id;
-        if (typeof memoryId === "string") {
-          map.set(memoryId, event);
-        }
+      if (event.summary_written === false) {
+        lines.push("Summary was not written.");
       }
-    });
-    return map;
-  }
-  function buildMemoryImpactMap(trace) {
-    const map = new Map();
-    const events = trace.canonical_events || [];
-    events.forEach((event) => {
-      if (event && event.type === "memory_impact") {
-        const memoryId = event.memory_id;
-        const depth = event.depth_used;
-        if (typeof memoryId === "string" && typeof depth === "number") {
-          const entry = map.get(memoryId) || {};
-          entry[String(depth)] = event;
-          map.set(memoryId, entry);
-        }
-      }
-    });
-    return map;
-  }
-  function buildTeamSummaryEntries(trace) {
-    const events = trace.canonical_events || [];
-    return events.filter((event) => event && event.type === "memory_team_summary");
-  }
-  function latestTeamSummary(trace) {
-    const entries = buildTeamSummaryEntries(trace);
-    if (!entries.length) return null;
-    return entries[entries.length - 1];
-  }
-  function findPhaseDiffEvent(trace, summary) {
-    if (!summary) return null;
-    const events = trace.canonical_events || [];
-    const summaryLane = summary.lane || "team";
-    return events.find((event) => {
-      if (!event || event.type !== "memory_phase_diff") return false;
-      if (event.space !== summary.space) return false;
-      if (event.from_phase_id !== summary.phase_from) return false;
-      if (event.to_phase_id !== summary.phase_to) return false;
-      if (event.lane && event.lane !== summaryLane) return false;
-      return true;
-    });
-  }
-  function formatTeamSummaryText(summary) {
-    const lines = [];
-    if (summary.title) lines.push(summary.title);
-    const detail = Array.isArray(summary.lines) ? summary.lines : [];
-    detail.forEach((line) => {
-      if (line) lines.push(line);
-    });
-    return lines.join("\n");
+      return lines;
+    }
+    return [];
   }
   function appendTeamSummaryBlock(wrapper, summary, diffEvent, renderMode) {
     const block = document.createElement("div");
@@ -107,7 +63,7 @@
     const label = document.createElement("div");
     label.className = "trace-event-label";
     label.textContent = "Team summary";
-    const summaryBlock = utils.createCodeBlock(formatTeamSummaryText(summary));
+    const summaryBlock = utils.createCodeBlock(traces.formatTeamSummaryText(summary));
     block.appendChild(label);
     block.appendChild(summaryBlock);
     if (diffEvent) {
@@ -125,96 +81,6 @@
       block.appendChild(diffBlock);
     }
     wrapper.appendChild(block);
-  }
-  function collectEventsForIds(map, ids) {
-    const events = [];
-    if (!map || !ids) return events;
-    ids.forEach((memoryId) => {
-      const event = map.get(memoryId);
-      if (event) events.push(event);
-    });
-    return events;
-  }
-  function collectImpactEventsByDepth(map, ids) {
-    const byDepth = new Map();
-    if (!map || !ids) return byDepth;
-    ids.forEach((memoryId) => {
-      const entry = map.get(memoryId);
-      if (!entry) return;
-      Object.keys(entry).forEach((depth) => {
-        const event = entry[depth];
-        if (!event) return;
-        const events = byDepth.get(depth) || [];
-        events.push(event);
-        byDepth.set(depth, events);
-      });
-    });
-    return byDepth;
-  }
-  function memoryIdsForEvent(event) {
-    if (!event || typeof event !== "object") return [];
-    if (typeof event.memory_id === "string") return [event.memory_id];
-    if (typeof event.to_id === "string") return [event.to_id];
-    if (typeof event.winner_id === "string") return [event.winner_id];
-    if (typeof event.from_id === "string") return [event.from_id];
-    if (Array.isArray(event.written)) {
-      return event.written.map((item) => item && item.id).filter((value) => typeof value === "string");
-    }
-    return [];
-  }
-  function formatExplanationText(explainEvent) {
-    const lines = [];
-    if (explainEvent.title) lines.push(explainEvent.title);
-    const detail = Array.isArray(explainEvent.lines) ? explainEvent.lines : [];
-    detail.forEach((line) => {
-      if (line) lines.push(line);
-    });
-    return lines.join("\n");
-  }
-  function formatLinksText(linkEvents) {
-    const lines = [];
-    linkEvents.forEach((event) => {
-      if (event.memory_id) {
-        lines.push(`Memory id is ${event.memory_id}.`);
-      }
-      const detail = Array.isArray(event.lines) ? event.lines : [];
-      detail.forEach((line) => {
-        if (line) lines.push(line);
-      });
-    });
-    return lines.join("\n");
-  }
-  function formatPathText(pathEvents) {
-    const lines = [];
-    pathEvents.forEach((event) => {
-      if (event.title) lines.push(event.title);
-      if (event.memory_id) {
-        lines.push(`Memory id is ${event.memory_id}.`);
-      }
-      const detail = Array.isArray(event.lines) ? event.lines : [];
-      detail.forEach((line) => {
-        if (line) lines.push(line);
-      });
-    });
-    return lines.join("\n");
-  }
-  function formatImpactText(impactEvents) {
-    const lines = [];
-    impactEvents.forEach((event) => {
-      if (event.title) lines.push(event.title);
-      if (event.memory_id) {
-        lines.push(`Memory id is ${event.memory_id}.`);
-      }
-      const detail = Array.isArray(event.lines) ? event.lines : [];
-      detail.forEach((line) => {
-        if (line) lines.push(line);
-      });
-      const pathDetail = Array.isArray(event.path_lines) ? event.path_lines : [];
-      pathDetail.forEach((line) => {
-        if (line) lines.push(line);
-      });
-    });
-    return lines.join("\n");
   }
   function defaultImpactDepth(impactByDepth) {
     if (!impactByDepth || impactByDepth.size === 0) return null;
@@ -250,7 +116,7 @@
 
     const updateDepth = (depthKey) => {
       const events = impactByDepth.get(depthKey) || [];
-      impactBlock.textContent = formatImpactText(events);
+      impactBlock.textContent = traces.formatImpactText(events);
       depth1Btn.classList.toggle("toggle-active", depthKey === "1");
       depth2Btn.classList.toggle("toggle-active", depthKey === "2");
     };
@@ -315,23 +181,50 @@
     }
     return event;
   }
+  function appendMemoryBudgetSection(details, trace, phaseId) {
+    const laneMode = state.getTraceLaneMode();
+    const phaseMode = state.getTracePhaseMode();
+    const filters = state.getMemoryBudgetFilters ? state.getMemoryBudgetFilters() : {};
+    const entries = buildBudgetEventEntries(trace);
+    if (!entries.length) return;
+    const lines = [];
+    entries.forEach((entry) => {
+      const filtered = filterMemoryEventForPhase(entry.event, phaseId, phaseMode);
+      if (!filtered) return;
+      const laneFiltered = filterMemoryEventForLane(filtered, laneMode);
+      if (!laneFiltered) return;
+      if (filters[laneFiltered.type] === false) return;
+      const eventLines = budgetLinesForEvent(laneFiltered);
+      eventLines.forEach((line) => {
+        if (line) lines.push(line);
+      });
+    });
+    if (!lines.length) return;
+    const wrapper = document.createElement("div");
+    const heading = document.createElement("div");
+    heading.className = "inline-label";
+    heading.textContent = "Memory budget";
+    wrapper.appendChild(heading);
+    wrapper.appendChild(utils.createCodeBlock(lines.join("\n")));
+    details.appendChild(wrapper);
+  }
   function appendMemoryEventsSection(details, trace, phaseId, renderMode = "json") {
     const laneMode = state.getTraceLaneMode();
     const phaseMode = state.getTracePhaseMode();
-    const events = buildMemoryEventEntries(trace);
+    const events = traces.buildMemoryEventEntries(trace);
     if (!events.length) return;
-    const explainMap = buildMemoryExplanationMap(trace);
-    const linksMap = buildMemoryLinksMap(trace);
-    const pathMap = buildMemoryPathMap(trace);
-    const impactMap = buildMemoryImpactMap(trace);
+    const explainMap = traces.buildMemoryExplanationMap(trace);
+    const linksMap = traces.buildMemoryLinksMap(trace);
+    const pathMap = traces.buildMemoryPathMap(trace);
+    const impactMap = traces.buildMemoryImpactMap(trace);
     const wrapper = document.createElement("div");
     const heading = document.createElement("div");
     heading.className = "inline-label";
     heading.textContent = "Memory events";
     wrapper.appendChild(heading);
-    const teamSummary = laneMode === "team" ? latestTeamSummary(trace) : null;
+    const teamSummary = laneMode === "team" ? traces.latestTeamSummary(trace) : null;
     if (teamSummary) {
-      const diffEvent = findPhaseDiffEvent(trace, teamSummary);
+      const diffEvent = traces.findPhaseDiffEvent(trace, teamSummary);
       appendTeamSummaryBlock(wrapper, teamSummary, diffEvent, renderMode);
     }
     events.forEach((entry) => {
@@ -339,16 +232,20 @@
       if (!filtered) return;
       const laneFiltered = filterMemoryEventForLane(filtered, laneMode);
       if (!laneFiltered) return;
+      if (budgetEventTypes.has(laneFiltered.type)) {
+        const filters = state.getMemoryBudgetFilters ? state.getMemoryBudgetFilters() : {};
+        if (filters[laneFiltered.type] === false) return;
+      }
       if (teamSummary && laneFiltered.type === "memory_team_summary") return;
       const block = document.createElement("div");
       block.className = "trace-event";
       const label = document.createElement("div");
       label.className = "trace-event-label";
       label.textContent = laneFiltered.type || "memory_event";
-      const memoryIds = memoryIdsForEvent(laneFiltered);
-      const linkEvents = collectEventsForIds(linksMap, memoryIds);
-      const pathEvents = collectEventsForIds(pathMap, memoryIds);
-      const impactEventsByDepth = collectImpactEventsByDepth(impactMap, memoryIds);
+      const memoryIds = traces.memoryIdsForEvent(laneFiltered);
+      const linkEvents = traces.collectEventsForIds(linksMap, memoryIds);
+      const pathEvents = traces.collectEventsForIds(pathMap, memoryIds);
+      const impactEventsByDepth = traces.collectImpactEventsByDepth(impactMap, memoryIds);
       const isLinkEvent = laneFiltered.type === "memory_links" || laneFiltered.type === "memory_path";
       const isImpactEvent = laneFiltered.type === "memory_impact" || laneFiltered.type === "memory_change_preview";
       const explain = explainMap.get(entry.index);
@@ -358,7 +255,7 @@
         explainBtn.className = "btn ghost small";
         explainBtn.textContent = "Explain";
         label.appendChild(explainBtn);
-        const explainText = formatExplanationText(explain);
+        const explainText = traces.formatExplanationText(explain);
         const explainBlock = utils.createCodeBlock(explainText);
         explainBlock.classList.add("trace-explain");
         explainBlock.style.display = "none";
@@ -374,7 +271,7 @@
           linksBtn.className = "btn ghost small";
           linksBtn.textContent = "Links";
           label.appendChild(linksBtn);
-          const linksText = formatLinksText(linkEvents);
+          const linksText = traces.formatLinksText(linkEvents);
           const linksBlock = utils.createCodeBlock(linksText);
           linksBlock.classList.add("trace-links");
           linksBlock.style.display = "none";
@@ -389,7 +286,7 @@
           pathBtn.className = "btn ghost small";
           pathBtn.textContent = "Path";
           label.appendChild(pathBtn);
-          const pathText = formatPathText(pathEvents);
+          const pathText = traces.formatPathText(pathEvents);
           const pathBlock = utils.createCodeBlock(pathText);
           pathBlock.classList.add("trace-links");
           pathBlock.style.display = "none";
@@ -412,7 +309,7 @@
         linksBtn.className = "btn ghost small";
         linksBtn.textContent = "Links";
         label.appendChild(linksBtn);
-        const linksText = formatLinksText(linkEvents);
+        const linksText = traces.formatLinksText(linkEvents);
         const linksBlock = utils.createCodeBlock(linksText);
         linksBlock.classList.add("trace-links");
         linksBlock.style.display = "none";
@@ -427,7 +324,7 @@
         pathBtn.className = "btn ghost small";
         pathBtn.textContent = "Path";
         label.appendChild(pathBtn);
-        const pathText = formatPathText(pathEvents);
+        const pathText = traces.formatPathText(pathEvents);
         const pathBlock = utils.createCodeBlock(pathText);
         pathBlock.classList.add("trace-links");
         pathBlock.style.display = "none";
@@ -445,25 +342,11 @@
     details.appendChild(wrapper);
   }
 
+  traces.appendMemoryBudgetSection = appendMemoryBudgetSection;
   traces.appendMemoryEventsSection = appendMemoryEventsSection;
-  traces.buildMemoryEventEntries = buildMemoryEventEntries;
-  traces.buildMemoryExplanationMap = buildMemoryExplanationMap;
-  traces.buildMemoryLinksMap = buildMemoryLinksMap;
-  traces.buildMemoryPathMap = buildMemoryPathMap;
-  traces.buildMemoryImpactMap = buildMemoryImpactMap;
-  traces.memoryIdsForEvent = memoryIdsForEvent;
   traces.filterMemoryEventForPhase = filterMemoryEventForPhase;
   traces.filterMemoryEventForLane = filterMemoryEventForLane;
-  traces.collectEventsForIds = collectEventsForIds;
-  traces.collectImpactEventsByDepth = collectImpactEventsByDepth;
   traces.appendImpactControls = appendImpactControls;
   traces.defaultImpactDepth = defaultImpactDepth;
-  traces.formatExplanationText = formatExplanationText;
-  traces.formatLinksText = formatLinksText;
-  traces.formatPathText = formatPathText;
-  traces.formatImpactText = formatImpactText;
-  traces.latestTeamSummary = latestTeamSummary;
-  traces.findPhaseDiffEvent = findPhaseDiffEvent;
-  traces.formatTeamSummaryText = formatTeamSummaryText;
   traces.appendTeamSummaryBlock = appendTeamSummaryBlock;
 })();

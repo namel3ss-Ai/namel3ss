@@ -4,6 +4,9 @@ from namel3ss.runtime.memory_agreement.store import ProposalStore
 from namel3ss.runtime.memory_trust import (
     approval_recorded_lines,
     can_approve,
+    can_handoff_apply,
+    can_handoff_create,
+    can_handoff_reject,
     can_propose,
     trust_level_from_identity,
 )
@@ -24,6 +27,12 @@ def test_trust_decisions_default_rules():
     assert can_propose("contributor", rules).allowed is True
     assert can_approve("contributor", rules).allowed is False
     assert can_approve("approver", rules).allowed is True
+    assert can_handoff_create("contributor", rules).allowed is True
+    assert can_handoff_create("viewer", rules).allowed is False
+    assert can_handoff_apply("approver", rules).allowed is True
+    assert can_handoff_apply("contributor", rules).allowed is False
+    assert can_handoff_reject("owner", rules).allowed is True
+    assert can_handoff_reject("approver", rules).allowed is False
 
 
 def test_trust_blocks_team_proposal_for_viewer():

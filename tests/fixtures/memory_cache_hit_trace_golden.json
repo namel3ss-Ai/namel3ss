@@ -1,0 +1,14 @@
+{
+  "type": "memory_cache_hit",
+  "trace_version": "2024-10-01",
+  "ai_profile": "assistant",
+  "session": "sess-1",
+  "space": "session",
+  "lane": "my",
+  "phase_id": "phase-1",
+  "title": "Memory cache hit",
+  "lines": [
+    "Cache was used for recall.",
+    "Cached result was returned."
+  ]
+}

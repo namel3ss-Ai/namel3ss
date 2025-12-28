@@ -12,7 +12,7 @@ from namel3ss.runtime.memory.events import (
     EVENT_PREFERENCE,
 )
 from namel3ss.runtime.memory.facts import SENSITIVE_MARKERS
-from namel3ss.runtime.memory_lanes.model import LANE_MY, LANE_SYSTEM, LANE_TEAM, lane_allowed_in_space
+from namel3ss.runtime.memory_lanes.model import LANE_AGENT, LANE_MY, LANE_SYSTEM, LANE_TEAM, lane_allowed_in_space
 from namel3ss.runtime.memory_policy.model import (
     AUTHORITY_AI,
     AUTHORITY_SYSTEM,
@@ -44,6 +44,7 @@ BORDER_DENY_WRITE = "write_space_disallowed"
 LANE_DENY_SPACE = "lane_space_disallowed"
 LANE_DENY_TEAM = "lane_team_disabled"
 LANE_DENY_SYSTEM = "lane_system_disabled"
+LANE_DENY_AGENT = "lane_agent_disabled"
 LANE_DENY_WRITE = "lane_write_disallowed"
 LANE_DENY_EVENT = "lane_event_type"
 LANE_DENY_SYSTEM_WRITE = "lane_system_read_only"
@@ -192,6 +193,8 @@ def evaluate_border_write(policy: MemoryPolicyContract, *, space: str) -> Border
 def evaluate_lane_read(policy: MemoryPolicyContract, *, lane: str, space: str) -> BorderDecision:
     if not lane_allowed_in_space(space, lane):
         return BorderDecision(False, LANE_DENY_SPACE)
+    if lane == LANE_AGENT and not policy.lanes.agent_enabled:
+        return BorderDecision(False, LANE_DENY_AGENT)
     if lane == LANE_TEAM and not policy.lanes.team_enabled:
         return BorderDecision(False, LANE_DENY_TEAM)
     if lane == LANE_SYSTEM and not policy.lanes.system_enabled:
@@ -204,6 +207,8 @@ def evaluate_lane_write(policy: MemoryPolicyContract, *, lane: str, space: str) 
         return BorderDecision(False, LANE_DENY_SYSTEM_WRITE)
     if not lane_allowed_in_space(space, lane):
         return BorderDecision(False, LANE_DENY_SPACE)
+    if lane == LANE_AGENT and not policy.lanes.agent_enabled:
+        return BorderDecision(False, LANE_DENY_AGENT)
     if lane not in policy.lanes.write_lanes:
         return BorderDecision(False, LANE_DENY_WRITE)
     return BorderDecision(True, BORDER_ALLOWED)
@@ -221,6 +226,12 @@ def evaluate_lane_promotion(
     if lane == LANE_MY:
         if not lane_allowed_in_space(space, lane):
             return BorderDecision(False, LANE_DENY_SPACE)
+        return BorderDecision(True, BORDER_ALLOWED)
+    if lane == LANE_AGENT:
+        if not lane_allowed_in_space(space, lane):
+            return BorderDecision(False, LANE_DENY_SPACE)
+        if not policy.lanes.agent_enabled:
+            return BorderDecision(False, LANE_DENY_AGENT)
         return BorderDecision(True, BORDER_ALLOWED)
     if lane != LANE_TEAM:
         return BorderDecision(False, LANE_DENY_WRITE)

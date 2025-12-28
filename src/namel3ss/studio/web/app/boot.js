@@ -30,6 +30,7 @@
     setup.setupTraceFormatToggle();
     setup.setupTracePhaseToggle();
     setup.setupTraceLaneToggle();
+    setup.setupTraceMemoryFilters();
     setup.setupToolsFilter();
     api.loadVersion();
     setup.setupHelpModal();

@@ -64,6 +64,10 @@ def test_text_only_traces_for_all_providers(monkeypatch):
             "memory_rule_applied",
             "memory_rules_snapshot",
             "memory_rule_changed",
+            "memory_handoff_created",
+            "memory_handoff_applied",
+            "memory_handoff_rejected",
+            "memory_agent_briefing",
             "ai_call_completed",
             "ai_call_failed",
         }

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable, Mapping, Optional
 
-from namel3ss.runtime.memory.contract import MemoryItem
+from namel3ss.runtime.memory.contract import MEMORY_SCOPE_SESSION, MemoryItem, MemoryKind
 from namel3ss.runtime.memory.profile import ProfileMemory
 from namel3ss.runtime.memory.semantic import SemanticMemory
 from namel3ss.runtime.memory.short_term import ShortTermMemory
@@ -105,8 +105,12 @@ def _collect_items(
     profile: ProfileMemory,
 ) -> dict[str, MemoryItem]:
     items: dict[str, MemoryItem] = {}
-    for entry in _iter_items(short_term.all_items(), semantic.all_items(), profile.all_items()):
+    all_items = list(_iter_items(short_term.all_items(), semantic.all_items(), profile.all_items()))
+    for entry in all_items:
         items[entry.id] = entry
+    for entry in _ledger_items(all_items):
+        if entry.id not in items:
+            items[entry.id] = entry
     return items
 
 
@@ -114,6 +118,67 @@ def _iter_items(*groups: Iterable[MemoryItem]) -> Iterable[MemoryItem]:
     for group in groups:
         for item in group:
             yield item
+
+
+def _ledger_items(items: Iterable[MemoryItem]) -> list[MemoryItem]:
+    ledger_items: list[MemoryItem] = []
+    seen: set[str] = set()
+    for item in items:
+        meta = item.meta or {}
+        ledger = meta.get("compaction_ledger")
+        if not isinstance(ledger, list):
+            continue
+        for entry in ledger:
+            if not isinstance(entry, dict):
+                continue
+            memory_id = entry.get("memory_id")
+            if not isinstance(memory_id, str) or not memory_id:
+                continue
+            if memory_id in seen:
+                continue
+            seen.add(memory_id)
+            ledger_items.append(_item_from_ledger(entry))
+    ledger_items.sort(key=lambda entry: entry.id)
+    return ledger_items
+
+
+def _item_from_ledger(entry: dict) -> MemoryItem:
+    kind_value = entry.get("kind") or MemoryKind.SEMANTIC.value
+    kind = MemoryKind.SEMANTIC
+    for candidate in MemoryKind:
+        if candidate.value == kind_value:
+            kind = candidate
+            break
+    preview = entry.get("preview") or ""
+    meta = _meta_from_ledger(entry)
+    return MemoryItem(
+        id=str(entry.get("memory_id")),
+        kind=kind,
+        text=str(preview),
+        source="system",
+        created_at=0,
+        importance=0,
+        scope=MEMORY_SCOPE_SESSION,
+        meta=meta,
+    )
+
+
+def _meta_from_ledger(entry: dict) -> dict:
+    meta = {
+        "space": entry.get("space") or "unknown",
+        "owner": entry.get("owner") or "unknown",
+        "lane": entry.get("lane") or "unknown",
+        "phase_id": entry.get("phase_id") or "phase-unknown",
+    }
+    links = entry.get("links")
+    if isinstance(links, list):
+        meta["links"] = links
+    previews = entry.get("link_preview_text")
+    if isinstance(previews, dict):
+        cleaned = {str(key): str(value) for key, value in previews.items() if isinstance(value, str)}
+        if cleaned:
+            meta["link_preview_text"] = cleaned
+    return meta
 
 
 def _links_for_item(item: MemoryItem) -> list[dict]:

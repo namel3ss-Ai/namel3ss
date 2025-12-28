@@ -24,7 +24,7 @@
   }
 
   async function refreshAll() {
-    const [summary, ui, actions, lint, tools, packs, security] = await Promise.all([
+    const [summary, ui, actions, lint, tools, packs, security, handoff] = await Promise.all([
       utils.fetchJson("/api/summary"),
       utils.fetchJson("/api/ui"),
       utils.fetchJson("/api/actions"),
@@ -32,6 +32,7 @@
       utils.fetchJson("/api/tools"),
       utils.fetchJson("/api/packs"),
       utils.fetchJson("/api/security"),
+      utils.fetchJson("/api/memory/handoff"),
     ]);
     if (window.renderSummary) window.renderSummary(summary);
     if (window.renderActions) window.renderActions(actions);
@@ -39,6 +40,7 @@
     if (window.renderTools) window.renderTools(tools);
     if (window.renderPacks) window.renderPacks(packs);
     if (window.renderSecurity) window.renderSecurity(security);
+    if (window.renderHandoff) window.renderHandoff(handoff);
     if (window.renderState) window.renderState({});
     if (window.renderTraces) window.renderTraces([]);
     if (ui.ok !== false) {

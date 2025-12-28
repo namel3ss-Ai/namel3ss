@@ -27,6 +27,10 @@ class TraceEventType:
     MEMORY_PATH = "memory_path"
     MEMORY_IMPACT = "memory_impact"
     MEMORY_CHANGE_PREVIEW = "memory_change_preview"
+    MEMORY_BUDGET = "memory_budget"
+    MEMORY_COMPACTION = "memory_compaction"
+    MEMORY_CACHE_HIT = "memory_cache_hit"
+    MEMORY_CACHE_MISS = "memory_cache_miss"
     MEMORY_TEAM_SUMMARY = "memory_team_summary"
     MEMORY_PROPOSED = "memory_proposed"
     MEMORY_APPROVED = "memory_approved"
@@ -38,6 +42,10 @@ class TraceEventType:
     MEMORY_RULE_APPLIED = "memory_rule_applied"
     MEMORY_RULES_SNAPSHOT = "memory_rules_snapshot"
     MEMORY_RULE_CHANGED = "memory_rule_changed"
+    MEMORY_HANDOFF_CREATED = "memory_handoff_created"
+    MEMORY_HANDOFF_APPLIED = "memory_handoff_applied"
+    MEMORY_HANDOFF_REJECTED = "memory_handoff_rejected"
+    MEMORY_AGENT_BRIEFING = "memory_agent_briefing"
 
 
 __all__ = ["TRACE_VERSION", "TraceEventType"]

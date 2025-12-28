@@ -8,6 +8,9 @@ from namel3ss.runtime.memory_rules.evaluate import (
 from namel3ss.runtime.memory_rules.model import (
     ACTION_APPROVE_TEAM_MEMORY,
     ACTION_DELETE_TEAM_MEMORY,
+    ACTION_HANDOFF_APPLY,
+    ACTION_HANDOFF_CREATE,
+    ACTION_HANDOFF_REJECT,
     ACTION_PROMOTE_TO_SYSTEM_LANE,
     ACTION_PROMOTE_TO_TEAM_LANE,
     ACTION_PROPOSE_TEAM_MEMORY,
@@ -70,6 +73,9 @@ _ACTION_LINES = {
     ACTION_PROMOTE_TO_SYSTEM_LANE: "promote memory to system lane",
     ACTION_WRITE_TEAM_LANE_DIRECT: "write memory to team lane",
     ACTION_DELETE_TEAM_MEMORY: "delete team memory",
+    ACTION_HANDOFF_CREATE: "create handoff packet",
+    ACTION_HANDOFF_APPLY: "apply handoff packet",
+    ACTION_HANDOFF_REJECT: "reject handoff packet",
 }
 
 

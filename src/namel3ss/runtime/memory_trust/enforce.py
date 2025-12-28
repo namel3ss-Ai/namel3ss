@@ -38,6 +38,20 @@ def can_change_rules(actor_level: str, rules: TrustRules) -> TrustDecision:
     return _decision("change_rules", actor_level, TRUST_OWNER, owner_override=True)
 
 
+def can_handoff_create(actor_level: str, rules: TrustRules) -> TrustDecision:
+    required = rules.who_can_propose
+    return _decision("handoff_create", actor_level, required, owner_override=False)
+
+
+def can_handoff_apply(actor_level: str, rules: TrustRules) -> TrustDecision:
+    required = rules.who_can_approve
+    return _decision("handoff_apply", actor_level, required, owner_override=rules.owner_override)
+
+
+def can_handoff_reject(actor_level: str, rules: TrustRules) -> TrustDecision:
+    return _decision("handoff_reject", actor_level, TRUST_OWNER, owner_override=True)
+
+
 def required_approvals(rules: TrustRules) -> int:
     return max(1, int(rules.approval_count_required))
 
@@ -75,6 +89,9 @@ __all__ = [
     "TrustDecision",
     "can_approve",
     "can_change_rules",
+    "can_handoff_apply",
+    "can_handoff_create",
+    "can_handoff_reject",
     "can_propose",
     "can_reject",
     "is_owner",

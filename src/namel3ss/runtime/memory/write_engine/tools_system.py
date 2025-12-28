@@ -178,6 +178,7 @@ def _write_system_rule(
     phase_policy_snapshot: dict,
     events: list[dict],
     written: list[MemoryItem],
+    budget_enforcer,
 ) -> None:
     if not system_rule_request:
         return
@@ -254,6 +255,16 @@ def _write_system_rule(
     )
     decision = evaluate_write(contract, rule_item, event_type=EVENT_RULE)
     if decision.allowed:
+        if not budget_enforcer.allow_write(
+            store_key=system_key,
+            space=SPACE_SYSTEM,
+            owner=system_owner,
+            lane=system_lane,
+            phase=system_phase,
+            kind=rule_item.kind.value,
+            incoming=1,
+        ):
+            return
         rule_item = with_policy_tags(rule_item, decision.tags)
         stored_item, conflict, deleted = semantic.store_item(
             system_key,

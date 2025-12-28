@@ -20,6 +20,12 @@ from namel3ss.studio.pkg_api import get_pkg_info_payload, search_pkg_index_paylo
 from namel3ss.studio.registry_api import get_registry_status_payload
 from namel3ss.studio.memory_agreement_api import apply_agreement_action_payload, get_agreements_payload
 from namel3ss.studio.memory_rules_api import get_rules_payload, propose_rule_payload
+from namel3ss.studio.memory_handoff_api import (
+    apply_handoff_payload,
+    create_handoff_payload,
+    get_handoff_payload,
+    reject_handoff_payload,
+)
 from namel3ss.studio.routes.core import (
     handle_action,
     handle_edit,
@@ -95,6 +101,10 @@ def handle_api_get(handler: Any) -> None:
         return
     if handler.path == "/api/memory/rules":
         payload = get_rules_payload(handler.server.app_path, handler._get_session())  # type: ignore[attr-defined]
+        handler._respond_json(payload, status=200 if payload.get("ok", True) else 400)
+        return
+    if handler.path == "/api/memory/handoff":
+        payload = get_handoff_payload(handler.server.app_path, handler._get_session())  # type: ignore[attr-defined]
         handler._respond_json(payload, status=200 if payload.get("ok", True) else 400)
         return
     if handler.path == "/api/graph":
@@ -228,6 +238,31 @@ def handle_api_post(handler: Any) -> None:
             text=str(text),
             scope=str(scope),
             priority=int(priority),
+        )
+        handler._respond_json(payload, status=200 if payload.get("ok", True) else 400)
+        return
+    if handler.path == "/api/memory/handoff/create":
+        payload = create_handoff_payload(
+            handler.server.app_path,  # type: ignore[attr-defined]
+            handler._get_session(),
+            from_agent_id=str(body.get("from_agent_id") or ""),
+            to_agent_id=str(body.get("to_agent_id") or ""),
+        )
+        handler._respond_json(payload, status=200 if payload.get("ok", True) else 400)
+        return
+    if handler.path == "/api/memory/handoff/apply":
+        payload = apply_handoff_payload(
+            handler.server.app_path,  # type: ignore[attr-defined]
+            handler._get_session(),
+            packet_id=str(body.get("packet_id") or ""),
+        )
+        handler._respond_json(payload, status=200 if payload.get("ok", True) else 400)
+        return
+    if handler.path == "/api/memory/handoff/reject":
+        payload = reject_handoff_payload(
+            handler.server.app_path,  # type: ignore[attr-defined]
+            handler._get_session(),
+            packet_id=str(body.get("packet_id") or ""),
         )
         handler._respond_json(payload, status=200 if payload.get("ok", True) else 400)
         return
