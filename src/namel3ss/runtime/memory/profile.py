@@ -118,6 +118,13 @@ class ProfileMemory:
         recalled = items[:limit]
         return [_with_recall_reason(item, ["active_rule"]) for item in recalled]
 
+    def all_items(self) -> List[MemoryItem]:
+        items: list[MemoryItem] = []
+        for facts in self._facts.values():
+            items.extend(facts.values())
+        items.sort(key=lambda item: item.id)
+        return items
+
     def apply_retention(self, store_key: str, policy, now_tick: int) -> List[tuple[MemoryItem, str]]:
         facts = self._facts.get(store_key, {})
         kept, forgotten = apply_retention(list(facts.values()), policy, now_tick=now_tick)
@@ -133,6 +140,22 @@ class ProfileMemory:
             if item.id == memory_id:
                 del facts[key]
                 return item
+        return None
+
+    def get_item(self, store_key: str, memory_id: str) -> MemoryItem | None:
+        facts = self._facts.get(store_key, {})
+        for item in facts.values():
+            if item.id == memory_id:
+                return item
+        return None
+
+    def update_item(self, store_key: str, memory_id: str, updater) -> MemoryItem | None:
+        facts = self._facts.get(store_key, {})
+        for key, item in list(facts.items()):
+            if item.id == memory_id:
+                updated = updater(item)
+                facts[key] = updated
+                return updated
         return None
 
     def has_items(self, store_key: str) -> bool:

@@ -1,0 +1,20 @@
+[
+  {
+    "type": "memory_team_summary",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "team_id": "unknown",
+    "space": "project",
+    "phase_from": "phase-1",
+    "phase_to": "phase-2",
+    "title": "Team memory summary",
+    "lines": [
+      "Team memory changed.",
+      "Added items count is 0.",
+      "Removed items count is 0.",
+      "Replaced items count is 0."
+    ],
+    "lane": "team"
+  }
+]

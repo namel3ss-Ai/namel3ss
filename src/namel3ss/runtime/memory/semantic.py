@@ -110,11 +110,34 @@ class SemanticMemory:
             matches.sort(key=lambda pair: (-pair[0], -pair[1].created_at, pair[1].id))
         return [item for _, item in matches[:top_k]]
 
+    def all_items(self) -> List[MemoryItem]:
+        items: list[MemoryItem] = []
+        for entries in self._snippets.values():
+            items.extend(entries)
+        items.sort(key=lambda item: item.id)
+        return items
+
     def delete_item(self, store_key: str, memory_id: str) -> MemoryItem | None:
         items = self._snippets.get(store_key, [])
         for idx, item in enumerate(items):
             if item.id == memory_id:
                 return items.pop(idx)
+        return None
+
+    def get_item(self, store_key: str, memory_id: str) -> MemoryItem | None:
+        items = self._snippets.get(store_key, [])
+        for item in items:
+            if item.id == memory_id:
+                return item
+        return None
+
+    def update_item(self, store_key: str, memory_id: str, updater) -> MemoryItem | None:
+        items = self._snippets.get(store_key, [])
+        for idx, item in enumerate(items):
+            if item.id == memory_id:
+                updated = updater(item)
+                items[idx] = updated
+                return updated
         return None
 
     def has_items(self, store_key: str) -> bool:

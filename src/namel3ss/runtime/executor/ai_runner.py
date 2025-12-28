@@ -14,6 +14,7 @@ from namel3ss.runtime.providers.capabilities import get_provider_capabilities
 from namel3ss.runtime.tools.field_schema import build_json_schema
 from namel3ss.runtime.tools.registry import execute_tool
 from namel3ss.runtime.memory.manager import MemoryManager
+from namel3ss.runtime.memory_explain import append_explanation_events
 from namel3ss.traces.builders import (
     build_ai_call_completed,
     build_ai_call_failed,
@@ -92,6 +93,7 @@ def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
     )
     if governance_events:
         canonical_events.extend(governance_events)
+    canonical_events = append_explanation_events(canonical_events)
     trace = AITrace(
         ai_name=expr.ai_name,
         ai_profile_name=expr.ai_name,

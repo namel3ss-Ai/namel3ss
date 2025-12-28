@@ -103,6 +103,68 @@
   padding: 6px 10px;
   font-size: 12px;
 }
+.trace-event {
+  margin-bottom: 12px;
+}
+.trace-event-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  text-transform: lowercase;
+}
+.trace-explain {
+  background: #f9f9f9;
+}
+.trace-links {
+  background: #f9f9f9;
+}
+.trace-impact {
+  margin-top: 6px;
+}
+.trace-impact-depth {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.team-agreements {
+  border: 1px solid #eaeaea;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: #fafafa;
+}
+.trust-panel {
+  border: 1px solid #e2e2e2;
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 10px;
+  background: #fff;
+}
+.trust-lines,
+.trust-notice {
+  font-size: 12px;
+  color: #333;
+  white-space: pre-wrap;
+}
+.trust-notice {
+  margin-top: 6px;
+  color: #a13b3b;
+}
+.agreement-summary {
+  font-size: 12px;
+  color: #333;
+  margin-bottom: 8px;
+  white-space: pre-wrap;
+}
+.agreement-item {
+  display: grid;
+  gap: 6px;
+}
+.agreement-item .list-actions {
+  display: flex;
+  gap: 6px;
+}
 .shell-body {
   display: flex;
   gap: 20px;

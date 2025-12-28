@@ -34,7 +34,7 @@ Manual diff request (internal API):
 - The next AI call emits `memory_phase_diff`.
 
 ## Deletion with traceability
-When a memory item is superseded, promoted, replaced, or expired:
+When a memory item is replaced, promoted, expired, or a conflict loser:
 - the old item is **deleted from storage**
 - a `memory_deleted` trace is emitted with a stable reason code
 

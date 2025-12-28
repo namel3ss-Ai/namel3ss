@@ -13,6 +13,9 @@ def _meta(event_type: str, text: str, source: str) -> tuple[int, dict]:
         "dedup_key": build_dedupe_key(event_type, text),
         "space": "session",
         "owner": "s1",
+        "lane": "my",
+        "visible_to": "me",
+        "can_change": True,
         "phase_id": "phase-1",
         "phase_started_at": 1,
         "phase_reason": "auto",
@@ -22,7 +25,7 @@ def _meta(event_type: str, text: str, source: str) -> tuple[int, dict]:
 def test_semantic_dedupe_merges_newest():
     factory = MemoryItemFactory(clock=MemoryClock(), id_generator=MemoryIdGenerator())
     memory = SemanticMemory(factory=factory)
-    store_key = "session:s1"
+    store_key = "session:s1:my"
     importance, meta = _meta(EVENT_DECISION, "We decided to ship weekly.", "user")
     memory.record(store_key, text="We decided to ship weekly.", source="user", importance=importance, meta=meta, dedupe_enabled=True)
     higher_importance, meta2 = _meta(EVENT_DECISION, "We decided to ship weekly.", "user")
@@ -42,7 +45,7 @@ def test_semantic_dedupe_merges_newest():
 def test_semantic_decay_forgets_old_context():
     factory = MemoryItemFactory(clock=MemoryClock(), id_generator=MemoryIdGenerator())
     memory = SemanticMemory(factory=factory)
-    store_key = "session:s1"
+    store_key = "session:s1:my"
     for idx in range(15):
         text = f"context {idx}"
         importance, meta = _meta(EVENT_CONTEXT, text, "user")

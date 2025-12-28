@@ -22,6 +22,19 @@ class TraceEventType:
     MEMORY_PHASE_STARTED = "memory_phase_started"
     MEMORY_DELETED = "memory_deleted"
     MEMORY_PHASE_DIFF = "memory_phase_diff"
+    MEMORY_EXPLANATION = "memory_explanation"
+    MEMORY_LINKS = "memory_links"
+    MEMORY_PATH = "memory_path"
+    MEMORY_IMPACT = "memory_impact"
+    MEMORY_CHANGE_PREVIEW = "memory_change_preview"
+    MEMORY_TEAM_SUMMARY = "memory_team_summary"
+    MEMORY_PROPOSED = "memory_proposed"
+    MEMORY_APPROVED = "memory_approved"
+    MEMORY_REJECTED = "memory_rejected"
+    MEMORY_AGREEMENT_SUMMARY = "memory_agreement_summary"
+    MEMORY_TRUST_CHECK = "memory_trust_check"
+    MEMORY_APPROVAL_RECORDED = "memory_approval_recorded"
+    MEMORY_TRUST_RULES = "memory_trust_rules"
 
 
 __all__ = ["TRACE_VERSION", "TraceEventType"]

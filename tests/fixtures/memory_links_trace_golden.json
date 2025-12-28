@@ -1,0 +1,78 @@
+[
+  {
+    "type": "memory_links",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "memory_id": "user:anonymous:my:semantic:1",
+    "phase_id": "phase-1",
+    "space": "user",
+    "owner": "anonymous",
+    "link_count": 2,
+    "lines": [
+      "Link replaced Remember this for me: I prefer concise updates.",
+      "Reason is promoted.",
+      "Link promoted from Remember this for me: I prefer concise updates.",
+      "Reason is hint:remember_for_me."
+    ],
+    "lane": "my"
+  },
+  {
+    "type": "memory_path",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "memory_id": "user:anonymous:my:semantic:1",
+    "phase_id": "phase-1",
+    "space": "user",
+    "owner": "anonymous",
+    "title": "Memory path",
+    "lines": [
+      "This exists because it replaced an older item.",
+      "Target summary is Remember this for me: I prefer concise updates.",
+      "Link was created in phase 1.",
+      "This exists because it was promoted from another space.",
+      "Target summary is Remember this for me: I prefer concise updates.",
+      "Link was created in phase 1."
+    ],
+    "lane": "my"
+  },
+  {
+    "type": "memory_links",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "memory_id": "session:anonymous:my:profile:2",
+    "phase_id": "phase-1",
+    "space": "session",
+    "owner": "anonymous",
+    "link_count": 2,
+    "lines": [
+      "Link replaced Ada.",
+      "Reason is conflict_loser.",
+      "Link conflicts with Ada.",
+      "Reason is correction."
+    ],
+    "lane": "my"
+  },
+  {
+    "type": "memory_path",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "memory_id": "session:anonymous:my:profile:2",
+    "phase_id": "phase-1",
+    "space": "session",
+    "owner": "anonymous",
+    "title": "Memory path",
+    "lines": [
+      "This exists because it replaced an older item.",
+      "Target summary is Ada.",
+      "Link was created in phase 1.",
+      "This exists because it won a conflict.",
+      "Target summary is Ada.",
+      "Link was created in phase 1."
+    ],
+    "lane": "my"
+  }
+]

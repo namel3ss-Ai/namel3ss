@@ -39,12 +39,12 @@ class SpaceContext:
             details={"space": space},
         )
 
-    def store_key_for(self, space: str) -> str:
-        return store_key(space, self.owner_for(space))
+    def store_key_for(self, space: str, *, lane: str) -> str:
+        return store_key(space, self.owner_for(space), lane)
 
 
-def store_key(space: str, owner: str) -> str:
-    return f"{space}:{owner}"
+def store_key(space: str, owner: str, lane: str) -> str:
+    return f"{space}:{owner}:{lane}"
 
 
 def resolve_space_context(

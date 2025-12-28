@@ -29,6 +29,7 @@ def test_memory_spaces_trace_golden():
         initial_state={},
         ai_provider=MockProvider(),
         ai_profiles=program.ais,
+        identity={"trust_level": "contributor", "id": "user-1"},
     )
     memory_events = []
     for trace in result.traces:
@@ -41,6 +42,7 @@ def test_memory_spaces_trace_golden():
                     "memory_recall",
                     "memory_border_check",
                     "memory_promoted",
+                    "memory_proposed",
                     "memory_promotion_denied",
                 }
             ]

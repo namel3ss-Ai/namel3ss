@@ -1,0 +1,199 @@
+[
+  {
+    "type": "memory_explanation",
+    "trace_version": "2024-10-01",
+    "for_event_index": 0,
+    "title": "Memory recall",
+    "lines": [
+      "Phase used is unknown.",
+      "Spaces checked are session, user, project, system.",
+      "Recalled items count is 0.",
+      "Only the current phase was used.",
+      "Older phases were ignored.",
+      "No items were recalled from session.",
+      "No items were recalled from user.",
+      "No items were recalled from project.",
+      "No items were recalled from system."
+    ]
+  },
+  {
+    "type": "memory_explanation",
+    "trace_version": "2024-10-01",
+    "for_event_index": 0,
+    "title": "Memory recall",
+    "lines": [
+      "Phase used is phase-1.",
+      "Spaces checked are session, user, project, system.",
+      "Recalled items count is 4.",
+      "Only the current phase was used.",
+      "Older phases were ignored.",
+      "Items recalled from session count is 4.",
+      "No items were recalled from user.",
+      "No items were recalled from project.",
+      "No items were recalled from system.",
+      "Phase phase-1 count in session is 3.",
+      "Recall reason is it matches your question.",
+      "Recall reason is it is recent.",
+      "Recall reason is it is marked important.",
+      "Recall reason is it is active by rule.",
+      "Recall reason is lane:my."
+    ]
+  },
+  {
+    "type": "memory_explanation",
+    "trace_version": "2024-10-01",
+    "for_event_index": 17,
+    "title": "Memory forgotten",
+    "lines": [
+      "Forgotten id is session:anonymous:my:short_term:1.",
+      "Item decayed by age."
+    ],
+    "related_ids": [
+      "session:anonymous:my:short_term:1"
+    ]
+  },
+  {
+    "type": "memory_explanation",
+    "trace_version": "2024-10-01",
+    "for_event_index": 19,
+    "title": "Memory forgotten",
+    "lines": [
+      "Forgotten id is session:anonymous:my:short_term:2.",
+      "Item decayed by age."
+    ],
+    "related_ids": [
+      "session:anonymous:my:short_term:2"
+    ]
+  },
+  {
+    "type": "memory_explanation",
+    "trace_version": "2024-10-01",
+    "for_event_index": 21,
+    "title": "Memory deleted",
+    "lines": [
+      "Deleted id is session:anonymous:my:short_term:1.",
+      "Item expired by retention rules."
+    ],
+    "related_ids": [
+      "session:anonymous:my:short_term:1"
+    ]
+  },
+  {
+    "type": "memory_explanation",
+    "trace_version": "2024-10-01",
+    "for_event_index": 23,
+    "title": "Memory deleted",
+    "lines": [
+      "Deleted id is session:anonymous:my:short_term:2.",
+      "Item expired by retention rules."
+    ],
+    "related_ids": [
+      "session:anonymous:my:short_term:2"
+    ]
+  },
+  {
+    "type": "memory_explanation",
+    "trace_version": "2024-10-01",
+    "for_event_index": 29,
+    "title": "Memory conflict",
+    "lines": [
+      "Conflict detected.",
+      "Winner id is session:anonymous:my:profile:2.",
+      "Loser id is session:anonymous:my:profile:1.",
+      "Winner was a correction."
+    ],
+    "related_ids": [
+      "session:anonymous:my:profile:2",
+      "session:anonymous:my:profile:1"
+    ]
+  },
+  {
+    "type": "memory_explanation",
+    "trace_version": "2024-10-01",
+    "for_event_index": 32,
+    "title": "Memory deleted",
+    "lines": [
+      "Deleted id is session:anonymous:my:profile:1.",
+      "Item lost a conflict.",
+      "Replaced by id is session:anonymous:my:profile:2."
+    ],
+    "related_ids": [
+      "session:anonymous:my:profile:1",
+      "session:anonymous:my:profile:2"
+    ]
+  },
+  {
+    "type": "memory_explanation",
+    "trace_version": "2024-10-01",
+    "for_event_index": 0,
+    "title": "Memory recall",
+    "lines": [
+      "Phase used is phase-2.",
+      "Spaces checked are session, user, project, system.",
+      "Recalled items count is 0.",
+      "Only the current phase was used.",
+      "Older phases were ignored.",
+      "No items were recalled from session.",
+      "No items were recalled from user.",
+      "No items were recalled from project.",
+      "No items were recalled from system."
+    ]
+  },
+  {
+    "type": "memory_explanation",
+    "trace_version": "2024-10-01",
+    "for_event_index": 18,
+    "title": "Memory denied",
+    "lines": [
+      "Write was blocked.",
+      "Blocked kind is short_term.",
+      "Blocked event type is context.",
+      "Policy blocks sensitive content.",
+      "Remove secrets or tokens."
+    ]
+  },
+  {
+    "type": "memory_explanation",
+    "trace_version": "2024-10-01",
+    "for_event_index": 22,
+    "title": "Memory denied",
+    "lines": [
+      "Write was blocked.",
+      "Blocked kind is short_term.",
+      "Blocked event type is context.",
+      "Policy blocks sensitive content.",
+      "Remove secrets or tokens."
+    ]
+  },
+  {
+    "type": "memory_explanation",
+    "trace_version": "2024-10-01",
+    "for_event_index": 0,
+    "title": "Memory recall",
+    "lines": [
+      "Phase used is phase-2.",
+      "Spaces checked are session, user, project, system.",
+      "Recalled items count is 0.",
+      "Only the current phase was used.",
+      "Older phases were ignored.",
+      "No items were recalled from session.",
+      "No items were recalled from user.",
+      "No items were recalled from project.",
+      "No items were recalled from system."
+    ]
+  },
+  {
+    "type": "memory_explanation",
+    "trace_version": "2024-10-01",
+    "for_event_index": 21,
+    "title": "Memory phase diff",
+    "lines": [
+      "Phase diff from phase-1 to phase-2.",
+      "Added count is 2.",
+      "Deleted count is 0.",
+      "Replaced count is 0.",
+      "Added session:anonymous:my:short_term:8 kind short_term.",
+      "Added session:anonymous:my:short_term:9 kind short_term."
+    ]
+  }
+]

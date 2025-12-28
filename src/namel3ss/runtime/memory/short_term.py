@@ -5,6 +5,7 @@ from typing import Dict, List, Optional
 
 from namel3ss.runtime.memory.contract import MemoryItem, MemoryItemFactory, MemoryKind
 from namel3ss.runtime.memory.events import EVENT_CONTEXT, build_dedupe_key
+from namel3ss.runtime.memory_lanes.model import ensure_lane_meta
 from namel3ss.runtime.memory.importance import importance_for_event
 from namel3ss.runtime.memory.summarizer import summarize_items
 from namel3ss.runtime.memory_policy.model import AUTHORITY_SYSTEM
@@ -49,6 +50,7 @@ class ShortTermMemory:
         phase_id: str,
         space: str,
         owner: str,
+        lane: str,
     ) -> tuple[MemoryItem | None, list[MemoryItem], MemoryItem | None]:
         messages = self._messages.get(store_key, {}).get(phase_id, [])
         if max_turns <= 0 or len(messages) <= max_turns:
@@ -75,6 +77,7 @@ class ShortTermMemory:
             "space": space,
             "owner": owner,
         }
+        meta = ensure_lane_meta(meta, lane=lane)
         meta.update(_phase_meta_from_items(evicted, phase_id))
         summary_item = self._factory.create(
             session=store_key,
@@ -104,6 +107,16 @@ class ShortTermMemory:
                 items.append(_with_recall_reason(item, ["recency"]))
         return items
 
+    def all_items(self) -> List[MemoryItem]:
+        items: list[MemoryItem] = []
+        for phases in self._messages.values():
+            for entries in phases.values():
+                items.extend(entries)
+        for summaries in self._summaries.values():
+            items.extend(summaries.values())
+        items.sort(key=lambda item: item.id)
+        return items
+
     def delete_item(self, store_key: str, memory_id: str) -> MemoryItem | None:
         phases = self._messages.get(store_key, {})
         for phase_id, items in phases.items():
@@ -119,6 +132,39 @@ class ShortTermMemory:
             if summary.id == memory_id:
                 summaries.pop(phase_id, None)
                 return summary
+        return None
+
+    def get_item(self, store_key: str, memory_id: str) -> MemoryItem | None:
+        phases = self._messages.get(store_key, {})
+        for items in phases.values():
+            for item in items:
+                if item.id == memory_id:
+                    return item
+        summaries = self._summaries.get(store_key, {})
+        for summary in summaries.values():
+            if summary.id == memory_id:
+                return summary
+        return None
+
+    def update_item(
+        self,
+        store_key: str,
+        memory_id: str,
+        updater,
+    ) -> MemoryItem | None:
+        phases = self._messages.get(store_key, {})
+        for phase_id, items in phases.items():
+            for idx, item in enumerate(items):
+                if item.id == memory_id:
+                    updated = updater(item)
+                    items[idx] = updated
+                    return updated
+        summaries = self._summaries.get(store_key, {})
+        for phase_id, summary in list(summaries.items()):
+            if summary.id == memory_id:
+                updated = updater(summary)
+                summaries[phase_id] = updated
+                return updated
         return None
 
     def has_items(self, store_key: str) -> bool:

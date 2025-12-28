@@ -1,0 +1,102 @@
+[
+  {
+    "ai_profile": "assistant",
+    "lane": "team",
+    "lines": [
+      "Team memory proposal created.",
+      "Proposal id is proposal-1.",
+      "Phase is phase-1.",
+      "Proposed by is approver-1.",
+      "Event type is decision.",
+      "Approvals required is 1.",
+      "Preview is Remember this for the project: We decided to ship weekly..",
+      "Status is waiting for one more approval."
+    ],
+    "memory_id": "session:anonymous:my:semantic:1",
+    "phase_id": "phase-1",
+    "proposal_id": "proposal-1",
+    "session": "anonymous",
+    "team_id": "unknown",
+    "title": "Team proposal decision",
+    "trace_version": "2024-10-01",
+    "type": "memory_proposed"
+  },
+  {
+    "ai_profile": "assistant",
+    "lane": "team",
+    "lines": [
+      "Team memory proposal approved.",
+      "Proposal id is proposal-1.",
+      "Phase is phase-1.",
+      "Proposed by is approver-1.",
+      "Event type is decision.",
+      "Memory id is project:unknown:team:semantic:1.",
+      "Status is approved."
+    ],
+    "memory_id": "project:unknown:team:semantic:1",
+    "phase_id": "phase-1",
+    "proposal_id": "proposal-1",
+    "session": "anonymous",
+    "team_id": "unknown",
+    "title": "Team memory approved",
+    "trace_version": "2024-10-01",
+    "type": "memory_approved"
+  },
+  {
+    "ai_profile": "assistant",
+    "lane": "team",
+    "lines": [
+      "Team memory proposal created.",
+      "Proposal id is proposal-2.",
+      "Phase is phase-2.",
+      "Proposed by is approver-1.",
+      "Event type is decision.",
+      "Approvals required is 1.",
+      "Preview is Remember this for the project: We decided to ship daily..",
+      "Status is waiting for one more approval."
+    ],
+    "memory_id": "session:anonymous:my:semantic:2",
+    "phase_id": "phase-2",
+    "proposal_id": "proposal-2",
+    "session": "anonymous",
+    "team_id": "unknown",
+    "title": "Team proposal decision",
+    "trace_version": "2024-10-01",
+    "type": "memory_proposed"
+  },
+  {
+    "ai_profile": "assistant",
+    "lane": "team",
+    "lines": [
+      "Team memory proposal rejected.",
+      "Proposal id is proposal-2.",
+      "Phase is phase-2.",
+      "Proposed by is approver-1.",
+      "Event type is decision.",
+      "Status is rejected."
+    ],
+    "phase_id": "phase-2",
+    "proposal_id": "proposal-2",
+    "session": "anonymous",
+    "team_id": "unknown",
+    "title": "Team memory rejected",
+    "trace_version": "2024-10-01",
+    "type": "memory_rejected"
+  },
+  {
+    "ai_profile": "assistant",
+    "lane": "team",
+    "lines": [
+      "One proposal was approved.",
+      "One proposal was rejected."
+    ],
+    "phase_from": "phase-1",
+    "phase_to": "phase-2",
+    "session": "anonymous",
+    "space": "project",
+    "team_id": "unknown",
+    "title": "Team agreement summary",
+    "trace_version": "2024-10-01",
+    "type": "memory_agreement_summary"
+  }
+]

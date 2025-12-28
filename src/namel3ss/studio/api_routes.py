@@ -18,6 +18,7 @@ from namel3ss.studio.data_api import get_audit_payload, get_data_summary_payload
 from namel3ss.studio.graph_api import get_exports_payload, get_graph_payload
 from namel3ss.studio.pkg_api import get_pkg_info_payload, search_pkg_index_payload
 from namel3ss.studio.registry_api import get_registry_status_payload
+from namel3ss.studio.memory_agreement_api import apply_agreement_action_payload, get_agreements_payload
 from namel3ss.studio.routes.core import (
     handle_action,
     handle_edit,
@@ -85,6 +86,10 @@ def handle_api_get(handler: Any) -> None:
         return
     if handler.path == "/api/security":
         payload = get_security_payload(handler.server.app_path)  # type: ignore[attr-defined]
+        handler._respond_json(payload, status=200 if payload.get("ok", True) else 400)
+        return
+    if handler.path == "/api/memory/agreements":
+        payload = get_agreements_payload(handler.server.app_path, handler._get_session())  # type: ignore[attr-defined]
         handler._respond_json(payload, status=200 if payload.get("ok", True) else 400)
         return
     if handler.path == "/api/graph":
@@ -187,6 +192,26 @@ def handle_api_post(handler: Any) -> None:
         return
     if handler.path == "/api/reset":
         handle_reset(handler)
+        return
+    if handler.path == "/api/memory/agreements/approve":
+        proposal_id = body.get("proposal_id")
+        payload = apply_agreement_action_payload(
+            handler.server.app_path,  # type: ignore[attr-defined]
+            handler._get_session(),
+            action="approve",
+            proposal_id=str(proposal_id) if proposal_id else None,
+        )
+        handler._respond_json(payload, status=200 if payload.get("ok", True) else 400)
+        return
+    if handler.path == "/api/memory/agreements/reject":
+        proposal_id = body.get("proposal_id")
+        payload = apply_agreement_action_payload(
+            handler.server.app_path,  # type: ignore[attr-defined]
+            handler._get_session(),
+            action="reject",
+            proposal_id=str(proposal_id) if proposal_id else None,
+        )
+        handler._respond_json(payload, status=200 if payload.get("ok", True) else 400)
         return
     if handler.path == "/api/tools/auto-bind":
         handle_tools_auto_bind(handler, source, body)

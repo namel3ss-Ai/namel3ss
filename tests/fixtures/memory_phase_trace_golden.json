@@ -16,7 +16,8 @@
         "max_phases": null,
         "diff_enabled": true
       }
-    }
+    },
+    "lane": "my"
   },
   {
     "type": "memory_phase_started",
@@ -35,7 +36,8 @@
         "max_phases": null,
         "diff_enabled": true
       }
-    }
+    },
+    "lane": "my"
   },
   {
     "type": "memory_deleted",
@@ -45,8 +47,8 @@
     "space": "session",
     "owner": "anonymous",
     "phase_id": "phase-2",
-    "memory_id": "session:anonymous:profile:1",
-    "reason": "superseded",
+    "memory_id": "session:anonymous:my:profile:1",
+    "reason": "conflict_loser",
     "policy_snapshot": {
       "phase": {
         "enabled": true,
@@ -56,7 +58,8 @@
         "diff_enabled": true
       }
     },
-    "replaced_by": "session:anonymous:profile:2"
+    "replaced_by": "session:anonymous:my:profile:2",
+    "lane": "my"
   },
   {
     "type": "memory_phase_diff",
@@ -74,29 +77,29 @@
       {
         "change": "replaced",
         "dedupe_key": "fact:name",
-        "from_id": "session:anonymous:profile:1",
-        "to_id": "session:anonymous:profile:2",
+        "from_id": "session:anonymous:my:profile:1",
+        "to_id": "session:anonymous:my:profile:2",
         "from_kind": "profile",
         "to_kind": "profile"
       },
       {
         "change": "added",
-        "memory_id": "session:anonymous:short_term:3",
+        "memory_id": "session:anonymous:my:short_term:3",
         "kind": "short_term"
       },
       {
         "change": "added",
-        "memory_id": "session:anonymous:short_term:4",
+        "memory_id": "session:anonymous:my:short_term:4",
         "kind": "short_term"
       },
       {
         "change": "added",
-        "memory_id": "session:anonymous:short_term:5",
+        "memory_id": "session:anonymous:my:short_term:5",
         "kind": "short_term"
       },
       {
         "change": "added",
-        "memory_id": "session:anonymous:short_term:6",
+        "memory_id": "session:anonymous:my:short_term:6",
         "kind": "short_term"
       }
     ],
@@ -104,6 +107,7 @@
       "Added 4 items",
       "Deleted 0 items",
       "Replaced 1 items"
-    ]
+    ],
+    "lane": "my"
   }
 ]

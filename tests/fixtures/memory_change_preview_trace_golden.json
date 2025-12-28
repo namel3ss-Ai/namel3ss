@@ -1,0 +1,59 @@
+[
+  {
+    "type": "memory_change_preview",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "memory_id": "session:anonymous:my:semantic:1",
+    "change_kind": "promote",
+    "title": "Memory change preview",
+    "lines": [
+      "Change preview for promote.",
+      "Affected items count is 0.",
+      "No items are affected."
+    ],
+    "space": "session",
+    "owner": "anonymous",
+    "phase_id": "phase-1",
+    "lane": "my"
+  },
+  {
+    "type": "memory_change_preview",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "memory_id": "session:anonymous:my:short_term:5",
+    "change_kind": "replace",
+    "title": "Memory change preview",
+    "lines": [
+      "Change preview for replace.",
+      "Affected items count is 0.",
+      "No items are affected."
+    ],
+    "space": "session",
+    "owner": "anonymous",
+    "phase_id": "phase-1",
+    "lane": "my"
+  },
+  {
+    "type": "memory_change_preview",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "memory_id": "session:anonymous:my:profile:1",
+    "change_kind": "replace",
+    "title": "Memory change preview",
+    "lines": [
+      "Change preview for replace.",
+      "Affected items count is 1.",
+      "Affected item.",
+      "Summary is Ada Lovelace.",
+      "Reason is correction.",
+      "id: session:anonymous:my:profile:2"
+    ],
+    "space": "session",
+    "owner": "anonymous",
+    "phase_id": "phase-1",
+    "lane": "my"
+  }
+]

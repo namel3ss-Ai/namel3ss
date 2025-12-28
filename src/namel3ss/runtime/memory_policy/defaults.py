@@ -9,6 +9,7 @@ from namel3ss.runtime.memory.events import (
     EVENT_EXECUTION,
     EVENT_FACT,
     EVENT_PREFERENCE,
+    EVENT_RULE,
     EVENT_TYPES,
 )
 from namel3ss.runtime.memory.facts import FACT_KEYS, SENSITIVE_MARKERS
@@ -23,6 +24,7 @@ from namel3ss.runtime.memory_policy.model import (
     AUTHORITY_SYSTEM,
     AUTHORITY_TOOL,
     AUTHORITY_USER,
+    LanePolicy,
     MemoryPolicyContract,
     PhasePolicy,
     PrivacyRule,
@@ -33,7 +35,9 @@ from namel3ss.runtime.memory_policy.model import (
     RETENTION_TTL,
     SpacePolicy,
     SpacePromotionRule,
+    TrustRules,
 )
+from namel3ss.runtime.memory_lanes.model import LANE_MY, LANE_SYSTEM, LANE_TEAM
 
 
 DEFAULT_AUTHORITY_ORDER = [AUTHORITY_SYSTEM, AUTHORITY_TOOL, AUTHORITY_USER, AUTHORITY_AI]
@@ -42,6 +46,7 @@ DEFAULT_DECAY_LIMITS = {
     EVENT_CONTEXT: 12,
     EVENT_EXECUTION: 18,
     EVENT_DECISION: 40,
+    EVENT_RULE: 40,
     EVENT_PREFERENCE: 40,
     EVENT_FACT: 60,
     EVENT_CORRECTION: 45,
@@ -100,6 +105,14 @@ def default_contract(*, write_policy: str, forget_policy: str, phase: PhasePolic
         max_phases=None,
         diff_enabled=True,
     )
+    lane_rules = LanePolicy(
+        read_order=[LANE_MY, LANE_TEAM, LANE_SYSTEM],
+        write_lanes=[LANE_MY],
+        team_enabled=True,
+        system_enabled=True,
+        team_event_types=[EVENT_DECISION, EVENT_RULE, EVENT_EXECUTION],
+        team_can_change=True,
+    )
     return MemoryPolicyContract(
         write_policy=write_policy,
         allow_event_types=[],
@@ -110,6 +123,8 @@ def default_contract(*, write_policy: str, forget_policy: str, phase: PhasePolic
         authority_order=list(DEFAULT_AUTHORITY_ORDER),
         spaces=space_rules,
         phase=phase_rules,
+        lanes=lane_rules,
+        trust=TrustRules(),
     )
 
 

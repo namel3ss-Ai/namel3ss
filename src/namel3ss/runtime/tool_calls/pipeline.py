@@ -81,7 +81,14 @@ def run_ai_tool_pipeline(
                 )
             )
             raise
-        tool_events.append({"type": "call", "name": request.tool_name, "args": request.arguments})
+        tool_events.append(
+            {
+                "type": "call",
+                "name": request.tool_name,
+                "args": request.arguments,
+                "tool_call_id": request.tool_call_id,
+            }
+        )
         try:
             result = tool_executor(request.tool_name, request.arguments)
         except Namel3ssError as err:
@@ -126,7 +133,14 @@ def run_ai_tool_pipeline(
                 duration_ms=duration_ms,
             )
         )
-        tool_events.append({"type": "result", "name": request.tool_name, "result": result})
+        tool_events.append(
+            {
+                "type": "result",
+                "name": request.tool_name,
+                "result": result,
+                "tool_call_id": request.tool_call_id,
+            }
+        )
         try:
             messages.append(
                 {

@@ -47,6 +47,7 @@ class PhaseDiffRequest:
     from_phase_id: str
     to_phase_id: str
     space: str
+    lane: str
 
 
 def diff_phases(ledger: PhaseLedger, *, store_key: str, from_phase_id: str, to_phase_id: str) -> PhaseDiff:
@@ -80,10 +81,12 @@ def phase_diff_request_from_state(state: Mapping[str, object] | None) -> PhaseDi
     if not from_phase or not to_phase:
         return None
     space = state.get("_memory_phase_diff_space") or "session"
+    lane = state.get("_memory_phase_diff_lane") or "my"
     return PhaseDiffRequest(
         from_phase_id=str(from_phase),
         to_phase_id=str(to_phase),
         space=str(space),
+        lane=str(lane),
     )
 
 

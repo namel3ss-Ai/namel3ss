@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
+from namel3ss.runtime.memory_trust.model import TrustRules
 
 RETENTION_NEVER = "never"
 RETENTION_TTL = "ttl"
@@ -87,6 +88,26 @@ class PhasePolicy:
 
 
 @dataclass(frozen=True)
+class LanePolicy:
+    read_order: List[str] = field(default_factory=list)
+    write_lanes: List[str] = field(default_factory=list)
+    team_enabled: bool = True
+    system_enabled: bool = True
+    team_event_types: List[str] = field(default_factory=list)
+    team_can_change: bool = True
+
+    def as_dict(self) -> dict:
+        return {
+            "read_order": list(self.read_order),
+            "write_lanes": list(self.write_lanes),
+            "team_enabled": bool(self.team_enabled),
+            "system_enabled": bool(self.system_enabled),
+            "team_event_types": list(self.team_event_types),
+            "team_can_change": bool(self.team_can_change),
+        }
+
+
+@dataclass(frozen=True)
 class PrivacyRule:
     deny_patterns: List[str] = field(default_factory=list)
     allow_profile_keys: List[str] = field(default_factory=list)
@@ -111,6 +132,8 @@ class MemoryPolicyContract:
     authority_order: List[str] = field(default_factory=list)
     spaces: SpacePolicy = field(default_factory=SpacePolicy)
     phase: PhasePolicy = field(default_factory=PhasePolicy)
+    lanes: LanePolicy = field(default_factory=LanePolicy)
+    trust: TrustRules = field(default_factory=TrustRules)
 
     def as_dict(self) -> dict:
         retention = {
@@ -127,6 +150,8 @@ class MemoryPolicyContract:
             "authority_order": list(self.authority_order),
             "spaces": self.spaces.as_dict(),
             "phase": self.phase.as_dict(),
+            "lanes": self.lanes.as_dict(),
+            "trust": self.trust.as_dict(),
         }
 
 
@@ -135,6 +160,7 @@ __all__ = [
     "AUTHORITY_SYSTEM",
     "AUTHORITY_TOOL",
     "AUTHORITY_USER",
+    "LanePolicy",
     "MemoryPolicyContract",
     "PhasePolicy",
     "PrivacyRule",

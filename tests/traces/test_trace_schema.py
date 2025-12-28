@@ -7,11 +7,24 @@ from namel3ss.traces.builders import (
     build_memory_denied,
     build_memory_forget,
     build_memory_recall,
+    build_memory_explanation,
     build_memory_deleted,
+    build_memory_links,
+    build_memory_path,
+    build_memory_change_preview,
+    build_memory_agreement_summary,
+    build_memory_approved,
+    build_memory_approval_recorded,
+    build_memory_team_summary,
+    build_memory_impact,
     build_memory_promoted,
+    build_memory_proposed,
     build_memory_phase_diff,
     build_memory_phase_started,
     build_memory_promotion_denied,
+    build_memory_rejected,
+    build_memory_trust_check,
+    build_memory_trust_rules,
     build_memory_write,
     build_tool_call_completed,
     build_tool_call_failed,
@@ -224,6 +237,112 @@ def test_memory_space_trace_events():
     assert denied["type"] == TraceEventType.MEMORY_PROMOTION_DENIED
     assert denied["allowed"] is False
 
+    team_summary = build_memory_team_summary(
+        ai_profile="assistant",
+        session="sess-1",
+        team_id="team-1",
+        space="project",
+        phase_from="phase-1",
+        phase_to="phase-2",
+        title="Team memory summary",
+        lines=["Team memory changed."],
+        lane="team",
+    )
+    assert team_summary["type"] == TraceEventType.MEMORY_TEAM_SUMMARY
+    assert team_summary["team_id"] == "team-1"
+
+    proposed = build_memory_proposed(
+        ai_profile="assistant",
+        session="sess-1",
+        team_id="team-1",
+        phase_id="phase-1",
+        proposal_id="proposal-1",
+        memory_id="sess-1:semantic:1",
+        title="Team memory proposal",
+        lines=["Team memory proposal created."],
+        lane="team",
+    )
+    assert proposed["type"] == TraceEventType.MEMORY_PROPOSED
+    assert proposed["proposal_id"] == "proposal-1"
+
+    approved = build_memory_approved(
+        ai_profile="assistant",
+        session="sess-1",
+        team_id="team-1",
+        phase_id="phase-1",
+        proposal_id="proposal-1",
+        memory_id="project:team:semantic:1",
+        title="Team memory approved",
+        lines=["Team memory proposal approved."],
+        lane="team",
+    )
+    assert approved["type"] == TraceEventType.MEMORY_APPROVED
+    assert approved["memory_id"] == "project:team:semantic:1"
+
+    rejected = build_memory_rejected(
+        ai_profile="assistant",
+        session="sess-1",
+        team_id="team-1",
+        phase_id="phase-1",
+        proposal_id="proposal-2",
+        title="Team memory rejected",
+        lines=["Team memory proposal rejected."],
+        lane="team",
+    )
+    assert rejected["type"] == TraceEventType.MEMORY_REJECTED
+
+    agreement_summary = build_memory_agreement_summary(
+        ai_profile="assistant",
+        session="sess-1",
+        team_id="team-1",
+        space="project",
+        phase_from="phase-1",
+        phase_to="phase-2",
+        title="Team agreement summary",
+        lines=["One proposal was approved."],
+        lane="team",
+    )
+    assert agreement_summary["type"] == TraceEventType.MEMORY_AGREEMENT_SUMMARY
+    assert agreement_summary["phase_from"] == "phase-1"
+
+    trust_check = build_memory_trust_check(
+        ai_profile="assistant",
+        session="sess-1",
+        action="approve",
+        actor_id="alice",
+        actor_level="contributor",
+        required_level="approver",
+        allowed=False,
+        reason="level_too_low",
+        title="Trust check approve",
+        lines=["Allowed is no."],
+    )
+    assert trust_check["type"] == TraceEventType.MEMORY_TRUST_CHECK
+    assert trust_check["actor_id"] == "alice"
+
+    approval_recorded = build_memory_approval_recorded(
+        ai_profile="assistant",
+        session="sess-1",
+        proposal_id="proposal-1",
+        actor_id="bob",
+        count_now=1,
+        count_required=2,
+        title="Team approval recorded",
+        lines=["Approvals now is 1."],
+    )
+    assert approval_recorded["type"] == TraceEventType.MEMORY_APPROVAL_RECORDED
+    assert approval_recorded["proposal_id"] == "proposal-1"
+
+    trust_rules = build_memory_trust_rules(
+        ai_profile="assistant",
+        session="sess-1",
+        team_id="team-1",
+        title="Team trust rules",
+        lines=["Propose requires contributor."],
+    )
+    assert trust_rules["type"] == TraceEventType.MEMORY_TRUST_RULES
+    assert trust_rules["team_id"] == "team-1"
+
 
 def test_memory_phase_trace_events():
     started = build_memory_phase_started(
@@ -247,7 +366,7 @@ def test_memory_phase_trace_events():
         owner="sess-1",
         phase_id="phase-1",
         memory_id="sess-1:semantic:2",
-        reason="superseded",
+        reason="replaced",
         policy_snapshot={"phase": {"enabled": True}},
         replaced_by="sess-1:semantic:3",
     )
@@ -269,3 +388,80 @@ def test_memory_phase_trace_events():
     )
     assert diff["type"] == TraceEventType.MEMORY_PHASE_DIFF
     assert diff["from_phase_id"] == "phase-1"
+
+
+def test_memory_explanation_trace_event():
+    explanation = build_memory_explanation(
+        for_event_index=3,
+        title="Memory recall",
+        lines=["Phase used is phase-1.", "Recalled items count is 2."],
+        related_ids=["session:anon:short_term:1"],
+    )
+    assert explanation["type"] == TraceEventType.MEMORY_EXPLANATION
+    assert explanation["for_event_index"] == 3
+    assert explanation["title"] == "Memory recall"
+
+
+def test_memory_links_and_path_trace_events():
+    links = build_memory_links(
+        ai_profile="assistant",
+        session="sess-1",
+        memory_id="session:anon:semantic:1",
+        phase_id="phase-1",
+        space="session",
+        owner="anon",
+        link_count=1,
+        lines=["Link replaced item.", "Target id is session:anon:semantic:0."],
+    )
+    assert links["type"] == TraceEventType.MEMORY_LINKS
+    assert links["memory_id"] == "session:anon:semantic:1"
+    assert links["link_count"] == 1
+
+    path = build_memory_path(
+        ai_profile="assistant",
+        session="sess-1",
+        memory_id="session:anon:semantic:1",
+        phase_id="phase-1",
+        space="session",
+        owner="anon",
+        title="Memory path",
+        lines=["This exists because it replaced an older item."],
+    )
+    assert path["type"] == TraceEventType.MEMORY_PATH
+    assert path["title"] == "Memory path"
+
+
+def test_memory_impact_trace_events():
+    impact = build_memory_impact(
+        ai_profile="assistant",
+        session="sess-1",
+        memory_id="session:anon:semantic:1",
+        phase_id="phase-1",
+        space="session",
+        owner="anon",
+        depth_used=2,
+        item_count=1,
+        title="Memory impact",
+        lines=["Impact summary.", "Items affected count is 1."],
+        path_lines=["Impact path.", "Depth used is 2."],
+    )
+    assert impact["type"] == TraceEventType.MEMORY_IMPACT
+    assert impact["memory_id"] == "session:anon:semantic:1"
+    assert impact["depth_used"] == 2
+
+
+def test_memory_change_preview_trace_events():
+    preview = build_memory_change_preview(
+        ai_profile="assistant",
+        session="sess-1",
+        memory_id="session:anon:semantic:1",
+        change_kind="replace",
+        title="Memory change preview",
+        lines=["Change preview for replace.", "Affected items count is 1."],
+        space="session",
+        owner="anon",
+        phase_id="phase-1",
+    )
+    assert preview["type"] == TraceEventType.MEMORY_CHANGE_PREVIEW
+    assert preview["memory_id"] == "session:anon:semantic:1"
+    assert preview["change_kind"] == "replace"

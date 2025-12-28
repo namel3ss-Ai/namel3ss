@@ -8,9 +8,10 @@ def test_short_term_summary_item_created():
     factory = MemoryItemFactory(clock=MemoryClock(), id_generator=MemoryIdGenerator())
     memory = ShortTermMemory(factory=factory)
     items = []
-    store_key = "session:s1"
+    store_key = "session:s1:my"
     space = "session"
     owner = "s1"
+    lane = "my"
     phase_id = "phase-1"
     for idx in range(3):
         text = f"turn {idx}"
@@ -21,6 +22,9 @@ def test_short_term_summary_item_created():
             "dedup_key": build_dedupe_key(EVENT_CONTEXT, text),
             "space": space,
             "owner": owner,
+            "lane": lane,
+            "visible_to": "me",
+            "can_change": True,
             "phase_id": phase_id,
             "phase_started_at": 1,
             "phase_reason": "auto",
@@ -33,6 +37,7 @@ def test_short_term_summary_item_created():
         phase_id=phase_id,
         space=space,
         owner=owner,
+        lane=lane,
     )
     assert summary is not None
     assert [item.id for item in evicted] == [items[0].id]
@@ -48,9 +53,10 @@ def test_short_term_summary_item_created():
 def test_short_term_summary_replaces_prior_summary():
     factory = MemoryItemFactory(clock=MemoryClock(), id_generator=MemoryIdGenerator())
     memory = ShortTermMemory(factory=factory)
-    store_key = "session:s1"
+    store_key = "session:s1:my"
     space = "session"
     owner = "s1"
+    lane = "my"
     phase_id = "phase-1"
 
     def record_turn(label: str) -> None:
@@ -61,6 +67,9 @@ def test_short_term_summary_replaces_prior_summary():
             "dedup_key": build_dedupe_key(EVENT_CONTEXT, label),
             "space": space,
             "owner": owner,
+            "lane": lane,
+            "visible_to": "me",
+            "can_change": True,
             "phase_id": phase_id,
             "phase_started_at": 1,
             "phase_reason": "auto",
@@ -75,6 +84,7 @@ def test_short_term_summary_replaces_prior_summary():
         phase_id=phase_id,
         space=space,
         owner=owner,
+        lane=lane,
     )
     assert summary1 is not None
     assert replaced1 is None
@@ -87,6 +97,7 @@ def test_short_term_summary_replaces_prior_summary():
         phase_id=phase_id,
         space=space,
         owner=owner,
+        lane=lane,
     )
     assert summary2 is not None
     assert replaced2 is not None

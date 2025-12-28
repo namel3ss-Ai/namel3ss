@@ -12,7 +12,7 @@ from namel3ss.runtime.memory_timeline.snapshot import PhaseLedger
 
 def test_phase_registry_starts_new_phase_per_token():
     registry = PhaseRegistry(clock=MemoryClock())
-    store_key = "session:s1"
+    store_key = "session:s1:my"
     phase1, started1 = registry.ensure_phase(store_key)
     assert started1 is True
     assert phase1.phase_id == "phase-1"
@@ -31,7 +31,7 @@ def test_phase_registry_starts_new_phase_per_token():
 
 def test_phase_recall_policy_ids_current_vs_history():
     registry = PhaseRegistry(clock=MemoryClock())
-    store_key = "session:s1"
+    store_key = "session:s1:my"
     phase1, _ = registry.ensure_phase(store_key)
     phase2, _ = registry.ensure_phase(
         store_key,
@@ -48,7 +48,7 @@ def test_phase_recall_policy_ids_current_vs_history():
 def test_semantic_recall_orders_by_phase():
     factory = MemoryItemFactory(clock=MemoryClock(), id_generator=MemoryIdGenerator())
     memory = SemanticMemory(factory=factory)
-    store_key = "session:s1"
+    store_key = "session:s1:my"
     meta1 = {
         "event_type": EVENT_DECISION,
         "dedup_key": build_dedupe_key(EVENT_DECISION, "We decided to ship weekly."),
@@ -70,13 +70,13 @@ def test_semantic_recall_orders_by_phase():
 
 def test_phase_diff_reports_replacements():
     ledger = PhaseLedger()
-    store_key = "session:s1"
+    store_key = "session:s1:my"
     phase1 = PhaseInfo(phase_id="phase-1", phase_index=1, started_at=1, reason="auto", name=None)
     phase2 = PhaseInfo(phase_id="phase-2", phase_index=2, started_at=2, reason="manual", name=None)
     ledger.start_phase(store_key, phase=phase1, previous=None)
 
     before = MemoryItem(
-        id="session:s1:profile:1",
+        id="session:s1:my:profile:1",
         kind=MemoryKind.PROFILE,
         text="Ada",
         source="user",
@@ -88,7 +88,7 @@ def test_phase_diff_reports_replacements():
 
     ledger.start_phase(store_key, phase=phase2, previous=phase1)
     after = MemoryItem(
-        id="session:s1:profile:2",
+        id="session:s1:my:profile:2",
         kind=MemoryKind.PROFILE,
         text="Ada Lovelace",
         source="user",

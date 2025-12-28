@@ -303,6 +303,9 @@
                 <button class="btn ghost small" id="traceFormatJson" aria-pressed="false">JSON</button>
                 <button class="btn ghost small" id="tracePhaseCurrent" aria-pressed="true">Phase: current</button>
                 <button class="btn ghost small" id="tracePhaseHistory" aria-pressed="false">Show history</button>
+                <button class="btn ghost small" id="traceLaneMy" aria-pressed="true">Lane my</button>
+                <button class="btn ghost small" id="traceLaneTeam" aria-pressed="false">Lane team</button>
+                <button class="btn ghost small" id="traceLaneSystem" aria-pressed="false">Lane system</button>
                 <button class="btn ghost small" id="tracesCopy">Copy JSON</button>
               </div>
             </div>
@@ -312,6 +315,16 @@
                 <button class="btn ghost small" id="traceCopyOutput">Copy output</button>
                 <button class="btn ghost small" id="traceCopyJson">Copy trace JSON</button>
               </div>
+            </div>
+            <div id="teamAgreements" class="panel-body team-agreements hidden">
+              <div class="inline-label">Team agreements</div>
+              <div id="teamTrust" class="trust-panel">
+                <div class="inline-label">Team trust</div>
+                <div id="teamTrustLines" class="trust-lines"></div>
+                <div id="teamTrustNotice" class="trust-notice"></div>
+              </div>
+              <div id="teamAgreementSummary" class="agreement-summary"></div>
+              <div id="teamAgreementsList"></div>
             </div>
             <div id="traces" class="panel-body"></div>
           </div>

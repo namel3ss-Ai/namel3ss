@@ -279,6 +279,8 @@ def build_memory_border_check(
     reason: str,
     policy_snapshot: dict,
     subject_id: str | None = None,
+    from_lane: str | None = None,
+    to_lane: str | None = None,
 ) -> dict:
     event = {
         "type": TraceEventType.MEMORY_BORDER_CHECK,
@@ -293,6 +295,10 @@ def build_memory_border_check(
     }
     if to_space is not None:
         event["to_space"] = to_space
+    if from_lane is not None:
+        event["from_lane"] = from_lane
+    if to_lane is not None:
+        event["to_lane"] = to_lane
     if subject_id is not None:
         event["subject_id"] = subject_id
     return event
@@ -309,8 +315,10 @@ def build_memory_promoted(
     authority_used: str,
     reason: str,
     policy_snapshot: dict,
+    from_lane: str | None = None,
+    to_lane: str | None = None,
 ) -> dict:
-    return {
+    event = {
         "type": TraceEventType.MEMORY_PROMOTED,
         "trace_version": TRACE_VERSION,
         "ai_profile": ai_profile,
@@ -323,6 +331,11 @@ def build_memory_promoted(
         "reason": reason,
         "policy_snapshot": policy_snapshot,
     }
+    if from_lane is not None:
+        event["from_lane"] = from_lane
+    if to_lane is not None:
+        event["to_lane"] = to_lane
+    return event
 
 
 def build_memory_promotion_denied(
@@ -335,8 +348,10 @@ def build_memory_promotion_denied(
     allowed: bool,
     reason: str,
     policy_snapshot: dict,
+    from_lane: str | None = None,
+    to_lane: str | None = None,
 ) -> dict:
-    return {
+    event = {
         "type": TraceEventType.MEMORY_PROMOTION_DENIED,
         "trace_version": TRACE_VERSION,
         "ai_profile": ai_profile,
@@ -348,6 +363,11 @@ def build_memory_promotion_denied(
         "reason": reason,
         "policy_snapshot": policy_snapshot,
     }
+    if from_lane is not None:
+        event["from_lane"] = from_lane
+    if to_lane is not None:
+        event["to_lane"] = to_lane
+    return event
 
 
 def build_memory_phase_started(
@@ -360,6 +380,7 @@ def build_memory_phase_started(
     phase_name: str | None,
     reason: str,
     policy_snapshot: dict,
+    lane: str | None = None,
 ) -> dict:
     event = {
         "type": TraceEventType.MEMORY_PHASE_STARTED,
@@ -374,6 +395,8 @@ def build_memory_phase_started(
     }
     if phase_name:
         event["phase_name"] = phase_name
+    if lane is not None:
+        event["lane"] = lane
     return event
 
 
@@ -388,6 +411,7 @@ def build_memory_deleted(
     reason: str,
     policy_snapshot: dict,
     replaced_by: str | None = None,
+    lane: str | None = None,
 ) -> dict:
     event = {
         "type": TraceEventType.MEMORY_DELETED,
@@ -403,6 +427,8 @@ def build_memory_deleted(
     }
     if replaced_by:
         event["replaced_by"] = replaced_by
+    if lane is not None:
+        event["lane"] = lane
     return event
 
 
@@ -419,8 +445,9 @@ def build_memory_phase_diff(
     replaced_count: int,
     top_changes: list[dict],
     summary_lines: list[str],
+    lane: str | None = None,
 ) -> dict:
-    return {
+    event = {
         "type": TraceEventType.MEMORY_PHASE_DIFF,
         "trace_version": TRACE_VERSION,
         "ai_profile": ai_profile,
@@ -434,6 +461,372 @@ def build_memory_phase_diff(
         "replaced_count": replaced_count,
         "top_changes": list(top_changes),
         "summary_lines": list(summary_lines),
+    }
+    if lane is not None:
+        event["lane"] = lane
+    return event
+
+
+def build_memory_explanation(
+    *,
+    for_event_index: int,
+    title: str,
+    lines: list[str],
+    related_ids: list[str] | None = None,
+) -> dict:
+    event = {
+        "type": TraceEventType.MEMORY_EXPLANATION,
+        "trace_version": TRACE_VERSION,
+        "for_event_index": int(for_event_index),
+        "title": title,
+        "lines": list(lines),
+    }
+    if related_ids:
+        event["related_ids"] = list(related_ids)
+    return event
+
+
+def build_memory_links(
+    *,
+    ai_profile: str,
+    session: str,
+    memory_id: str,
+    phase_id: str,
+    space: str,
+    owner: str,
+    link_count: int,
+    lines: list[str],
+    lane: str | None = None,
+) -> dict:
+    event = {
+        "type": TraceEventType.MEMORY_LINKS,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "memory_id": memory_id,
+        "phase_id": phase_id,
+        "space": space,
+        "owner": owner,
+        "link_count": int(link_count),
+        "lines": list(lines),
+    }
+    if lane is not None:
+        event["lane"] = lane
+    return event
+
+
+def build_memory_path(
+    *,
+    ai_profile: str,
+    session: str,
+    memory_id: str,
+    phase_id: str,
+    space: str,
+    owner: str,
+    title: str,
+    lines: list[str],
+    lane: str | None = None,
+) -> dict:
+    event = {
+        "type": TraceEventType.MEMORY_PATH,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "memory_id": memory_id,
+        "phase_id": phase_id,
+        "space": space,
+        "owner": owner,
+        "title": title,
+        "lines": list(lines),
+    }
+    if lane is not None:
+        event["lane"] = lane
+    return event
+
+
+def build_memory_impact(
+    *,
+    ai_profile: str,
+    session: str,
+    memory_id: str,
+    space: str,
+    owner: str,
+    phase_id: str,
+    depth_used: int,
+    item_count: int,
+    title: str,
+    lines: list[str],
+    path_lines: list[str] | None = None,
+    lane: str | None = None,
+) -> dict:
+    event = {
+        "type": TraceEventType.MEMORY_IMPACT,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "memory_id": memory_id,
+        "space": space,
+        "owner": owner,
+        "phase_id": phase_id,
+        "depth_used": int(depth_used),
+        "item_count": int(item_count),
+        "title": title,
+        "lines": list(lines),
+    }
+    if path_lines is not None:
+        event["path_lines"] = list(path_lines)
+    if lane is not None:
+        event["lane"] = lane
+    return event
+
+
+def build_memory_change_preview(
+    *,
+    ai_profile: str,
+    session: str,
+    memory_id: str,
+    change_kind: str,
+    title: str,
+    lines: list[str],
+    space: str | None = None,
+    owner: str | None = None,
+    phase_id: str | None = None,
+    lane: str | None = None,
+) -> dict:
+    event = {
+        "type": TraceEventType.MEMORY_CHANGE_PREVIEW,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "memory_id": memory_id,
+        "change_kind": change_kind,
+        "title": title,
+        "lines": list(lines),
+    }
+    if space is not None:
+        event["space"] = space
+    if owner is not None:
+        event["owner"] = owner
+    if phase_id is not None:
+        event["phase_id"] = phase_id
+    if lane is not None:
+        event["lane"] = lane
+    return event
+
+
+def build_memory_team_summary(
+    *,
+    ai_profile: str,
+    session: str,
+    team_id: str,
+    space: str,
+    phase_from: str,
+    phase_to: str,
+    title: str,
+    lines: list[str],
+    lane: str | None = None,
+) -> dict:
+    event = {
+        "type": TraceEventType.MEMORY_TEAM_SUMMARY,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "team_id": team_id,
+        "space": space,
+        "phase_from": phase_from,
+        "phase_to": phase_to,
+        "title": title,
+        "lines": list(lines),
+    }
+    if lane is not None:
+        event["lane"] = lane
+    return event
+
+
+def build_memory_proposed(
+    *,
+    ai_profile: str,
+    session: str,
+    team_id: str,
+    phase_id: str,
+    proposal_id: str,
+    memory_id: str,
+    title: str,
+    lines: list[str],
+    lane: str | None = None,
+) -> dict:
+    event = {
+        "type": TraceEventType.MEMORY_PROPOSED,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "team_id": team_id,
+        "phase_id": phase_id,
+        "proposal_id": proposal_id,
+        "memory_id": memory_id,
+        "title": title,
+        "lines": list(lines),
+    }
+    if lane is not None:
+        event["lane"] = lane
+    return event
+
+
+def build_memory_approved(
+    *,
+    ai_profile: str,
+    session: str,
+    team_id: str,
+    phase_id: str,
+    proposal_id: str,
+    memory_id: str,
+    title: str,
+    lines: list[str],
+    lane: str | None = None,
+) -> dict:
+    event = {
+        "type": TraceEventType.MEMORY_APPROVED,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "team_id": team_id,
+        "phase_id": phase_id,
+        "proposal_id": proposal_id,
+        "memory_id": memory_id,
+        "title": title,
+        "lines": list(lines),
+    }
+    if lane is not None:
+        event["lane"] = lane
+    return event
+
+
+def build_memory_rejected(
+    *,
+    ai_profile: str,
+    session: str,
+    team_id: str,
+    phase_id: str,
+    proposal_id: str,
+    title: str,
+    lines: list[str],
+    lane: str | None = None,
+) -> dict:
+    event = {
+        "type": TraceEventType.MEMORY_REJECTED,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "team_id": team_id,
+        "phase_id": phase_id,
+        "proposal_id": proposal_id,
+        "title": title,
+        "lines": list(lines),
+    }
+    if lane is not None:
+        event["lane"] = lane
+    return event
+
+
+def build_memory_agreement_summary(
+    *,
+    ai_profile: str,
+    session: str,
+    team_id: str,
+    space: str,
+    phase_from: str,
+    phase_to: str,
+    title: str,
+    lines: list[str],
+    lane: str | None = None,
+) -> dict:
+    event = {
+        "type": TraceEventType.MEMORY_AGREEMENT_SUMMARY,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "team_id": team_id,
+        "space": space,
+        "phase_from": phase_from,
+        "phase_to": phase_to,
+        "title": title,
+        "lines": list(lines),
+    }
+    if lane is not None:
+        event["lane"] = lane
+    return event
+
+
+def build_memory_trust_check(
+    *,
+    ai_profile: str,
+    session: str,
+    action: str,
+    actor_id: str,
+    actor_level: str,
+    required_level: str,
+    allowed: bool,
+    reason: str,
+    title: str,
+    lines: list[str],
+) -> dict:
+    return {
+        "type": TraceEventType.MEMORY_TRUST_CHECK,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "action": action,
+        "actor_id": actor_id,
+        "actor_level": actor_level,
+        "required_level": required_level,
+        "allowed": bool(allowed),
+        "reason": reason,
+        "title": title,
+        "lines": list(lines),
+    }
+
+
+def build_memory_approval_recorded(
+    *,
+    ai_profile: str,
+    session: str,
+    proposal_id: str,
+    actor_id: str,
+    count_now: int,
+    count_required: int,
+    title: str,
+    lines: list[str],
+) -> dict:
+    return {
+        "type": TraceEventType.MEMORY_APPROVAL_RECORDED,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "proposal_id": proposal_id,
+        "actor_id": actor_id,
+        "count_now": int(count_now),
+        "count_required": int(count_required),
+        "title": title,
+        "lines": list(lines),
+    }
+
+
+def build_memory_trust_rules(
+    *,
+    ai_profile: str,
+    session: str,
+    team_id: str,
+    title: str,
+    lines: list[str],
+) -> dict:
+    return {
+        "type": TraceEventType.MEMORY_TRUST_RULES,
+        "trace_version": TRACE_VERSION,
+        "ai_profile": ai_profile,
+        "session": session,
+        "team_id": team_id,
+        "title": title,
+        "lines": list(lines),
     }
 
 
@@ -452,6 +845,19 @@ __all__ = [
     "build_memory_promotion_denied",
     "build_memory_phase_diff",
     "build_memory_phase_started",
+    "build_memory_explanation",
+    "build_memory_links",
+    "build_memory_path",
+    "build_memory_impact",
+    "build_memory_change_preview",
+    "build_memory_team_summary",
+    "build_memory_proposed",
+    "build_memory_approved",
+    "build_memory_rejected",
+    "build_memory_agreement_summary",
+    "build_memory_trust_check",
+    "build_memory_approval_recorded",
+    "build_memory_trust_rules",
     "build_tool_call_completed",
     "build_tool_call_failed",
     "build_tool_call_requested",

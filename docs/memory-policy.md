@@ -1,76 +1,92 @@
 # Memory Governance Policy
 
-Phase 4 uses a governed memory policy that is enforced on every write and exposed via traces.
+This policy is enforced on every write and recorded in traces.
 
 ## Policy contract
-Policies are deterministic and serializable. The default contract is emitted under `policy` in `memory_recall` traces.
+Policies are deterministic and serializable.
+The contract is emitted under `policy` in `memory_recall` traces.
 
 Key fields:
-- `write_policy`: `none | minimal | normal | aggressive`
-- `allow_event_types`: explicit allowlist (empty = allow all)
-- `deny_event_types`: explicit denylist
-- `retention`: per kind + event type (`never | ttl | decay`)
-- `promotion`: allowed event types for `semantic` / `profile`
-- `spaces`: read order + write spaces + promotion rules between spaces
-- `phase`: phase settings (`enabled`, `mode`, `allow_cross_phase_recall`, `max_phases`, `diff_enabled`)
-- `privacy`: deny patterns + allowlisted profile keys
-- `authority_order`: overwrite hierarchy
+- `write_policy` none, minimal, normal, aggressive
+- `allow_event_types` and `deny_event_types`
+- `retention` per kind and event type
+- `promotion` rules for semantic and profile
+- `spaces` read order, write spaces, promotion rules
+- `lanes` read order, write lanes, team rules
+- `trust` propose, approve, reject levels and approval count
+- `phase` enabled, mode, allow_cross_phase_recall, max_phases, diff_enabled
+- `privacy` deny patterns and allowlisted profile keys
+- `authority_order` overwrite order
 
 ## Authority
-Authority controls overwrites:
-- `system_imposed` > `tool_verified` > `user_asserted` > `ai_inferred`
-
-Authority is stored on each MemoryItem (`meta.authority`, `meta.authority_reason`).
+Authority controls overwrites in conflicts.
+Order from highest to lowest:
+- system_imposed
+- tool_verified
+- user_asserted
+- ai_inferred
 
 ## Conflict resolution
 Conflicts are detected by `meta.dedup_key` or profile fact key.
-Resolution is deterministic:
-1) authority
-2) correction
-3) recency
-4) importance
+Resolution is deterministic.
+Order is authority then correction then recency then importance.
+Losers are deleted and emit `memory_deleted` with reason conflict_loser.
 
-Losers are deleted immediately and emit `memory_deleted` with reason `superseded`.
+## Retention and forgetting
+Retention is deterministic and counter based.
+- ttl expires at created_at plus ttl_ticks
+- decay expires after ttl_ticks of age
 
-## Retention + forgetting
-Retention is deterministic and counter-based:
-- `ttl`: expire at `created_at + ttl_ticks`
-- `decay`: expire after `ttl_ticks` of age
+Expired items emit `memory_forget` with reason ttl_expired or decay.
+Expired, replaced, or promoted items emit `memory_deleted`.
 
-When items expire, a `memory_forget` event is emitted with a stable reason code:
-- `ttl_expired`
-- `decay`
+## Privacy and deny rules
+Privacy rules are enforced before writes.
+Sensitive patterns are denied.
+Profile facts are allowlisted by key.
+Denied writes emit `memory_denied` with a stable reason.
 
-Expired, superseded, or promoted items also emit `memory_deleted`.
-
-## Privacy + deny rules
-Privacy rules are enforced before writes:
-- deny obvious secrets/tokens
-- allowlist profile keys
-
-Denied writes emit `memory_denied` with:
-- `attempted` (redacted)
-- `reason` (stable code)
-- `policy_snapshot`
+## Lanes and borders
+Lane rules are enforced for reads and writes.
+My lane reads are always allowed for the current user.
+Team lane reads follow policy and border checks.
+System lane is read only for normal flows.
+Border checks emit `memory_border_check` with space and lane details.
+Team lane writes create proposals that require approval.
 
 ## Trace events
-Governance trace events:
-- `memory_denied`: policy or privacy blocked a write
-- `memory_conflict`: deterministic winner/loser selected
-- `memory_forget`: TTL/decay removal
-- `memory_border_check`: read/write/promote border decision
-- `memory_promoted`: successful cross-space promotion
-- `memory_promotion_denied`: promotion blocked by policy/authority
-- `memory_phase_started`: phase timeline marker
-- `memory_deleted`: explicit deletion trace
-- `memory_phase_diff`: phase-to-phase diff summary
+Governance trace events include:
+- `memory_denied`
+- `memory_conflict`
+- `memory_forget`
+- `memory_border_check`
+- `memory_promoted`
+- `memory_promotion_denied`
+- `memory_phase_started`
+- `memory_deleted`
+- `memory_phase_diff`
+- `memory_team_summary`
+- `memory_proposed`
+- `memory_approved`
+- `memory_rejected`
+- `memory_agreement_summary`
+- `memory_trust_check`
+- `memory_approval_recorded`
+- `memory_trust_rules`
+- `memory_explanation`
+- `memory_links`
+- `memory_path`
+- `memory_impact`
+- `memory_change_preview`
+
+See the memory docs for explanations, links, impact, and lanes.
 
 ## Determinism
-- `created_at` is a monotonic counter
-- `id` is deterministic per session + kind
+- created_at is a monotonic counter
+- id is deterministic per session and kind
 - ordering is stable and replayable
 
 ## Testing
 - Unit tests cover policy evaluation and conflict resolution
-- Golden fixtures lock governance trace schemas
-- Retention/decay uses deterministic counters for repeatable tests
+- Golden fixtures lock trace schemas
+- Retention uses deterministic counters

@@ -12,6 +12,7 @@ from namel3ss.runtime.memory.events import (
     EVENT_PREFERENCE,
 )
 from namel3ss.runtime.memory.facts import SENSITIVE_MARKERS
+from namel3ss.runtime.memory_lanes.model import LANE_MY, LANE_SYSTEM, LANE_TEAM, lane_allowed_in_space
 from namel3ss.runtime.memory_policy.model import (
     AUTHORITY_AI,
     AUTHORITY_SYSTEM,
@@ -40,6 +41,12 @@ DENY_WRITE_POLICY_CONTEXT = "write_policy_context"
 BORDER_ALLOWED = "allowed"
 BORDER_DENY_SPACE = "space_disabled"
 BORDER_DENY_WRITE = "write_space_disallowed"
+LANE_DENY_SPACE = "lane_space_disallowed"
+LANE_DENY_TEAM = "lane_team_disabled"
+LANE_DENY_SYSTEM = "lane_system_disabled"
+LANE_DENY_WRITE = "lane_write_disallowed"
+LANE_DENY_EVENT = "lane_event_type"
+LANE_DENY_SYSTEM_WRITE = "lane_system_read_only"
 PROMOTION_DENY_EVENT_TYPE = "promotion_event_type"
 PROMOTION_DENY_AUTHORITY = "promotion_authority"
 PROMOTION_DENY_POLICY = "promotion_disallowed"
@@ -179,6 +186,50 @@ def evaluate_border_read(policy: MemoryPolicyContract, *, space: str) -> BorderD
 def evaluate_border_write(policy: MemoryPolicyContract, *, space: str) -> BorderDecision:
     if space not in policy.spaces.write_spaces:
         return BorderDecision(False, BORDER_DENY_WRITE)
+    return BorderDecision(True, BORDER_ALLOWED)
+
+
+def evaluate_lane_read(policy: MemoryPolicyContract, *, lane: str, space: str) -> BorderDecision:
+    if not lane_allowed_in_space(space, lane):
+        return BorderDecision(False, LANE_DENY_SPACE)
+    if lane == LANE_TEAM and not policy.lanes.team_enabled:
+        return BorderDecision(False, LANE_DENY_TEAM)
+    if lane == LANE_SYSTEM and not policy.lanes.system_enabled:
+        return BorderDecision(False, LANE_DENY_SYSTEM)
+    return BorderDecision(True, BORDER_ALLOWED)
+
+
+def evaluate_lane_write(policy: MemoryPolicyContract, *, lane: str, space: str) -> BorderDecision:
+    if lane == LANE_SYSTEM:
+        return BorderDecision(False, LANE_DENY_SYSTEM_WRITE)
+    if not lane_allowed_in_space(space, lane):
+        return BorderDecision(False, LANE_DENY_SPACE)
+    if lane not in policy.lanes.write_lanes:
+        return BorderDecision(False, LANE_DENY_WRITE)
+    return BorderDecision(True, BORDER_ALLOWED)
+
+
+def evaluate_lane_promotion(
+    policy: MemoryPolicyContract,
+    *,
+    lane: str,
+    space: str,
+    event_type: str,
+) -> BorderDecision:
+    if lane == LANE_SYSTEM:
+        return BorderDecision(False, LANE_DENY_SYSTEM_WRITE)
+    if lane == LANE_MY:
+        if not lane_allowed_in_space(space, lane):
+            return BorderDecision(False, LANE_DENY_SPACE)
+        return BorderDecision(True, BORDER_ALLOWED)
+    if lane != LANE_TEAM:
+        return BorderDecision(False, LANE_DENY_WRITE)
+    if not lane_allowed_in_space(space, lane):
+        return BorderDecision(False, LANE_DENY_SPACE)
+    if not policy.lanes.team_enabled:
+        return BorderDecision(False, LANE_DENY_TEAM)
+    if policy.lanes.team_event_types and event_type not in policy.lanes.team_event_types:
+        return BorderDecision(False, LANE_DENY_EVENT)
     return BorderDecision(True, BORDER_ALLOWED)
 
 
@@ -360,6 +411,9 @@ __all__ = [
     "authority_for_item",
     "evaluate_border_read",
     "evaluate_border_write",
+    "evaluate_lane_promotion",
+    "evaluate_lane_read",
+    "evaluate_lane_write",
     "evaluate_phase_diff",
     "evaluate_phase_start",
     "evaluate_promotion",
@@ -368,6 +422,12 @@ __all__ = [
     "BORDER_ALLOWED",
     "BORDER_DENY_SPACE",
     "BORDER_DENY_WRITE",
+    "LANE_DENY_EVENT",
+    "LANE_DENY_SPACE",
+    "LANE_DENY_SYSTEM",
+    "LANE_DENY_SYSTEM_WRITE",
+    "LANE_DENY_TEAM",
+    "LANE_DENY_WRITE",
     "DENY_EVENT_TYPE",
     "DENY_LOW_SIGNAL",
     "DENY_PROFILE_KEY",

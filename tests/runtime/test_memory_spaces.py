@@ -25,7 +25,7 @@ def test_space_context_resolution_prefers_identity_and_project_root():
     assert ctx.user_id == "user-9"
     expected = sha256(Path("/tmp/namel3ss").resolve().as_posix().encode("utf-8")).hexdigest()[:12]
     assert ctx.project_id == expected
-    assert ctx.store_key_for("session") == "session:7"
+    assert ctx.store_key_for("session", lane="my") == "session:7:my"
 
 
 def test_space_context_falls_back_to_app_path():
@@ -49,9 +49,12 @@ def test_promotion_decision_respects_authority_and_policy():
         "authority_reason": "source:user",
         "space": "session",
         "owner": "s1",
+        "lane": "my",
+        "visible_to": "me",
+        "can_change": True,
     }
     item = factory.create(
-        session="session:s1",
+        session="session:s1:my",
         kind=MemoryKind.SEMANTIC,
         text="We decided to ship weekly.",
         source="user",
@@ -69,7 +72,7 @@ def test_promotion_decision_respects_authority_and_policy():
     low_meta = dict(meta)
     low_meta["event_type"] = EVENT_PREFERENCE
     low_item = factory.create(
-        session="session:s1",
+        session="session:s1:my",
         kind=MemoryKind.SEMANTIC,
         text="I prefer weekly updates.",
         source="user",

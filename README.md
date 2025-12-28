@@ -87,30 +87,38 @@ ai "assistant":
     profile is true
 ```
 
-### Memory (Contract v1)
-Memory is a first-class, deterministic subsystem. Items follow a stable contract (`id`, `kind`, `text`, `source`, `created_at`, `importance`, `scope`, `meta`) with canonical kinds (`short_term`, `semantic`, `profile`).
+### Memory Contract v1
+Memory is deterministic, policy driven, and inspectable.
+Items follow a stable contract with canonical kinds short_term, semantic, profile.
 
-Memory is event-driven, policy-led, and governed. Writes are categorized (`preference`, `decision`, `fact`, `correction`, `execution`, `context`) with rule-based importance, authority-aware overwrites, and deterministic conflict resolution. Strategic dedupe/retention keeps memory low-noise and replayable.
+Memory is event driven and governed.
+Writes are categorized as preference, decision, fact, correction, execution, rule, or context.
+Importance and conflicts are resolved by deterministic rules.
 
-Memory is spatial and owned (`session`, `user`, `project`, `system`) with explicit, traceable promotion across borders.
-Memory is phase-based (`phase-1`, `phase-2`, ...) with deterministic deletion of superseded/expired items and explicit diff traces between phases.
+Memory is spatial and owned across session, user, project, and system.
+Memory lanes separate my, team, and system memory.
+Team lane writes happen only by promotion and are summarized by memory_team_summary.
+Team lane changes require agreement before they become active.
+Team memory actions follow trust levels for propose and approve.
 
-Memory is inspectable via traces. Each AI call emits `memory_recall` + `memory_write`, plus governance/border events (`memory_denied`, `memory_conflict`, `memory_forget`, `memory_border_check`, `memory_promoted`, `memory_promotion_denied`, `memory_phase_started`, `memory_deleted`, `memory_phase_diff`) with deterministic policy snapshots (Studio defaults to a bracketless Plain view).
-```json
-{
-  "type": "memory_recall",
-  "ai_profile": "assistant",
-  "session": "anonymous",
-  "query": "Hello",
-  "recalled": [{"id": "session:anonymous:short_term:1", "kind": "short_term", "meta": {"space": "session", "owner": "anonymous", "phase_id": "phase-1", "recall_reason": ["recency", "space:session"]}}],
-  "policy": {"short_term": 2, "semantic": true, "profile": false, "semantic_top_k": 3, "write_policy": "normal", "phase_mode": "current_only"},
-  "spaces_consulted": ["session", "user", "project", "system"],
-  "recall_counts": {"session": 1, "user": 0, "project": 0, "system": 0},
-  "current_phase": {"phase_id": "phase-1", "phase_started_at": 1, "phase_reason": "auto"},
-  "deterministic_hash": "..."
-}
+Memory is phase based with deterministic deletion of superseded or expired items.
+Each AI call emits memory_recall and memory_write, plus governance and border events.
+Studio shows a bracketless Plain view by default and can show explanations, links, and impact.
+
+Plain trace example:
 ```
-See [Memory contract](docs/memory.md), [Memory policy](docs/memory-policy.md), [Memory spaces](docs/memory-spaces.md), and [Memory phases](docs/memory-phases.md) for the full schema and governance rules.
+type: memory_recall
+ai_profile: assistant
+session: anonymous
+recalled.count: 1
+recalled.1.id: session:anonymous:my:short_term:1
+policy.short_term: 2
+policy.lanes.read_order.1: my
+current_phase.phase_id: phase-1
+```
+
+Memory trust docs at docs/memory-trust.md.
+See [Memory contract](docs/memory.md), [Memory policy](docs/memory-policy.md), [Memory lanes](docs/memory-lanes.md), [Memory agreement](docs/memory-agreement.md), [Memory spaces](docs/memory-spaces.md), and [Memory phases](docs/memory-phases.md) for the full schema and governance rules.
 
 ### Tools
 Tools are explicit, local functions with schema-validated inputs/outputs. Python code lives in `tools/*.py` (no inline Python). The `.ai` file stays intent-only; Python wiring lives in `.namel3ss/tools.yaml`.

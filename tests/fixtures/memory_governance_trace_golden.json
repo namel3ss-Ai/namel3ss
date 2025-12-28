@@ -4,7 +4,7 @@
     "trace_version": "2024-10-01",
     "ai_profile": "assistant",
     "session": "anonymous",
-    "memory_id": "session:anonymous:short_term:1",
+    "memory_id": "session:anonymous:my:short_term:1",
     "reason": "decay",
     "policy_snapshot": {
       "write_policy": "normal",
@@ -35,6 +35,10 @@
           "preference": {
             "mode": "never",
             "ttl_ticks": null
+          },
+          "rule": {
+            "mode": "never",
+            "ttl_ticks": null
           }
         },
         "semantic": {
@@ -59,6 +63,10 @@
             "ttl_ticks": 60
           },
           "preference": {
+            "mode": "decay",
+            "ttl_ticks": 40
+          },
+          "rule": {
             "mode": "decay",
             "ttl_ticks": 40
           }
@@ -87,6 +95,10 @@
           "preference": {
             "mode": "never",
             "ttl_ticks": null
+          },
+          "rule": {
+            "mode": "never",
+            "ttl_ticks": null
           }
         }
       },
@@ -98,7 +110,8 @@
             "decision",
             "execution",
             "fact",
-            "preference"
+            "preference",
+            "rule"
           ]
         },
         "semantic": {
@@ -108,7 +121,8 @@
             "decision",
             "execution",
             "fact",
-            "preference"
+            "preference",
+            "rule"
           ]
         },
         "profile": {
@@ -201,6 +215,31 @@
         "allow_cross_phase_recall": false,
         "max_phases": null,
         "diff_enabled": true
+      },
+      "lanes": {
+        "read_order": [
+          "my",
+          "team",
+          "system"
+        ],
+        "write_lanes": [
+          "my"
+        ],
+        "team_enabled": true,
+        "system_enabled": true,
+        "team_event_types": [
+          "decision",
+          "rule",
+          "execution"
+        ],
+        "team_can_change": true
+      },
+      "trust": {
+        "who_can_propose": "contributor",
+        "who_can_approve": "approver",
+        "who_can_reject": "approver",
+        "approval_count_required": 1,
+        "owner_override": true
       }
     },
     "explanation": {
@@ -215,7 +254,7 @@
     "trace_version": "2024-10-01",
     "ai_profile": "assistant",
     "session": "anonymous",
-    "memory_id": "session:anonymous:short_term:2",
+    "memory_id": "session:anonymous:my:short_term:2",
     "reason": "decay",
     "policy_snapshot": {
       "write_policy": "normal",
@@ -246,6 +285,10 @@
           "preference": {
             "mode": "never",
             "ttl_ticks": null
+          },
+          "rule": {
+            "mode": "never",
+            "ttl_ticks": null
           }
         },
         "semantic": {
@@ -270,6 +313,10 @@
             "ttl_ticks": 60
           },
           "preference": {
+            "mode": "decay",
+            "ttl_ticks": 40
+          },
+          "rule": {
             "mode": "decay",
             "ttl_ticks": 40
           }
@@ -298,6 +345,10 @@
           "preference": {
             "mode": "never",
             "ttl_ticks": null
+          },
+          "rule": {
+            "mode": "never",
+            "ttl_ticks": null
           }
         }
       },
@@ -309,7 +360,8 @@
             "decision",
             "execution",
             "fact",
-            "preference"
+            "preference",
+            "rule"
           ]
         },
         "semantic": {
@@ -319,7 +371,8 @@
             "decision",
             "execution",
             "fact",
-            "preference"
+            "preference",
+            "rule"
           ]
         },
         "profile": {
@@ -412,6 +465,31 @@
         "allow_cross_phase_recall": false,
         "max_phases": null,
         "diff_enabled": true
+      },
+      "lanes": {
+        "read_order": [
+          "my",
+          "team",
+          "system"
+        ],
+        "write_lanes": [
+          "my"
+        ],
+        "team_enabled": true,
+        "system_enabled": true,
+        "team_event_types": [
+          "decision",
+          "rule",
+          "execution"
+        ],
+        "team_can_change": true
+      },
+      "trust": {
+        "who_can_propose": "contributor",
+        "who_can_approve": "approver",
+        "who_can_reject": "approver",
+        "approval_count_required": 1,
+        "owner_override": true
       }
     },
     "explanation": {
@@ -426,8 +504,8 @@
     "trace_version": "2024-10-01",
     "ai_profile": "assistant",
     "session": "anonymous",
-    "winner_id": "session:anonymous:profile:2",
-    "loser_id": "session:anonymous:profile:1",
+    "winner_id": "session:anonymous:my:profile:2",
+    "loser_id": "session:anonymous:my:profile:1",
     "rule": "recency",
     "dedup_key": "fact:name",
     "explanation": {
@@ -456,7 +534,7 @@
     "ai_profile": "assistant",
     "session": "anonymous",
     "attempted": {
-      "id": "session:anonymous:short_term:6",
+      "id": "session:anonymous:my:short_term:6",
       "kind": "short_term",
       "text": "(redacted)",
       "source": "user",
@@ -474,6 +552,9 @@
         "authority_reason": "source:user",
         "space": "session",
         "owner": "anonymous",
+        "lane": "my",
+        "visible_to": "me",
+        "can_change": true,
         "phase_id": "phase-1",
         "phase_started_at": 1,
         "phase_reason": "auto"
@@ -509,6 +590,10 @@
           "preference": {
             "mode": "never",
             "ttl_ticks": null
+          },
+          "rule": {
+            "mode": "never",
+            "ttl_ticks": null
           }
         },
         "semantic": {
@@ -533,6 +618,10 @@
             "ttl_ticks": 60
           },
           "preference": {
+            "mode": "decay",
+            "ttl_ticks": 40
+          },
+          "rule": {
             "mode": "decay",
             "ttl_ticks": 40
           }
@@ -561,6 +650,10 @@
           "preference": {
             "mode": "never",
             "ttl_ticks": null
+          },
+          "rule": {
+            "mode": "never",
+            "ttl_ticks": null
           }
         }
       },
@@ -572,7 +665,8 @@
             "decision",
             "execution",
             "fact",
-            "preference"
+            "preference",
+            "rule"
           ]
         },
         "semantic": {
@@ -582,7 +676,8 @@
             "decision",
             "execution",
             "fact",
-            "preference"
+            "preference",
+            "rule"
           ]
         },
         "profile": {
@@ -675,6 +770,31 @@
         "allow_cross_phase_recall": false,
         "max_phases": null,
         "diff_enabled": true
+      },
+      "lanes": {
+        "read_order": [
+          "my",
+          "team",
+          "system"
+        ],
+        "write_lanes": [
+          "my"
+        ],
+        "team_enabled": true,
+        "system_enabled": true,
+        "team_event_types": [
+          "decision",
+          "rule",
+          "execution"
+        ],
+        "team_can_change": true
+      },
+      "trust": {
+        "who_can_propose": "contributor",
+        "who_can_approve": "approver",
+        "who_can_reject": "approver",
+        "approval_count_required": 1,
+        "owner_override": true
       }
     },
     "explanation": {
@@ -691,7 +811,7 @@
     "ai_profile": "assistant",
     "session": "anonymous",
     "attempted": {
-      "id": "session:anonymous:short_term:7",
+      "id": "session:anonymous:my:short_term:7",
       "kind": "short_term",
       "text": "(redacted)",
       "source": "ai",
@@ -708,6 +828,9 @@
         "authority_reason": "source:ai",
         "space": "session",
         "owner": "anonymous",
+        "lane": "my",
+        "visible_to": "me",
+        "can_change": true,
         "phase_id": "phase-1",
         "phase_started_at": 1,
         "phase_reason": "auto"
@@ -743,6 +866,10 @@
           "preference": {
             "mode": "never",
             "ttl_ticks": null
+          },
+          "rule": {
+            "mode": "never",
+            "ttl_ticks": null
           }
         },
         "semantic": {
@@ -767,6 +894,10 @@
             "ttl_ticks": 60
           },
           "preference": {
+            "mode": "decay",
+            "ttl_ticks": 40
+          },
+          "rule": {
             "mode": "decay",
             "ttl_ticks": 40
           }
@@ -795,6 +926,10 @@
           "preference": {
             "mode": "never",
             "ttl_ticks": null
+          },
+          "rule": {
+            "mode": "never",
+            "ttl_ticks": null
           }
         }
       },
@@ -806,7 +941,8 @@
             "decision",
             "execution",
             "fact",
-            "preference"
+            "preference",
+            "rule"
           ]
         },
         "semantic": {
@@ -816,7 +952,8 @@
             "decision",
             "execution",
             "fact",
-            "preference"
+            "preference",
+            "rule"
           ]
         },
         "profile": {
@@ -909,6 +1046,31 @@
         "allow_cross_phase_recall": false,
         "max_phases": null,
         "diff_enabled": true
+      },
+      "lanes": {
+        "read_order": [
+          "my",
+          "team",
+          "system"
+        ],
+        "write_lanes": [
+          "my"
+        ],
+        "team_enabled": true,
+        "system_enabled": true,
+        "team_event_types": [
+          "decision",
+          "rule",
+          "execution"
+        ],
+        "team_can_change": true
+      },
+      "trust": {
+        "who_can_propose": "contributor",
+        "who_can_approve": "approver",
+        "who_can_reject": "approver",
+        "approval_count_required": 1,
+        "owner_override": true
       }
     },
     "explanation": {

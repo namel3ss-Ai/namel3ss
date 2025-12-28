@@ -21,7 +21,7 @@ def test_correction_overwrites_profile_fact():
     state = {}
     memory.record_interaction(ai, state, "My name is Ada.", "ok", [])
     memory.record_interaction(ai, state, "Actually, my name is Ada Lovelace.", "ok", [])
-    facts = memory.profile.recall("session:anonymous")
+    facts = memory.profile.recall("session:anonymous:my")
     assert len(facts) == 1
     assert facts[0].text == "Ada Lovelace"
     assert facts[0].meta["event_type"] == "correction"

@@ -6,6 +6,7 @@ from namel3ss.runtime.ai.trace import AITrace
 from namel3ss.runtime.executor.ai_runner import run_ai_with_tools
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.memory.manager import MemoryManager
+from namel3ss.runtime.memory_explain import append_explanation_events
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
 from namel3ss.traces.builders import build_memory_recall, build_memory_write
 from namel3ss.traces.redact import redact_memory_context
@@ -115,6 +116,7 @@ def run_agent_call(ctx: ExecutionContext, agent_name: str, input_expr, line: int
     )
     if governance_events:
         canonical_events.extend(governance_events)
+    canonical_events = append_explanation_events(canonical_events)
     trace = AITrace(
         ai_name=profile_override.name,
         ai_profile_name=profile_override.name,

@@ -7,7 +7,7 @@
     "query": "Hello",
     "recalled": [
       {
-        "id": "session:anonymous:short_term:1",
+        "id": "session:anonymous:my:short_term:1",
         "kind": "short_term",
         "text": "Hello",
         "source": "user",
@@ -25,6 +25,9 @@
           "authority_reason": "source:user",
           "space": "session",
           "owner": "anonymous",
+          "lane": "my",
+          "visible_to": "me",
+          "can_change": true,
           "phase_id": "phase-1",
           "phase_started_at": 1,
           "phase_reason": "auto",
@@ -34,12 +37,13 @@
           ],
           "recall_reason": [
             "recency",
-            "space:session"
+            "space:session",
+            "lane:my"
           ]
         }
       },
       {
-        "id": "session:anonymous:short_term:2",
+        "id": "session:anonymous:my:short_term:2",
         "kind": "short_term",
         "text": "[mock-model] Hello | mem:st=0",
         "source": "ai",
@@ -56,6 +60,9 @@
           "authority_reason": "source:ai",
           "space": "session",
           "owner": "anonymous",
+          "lane": "my",
+          "visible_to": "me",
+          "can_change": true,
           "phase_id": "phase-1",
           "phase_started_at": 1,
           "phase_reason": "auto",
@@ -65,7 +72,8 @@
           ],
           "recall_reason": [
             "recency",
-            "space:session"
+            "space:session",
+            "lane:my"
           ]
         }
       }
@@ -112,6 +120,10 @@
           "preference": {
             "mode": "never",
             "ttl_ticks": null
+          },
+          "rule": {
+            "mode": "never",
+            "ttl_ticks": null
           }
         },
         "semantic": {
@@ -136,6 +148,10 @@
             "ttl_ticks": 60
           },
           "preference": {
+            "mode": "decay",
+            "ttl_ticks": 40
+          },
+          "rule": {
             "mode": "decay",
             "ttl_ticks": 40
           }
@@ -164,6 +180,10 @@
           "preference": {
             "mode": "never",
             "ttl_ticks": null
+          },
+          "rule": {
+            "mode": "never",
+            "ttl_ticks": null
           }
         }
       },
@@ -175,7 +195,8 @@
             "decision",
             "execution",
             "fact",
-            "preference"
+            "preference",
+            "rule"
           ]
         },
         "semantic": {
@@ -185,7 +206,8 @@
             "decision",
             "execution",
             "fact",
-            "preference"
+            "preference",
+            "rule"
           ]
         },
         "profile": {
@@ -278,9 +300,34 @@
         "allow_cross_phase_recall": false,
         "max_phases": null,
         "diff_enabled": true
+      },
+      "lanes": {
+        "read_order": [
+          "my",
+          "team",
+          "system"
+        ],
+        "write_lanes": [
+          "my"
+        ],
+        "team_enabled": true,
+        "system_enabled": true,
+        "team_event_types": [
+          "decision",
+          "rule",
+          "execution"
+        ],
+        "team_can_change": true
+      },
+      "trust": {
+        "who_can_propose": "contributor",
+        "who_can_approve": "approver",
+        "who_can_reject": "approver",
+        "approval_count_required": 1,
+        "owner_override": true
       }
     },
-    "deterministic_hash": "59a23a2b3dd701bd3c809295dd00c755c984e5bbe6ecc3c5860a02ae333fc977",
+    "deterministic_hash": "5685049e8c64a7f80ec7344c39e9e4de9c2f8ba9b7bc8d0d942c44705a04219e",
     "spaces_consulted": [
       "session",
       "user",
@@ -312,7 +359,7 @@
     "session": "anonymous",
     "written": [
       {
-        "id": "session:anonymous:short_term:3",
+        "id": "session:anonymous:my:short_term:3",
         "kind": "short_term",
         "text": "Hello",
         "source": "user",
@@ -330,6 +377,9 @@
           "authority_reason": "source:user",
           "space": "session",
           "owner": "anonymous",
+          "lane": "my",
+          "visible_to": "me",
+          "can_change": true,
           "phase_id": "phase-1",
           "phase_started_at": 1,
           "phase_reason": "auto",
@@ -340,7 +390,7 @@
         }
       },
       {
-        "id": "session:anonymous:short_term:4",
+        "id": "session:anonymous:my:short_term:4",
         "kind": "short_term",
         "text": "[mock-model] Hello | mem:st=2",
         "source": "ai",
@@ -357,6 +407,9 @@
           "authority_reason": "source:ai",
           "space": "session",
           "owner": "anonymous",
+          "lane": "my",
+          "visible_to": "me",
+          "can_change": true,
           "phase_id": "phase-1",
           "phase_started_at": 1,
           "phase_reason": "auto",
@@ -367,7 +420,7 @@
         }
       },
       {
-        "id": "session:anonymous:short_term:5",
+        "id": "session:anonymous:my:short_term:5",
         "kind": "short_term",
         "text": "user: Hello | ai: [mock-model] Hello | mem:st=0",
         "source": "system",
@@ -377,8 +430,8 @@
         "meta": {
           "event_type": "context",
           "summary_of": [
-            "session:anonymous:short_term:1",
-            "session:anonymous:short_term:2"
+            "session:anonymous:my:short_term:1",
+            "session:anonymous:my:short_term:2"
           ],
           "importance_reason": [
             "event:context",
@@ -389,6 +442,9 @@
           "authority_reason": "summary",
           "space": "session",
           "owner": "anonymous",
+          "lane": "my",
+          "visible_to": "me",
+          "can_change": true,
           "phase_id": "phase-1",
           "phase_started_at": 1,
           "phase_reason": "auto"

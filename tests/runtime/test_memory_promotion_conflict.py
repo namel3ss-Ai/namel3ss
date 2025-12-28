@@ -22,7 +22,7 @@ def test_promotion_conflict_keeps_higher_authority_fact():
     ai = _ai_profile()
     state = {"user": {"id": "1"}}
     space_ctx = memory.space_context(state)
-    user_key = space_ctx.store_key_for("user")
+    user_key = space_ctx.store_key_for("user", lane="my")
     existing_meta = {
         "event_type": EVENT_FACT,
         "importance_reason": ["event:fact"],
@@ -31,6 +31,9 @@ def test_promotion_conflict_keeps_higher_authority_fact():
         "authority_reason": "seed",
         "space": "user",
         "owner": space_ctx.user_id,
+        "lane": "my",
+        "visible_to": "me",
+        "can_change": True,
         "key": "name",
     }
     existing_item = memory._factory.create(

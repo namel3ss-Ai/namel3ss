@@ -38,22 +38,98 @@ flow "memory_tour":
   ask ai "assistant" with input: "Remember this for me: I prefer concise, bullet summaries." as pref
   ask ai "assistant" with input: "My name is Ada." as fact
   ask ai "assistant" with input: "Actually, my name is Ada Lovelace." as correction
+  ask ai "assistant" with input: "Remember this for the project: We decided to ship weekly." as team_decision
+  set state._memory_agreement_action is "approve"
+  ask ai "assistant" with input: "Approve team memory." as team_approve
+  set state._memory_agreement_action is ""
   ask ai "assistant" with input: "Remember this for everyone: We release weekly." as denied_promo
   ask ai "assistant" with input: "my password is 123" as denied
+  set state._memory_system_rule is "System rule: never store secrets."
+  set state._memory_system_rule_reason is "demo"
+  ask ai "assistant" with input: "System rule update." as system_rule
+  set state._memory_system_rule is ""
+  set state._memory_system_rule_reason is ""
   set state._memory_phase_token is "phase-2"
   set state._memory_phase_name is "Phase 2"
   set state._memory_phase_reason is "manual"
   ask ai "assistant" with input: "We decided to ship weekly." as decision
   ask ai "assistant" with input: "Actually, my name is Ada Byron." as correction2
+  ask ai "assistant" with input: "Remember this for the project: We decided to ship every Monday." as team_decision2
+  set state._memory_agreement_action is "reject"
+  ask ai "assistant" with input: "Reject team memory." as team_reject
+  set state._memory_agreement_action is ""
+  ask ai "assistant" with input: "Remember this for the project: We decided to ship in sprints." as team_pending
   set state._memory_phase_diff_from is "phase-1"
   set state._memory_phase_diff_to is "phase-2"
   set state._memory_phase_diff_space is "session"
+  set state._memory_phase_diff_lane is "my"
   ask ai "assistant" with input: "Show me the memory changes between phases." as diff
+  set state._memory_phase_diff_from is "phase-1"
+  set state._memory_phase_diff_to is "phase-2"
+  set state._memory_phase_diff_space is "project"
+  set state._memory_phase_diff_lane is "team"
+  ask ai "assistant" with input: "Show me the team memory changes." as team_diff
   set state._memory_phase_diff_from is ""
   set state._memory_phase_diff_to is ""
   set state._memory_phase_diff_space is ""
+  set state._memory_phase_diff_lane is ""
+  set state._memory_impact_id is "user:anonymous:my:semantic:1"
+  ask ai "assistant" with input: "Show me the impact." as impact
+  set state._memory_impact_id is ""
   set state.reply is diff
   return diff
+
+flow "trust_proposal_contributor":
+  ask ai "assistant" with input: "Remember this for the project: We decided to ship weekly." as proposal
+  return proposal
+
+flow "trust_approve_approver":
+  ask ai "assistant" with input: "Remember this for the project: We decided to ship weekly." as proposal
+  set state._memory_agreement_action is "approve"
+  set state._memory_agreement_by is "approver-one"
+  ask ai "assistant" with input: "Approve as approver." as approved
+  set state._memory_agreement_action is ""
+  set state._memory_agreement_by is ""
+  return approved
+
+flow "trust_blocked_approve":
+  ask ai "assistant" with input: "Remember this for the project: We decided to ship weekly." as proposal
+  set state._memory_agreement_action is "approve"
+  set state._memory_agreement_by is "contributor-one"
+  ask ai "assistant" with input: "Approve as contributor." as blocked
+  set state._memory_agreement_action is ""
+  set state._memory_agreement_by is ""
+  return blocked
+
+flow "trust_two_approvals":
+  set state._memory_trust_action is "change_rules"
+  set state._memory_trust_approval_count is 2
+  set state._memory_trust_owner_override is "false"
+  ask ai "assistant" with input: "Set trust rules." as rules
+  ask ai "assistant" with input: "Remember this for the project: We decided to ship daily." as proposal
+  set state._memory_agreement_action is "approve"
+  set state._memory_agreement_by is "approver-one"
+  ask ai "assistant" with input: "Approve once." as approve_one
+  set state._memory_agreement_by is "approver-two"
+  ask ai "assistant" with input: "Approve twice." as approve_two
+  set state._memory_agreement_action is ""
+  set state._memory_agreement_by is ""
+  set state._memory_trust_action is ""
+  return approve_two
+
+flow "trust_owner_override":
+  set state._memory_trust_action is "change_rules"
+  set state._memory_trust_approval_count is 2
+  set state._memory_trust_owner_override is "true"
+  ask ai "assistant" with input: "Set trust rules." as rules
+  ask ai "assistant" with input: "Remember this for the project: We decided to ship monthly." as proposal
+  set state._memory_agreement_action is "approve"
+  set state._memory_agreement_by is "owner-one"
+  ask ai "assistant" with input: "Approve as owner." as approved
+  set state._memory_agreement_action is ""
+  set state._memory_agreement_by is ""
+  set state._memory_trust_action is ""
+  return approved
 
 page "notes":
   title is "Notes Assistant"
@@ -70,3 +146,13 @@ page "notes":
       calls flow "ask_assistant"
     button "Memory tour":
       calls flow "memory_tour"
+    button "Trust proposal":
+      calls flow "trust_proposal_contributor"
+    button "Trust approve":
+      calls flow "trust_approve_approver"
+    button "Trust blocked approve":
+      calls flow "trust_blocked_approve"
+    button "Trust two approvals":
+      calls flow "trust_two_approvals"
+    button "Trust owner override":
+      calls flow "trust_owner_override"

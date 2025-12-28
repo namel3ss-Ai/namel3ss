@@ -11,6 +11,7 @@ from namel3ss.ir import nodes as ir
 from namel3ss.runtime.ai.provider import AIProvider
 from namel3ss.runtime.executor.executor import Executor
 from namel3ss.runtime.executor.result import ExecutionResult
+from namel3ss.runtime.memory.manager import MemoryManager
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.storage.factory import resolve_store
 from namel3ss.schema.records import RecordSchema
@@ -28,6 +29,7 @@ def execute_flow(
     ai_provider: Optional[AIProvider] = None,
     ai_profiles: Optional[Dict[str, ir.AIDecl]] = None,
     tools: Optional[Dict[str, ir.ToolDecl]] = None,
+    identity: Optional[Dict[str, object]] = None,
 ) -> ExecutionResult:
     return Executor(
         flow,
@@ -39,6 +41,7 @@ def execute_flow(
         tools=tools,
         store=resolve_store(None),
         project_root=None,
+        identity=identity,
     ).run()
 
 
@@ -50,6 +53,7 @@ def execute_program_flow(
     input: Optional[Dict[str, object]] = None,
     store: Optional[Storage] = None,
     ai_provider: Optional[AIProvider] = None,
+    memory_manager: Optional["MemoryManager"] = None,
     runtime_theme: Optional[str] = None,
     preference_store=None,
     preference_key: str | None = None,
@@ -93,6 +97,7 @@ def execute_program_flow(
         ai_profiles=program.ais,
         agents=program.agents,
         tools=program.tools,
+        memory_manager=memory_manager,
         runtime_theme=resolution.setting_used.value,
         config=resolved_config,
         identity_schema=getattr(program, "identity", None),

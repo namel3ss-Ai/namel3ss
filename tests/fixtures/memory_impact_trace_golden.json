@@ -1,0 +1,72 @@
+[
+  {
+    "type": "memory_impact",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "memory_id": "session:anonymous:my:profile:2",
+    "space": "session",
+    "owner": "anonymous",
+    "phase_id": "phase-1",
+    "depth_used": 1,
+    "item_count": 1,
+    "title": "Memory impact",
+    "lines": [
+      "Impact summary.",
+      "Depth used is 1.",
+      "Items affected count is 1.",
+      "Affected item.",
+      "Summary is Ada.",
+      "Space is unknown.",
+      "Phase is phase-unknown.",
+      "Depth is 1.",
+      "Reason is conflict_loser.",
+      "id: session:anonymous:my:profile:1"
+    ],
+    "path_lines": [
+      "Impact path.",
+      "Depth used is 1.",
+      "Depth 1.",
+      "Path item.",
+      "Summary is Ada.",
+      "Reason is conflict_loser.",
+      "id: session:anonymous:my:profile:1"
+    ],
+    "lane": "my"
+  },
+  {
+    "type": "memory_impact",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "memory_id": "session:anonymous:my:profile:2",
+    "space": "session",
+    "owner": "anonymous",
+    "phase_id": "phase-1",
+    "depth_used": 2,
+    "item_count": 1,
+    "title": "Memory impact",
+    "lines": [
+      "Impact summary.",
+      "Depth used is 2.",
+      "Items affected count is 1.",
+      "Affected item.",
+      "Summary is Ada.",
+      "Space is unknown.",
+      "Phase is phase-unknown.",
+      "Depth is 1.",
+      "Reason is conflict_loser.",
+      "id: session:anonymous:my:profile:1"
+    ],
+    "path_lines": [
+      "Impact path.",
+      "Depth used is 2.",
+      "Depth 1.",
+      "Path item.",
+      "Summary is Ada.",
+      "Reason is conflict_loser.",
+      "id: session:anonymous:my:profile:1"
+    ],
+    "lane": "my"
+  }
+]

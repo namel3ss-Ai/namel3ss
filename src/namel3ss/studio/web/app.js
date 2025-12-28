@@ -2,6 +2,7 @@ let cachedSummary = {};
 let cachedState = {};
 let cachedActions = {};
 let cachedTraces = [];
+let cachedAgreements = {};
 let cachedLint = {};
 let cachedTools = {};
 let cachedPacks = {};
@@ -11,6 +12,7 @@ let traceFilterText = "";
 let traceFilterTimer = null;
 let traceRenderMode = "plain";
 let tracePhaseMode = "current";
+let traceLaneMode = "my";
 let toolsFilterText = "";
 let toolsFilterTimer = null;
 let selectedTrace = null;
@@ -646,6 +648,580 @@ function appendTraceSection(details, label, value, copyable = false, renderMode 
   wrapper.appendChild(createCodeBlock(content));
   details.appendChild(wrapper);
 }
+const MEMORY_EVENT_TYPES = new Set([
+  "memory_recall",
+  "memory_write",
+  "memory_denied",
+  "memory_forget",
+  "memory_conflict",
+  "memory_border_check",
+  "memory_promoted",
+  "memory_promotion_denied",
+  "memory_phase_started",
+  "memory_deleted",
+  "memory_phase_diff",
+  "memory_links",
+  "memory_path",
+  "memory_impact",
+  "memory_change_preview",
+  "memory_team_summary",
+  "memory_proposed",
+  "memory_approved",
+  "memory_rejected",
+  "memory_agreement_summary",
+  "memory_trust_check",
+  "memory_approval_recorded",
+  "memory_trust_rules",
+]);
+function appendMemoryEventsSection(details, trace, phaseId, renderMode = "json") {
+  const events = buildMemoryEventEntries(trace);
+  if (!events.length) return;
+  const explainMap = buildMemoryExplanationMap(trace);
+  const linksMap = buildMemoryLinksMap(trace);
+  const pathMap = buildMemoryPathMap(trace);
+  const impactMap = buildMemoryImpactMap(trace);
+  const wrapper = document.createElement("div");
+  const heading = document.createElement("div");
+  heading.className = "inline-label";
+  heading.textContent = "Memory events";
+  wrapper.appendChild(heading);
+  const teamSummary = traceLaneMode === "team" ? latestTeamSummary(trace) : null;
+  if (teamSummary) {
+    const diffEvent = findPhaseDiffEvent(trace, teamSummary);
+    appendTeamSummaryBlock(wrapper, teamSummary, diffEvent, renderMode);
+  }
+  events.forEach((entry) => {
+    const filtered = filterMemoryEventForPhase(entry.event, phaseId, tracePhaseMode);
+    if (!filtered) return;
+    const laneFiltered = filterMemoryEventForLane(filtered, traceLaneMode);
+    if (!laneFiltered) return;
+    if (teamSummary && laneFiltered.type === "memory_team_summary") return;
+    const block = document.createElement("div");
+    block.className = "trace-event";
+    const label = document.createElement("div");
+    label.className = "trace-event-label";
+    label.textContent = laneFiltered.type || "memory_event";
+    const memoryIds = memoryIdsForEvent(laneFiltered);
+    const linkEvents = collectEventsForIds(linksMap, memoryIds);
+    const pathEvents = collectEventsForIds(pathMap, memoryIds);
+    const impactEventsByDepth = collectImpactEventsByDepth(impactMap, memoryIds);
+    const isLinkEvent = laneFiltered.type === "memory_links" || laneFiltered.type === "memory_path";
+    const isImpactEvent = laneFiltered.type === "memory_impact" || laneFiltered.type === "memory_change_preview";
+    const explain = explainMap.get(entry.index);
+    const contentBlock = createCodeBlock(renderMode === "plain" ? renderPlainTraceValue(laneFiltered) : laneFiltered);
+    if (explain) {
+      const explainBtn = document.createElement("button");
+      explainBtn.className = "btn ghost small";
+      explainBtn.textContent = "Explain";
+      label.appendChild(explainBtn);
+      const explainText = formatExplanationText(explain);
+      const explainBlock = createCodeBlock(explainText);
+      explainBlock.classList.add("trace-explain");
+      explainBlock.style.display = "none";
+      explainBtn.onclick = () => {
+        const nextState = explainBlock.style.display === "none" ? "block" : "none";
+        explainBlock.style.display = nextState;
+      };
+      block.appendChild(label);
+      block.appendChild(contentBlock);
+      block.appendChild(explainBlock);
+      if (!isLinkEvent && linkEvents.length) {
+        const linksBtn = document.createElement("button");
+        linksBtn.className = "btn ghost small";
+        linksBtn.textContent = "Links";
+        label.appendChild(linksBtn);
+        const linksText = formatLinksText(linkEvents);
+        const linksBlock = createCodeBlock(linksText);
+        linksBlock.classList.add("trace-links");
+        linksBlock.style.display = "none";
+        linksBtn.onclick = () => {
+          const nextState = linksBlock.style.display === "none" ? "block" : "none";
+          linksBlock.style.display = nextState;
+        };
+        block.appendChild(linksBlock);
+      }
+      if (!isLinkEvent && pathEvents.length) {
+        const pathBtn = document.createElement("button");
+        pathBtn.className = "btn ghost small";
+        pathBtn.textContent = "Path";
+        label.appendChild(pathBtn);
+        const pathText = formatPathText(pathEvents);
+        const pathBlock = createCodeBlock(pathText);
+        pathBlock.classList.add("trace-links");
+        pathBlock.style.display = "none";
+        pathBtn.onclick = () => {
+          const nextState = pathBlock.style.display === "none" ? "block" : "none";
+          pathBlock.style.display = nextState;
+        };
+        block.appendChild(pathBlock);
+      }
+      if (!isLinkEvent && !isImpactEvent) {
+        appendImpactControls(block, label, impactEventsByDepth);
+      }
+      wrapper.appendChild(block);
+      return;
+    }
+    block.appendChild(label);
+    block.appendChild(contentBlock);
+    if (!isLinkEvent && linkEvents.length) {
+      const linksBtn = document.createElement("button");
+      linksBtn.className = "btn ghost small";
+      linksBtn.textContent = "Links";
+      label.appendChild(linksBtn);
+      const linksText = formatLinksText(linkEvents);
+      const linksBlock = createCodeBlock(linksText);
+      linksBlock.classList.add("trace-links");
+      linksBlock.style.display = "none";
+      linksBtn.onclick = () => {
+        const nextState = linksBlock.style.display === "none" ? "block" : "none";
+        linksBlock.style.display = nextState;
+      };
+      block.appendChild(linksBlock);
+    }
+    if (!isLinkEvent && pathEvents.length) {
+      const pathBtn = document.createElement("button");
+      pathBtn.className = "btn ghost small";
+      pathBtn.textContent = "Path";
+      label.appendChild(pathBtn);
+      const pathText = formatPathText(pathEvents);
+      const pathBlock = createCodeBlock(pathText);
+      pathBlock.classList.add("trace-links");
+      pathBlock.style.display = "none";
+      pathBtn.onclick = () => {
+        const nextState = pathBlock.style.display === "none" ? "block" : "none";
+        pathBlock.style.display = nextState;
+      };
+      block.appendChild(pathBlock);
+    }
+    if (!isLinkEvent && !isImpactEvent) {
+      appendImpactControls(block, label, impactEventsByDepth);
+    }
+    wrapper.appendChild(block);
+  });
+  details.appendChild(wrapper);
+}
+function buildMemoryEventEntries(trace) {
+  const entries = [];
+  const events = trace.canonical_events || [];
+  events.forEach((event, index) => {
+    if (event && MEMORY_EVENT_TYPES.has(event.type)) {
+      entries.push({ event, index });
+    }
+  });
+  return entries;
+}
+function buildMemoryExplanationMap(trace) {
+  const map = new Map();
+  const events = trace.canonical_events || [];
+  events.forEach((event) => {
+    if (event && event.type === "memory_explanation") {
+      const index = event.for_event_index;
+      if (typeof index === "number") {
+        map.set(index, event);
+      }
+    }
+  });
+  return map;
+}
+function buildMemoryLinksMap(trace) {
+  const map = new Map();
+  const events = trace.canonical_events || [];
+  events.forEach((event) => {
+    if (event && event.type === "memory_links") {
+      const memoryId = event.memory_id;
+      if (typeof memoryId === "string") {
+        map.set(memoryId, event);
+      }
+    }
+  });
+  return map;
+}
+function buildMemoryPathMap(trace) {
+  const map = new Map();
+  const events = trace.canonical_events || [];
+  events.forEach((event) => {
+    if (event && event.type === "memory_path") {
+      const memoryId = event.memory_id;
+      if (typeof memoryId === "string") {
+        map.set(memoryId, event);
+      }
+    }
+  });
+  return map;
+}
+function buildMemoryImpactMap(trace) {
+  const map = new Map();
+  const events = trace.canonical_events || [];
+  events.forEach((event) => {
+    if (event && event.type === "memory_impact") {
+      const memoryId = event.memory_id;
+      const depth = event.depth_used;
+      if (typeof memoryId === "string" && typeof depth === "number") {
+        const entry = map.get(memoryId) || {};
+        entry[String(depth)] = event;
+        map.set(memoryId, entry);
+      }
+    }
+  });
+  return map;
+}
+function buildTeamSummaryEntries(trace) {
+  const events = trace.canonical_events || [];
+  return events.filter((event) => event && event.type === "memory_team_summary");
+}
+function latestTeamSummary(trace) {
+  const entries = buildTeamSummaryEntries(trace);
+  if (!entries.length) return null;
+  return entries[entries.length - 1];
+}
+function findPhaseDiffEvent(trace, summary) {
+  if (!summary) return null;
+  const events = trace.canonical_events || [];
+  const summaryLane = summary.lane || "team";
+  return events.find((event) => {
+    if (!event || event.type !== "memory_phase_diff") return false;
+    if (event.space !== summary.space) return false;
+    if (event.from_phase_id !== summary.phase_from) return false;
+    if (event.to_phase_id !== summary.phase_to) return false;
+    if (event.lane && event.lane !== summaryLane) return false;
+    return true;
+  });
+}
+function formatTeamSummaryText(summary) {
+  const lines = [];
+  if (summary.title) lines.push(summary.title);
+  const detail = Array.isArray(summary.lines) ? summary.lines : [];
+  detail.forEach((line) => {
+    if (line) lines.push(line);
+  });
+  return lines.join("\n");
+}
+function appendTeamSummaryBlock(wrapper, summary, diffEvent, renderMode) {
+  const block = document.createElement("div");
+  block.className = "trace-event trace-team-summary";
+  const label = document.createElement("div");
+  label.className = "trace-event-label";
+  label.textContent = "Team summary";
+  const summaryBlock = createCodeBlock(formatTeamSummaryText(summary));
+  block.appendChild(label);
+  block.appendChild(summaryBlock);
+  if (diffEvent) {
+    const diffBtn = document.createElement("button");
+    diffBtn.className = "btn ghost small";
+    diffBtn.textContent = "Show diff";
+    label.appendChild(diffBtn);
+    const diffBlock = createCodeBlock(renderMode === "plain" ? renderPlainTraceValue(diffEvent) : diffEvent);
+    diffBlock.classList.add("trace-links");
+    diffBlock.style.display = "none";
+    diffBtn.onclick = () => {
+      const nextState = diffBlock.style.display === "none" ? "block" : "none";
+      diffBlock.style.display = nextState;
+    };
+    block.appendChild(diffBlock);
+  }
+  wrapper.appendChild(block);
+}
+function latestAgreementSummary(traces) {
+  const events = [];
+  (traces || []).forEach((trace) => {
+    const entries = trace && trace.canonical_events ? trace.canonical_events : [];
+    entries.forEach((event) => {
+      if (event && event.type === "memory_agreement_summary") {
+        events.push(event);
+      }
+    });
+  });
+  if (!events.length) return null;
+  return events[events.length - 1];
+}
+function formatAgreementSummaryText(summary) {
+  const lines = [];
+  if (summary.title) lines.push(summary.title);
+  const detail = Array.isArray(summary.lines) ? summary.lines : [];
+  detail.forEach((line) => {
+    if (line) lines.push(line);
+  });
+  return lines.join("\n");
+}
+function latestTrustCheck(traces) {
+  const events = [];
+  (traces || []).forEach((trace) => {
+    const entries = trace && trace.canonical_events ? trace.canonical_events : [];
+    entries.forEach((event) => {
+      if (event && event.type === "memory_trust_check" && event.allowed === false) {
+        events.push(event);
+      }
+    });
+  });
+  if (!events.length) return null;
+  return events[events.length - 1];
+}
+function formatTrustLines(trust) {
+  const lines = [];
+  if (!trust) return "";
+  const detail = Array.isArray(trust.lines) ? trust.lines : [];
+  detail.forEach((line) => {
+    if (line) lines.push(line);
+  });
+  return lines.join("\n");
+}
+function formatTrustNotice(traces) {
+  const event = latestTrustCheck(traces);
+  if (!event) return "";
+  const lines = [];
+  if (event.title) lines.push(event.title);
+  const detail = Array.isArray(event.lines) ? event.lines : [];
+  detail.forEach((line) => {
+    if (line) lines.push(line);
+  });
+  return lines.join("\n");
+}
+function renderAgreements(data) {
+  cachedAgreements = data || cachedAgreements;
+  const panel = document.getElementById("teamAgreements");
+  const list = document.getElementById("teamAgreementsList");
+  const summaryBlock = document.getElementById("teamAgreementSummary");
+  const trustLines = document.getElementById("teamTrustLines");
+  const trustNotice = document.getElementById("teamTrustNotice");
+  if (!panel || !list) return;
+  if (traceLaneMode !== "team") {
+    panel.classList.add("hidden");
+    return;
+  }
+  panel.classList.remove("hidden");
+  list.innerHTML = "";
+  if (summaryBlock) {
+    const summary = latestAgreementSummary(cachedTraces);
+    summaryBlock.textContent = summary ? formatAgreementSummaryText(summary) : "No agreement summary yet.";
+  }
+  if (trustLines) {
+    trustLines.textContent = formatTrustLines(data && data.trust ? data.trust : cachedAgreements.trust);
+  }
+  if (trustNotice) {
+    trustNotice.textContent = formatTrustNotice(cachedTraces);
+  }
+  if (!data || data.ok === false) {
+    showEmpty(list, data && data.error ? data.error : "Unable to load agreements");
+    return;
+  }
+  const proposals = data.proposals || [];
+  if (!proposals.length) {
+    showEmpty(list, "No pending proposals.");
+    return;
+  }
+  const listWrap = document.createElement("div");
+  listWrap.className = "list";
+  proposals.forEach((proposal) => {
+    const item = document.createElement("div");
+    item.className = "list-item agreement-item";
+    const title = document.createElement("div");
+    title.className = "list-title";
+    title.textContent = proposal.title || "Team memory proposal";
+    const meta = document.createElement("div");
+    meta.className = "list-meta";
+    const parts = [];
+    if (proposal.status) parts.push(`status: ${proposal.status}`);
+    if (proposal.status_line) parts.push(proposal.status_line);
+    if (proposal.approval_required !== undefined && proposal.approval_count !== undefined) {
+      parts.push(`approvals: ${proposal.approval_count} of ${proposal.approval_required}`);
+    }
+    if (proposal.proposed_by) parts.push(`by: ${proposal.proposed_by}`);
+    if (proposal.phase_id) parts.push(`phase: ${proposal.phase_id}`);
+    if (proposal.preview) parts.push(`preview: ${proposal.preview}`);
+    meta.textContent = parts.join(" · ");
+    const actions = document.createElement("div");
+    actions.className = "list-actions";
+    const approveBtn = document.createElement("button");
+    approveBtn.className = "btn ghost small";
+    approveBtn.textContent = "Approve";
+    approveBtn.onclick = () => applyAgreementAction("approve", proposal.proposal_id);
+    const rejectBtn = document.createElement("button");
+    rejectBtn.className = "btn ghost small";
+    rejectBtn.textContent = "Reject";
+    rejectBtn.onclick = () => applyAgreementAction("reject", proposal.proposal_id);
+    actions.appendChild(approveBtn);
+    actions.appendChild(rejectBtn);
+    item.appendChild(title);
+    item.appendChild(meta);
+    item.appendChild(actions);
+    listWrap.appendChild(item);
+  });
+  list.appendChild(listWrap);
+}
+async function refreshAgreements() {
+  if (traceLaneMode !== "team") {
+    renderAgreements(cachedAgreements);
+    return;
+  }
+  const data = await fetchJson("/api/memory/agreements");
+  renderAgreements(data);
+}
+async function applyAgreementAction(action, proposalId) {
+  const res = await fetch(`/api/memory/agreements/${action}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ proposal_id: proposalId }),
+  });
+  const data = await res.json();
+  if (!data.ok) {
+    showToast("Agreement action failed.");
+    if (data.error) showToast(data.error);
+    return;
+  }
+  if (Array.isArray(data.traces) && data.traces.length) {
+    cachedTraces = cachedTraces.concat(data.traces);
+    renderTraces(cachedTraces);
+  }
+  renderAgreements(data);
+}
+function collectEventsForIds(map, ids) {
+  const events = [];
+  if (!map || !ids) return events;
+  ids.forEach((memoryId) => {
+    const event = map.get(memoryId);
+    if (event) events.push(event);
+  });
+  return events;
+}
+function collectImpactEventsByDepth(map, ids) {
+  const byDepth = new Map();
+  if (!map || !ids) return byDepth;
+  ids.forEach((memoryId) => {
+    const entry = map.get(memoryId);
+    if (!entry) return;
+    Object.keys(entry).forEach((depth) => {
+      const event = entry[depth];
+      if (!event) return;
+      const events = byDepth.get(depth) || [];
+      events.push(event);
+      byDepth.set(depth, events);
+    });
+  });
+  return byDepth;
+}
+function memoryIdsForEvent(event) {
+  if (!event || typeof event !== "object") return [];
+  if (typeof event.memory_id === "string") return [event.memory_id];
+  if (typeof event.to_id === "string") return [event.to_id];
+  if (typeof event.winner_id === "string") return [event.winner_id];
+  if (typeof event.from_id === "string") return [event.from_id];
+  if (Array.isArray(event.written)) {
+    return event.written.map((item) => item && item.id).filter((value) => typeof value === "string");
+  }
+  return [];
+}
+function formatExplanationText(explainEvent) {
+  const lines = [];
+  if (explainEvent.title) lines.push(explainEvent.title);
+  const detail = Array.isArray(explainEvent.lines) ? explainEvent.lines : [];
+  detail.forEach((line) => {
+    if (line) lines.push(line);
+  });
+  return lines.join("\n");
+}
+function formatLinksText(linkEvents) {
+  const lines = [];
+  linkEvents.forEach((event) => {
+    if (event.memory_id) {
+      lines.push(`Memory id is ${event.memory_id}.`);
+    }
+    const detail = Array.isArray(event.lines) ? event.lines : [];
+    detail.forEach((line) => {
+      if (line) lines.push(line);
+    });
+  });
+  return lines.join("\n");
+}
+function formatPathText(pathEvents) {
+  const lines = [];
+  pathEvents.forEach((event) => {
+    if (event.title) lines.push(event.title);
+    if (event.memory_id) {
+      lines.push(`Memory id is ${event.memory_id}.`);
+    }
+    const detail = Array.isArray(event.lines) ? event.lines : [];
+    detail.forEach((line) => {
+      if (line) lines.push(line);
+    });
+  });
+  return lines.join("\n");
+}
+function formatImpactText(impactEvents) {
+  const lines = [];
+  impactEvents.forEach((event) => {
+    if (event.title) lines.push(event.title);
+    if (event.memory_id) {
+      lines.push(`Memory id is ${event.memory_id}.`);
+    }
+    const detail = Array.isArray(event.lines) ? event.lines : [];
+    detail.forEach((line) => {
+      if (line) lines.push(line);
+    });
+    const pathDetail = Array.isArray(event.path_lines) ? event.path_lines : [];
+    pathDetail.forEach((line) => {
+      if (line) lines.push(line);
+    });
+  });
+  return lines.join("\n");
+}
+function defaultImpactDepth(impactByDepth) {
+  if (!impactByDepth || impactByDepth.size === 0) return null;
+  if (impactByDepth.has("1")) return "1";
+  if (impactByDepth.has("2")) return "2";
+  const keys = Array.from(impactByDepth.keys()).sort();
+  return keys[0] || null;
+}
+function appendImpactControls(block, label, impactByDepth) {
+  if (!impactByDepth || impactByDepth.size === 0) return;
+  const impactBtn = document.createElement("button");
+  impactBtn.className = "btn ghost small";
+  impactBtn.textContent = "Impact";
+  label.appendChild(impactBtn);
+
+  const impactWrapper = document.createElement("div");
+  impactWrapper.className = "trace-impact";
+  impactWrapper.style.display = "none";
+
+  const depthRow = document.createElement("div");
+  depthRow.className = "trace-impact-depth";
+  const depth1Btn = document.createElement("button");
+  depth1Btn.className = "btn ghost small";
+  depth1Btn.textContent = "Depth 1";
+  const depth2Btn = document.createElement("button");
+  depth2Btn.className = "btn ghost small";
+  depth2Btn.textContent = "Depth 2";
+  depthRow.appendChild(depth1Btn);
+  depthRow.appendChild(depth2Btn);
+
+  const impactBlock = createCodeBlock("");
+  impactBlock.classList.add("trace-links");
+
+  const updateDepth = (depthKey) => {
+    const events = impactByDepth.get(depthKey) || [];
+    impactBlock.textContent = formatImpactText(events);
+    depth1Btn.classList.toggle("toggle-active", depthKey === "1");
+    depth2Btn.classList.toggle("toggle-active", depthKey === "2");
+  };
+
+  const initialDepth = defaultImpactDepth(impactByDepth);
+  if (initialDepth) {
+    updateDepth(initialDepth);
+  }
+
+  depth1Btn.disabled = !impactByDepth.has("1");
+  depth2Btn.disabled = !impactByDepth.has("2");
+
+  depth1Btn.onclick = () => updateDepth("1");
+  depth2Btn.onclick = () => updateDepth("2");
+  impactBtn.onclick = () => {
+    const nextState = impactWrapper.style.display === "none" ? "block" : "none";
+    impactWrapper.style.display = nextState;
+  };
+
+  impactWrapper.appendChild(depthRow);
+  impactWrapper.appendChild(impactBlock);
+  block.appendChild(impactWrapper);
+}
 function renderPlainTraceValue(value) {
   if (Array.isArray(value) || (value && typeof value === "object")) {
     return formatPlainTrace(value);
@@ -675,9 +1251,40 @@ function filterMemoryEventForPhase(event, phaseId, mode) {
   if (event.phase_id && event.phase_id !== phaseId) return null;
   return event;
 }
+function filterMemoryEventForLane(event, laneMode) {
+  if (!event || !laneMode) return event;
+  if (event.type === "memory_recall" && Array.isArray(event.recalled)) {
+    const filtered = event.recalled.filter((item) => item && item.meta && item.meta.lane === laneMode);
+    if (!filtered.length) return null;
+    const next = { ...event, recalled: filtered };
+    return next;
+  }
+  if (event.type === "memory_write" && Array.isArray(event.written)) {
+    const filtered = event.written.filter((item) => item && item.meta && item.meta.lane === laneMode);
+    if (!filtered.length) return null;
+    const next = { ...event, written: filtered };
+    return next;
+  }
+  if (event.type === "memory_denied" && event.attempted && event.attempted.meta) {
+    if (event.attempted.meta.lane !== laneMode) return null;
+    return event;
+  }
+  if (event.type === "memory_team_summary") {
+    return laneMode === "team" ? event : null;
+  }
+  if (event.lane) {
+    return event.lane === laneMode ? event : null;
+  }
+  if (event.from_lane || event.to_lane) {
+    if (event.from_lane === laneMode || event.to_lane === laneMode) return event;
+    return null;
+  }
+  return event;
+}
   function matchTrace(trace, needle) {
     if (!needle) return true;
-    const values = [trace.provider, trace.model, trace.ai_name, trace.ai_profile_name, trace.agent_name, trace.input, trace.output, trace.result]
+    const eventTypes = (trace.canonical_events || []).map((event) => event.type).join(" ");
+    const values = [trace.provider, trace.model, trace.ai_name, trace.ai_profile_name, trace.agent_name, trace.input, trace.output, trace.result, eventTypes]
       .map((v) => (typeof v === "string" ? v : v ? JSON.stringify(v) : ""))
       .join(" ")
       .toLowerCase();
@@ -722,25 +1329,7 @@ function filterMemoryEventForPhase(event, phaseId, mode) {
       appendTraceSection(details, "Input", trace.input, false, traceRenderMode);
       appendTraceSection(details, "Memory", trace.memory, false, traceRenderMode);
       const phaseId = currentPhaseIdForTrace(trace);
-      const memoryEvents = (trace.canonical_events || [])
-        .filter(
-          (event) =>
-            event &&
-            (event.type === "memory_recall" ||
-              event.type === "memory_write" ||
-              event.type === "memory_denied" ||
-              event.type === "memory_forget" ||
-              event.type === "memory_conflict" ||
-              event.type === "memory_border_check" ||
-              event.type === "memory_promoted" ||
-              event.type === "memory_promotion_denied" ||
-              event.type === "memory_phase_started" ||
-              event.type === "memory_deleted" ||
-              event.type === "memory_phase_diff")
-        )
-        .map((event) => filterMemoryEventForPhase(event, phaseId, tracePhaseMode))
-        .filter(Boolean);
-      appendTraceSection(details, "Memory events", memoryEvents, false, traceRenderMode);
+      appendMemoryEventsSection(details, trace, phaseId, traceRenderMode);
       appendTraceSection(details, "Tool calls", trace.tool_calls, false, traceRenderMode);
       appendTraceSection(details, "Tool results", trace.tool_results, false, traceRenderMode);
       appendTraceSection(details, "Output", trace.output ?? trace.result, true, traceRenderMode);
@@ -757,6 +1346,7 @@ function filterMemoryEventForPhase(event, phaseId, mode) {
   container.appendChild(list);
   updateCopyButton("tracesCopy", () => JSON.stringify(cachedTraces || [], null, 2));
   updateTraceCopyButtons();
+  renderAgreements(cachedAgreements);
 }
 async function executeAction(actionId, payload) {
   const res = await fetch("/api/action", {
@@ -777,6 +1367,7 @@ async function executeAction(actionId, payload) {
   }
   if (data.traces) {
     renderTraces(data.traces);
+    refreshAgreements();
   }
   if (data.ui) {
     cachedManifest = data.ui;
@@ -862,6 +1453,7 @@ async function refreshAll() {
   if (window.refreshTrustPanel) window.refreshTrustPanel();
   if (window.refreshDataPanel) window.refreshDataPanel();
   if (window.refreshFixPanel) window.refreshFixPanel();
+  refreshAgreements();
 }
 function setupTabs() {
   const tabs = Array.from(document.querySelectorAll(".tab"));
@@ -917,6 +1509,27 @@ function setupTracePhaseToggle() {
   currentBtn.onclick = () => applyMode("current");
   historyBtn.onclick = () => applyMode("history");
   applyMode(tracePhaseMode || "current");
+}
+function setupTraceLaneToggle() {
+  const myBtn = document.getElementById("traceLaneMy");
+  const teamBtn = document.getElementById("traceLaneTeam");
+  const systemBtn = document.getElementById("traceLaneSystem");
+  if (!myBtn || !teamBtn || !systemBtn) return;
+  const applyMode = (mode) => {
+    traceLaneMode = mode;
+    myBtn.classList.toggle("toggle-active", mode === "my");
+    teamBtn.classList.toggle("toggle-active", mode === "team");
+    systemBtn.classList.toggle("toggle-active", mode === "system");
+    myBtn.setAttribute("aria-pressed", mode === "my");
+    teamBtn.setAttribute("aria-pressed", mode === "team");
+    systemBtn.setAttribute("aria-pressed", mode === "system");
+    renderTraces(cachedTraces);
+    refreshAgreements();
+  };
+  myBtn.onclick = () => applyMode("my");
+  teamBtn.onclick = () => applyMode("team");
+  systemBtn.onclick = () => applyMode("system");
+  applyMode(traceLaneMode || "my");
 }
 function setupToolsFilter() {
   const input = document.getElementById("toolsFilter");
@@ -1024,6 +1637,7 @@ setupTabs();
 setupTraceFilter();
 setupTraceFormatToggle();
 setupTracePhaseToggle();
+setupTraceLaneToggle();
 setupToolsFilter();
 loadVersion();
 const helpButton = document.getElementById("helpButton");

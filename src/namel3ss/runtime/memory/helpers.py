@@ -13,6 +13,7 @@ from namel3ss.runtime.memory.events import (
     build_dedupe_key,
     is_low_signal,
 )
+from namel3ss.runtime.memory_lanes.model import ensure_lane_meta
 from namel3ss.runtime.memory_policy.explain import explain_conflict, explain_forget, explain_write_decision
 from namel3ss.runtime.memory_timeline.versioning import apply_phase_meta
 from namel3ss.runtime.memory_policy.model import (
@@ -65,10 +66,14 @@ def build_meta(
     authority_reason: str,
     space: str,
     owner: str,
+    lane: str,
     phase=None,
     dedup_key: Optional[str] = None,
     promotion_target: str | None = None,
     promotion_reason: str | None = None,
+    visible_to: str | None = None,
+    can_change: bool | None = None,
+    allow_team_change: bool = True,
 ) -> dict:
     meta = {
         "event_type": event_type,
@@ -79,6 +84,13 @@ def build_meta(
         "space": space,
         "owner": owner,
     }
+    meta = ensure_lane_meta(
+        meta,
+        lane=lane,
+        visible_to=visible_to,
+        can_change=can_change,
+        allow_team_change=allow_team_change,
+    )
     if phase is not None:
         meta = apply_phase_meta(meta, phase)
     if promotion_target:
@@ -169,6 +181,7 @@ def build_deleted_event(
 ) -> dict:
     phase_id = getattr(phase, "phase_id", None) if phase is not None else None
     phase_id = phase_id or item.meta.get("phase_id") or "phase-unknown"
+    lane = item.meta.get("lane") if hasattr(item, "meta") else None
     return build_memory_deleted(
         ai_profile=ai_profile,
         session=session,
@@ -179,6 +192,7 @@ def build_deleted_event(
         reason=reason,
         policy_snapshot=policy_snapshot,
         replaced_by=replaced_by,
+        lane=lane,
     )
 
 
@@ -221,6 +235,8 @@ def build_border_event(
     reason: str,
     subject_id: str | None,
     policy_snapshot: dict,
+    from_lane: str | None = None,
+    to_lane: str | None = None,
 ) -> dict:
     return build_memory_border_check(
         ai_profile=ai_profile,
@@ -232,6 +248,8 @@ def build_border_event(
         reason=reason,
         subject_id=subject_id,
         policy_snapshot=policy_snapshot,
+        from_lane=from_lane,
+        to_lane=to_lane,
     )
 
 

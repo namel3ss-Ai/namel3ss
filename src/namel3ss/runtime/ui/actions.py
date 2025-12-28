@@ -12,6 +12,7 @@ from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.records.service import save_record_with_errors
 from namel3ss.runtime.records.state_paths import set_state_record
 from namel3ss.runtime.storage.base import Storage
+from namel3ss.runtime.memory.manager import MemoryManager
 from namel3ss.runtime.storage.factory import resolve_store
 from namel3ss.ui.manifest import build_manifest
 from namel3ss.utils.json_tools import dumps as json_dumps
@@ -31,6 +32,7 @@ def handle_action(
     state: Optional[dict] = None,
     store: Optional[Storage] = None,
     runtime_theme: Optional[str] = None,
+    memory_manager: MemoryManager | None = None,
     preference_store=None,
     preference_key: str | None = None,
     allow_theme_override: bool | None = None,
@@ -74,6 +76,7 @@ def handle_action(
                 store,
                 manifest,
                 runtime_theme,
+                memory_manager=memory_manager,
                 preference_store=preference_store,
                 preference_key=preference_key,
                 allow_theme_override=allow_theme_override,
@@ -149,6 +152,7 @@ def _handle_call_flow(
     store: Storage,
     manifest: dict,
     runtime_theme: Optional[str],
+    memory_manager: MemoryManager | None = None,
     preference_store=None,
     preference_key: str | None = None,
     allow_theme_override: bool | None = None,
@@ -165,6 +169,7 @@ def _handle_call_flow(
         state=state,
         input=payload,
         store=store,
+        memory_manager=memory_manager,
         runtime_theme=runtime_theme,
         preference_store=preference_store,
         preference_key=preference_key,

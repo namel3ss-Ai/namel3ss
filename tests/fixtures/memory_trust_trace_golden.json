@@ -1,0 +1,334 @@
+[
+  {
+    "type": "memory_trust_check",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "action": "change_rules",
+    "actor_id": "anonymous",
+    "actor_level": "owner",
+    "required_level": "owner",
+    "allowed": true,
+    "reason": "owner_override",
+    "title": "Trust check change_rules",
+    "lines": [
+      "Action is change_rules.",
+      "Actor id is anonymous.",
+      "Actor level is owner.",
+      "Required level is owner.",
+      "Allowed is yes.",
+      "Reason is owner override."
+    ]
+  },
+  {
+    "type": "memory_trust_rules",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "team_id": "unknown",
+    "title": "Team trust rules",
+    "lines": [
+      "Propose requires contributor.",
+      "Approve requires approver.",
+      "Reject requires approver.",
+      "Approvals required is 2.",
+      "Owner override is off."
+    ]
+  },
+  {
+    "type": "memory_trust_check",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "action": "change_rules",
+    "actor_id": "anonymous",
+    "actor_level": "owner",
+    "required_level": "owner",
+    "allowed": true,
+    "reason": "owner_override",
+    "title": "Trust check change_rules",
+    "lines": [
+      "Action is change_rules.",
+      "Actor id is anonymous.",
+      "Actor level is owner.",
+      "Required level is owner.",
+      "Allowed is yes.",
+      "Reason is owner override."
+    ]
+  },
+  {
+    "type": "memory_trust_rules",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "team_id": "unknown",
+    "title": "Team trust rules",
+    "lines": [
+      "Propose requires contributor.",
+      "Approve requires approver.",
+      "Reject requires approver.",
+      "Approvals required is 2.",
+      "Owner override is off."
+    ]
+  },
+  {
+    "type": "memory_trust_rules",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "team_id": "unknown",
+    "title": "Team trust rules",
+    "lines": [
+      "Propose requires contributor.",
+      "Approve requires approver.",
+      "Reject requires approver.",
+      "Approvals required is 2.",
+      "Owner override is off."
+    ]
+  },
+  {
+    "type": "memory_trust_check",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "action": "propose",
+    "actor_id": "user",
+    "actor_level": "owner",
+    "required_level": "contributor",
+    "allowed": true,
+    "reason": "allowed",
+    "title": "Trust check propose",
+    "lines": [
+      "Action is propose.",
+      "Actor id is user.",
+      "Actor level is owner.",
+      "Required level is contributor.",
+      "Allowed is yes.",
+      "Reason is allowed by rules."
+    ]
+  },
+  {
+    "type": "memory_trust_check",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "action": "change_rules",
+    "actor_id": "anonymous",
+    "actor_level": "owner",
+    "required_level": "owner",
+    "allowed": true,
+    "reason": "owner_override",
+    "title": "Trust check change_rules",
+    "lines": [
+      "Action is change_rules.",
+      "Actor id is anonymous.",
+      "Actor level is owner.",
+      "Required level is owner.",
+      "Allowed is yes.",
+      "Reason is owner override."
+    ]
+  },
+  {
+    "type": "memory_trust_rules",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "team_id": "unknown",
+    "title": "Team trust rules",
+    "lines": [
+      "Propose requires contributor.",
+      "Approve requires approver.",
+      "Reject requires approver.",
+      "Approvals required is 2.",
+      "Owner override is off."
+    ]
+  },
+  {
+    "type": "memory_trust_check",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "action": "change_rules",
+    "actor_id": "approver-one",
+    "actor_level": "owner",
+    "required_level": "owner",
+    "allowed": true,
+    "reason": "owner_override",
+    "title": "Trust check change_rules",
+    "lines": [
+      "Action is change_rules.",
+      "Actor id is approver-one.",
+      "Actor level is owner.",
+      "Required level is owner.",
+      "Allowed is yes.",
+      "Reason is owner override."
+    ]
+  },
+  {
+    "type": "memory_trust_rules",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "team_id": "unknown",
+    "title": "Team trust rules",
+    "lines": [
+      "Propose requires contributor.",
+      "Approve requires approver.",
+      "Reject requires approver.",
+      "Approvals required is 2.",
+      "Owner override is off."
+    ]
+  },
+  {
+    "type": "memory_trust_check",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "action": "approve",
+    "actor_id": "approver-one",
+    "actor_level": "owner",
+    "required_level": "approver",
+    "allowed": true,
+    "reason": "allowed",
+    "title": "Trust check approve",
+    "lines": [
+      "Action is approve.",
+      "Actor id is approver-one.",
+      "Actor level is owner.",
+      "Required level is approver.",
+      "Allowed is yes.",
+      "Reason is allowed by rules."
+    ]
+  },
+  {
+    "type": "memory_approval_recorded",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "proposal_id": "proposal-1",
+    "actor_id": "approver-one",
+    "count_now": 1,
+    "count_required": 2,
+    "title": "Team approval recorded",
+    "lines": [
+      "Approval recorded.",
+      "Proposal id is proposal-1.",
+      "Actor id is approver-one.",
+      "Approvals now is 1.",
+      "Approvals required is 2.",
+      "Status is waiting for one more approval."
+    ]
+  },
+  {
+    "type": "memory_trust_check",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "action": "change_rules",
+    "actor_id": "anonymous",
+    "actor_level": "owner",
+    "required_level": "owner",
+    "allowed": true,
+    "reason": "owner_override",
+    "title": "Trust check change_rules",
+    "lines": [
+      "Action is change_rules.",
+      "Actor id is anonymous.",
+      "Actor level is owner.",
+      "Required level is owner.",
+      "Allowed is yes.",
+      "Reason is owner override."
+    ]
+  },
+  {
+    "type": "memory_trust_rules",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "team_id": "unknown",
+    "title": "Team trust rules",
+    "lines": [
+      "Propose requires contributor.",
+      "Approve requires approver.",
+      "Reject requires approver.",
+      "Approvals required is 2.",
+      "Owner override is off."
+    ]
+  },
+  {
+    "type": "memory_trust_check",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "action": "change_rules",
+    "actor_id": "approver-two",
+    "actor_level": "owner",
+    "required_level": "owner",
+    "allowed": true,
+    "reason": "owner_override",
+    "title": "Trust check change_rules",
+    "lines": [
+      "Action is change_rules.",
+      "Actor id is approver-two.",
+      "Actor level is owner.",
+      "Required level is owner.",
+      "Allowed is yes.",
+      "Reason is owner override."
+    ]
+  },
+  {
+    "type": "memory_trust_rules",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "team_id": "unknown",
+    "title": "Team trust rules",
+    "lines": [
+      "Propose requires contributor.",
+      "Approve requires approver.",
+      "Reject requires approver.",
+      "Approvals required is 2.",
+      "Owner override is off."
+    ]
+  },
+  {
+    "type": "memory_trust_check",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "action": "approve",
+    "actor_id": "approver-two",
+    "actor_level": "owner",
+    "required_level": "approver",
+    "allowed": true,
+    "reason": "allowed",
+    "title": "Trust check approve",
+    "lines": [
+      "Action is approve.",
+      "Actor id is approver-two.",
+      "Actor level is owner.",
+      "Required level is approver.",
+      "Allowed is yes.",
+      "Reason is allowed by rules."
+    ]
+  },
+  {
+    "type": "memory_approval_recorded",
+    "trace_version": "2024-10-01",
+    "ai_profile": "assistant",
+    "session": "anonymous",
+    "proposal_id": "proposal-1",
+    "actor_id": "approver-two",
+    "count_now": 2,
+    "count_required": 2,
+    "title": "Team approval recorded",
+    "lines": [
+      "Approval recorded.",
+      "Proposal id is proposal-1.",
+      "Actor id is approver-two.",
+      "Approvals now is 2.",
+      "Approvals required is 2.",
+      "Status is approved."
+    ]
+  }
+]

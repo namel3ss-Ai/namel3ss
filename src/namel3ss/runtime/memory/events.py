@@ -9,6 +9,7 @@ EVENT_DECISION = "decision"
 EVENT_FACT = "fact"
 EVENT_CORRECTION = "correction"
 EVENT_EXECUTION = "execution"
+EVENT_RULE = "rule"
 EVENT_CONTEXT = "context"
 
 EVENT_TYPES = {
@@ -17,6 +18,7 @@ EVENT_TYPES = {
     EVENT_FACT,
     EVENT_CORRECTION,
     EVENT_EXECUTION,
+    EVENT_RULE,
     EVENT_CONTEXT,
 }
 
@@ -92,6 +94,7 @@ __all__ = [
     "EVENT_EXECUTION",
     "EVENT_FACT",
     "EVENT_PREFERENCE",
+    "EVENT_RULE",
     "EVENT_TYPES",
     "build_dedupe_key",
     "classify_event_type",

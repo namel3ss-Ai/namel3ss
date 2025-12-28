@@ -7,11 +7,13 @@ from namel3ss.runtime.memory.events import (
     EVENT_EXECUTION,
     EVENT_FACT,
     EVENT_PREFERENCE,
+    EVENT_RULE,
 )
 
 _BASE_IMPORTANCE = {
     EVENT_PREFERENCE: 3,
     EVENT_DECISION: 3,
+    EVENT_RULE: 4,
     EVENT_FACT: 4,
     EVENT_CORRECTION: 4,
     EVENT_EXECUTION: 2,

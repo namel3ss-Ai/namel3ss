@@ -245,6 +245,7 @@ def execute_action(source: str, session: SessionState | None, action_id: str, pa
             preference_key=app_pref_key(app_path),
             allow_theme_override=getattr(program_ir, "theme_preference", {}).get("allow_override"),
             config=config,
+            memory_manager=session.memory_manager,
         )
         if response and isinstance(response, dict):
             ui_theme = (response.get("ui") or {}).get("theme") if response.get("ui") else None
