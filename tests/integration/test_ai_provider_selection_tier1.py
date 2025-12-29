@@ -39,20 +39,20 @@ flow "demo":
 
 def test_openai_provider_selected(monkeypatch):
     result, stub = _run_with_provider(monkeypatch, "openai")
-    assert result.last_value == "openai-model|None|hi"
+    assert result.last_value["text"] == "openai-model|None|hi"
     assert stub.calls[0][0] == "openai-model"
 
 
 def test_anthropic_provider_selected(monkeypatch):
     result, stub = _run_with_provider(monkeypatch, "anthropic")
-    assert result.last_value == "anthropic-model|None|hi"
+    assert result.last_value["text"] == "anthropic-model|None|hi"
 
 
 def test_gemini_provider_selected(monkeypatch):
     result, stub = _run_with_provider(monkeypatch, "gemini")
-    assert result.last_value == "gemini-model|None|hi"
+    assert result.last_value["text"] == "gemini-model|None|hi"
 
 
 def test_mistral_provider_selected(monkeypatch):
     result, stub = _run_with_provider(monkeypatch, "mistral")
-    assert result.last_value == "mistral-model|None|hi"
+    assert result.last_value["text"] == "mistral-model|None|hi"

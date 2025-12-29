@@ -9,39 +9,27 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
 from namel3ss.observe import summarize_value
 from namel3ss.runtime.capabilities import build_effective_guarantees, resolve_tool_capabilities
-from namel3ss.runtime.capabilities.coverage import container_runner_coverage, local_runner_coverage
-from namel3ss.runtime.capabilities.gates import (
-    check_network,
-    check_secret_allowed,
-    record_capability_check,
-    record_capability_checks,
-)
-from namel3ss.runtime.capabilities.gates.base import CapabilityViolation, REASON_COVERAGE_MISSING
-from namel3ss.runtime.capabilities.model import CapabilityCheck, CapabilityContext
+from namel3ss.runtime.capabilities.gates import record_capability_checks
 from namel3ss.runtime.capabilities.overrides import unsafe_override_enabled
-from namel3ss.runtime.capabilities.secrets import secret_names_in_payload
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.packs.policy import load_pack_policy
+from namel3ss.runtime.tools.entry_validation import validate_node_tool_entry
 from namel3ss.runtime.tools.resolution import resolve_tool_binding
-from namel3ss.runtime.tools.entry_validation import validate_python_tool_entry
-from namel3ss.runtime.tools.schema_validate import validate_tool_fields
 from namel3ss.runtime.tools.runners.base import ToolRunnerRequest
 from namel3ss.runtime.tools.runners.registry import get_runner
-from namel3ss.runtime.tools.sandbox import sandbox_enabled
-from namel3ss.runtime.tools.python_subprocess import PROTOCOL_VERSION
+from namel3ss.runtime.tools.schema_validate import validate_tool_fields
+from namel3ss.runtime.tools.python_runtime import (
+    ToolExecutionError,
+    _pack_root_from_paths,
+    _preflight_capabilities,
+    _resolve_project_root,
+    _resolve_timeout_seconds,
+    _trace_error_details,
+)
 from namel3ss.secrets import collect_secret_values, redact_text
 
-DEFAULT_TOOL_TIMEOUT_SECONDS = 10
 
-
-class ToolExecutionError(Exception):
-    def __init__(self, error_type: str, error_message: str) -> None:
-        super().__init__(error_message)
-        self.error_type = error_type
-        self.error_message = error_message
-
-
-def execute_python_tool_call(
+def execute_node_tool_call(
     ctx: ExecutionContext,
     *,
     tool_name: str,
@@ -61,21 +49,21 @@ def execute_python_tool_call(
             line=line,
             column=column,
         )
-    if tool.kind != "python":
+    if tool.kind != "node":
         raise Namel3ssError(
             build_guidance_message(
                 what=f'Tool "{tool_name}" has unsupported kind "{tool.kind}".',
-                why="Only python tools can be called directly from flows.",
-                fix='Declare the tool with `implemented using python` before calling it.',
+                why="Only node tools can be called by this executor.",
+                fix='Declare the tool with `implemented using node` before calling it.',
                 example=_tool_example(tool_name),
             ),
             line=line,
             column=column,
         )
-    return _execute_python_tool(ctx, tool, payload, line=line, column=column)
+    return _execute_node_tool(ctx, tool, payload, line=line, column=column)
 
 
-def _execute_python_tool(
+def _execute_node_tool(
     ctx: ExecutionContext,
     tool: ir.ToolDecl,
     payload: object,
@@ -118,14 +106,19 @@ def _execute_python_tool(
         pack_name = resolved.pack_name
         pack_version = resolved.pack_version
         entry = binding.entry
-        allow_external = resolved_source in {"installed_pack"}
-        validate_python_tool_entry(entry, tool.name, line=line, column=column, allow_external=allow_external)
-        if binding.kind != "python":
+        validate_node_tool_entry(
+            entry,
+            tool.name,
+            line=line,
+            column=column,
+            allow_external=resolved_source in {"builtin_pack", "installed_pack"},
+        )
+        if binding.kind != "node":
             raise Namel3ssError(
                 build_guidance_message(
                     what=f'Tool "{tool.name}" binding kind is "{binding.kind}".',
-                    why="Python tools require python bindings in tools.yaml.",
-                    fix='Set kind to "python" in the binding.',
+                    why="Node tools require node bindings in tools.yaml.",
+                    fix='Set kind to "node" in the binding.',
                     example=_binding_example(tool.name),
                 ),
                 line=line,
@@ -136,14 +129,14 @@ def _execute_python_tool(
         trace_event["resolved_source"] = resolved_source
         if resolved_source == "binding":
             trace_event["entry"] = entry
-        runner_name = binding.runner or "local"
-        if runner_name == "node":
+        runner_name = binding.runner or "node"
+        if runner_name not in {"node", "service"}:
             raise Namel3ssError(
                 build_guidance_message(
                     what=f'Tool "{tool.name}" has unsupported runner "{runner_name}".',
-                    why="Python tools cannot run on the node runner.",
-                    fix='Set runner to "local", "service", or "container".',
-                    example='runner: "local"',
+                    why="Node tools must use the node or service runner.",
+                    fix='Set runner to "node" or "service".',
+                    example='runner: "node"',
                 ),
                 line=line,
                 column=column,
@@ -151,13 +144,6 @@ def _execute_python_tool(
         trace_event["runner"] = runner_name
         if runner_name == "service" and binding.url:
             trace_event["service_url"] = binding.url
-        if runner_name == "container":
-            if binding.image:
-                trace_event["image"] = binding.image
-            if binding.command:
-                trace_event["command"] = " ".join(binding.command)
-            if getattr(binding, "enforcement", None):
-                trace_event["container_enforcement"] = binding.enforcement
         if resolved_source in {"builtin_pack", "installed_pack"} and pack_id:
             trace_event["pack_id"] = pack_id
             if pack_name:
@@ -176,11 +162,10 @@ def _execute_python_tool(
             overrides=overrides,
             policy=policy,
         )
-        capability_ctx = CapabilityContext(
-            tool_name=tool.name,
+        capability_ctx = _capability_context(
+            tool,
+            runner_name=runner_name,
             resolved_source=resolved_source,
-            runner=runner_name,
-            protocol_version=PROTOCOL_VERSION,
             guarantees=guarantees,
         )
         unsafe_used = _preflight_capabilities(
@@ -240,8 +225,6 @@ def _execute_python_tool(
             }
         )
         ctx.traces.append(trace_event)
-        if isinstance(err, CapabilityViolation):
-            raise Namel3ssError(str(err), line=line, column=column) from err
         if isinstance(err, Namel3ssError):
             raise
         if isinstance(err, ToolExecutionError):
@@ -256,7 +239,7 @@ def _execute_python_tool(
                 example = _tool_example(tool.name)
             raise Namel3ssError(
                 build_guidance_message(
-                    what=f'Python tool "{tool.name}" failed with {err.error_type}.',
+                    what=f'Node tool "{tool.name}" failed with {err.error_type}.',
                     why=redacted_message,
                     fix=fix,
                     example=example,
@@ -266,7 +249,7 @@ def _execute_python_tool(
             ) from err
         raise Namel3ssError(
             build_guidance_message(
-                what=f'Python tool "{tool.name}" failed with {err.__class__.__name__}.',
+                what=f'Node tool "{tool.name}" failed with {err.__class__.__name__}.',
                 why="The tool function raised an exception during execution.",
                 fix="Fix the tool implementation in tools/ and try again."
                 if resolved_source not in {"builtin_pack", "installed_pack"}
@@ -290,206 +273,54 @@ def _execute_python_tool(
     return result.output
 
 
-def _resolve_project_root(
-    project_root: str | None,
-    tool_name: str,
-    *,
-    line: int | None,
-    column: int | None,
-) -> Path:
-    if not project_root:
-        raise Namel3ssError(
-            build_guidance_message(
-                what=f'Tool "{tool_name}" cannot resolve tools/ without a project root.',
-                why="The engine was started without a project root path.",
-                fix="Run the app from its project root or pass project_root to the executor.",
-                example=_tool_example(tool_name),
-            ),
-            line=line,
-            column=column,
-        )
-    return Path(project_root).resolve()
-
-
-def _trace_error_details(err: Exception, secret_values: list[str]) -> tuple[str, str]:
-    if isinstance(err, ToolExecutionError):
-        return err.error_type, redact_text(err.error_message, secret_values)
-    error_type = err.__class__.__name__
-    error_message = str(err)
-    cause = getattr(err, "__cause__", None)
-    if cause is not None:
-        error_type = cause.__class__.__name__
-        error_message = str(cause)
-    return error_type, redact_text(error_message, secret_values)
-
-
-def _resolve_timeout_seconds(ctx: ExecutionContext, tool: ir.ToolDecl, *, line: int | None, column: int | None) -> int:
-    if tool.timeout_seconds is not None:
-        return tool.timeout_seconds
-    config_timeout = getattr(getattr(ctx, "config", None), "python_tools", None)
-    if config_timeout and getattr(config_timeout, "timeout_seconds", None):
-        return int(config_timeout.timeout_seconds)
-    return DEFAULT_TOOL_TIMEOUT_SECONDS
-
-
-def _preflight_capabilities(
-    ctx: ExecutionContext,
-    capability_ctx: CapabilityContext,
+def _capability_context(
+    tool: ir.ToolDecl,
     *,
     runner_name: str,
-    payload: object,
-    binding,
     resolved_source: str,
-    unsafe_override: bool,
-    line: int | None,
-    column: int | None,
-) -> bool:
-    unsafe_used = False
-    if runner_name in {"local", "node"}:
-        sandbox_on = sandbox_enabled(
-            resolved_source=resolved_source,
-            runner=runner_name,
-            binding=binding,
-        )
-        coverage = local_runner_coverage(capability_ctx.guarantees, sandbox_enabled=sandbox_on)
-        if coverage.status != "enforced":
-            if unsafe_override:
-                unsafe_used = True
-            else:
-                _record_coverage_block(ctx, capability_ctx, coverage.missing)
-                raise Namel3ssError(
-                    build_guidance_message(
-                        what=f'Tool "{capability_ctx.tool_name}" requires sandbox enforcement.',
-                        why=f"Sandbox is disabled but guarantees require: {', '.join(coverage.missing)}.",
-                        fix="Enable sandbox in tools.yaml or relax the capability overrides.",
-                        example='sandbox: true',
-                    ),
-                    line=line,
-                    column=column,
-                )
-    if runner_name == "container":
-        if capability_ctx.guarantees.no_subprocess:
-            if unsafe_override:
-                unsafe_used = True
-            else:
-                _record_coverage_block(ctx, capability_ctx, ["subprocess"])
-                raise Namel3ssError(
-                    build_guidance_message(
-                        what=f'Tool "{capability_ctx.tool_name}" cannot run in a container runner.',
-                        why="Container execution requires subprocess access.",
-                        fix="Switch to the local runner or relax the no_subprocess guarantee.",
-                        example=f'n3 tools set-runner "{capability_ctx.tool_name}" --runner local',
-                    ),
-                    line=line,
-                    column=column,
-                )
-        coverage = container_runner_coverage(capability_ctx.guarantees, enforcement=getattr(binding, "enforcement", None))
-        if coverage.status == "not_enforceable":
-            if unsafe_override:
-                unsafe_used = True
-            else:
-                _record_coverage_block(ctx, capability_ctx, coverage.missing)
-                raise Namel3ssError(
-                    build_guidance_message(
-                        what=f'Tool "{capability_ctx.tool_name}" requires container enforcement.',
-                        why="Container bindings must declare enforcement coverage.",
-                        fix="Set enforcement to declared/verified or choose a local runner.",
-                        example='enforcement: "declared"',
-                    ),
-                    line=line,
-                    column=column,
-                )
-    if runner_name == "service":
-        url = binding.url or ctx.config.python_tools.service_url
-        if url:
-            _gate_capability(
-                ctx,
-                capability_ctx,
-                lambda: check_network(capability_ctx, _record_for(ctx, capability_ctx), url=url, method="POST"),
-                line=line,
-                column=column,
-            )
-        _check_payload_secrets(ctx, capability_ctx, payload, line=line, column=column)
-    return unsafe_used
+    guarantees,
+):
+    from namel3ss.runtime.capabilities.model import CapabilityContext
+    from namel3ss.runtime.tools.runners.node.protocol import PROTOCOL_VERSION
 
-
-def _gate_capability(ctx: ExecutionContext, capability_ctx: CapabilityContext, fn, *, line: int | None, column: int | None) -> None:
-    try:
-        fn()
-    except CapabilityViolation as err:
-        raise Namel3ssError(str(err), line=line, column=column) from err
-
-
-def _check_payload_secrets(
-    ctx: ExecutionContext,
-    capability_ctx: CapabilityContext,
-    payload: object,
-    *,
-    line: int | None,
-    column: int | None,
-) -> None:
-    if capability_ctx.guarantees.secrets_allowed is None:
-        return
-    names = secret_names_in_payload(payload, ctx.config)
-    if not names:
-        return
-    record = _record_for(ctx, capability_ctx)
-    for name in sorted(names):
-        _gate_capability(
-            ctx,
-            capability_ctx,
-            lambda n=name: check_secret_allowed(capability_ctx, record, secret_name=n),
-            line=line,
-            column=column,
-        )
-
-
-def _record_for(ctx: ExecutionContext, capability_ctx: CapabilityContext):
-    return lambda check: record_capability_check(capability_ctx, check, ctx.traces)
-
-
-def _record_coverage_block(ctx: ExecutionContext, capability_ctx: CapabilityContext, missing: list[str]) -> None:
-    for capability in missing:
-        source = capability_ctx.guarantees.source_for_capability(capability) or "pack"
-        record_capability_check(
-            capability_ctx,
-            CapabilityCheck(
-                capability=capability,
-                allowed=False,
-                guarantee_source=source,
-                reason=REASON_COVERAGE_MISSING,
-            ),
-            ctx.traces,
-        )
-def _pack_root_from_paths(paths: list[Path] | None) -> Path | None:
-    if not paths:
-        return None
-    return paths[0]
+    return CapabilityContext(
+        tool_name=tool.name,
+        resolved_source=resolved_source,
+        runner=runner_name,
+        protocol_version=PROTOCOL_VERSION,
+        guarantees=guarantees,
+    )
 
 
 def _tool_example(tool_name: str) -> str:
     return (
         f'tool "{tool_name}":\n'
-        "  implemented using python\n\n"
+        "  implemented using node\n\n"
         "  input:\n"
         "    web address is text\n\n"
         "  output:\n"
         "    data is json"
     )
+
+
 def _tool_pack_example(tool_name: str) -> str:
     return (
         f'tool "{tool_name}":\n'
-        "  implemented using python\n\n"
+        "  implemented using node\n\n"
         "  input:\n"
         "    text is text\n\n"
         "  output:\n"
         "    text is text"
     )
+
+
 def _binding_example(tool_name: str) -> str:
     return (
         "tools:\n"
         f'  "{tool_name}":\n'
-        '    kind: "python"\n'
+        '    kind: "node"\n'
         '    entry: "tools.my_tool:run"'
     )
-__all__ = ["execute_python_tool_call"]
+
+
+__all__ = ["execute_node_tool_call"]

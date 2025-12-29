@@ -59,7 +59,7 @@ def test_openai_pipeline_offline_tool_call(monkeypatch):
         initial_state={},
         ai_profiles=program.ais,
     )
-    assert result.last_value == "[done]"
+    assert result.last_value["text"] == "[done]"
     trace = result.traces[0]
     event_types = [event["type"] for event in trace.canonical_events]
     assert "tool_call_requested" in event_types

@@ -31,7 +31,7 @@ def test_ai_output_stable_with_memory_traces():
         ai_provider=StubProvider(),
         ai_profiles=program.ais,
     )
-    assert result.last_value == "ok"
+    assert result.last_value["text"] == "ok"
     trace = result.traces[0]
     types = [event["type"] for event in trace.canonical_events]
     assert "memory_recall" in types

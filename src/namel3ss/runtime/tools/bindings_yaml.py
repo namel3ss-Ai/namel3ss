@@ -8,9 +8,9 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 
 
-SUPPORTED_BINDING_KIND = "python"
+SUPPORTED_BINDING_KINDS = {"python", "node"}
 SUPPORTED_PURITY = {"pure", "impure"}
-SUPPORTED_RUNNERS = {"local", "service", "container"}
+SUPPORTED_RUNNERS = {"local", "service", "container", "node"}
 SUPPORTED_ENFORCEMENT = {"declared", "verified"}
 
 
@@ -144,7 +144,7 @@ def _finalize_binding(
     entry = fields.get("entry")
     if not isinstance(kind, str) or not kind:
         raise Namel3ssError(_missing_field_message(path, tool_name, "kind", line_no))
-    if kind != SUPPORTED_BINDING_KIND:
+    if kind not in SUPPORTED_BINDING_KINDS:
         raise Namel3ssError(_invalid_kind_message(path, tool_name, kind))
     if not isinstance(entry, str) or not entry:
         raise Namel3ssError(_missing_field_message(path, tool_name, "entry", line_no))
@@ -289,8 +289,8 @@ def _missing_field_message(path: Path, tool_name: str, field_name: str, line_no:
 def _invalid_kind_message(path: Path, tool_name: str, kind: str) -> str:
     return build_guidance_message(
         what=f"Tool binding '{tool_name}' has invalid kind '{kind}'.",
-        why=f"Only '{SUPPORTED_BINDING_KIND}' bindings are supported.",
-        fix="Set kind to 'python'.",
+        why=f"Supported kinds are: {', '.join(sorted(SUPPORTED_BINDING_KINDS))}.",
+        fix="Set kind to a supported value.",
         example=_bindings_example(tool_name),
     )
 

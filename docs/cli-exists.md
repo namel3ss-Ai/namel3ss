@@ -1,4 +1,4 @@
-# Phase B1: exists
+# CLI: exists
 
 `n3 exists` compiles a namel3ss source file into a deterministic contract summary.
 

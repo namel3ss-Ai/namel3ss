@@ -27,6 +27,7 @@ def resolve_tool_binding(
     tool_name: str,
     config: AppConfig,
     *,
+    tool_kind: str | None = None,
     line: int | None,
     column: int | None,
 ) -> ResolvedToolBinding:
@@ -68,16 +69,17 @@ def resolve_tool_binding(
             column=column,
         )
     slug = slugify_tool_name(tool_name)
+    kind_label = tool_kind or "python"
     raise Namel3ssError(
         build_guidance_message(
-            what=f'Tool "{tool_name}" is not bound to a python entry.',
+            what=f'Tool "{tool_name}" is not bound to a {kind_label} entry.',
             why="Tool declarations no longer include module paths; bindings live in .namel3ss/tools.yaml.",
             fix=(
                 "Check bindings with `n3 tools status`, then run "
                 f'`n3 tools bind "{tool_name}" --entry "tools.{slug}:run"` '
                 "or `n3 tools bind --auto`."
             ),
-            example=_bindings_example(tool_name),
+            example=_bindings_example(tool_name, tool_kind),
         ),
         line=line,
         column=column,
@@ -93,11 +95,12 @@ def _collision_message(tool_name: str) -> str:
     )
 
 
-def _bindings_example(tool_name: str) -> str:
+def _bindings_example(tool_name: str, tool_kind: str | None) -> str:
+    kind = tool_kind or "python"
     return (
         "tools:\n"
         f'  "{tool_name}":\n'
-        '    kind: "python"\n'
+        f'    kind: "{kind}"\n'
         '    entry: "tools.my_tool:run"'
     )
 

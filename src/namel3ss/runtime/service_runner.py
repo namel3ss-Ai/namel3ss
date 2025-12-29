@@ -1,12 +1,19 @@
 from __future__ import annotations
 
+import json
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from typing import Any, Dict
+from urllib.parse import urlparse
 
 from namel3ss.cli.app_loader import load_program
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.errors.payload import build_error_from_exception, build_error_payload
+from namel3ss.ui.actions.dispatch import dispatch_ui_action
+from namel3ss.ui.export.contract import build_ui_contract_payload
+from namel3ss.ui.external.detect import resolve_external_ui_root
+from namel3ss.ui.external.serve import resolve_external_ui_file
 from namel3ss.utils.json_tools import dumps as json_dumps
 from namel3ss.version import get_version
 
@@ -19,11 +26,29 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         pass
 
     def do_GET(self) -> None:  # noqa: N802
-        if self.path.startswith("/health"):
+        path = urlparse(self.path).path
+        if path.startswith("/health"):
             self._respond_json(self._health_payload())
             return
-        if self.path.startswith("/version"):
+        if path.startswith("/version"):
             self._respond_json(self._version_payload())
+            return
+        if path.startswith("/api/"):
+            self._handle_api_get(path)
+            return
+        if self._handle_static(path):
+            return
+        self.send_error(404)
+
+    def do_POST(self) -> None:  # noqa: N802
+        path = urlparse(self.path).path
+        if path == "/api/action":
+            body = self._read_json_body()
+            if body is None:
+                payload = build_error_payload("Invalid JSON body", kind="engine")
+                self._respond_json(payload, status=400)
+                return
+            self._handle_action_post(body)
             return
         self.send_error(404)
 
@@ -46,13 +71,93 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
             "build_id": getattr(self.server, "build_id", None),  # type: ignore[attr-defined]
         }
 
-    def _respond_json(self, payload: dict, status: int = 200) -> None:
-        data = json_dumps(payload).encode("utf-8")
+    def _respond_json(self, payload: dict, status: int = 200, *, sort_keys: bool = False) -> None:
+        data = json_dumps(payload, sort_keys=sort_keys).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)
+
+    def _handle_api_get(self, path: str) -> None:
+        normalized = path.rstrip("/") or "/"
+        contract_kind = _contract_kind_for_path(normalized)
+        if contract_kind is not None:
+            self._respond_contract(contract_kind)
+            return
+        self.send_error(404)
+
+    def _respond_contract(self, kind: str) -> None:
+        program_ir = self._program()
+        if program_ir is None:
+            self._respond_json(build_error_payload("Program not loaded", kind="engine"), status=500)
+            return
+        try:
+            payload = build_ui_contract_payload(program_ir)
+            if kind != "all":
+                payload = payload.get(kind, {})
+            self._respond_json(payload, status=200, sort_keys=True)
+        except Namel3ssError as err:
+            payload = build_error_from_exception(err, kind="engine")
+            self._respond_json(payload, status=400)
+
+    def _handle_action_post(self, body: dict) -> None:
+        if not isinstance(body, dict):
+            self._respond_json(build_error_payload("Body must be a JSON object", kind="engine"), status=400)
+            return
+        action_id = body.get("id")
+        payload = body.get("payload") or {}
+        if not isinstance(action_id, str):
+            self._respond_json(build_error_payload("Action id is required", kind="engine"), status=400)
+            return
+        if not isinstance(payload, dict):
+            self._respond_json(build_error_payload("Payload must be an object", kind="engine"), status=400)
+            return
+        program_ir = self._program()
+        if program_ir is None:
+            self._respond_json(build_error_payload("Program not loaded", kind="engine"), status=500)
+            return
+        try:
+            response = dispatch_ui_action(program_ir, action_id=action_id, payload=payload)
+            if isinstance(response, dict):
+                status = 200 if response.get("ok", True) else 400
+                self._respond_json(response, status=status)
+            else:  # pragma: no cover - defensive
+                payload = build_error_payload("Action response invalid", kind="engine")
+                self._respond_json(payload, status=500)
+        except Namel3ssError as err:
+            payload = build_error_from_exception(err, kind="engine")
+            self._respond_json(payload, status=400)
+        except Exception as err:  # pragma: no cover - defensive
+            payload = build_error_payload(f"Action failed: {err}", kind="engine")
+            self._respond_json(payload, status=500)
+
+    def _handle_static(self, path: str) -> bool:
+        ui_root = getattr(self.server, "external_ui_root", None)  # type: ignore[attr-defined]
+        if ui_root is None:
+            return False
+        file_path, content_type = resolve_external_ui_file(ui_root, path)
+        if not file_path or not content_type:
+            return False
+        content = file_path.read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(content)))
+        self.end_headers()
+        self.wfile.write(content)
+        return True
+
+    def _read_json_body(self) -> dict | None:
+        length = int(self.headers.get("Content-Length", "0"))
+        raw_body = self.rfile.read(length) if length else b""
+        try:
+            decoded = raw_body.decode("utf-8") if raw_body else ""
+            return json.loads(decoded or "{}")
+        except json.JSONDecodeError:
+            return None
+
+    def _program(self):
+        return getattr(self.server, "program_ir", None)  # type: ignore[attr-defined]
 
 
 class ServiceRunner:
@@ -68,12 +173,19 @@ class ServiceRunner:
     def start(self, *, background: bool = False) -> None:
         program_ir, _ = load_program(self.app_path.as_posix())
         self.program_summary = _summarize_program(program_ir)
+        external_ui_root = resolve_external_ui_root(
+            getattr(program_ir, "project_root", None),
+            getattr(program_ir, "app_path", None),
+        )
         server = HTTPServer(("0.0.0.0", self.port), ServiceRequestHandler)
         server.target = self.target  # type: ignore[attr-defined]
         server.build_id = self.build_id  # type: ignore[attr-defined]
         server.app_path = self.app_path.as_posix()  # type: ignore[attr-defined]
         server.process_model = "service"  # type: ignore[attr-defined]
         server.program_summary = self.program_summary  # type: ignore[attr-defined]
+        server.program_ir = program_ir  # type: ignore[attr-defined]
+        server.external_ui_root = external_ui_root  # type: ignore[attr-defined]
+        server.external_ui_enabled = external_ui_root is not None  # type: ignore[attr-defined]
         self.server = server
         if background:
             thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -104,6 +216,18 @@ def _summarize_program(program_ir) -> Dict[str, object]:
         "pages": sorted(getattr(page, "name", "") for page in getattr(program_ir, "pages", []) if getattr(page, "name", "")),
         "records": sorted(getattr(rec, "name", "") for rec in getattr(program_ir, "records", []) if getattr(rec, "name", "")),
     }
+
+
+def _contract_kind_for_path(path: str) -> str | None:
+    if path in {"/api/ui/contract", "/api/ui/contract.json"}:
+        return "all"
+    if path in {"/api/ui/contract/ui", "/api/ui/contract/ui.json"}:
+        return "ui"
+    if path in {"/api/ui/contract/actions", "/api/ui/contract/actions.json"}:
+        return "actions"
+    if path in {"/api/ui/contract/schema", "/api/ui/contract/schema.json"}:
+        return "schema"
+    return None
 
 
 __all__ = ["DEFAULT_SERVICE_PORT", "ServiceRunner"]

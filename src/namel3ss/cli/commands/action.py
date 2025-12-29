@@ -11,6 +11,7 @@ from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.runtime.ui.actions import handle_action
 from namel3ss.cli.io.json_io import dumps_pretty, parse_json
 from namel3ss.cli.io.read_source import read_source
+from namel3ss.cli.runner import collect_ai_outputs, unwrap_ai_outputs
 
 
 def run(args) -> int:
@@ -21,6 +22,9 @@ def run(args) -> int:
         program_ir = lower_program(ast_program)
         payload = parse_json(args.payload or "{}")
         response = handle_action(program_ir, action_id=args.id, payload=payload, state={}, store=MemoryStore())
+        ai_outputs = collect_ai_outputs(response.get("traces") or [])
+        response["state"] = unwrap_ai_outputs(response.get("state"), ai_outputs)
+        response["result"] = unwrap_ai_outputs(response.get("result"), ai_outputs)
         print(dumps_pretty(response))
         return 0
     except Namel3ssError as err:

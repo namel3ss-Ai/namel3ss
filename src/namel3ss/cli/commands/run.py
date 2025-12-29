@@ -13,6 +13,7 @@ from namel3ss.cli.io.read_source import read_source
 from namel3ss.runtime.preferences.factory import preference_store_for_app, app_pref_key
 from namel3ss.cli.redaction import redact_cli_text
 from namel3ss.secrets import collect_secret_values, redact_payload
+from namel3ss.cli.runner import collect_ai_outputs, unwrap_ai_outputs
 
 
 def run(args) -> int:
@@ -38,7 +39,13 @@ def run(args) -> int:
             preference_key=pref_key,
         )
         traces = [_trace_to_dict(t) for t in result.traces]
-        output = {"ok": True, "state": result.state, "result": result.last_value, "traces": traces}
+        ai_outputs = collect_ai_outputs(traces)
+        output = {
+            "ok": True,
+            "state": unwrap_ai_outputs(result.state, ai_outputs),
+            "result": unwrap_ai_outputs(result.last_value, ai_outputs),
+            "traces": traces,
+        }
         redacted = redact_payload(output, collect_secret_values())
         print(dumps_pretty(redacted))
         return 0

@@ -66,15 +66,15 @@ def test_parallel_agent_wrapper_trace_and_order():
     executor = Executor(flow, ai_profiles=profiles, agents=agents, ai_provider=MockProvider())
     result = executor.run()
     outputs = executor.locals["results"]
-    assert outputs[0].startswith("[gpt-4.1] hi :: A")
-    assert outputs[1].startswith("[gpt-4.1] hi :: B")
+    assert outputs[0]["text"].startswith("[gpt-4.1] hi :: A")
+    assert outputs[1]["text"].startswith("[gpt-4.1] hi :: B")
     assert len(result.traces) == 1
     wrapper = result.traces[0]
     assert wrapper["type"] == "parallel_agents"
     assert wrapper["target"] == "results"
     agents_traces = wrapper["agents"]
     assert [a["agent_name"] for a in agents_traces] == ["critic", "researcher"]
-    assert [a["output"] for a in agents_traces] == executor.locals["results"]
+    assert [a["output"] for a in agents_traces] == [item["text"] for item in executor.locals["results"]]
 
 
 def test_parallel_agent_failure_propagates_with_name():

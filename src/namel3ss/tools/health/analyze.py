@@ -9,7 +9,7 @@ from namel3ss.config.loader import load_config
 from namel3ss.runtime.packs.registry import load_pack_registry
 from namel3ss.runtime.tools.bindings import load_tool_bindings
 from namel3ss.runtime.tools.bindings_yaml import ToolBinding
-from namel3ss.runtime.tools.entry_validation import validate_python_tool_entry
+from namel3ss.runtime.tools.entry_validation import validate_node_tool_entry, validate_python_tool_entry
 from namel3ss.runtime.tools.runners.container_detect import detect_container_runtime
 from namel3ss.utils.slugify import slugify_tool_name
 
@@ -73,7 +73,7 @@ def analyze_tool_health(project: ProjectLoadResult) -> ToolHealthReport:
         missing_bindings = sorted(
             name
             for name, tool in declared_map.items()
-            if tool.kind == "python" and name not in bindings and name not in pack_names
+            if tool.kind in {"python", "node"} and name not in bindings and name not in pack_names
         )
         for name in missing_bindings:
             issues.append(
@@ -195,7 +195,10 @@ def _find_invalid_bindings(bindings: dict[str, ToolBinding]) -> tuple[list[str],
             )
             continue
         try:
-            validate_python_tool_entry(entry, name, line=None, column=None)
+            if binding.kind == "node":
+                validate_node_tool_entry(entry, name, line=None, column=None)
+            else:
+                validate_python_tool_entry(entry, name, line=None, column=None)
         except Namel3ssError as err:
             invalid.append(name)
             issues.append(
@@ -223,12 +226,13 @@ def _find_runner_issues(
         runner = binding.runner
         if runner is None:
             continue
-        if runner not in {"local", "service", "container"}:
+        allowed = _allowed_runners(binding)
+        if runner not in allowed:
             invalid_runners.append(name)
             issues.append(
                 ToolIssue(
                     code="tools.invalid_runner",
-                    message=_invalid_runner_message(name),
+                    message=_invalid_runner_message(name, allowed),
                     severity="error",
                     tool_name=name,
                 )
@@ -344,7 +348,7 @@ def _collision_message(tool_name: str) -> str:
 def _invalid_binding_message(tool_name: str) -> str:
     return build_guidance_message(
         what=f'Tool "{tool_name}" binding is invalid.',
-        why="Bindings must be valid python module:function entries.",
+        why="Bindings must be valid module:function entries.",
         fix="Update the binding entry to a valid module:function path.",
         example=f'n3 tools bind "{tool_name}" --entry "tools.my_tool:run"',
     )
@@ -380,12 +384,19 @@ def _tool_decl_example(tool_name: str) -> str:
     )
 
 
-def _invalid_runner_message(tool_name: str) -> str:
+def _allowed_runners(binding: ToolBinding) -> tuple[str, ...]:
+    if binding.kind == "node":
+        return ("node", "service")
+    return ("local", "service", "container")
+
+
+def _invalid_runner_message(tool_name: str, allowed: tuple[str, ...]) -> str:
+    example = 'runner: "node"' if "node" in allowed else 'runner: "local"'
     return build_guidance_message(
         what=f'Tool "{tool_name}" has an invalid runner.',
-        why="Runner must be local, service, or container.",
+        why=f"Runner must be one of: {', '.join(allowed)}.",
         fix="Update the runner field or remove it.",
-        example='runner: "local"',
+        example=example,
     )
 
 

@@ -11,8 +11,10 @@ from namel3ss.runtime.tools.gate import gate_tool_call
 from namel3ss.runtime.tools.outcome import ToolCallOutcome, ToolDecision
 from namel3ss.runtime.tools.policy import load_tool_policy, normalize_capabilities
 from namel3ss.runtime.tools.python_runtime import execute_python_tool_call
+from namel3ss.runtime.tools.node_runtime import execute_node_tool_call
 from namel3ss.runtime.tools.registry import execute_tool as execute_builtin_tool, is_builtin_tool
 from namel3ss.runtime.tools.resolution import resolve_tool_binding
+from namel3ss.runtime.values.normalize import ensure_object
 
 
 def execute_tool_call(
@@ -56,6 +58,8 @@ def execute_tool_call(
     try:
         if tool_kind == "python":
             result = _run_python_tool(ctx, tool_name, args, line=line, column=column)
+        elif tool_kind == "node":
+            result = _run_node_tool(ctx, tool_name, args, line=line, column=column)
         elif tool_kind == "builtin" and ctx.tool_call_source == "ai":
             result = execute_builtin_tool(tool_name, args)
         else:
@@ -68,13 +72,14 @@ def execute_tool_call(
         mark_boundary(err, "tools")
         raise
 
+    result_object = ensure_object(result)
     _record_tool_trace(ctx, tool_name, tool_kind, decision, result="ok")
     return ToolCallOutcome(
         tool_name=tool_name,
         decision=decision,
         result_kind="ok",
         result_summary="ok",
-        result_value=result,
+        result_value=result_object,
     )
 
 
@@ -89,6 +94,23 @@ def _run_python_tool(
     trace_target, original_traces = _swap_trace_target(ctx)
     try:
         return execute_python_tool_call(ctx, tool_name=tool_name, payload=args, line=line, column=column)
+    finally:
+        if original_traces is not None:
+            ctx.traces = original_traces
+            ctx.pending_tool_traces = trace_target
+
+
+def _run_node_tool(
+    ctx: ExecutionContext,
+    tool_name: str,
+    args: dict,
+    *,
+    line: int | None,
+    column: int | None,
+) -> object:
+    trace_target, original_traces = _swap_trace_target(ctx)
+    try:
+        return execute_node_tool_call(ctx, tool_name=tool_name, payload=args, line=line, column=column)
     finally:
         if original_traces is not None:
             ctx.traces = original_traces
@@ -113,12 +135,12 @@ def _check_binding(
 ) -> tuple[bool, Namel3ssError | None]:
     if tool_kind is None:
         return False, None
-    if tool_kind != "python":
+    if tool_kind not in {"python", "node"}:
         return True, None
     if not ctx.project_root:
         return True, None
     try:
-        resolve_tool_binding(Path(ctx.project_root), tool_name, ctx.config, line=line, column=column)
+        resolve_tool_binding(Path(ctx.project_root), tool_name, ctx.config, tool_kind=tool_kind, line=line, column=column)
     except Namel3ssError as err:
         return False, err
     return True, None
@@ -153,8 +175,8 @@ def _unsupported_kind_error(tool_name: str, kind: str, *, line: int | None, colu
     return Namel3ssError(
         build_guidance_message(
             what=f'Tool "{tool_name}" has unsupported kind "{kind}".',
-            why="Only python tools can be called directly from flows.",
-            fix='Declare the tool with `implemented using python` before calling it.',
+            why="Only python and node tools can be called directly from flows.",
+            fix='Declare the tool with `implemented using python` or `implemented using node` before calling it.',
             example=_tool_example(tool_name),
         ),
         line=line,

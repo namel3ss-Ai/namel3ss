@@ -39,3 +39,25 @@ def test_tool_decl_and_call_parse():
     assert isinstance(stmt.expression, ir.ToolCallExpr)
     assert stmt.expression.tool_name == "greeter"
     assert stmt.expression.arguments[0].name == "name"
+
+
+def test_node_tool_decl_parse():
+    source = '''tool "greeter":
+  implemented using node
+
+  input:
+    name is text
+
+  output:
+    message is text
+
+spec is "1.0"
+
+flow "demo":
+  let result is greeter:
+    name is "Ada"
+  return result
+'''
+    program = lower_ir_program(source)
+    tool = program.tools["greeter"]
+    assert tool.kind == "node"

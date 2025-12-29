@@ -16,6 +16,7 @@ from namel3ss.runtime.providers.capabilities import get_provider_capabilities
 from namel3ss.runtime.tools.field_schema import build_json_schema
 from namel3ss.runtime.tools.executor import execute_tool_call
 from namel3ss.runtime.boundary import mark_boundary
+from namel3ss.runtime.values.normalize import ensure_object, unwrap_text
 import namel3ss.runtime.memory.api as memory_api
 from namel3ss.runtime.memory.api import MemoryManager
 from namel3ss.runtime.memory_explain import append_explanation_events
@@ -31,7 +32,7 @@ from namel3ss.observe import record_event, summarize_value
 from namel3ss.secrets import collect_secret_values
 
 
-def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
+def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> dict:
     try:
         ensure_ai_call_allowed(ctx, expr.ai_name, line=expr.line, column=expr.column)
         if expr.ai_name not in ctx.ai_profiles:
@@ -42,6 +43,7 @@ def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
             )
         profile = ctx.ai_profiles[expr.ai_name]
         user_input = evaluate_expression(ctx, expr.input_expr)
+        user_input = unwrap_text(user_input)
         if not isinstance(user_input, str):
             raise Namel3ssError("AI input must be a string", line=expr.line, column=expr.column)
         record_step(
@@ -138,11 +140,12 @@ def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
         )
         ctx.traces.append(trace)
         _flush_pending_tool_traces(ctx)
+        output_value = ensure_object(response_output, key="text")
         if expr.target in ctx.constants:
             raise Namel3ssError(f"Cannot assign to constant '{expr.target}'", line=expr.line, column=expr.column)
-        ctx.locals[expr.target] = response_output
-        ctx.last_value = response_output
-        return response_output
+        ctx.locals[expr.target] = output_value
+        ctx.last_value = output_value
+        return output_value
     except Exception as err:
         _flush_pending_tool_traces(ctx)
         mark_boundary(err, "ai")

@@ -1,4 +1,4 @@
-# Phase B2 fix example
+# CLI fix example
 
 Run:
 - `cd examples/b2_fix`

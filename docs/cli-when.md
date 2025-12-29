@@ -1,4 +1,4 @@
-# Phase B4: when
+# CLI: when
 
 `n3 when` checks the program spec against the engine and writes a deterministic proof pack.
 

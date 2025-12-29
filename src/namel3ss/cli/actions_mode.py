@@ -4,6 +4,7 @@ from namel3ss.config.loader import load_config
 from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.ui.manifest import build_manifest
+from namel3ss.ui.export.actions import build_actions_list
 
 
 def list_actions(program_ir, json_mode: bool) -> tuple[dict | None, str | None]:
@@ -16,15 +17,7 @@ def list_actions(program_ir, json_mode: bool) -> tuple[dict | None, str | None]:
     actions = manifest.get("actions", {})
     sorted_ids = sorted(actions.keys())
     if json_mode:
-        data = []
-        for action_id in sorted_ids:
-            entry = actions[action_id]
-            item = {"id": action_id, "type": entry.get("type")}
-            if entry.get("type") == "call_flow":
-                item["flow"] = entry.get("flow")
-            if entry.get("type") == "submit_form":
-                item["record"] = entry.get("record")
-            data.append(item)
+        data = build_actions_list(actions)
         return (
             {
                 "ok": True,

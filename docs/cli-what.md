@@ -1,4 +1,4 @@
-# Phase B3: what
+# CLI: what
 
 `n3 what` shows the last run outcome in a deterministic, inspectable format.
 

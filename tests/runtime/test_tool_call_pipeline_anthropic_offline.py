@@ -51,7 +51,7 @@ def test_anthropic_pipeline_offline(monkeypatch):
         initial_state={},
         ai_profiles=program.ais,
     )
-    assert result.last_value == "[done]"
+    assert result.last_value["text"] == "[done]"
     trace = result.traces[0]
     types = [event["type"] for event in trace.canonical_events]
     assert "tool_call_requested" in types

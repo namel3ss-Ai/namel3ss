@@ -22,6 +22,7 @@ from namel3ss.module_loader.module_files import (
     collect_module_file_defs,
     load_module_file_results,
 )
+from namel3ss.ui.external.detect import detect_external_ui
 
 
 ROOT_NODE = "(app)"
@@ -109,6 +110,7 @@ def load_project(
     program_ir = lower_program(combined)
     setattr(program_ir, "project_root", root)
     setattr(program_ir, "app_path", app_file)
+    setattr(program_ir, "external_ui_enabled", detect_external_ui(root, app_file))
 
     public_flows = _public_flow_names(app_ast, modules, exports_map)
     entry_flows = [flow.name for flow in app_ast.flows]

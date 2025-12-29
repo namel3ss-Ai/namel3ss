@@ -25,7 +25,14 @@ def collect_tool_reports(
     for tool_name in sorted(tools.keys()):
         tool_decl = tools[tool_name]
         try:
-            resolved = resolve_tool_binding(app_root, tool_name, config, line=None, column=None)
+            resolved = resolve_tool_binding(
+                app_root,
+                tool_name,
+                config,
+                tool_kind=getattr(tool_decl, "kind", None),
+                line=None,
+                column=None,
+            )
             binding = resolved.binding
             runner_name = binding.runner or "local"
             pack_root = _pack_root_from_paths(resolved.pack_paths)
@@ -88,7 +95,7 @@ def _pack_root_from_paths(paths: list[Path] | None) -> Path | None:
 
 
 def _coverage_for(guarantees, runner: str, *, binding, resolved_source: str, handshake_required: bool) -> dict[str, object]:
-    if runner == "local":
+    if runner in {"local", "node"}:
         coverage = local_runner_coverage(
             guarantees,
             sandbox_enabled=sandbox_enabled(resolved_source=resolved_source, runner=runner, binding=binding),

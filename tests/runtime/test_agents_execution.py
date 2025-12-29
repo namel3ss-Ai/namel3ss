@@ -30,5 +30,5 @@ def test_agent_execution_sets_locals_and_traces():
     provider = MockProvider()
     executor = Executor(flow, schemas={}, ai_profiles=program.ais, agents=program.agents, ai_provider=provider)
     result = executor.run()
-    assert result.state["result"].startswith("[gpt-4.1]")
+    assert result.state["result"]["text"].startswith("[gpt-4.1]")
     assert any(trace.agent_name == "planner" for trace in result.traces)

@@ -38,7 +38,7 @@ from namel3ss.cli.status_mode import run_status_command
 from namel3ss.cli.studio_mode import run_studio
 from namel3ss.cli.test_mode import run_test_command
 from namel3ss.cli.tools_mode import run_tools
-from namel3ss.cli.ui_mode import render_manifest, run_action
+from namel3ss.cli.ui_mode import export_ui_contract, render_manifest, run_action
 from namel3ss.cli.pkg_mode import run_pkg
 from namel3ss.cli.pattern_mode import run_pattern
 from namel3ss.cli.kit_mode import run_kit_command
@@ -307,6 +307,10 @@ def _handle_app_commands(path: str, remainder: list[str], context: dict | None =
     cmd = canonical_command(remainder[0])
     tail = remainder[1:]
     if cmd == "ui":
+        if tail and tail[0] == "export":
+            result = export_ui_contract(program_ir)
+            print(dumps_pretty(result))
+            return 0
         manifest = render_manifest(program_ir)
         print(dumps_pretty(manifest))
         return 0

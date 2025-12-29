@@ -16,11 +16,11 @@ Start here:
 - [Flow explanations](docs/flow-what.md)
 - [UI explanations](docs/ui-see.md)
 - [Error explanations](docs/errors-fix.md)
-- [Phase B1: exists](docs/phase-b1-exists.md)
-- [Phase B2: fix](docs/phase-b2-fix.md)
-- [Phase B3: what](docs/phase-b3-what.md)
-- [Phase B4: when](docs/phase-b4-when.md)
-- [Phase B5: with](docs/phase-b5-with.md)
+- [CLI: exists](docs/cli-exists.md)
+- [CLI: fix](docs/cli-fix.md)
+- [CLI: what](docs/cli-what.md)
+- [CLI: when](docs/cli-when.md)
+- [CLI: with](docs/cli-with.md)
 - [Publishing packs](docs/publishing-packs.md)
 - [Registry](docs/registry.md)
 - [Editor](docs/editor.md)
@@ -157,7 +157,7 @@ Memory proof harness docs at docs/memory-proof.md.
 Concurrency docs at docs/concurrency.md.
 See docs/memory.md, docs/memory-policy.md, docs/memory-lanes.md, docs/memory-agreement.md, docs/memory-spaces.md, and docs/memory-phases.md for the full schema and governance rules.
 
-### Phase B1: exists
+### CLI: exists
 10-second demo:
 ```bash
 n3 exists app.ai
@@ -183,7 +183,7 @@ Capabilities required
 - none recorded
 ```
 
-### Phase B2: fix
+### CLI: fix
 10-second demo:
 ```bash
 n3 app.ai flow "fail"
@@ -204,7 +204,7 @@ How to fix
 - Review the error message and try again.
 ```
 
-### Phase B3: what
+### CLI: what
 10-second demo:
 ```bash
 n3 run app.ai
@@ -227,7 +227,7 @@ What did not happen
 - none recorded
 ```
 
-### Phase B4: when
+### CLI: when
 10-second demo:
 ```bash
 n3 when app.ai
@@ -254,7 +254,7 @@ Result
 - Spec version "1.0" is compatible.
 ```
 
-### Phase B5: with
+### CLI: with
 10-second demo:
 ```bash
 n3 run app.ai

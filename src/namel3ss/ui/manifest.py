@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
@@ -11,6 +11,7 @@ from namel3ss.runtime.identity.guards import build_guard_context, enforce_requir
 from namel3ss.runtime.storage.metadata import PersistenceMetadata
 from namel3ss.runtime.theme.resolution import resolve_effective_theme, ThemeSource
 from namel3ss.schema import records as schema
+from namel3ss.ui.fields import field_to_ui
 
 
 def build_manifest(
@@ -180,7 +181,7 @@ def _page_item_to_manifest(
                 "id": action_id,
                 "action_id": action_id,
                 "record": record.name,
-                "fields": [_field_to_manifest(f) for f in record.fields],
+                "fields": [field_to_ui(f) for f in record.fields],
                 "page": page_name,
                 "page_slug": page_slug,
                 "index": index,
@@ -321,43 +322,6 @@ def _page_item_to_manifest(
         line=getattr(item, "line", None),
         column=getattr(item, "column", None),
     )
-
-
-def _field_to_manifest(field: schema.FieldSchema) -> dict:
-    return {
-        "name": field.name,
-        "type": field.type_name,
-        "constraints": _constraints_to_manifest(field.constraint),
-    }
-
-
-def _constraints_to_manifest(constraint: Optional[schema.FieldConstraint]) -> List[dict]:
-    if constraint is None:
-        return []
-    kind = constraint.kind
-    if kind == "present":
-        return [{"kind": "present"}]
-    if kind == "unique":
-        return [{"kind": "unique"}]
-    if kind == "pattern":
-        return [{"kind": "pattern", "value": constraint.pattern}]
-    if kind == "gt":
-        return [{"kind": "greater_than", "value": _literal_value(constraint.expression)}]
-    if kind == "lt":
-        return [{"kind": "less_than", "value": _literal_value(constraint.expression)}]
-    if kind == "len_min":
-        return [{"kind": "length_min", "value": _literal_value(constraint.expression)}]
-    if kind == "len_max":
-        return [{"kind": "length_max", "value": _literal_value(constraint.expression)}]
-    return []
-
-
-def _literal_value(expr: ir.Expression | None) -> object:
-    if isinstance(expr, ir.Literal):
-        return expr.value
-    if expr is None:
-        return None
-    raise Namel3ssError("Manifest requires literal constraint values")
 
 
 def _require_record(name: str, record_map: Dict[str, schema.RecordSchema], item: ir.PageItem) -> schema.RecordSchema:

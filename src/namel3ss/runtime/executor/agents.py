@@ -13,6 +13,7 @@ from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
 from namel3ss.traces.builders import build_memory_recall, build_memory_write
 from namel3ss.traces.redact import redact_memory_context
+from namel3ss.runtime.values.normalize import ensure_object, unwrap_text
 
 
 def execute_run_agent(ctx: ExecutionContext, stmt: ir.RunAgentStmt) -> None:
@@ -60,6 +61,7 @@ def run_agent_call(ctx: ExecutionContext, agent_name: str, input_expr, line: int
     if ai_profile is None:
         raise Namel3ssError(f"Agent '{agent.name}' references unknown AI '{agent.ai_name}'", line=line, column=column)
     user_input = evaluate_expression(ctx, input_expr)
+    user_input = unwrap_text(user_input)
     if not isinstance(user_input, str):
         raise Namel3ssError("Agent input must be a string", line=line, column=column)
     record_step(
@@ -158,7 +160,8 @@ def run_agent_call(ctx: ExecutionContext, agent_name: str, input_expr, line: int
         tool_results=[e for e in tool_events if e.get("type") == "result"],
         canonical_events=canonical_events,
     )
-    return response_output, trace
+    output_value = ensure_object(response_output, key="text")
+    return output_value, trace
 
 
 def _trace_to_dict(trace: AITrace) -> dict:

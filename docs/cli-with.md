@@ -1,4 +1,4 @@
-# Phase B5: with
+# CLI: with
 
 `n3 with` writes and renders a deterministic tool proof pack.
 

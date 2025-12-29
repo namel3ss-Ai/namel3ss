@@ -1,4 +1,4 @@
-# Phase B1 exists example
+# CLI exists example
 
 Run:
 - `cd examples/b1_exists`

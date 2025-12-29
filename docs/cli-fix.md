@@ -1,4 +1,4 @@
-# Phase B2: fix
+# CLI: fix
 
 `n3 fix` shows the last runtime failure in a deterministic, inspectable format.
 

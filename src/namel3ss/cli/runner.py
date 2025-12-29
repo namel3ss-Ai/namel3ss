@@ -49,11 +49,12 @@ def run_flow(program_ir, flow_name: str | None = None) -> dict:
         _write_last_run(program_ir, redacted)
         raise
     traces = [_trace_to_dict(t) for t in result.traces]
+    ai_outputs = collect_ai_outputs(traces)
     payload = {
         "ok": True,
         "flow_name": selected,
-        "state": result.state,
-        "result": result.last_value,
+        "state": unwrap_ai_outputs(result.state, ai_outputs),
+        "result": unwrap_ai_outputs(result.last_value, ai_outputs),
         "traces": traces,
     }
     redacted = redact_payload(payload, secret_values)  # type: ignore[return-value]
@@ -97,6 +98,29 @@ def _trace_to_dict(trace) -> dict:
     if isinstance(trace, dict):
         return trace
     return {"trace": trace}
+
+
+def collect_ai_outputs(traces: list[dict]) -> set[str]:
+    outputs: set[str] = set()
+    for trace in traces:
+        if not isinstance(trace, dict):
+            continue
+        output = trace.get("output")
+        if isinstance(output, str):
+            outputs.add(output)
+    return outputs
+
+
+def unwrap_ai_outputs(value: object, outputs: set[str]) -> object:
+    if isinstance(value, dict):
+        if set(value.keys()) == {"text"}:
+            text = value.get("text")
+            if isinstance(text, str) and text in outputs:
+                return text
+        return {key: unwrap_ai_outputs(val, outputs) for key, val in value.items()}
+    if isinstance(value, list):
+        return [unwrap_ai_outputs(item, outputs) for item in value]
+    return value
 
 
 def _write_last_run(program_ir, payload: dict) -> None:

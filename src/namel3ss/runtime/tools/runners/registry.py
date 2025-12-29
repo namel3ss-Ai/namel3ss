@@ -5,6 +5,7 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.tools.runners.base import ToolRunner
 from namel3ss.runtime.tools.runners.container_runner import ContainerRunner
 from namel3ss.runtime.tools.runners.local_runner import LocalRunner
+from namel3ss.runtime.tools.runners.node.runner import NodeRunner
 from namel3ss.runtime.tools.runners.service_runner import ServiceRunner
 
 
@@ -12,6 +13,7 @@ _RUNNERS: dict[str, ToolRunner] = {
     "local": LocalRunner(),
     "service": ServiceRunner(),
     "container": ContainerRunner(),
+    "node": NodeRunner(),
 }
 
 
@@ -21,7 +23,7 @@ def get_runner(name: str) -> ToolRunner:
         raise Namel3ssError(
             build_guidance_message(
                 what=f"Unknown tool runner '{name}'.",
-                why="Supported runners are local, service, and container.",
+                why="Supported runners are local, service, container, and node.",
                 fix="Update the binding runner or remove the runner field.",
                 example='runner: "local"',
             )

@@ -21,8 +21,8 @@ page "home":
 def test_ai_call_uses_mock_and_traces():
     program = lower_ir_program(SOURCE)
     response = handle_action(program, action_id="page.home.button.ask")
-    assert response["state"]["reply"].startswith("[gpt-4.1]")
-    assert response["result"].startswith("[gpt-4.1]")
+    assert response["state"]["reply"]["text"].startswith("[gpt-4.1]")
+    assert response["result"]["text"].startswith("[gpt-4.1]")
     traces = response["traces"]
     assert len(traces) == 1
     trace = traces[0]
