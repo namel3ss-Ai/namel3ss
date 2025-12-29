@@ -62,7 +62,7 @@ class Executor:
             agents=agents or {},
             tools=tools or {},
             traces=[],
-            memory_manager=memory_manager or MemoryManager(),
+            memory_manager=memory_manager or MemoryManager(project_root=project_root, app_path=app_path),
             agent_calls=0,
             config=resolved_config,
             provider_cache=provider_cache,
@@ -120,6 +120,12 @@ class Executor:
                 )
             self.ctx.store.save_state(self.ctx.state)
             self.ctx.store.commit()
+            secret_values = collect_secret_values(self.ctx.config)
+            self.ctx.memory_manager.persist(
+                project_root=self.ctx.project_root,
+                app_path=self.ctx.app_path,
+                secret_values=secret_values,
+            )
         except Exception:
             try:
                 self.ctx.store.rollback()

@@ -54,6 +54,8 @@ from .memory_views import (
     build_memory_impact,
     build_memory_links,
     build_memory_path,
+    build_memory_restore_failed,
+    build_memory_wake_up_report,
 )
 
 __all__ = [
@@ -80,6 +82,8 @@ __all__ = [
     "build_memory_compaction",
     "build_memory_cache_hit",
     "build_memory_cache_miss",
+    "build_memory_wake_up_report",
+    "build_memory_restore_failed",
     "build_memory_team_summary",
     "build_memory_proposed",
     "build_memory_approved",

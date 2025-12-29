@@ -3,6 +3,8 @@ from namel3ss.traces.builders import (
     build_memory_budget,
     build_memory_cache_hit,
     build_memory_cache_miss,
+    build_memory_restore_failed,
+    build_memory_wake_up_report,
     build_memory_change_preview,
     build_memory_compaction,
     build_memory_conflict,
@@ -419,6 +421,24 @@ def test_memory_budget_and_cache_trace_events():
     )
     assert cache_miss["type"] == TraceEventType.MEMORY_CACHE_MISS
     assert cache_miss["phase_id"] == "phase-1"
+
+
+def test_memory_restore_trace_events():
+    wake_up = build_memory_wake_up_report(
+        project_id="proj-1",
+        title="Memory wake up report",
+        lines=["Memory was restored."],
+    )
+    assert wake_up["type"] == TraceEventType.MEMORY_WAKE_UP_REPORT
+    assert wake_up["project_id"] == "proj-1"
+
+    restore_failed = build_memory_restore_failed(
+        project_id="proj-1",
+        title="Memory restore failed",
+        lines=["Memory restore failed."],
+    )
+    assert restore_failed["type"] == TraceEventType.MEMORY_RESTORE_FAILED
+    assert restore_failed["project_id"] == "proj-1"
 
 
 def test_memory_explanation_trace_event():

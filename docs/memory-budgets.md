@@ -27,6 +27,11 @@ Open the Traces panel.
 Open a trace and look for the Memory budget section.
 Use the memory filters to show budget, compaction, and cache events.
 
+## Persistence
+Budgets and cache settings are saved with memory.
+Restore keeps the same budget configs.
+Wake up report lines show cache status.
+
 ## Protected items
 System lane rules are protected.
 Team decisions are protected.

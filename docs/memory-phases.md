@@ -27,6 +27,11 @@ Budgets are tracked per phase and lane.
 Compaction keeps a summary item in the same phase.
 Recall cache keys include the phase id.
 
+## Persistence
+Phase data is saved with the memory snapshot.
+Restore keeps phase ids and diff order stable.
+Wake up report confirms what was loaded.
+
 ## Phase diff
 Phase diff compares two phases within a space/owner and reports:
 - added items

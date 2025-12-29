@@ -17,6 +17,7 @@ from namel3ss.runtime.memory_trust import (
     trust_level_from_identity,
     trust_overview_lines,
 )
+from namel3ss.secrets import collect_secret_values
 from namel3ss.studio.session import SessionState
 
 
@@ -24,6 +25,10 @@ def get_agreements_payload(app_path: str, session: SessionState) -> dict:
     config = load_config(app_path=Path(app_path))
     source = Path(app_path).read_text(encoding="utf-8")
     program_ir = lower_program(parse(source))
+    session.memory_manager.ensure_restored(
+        project_root=str(Path(app_path).parent),
+        app_path=app_path,
+    )
     team_id = resolve_team_id(project_root=str(Path(app_path).parent), app_path=app_path, config=config)
     proposals = session.memory_manager.list_team_proposals(team_id)
     ai_profile = next(iter(program_ir.ais.values()), None)
@@ -84,6 +89,12 @@ def apply_agreement_action_payload(
         project_root=str(Path(app_path).parent),
         app_path=app_path,
         team_id=team_id,
+    )
+    secret_values = collect_secret_values(config)
+    session.memory_manager.persist(
+        project_root=str(Path(app_path).parent),
+        app_path=app_path,
+        secret_values=secret_values,
     )
     events = append_explanation_events(events)
     traces = []

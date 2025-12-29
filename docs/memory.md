@@ -82,6 +82,12 @@ Budgets apply per space, lane, and phase.
 Soft limit actions use compaction, low value removal, or deny write.
 See docs/memory-budgets.md for details.
 
+## Memory persistence
+Memory is saved to disk in the project folder.
+Restore loads the exact memory state or fails fast.
+A wake up report trace appears after restore or fresh start.
+See docs/memory-persist.md for details.
+
 ## Trace events
 Memory emits canonical events on every AI call.
 
@@ -134,6 +140,10 @@ Memory emits canonical events on every AI call.
 - `memory_handoff_applied`
 - `memory_handoff_rejected`
 - `memory_agent_briefing`
+
+### Persistence events
+- `memory_wake_up_report`
+- `memory_restore_failed`
 
 ### Explanation and links
 - `memory_explanation`

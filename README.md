@@ -112,6 +112,10 @@ Studio shows a bracketless Plain view by default and can show explanations, link
 Memory budgets keep memory fast and small.
 Soft limits trigger compaction or low value removal with clear reasons.
 Recall caching is deterministic per phase and lane.
+Memory is saved to disk in the project folder.
+Restore loads memory on startup or stops with a clear error.
+A wake up report trace shows what was restored.
+Studio shows the wake up report in the Traces panel.
 Studio shows a Memory budget section in the Traces panel.
 
 Plain trace example:
@@ -130,6 +134,7 @@ Memory trust docs at docs/memory-trust.md.
 Memory rules docs at docs/memory-rules.md.
 Memory handoff docs at docs/memory-handoff.md.
 Memory budgets docs at docs/memory-budgets.md.
+Memory persistence docs at docs/memory-persist.md.
 See docs/memory.md, docs/memory-policy.md, docs/memory-lanes.md, docs/memory-agreement.md, docs/memory-spaces.md, and docs/memory-phases.md for the full schema and governance rules.
 
 ### Tools

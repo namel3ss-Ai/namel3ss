@@ -98,6 +98,10 @@ Governance trace events include:
 - `memory_impact`
 - `memory_change_preview`
 
+Persistence trace events include:
+- `memory_wake_up_report`
+- `memory_restore_failed`
+
 See the memory docs for explanations, links, impact, and lanes.
 
 ## Determinism

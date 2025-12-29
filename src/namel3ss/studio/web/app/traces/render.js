@@ -73,6 +73,9 @@
         traces.appendTraceSection(details, "Input", trace.input, false, state.getTraceRenderMode());
         traces.appendTraceSection(details, "Memory", trace.memory, false, state.getTraceRenderMode());
         const phaseId = traces.currentPhaseIdForTrace(trace);
+        if (traces.appendWakeUpSection) {
+          traces.appendWakeUpSection(details, trace);
+        }
         traces.appendMemoryBudgetSection(details, trace, phaseId);
         traces.appendMemoryEventsSection(details, trace, phaseId, state.getTraceRenderMode());
         traces.appendTraceSection(details, "Tool calls", trace.tool_calls, false, state.getTraceRenderMode());

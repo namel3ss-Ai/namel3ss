@@ -6,6 +6,7 @@
 - Seed and ask flows to drive traces
 - Memory tour with preference, decision, fact, promotion, conflict, denial, phases, diff, lanes, and agreements
 - Memory budgets, compaction, and recall cache events
+- Memory persistence and wake up report
 - Agent lanes and handoff board
 - UI with cards, form, table, and assistant action
 
@@ -29,6 +30,9 @@ n3 examples/demo_ai_assistant_over_records.ai studio
 - Click Memory tour to generate memory writes, promotions, conflicts, denials, phase starts, deletions, phase diffs, and lane events
 - Click Budget demo to generate memory budget and compaction events
 - Click Cache demo to generate cache miss and cache hit events
+- Stop Studio and run it again in the same folder
+- In Traces, look for memory_wake_up_report lines
+- If restore fails, look for memory_restore_failed
 - In Traces, switch to Plain view and expand memory events
 - In Traces, open the Memory budget section for budget lines
 - Use the memory filters to show budget, compaction, and cache events
@@ -94,3 +98,5 @@ N3_IDENTITY_TRUST_LEVEL=owner n3 examples/demo_ai_assistant_over_records.ai stud
 33. Confirm memory_compaction appears with action and reason
 34. Run Cache demo and confirm memory_cache_miss then memory_cache_hit
 35. Open the Memory budget section and read the budget lines
+36. Stop Studio and run it again in the same folder
+37. Confirm memory_wake_up_report shows restored memory lines

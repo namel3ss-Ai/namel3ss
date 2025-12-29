@@ -44,6 +44,7 @@ from namel3ss.runtime.memory_handoff import (
 )
 from namel3ss.runtime.memory.write_engine.phases import _ensure_phase_for_store
 from namel3ss.runtime.memory_explain import append_explanation_events
+from namel3ss.secrets import collect_secret_values
 from namel3ss.studio.session import SessionState
 
 
@@ -52,6 +53,10 @@ def get_handoff_payload(app_path: str, session: SessionState) -> dict:
     source = Path(app_path).read_text(encoding="utf-8")
     program_ir = lower_program(parse(source))
     identity = resolve_identity(config, getattr(program_ir, "identity", None))
+    session.memory_manager.ensure_restored(
+        project_root=str(Path(app_path).parent),
+        app_path=app_path,
+    )
     team_id = resolve_team_id(project_root=str(Path(app_path).parent), app_path=app_path, config=config)
     packets = session.memory_manager.handoffs.list_packets(team_id)
     return {
@@ -71,7 +76,11 @@ def create_handoff_payload(
     to_agent_id: str,
 ) -> dict:
     ai_profile, identity, team_id = _resolve_context(app_path)
-    events: list[dict] = []
+    startup_events = session.memory_manager.startup_events(
+        project_root=str(Path(app_path).parent),
+        app_path=app_path,
+    )
+    events: list[dict] = list(startup_events)
     space_ctx = session.memory_manager.space_context(
         session.state,
         identity=identity,
@@ -139,6 +148,12 @@ def create_handoff_payload(
         items=selection.item_ids,
         summary_lines=summary_lines,
     )
+    secret_values = collect_secret_values(load_config(app_path=Path(app_path)))
+    session.memory_manager.persist(
+        project_root=str(Path(app_path).parent),
+        app_path=app_path,
+        secret_values=secret_values,
+    )
     events.append(build_handoff_created_event(ai_profile=ai_profile.name, session=space_ctx.session_id, packet=packet))
     return _handoff_payload_with_traces(app_path, session, ai_profile, events)
 
@@ -150,7 +165,11 @@ def apply_handoff_payload(
     packet_id: str,
 ) -> dict:
     ai_profile, identity, team_id = _resolve_context(app_path)
-    events: list[dict] = []
+    startup_events = session.memory_manager.startup_events(
+        project_root=str(Path(app_path).parent),
+        app_path=app_path,
+    )
+    events: list[dict] = list(startup_events)
     space_ctx = session.memory_manager.space_context(
         session.state,
         identity=identity,
@@ -234,6 +253,12 @@ def apply_handoff_payload(
         authority_order=contract.authority_order,
     )
     session.memory_manager.handoffs.apply_packet(packet.packet_id)
+    secret_values = collect_secret_values(load_config(app_path=Path(app_path)))
+    session.memory_manager.persist(
+        project_root=str(Path(app_path).parent),
+        app_path=app_path,
+        secret_values=secret_values,
+    )
     events.append(
         build_handoff_applied_event(
             ai_profile=ai_profile.name,
@@ -253,7 +278,11 @@ def reject_handoff_payload(
     packet_id: str,
 ) -> dict:
     ai_profile, identity, team_id = _resolve_context(app_path)
-    events: list[dict] = []
+    startup_events = session.memory_manager.startup_events(
+        project_root=str(Path(app_path).parent),
+        app_path=app_path,
+    )
+    events: list[dict] = list(startup_events)
     space_ctx = session.memory_manager.space_context(
         session.state,
         identity=identity,
@@ -305,6 +334,12 @@ def reject_handoff_payload(
     if not decision.allowed:
         return _handoff_payload_with_traces(app_path, session, ai_profile, events)
     session.memory_manager.handoffs.reject_packet(packet.packet_id)
+    secret_values = collect_secret_values(load_config(app_path=Path(app_path)))
+    session.memory_manager.persist(
+        project_root=str(Path(app_path).parent),
+        app_path=app_path,
+        secret_values=secret_values,
+    )
     events.append(build_handoff_rejected_event(ai_profile=ai_profile.name, session=space_ctx.session_id, packet=packet))
     return _handoff_payload_with_traces(app_path, session, ai_profile, events)
 

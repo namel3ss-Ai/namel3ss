@@ -56,6 +56,8 @@ Memory events include:
 - memory_compaction
 - memory_cache_hit
 - memory_cache_miss
+- memory_wake_up_report
+- memory_restore_failed
 - memory_deleted
 - memory_phase_diff
 - memory_team_summary
@@ -83,6 +85,10 @@ Memory events include:
 Memory budget events include type, space, lane, phase_id, owner, title, and lines.
 Memory compaction events include action, items_removed_count, summary_written, reason, title, and lines.
 Memory cache events include type, space, lane, phase_id, title, and lines.
+
+### Memory restore events
+Memory wake up report events include type, project_id, title, and lines.
+Memory restore failed events include type, project_id, title, and lines.
 
 ## Capability check traces v1
 Every denied capability check must include:

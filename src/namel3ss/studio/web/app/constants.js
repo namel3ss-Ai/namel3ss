@@ -32,6 +32,8 @@
     "memory_compaction",
     "memory_cache_hit",
     "memory_cache_miss",
+    "memory_wake_up_report",
+    "memory_restore_failed",
     "memory_handoff_created",
     "memory_handoff_applied",
     "memory_handoff_rejected",

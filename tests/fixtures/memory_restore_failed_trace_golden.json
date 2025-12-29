@@ -1,0 +1,11 @@
+{
+  "type": "memory_restore_failed",
+  "trace_version": "2024-10-01",
+  "project_id": "project-1",
+  "title": "Memory restore failed",
+  "lines": [
+    "Memory restore failed.",
+    "Checksum did not match.",
+    "Restore could not continue."
+  ]
+}

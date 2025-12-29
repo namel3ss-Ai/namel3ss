@@ -1,0 +1,15 @@
+{
+  "type": "memory_wake_up_report",
+  "trace_version": "2024-10-01",
+  "project_id": "project-1",
+  "title": "Memory wake up report",
+  "lines": [
+    "Memory was restored.",
+    "Total items are 4.",
+    "Team memory loaded.",
+    "Two rules active.",
+    "Two proposals still waiting.",
+    "No handoffs are waiting.",
+    "Cache is empty."
+  ]
+}

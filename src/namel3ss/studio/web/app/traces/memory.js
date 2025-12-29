@@ -9,12 +9,23 @@
     "memory_cache_hit",
     "memory_cache_miss",
   ]);
+  const wakeUpEventTypes = new Set(["memory_wake_up_report", "memory_restore_failed"]);
 
   function buildBudgetEventEntries(trace) {
     const entries = [];
     const events = trace.canonical_events || [];
     events.forEach((event, index) => {
       if (event && budgetEventTypes.has(event.type)) {
+        entries.push({ event, index });
+      }
+    });
+    return entries;
+  }
+  function buildWakeUpEventEntries(trace) {
+    const entries = [];
+    const events = trace.canonical_events || [];
+    events.forEach((event, index) => {
+      if (event && wakeUpEventTypes.has(event.type)) {
         entries.push({ event, index });
       }
     });
@@ -56,6 +67,16 @@
       return lines;
     }
     return [];
+  }
+  function wakeUpLinesForEvent(event) {
+    if (!event || typeof event !== "object") return [];
+    const lines = [];
+    if (event.title) lines.push(event.title);
+    const detail = Array.isArray(event.lines) ? event.lines : [];
+    detail.forEach((line) => {
+      if (line) lines.push(line);
+    });
+    return lines;
   }
   function appendTeamSummaryBlock(wrapper, summary, diffEvent, renderMode) {
     const block = document.createElement("div");
@@ -208,6 +229,23 @@
     wrapper.appendChild(utils.createCodeBlock(lines.join("\n")));
     details.appendChild(wrapper);
   }
+  function appendWakeUpSection(details, trace) {
+    const filters = state.getMemoryBudgetFilters ? state.getMemoryBudgetFilters() : {};
+    const entries = buildWakeUpEventEntries(trace);
+    if (!entries.length) return;
+    entries.forEach((entry) => {
+      if (filters[entry.event.type] === false) return;
+      const lines = wakeUpLinesForEvent(entry.event);
+      if (!lines.length) return;
+      const wrapper = document.createElement("div");
+      const heading = document.createElement("div");
+      heading.className = "inline-label";
+      heading.textContent = entry.event.title || "Wake up report";
+      wrapper.appendChild(heading);
+      wrapper.appendChild(utils.createCodeBlock(lines.join("\n")));
+      details.appendChild(wrapper);
+    });
+  }
   function appendMemoryEventsSection(details, trace, phaseId, renderMode = "json") {
     const laneMode = state.getTraceLaneMode();
     const phaseMode = state.getTracePhaseMode();
@@ -235,6 +273,11 @@
       if (budgetEventTypes.has(laneFiltered.type)) {
         const filters = state.getMemoryBudgetFilters ? state.getMemoryBudgetFilters() : {};
         if (filters[laneFiltered.type] === false) return;
+      }
+      if (wakeUpEventTypes.has(laneFiltered.type)) {
+        const filters = state.getMemoryBudgetFilters ? state.getMemoryBudgetFilters() : {};
+        if (filters[laneFiltered.type] === false) return;
+        return;
       }
       if (teamSummary && laneFiltered.type === "memory_team_summary") return;
       const block = document.createElement("div");
@@ -343,6 +386,7 @@
   }
 
   traces.appendMemoryBudgetSection = appendMemoryBudgetSection;
+  traces.appendWakeUpSection = appendWakeUpSection;
   traces.appendMemoryEventsSection = appendMemoryEventsSection;
   traces.filterMemoryEventForPhase = filterMemoryEventForPhase;
   traces.filterMemoryEventForLane = filterMemoryEventForLane;

@@ -6,6 +6,7 @@ from namel3ss.runtime.memory_budget.model import BudgetConfig
 from namel3ss.runtime.memory_budget.traces import build_budget_event
 from namel3ss.runtime.memory_cache.traces import build_cache_event
 from namel3ss.runtime.memory_compact.traces import build_compaction_event
+from namel3ss.runtime.memory_persist.traces import build_restore_failed_event, build_wake_up_report_event
 
 
 def test_memory_budget_trace_golden():
@@ -77,5 +78,33 @@ def test_memory_cache_miss_trace_golden():
         hit=False,
     )
     fixture_path = Path("tests/fixtures/memory_cache_miss_trace_golden.json")
+    expected = json.loads(fixture_path.read_text(encoding="utf-8"))
+    assert event == expected
+
+
+def test_memory_wake_up_report_trace_golden():
+    event = build_wake_up_report_event(
+        project_id="project-1",
+        restored=True,
+        total_items=4,
+        team_items=1,
+        active_rules=2,
+        pending_proposals=2,
+        pending_handoffs=0,
+        cache_entries=0,
+        cache_enabled=True,
+    )
+    fixture_path = Path("tests/fixtures/memory_wake_up_report_trace_golden.json")
+    expected = json.loads(fixture_path.read_text(encoding="utf-8"))
+    assert event == expected
+
+
+def test_memory_restore_failed_trace_golden():
+    event = build_restore_failed_event(
+        project_id="project-1",
+        reason="Checksum did not match.",
+        detail="Restore could not continue.",
+    )
+    fixture_path = Path("tests/fixtures/memory_restore_failed_trace_golden.json")
     expected = json.loads(fixture_path.read_text(encoding="utf-8"))
     assert event == expected

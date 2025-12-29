@@ -287,7 +287,12 @@ def _phase_ids_for_recall(registry: PhaseRegistry, store_key: str, policy: Memor
 def _count_by_phase(items: list[MemoryItem]) -> dict[str, int]:
     counts: dict[str, int] = {}
     for item in items:
-        phase_id = item.meta.get("phase_id") if hasattr(item, "meta") else None
+        meta = None
+        if hasattr(item, "meta"):
+            meta = item.meta
+        elif isinstance(item, dict):
+            meta = item.get("meta")
+        phase_id = meta.get("phase_id") if isinstance(meta, dict) else None
         if not phase_id:
             continue
         counts[phase_id] = counts.get(phase_id, 0) + 1

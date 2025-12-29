@@ -252,3 +252,33 @@ def build_memory_cache_miss(
         "title": title,
         "lines": list(lines),
     }
+
+
+def build_memory_wake_up_report(
+    *,
+    project_id: str,
+    title: str,
+    lines: list[str],
+) -> dict:
+    return {
+        "type": TraceEventType.MEMORY_WAKE_UP_REPORT,
+        "trace_version": TRACE_VERSION,
+        "project_id": project_id,
+        "title": title,
+        "lines": list(lines),
+    }
+
+
+def build_memory_restore_failed(
+    *,
+    project_id: str,
+    title: str,
+    lines: list[str],
+) -> dict:
+    return {
+        "type": TraceEventType.MEMORY_RESTORE_FAILED,
+        "trace_version": TRACE_VERSION,
+        "project_id": project_id,
+        "title": title,
+        "lines": list(lines),
+    }

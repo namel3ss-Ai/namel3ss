@@ -65,6 +65,8 @@
       { id: "traceMemoryCompaction", type: "memory_compaction" },
       { id: "traceMemoryCacheHit", type: "memory_cache_hit" },
       { id: "traceMemoryCacheMiss", type: "memory_cache_miss" },
+      { id: "traceMemoryWakeUp", type: "memory_wake_up_report" },
+      { id: "traceMemoryRestoreFailed", type: "memory_restore_failed" },
     ];
     const buttons = entries
       .map((entry) => ({ entry, btn: document.getElementById(entry.id) }))

@@ -17,6 +17,7 @@ from namel3ss.runtime.memory_rules import (
     rule_space_for_scope,
 )
 from namel3ss.runtime.memory_trust import actor_id_from_identity
+from namel3ss.secrets import collect_secret_values
 from namel3ss.studio.session import SessionState
 
 
@@ -25,6 +26,10 @@ def get_rules_payload(app_path: str, session: SessionState) -> dict:
     source = Path(app_path).read_text(encoding="utf-8")
     program_ir = lower_program(parse(source))
     identity = resolve_identity(config, getattr(program_ir, "identity", None))
+    session.memory_manager.ensure_restored(
+        project_root=str(Path(app_path).parent),
+        app_path=app_path,
+    )
     team_id = resolve_team_id(project_root=str(Path(app_path).parent), app_path=app_path, config=config)
     space_ctx = session.memory_manager.space_context(
         session.state,
@@ -77,6 +82,12 @@ def propose_rule_payload(
         project_root=str(Path(app_path).parent),
         app_path=app_path,
         team_id=team_id,
+    )
+    secret_values = collect_secret_values(config)
+    session.memory_manager.persist(
+        project_root=str(Path(app_path).parent),
+        app_path=app_path,
+        secret_values=secret_values,
     )
     events = append_explanation_events(events)
     traces = []

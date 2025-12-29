@@ -21,6 +21,8 @@
       memory_compaction: true,
       memory_cache_hit: true,
       memory_cache_miss: true,
+      memory_wake_up_report: true,
+      memory_restore_failed: true,
     },
     traceRenderMode: "plain",
     tracePhaseMode: "current",

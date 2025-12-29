@@ -31,6 +31,8 @@ class TraceEventType:
     MEMORY_COMPACTION = "memory_compaction"
     MEMORY_CACHE_HIT = "memory_cache_hit"
     MEMORY_CACHE_MISS = "memory_cache_miss"
+    MEMORY_WAKE_UP_REPORT = "memory_wake_up_report"
+    MEMORY_RESTORE_FAILED = "memory_restore_failed"
     MEMORY_TEAM_SUMMARY = "memory_team_summary"
     MEMORY_PROPOSED = "memory_proposed"
     MEMORY_APPROVED = "memory_approved"
