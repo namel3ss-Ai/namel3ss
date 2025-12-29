@@ -1,0 +1,20 @@
+flow "demo":
+  let total is 2
+
+  if total is greater than 1:
+    let label is "big"
+  else:
+    let label is "small"
+
+  repeat 0 times:
+    set state.repeat_hit is true
+
+  match total:
+    case 1:
+      set state.match is "one"
+    case 2:
+      set state.match is "two"
+    otherwise:
+      set state.match is "other"
+
+  return label

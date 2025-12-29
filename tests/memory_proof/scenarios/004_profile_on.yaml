@@ -1,0 +1,18 @@
+name: "Profile memory on"
+ai_profile:
+  name: "assistant"
+  memory:
+    short_term: 1
+    semantic: false
+    profile: true
+steps:
+  - record:
+    input: "My name is Ada."
+    output: "ok"
+    tool_events: []
+  - record:
+    input: "Actually, my name is Ada Lovelace."
+    output: "ok"
+    tool_events: []
+  - recall:
+    input: "What is my name?"

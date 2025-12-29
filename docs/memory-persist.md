@@ -27,3 +27,12 @@ Studio shows the report in the Traces panel.
 ## Protection
 Secrets are redacted before writing.
 Only memory state is stored.
+
+## Other memory files
+The memory CLI writes a proof pack for recall and explain:
+- `.namel3ss/memory/last.json`
+- `.namel3ss/memory/last.plain`
+- `.namel3ss/memory/last.why.txt`
+- `.namel3ss/memory/last.graph.json`
+
+These files are not used for persistence and can be deleted safely.

@@ -1,0 +1,15 @@
+scenario.id: 007_handoff_flow
+scenario.name: Handoff flow
+steps.total: 4
+steps.recall: 1
+steps.record: 1
+steps.admin: 2
+memory.short_term: 2
+memory.semantic: 2
+memory.profile: 0
+cache.project:unknown:agent:agent-1.semantic: 1
+cache.session:anonymous:my.semantic: 2
+cache.session:anonymous:my.short_term: 4
+phase.project:unknown:agent:agent-1.current: phase-1
+phase.project:unknown:agent:agent-2.current: phase-1
+phase.session:anonymous:my.current: phase-1

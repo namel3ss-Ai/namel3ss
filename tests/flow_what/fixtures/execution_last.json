@@ -1,0 +1,38 @@
+{
+  "ok": true,
+  "flow_name": "demo",
+  "execution_steps": [
+    {
+      "id": "step:0001",
+      "kind": "flow_start",
+      "what": "flow \"demo\" started"
+    },
+    {
+      "id": "step:0002",
+      "kind": "decision_if",
+      "what": "if total was true",
+      "data": {
+        "condition": "total",
+        "value": true
+      }
+    },
+    {
+      "id": "step:0003",
+      "kind": "branch_taken",
+      "what": "took then branch",
+      "because": "condition was true"
+    },
+    {
+      "id": "step:0004",
+      "kind": "branch_skipped",
+      "what": "skipped else branch",
+      "because": "condition was true"
+    },
+    {
+      "id": "step:0005",
+      "kind": "statement_return",
+      "what": "returned a value"
+    }
+  ],
+  "summary": "Flow \"demo\" ran with 5 steps."
+}

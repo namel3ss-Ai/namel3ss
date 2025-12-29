@@ -7,42 +7,25 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir.nodes import lower_program
 from namel3ss.parser.core import parse
 from namel3ss.runtime.identity.context import resolve_identity
-from namel3ss.runtime.memory.events import EVENT_CONTEXT
+import namel3ss.runtime.memory.api as memory_api
 from namel3ss.runtime.memory_lanes.context import resolve_team_id
-from namel3ss.runtime.memory_lanes.model import LANE_AGENT, LANE_TEAM, agent_lane_key
 from namel3ss.runtime.memory_rules import (
-    ACTION_HANDOFF_APPLY,
-    ACTION_HANDOFF_CREATE,
     ACTION_HANDOFF_REJECT,
     active_rules_for_scope,
     enforce_action,
 )
 from namel3ss.runtime.memory_rules.traces import build_rule_applied_event
-from namel3ss.runtime.memory.spaces import SPACE_PROJECT
 from namel3ss.runtime.memory_trust import (
     actor_id_from_identity,
     build_trust_check_event,
     build_trust_rules_event,
     can_change_rules,
-    can_handoff_apply,
-    can_handoff_create,
     can_handoff_reject,
     rules_from_contract,
     rules_from_state,
     trust_level_from_identity,
 )
-from namel3ss.runtime.memory_handoff import (
-    HANDOFF_STATUS_PENDING,
-    apply_handoff_packet,
-    briefing_lines,
-    build_agent_briefing_event,
-    build_handoff_applied_event,
-    build_handoff_created_event,
-    build_handoff_rejected_event,
-    build_packet_preview,
-    select_handoff_items,
-)
-from namel3ss.runtime.memory.write_engine.phases import _ensure_phase_for_store
+from namel3ss.runtime.memory_handoff import HANDOFF_STATUS_PENDING, build_handoff_rejected_event, build_packet_preview
 from namel3ss.runtime.memory_explain import append_explanation_events
 from namel3ss.secrets import collect_secret_values
 from namel3ss.studio.session import SessionState
@@ -81,80 +64,30 @@ def create_handoff_payload(
         app_path=app_path,
     )
     events: list[dict] = list(startup_events)
-    space_ctx = session.memory_manager.space_context(
+    if not from_agent_id or not to_agent_id:
+        raise Namel3ssError("Both from agent id and to agent id are required.")
+    pack = memory_api.admin_action(
+        session.memory_manager,
+        ai_profile,
         session.state,
+        "create_handoff",
+        {"from_agent_id": from_agent_id, "to_agent_id": to_agent_id},
         identity=identity,
         project_root=str(Path(app_path).parent),
         app_path=app_path,
-    )
-    policy = session.memory_manager.policy_for(ai_profile)
-    contract = session.memory_manager.policy_contract_for(policy)
-    actor_level = trust_level_from_identity(identity)
-    actor_id = actor_id_from_identity(identity)
-    trust_rules, trust_events = _resolve_trust_rules(
-        ai_profile=ai_profile.name,
-        session_id=space_ctx.session_id,
         team_id=team_id,
-        actor_id=actor_id,
-        actor_level=actor_level,
-        state=session.state,
-        contract=contract,
     )
-    events.extend(trust_events)
-    team_rules = active_rules_for_scope(semantic=session.memory_manager.semantic, space_ctx=space_ctx, scope="team")
-    rule_check = enforce_action(
-        rules=team_rules,
-        action=ACTION_HANDOFF_CREATE,
-        actor_level=actor_level,
-        event_type=EVENT_CONTEXT,
-    )
-    events.extend(_rule_events(ai_profile.name, space_ctx.session_id, rule_check))
-    if not rule_check.allowed:
-        return _handoff_payload_with_traces(app_path, session, ai_profile, events)
-    decision = can_handoff_create(actor_level, trust_rules)
-    events.append(
-        build_trust_check_event(
-            ai_profile=ai_profile.name,
-            session=space_ctx.session_id,
-            action=decision.action,
-            actor_id=actor_id,
-            actor_level=decision.actor_level,
-            required_level=decision.required_level,
-            allowed=decision.allowed,
-            reason=decision.reason,
+    events.extend(pack.events)
+    packet_id = None
+    if isinstance(pack.payload, dict):
+        packet_id = pack.payload.get("packet_id")
+    if packet_id:
+        secret_values = collect_secret_values(load_config(app_path=Path(app_path)))
+        session.memory_manager.persist(
+            project_root=str(Path(app_path).parent),
+            app_path=app_path,
+            secret_values=secret_values,
         )
-    )
-    if not decision.allowed:
-        return _handoff_payload_with_traces(app_path, session, ai_profile, events)
-    if not from_agent_id or not to_agent_id:
-        raise Namel3ssError("Both from agent id and to agent id are required.")
-    from_key = agent_lane_key(space_ctx, space=SPACE_PROJECT, agent_id=from_agent_id)
-    team_key = space_ctx.store_key_for(SPACE_PROJECT, lane=LANE_TEAM)
-    selection = select_handoff_items(
-        agent_items=session.memory_manager.semantic.items_for_store(from_key),
-        team_items=session.memory_manager.semantic.items_for_store(team_key),
-        proposals=session.memory_manager.agreements.list_pending(team_id),
-        rules=team_rules,
-    )
-    summary_lines = briefing_lines(selection)
-    phase_id = _handoff_phase_id(session, space_ctx, from_key, team_key)
-    packet = session.memory_manager.handoffs.create_packet(
-        from_agent_id=from_agent_id,
-        to_agent_id=to_agent_id,
-        team_id=team_id,
-        space=SPACE_PROJECT,
-        phase_id=phase_id,
-        created_by=actor_id,
-        items=selection.item_ids,
-        summary_lines=summary_lines,
-    )
-    secret_values = collect_secret_values(load_config(app_path=Path(app_path)))
-    session.memory_manager.persist(
-        project_root=str(Path(app_path).parent),
-        app_path=app_path,
-        secret_values=secret_values,
-    )
-    events.append(build_handoff_created_event(ai_profile=ai_profile.name, session=space_ctx.session_id, packet=packet))
     return _handoff_payload_with_traces(app_path, session, ai_profile, events)
 
 
@@ -170,104 +103,31 @@ def apply_handoff_payload(
         app_path=app_path,
     )
     events: list[dict] = list(startup_events)
-    space_ctx = session.memory_manager.space_context(
-        session.state,
-        identity=identity,
-        project_root=str(Path(app_path).parent),
-        app_path=app_path,
-    )
     packet = session.memory_manager.handoffs.get_packet(packet_id)
     if packet is None:
         raise Namel3ssError("Handoff packet was not found.")
     if packet.status != HANDOFF_STATUS_PENDING:
         raise Namel3ssError("Handoff packet is not pending.")
-    policy = session.memory_manager.policy_for(ai_profile)
-    contract = session.memory_manager.policy_contract_for(policy)
-    actor_level = trust_level_from_identity(identity)
-    actor_id = actor_id_from_identity(identity)
-    trust_rules, trust_events = _resolve_trust_rules(
-        ai_profile=ai_profile.name,
-        session_id=space_ctx.session_id,
-        team_id=team_id,
-        actor_id=actor_id,
-        actor_level=actor_level,
-        state=session.state,
-        contract=contract,
-    )
-    events.extend(trust_events)
-    team_rules = active_rules_for_scope(semantic=session.memory_manager.semantic, space_ctx=space_ctx, scope="team")
-    rule_check = enforce_action(
-        rules=team_rules,
-        action=ACTION_HANDOFF_APPLY,
-        actor_level=actor_level,
-        event_type=EVENT_CONTEXT,
-    )
-    events.extend(_rule_events(ai_profile.name, space_ctx.session_id, rule_check))
-    if not rule_check.allowed:
-        return _handoff_payload_with_traces(app_path, session, ai_profile, events)
-    decision = can_handoff_apply(actor_level, trust_rules)
-    events.append(
-        build_trust_check_event(
-            ai_profile=ai_profile.name,
-            session=space_ctx.session_id,
-            action=decision.action,
-            actor_id=actor_id,
-            actor_level=decision.actor_level,
-            required_level=decision.required_level,
-            allowed=decision.allowed,
-            reason=decision.reason,
-        )
-    )
-    if not decision.allowed:
-        return _handoff_payload_with_traces(app_path, session, ai_profile, events)
-    target_key = agent_lane_key(space_ctx, space=packet.space, agent_id=packet.to_agent_id)
-    target_owner = space_ctx.owner_for(packet.space)
-    target_phase, phase_events = _ensure_phase_for_store(
-        ai_profile=ai_profile.name,
-        session=space_ctx.session_id,
-        space=packet.space,
-        owner=target_owner,
-        store_key=target_key,
-        contract=contract,
-        phase_registry=session.memory_manager._phases,
-        phase_ledger=session.memory_manager._ledger,
-        request=None,
-        default_reason="handoff",
-        lane=LANE_AGENT,
-    )
-    events.extend(phase_events)
-    applied_items = apply_handoff_packet(
-        packet=packet,
-        short_term=session.memory_manager.short_term,
-        semantic=session.memory_manager.semantic,
-        profile=session.memory_manager.profile,
-        factory=session.memory_manager._factory,
-        target_store_key=target_key,
-        target_phase=target_phase,
-        space=packet.space,
-        owner=target_owner,
-        agent_id=packet.to_agent_id,
-        allow_team_change=contract.lanes.team_can_change,
-        phase_ledger=session.memory_manager._ledger,
-        dedupe_enabled=policy.dedupe_enabled,
-        authority_order=contract.authority_order,
-    )
-    session.memory_manager.handoffs.apply_packet(packet.packet_id)
-    secret_values = collect_secret_values(load_config(app_path=Path(app_path)))
-    session.memory_manager.persist(
+    pack = memory_api.admin_action(
+        session.memory_manager,
+        ai_profile,
+        session.state,
+        "apply_handoff",
+        {"packet_id": packet_id},
+        identity=identity,
         project_root=str(Path(app_path).parent),
         app_path=app_path,
-        secret_values=secret_values,
+        team_id=team_id,
     )
-    events.append(
-        build_handoff_applied_event(
-            ai_profile=ai_profile.name,
-            session=space_ctx.session_id,
-            packet=packet,
-            item_count=len(applied_items),
+    events.extend(pack.events)
+    applied_packet = session.memory_manager.handoffs.get_packet(packet_id)
+    if applied_packet and applied_packet.status != HANDOFF_STATUS_PENDING:
+        secret_values = collect_secret_values(load_config(app_path=Path(app_path)))
+        session.memory_manager.persist(
+            project_root=str(Path(app_path).parent),
+            app_path=app_path,
+            secret_values=secret_values,
         )
-    )
-    events.append(build_agent_briefing_event(ai_profile=ai_profile.name, session=space_ctx.session_id, packet=packet))
     return _handoff_payload_with_traces(app_path, session, ai_profile, events)
 
 
@@ -313,7 +173,7 @@ def reject_handoff_payload(
         rules=team_rules,
         action=ACTION_HANDOFF_REJECT,
         actor_level=actor_level,
-        event_type=EVENT_CONTEXT,
+        event_type="context",
     )
     events.extend(_rule_events(ai_profile.name, space_ctx.session_id, rule_check))
     if not rule_check.allowed:
@@ -432,13 +292,6 @@ def _rule_events(ai_profile: str, session_id: str, rule_check) -> list[dict]:
                 )
             )
     return events
-
-
-def _handoff_phase_id(session: SessionState, space_ctx, agent_key: str, team_key: str) -> str:
-    phase = session.memory_manager._phases.current(agent_key)
-    if phase is None:
-        phase = session.memory_manager._phases.current(team_key)
-    return phase.phase_id if phase else "phase-unknown"
 
 
 def _agent_payload(agent) -> dict:

@@ -23,6 +23,11 @@ Proposals need one or two approvals.
 The required count is part of the trust rules.
 The same person cannot approve twice.
 
+## Packs
+Trust defaults can come from memory packs.
+Local overrides can change the defaults.
+The source is tracked and traced.
+
 ## Why actions are blocked
 Blocked actions emit a trust check event.
 The event says the required level and the actor level.

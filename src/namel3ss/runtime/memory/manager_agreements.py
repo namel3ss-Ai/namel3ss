@@ -46,6 +46,7 @@ def propose_rule_with_events(
     project_root: str | None = None,
     app_path: str | None = None,
     team_id: str | None = None,
+    agreement_defaults: dict | None = None,
 ) -> list[dict]:
     space_ctx = manager.space_context(
         state,
@@ -161,7 +162,8 @@ def propose_rule_with_events(
         event_type=EVENT_RULE,
     )
     approvals_required = merge_required_approvals(
-        required_approvals(trust_rules), approval_rules.required_approvals
+        _agreement_approval_count(trust_rules, agreement_defaults),
+        approval_rules.required_approvals,
     )
     proposal = manager.agreements.create_proposal(
         team_id=resolved_team_id,
@@ -170,7 +172,7 @@ def propose_rule_with_events(
         proposed_by=actor_id,
         reason_code="rule",
         approval_count_required=approvals_required,
-        owner_override=trust_rules.owner_override,
+        owner_override=_agreement_owner_override(trust_rules, agreement_defaults),
         ai_profile=ai.name,
     )
     events.append(
@@ -196,6 +198,7 @@ def apply_agreement_action(
     project_root: str | None = None,
     app_path: str | None = None,
     team_id: str | None = None,
+    agreement_defaults: dict | None = None,
 ) -> list[dict]:
     space_ctx = manager.space_context(
         state,
@@ -229,9 +232,22 @@ def apply_agreement_action(
         identity=identity,
         state=state,
         budget_configs=manager._budgets,
+        agreement_defaults=agreement_defaults,
     )
     manager._cache.clear()
     return events
+
+
+def _agreement_approval_count(trust_rules, agreement_defaults: dict | None) -> int:
+    if agreement_defaults and agreement_defaults.get("approval_count_required") is not None:
+        return int(agreement_defaults.get("approval_count_required"))
+    return required_approvals(trust_rules)
+
+
+def _agreement_owner_override(trust_rules, agreement_defaults: dict | None) -> bool:
+    if agreement_defaults and agreement_defaults.get("owner_override") is not None:
+        return bool(agreement_defaults.get("owner_override"))
+    return bool(getattr(trust_rules, "owner_override", True))
 
 
 __all__ = ["apply_agreement_action", "propose_rule_with_events"]

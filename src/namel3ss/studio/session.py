@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.storage.factory import create_store
-from namel3ss.runtime.memory.manager import MemoryManager
+from namel3ss.runtime.memory.api import MemoryManager
 
 
 @dataclass

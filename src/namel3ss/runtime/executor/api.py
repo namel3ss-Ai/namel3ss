@@ -11,7 +11,7 @@ from namel3ss.ir import nodes as ir
 from namel3ss.runtime.ai.provider import AIProvider
 from namel3ss.runtime.executor.executor import Executor
 from namel3ss.runtime.executor.result import ExecutionResult
-from namel3ss.runtime.memory.manager import MemoryManager
+from namel3ss.runtime.memory.api import MemoryManager
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.storage.factory import resolve_store
 from namel3ss.schema.records import RecordSchema

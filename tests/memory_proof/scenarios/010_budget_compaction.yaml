@@ -1,0 +1,36 @@
+name: "Budget compaction"
+ai_profile:
+  name: "assistant"
+  memory:
+    short_term: 12
+    semantic: false
+    profile: false
+steps:
+  - record:
+    input: "Note 1."
+    output: "ok"
+    tool_events: []
+  - record:
+    input: "Note 2."
+    output: "ok"
+    tool_events: []
+  - record:
+    input: "Note 3."
+    output: "ok"
+    tool_events: []
+  - record:
+    input: "Note 4."
+    output: "ok"
+    tool_events: []
+  - record:
+    input: "Note 5."
+    output: "ok"
+    tool_events: []
+  - record:
+    input: "Note 6."
+    output: "ok"
+    tool_events: []
+  - record:
+    input: "Note 7."
+    output: "ok"
+    tool_events: []

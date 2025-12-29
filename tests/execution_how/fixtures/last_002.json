@@ -1,0 +1,64 @@
+{
+  "ok": true,
+  "flow_name": "matcher",
+  "summary": "Flow \"matcher\" ran with 6 steps.",
+  "traces": [],
+  "execution_steps": [
+    {
+      "id": "step:0001",
+      "kind": "flow_start",
+      "what": "flow \"matcher\" started",
+      "because": null,
+      "data": {},
+      "line": 1,
+      "column": 1
+    },
+    {
+      "id": "step:0002",
+      "kind": "decision_match",
+      "what": "match 2",
+      "because": null,
+      "data": {
+        "subject": "2"
+      },
+      "line": 2,
+      "column": 1
+    },
+    {
+      "id": "step:0003",
+      "kind": "case_skipped",
+      "what": "case 1 skipped",
+      "because": "subject != pattern",
+      "data": {},
+      "line": 3,
+      "column": 1
+    },
+    {
+      "id": "step:0004",
+      "kind": "case_taken",
+      "what": "case 2 matched",
+      "because": "subject == pattern",
+      "data": {},
+      "line": 4,
+      "column": 1
+    },
+    {
+      "id": "step:0005",
+      "kind": "otherwise_skipped",
+      "what": "otherwise branch skipped",
+      "because": "matched an earlier case",
+      "data": {},
+      "line": 5,
+      "column": 1
+    },
+    {
+      "id": "step:0006",
+      "kind": "flow_end",
+      "what": "flow \"matcher\" ended",
+      "because": "completed successfully",
+      "data": {},
+      "line": 6,
+      "column": 1
+    }
+  ]
+}

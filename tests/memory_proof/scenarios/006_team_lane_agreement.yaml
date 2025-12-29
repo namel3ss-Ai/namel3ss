@@ -1,0 +1,21 @@
+name: "Team lane agreement"
+ai_profile:
+  name: "assistant"
+  memory:
+    short_term: 1
+    semantic: true
+    profile: false
+identity:
+  id: "approver-1"
+  trust_level: "approver"
+steps:
+  - record:
+    input: "Remember this for the project: We decided to ship weekly."
+    output: "ok"
+    tool_events: []
+  - admin:
+    action: "apply_agreement"
+    payload:
+      action: "approve"
+      proposal_id: "first_pending"
+      requested_by: "approver-1"

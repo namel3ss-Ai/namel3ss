@@ -21,6 +21,7 @@
     "render/security.js",
     "render/state.js",
     "render/agreements.js",
+    "render/memory_packs.js",
     "render/rules.js",
     "render/handoff.js",
     "api/actions.js",

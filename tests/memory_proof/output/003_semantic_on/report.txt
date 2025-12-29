@@ -1,0 +1,4 @@
+Memory proof: ok
+Scenario: 003_semantic_on - Semantic memory on
+Invariant notes:
+- TODO: memory_deleted explanation field is not emitted yet.

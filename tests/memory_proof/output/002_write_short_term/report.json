@@ -1,0 +1,16 @@
+{
+  "diff": {
+    "entries": [],
+    "ok": true
+  },
+  "invariants": {
+    "failures": [],
+    "notes": [
+      "TODO: memory_deleted explanation field is not emitted yet."
+    ],
+    "ok": true
+  },
+  "ok": true,
+  "scenario_id": "002_write_short_term",
+  "scenario_name": "Write short term"
+}

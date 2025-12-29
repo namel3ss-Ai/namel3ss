@@ -13,6 +13,9 @@ Start here:
 - [Python tools](docs/python-tools.md)
 - [Tool packs](docs/tool-packs.md)
 - [Capabilities](docs/capabilities.md)
+- [Flow explanations](docs/flow-what.md)
+- [UI explanations](docs/ui-see.md)
+- [Error explanations](docs/errors-fix.md)
 - [Publishing packs](docs/publishing-packs.md)
 - [Registry](docs/registry.md)
 - [Editor](docs/editor.md)
@@ -117,6 +120,12 @@ Restore loads memory on startup or stops with a clear error.
 A wake up report trace shows what was restored.
 Studio shows the wake up report in the Traces panel.
 Studio shows a Memory budget section in the Traces panel.
+Memory packs provide reusable defaults for trust, agreement, budgets, lanes, phase, and rules.
+Local overrides are explicit and traced.
+Studio shows a Memory packs section in the Rules panel.
+Memory recall can be inspected from the CLI, which stores a proof pack under `.namel3ss/memory/last.json`.
+The `n3 memory why` command renders a deterministic explanation from that proof pack.
+Memory proof scenarios run under `tests/memory_proof` with golden outputs for CI checks.
 
 Plain trace example:
 ```
@@ -135,7 +144,129 @@ Memory rules docs at docs/memory-rules.md.
 Memory handoff docs at docs/memory-handoff.md.
 Memory budgets docs at docs/memory-budgets.md.
 Memory persistence docs at docs/memory-persist.md.
+Memory packs docs at docs/memory-packs.md.
+Memory explanations docs at docs/memory-explanations.md.
+Memory proof harness docs at docs/memory-proof.md.
 See docs/memory.md, docs/memory-policy.md, docs/memory-lanes.md, docs/memory-agreement.md, docs/memory-spaces.md, and docs/memory-phases.md for the full schema and governance rules.
+
+### Explainable execution (Phase 3)
+Flows record deterministic execution steps and can explain how they ran.
+```bash
+n3 run app.ai
+n3 how
+```
+
+Example output:
+```
+How the flow ran
+- Flow "demo" ran with 6 steps.
+- flow "demo" started.
+- if total > 1 was true.
+- took then branch because condition was true.
+- returned a value.
+- flow "demo" ended.
+
+What did not happen
+- skipped else branch because condition was true.
+```
+Execution how docs at docs/execution-how.md.
+
+### Explainable tools (Phase 4)
+Tools report what ran, why it was allowed or blocked, and what happened.
+```bash
+n3 run app.ai
+n3 with
+```
+
+Example output:
+```
+Tools used in the last run
+- greet someone
+  - intent: called tool greet someone
+  - blocked
+  - runner: local
+  - result: blocked
+  - why: network: guarantee_blocked
+```
+Tools with docs at docs/tools-with.md.
+
+### Explainable flows (Phase 5)
+Flows summarize intent, outcome, and what did not happen.
+```bash
+n3 run app.ai
+n3 with
+n3 what
+```
+
+Example output:
+```
+What the flow did
+Flow: demo
+
+Intent
+- run flow "demo" to use tool "greet someone".
+- audited: no.
+
+Outcome
+- status: partial.
+- tools: ok 1, blocked 0, error 0.
+
+Why
+- took then branch because condition was true.
+
+What did not happen
+- skipped else branch because condition was true.
+```
+Flow what docs at docs/flow-what.md.
+
+### Explainable ui (Phase 6)
+UI manifests can be explained in plain English.
+```bash
+n3 ui app.ai
+n3 see
+```
+
+Example output:
+```
+What the user sees
+Pages
+- home (3 items)
+
+On page "home"
+- title: "Welcome"
+  - because: declared in page "home"
+- button: "Admin"
+  - enabled: no
+  - because: action "page.home.button.admin" not available because requires identity.role == "admin"
+
+What the user does not see
+- Action page.home.button.admin not available because requires identity.role == "admin".
+```
+UI see docs at docs/ui-see.md.
+
+### Explainable errors (Phase 7)
+Errors report what went wrong, impact, and recovery options.
+```bash
+n3 run app.ai
+n3 fix
+```
+
+Example output:
+```
+What went wrong
+
+Error
+- Identity is missing "role".
+- kind: permission
+- where: flow "admin_only"
+
+Impact
+- Action page.home.button.admin not available because requires identity.role == "admin".
+
+Recovery options
+- Provide identity: Provide identity fields and run again.
+```
+Errors fix docs at docs/errors-fix.md.
 
 ### Tools
 Tools are explicit, local functions with schema-validated inputs/outputs. Python code lives in `tools/*.py` (no inline Python). The `.ai` file stays intent-only; Python wiring lives in `.namel3ss/tools.yaml`.
@@ -360,6 +491,21 @@ n3 studio         # or n3 app.ai studio
 Why mode:
 ```bash
 n3 why            # or n3 explain --why
+```
+How mode:
+```bash
+n3 how
+```
+With mode:
+```bash
+n3 with
+```
+Memory recall and explain:
+```bash
+n3 memory "hello"
+n3 memory why
+n3 memory show
+n3 memory @assistant "hello"
 ```
 Format and lint:
 ```bash

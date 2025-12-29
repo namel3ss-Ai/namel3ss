@@ -11,6 +11,10 @@ Rejecting removes the proposal.
 - approved
 - rejected
 
+## Agreement defaults
+Approval count and owner override can be set by memory packs.
+Local overrides can replace pack defaults.
+
 ## Rules and agreement
 Rules are proposed like other team memory.
 Approving a rule replaces older rules with the same key.

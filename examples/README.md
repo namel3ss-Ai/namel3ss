@@ -38,6 +38,64 @@ What to click:
 - Submit an order with price + quantity.
 - Click "Compute total" and inspect State for the computed total.
 
+## execution_how
+A tiny flow that shows explainable execution (if/else, repeat, match).
+
+Run:
+- `cd examples/execution_how && n3 run app.ai`
+- `cd examples/execution_how && n3 how`
+
+What to look for:
+- Branch taken and skipped lines.
+- Repeat body skipped when count is 0.
+- Match case taken and otherwise skipped.
+
+## tools_with
+A minimal tool call with explainable tool output.
+
+Run:
+- `cd examples/tools_with && n3 run app.ai`
+- `cd examples/tools_with && n3 with`
+
+What to look for:
+- Tool intent and permission lines.
+- Blocked tool reasons if you disable capability access.
+
+## flow_what
+A small flow showing intent and outcome summaries.
+
+Run:
+- `cd examples/flow_what && n3 run app.ai`
+- `cd examples/flow_what && n3 with`
+- `cd examples/flow_what && n3 what`
+
+What to look for:
+- Intent and outcome lines.
+- Skipped else branch under \"What did not happen\".
+
+## ui_see
+A small ui manifest explanation demo.
+
+Run:
+- `cd examples/ui_see && n3 check`
+- `cd examples/ui_see && n3 ui`
+- `cd examples/ui_see && n3 see`
+
+What to look for:
+- Page list and element summaries.
+- Action availability with requires details.
+
+## errors_fix
+A minimal error example for `n3 fix`.
+
+Run:
+- `cd examples/errors_fix && n3 run app.ai`
+- `cd examples/errors_fix && n3 fix`
+
+What to look for:
+- Error kind and flow name.
+- Recovery option to provide identity.
+
 ## demo_ai_assistant_ui.ai
 A lightweight AI assistant UI using the mock provider by default, with graceful messaging when real keys are missing.
 

@@ -1,0 +1,73 @@
+{
+  "cache_versions_by_step": [
+    {
+      "step_index": 1,
+      "versions": [
+        {
+          "kind": "short_term",
+          "store_key": "session:anonymous:my",
+          "version": 2
+        }
+      ]
+    },
+    {
+      "step_index": 2,
+      "versions": [
+        {
+          "kind": "short_term",
+          "store_key": "session:anonymous:my",
+          "version": 7
+        }
+      ]
+    }
+  ],
+  "invariants": {
+    "failures": [],
+    "notes": [
+      "TODO: memory_deleted explanation field is not emitted yet."
+    ],
+    "ok": true
+  },
+  "memory_counts": {
+    "profile": 0,
+    "semantic": 0,
+    "short_term": 3
+  },
+  "phase_snapshots_by_step": [
+    {
+      "phases": [
+        {
+          "current_phase_id": "phase-1",
+          "history_ids": [
+            "phase-1"
+          ],
+          "store_key": "session:anonymous:my"
+        }
+      ],
+      "step_index": 1
+    },
+    {
+      "phases": [
+        {
+          "current_phase_id": "phase-1",
+          "history_ids": [
+            "phase-1"
+          ],
+          "store_key": "session:anonymous:my"
+        }
+      ],
+      "step_index": 2
+    }
+  ],
+  "recall_hashes": [],
+  "scenario": {
+    "id": "002_write_short_term",
+    "name": "Write short term"
+  },
+  "step_counts": {
+    "admin": 0,
+    "recall": 0,
+    "record": 2,
+    "total": 2
+  }
+}

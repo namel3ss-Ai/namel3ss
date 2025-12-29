@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "api_version": "memory.v1",
+  "payload": [
+    {
+      "id": "session:anon:my:short_term:1",
+      "kind": "short_term",
+      "text": "remember this"
+    }
+  ],
+  "events": [],
+  "meta": {},
+  "proof": {
+    "write_count": 1
+  },
+  "summary": "Recorded 1 item."
+}

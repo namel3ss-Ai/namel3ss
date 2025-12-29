@@ -1,0 +1,14 @@
+name: "Basic recall"
+ai_profile:
+  name: "assistant"
+  memory:
+    short_term: 1
+    semantic: false
+    profile: false
+steps:
+  - record:
+    input: "Hello, remember this."
+    output: "ok"
+    tool_events: []
+  - recall:
+    input: "What did I just say?"

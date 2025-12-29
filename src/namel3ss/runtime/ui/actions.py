@@ -12,7 +12,7 @@ from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.records.service import save_record_with_errors
 from namel3ss.runtime.records.state_paths import set_state_record
 from namel3ss.runtime.storage.base import Storage
-from namel3ss.runtime.memory.manager import MemoryManager
+from namel3ss.runtime.memory.api import MemoryManager
 from namel3ss.runtime.storage.factory import resolve_store
 from namel3ss.ui.manifest import build_manifest
 from namel3ss.utils.json_tools import dumps as json_dumps

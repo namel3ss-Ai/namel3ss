@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "flow_name": "admin_only",
+  "error_type": "Namel3ssError",
+  "error_message": "What happened: Identity is missing 'role'.\nWhy: The app referenced identity data that was not provided.\nFix: Provide the field via N3_IDENTITY_* or N3_IDENTITY_JSON.\nExample: N3_IDENTITY_EMAIL=dev@example.com"
+}

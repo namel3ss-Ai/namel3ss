@@ -20,6 +20,7 @@ from namel3ss.studio.pkg_api import get_pkg_info_payload, search_pkg_index_paylo
 from namel3ss.studio.registry_api import get_registry_status_payload
 from namel3ss.studio.memory_agreement_api import apply_agreement_action_payload, get_agreements_payload
 from namel3ss.studio.memory_rules_api import get_rules_payload, propose_rule_payload
+from namel3ss.studio.memory_packs_api import get_memory_packs_payload
 from namel3ss.studio.memory_handoff_api import (
     apply_handoff_payload,
     create_handoff_payload,
@@ -101,6 +102,10 @@ def handle_api_get(handler: Any) -> None:
         return
     if handler.path == "/api/memory/rules":
         payload = get_rules_payload(handler.server.app_path, handler._get_session())  # type: ignore[attr-defined]
+        handler._respond_json(payload, status=200 if payload.get("ok", True) else 400)
+        return
+    if handler.path == "/api/memory/packs":
+        payload = get_memory_packs_payload(handler.server.app_path, handler._get_session())  # type: ignore[attr-defined]
         handler._respond_json(payload, status=200 if payload.get("ok", True) else 400)
         return
     if handler.path == "/api/memory/handoff":

@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+from pathlib import Path
+import json
+
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.executor import execute_program_flow
+from namel3ss.runtime.errors.explain.builder import build_error_explain_pack, write_error_explain_artifacts
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.preferences.factory import preference_store_for_app, app_pref_key
 from namel3ss.secrets import collect_secret_values, redact_payload
+from namel3ss.utils.json_tools import dumps as json_dumps
 
 
 def run_flow(program_ir, flow_name: str | None = None) -> dict:
@@ -15,21 +20,48 @@ def run_flow(program_ir, flow_name: str | None = None) -> dict:
         app_path=getattr(program_ir, "app_path", None),
         root=getattr(program_ir, "project_root", None),
     )
-    result = execute_program_flow(
-        program_ir,
-        selected,
-        state={},
-        input={},
-        store=None,
-        runtime_theme=getattr(program_ir, "theme", None),
-        preference_store=pref_store,
-        preference_key=app_pref_key(None),
-        config=config,
-    )
-    traces = [_trace_to_dict(t) for t in result.traces]
-    payload = {"ok": True, "state": result.state, "result": result.last_value, "traces": traces}
     secret_values = collect_secret_values(config)
-    return redact_payload(payload, secret_values)  # type: ignore[return-value]
+    try:
+        result = execute_program_flow(
+            program_ir,
+            selected,
+            state={},
+            input={},
+            store=None,
+            runtime_theme=getattr(program_ir, "theme", None),
+            preference_store=pref_store,
+            preference_key=app_pref_key(None),
+            config=config,
+        )
+    except Exception as err:
+        payload = {
+            "ok": False,
+            "flow_name": selected,
+            "state": {},
+            "result": None,
+            "traces": [],
+            "error_type": err.__class__.__name__,
+            "error_message": str(err),
+        }
+        error_step_id = _error_step_id(program_ir)
+        if error_step_id:
+            payload["error_step_id"] = error_step_id
+        redacted = redact_payload(payload, secret_values)  # type: ignore[return-value]
+        _write_last_run(program_ir, redacted)
+        _write_last_error_pack(program_ir)
+        raise
+    traces = [_trace_to_dict(t) for t in result.traces]
+    payload = {
+        "ok": True,
+        "flow_name": selected,
+        "state": result.state,
+        "result": result.last_value,
+        "traces": traces,
+    }
+    redacted = redact_payload(payload, secret_values)  # type: ignore[return-value]
+    _write_last_run(program_ir, redacted)
+    _write_last_error_pack(program_ir)
+    return redacted
 
 
 def _select_flow(program_ir, flow_name: str | None) -> str:
@@ -68,3 +100,48 @@ def _trace_to_dict(trace) -> dict:
     if isinstance(trace, dict):
         return trace
     return {"trace": trace}
+
+
+def _write_last_run(program_ir, payload: dict) -> None:
+    project_root = getattr(program_ir, "project_root", None)
+    if not project_root:
+        return
+    root = Path(project_root)
+    run_dir = root / ".namel3ss" / "run"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    last_json = run_dir / "last.json"
+    last_json.write_text(json_dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _write_last_error_pack(program_ir) -> None:
+    project_root = getattr(program_ir, "project_root", None)
+    if not project_root:
+        return
+    try:
+        root = Path(project_root)
+        pack = build_error_explain_pack(root)
+        if pack is None:
+            return
+        write_error_explain_artifacts(root, pack)
+    except Exception:
+        return
+
+
+def _error_step_id(program_ir) -> str | None:
+    project_root = getattr(program_ir, "project_root", None)
+    if not project_root:
+        return None
+    path = Path(project_root) / ".namel3ss" / "execution" / "last.json"
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+    steps = data.get("execution_steps") or []
+    if not isinstance(steps, list):
+        return None
+    for step in reversed(steps):
+        if isinstance(step, dict) and step.get("kind") == "error" and step.get("id"):
+            return str(step.get("id"))
+    return None

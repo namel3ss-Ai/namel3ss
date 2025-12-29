@@ -24,6 +24,15 @@ Run any `.ai` app with the file-first CLI.
 - Run an action (CRUD template): `n3 app.ai page.home.form.customer '{"values":{"name":"Ada","email":"ada@example.com","age":23}}'`
 - Run tests: `n3 test`
 - Why mode: `n3 why` or `n3 explain --why`
+- How mode: `n3 how`
+- With mode: `n3 with`
+- What mode: `n3 what`
+- See mode: `n3 see`
+- Fix mode: `n3 fix`
+- Memory recall: `n3 memory "hello"` (run from a folder with `app.ai`)
+- Memory explain: `n3 memory why`
+- Memory show: `n3 memory show`
+- Memory with selector: `n3 memory @assistant "hello"`
 - Pattern list: `n3 pattern list`
 - Scaffold a pattern: `n3 pattern new admin-dashboard my_admin`
 - Search packages: `n3 pkg search auth`
@@ -39,6 +48,14 @@ Formatter and linter:
 - Format check (CI): `n3 app.ai format check`
 - Lint: `n3 app.ai lint`
 - Lint check (CI): `n3 app.ai lint check`
+
+Try this:
+- Run `n3 run app.ai`, then `n3 how`, `n3 with`, `n3 what`, and `n3 see`.
+- If something fails, try: `n3 fix`.
+
+Memory proof harness (dev):
+- Generate goldens: `python3 tools/memory_proof_generate.py`
+- Check goldens: `python3 tools/memory_proof_check.py`
 
 ## Python tools
 

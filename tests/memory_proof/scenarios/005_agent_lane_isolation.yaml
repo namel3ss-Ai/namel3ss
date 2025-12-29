@@ -1,0 +1,22 @@
+name: "Agent lane isolation"
+ai_profile:
+  name: "assistant"
+  memory:
+    short_term: 1
+    semantic: true
+    profile: false
+identity:
+  id: "agent-owner"
+  trust_level: "contributor"
+steps:
+  - record:
+    input: "Remember this for the project: We decided to use SQLite."
+    output: "ok"
+    tool_events: []
+    agent_id: "agent-1"
+  - recall:
+    input: "What did we decide?"
+    agent_id: "agent-1"
+  - recall:
+    input: "What did we decide?"
+    agent_id: "agent-2"

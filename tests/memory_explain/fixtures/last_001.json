@@ -1,0 +1,62 @@
+{
+  "ok": true,
+  "api_version": "memory.v1",
+  "payload": {
+    "short_term": [
+      {
+        "id": "st-1",
+        "kind": "short_term",
+        "meta": {
+          "space": "short_term",
+          "lane": "my",
+          "phase_id": "phase-1"
+        }
+      }
+    ],
+    "semantic": [
+      {
+        "id": "se-1",
+        "kind": "semantic",
+        "meta": {
+          "space": "semantic",
+          "lane": "team",
+          "phase_id": "phase-1"
+        }
+      }
+    ],
+    "profile": []
+  },
+  "events": [
+    {
+      "type": "memory_border_check",
+      "action": "read",
+      "allowed": true,
+      "from_space": "short_term",
+      "reason": "policy"
+    },
+    {
+      "type": "memory_border_check",
+      "action": "lane_read",
+      "allowed": true,
+      "from_lane": "my",
+      "reason": "policy"
+    },
+    {
+      "type": "memory_cache_hit",
+      "space": "short_term",
+      "lane": "my",
+      "phase_id": "phase-1"
+    }
+  ],
+  "meta": {
+    "spaces_consulted": ["short_term", "semantic"],
+    "current_phase": {
+      "phase_id": "phase-1"
+    }
+  },
+  "proof": {
+    "recall_hash": "hash-1",
+    "phase_mode": "current_only"
+  },
+  "summary": "Recalled 2 items: 1 short term, 1 semantic."
+}

@@ -96,8 +96,12 @@
   }
 
   async function refreshRules() {
-    const data = await utils.fetchJson("/api/memory/rules");
-    renderRules(data);
+    const [rules, packs] = await Promise.all([
+      utils.fetchJson("/api/memory/rules"),
+      utils.fetchJson("/api/memory/packs"),
+    ]);
+    renderRules(rules);
+    if (window.renderMemoryPacks) window.renderMemoryPacks(packs);
   }
 
   async function proposeRule() {

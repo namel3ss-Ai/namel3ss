@@ -1,0 +1,14 @@
+{
+  "diff": {
+    "entries": [],
+    "ok": true
+  },
+  "invariants": {
+    "failures": [],
+    "notes": [],
+    "ok": true
+  },
+  "ok": true,
+  "scenario_id": "008_phases_diff",
+  "scenario_name": "Phases diff"
+}

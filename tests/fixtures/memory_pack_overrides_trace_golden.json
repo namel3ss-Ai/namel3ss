@@ -1,0 +1,8 @@
+{
+  "type": "memory_pack_overrides",
+  "trace_version": "2024-10-01",
+  "title": "Memory pack overrides",
+  "lines": [
+    "Override agreement.approval_count_required from pack base to local override."
+  ]
+}

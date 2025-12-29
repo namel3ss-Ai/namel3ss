@@ -7,7 +7,7 @@ from namel3ss.config.model import AppConfig
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.ai.provider import AIProvider
 from namel3ss.runtime.ai.trace import AITrace
-from namel3ss.runtime.memory.manager import MemoryManager
+from namel3ss.runtime.memory.api import MemoryManager
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.schema.records import RecordSchema
 
@@ -35,3 +35,5 @@ class ExecutionContext:
     project_root: str | None = None
     app_path: str | None = None
     record_changes: list[dict] = field(default_factory=list)
+    execution_steps: list[dict] = field(default_factory=list)
+    execution_step_counter: int = 0

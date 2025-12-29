@@ -1,0 +1,16 @@
+name: "Cache version bumps"
+ai_profile:
+  name: "assistant"
+  memory:
+    short_term: 1
+    semantic: true
+    profile: false
+steps:
+  - recall:
+    input: "Warm the cache."
+  - record:
+    input: "Remember this for me: Use UTC for timestamps."
+    output: "ok"
+    tool_events: []
+  - recall:
+    input: "timestamps"

@@ -1,0 +1,3767 @@
+[
+  {
+    "agent_id": null,
+    "events": [
+      {
+        "action": "phase_start",
+        "ai_profile": "assistant",
+        "allowed": true,
+        "from_lane": "my",
+        "from_space": "session",
+        "policy_snapshot": {
+          "phase": {
+            "allow_cross_phase_recall": false,
+            "diff_enabled": true,
+            "enabled": true,
+            "max_phases": null,
+            "mode": "current_only"
+          }
+        },
+        "reason": "allowed",
+        "session": "anonymous",
+        "trace_version": "2024-10-01",
+        "type": "memory_border_check"
+      },
+      {
+        "ai_profile": "assistant",
+        "lane": "my",
+        "owner": "anonymous",
+        "phase_id": "phase-1",
+        "policy_snapshot": {
+          "phase": {
+            "allow_cross_phase_recall": false,
+            "diff_enabled": true,
+            "enabled": true,
+            "max_phases": null,
+            "mode": "current_only"
+          }
+        },
+        "reason": "auto",
+        "session": "anonymous",
+        "space": "session",
+        "trace_version": "2024-10-01",
+        "type": "memory_phase_started"
+      },
+      {
+        "action": "write",
+        "ai_profile": "assistant",
+        "allowed": true,
+        "from_lane": "my",
+        "from_space": "session",
+        "policy_snapshot": {
+          "allow_event_types": [],
+          "authority_order": [
+            "system_imposed",
+            "tool_verified",
+            "user_asserted",
+            "ai_inferred"
+          ],
+          "deny_event_types": [],
+          "lanes": {
+            "agent_enabled": true,
+            "read_order": [
+              "my",
+              "agent",
+              "team",
+              "system"
+            ],
+            "system_enabled": true,
+            "team_can_change": true,
+            "team_enabled": true,
+            "team_event_types": [
+              "decision",
+              "rule",
+              "execution"
+            ],
+            "write_lanes": [
+              "my",
+              "agent"
+            ]
+          },
+          "phase": {
+            "allow_cross_phase_recall": false,
+            "diff_enabled": true,
+            "enabled": true,
+            "max_phases": null,
+            "mode": "current_only"
+          },
+          "privacy": {
+            "allow_profile_keys": [
+              "name",
+              "timezone",
+              "language",
+              "project",
+              "editor",
+              "units"
+            ],
+            "deny_patterns": [
+              "password",
+              "secret",
+              "token",
+              "api key",
+              "apikey",
+              "credit card",
+              "ssn",
+              "social security",
+              "private key"
+            ],
+            "deny_sensitive": true
+          },
+          "promotion": {
+            "profile": {
+              "allowed_event_types": [
+                "fact",
+                "correction"
+              ]
+            },
+            "semantic": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            },
+            "short_term": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            }
+          },
+          "retention": {
+            "profile": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            },
+            "semantic": {
+              "context": {
+                "mode": "decay",
+                "ttl_ticks": 12
+              },
+              "correction": {
+                "mode": "decay",
+                "ttl_ticks": 45
+              },
+              "decision": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "execution": {
+                "mode": "decay",
+                "ttl_ticks": 18
+              },
+              "fact": {
+                "mode": "decay",
+                "ttl_ticks": 60
+              },
+              "preference": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "rule": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              }
+            },
+            "short_term": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            }
+          },
+          "spaces": {
+            "promotions": [
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "session",
+                "min_authority": "user_asserted",
+                "to_space": "user"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": true,
+                "from_space": "session",
+                "min_authority": "tool_verified",
+                "to_space": "project"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "user",
+                "min_authority": "user_asserted",
+                "to_space": "project"
+              }
+            ],
+            "read_order": [
+              "session",
+              "user",
+              "project",
+              "system"
+            ],
+            "write_spaces": [
+              "session"
+            ]
+          },
+          "trust": {
+            "approval_count_required": 1,
+            "owner_override": true,
+            "who_can_approve": "approver",
+            "who_can_propose": "contributor",
+            "who_can_reject": "approver"
+          },
+          "write_policy": "normal"
+        },
+        "reason": "allowed",
+        "session": "anonymous",
+        "subject_id": "session:anonymous:my:short_term:1",
+        "to_lane": "my",
+        "to_space": "session",
+        "trace_version": "2024-10-01",
+        "type": "memory_border_check"
+      },
+      {
+        "action": "lane_write",
+        "ai_profile": "assistant",
+        "allowed": true,
+        "from_lane": "my",
+        "from_space": "session",
+        "policy_snapshot": {
+          "allow_event_types": [],
+          "authority_order": [
+            "system_imposed",
+            "tool_verified",
+            "user_asserted",
+            "ai_inferred"
+          ],
+          "deny_event_types": [],
+          "lanes": {
+            "agent_enabled": true,
+            "read_order": [
+              "my",
+              "agent",
+              "team",
+              "system"
+            ],
+            "system_enabled": true,
+            "team_can_change": true,
+            "team_enabled": true,
+            "team_event_types": [
+              "decision",
+              "rule",
+              "execution"
+            ],
+            "write_lanes": [
+              "my",
+              "agent"
+            ]
+          },
+          "phase": {
+            "allow_cross_phase_recall": false,
+            "diff_enabled": true,
+            "enabled": true,
+            "max_phases": null,
+            "mode": "current_only"
+          },
+          "privacy": {
+            "allow_profile_keys": [
+              "name",
+              "timezone",
+              "language",
+              "project",
+              "editor",
+              "units"
+            ],
+            "deny_patterns": [
+              "password",
+              "secret",
+              "token",
+              "api key",
+              "apikey",
+              "credit card",
+              "ssn",
+              "social security",
+              "private key"
+            ],
+            "deny_sensitive": true
+          },
+          "promotion": {
+            "profile": {
+              "allowed_event_types": [
+                "fact",
+                "correction"
+              ]
+            },
+            "semantic": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            },
+            "short_term": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            }
+          },
+          "retention": {
+            "profile": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            },
+            "semantic": {
+              "context": {
+                "mode": "decay",
+                "ttl_ticks": 12
+              },
+              "correction": {
+                "mode": "decay",
+                "ttl_ticks": 45
+              },
+              "decision": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "execution": {
+                "mode": "decay",
+                "ttl_ticks": 18
+              },
+              "fact": {
+                "mode": "decay",
+                "ttl_ticks": 60
+              },
+              "preference": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "rule": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              }
+            },
+            "short_term": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            }
+          },
+          "spaces": {
+            "promotions": [
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "session",
+                "min_authority": "user_asserted",
+                "to_space": "user"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": true,
+                "from_space": "session",
+                "min_authority": "tool_verified",
+                "to_space": "project"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "user",
+                "min_authority": "user_asserted",
+                "to_space": "project"
+              }
+            ],
+            "read_order": [
+              "session",
+              "user",
+              "project",
+              "system"
+            ],
+            "write_spaces": [
+              "session"
+            ]
+          },
+          "trust": {
+            "approval_count_required": 1,
+            "owner_override": true,
+            "who_can_approve": "approver",
+            "who_can_propose": "contributor",
+            "who_can_reject": "approver"
+          },
+          "write_policy": "normal"
+        },
+        "reason": "allowed",
+        "session": "anonymous",
+        "subject_id": "session:anonymous:my:short_term:1",
+        "to_lane": "my",
+        "to_space": "session",
+        "trace_version": "2024-10-01",
+        "type": "memory_border_check"
+      },
+      {
+        "action": "write",
+        "ai_profile": "assistant",
+        "allowed": true,
+        "from_lane": "my",
+        "from_space": "session",
+        "policy_snapshot": {
+          "allow_event_types": [],
+          "authority_order": [
+            "system_imposed",
+            "tool_verified",
+            "user_asserted",
+            "ai_inferred"
+          ],
+          "deny_event_types": [],
+          "lanes": {
+            "agent_enabled": true,
+            "read_order": [
+              "my",
+              "agent",
+              "team",
+              "system"
+            ],
+            "system_enabled": true,
+            "team_can_change": true,
+            "team_enabled": true,
+            "team_event_types": [
+              "decision",
+              "rule",
+              "execution"
+            ],
+            "write_lanes": [
+              "my",
+              "agent"
+            ]
+          },
+          "phase": {
+            "allow_cross_phase_recall": false,
+            "diff_enabled": true,
+            "enabled": true,
+            "max_phases": null,
+            "mode": "current_only"
+          },
+          "privacy": {
+            "allow_profile_keys": [
+              "name",
+              "timezone",
+              "language",
+              "project",
+              "editor",
+              "units"
+            ],
+            "deny_patterns": [
+              "password",
+              "secret",
+              "token",
+              "api key",
+              "apikey",
+              "credit card",
+              "ssn",
+              "social security",
+              "private key"
+            ],
+            "deny_sensitive": true
+          },
+          "promotion": {
+            "profile": {
+              "allowed_event_types": [
+                "fact",
+                "correction"
+              ]
+            },
+            "semantic": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            },
+            "short_term": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            }
+          },
+          "retention": {
+            "profile": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            },
+            "semantic": {
+              "context": {
+                "mode": "decay",
+                "ttl_ticks": 12
+              },
+              "correction": {
+                "mode": "decay",
+                "ttl_ticks": 45
+              },
+              "decision": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "execution": {
+                "mode": "decay",
+                "ttl_ticks": 18
+              },
+              "fact": {
+                "mode": "decay",
+                "ttl_ticks": 60
+              },
+              "preference": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "rule": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              }
+            },
+            "short_term": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            }
+          },
+          "spaces": {
+            "promotions": [
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "session",
+                "min_authority": "user_asserted",
+                "to_space": "user"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": true,
+                "from_space": "session",
+                "min_authority": "tool_verified",
+                "to_space": "project"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "user",
+                "min_authority": "user_asserted",
+                "to_space": "project"
+              }
+            ],
+            "read_order": [
+              "session",
+              "user",
+              "project",
+              "system"
+            ],
+            "write_spaces": [
+              "session"
+            ]
+          },
+          "trust": {
+            "approval_count_required": 1,
+            "owner_override": true,
+            "who_can_approve": "approver",
+            "who_can_propose": "contributor",
+            "who_can_reject": "approver"
+          },
+          "write_policy": "normal"
+        },
+        "reason": "allowed",
+        "session": "anonymous",
+        "subject_id": "session:anonymous:my:short_term:2",
+        "to_lane": "my",
+        "to_space": "session",
+        "trace_version": "2024-10-01",
+        "type": "memory_border_check"
+      },
+      {
+        "action": "lane_write",
+        "ai_profile": "assistant",
+        "allowed": true,
+        "from_lane": "my",
+        "from_space": "session",
+        "policy_snapshot": {
+          "allow_event_types": [],
+          "authority_order": [
+            "system_imposed",
+            "tool_verified",
+            "user_asserted",
+            "ai_inferred"
+          ],
+          "deny_event_types": [],
+          "lanes": {
+            "agent_enabled": true,
+            "read_order": [
+              "my",
+              "agent",
+              "team",
+              "system"
+            ],
+            "system_enabled": true,
+            "team_can_change": true,
+            "team_enabled": true,
+            "team_event_types": [
+              "decision",
+              "rule",
+              "execution"
+            ],
+            "write_lanes": [
+              "my",
+              "agent"
+            ]
+          },
+          "phase": {
+            "allow_cross_phase_recall": false,
+            "diff_enabled": true,
+            "enabled": true,
+            "max_phases": null,
+            "mode": "current_only"
+          },
+          "privacy": {
+            "allow_profile_keys": [
+              "name",
+              "timezone",
+              "language",
+              "project",
+              "editor",
+              "units"
+            ],
+            "deny_patterns": [
+              "password",
+              "secret",
+              "token",
+              "api key",
+              "apikey",
+              "credit card",
+              "ssn",
+              "social security",
+              "private key"
+            ],
+            "deny_sensitive": true
+          },
+          "promotion": {
+            "profile": {
+              "allowed_event_types": [
+                "fact",
+                "correction"
+              ]
+            },
+            "semantic": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            },
+            "short_term": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            }
+          },
+          "retention": {
+            "profile": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            },
+            "semantic": {
+              "context": {
+                "mode": "decay",
+                "ttl_ticks": 12
+              },
+              "correction": {
+                "mode": "decay",
+                "ttl_ticks": 45
+              },
+              "decision": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "execution": {
+                "mode": "decay",
+                "ttl_ticks": 18
+              },
+              "fact": {
+                "mode": "decay",
+                "ttl_ticks": 60
+              },
+              "preference": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "rule": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              }
+            },
+            "short_term": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            }
+          },
+          "spaces": {
+            "promotions": [
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "session",
+                "min_authority": "user_asserted",
+                "to_space": "user"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": true,
+                "from_space": "session",
+                "min_authority": "tool_verified",
+                "to_space": "project"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "user",
+                "min_authority": "user_asserted",
+                "to_space": "project"
+              }
+            ],
+            "read_order": [
+              "session",
+              "user",
+              "project",
+              "system"
+            ],
+            "write_spaces": [
+              "session"
+            ]
+          },
+          "trust": {
+            "approval_count_required": 1,
+            "owner_override": true,
+            "who_can_approve": "approver",
+            "who_can_propose": "contributor",
+            "who_can_reject": "approver"
+          },
+          "write_policy": "normal"
+        },
+        "reason": "allowed",
+        "session": "anonymous",
+        "subject_id": "session:anonymous:my:short_term:2",
+        "to_lane": "my",
+        "to_space": "session",
+        "trace_version": "2024-10-01",
+        "type": "memory_border_check"
+      }
+    ],
+    "input": "Phase one note.",
+    "output": "ok",
+    "step_index": 1,
+    "step_kind": "record",
+    "tool_events": [],
+    "written": [
+      {
+        "created_at": 2,
+        "id": "session:anonymous:my:short_term:1",
+        "importance": 2,
+        "kind": "short_term",
+        "meta": {
+          "authority": "user_asserted",
+          "authority_reason": "source:user",
+          "can_change": true,
+          "dedup_key": "context:phase one note",
+          "event_type": "context",
+          "importance_reason": [
+            "event:context",
+            "source:user"
+          ],
+          "lane": "my",
+          "owner": "anonymous",
+          "phase_id": "phase-1",
+          "phase_reason": "auto",
+          "phase_started_at": 1,
+          "policy_tags": [
+            "allowed_by:privacy",
+            "allowed_by:promotion_rule"
+          ],
+          "space": "session",
+          "visible_to": "me"
+        },
+        "scope": "session",
+        "source": "user",
+        "text": "Phase one note."
+      },
+      {
+        "created_at": 3,
+        "id": "session:anonymous:my:short_term:2",
+        "importance": 1,
+        "kind": "short_term",
+        "meta": {
+          "authority": "ai_inferred",
+          "authority_reason": "source:ai",
+          "can_change": true,
+          "dedup_key": "context:ok",
+          "event_type": "context",
+          "importance_reason": [
+            "event:context"
+          ],
+          "lane": "my",
+          "owner": "anonymous",
+          "phase_id": "phase-1",
+          "phase_reason": "auto",
+          "phase_started_at": 1,
+          "policy_tags": [
+            "allowed_by:privacy",
+            "allowed_by:promotion_rule"
+          ],
+          "space": "session",
+          "visible_to": "me"
+        },
+        "scope": "session",
+        "source": "ai",
+        "text": "ok"
+      }
+    ]
+  },
+  {
+    "action": "advance_phase",
+    "events": [],
+    "payload": {
+      "name": "Phase Two",
+      "reason": "manual",
+      "token": "phase-2"
+    },
+    "result": {
+      "state_update": {
+        "_memory_phase_diff_from": null,
+        "_memory_phase_diff_lane": null,
+        "_memory_phase_diff_space": null,
+        "_memory_phase_diff_to": null,
+        "_memory_phase_name": "Phase Two",
+        "_memory_phase_reason": "manual",
+        "_memory_phase_token": "phase-2"
+      }
+    },
+    "step_index": 2,
+    "step_kind": "admin",
+    "written": []
+  },
+  {
+    "agent_id": null,
+    "events": [
+      {
+        "action": "phase_start",
+        "ai_profile": "assistant",
+        "allowed": true,
+        "from_lane": "my",
+        "from_space": "session",
+        "policy_snapshot": {
+          "phase": {
+            "allow_cross_phase_recall": false,
+            "diff_enabled": true,
+            "enabled": true,
+            "max_phases": null,
+            "mode": "current_only"
+          }
+        },
+        "reason": "allowed",
+        "session": "anonymous",
+        "trace_version": "2024-10-01",
+        "type": "memory_border_check"
+      },
+      {
+        "ai_profile": "assistant",
+        "lane": "my",
+        "owner": "anonymous",
+        "phase_id": "phase-2",
+        "phase_name": "Phase Two",
+        "policy_snapshot": {
+          "phase": {
+            "allow_cross_phase_recall": false,
+            "diff_enabled": true,
+            "enabled": true,
+            "max_phases": null,
+            "mode": "current_only"
+          }
+        },
+        "reason": "manual",
+        "session": "anonymous",
+        "space": "session",
+        "trace_version": "2024-10-01",
+        "type": "memory_phase_started"
+      },
+      {
+        "action": "write",
+        "ai_profile": "assistant",
+        "allowed": true,
+        "from_lane": "my",
+        "from_space": "session",
+        "policy_snapshot": {
+          "allow_event_types": [],
+          "authority_order": [
+            "system_imposed",
+            "tool_verified",
+            "user_asserted",
+            "ai_inferred"
+          ],
+          "deny_event_types": [],
+          "lanes": {
+            "agent_enabled": true,
+            "read_order": [
+              "my",
+              "agent",
+              "team",
+              "system"
+            ],
+            "system_enabled": true,
+            "team_can_change": true,
+            "team_enabled": true,
+            "team_event_types": [
+              "decision",
+              "rule",
+              "execution"
+            ],
+            "write_lanes": [
+              "my",
+              "agent"
+            ]
+          },
+          "phase": {
+            "allow_cross_phase_recall": false,
+            "diff_enabled": true,
+            "enabled": true,
+            "max_phases": null,
+            "mode": "current_only"
+          },
+          "privacy": {
+            "allow_profile_keys": [
+              "name",
+              "timezone",
+              "language",
+              "project",
+              "editor",
+              "units"
+            ],
+            "deny_patterns": [
+              "password",
+              "secret",
+              "token",
+              "api key",
+              "apikey",
+              "credit card",
+              "ssn",
+              "social security",
+              "private key"
+            ],
+            "deny_sensitive": true
+          },
+          "promotion": {
+            "profile": {
+              "allowed_event_types": [
+                "fact",
+                "correction"
+              ]
+            },
+            "semantic": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            },
+            "short_term": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            }
+          },
+          "retention": {
+            "profile": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            },
+            "semantic": {
+              "context": {
+                "mode": "decay",
+                "ttl_ticks": 12
+              },
+              "correction": {
+                "mode": "decay",
+                "ttl_ticks": 45
+              },
+              "decision": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "execution": {
+                "mode": "decay",
+                "ttl_ticks": 18
+              },
+              "fact": {
+                "mode": "decay",
+                "ttl_ticks": 60
+              },
+              "preference": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "rule": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              }
+            },
+            "short_term": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            }
+          },
+          "spaces": {
+            "promotions": [
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "session",
+                "min_authority": "user_asserted",
+                "to_space": "user"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": true,
+                "from_space": "session",
+                "min_authority": "tool_verified",
+                "to_space": "project"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "user",
+                "min_authority": "user_asserted",
+                "to_space": "project"
+              }
+            ],
+            "read_order": [
+              "session",
+              "user",
+              "project",
+              "system"
+            ],
+            "write_spaces": [
+              "session"
+            ]
+          },
+          "trust": {
+            "approval_count_required": 1,
+            "owner_override": true,
+            "who_can_approve": "approver",
+            "who_can_propose": "contributor",
+            "who_can_reject": "approver"
+          },
+          "write_policy": "normal"
+        },
+        "reason": "allowed",
+        "session": "anonymous",
+        "subject_id": "session:anonymous:my:short_term:3",
+        "to_lane": "my",
+        "to_space": "session",
+        "trace_version": "2024-10-01",
+        "type": "memory_border_check"
+      },
+      {
+        "action": "lane_write",
+        "ai_profile": "assistant",
+        "allowed": true,
+        "from_lane": "my",
+        "from_space": "session",
+        "policy_snapshot": {
+          "allow_event_types": [],
+          "authority_order": [
+            "system_imposed",
+            "tool_verified",
+            "user_asserted",
+            "ai_inferred"
+          ],
+          "deny_event_types": [],
+          "lanes": {
+            "agent_enabled": true,
+            "read_order": [
+              "my",
+              "agent",
+              "team",
+              "system"
+            ],
+            "system_enabled": true,
+            "team_can_change": true,
+            "team_enabled": true,
+            "team_event_types": [
+              "decision",
+              "rule",
+              "execution"
+            ],
+            "write_lanes": [
+              "my",
+              "agent"
+            ]
+          },
+          "phase": {
+            "allow_cross_phase_recall": false,
+            "diff_enabled": true,
+            "enabled": true,
+            "max_phases": null,
+            "mode": "current_only"
+          },
+          "privacy": {
+            "allow_profile_keys": [
+              "name",
+              "timezone",
+              "language",
+              "project",
+              "editor",
+              "units"
+            ],
+            "deny_patterns": [
+              "password",
+              "secret",
+              "token",
+              "api key",
+              "apikey",
+              "credit card",
+              "ssn",
+              "social security",
+              "private key"
+            ],
+            "deny_sensitive": true
+          },
+          "promotion": {
+            "profile": {
+              "allowed_event_types": [
+                "fact",
+                "correction"
+              ]
+            },
+            "semantic": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            },
+            "short_term": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            }
+          },
+          "retention": {
+            "profile": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            },
+            "semantic": {
+              "context": {
+                "mode": "decay",
+                "ttl_ticks": 12
+              },
+              "correction": {
+                "mode": "decay",
+                "ttl_ticks": 45
+              },
+              "decision": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "execution": {
+                "mode": "decay",
+                "ttl_ticks": 18
+              },
+              "fact": {
+                "mode": "decay",
+                "ttl_ticks": 60
+              },
+              "preference": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "rule": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              }
+            },
+            "short_term": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            }
+          },
+          "spaces": {
+            "promotions": [
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "session",
+                "min_authority": "user_asserted",
+                "to_space": "user"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": true,
+                "from_space": "session",
+                "min_authority": "tool_verified",
+                "to_space": "project"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "user",
+                "min_authority": "user_asserted",
+                "to_space": "project"
+              }
+            ],
+            "read_order": [
+              "session",
+              "user",
+              "project",
+              "system"
+            ],
+            "write_spaces": [
+              "session"
+            ]
+          },
+          "trust": {
+            "approval_count_required": 1,
+            "owner_override": true,
+            "who_can_approve": "approver",
+            "who_can_propose": "contributor",
+            "who_can_reject": "approver"
+          },
+          "write_policy": "normal"
+        },
+        "reason": "allowed",
+        "session": "anonymous",
+        "subject_id": "session:anonymous:my:short_term:3",
+        "to_lane": "my",
+        "to_space": "session",
+        "trace_version": "2024-10-01",
+        "type": "memory_border_check"
+      },
+      {
+        "action": "write",
+        "ai_profile": "assistant",
+        "allowed": true,
+        "from_lane": "my",
+        "from_space": "session",
+        "policy_snapshot": {
+          "allow_event_types": [],
+          "authority_order": [
+            "system_imposed",
+            "tool_verified",
+            "user_asserted",
+            "ai_inferred"
+          ],
+          "deny_event_types": [],
+          "lanes": {
+            "agent_enabled": true,
+            "read_order": [
+              "my",
+              "agent",
+              "team",
+              "system"
+            ],
+            "system_enabled": true,
+            "team_can_change": true,
+            "team_enabled": true,
+            "team_event_types": [
+              "decision",
+              "rule",
+              "execution"
+            ],
+            "write_lanes": [
+              "my",
+              "agent"
+            ]
+          },
+          "phase": {
+            "allow_cross_phase_recall": false,
+            "diff_enabled": true,
+            "enabled": true,
+            "max_phases": null,
+            "mode": "current_only"
+          },
+          "privacy": {
+            "allow_profile_keys": [
+              "name",
+              "timezone",
+              "language",
+              "project",
+              "editor",
+              "units"
+            ],
+            "deny_patterns": [
+              "password",
+              "secret",
+              "token",
+              "api key",
+              "apikey",
+              "credit card",
+              "ssn",
+              "social security",
+              "private key"
+            ],
+            "deny_sensitive": true
+          },
+          "promotion": {
+            "profile": {
+              "allowed_event_types": [
+                "fact",
+                "correction"
+              ]
+            },
+            "semantic": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            },
+            "short_term": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            }
+          },
+          "retention": {
+            "profile": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            },
+            "semantic": {
+              "context": {
+                "mode": "decay",
+                "ttl_ticks": 12
+              },
+              "correction": {
+                "mode": "decay",
+                "ttl_ticks": 45
+              },
+              "decision": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "execution": {
+                "mode": "decay",
+                "ttl_ticks": 18
+              },
+              "fact": {
+                "mode": "decay",
+                "ttl_ticks": 60
+              },
+              "preference": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "rule": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              }
+            },
+            "short_term": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            }
+          },
+          "spaces": {
+            "promotions": [
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "session",
+                "min_authority": "user_asserted",
+                "to_space": "user"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": true,
+                "from_space": "session",
+                "min_authority": "tool_verified",
+                "to_space": "project"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "user",
+                "min_authority": "user_asserted",
+                "to_space": "project"
+              }
+            ],
+            "read_order": [
+              "session",
+              "user",
+              "project",
+              "system"
+            ],
+            "write_spaces": [
+              "session"
+            ]
+          },
+          "trust": {
+            "approval_count_required": 1,
+            "owner_override": true,
+            "who_can_approve": "approver",
+            "who_can_propose": "contributor",
+            "who_can_reject": "approver"
+          },
+          "write_policy": "normal"
+        },
+        "reason": "allowed",
+        "session": "anonymous",
+        "subject_id": "session:anonymous:my:short_term:4",
+        "to_lane": "my",
+        "to_space": "session",
+        "trace_version": "2024-10-01",
+        "type": "memory_border_check"
+      },
+      {
+        "action": "lane_write",
+        "ai_profile": "assistant",
+        "allowed": true,
+        "from_lane": "my",
+        "from_space": "session",
+        "policy_snapshot": {
+          "allow_event_types": [],
+          "authority_order": [
+            "system_imposed",
+            "tool_verified",
+            "user_asserted",
+            "ai_inferred"
+          ],
+          "deny_event_types": [],
+          "lanes": {
+            "agent_enabled": true,
+            "read_order": [
+              "my",
+              "agent",
+              "team",
+              "system"
+            ],
+            "system_enabled": true,
+            "team_can_change": true,
+            "team_enabled": true,
+            "team_event_types": [
+              "decision",
+              "rule",
+              "execution"
+            ],
+            "write_lanes": [
+              "my",
+              "agent"
+            ]
+          },
+          "phase": {
+            "allow_cross_phase_recall": false,
+            "diff_enabled": true,
+            "enabled": true,
+            "max_phases": null,
+            "mode": "current_only"
+          },
+          "privacy": {
+            "allow_profile_keys": [
+              "name",
+              "timezone",
+              "language",
+              "project",
+              "editor",
+              "units"
+            ],
+            "deny_patterns": [
+              "password",
+              "secret",
+              "token",
+              "api key",
+              "apikey",
+              "credit card",
+              "ssn",
+              "social security",
+              "private key"
+            ],
+            "deny_sensitive": true
+          },
+          "promotion": {
+            "profile": {
+              "allowed_event_types": [
+                "fact",
+                "correction"
+              ]
+            },
+            "semantic": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            },
+            "short_term": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            }
+          },
+          "retention": {
+            "profile": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            },
+            "semantic": {
+              "context": {
+                "mode": "decay",
+                "ttl_ticks": 12
+              },
+              "correction": {
+                "mode": "decay",
+                "ttl_ticks": 45
+              },
+              "decision": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "execution": {
+                "mode": "decay",
+                "ttl_ticks": 18
+              },
+              "fact": {
+                "mode": "decay",
+                "ttl_ticks": 60
+              },
+              "preference": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "rule": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              }
+            },
+            "short_term": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            }
+          },
+          "spaces": {
+            "promotions": [
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "session",
+                "min_authority": "user_asserted",
+                "to_space": "user"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": true,
+                "from_space": "session",
+                "min_authority": "tool_verified",
+                "to_space": "project"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "user",
+                "min_authority": "user_asserted",
+                "to_space": "project"
+              }
+            ],
+            "read_order": [
+              "session",
+              "user",
+              "project",
+              "system"
+            ],
+            "write_spaces": [
+              "session"
+            ]
+          },
+          "trust": {
+            "approval_count_required": 1,
+            "owner_override": true,
+            "who_can_approve": "approver",
+            "who_can_propose": "contributor",
+            "who_can_reject": "approver"
+          },
+          "write_policy": "normal"
+        },
+        "reason": "allowed",
+        "session": "anonymous",
+        "subject_id": "session:anonymous:my:short_term:4",
+        "to_lane": "my",
+        "to_space": "session",
+        "trace_version": "2024-10-01",
+        "type": "memory_border_check"
+      }
+    ],
+    "input": "Phase two note.",
+    "output": "ok",
+    "step_index": 3,
+    "step_kind": "record",
+    "tool_events": [],
+    "written": [
+      {
+        "created_at": 5,
+        "id": "session:anonymous:my:short_term:3",
+        "importance": 2,
+        "kind": "short_term",
+        "meta": {
+          "authority": "user_asserted",
+          "authority_reason": "source:user",
+          "can_change": true,
+          "dedup_key": "context:phase two note",
+          "event_type": "context",
+          "importance_reason": [
+            "event:context",
+            "source:user"
+          ],
+          "lane": "my",
+          "owner": "anonymous",
+          "phase_id": "phase-2",
+          "phase_name": "Phase Two",
+          "phase_reason": "manual",
+          "phase_started_at": 4,
+          "policy_tags": [
+            "allowed_by:privacy",
+            "allowed_by:promotion_rule"
+          ],
+          "space": "session",
+          "visible_to": "me"
+        },
+        "scope": "session",
+        "source": "user",
+        "text": "Phase two note."
+      },
+      {
+        "created_at": 6,
+        "id": "session:anonymous:my:short_term:4",
+        "importance": 1,
+        "kind": "short_term",
+        "meta": {
+          "authority": "ai_inferred",
+          "authority_reason": "source:ai",
+          "can_change": true,
+          "dedup_key": "context:ok",
+          "event_type": "context",
+          "importance_reason": [
+            "event:context"
+          ],
+          "lane": "my",
+          "owner": "anonymous",
+          "phase_id": "phase-2",
+          "phase_name": "Phase Two",
+          "phase_reason": "manual",
+          "phase_started_at": 4,
+          "policy_tags": [
+            "allowed_by:privacy",
+            "allowed_by:promotion_rule"
+          ],
+          "space": "session",
+          "visible_to": "me"
+        },
+        "scope": "session",
+        "source": "ai",
+        "text": "ok"
+      }
+    ]
+  },
+  {
+    "action": "advance_phase",
+    "events": [],
+    "payload": {
+      "diff_from": "phase-1",
+      "diff_lane": "my",
+      "diff_space": "session",
+      "diff_to": "phase-2"
+    },
+    "result": {
+      "state_update": {
+        "_memory_phase_diff_from": "phase-1",
+        "_memory_phase_diff_lane": "my",
+        "_memory_phase_diff_space": "session",
+        "_memory_phase_diff_to": "phase-2",
+        "_memory_phase_name": "Phase Two",
+        "_memory_phase_reason": "manual",
+        "_memory_phase_token": "proof-phase-4"
+      }
+    },
+    "step_index": 4,
+    "step_kind": "admin",
+    "written": []
+  },
+  {
+    "agent_id": null,
+    "events": [
+      {
+        "action": "phase_start",
+        "ai_profile": "assistant",
+        "allowed": true,
+        "from_lane": "my",
+        "from_space": "session",
+        "policy_snapshot": {
+          "phase": {
+            "allow_cross_phase_recall": false,
+            "diff_enabled": true,
+            "enabled": true,
+            "max_phases": null,
+            "mode": "current_only"
+          }
+        },
+        "reason": "allowed",
+        "session": "anonymous",
+        "trace_version": "2024-10-01",
+        "type": "memory_border_check"
+      },
+      {
+        "ai_profile": "assistant",
+        "lane": "my",
+        "owner": "anonymous",
+        "phase_id": "phase-3",
+        "phase_name": "Phase Two",
+        "policy_snapshot": {
+          "phase": {
+            "allow_cross_phase_recall": false,
+            "diff_enabled": true,
+            "enabled": true,
+            "max_phases": null,
+            "mode": "current_only"
+          }
+        },
+        "reason": "manual",
+        "session": "anonymous",
+        "space": "session",
+        "trace_version": "2024-10-01",
+        "type": "memory_phase_started"
+      },
+      {
+        "action": "write",
+        "ai_profile": "assistant",
+        "allowed": true,
+        "from_lane": "my",
+        "from_space": "session",
+        "policy_snapshot": {
+          "allow_event_types": [],
+          "authority_order": [
+            "system_imposed",
+            "tool_verified",
+            "user_asserted",
+            "ai_inferred"
+          ],
+          "deny_event_types": [],
+          "lanes": {
+            "agent_enabled": true,
+            "read_order": [
+              "my",
+              "agent",
+              "team",
+              "system"
+            ],
+            "system_enabled": true,
+            "team_can_change": true,
+            "team_enabled": true,
+            "team_event_types": [
+              "decision",
+              "rule",
+              "execution"
+            ],
+            "write_lanes": [
+              "my",
+              "agent"
+            ]
+          },
+          "phase": {
+            "allow_cross_phase_recall": false,
+            "diff_enabled": true,
+            "enabled": true,
+            "max_phases": null,
+            "mode": "current_only"
+          },
+          "privacy": {
+            "allow_profile_keys": [
+              "name",
+              "timezone",
+              "language",
+              "project",
+              "editor",
+              "units"
+            ],
+            "deny_patterns": [
+              "password",
+              "secret",
+              "token",
+              "api key",
+              "apikey",
+              "credit card",
+              "ssn",
+              "social security",
+              "private key"
+            ],
+            "deny_sensitive": true
+          },
+          "promotion": {
+            "profile": {
+              "allowed_event_types": [
+                "fact",
+                "correction"
+              ]
+            },
+            "semantic": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            },
+            "short_term": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            }
+          },
+          "retention": {
+            "profile": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            },
+            "semantic": {
+              "context": {
+                "mode": "decay",
+                "ttl_ticks": 12
+              },
+              "correction": {
+                "mode": "decay",
+                "ttl_ticks": 45
+              },
+              "decision": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "execution": {
+                "mode": "decay",
+                "ttl_ticks": 18
+              },
+              "fact": {
+                "mode": "decay",
+                "ttl_ticks": 60
+              },
+              "preference": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "rule": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              }
+            },
+            "short_term": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            }
+          },
+          "spaces": {
+            "promotions": [
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "session",
+                "min_authority": "user_asserted",
+                "to_space": "user"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": true,
+                "from_space": "session",
+                "min_authority": "tool_verified",
+                "to_space": "project"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "user",
+                "min_authority": "user_asserted",
+                "to_space": "project"
+              }
+            ],
+            "read_order": [
+              "session",
+              "user",
+              "project",
+              "system"
+            ],
+            "write_spaces": [
+              "session"
+            ]
+          },
+          "trust": {
+            "approval_count_required": 1,
+            "owner_override": true,
+            "who_can_approve": "approver",
+            "who_can_propose": "contributor",
+            "who_can_reject": "approver"
+          },
+          "write_policy": "normal"
+        },
+        "reason": "allowed",
+        "session": "anonymous",
+        "subject_id": "session:anonymous:my:short_term:5",
+        "to_lane": "my",
+        "to_space": "session",
+        "trace_version": "2024-10-01",
+        "type": "memory_border_check"
+      },
+      {
+        "action": "lane_write",
+        "ai_profile": "assistant",
+        "allowed": true,
+        "from_lane": "my",
+        "from_space": "session",
+        "policy_snapshot": {
+          "allow_event_types": [],
+          "authority_order": [
+            "system_imposed",
+            "tool_verified",
+            "user_asserted",
+            "ai_inferred"
+          ],
+          "deny_event_types": [],
+          "lanes": {
+            "agent_enabled": true,
+            "read_order": [
+              "my",
+              "agent",
+              "team",
+              "system"
+            ],
+            "system_enabled": true,
+            "team_can_change": true,
+            "team_enabled": true,
+            "team_event_types": [
+              "decision",
+              "rule",
+              "execution"
+            ],
+            "write_lanes": [
+              "my",
+              "agent"
+            ]
+          },
+          "phase": {
+            "allow_cross_phase_recall": false,
+            "diff_enabled": true,
+            "enabled": true,
+            "max_phases": null,
+            "mode": "current_only"
+          },
+          "privacy": {
+            "allow_profile_keys": [
+              "name",
+              "timezone",
+              "language",
+              "project",
+              "editor",
+              "units"
+            ],
+            "deny_patterns": [
+              "password",
+              "secret",
+              "token",
+              "api key",
+              "apikey",
+              "credit card",
+              "ssn",
+              "social security",
+              "private key"
+            ],
+            "deny_sensitive": true
+          },
+          "promotion": {
+            "profile": {
+              "allowed_event_types": [
+                "fact",
+                "correction"
+              ]
+            },
+            "semantic": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            },
+            "short_term": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            }
+          },
+          "retention": {
+            "profile": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            },
+            "semantic": {
+              "context": {
+                "mode": "decay",
+                "ttl_ticks": 12
+              },
+              "correction": {
+                "mode": "decay",
+                "ttl_ticks": 45
+              },
+              "decision": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "execution": {
+                "mode": "decay",
+                "ttl_ticks": 18
+              },
+              "fact": {
+                "mode": "decay",
+                "ttl_ticks": 60
+              },
+              "preference": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "rule": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              }
+            },
+            "short_term": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            }
+          },
+          "spaces": {
+            "promotions": [
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "session",
+                "min_authority": "user_asserted",
+                "to_space": "user"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": true,
+                "from_space": "session",
+                "min_authority": "tool_verified",
+                "to_space": "project"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "user",
+                "min_authority": "user_asserted",
+                "to_space": "project"
+              }
+            ],
+            "read_order": [
+              "session",
+              "user",
+              "project",
+              "system"
+            ],
+            "write_spaces": [
+              "session"
+            ]
+          },
+          "trust": {
+            "approval_count_required": 1,
+            "owner_override": true,
+            "who_can_approve": "approver",
+            "who_can_propose": "contributor",
+            "who_can_reject": "approver"
+          },
+          "write_policy": "normal"
+        },
+        "reason": "allowed",
+        "session": "anonymous",
+        "subject_id": "session:anonymous:my:short_term:5",
+        "to_lane": "my",
+        "to_space": "session",
+        "trace_version": "2024-10-01",
+        "type": "memory_border_check"
+      },
+      {
+        "action": "write",
+        "ai_profile": "assistant",
+        "allowed": true,
+        "from_lane": "my",
+        "from_space": "session",
+        "policy_snapshot": {
+          "allow_event_types": [],
+          "authority_order": [
+            "system_imposed",
+            "tool_verified",
+            "user_asserted",
+            "ai_inferred"
+          ],
+          "deny_event_types": [],
+          "lanes": {
+            "agent_enabled": true,
+            "read_order": [
+              "my",
+              "agent",
+              "team",
+              "system"
+            ],
+            "system_enabled": true,
+            "team_can_change": true,
+            "team_enabled": true,
+            "team_event_types": [
+              "decision",
+              "rule",
+              "execution"
+            ],
+            "write_lanes": [
+              "my",
+              "agent"
+            ]
+          },
+          "phase": {
+            "allow_cross_phase_recall": false,
+            "diff_enabled": true,
+            "enabled": true,
+            "max_phases": null,
+            "mode": "current_only"
+          },
+          "privacy": {
+            "allow_profile_keys": [
+              "name",
+              "timezone",
+              "language",
+              "project",
+              "editor",
+              "units"
+            ],
+            "deny_patterns": [
+              "password",
+              "secret",
+              "token",
+              "api key",
+              "apikey",
+              "credit card",
+              "ssn",
+              "social security",
+              "private key"
+            ],
+            "deny_sensitive": true
+          },
+          "promotion": {
+            "profile": {
+              "allowed_event_types": [
+                "fact",
+                "correction"
+              ]
+            },
+            "semantic": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            },
+            "short_term": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            }
+          },
+          "retention": {
+            "profile": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            },
+            "semantic": {
+              "context": {
+                "mode": "decay",
+                "ttl_ticks": 12
+              },
+              "correction": {
+                "mode": "decay",
+                "ttl_ticks": 45
+              },
+              "decision": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "execution": {
+                "mode": "decay",
+                "ttl_ticks": 18
+              },
+              "fact": {
+                "mode": "decay",
+                "ttl_ticks": 60
+              },
+              "preference": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "rule": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              }
+            },
+            "short_term": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            }
+          },
+          "spaces": {
+            "promotions": [
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "session",
+                "min_authority": "user_asserted",
+                "to_space": "user"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": true,
+                "from_space": "session",
+                "min_authority": "tool_verified",
+                "to_space": "project"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "user",
+                "min_authority": "user_asserted",
+                "to_space": "project"
+              }
+            ],
+            "read_order": [
+              "session",
+              "user",
+              "project",
+              "system"
+            ],
+            "write_spaces": [
+              "session"
+            ]
+          },
+          "trust": {
+            "approval_count_required": 1,
+            "owner_override": true,
+            "who_can_approve": "approver",
+            "who_can_propose": "contributor",
+            "who_can_reject": "approver"
+          },
+          "write_policy": "normal"
+        },
+        "reason": "allowed",
+        "session": "anonymous",
+        "subject_id": "session:anonymous:my:short_term:6",
+        "to_lane": "my",
+        "to_space": "session",
+        "trace_version": "2024-10-01",
+        "type": "memory_border_check"
+      },
+      {
+        "action": "lane_write",
+        "ai_profile": "assistant",
+        "allowed": true,
+        "from_lane": "my",
+        "from_space": "session",
+        "policy_snapshot": {
+          "allow_event_types": [],
+          "authority_order": [
+            "system_imposed",
+            "tool_verified",
+            "user_asserted",
+            "ai_inferred"
+          ],
+          "deny_event_types": [],
+          "lanes": {
+            "agent_enabled": true,
+            "read_order": [
+              "my",
+              "agent",
+              "team",
+              "system"
+            ],
+            "system_enabled": true,
+            "team_can_change": true,
+            "team_enabled": true,
+            "team_event_types": [
+              "decision",
+              "rule",
+              "execution"
+            ],
+            "write_lanes": [
+              "my",
+              "agent"
+            ]
+          },
+          "phase": {
+            "allow_cross_phase_recall": false,
+            "diff_enabled": true,
+            "enabled": true,
+            "max_phases": null,
+            "mode": "current_only"
+          },
+          "privacy": {
+            "allow_profile_keys": [
+              "name",
+              "timezone",
+              "language",
+              "project",
+              "editor",
+              "units"
+            ],
+            "deny_patterns": [
+              "password",
+              "secret",
+              "token",
+              "api key",
+              "apikey",
+              "credit card",
+              "ssn",
+              "social security",
+              "private key"
+            ],
+            "deny_sensitive": true
+          },
+          "promotion": {
+            "profile": {
+              "allowed_event_types": [
+                "fact",
+                "correction"
+              ]
+            },
+            "semantic": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            },
+            "short_term": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            }
+          },
+          "retention": {
+            "profile": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            },
+            "semantic": {
+              "context": {
+                "mode": "decay",
+                "ttl_ticks": 12
+              },
+              "correction": {
+                "mode": "decay",
+                "ttl_ticks": 45
+              },
+              "decision": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "execution": {
+                "mode": "decay",
+                "ttl_ticks": 18
+              },
+              "fact": {
+                "mode": "decay",
+                "ttl_ticks": 60
+              },
+              "preference": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "rule": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              }
+            },
+            "short_term": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            }
+          },
+          "spaces": {
+            "promotions": [
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "session",
+                "min_authority": "user_asserted",
+                "to_space": "user"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": true,
+                "from_space": "session",
+                "min_authority": "tool_verified",
+                "to_space": "project"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "user",
+                "min_authority": "user_asserted",
+                "to_space": "project"
+              }
+            ],
+            "read_order": [
+              "session",
+              "user",
+              "project",
+              "system"
+            ],
+            "write_spaces": [
+              "session"
+            ]
+          },
+          "trust": {
+            "approval_count_required": 1,
+            "owner_override": true,
+            "who_can_approve": "approver",
+            "who_can_propose": "contributor",
+            "who_can_reject": "approver"
+          },
+          "write_policy": "normal"
+        },
+        "reason": "allowed",
+        "session": "anonymous",
+        "subject_id": "session:anonymous:my:short_term:6",
+        "to_lane": "my",
+        "to_space": "session",
+        "trace_version": "2024-10-01",
+        "type": "memory_border_check"
+      },
+      {
+        "action": "phase_diff",
+        "ai_profile": "assistant",
+        "allowed": true,
+        "from_lane": "my",
+        "from_space": "session",
+        "policy_snapshot": {
+          "phase": {
+            "allow_cross_phase_recall": false,
+            "diff_enabled": true,
+            "enabled": true,
+            "max_phases": null,
+            "mode": "current_only"
+          }
+        },
+        "reason": "allowed",
+        "session": "anonymous",
+        "trace_version": "2024-10-01",
+        "type": "memory_border_check"
+      },
+      {
+        "action": "lane_read",
+        "ai_profile": "assistant",
+        "allowed": true,
+        "from_lane": "my",
+        "from_space": "session",
+        "policy_snapshot": {
+          "allow_event_types": [],
+          "authority_order": [
+            "system_imposed",
+            "tool_verified",
+            "user_asserted",
+            "ai_inferred"
+          ],
+          "deny_event_types": [],
+          "lanes": {
+            "agent_enabled": true,
+            "read_order": [
+              "my",
+              "agent",
+              "team",
+              "system"
+            ],
+            "system_enabled": true,
+            "team_can_change": true,
+            "team_enabled": true,
+            "team_event_types": [
+              "decision",
+              "rule",
+              "execution"
+            ],
+            "write_lanes": [
+              "my",
+              "agent"
+            ]
+          },
+          "phase": {
+            "allow_cross_phase_recall": false,
+            "diff_enabled": true,
+            "enabled": true,
+            "max_phases": null,
+            "mode": "current_only"
+          },
+          "privacy": {
+            "allow_profile_keys": [
+              "name",
+              "timezone",
+              "language",
+              "project",
+              "editor",
+              "units"
+            ],
+            "deny_patterns": [
+              "password",
+              "secret",
+              "token",
+              "api key",
+              "apikey",
+              "credit card",
+              "ssn",
+              "social security",
+              "private key"
+            ],
+            "deny_sensitive": true
+          },
+          "promotion": {
+            "profile": {
+              "allowed_event_types": [
+                "fact",
+                "correction"
+              ]
+            },
+            "semantic": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            },
+            "short_term": {
+              "allowed_event_types": [
+                "context",
+                "correction",
+                "decision",
+                "execution",
+                "fact",
+                "preference",
+                "rule"
+              ]
+            }
+          },
+          "retention": {
+            "profile": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            },
+            "semantic": {
+              "context": {
+                "mode": "decay",
+                "ttl_ticks": 12
+              },
+              "correction": {
+                "mode": "decay",
+                "ttl_ticks": 45
+              },
+              "decision": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "execution": {
+                "mode": "decay",
+                "ttl_ticks": 18
+              },
+              "fact": {
+                "mode": "decay",
+                "ttl_ticks": 60
+              },
+              "preference": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              },
+              "rule": {
+                "mode": "decay",
+                "ttl_ticks": 40
+              }
+            },
+            "short_term": {
+              "context": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "correction": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "decision": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "execution": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "fact": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "preference": {
+                "mode": "never",
+                "ttl_ticks": null
+              },
+              "rule": {
+                "mode": "never",
+                "ttl_ticks": null
+              }
+            }
+          },
+          "spaces": {
+            "promotions": [
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "session",
+                "min_authority": "user_asserted",
+                "to_space": "user"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": true,
+                "from_space": "session",
+                "min_authority": "tool_verified",
+                "to_space": "project"
+              },
+              {
+                "allowed_event_types": [
+                  "preference",
+                  "decision",
+                  "fact",
+                  "correction"
+                ],
+                "decision_override": false,
+                "from_space": "user",
+                "min_authority": "user_asserted",
+                "to_space": "project"
+              }
+            ],
+            "read_order": [
+              "session",
+              "user",
+              "project",
+              "system"
+            ],
+            "write_spaces": [
+              "session"
+            ]
+          },
+          "trust": {
+            "approval_count_required": 1,
+            "owner_override": true,
+            "who_can_approve": "approver",
+            "who_can_propose": "contributor",
+            "who_can_reject": "approver"
+          },
+          "write_policy": "normal"
+        },
+        "reason": "allowed",
+        "session": "anonymous",
+        "trace_version": "2024-10-01",
+        "type": "memory_border_check"
+      },
+      {
+        "added_count": 1,
+        "ai_profile": "assistant",
+        "deleted_count": 0,
+        "from_phase_id": "phase-1",
+        "lane": "my",
+        "owner": "anonymous",
+        "replaced_count": 1,
+        "session": "anonymous",
+        "space": "session",
+        "summary_lines": [
+          "Added 1 items",
+          "Deleted 0 items",
+          "Replaced 1 items"
+        ],
+        "to_phase_id": "phase-2",
+        "top_changes": [
+          {
+            "change": "replaced",
+            "dedupe_key": "context:ok",
+            "from_id": "session:anonymous:my:short_term:2",
+            "from_kind": "short_term",
+            "to_id": "session:anonymous:my:short_term:4",
+            "to_kind": "short_term"
+          },
+          {
+            "change": "added",
+            "kind": "short_term",
+            "memory_id": "session:anonymous:my:short_term:3"
+          }
+        ],
+        "trace_version": "2024-10-01",
+        "type": "memory_phase_diff"
+      },
+      {
+        "ai_profile": "assistant",
+        "lane": "my",
+        "lines": [
+          "Link replaced ok.",
+          "Reason is phase_diff."
+        ],
+        "link_count": 1,
+        "memory_id": "session:anonymous:my:short_term:4",
+        "owner": "anonymous",
+        "phase_id": "phase-2",
+        "session": "anonymous",
+        "space": "session",
+        "trace_version": "2024-10-01",
+        "type": "memory_links"
+      },
+      {
+        "ai_profile": "assistant",
+        "lane": "my",
+        "lines": [
+          "This exists because it replaced an older item.",
+          "Target summary is ok.",
+          "Link was created in phase 2."
+        ],
+        "memory_id": "session:anonymous:my:short_term:4",
+        "owner": "anonymous",
+        "phase_id": "phase-2",
+        "session": "anonymous",
+        "space": "session",
+        "title": "Memory path",
+        "trace_version": "2024-10-01",
+        "type": "memory_path"
+      }
+    ],
+    "input": "Trigger phase diff.",
+    "output": "ok",
+    "step_index": 5,
+    "step_kind": "record",
+    "tool_events": [],
+    "written": [
+      {
+        "created_at": 8,
+        "id": "session:anonymous:my:short_term:5",
+        "importance": 2,
+        "kind": "short_term",
+        "meta": {
+          "authority": "user_asserted",
+          "authority_reason": "source:user",
+          "can_change": true,
+          "dedup_key": "context:trigger phase diff",
+          "event_type": "context",
+          "importance_reason": [
+            "event:context",
+            "source:user"
+          ],
+          "lane": "my",
+          "owner": "anonymous",
+          "phase_id": "phase-3",
+          "phase_name": "Phase Two",
+          "phase_reason": "manual",
+          "phase_started_at": 7,
+          "policy_tags": [
+            "allowed_by:privacy",
+            "allowed_by:promotion_rule"
+          ],
+          "space": "session",
+          "visible_to": "me"
+        },
+        "scope": "session",
+        "source": "user",
+        "text": "Trigger phase diff."
+      },
+      {
+        "created_at": 9,
+        "id": "session:anonymous:my:short_term:6",
+        "importance": 1,
+        "kind": "short_term",
+        "meta": {
+          "authority": "ai_inferred",
+          "authority_reason": "source:ai",
+          "can_change": true,
+          "dedup_key": "context:ok",
+          "event_type": "context",
+          "importance_reason": [
+            "event:context"
+          ],
+          "lane": "my",
+          "owner": "anonymous",
+          "phase_id": "phase-3",
+          "phase_name": "Phase Two",
+          "phase_reason": "manual",
+          "phase_started_at": 7,
+          "policy_tags": [
+            "allowed_by:privacy",
+            "allowed_by:promotion_rule"
+          ],
+          "space": "session",
+          "visible_to": "me"
+        },
+        "scope": "session",
+        "source": "ai",
+        "text": "ok"
+      }
+    ]
+  }
+]

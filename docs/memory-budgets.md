@@ -22,6 +22,10 @@ The cache key uses a stable fingerprint of the query and policy.
 Cache entries are evicted in a stable order.
 Cache events show when a hit or miss happens.
 
+## Packs
+Budgets can be set by memory packs.
+Local overrides can replace pack budgets.
+
 ## Studio view
 Open the Traces panel.
 Open a trace and look for the Memory budget section.

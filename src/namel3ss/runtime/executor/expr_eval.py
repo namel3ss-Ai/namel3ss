@@ -6,6 +6,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.executor.context import ExecutionContext
+from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.utils.numbers import is_number, to_decimal
 from namel3ss.runtime.tools.python_runtime import execute_python_tool_call
 
@@ -172,6 +173,14 @@ def evaluate_expression(ctx: ExecutionContext, expr: ir.Expression) -> object:
             return left != right
         raise Namel3ssError(f"Unsupported comparison '{expr.kind}'", line=expr.line, column=expr.column)
     if isinstance(expr, ir.ToolCallExpr):
+        record_step(
+            ctx,
+            kind="tool_call",
+            what=f"called tool {expr.tool_name}",
+            data={"tool_name": expr.tool_name},
+            line=expr.line,
+            column=expr.column,
+        )
         payload = {}
         for arg in expr.arguments:
             if arg.name in payload:

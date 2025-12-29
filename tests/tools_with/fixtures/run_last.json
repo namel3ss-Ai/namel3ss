@@ -1,0 +1,32 @@
+{
+  "ok": true,
+  "flow_name": "demo",
+  "state": {},
+  "result": null,
+  "traces": [
+    {
+      "type": "capability_check",
+      "tool_name": "greet someone",
+      "runner": "local",
+      "resolved_source": "binding",
+      "capability": "network",
+      "allowed": false,
+      "guarantee_source": "tool",
+      "reason": "guarantee_blocked",
+      "protocol_version": 1
+    },
+    {
+      "type": "tool_call",
+      "tool": "greet someone",
+      "tool_name": "greet someone",
+      "kind": "python",
+      "input_summary": "object(1)",
+      "status": "error",
+      "error_type": "CapabilityViolation",
+      "error_message": "network is not allowed",
+      "runner": "local",
+      "resolved_source": "binding",
+      "duration_ms": 5
+    }
+  ]
+}

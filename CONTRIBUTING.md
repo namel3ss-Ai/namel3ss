@@ -34,6 +34,7 @@ Clarity beats cleverness. Every change should make the language easier to unders
 ## Expectations for Every Change
 
 - Keep behavior stable unless a change is explicitly required. Preserve public imports and facades.  
+- Memory imports outside the memory subsystem must go through `namel3ss.runtime.memory.api` or `namel3ss.runtime.memory.types`.  
 - Errors must be clear, actionable, and include line/column when possible (use caret rendering where applicable).  
 - Determinism first: AI is the only non-deterministic boundary, and it must stay explicit.
 
@@ -54,6 +55,11 @@ python -m pytest -q
 Compile check:
 ```bash
 python -m compileall src -q
+```
+
+Memory import guard:
+```bash
+python3 tools/memory_import_guard.py
 ```
 
 Enforce line limit:

@@ -1,0 +1,28 @@
+name: "Handoff flow"
+ai_profile:
+  name: "assistant"
+  memory:
+    short_term: 1
+    semantic: true
+    profile: false
+identity:
+  id: "approver-1"
+  trust_level: "approver"
+steps:
+  - record:
+    input: "Remember this for the project: We decided to use Redis."
+    output: "ok"
+    tool_events: []
+    agent_id: "agent-1"
+  - admin:
+    action: "create_handoff"
+    payload:
+      from_agent_id: "agent-1"
+      to_agent_id: "agent-2"
+  - admin:
+    action: "apply_handoff"
+    payload:
+      packet_id: "first_pending"
+  - recall:
+    input: "What did we decide?"
+    agent_id: "agent-2"

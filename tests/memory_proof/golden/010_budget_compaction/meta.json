@@ -1,0 +1,183 @@
+{
+  "cache_versions_by_step": [
+    {
+      "step_index": 1,
+      "versions": [
+        {
+          "kind": "short_term",
+          "store_key": "session:anonymous:my",
+          "version": 2
+        }
+      ]
+    },
+    {
+      "step_index": 2,
+      "versions": [
+        {
+          "kind": "short_term",
+          "store_key": "session:anonymous:my",
+          "version": 4
+        }
+      ]
+    },
+    {
+      "step_index": 3,
+      "versions": [
+        {
+          "kind": "short_term",
+          "store_key": "session:anonymous:my",
+          "version": 6
+        }
+      ]
+    },
+    {
+      "step_index": 4,
+      "versions": [
+        {
+          "kind": "short_term",
+          "store_key": "session:anonymous:my",
+          "version": 8
+        }
+      ]
+    },
+    {
+      "step_index": 5,
+      "versions": [
+        {
+          "kind": "short_term",
+          "store_key": "session:anonymous:my",
+          "version": 10
+        }
+      ]
+    },
+    {
+      "step_index": 6,
+      "versions": [
+        {
+          "kind": "short_term",
+          "store_key": "session:anonymous:my",
+          "version": 12
+        }
+      ]
+    },
+    {
+      "step_index": 7,
+      "versions": [
+        {
+          "kind": "short_term",
+          "store_key": "session:anonymous:my",
+          "version": 18
+        }
+      ]
+    }
+  ],
+  "invariants": {
+    "failures": [],
+    "notes": [
+      "TODO: memory_deleted explanation field is not emitted yet."
+    ],
+    "ok": true
+  },
+  "memory_counts": {
+    "profile": 0,
+    "semantic": 0,
+    "short_term": 12
+  },
+  "phase_snapshots_by_step": [
+    {
+      "phases": [
+        {
+          "current_phase_id": "phase-1",
+          "history_ids": [
+            "phase-1"
+          ],
+          "store_key": "session:anonymous:my"
+        }
+      ],
+      "step_index": 1
+    },
+    {
+      "phases": [
+        {
+          "current_phase_id": "phase-1",
+          "history_ids": [
+            "phase-1"
+          ],
+          "store_key": "session:anonymous:my"
+        }
+      ],
+      "step_index": 2
+    },
+    {
+      "phases": [
+        {
+          "current_phase_id": "phase-1",
+          "history_ids": [
+            "phase-1"
+          ],
+          "store_key": "session:anonymous:my"
+        }
+      ],
+      "step_index": 3
+    },
+    {
+      "phases": [
+        {
+          "current_phase_id": "phase-1",
+          "history_ids": [
+            "phase-1"
+          ],
+          "store_key": "session:anonymous:my"
+        }
+      ],
+      "step_index": 4
+    },
+    {
+      "phases": [
+        {
+          "current_phase_id": "phase-1",
+          "history_ids": [
+            "phase-1"
+          ],
+          "store_key": "session:anonymous:my"
+        }
+      ],
+      "step_index": 5
+    },
+    {
+      "phases": [
+        {
+          "current_phase_id": "phase-1",
+          "history_ids": [
+            "phase-1"
+          ],
+          "store_key": "session:anonymous:my"
+        }
+      ],
+      "step_index": 6
+    },
+    {
+      "phases": [
+        {
+          "current_phase_id": "phase-1",
+          "history_ids": [
+            "phase-1"
+          ],
+          "store_key": "session:anonymous:my"
+        }
+      ],
+      "step_index": 7
+    }
+  ],
+  "recall_hashes": [],
+  "scenario": {
+    "id": "010_budget_compaction",
+    "name": "Budget compaction"
+  },
+  "step_counts": {
+    "admin": 0,
+    "recall": 0,
+    "record": 7,
+    "total": 7
+  }
+}

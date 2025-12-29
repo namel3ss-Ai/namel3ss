@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "flow_name": "demo",
+  "state": {},
+  "result": {
+    "message": "hello"
+  },
+  "traces": []
+}

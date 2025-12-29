@@ -32,6 +32,9 @@ from namel3ss.traces.builders import (
     build_memory_agreement_summary,
     build_memory_approved,
     build_memory_approval_recorded,
+    build_memory_pack_loaded,
+    build_memory_pack_merged,
+    build_memory_pack_overrides,
 )
 from namel3ss.traces.schema import TRACE_VERSION, TraceEventType
 
@@ -439,6 +442,31 @@ def test_memory_restore_trace_events():
     )
     assert restore_failed["type"] == TraceEventType.MEMORY_RESTORE_FAILED
     assert restore_failed["project_id"] == "proj-1"
+
+
+def test_memory_pack_trace_events():
+    loaded = build_memory_pack_loaded(
+        pack_id="pack-1",
+        pack_version="1.0.0",
+        title="Memory pack loaded",
+        lines=["Pack name is Base pack."],
+    )
+    assert loaded["type"] == TraceEventType.MEMORY_PACK_LOADED
+    assert loaded["pack_id"] == "pack-1"
+
+    merged = build_memory_pack_merged(
+        title="Memory packs merged",
+        lines=["pack-1", "pack-2"],
+    )
+    assert merged["type"] == TraceEventType.MEMORY_PACK_MERGED
+    assert merged["title"] == "Memory packs merged"
+
+    overrides = build_memory_pack_overrides(
+        title="Memory pack overrides",
+        lines=["Override trust.who_can_approve from pack-1 to local override."],
+    )
+    assert overrides["type"] == TraceEventType.MEMORY_PACK_OVERRIDES
+    assert overrides["title"] == "Memory pack overrides"
 
 
 def test_memory_explanation_trace_event():

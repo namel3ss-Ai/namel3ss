@@ -83,6 +83,7 @@ def record_interaction_with_events(
     phase_ledger: PhaseLedger,
     phase_request: PhaseRequest | None,
     budget_configs: list[BudgetConfig] | None,
+    agreement_defaults: dict | None,
     agreement_request: AgreementRequest | None,
     agreements: ProposalStore,
     phase_diff_request: PhaseDiffRequest | None,
@@ -188,6 +189,7 @@ def record_interaction_with_events(
         phase_request=phase_request,
         session_phase=session_phase,
         link_tracker=link_tracker,
+        agreement_defaults=agreement_defaults,
         budget_enforcer=budget_enforcer,
         events=events,
     )
@@ -404,6 +406,7 @@ def record_interaction_with_events(
         link_tracker=link_tracker,
         agent_id=agent_id,
         budget_enforcer=budget_enforcer,
+        agreement_defaults=agreement_defaults,
     )
     if promoted_items:
         written.extend(promoted_items)

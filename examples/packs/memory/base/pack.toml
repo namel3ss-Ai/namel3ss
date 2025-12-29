@@ -1,0 +1,40 @@
+format_version = "memory_pack_v1"
+pack_id = "base"
+pack_name = "Base memory pack"
+pack_version = "1.0.0"
+
+[trust]
+who_can_propose = "contributor"
+who_can_approve = "approver"
+who_can_reject = "approver"
+approval_count_required = 1
+owner_override = true
+
+[agreement]
+approval_count_required = 1
+owner_override = true
+
+[[budgets]]
+space = "project"
+lane = "team"
+max_items_short_term = 40
+max_items_team = 20
+cache_enabled = true
+cache_max_entries = 50
+compaction_enabled = true
+
+[lanes]
+read_order = ["my", "team", "system"]
+write_lanes = ["my", "team"]
+team_enabled = true
+system_enabled = true
+agent_enabled = true
+team_event_types = ["decision", "fact", "preference"]
+team_can_change = true
+
+[phase]
+enabled = true
+mode = "current_plus_history"
+allow_cross_phase_recall = true
+max_phases = 3
+diff_enabled = true

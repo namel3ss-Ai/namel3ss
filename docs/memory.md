@@ -82,11 +82,46 @@ Budgets apply per space, lane, and phase.
 Soft limit actions use compaction, low value removal, or deny write.
 See docs/memory-budgets.md for details.
 
+## Memory packs
+Memory packs reuse trust, agreement defaults, budgets, lane defaults, phase defaults, and rules.
+Packs load from packs memory under the project root.
+Local overrides live under dot namel3ss.
+Studio shows pack summary and overrides.
+See docs/memory-packs.md for details.
+
 ## Memory persistence
 Memory is saved to disk in the project folder.
 Restore loads the exact memory state or fails fast.
 A wake up report trace appears after restore or fresh start.
 See docs/memory-persist.md for details.
+
+## Memory CLI and proof packs
+Memory recall and explain are available through a single command:
+- `n3 memory "hello"`
+- `n3 memory why`
+- `n3 memory show`
+- `n3 memory @assistant "hello"`
+
+The recall command stores a proof pack at `.namel3ss/memory/last.json`.
+It also writes `.namel3ss/memory/last.plain` for a stable, line-based summary.
+The why command writes `.namel3ss/memory/last.why.txt` and `.namel3ss/memory/last.graph.json`.
+
+## Memory proof harness
+Deterministic scenarios live under `tests/memory_proof/scenarios`.
+Goldens live under `tests/memory_proof/golden`.
+Run output is written under `tests/memory_proof/output`.
+
+Generate or refresh goldens:
+```bash
+python3 tools/memory_proof_generate.py
+```
+
+Check against goldens (CI):
+```bash
+python3 tools/memory_proof_check.py
+```
+
+See docs/memory-proof.md for details.
 
 ## Trace events
 Memory emits canonical events on every AI call.
@@ -144,6 +179,11 @@ Memory emits canonical events on every AI call.
 ### Persistence events
 - `memory_wake_up_report`
 - `memory_restore_failed`
+
+### Pack events
+- `memory_pack_loaded`
+- `memory_pack_merged`
+- `memory_pack_overrides`
 
 ### Explanation and links
 - `memory_explanation`

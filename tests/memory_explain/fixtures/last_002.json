@@ -1,0 +1,33 @@
+{
+  "ok": true,
+  "api_version": "memory.v1",
+  "payload": {
+    "short_term": [],
+    "semantic": [],
+    "profile": []
+  },
+  "events": [
+    {
+      "type": "memory_border_check",
+      "action": "read",
+      "allowed": false,
+      "from_space": "profile",
+      "reason": "disabled"
+    },
+    {
+      "type": "memory_denied",
+      "reason": "governance"
+    }
+  ],
+  "meta": {
+    "spaces_consulted": [],
+    "current_phase": {
+      "phase_id": "phase-2"
+    }
+  },
+  "proof": {
+    "recall_hash": "hash-2",
+    "phase_mode": "history"
+  },
+  "summary": "Recalled 0 items."
+}

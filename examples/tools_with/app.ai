@@ -1,0 +1,14 @@
+tool "greet someone":
+  implemented using python
+  purity is "pure"
+
+  input:
+    name is text
+
+  output:
+    message is text
+
+flow "demo":
+  let result is greet someone:
+    name is "Ada"
+  return result

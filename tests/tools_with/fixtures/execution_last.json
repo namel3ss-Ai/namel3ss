@@ -1,0 +1,26 @@
+{
+  "ok": true,
+  "flow_name": "demo",
+  "execution_steps": [
+    {
+      "id": "step:0001",
+      "kind": "flow_start",
+      "what": "flow \"demo\" started",
+      "because": null,
+      "data": {},
+      "line": 1,
+      "column": 1
+    },
+    {
+      "id": "step:0002",
+      "kind": "tool_call",
+      "what": "called tool greet someone",
+      "because": null,
+      "data": {
+        "tool_name": "greet someone"
+      },
+      "line": 2,
+      "column": 1
+    }
+  ]
+}

@@ -11,6 +11,8 @@ namel3ss is in early alpha. We keep core behavior predictable while we iterate.
 - UI manifest shape (element types, ids, page/slug/index metadata).
 - UI manifest `theme.schema_version` is `1`. Bump only on breaking manifest changes; additive fields do not bump the schema version.
 - Type canon: `text`, `number`, `boolean` (and `json` if present). Legacy aliases (`string`/`int`/`bool`) are deprecated; formatter rewrites and lint errors by default.
+- Execution explain artifacts: `.namel3ss/execution/last.json`, `.namel3ss/execution/last.plain`, and `n3 how`.
+- Error explain artifacts: `.namel3ss/errors/last.json`, `.namel3ss/errors/last.plain`, and `n3 fix`.
 
 ## May change
 - Experimental UI DSL details (new primitives may be added).

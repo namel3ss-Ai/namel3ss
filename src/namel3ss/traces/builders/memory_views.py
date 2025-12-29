@@ -282,3 +282,46 @@ def build_memory_restore_failed(
         "title": title,
         "lines": list(lines),
     }
+
+
+def build_memory_pack_loaded(
+    *,
+    pack_id: str,
+    pack_version: str,
+    title: str,
+    lines: list[str],
+) -> dict:
+    return {
+        "type": TraceEventType.MEMORY_PACK_LOADED,
+        "trace_version": TRACE_VERSION,
+        "pack_id": pack_id,
+        "pack_version": pack_version,
+        "title": title,
+        "lines": list(lines),
+    }
+
+
+def build_memory_pack_merged(
+    *,
+    title: str,
+    lines: list[str],
+) -> dict:
+    return {
+        "type": TraceEventType.MEMORY_PACK_MERGED,
+        "trace_version": TRACE_VERSION,
+        "title": title,
+        "lines": list(lines),
+    }
+
+
+def build_memory_pack_overrides(
+    *,
+    title: str,
+    lines: list[str],
+) -> dict:
+    return {
+        "type": TraceEventType.MEMORY_PACK_OVERRIDES,
+        "trace_version": TRACE_VERSION,
+        "title": title,
+        "lines": list(lines),
+    }

@@ -27,6 +27,11 @@ from namel3ss.cli.secrets_mode import run_secrets_command
 from namel3ss.cli.observe_mode import run_observe_command
 from namel3ss.cli.explain_mode import run_explain_command
 from namel3ss.cli.why_mode import run_why_command
+from namel3ss.cli.with_mode import run_with_command
+from namel3ss.cli.how_mode import run_how_command
+from namel3ss.cli.what_mode import run_what_command
+from namel3ss.cli.see_mode import run_see_command
+from namel3ss.cli.fix_mode import run_fix_command
 from namel3ss.cli.status_mode import run_status_command
 from namel3ss.cli.studio_mode import run_studio
 from namel3ss.cli.test_mode import run_test_command
@@ -39,6 +44,7 @@ from namel3ss.cli.packs_mode import run_packs
 from namel3ss.cli.registry_mode import run_registry
 from namel3ss.cli.discover_mode import run_discover
 from namel3ss.cli.verify_mode import run_verify_command
+from namel3ss.cli.memory_mode import run_memory_command
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.render import format_error
 from namel3ss.cli.redaction import redact_cli_text
@@ -71,11 +77,17 @@ RESERVED = {
     "where",
     "status",
     "proof",
+    "memory",
     "verify",
     "secrets",
     "observe",
     "explain",
     "why",
+    "how",
+    "with",
+    "what",
+    "see",
+    "fix",
     "kit",
     "editor",
     "run",
@@ -132,6 +144,8 @@ def main(argv: list[str] | None = None) -> int:
             return run_status_command(args[1:])
         if cmd == "proof":
             return run_proof_command(args[1:])
+        if cmd == "memory":
+            return run_memory_command(args[1:])
         if cmd == "verify":
             return run_verify_command(args[1:])
         if cmd == "secrets":
@@ -142,6 +156,16 @@ def main(argv: list[str] | None = None) -> int:
             return run_explain_command(args[1:])
         if cmd == "why":
             return run_why_command(args[1:])
+        if cmd == "how":
+            return run_how_command(args[1:])
+        if cmd == "with":
+            return run_with_command(args[1:])
+        if cmd == "what":
+            return run_what_command(args[1:])
+        if cmd == "see":
+            return run_see_command(args[1:])
+        if cmd == "fix":
+            return run_fix_command(args[1:])
         if cmd == "kit":
             return run_kit_command(args[1:])
         if cmd == "editor":
@@ -324,11 +348,20 @@ def _print_usage() -> None:
   n3 ship [--to T|--back]          # promote build (alias: promote; --rollback alias of --back)
   n3 where [app.ai]                # show active target/build (alias: status)
   n3 proof [app.ai] [--json]       # write engine proof for the target
+  n3 memory "text"                 # recall memory context
+  n3 memory why                    # explain the last recall
+  n3 memory show                   # show the last recall details
+  n3 memory @assistant "text"      # recall with a named AI profile
   n3 verify [app.ai] [--prod]      # governance checks (use --json for details)
   n3 secrets [app.ai]              # secret status/audit (subcommands: status, audit)
   n3 observe [app.ai] [--since T]  # engine observability stream (use --json for details)
   n3 explain [app.ai] [--json]     # explain the active engine state
   n3 why [app.ai] [--json]         # plain-English explanation of the app
+  n3 how                           # plain-English explanation of the last run
+  n3 with                          # explain tool usage and blocks from the last run
+  n3 what                          # explain flow intent and outcome from the last run
+  n3 see                           # explain the last UI manifest
+  n3 fix                           # explain the last error and recovery options
   n3 kit [app.ai] [--format md]    # adoption kit summary (writes .namel3ss/kit)
   n3 editor [app.ai] [--port N]    # start the editor service (use --json for details)
   n3 check [app.ai]                # validate (alias: n3 <app.ai> check)

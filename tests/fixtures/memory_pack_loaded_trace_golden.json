@@ -1,0 +1,13 @@
+{
+  "type": "memory_pack_loaded",
+  "trace_version": "2024-10-01",
+  "pack_id": "base",
+  "pack_version": "1.0.0",
+  "title": "Memory pack loaded",
+  "lines": [
+    "Pack name is Base pack.",
+    "Pack version is 1.0.0.",
+    "Provides rules.",
+    "Provides trust."
+  ]
+}

@@ -1,0 +1,11 @@
+scenario.id: 008_phases_diff
+scenario.name: Phases diff
+steps.total: 5
+steps.recall: 0
+steps.record: 3
+steps.admin: 2
+memory.short_term: 6
+memory.semantic: 0
+memory.profile: 0
+cache.session:anonymous:my.short_term: 6
+phase.session:anonymous:my.current: phase-3

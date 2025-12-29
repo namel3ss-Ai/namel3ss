@@ -1,0 +1,66 @@
+{
+  "ok": true,
+  "flow_name": "loops",
+  "summary": "Flow \"loops\" ran with 6 steps.",
+  "traces": [],
+  "execution_steps": [
+    {
+      "id": "step:0001",
+      "kind": "flow_start",
+      "what": "flow \"loops\" started",
+      "because": null,
+      "data": {},
+      "line": 1,
+      "column": 1
+    },
+    {
+      "id": "step:0002",
+      "kind": "decision_repeat",
+      "what": "repeat 0 times",
+      "because": null,
+      "data": {
+        "count": 0
+      },
+      "line": 2,
+      "column": 1
+    },
+    {
+      "id": "step:0003",
+      "kind": "branch_skipped",
+      "what": "skipped repeat body",
+      "because": "count was 0",
+      "data": {},
+      "line": 2,
+      "column": 1
+    },
+    {
+      "id": "step:0004",
+      "kind": "decision_for_each",
+      "what": "for each item in list (0)",
+      "because": null,
+      "data": {
+        "count": 0
+      },
+      "line": 3,
+      "column": 1
+    },
+    {
+      "id": "step:0005",
+      "kind": "branch_skipped",
+      "what": "skipped for each body",
+      "because": "list was empty",
+      "data": {},
+      "line": 3,
+      "column": 1
+    },
+    {
+      "id": "step:0006",
+      "kind": "flow_end",
+      "what": "flow \"loops\" ended",
+      "because": "completed successfully",
+      "data": {},
+      "line": 4,
+      "column": 1
+    }
+  ]
+}

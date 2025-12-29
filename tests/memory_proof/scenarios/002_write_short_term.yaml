@@ -1,0 +1,16 @@
+name: "Write short term"
+ai_profile:
+  name: "assistant"
+  memory:
+    short_term: 2
+    semantic: false
+    profile: false
+steps:
+  - record:
+    input: "First note."
+    output: "ok"
+    tool_events: []
+  - record:
+    input: "Second note."
+    output: "ok"
+    tool_events: []

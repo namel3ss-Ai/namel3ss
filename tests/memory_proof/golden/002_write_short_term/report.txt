@@ -1,0 +1,4 @@
+Memory proof: ok
+Scenario: 002_write_short_term - Write short term
+Invariant notes:
+- TODO: memory_deleted explanation field is not emitted yet.

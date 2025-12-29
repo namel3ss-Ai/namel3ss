@@ -1,0 +1,6 @@
+{
+  "ok": false,
+  "flow_name": "demo",
+  "error_type": "CapabilityViolation",
+  "error_message": "Tool \"send email\" was blocked."
+}

@@ -12,7 +12,7 @@ of memory where the current items reflect “what we believe now.”
 Default behavior:
 - Phase 1 is created automatically at the first memory write for a space/owner.
 
-Manual phase start (internal API):
+Manual phase start internal API:
 - Set `state._memory_phase_token` to a new string before an AI call.
 - Optional: set `state._memory_phase_name` and `state._memory_phase_reason`.
 - A new phase starts the next time memory is used.
@@ -27,6 +27,10 @@ Budgets are tracked per phase and lane.
 Compaction keeps a summary item in the same phase.
 Recall cache keys include the phase id.
 
+## Packs
+Phase defaults can be set by memory packs.
+Local overrides can replace pack phase settings.
+
 ## Persistence
 Phase data is saved with the memory snapshot.
 Restore keeps phase ids and diff order stable.
@@ -36,11 +40,11 @@ Wake up report confirms what was loaded.
 Phase diff compares two phases within a space/owner and reports:
 - added items
 - deleted items
-- replaced items (same fact key, new active id)
+- replaced items with the same fact key and new active id
 
-Manual diff request (internal API):
+Manual diff request internal API:
 - Set `state._memory_phase_diff_from` and `state._memory_phase_diff_to`.
-- Optional: set `state._memory_phase_diff_space` (defaults to `session`).
+- Optional set `state._memory_phase_diff_space` defaults to `session`.
 - The next AI call emits `memory_phase_diff`.
 
 ## Deletion with traceability

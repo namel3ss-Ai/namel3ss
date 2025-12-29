@@ -72,6 +72,7 @@ def _apply_agreement_actions(
     session_phase,
     link_tracker: LinkTracker,
     budget_enforcer,
+    agreement_defaults: dict | None = None,
     events: list[dict] | None = None,
 ) -> list[dict]:
     if events is None:
@@ -234,7 +235,7 @@ def _apply_agreement_actions(
                 count_required=count_required,
             )
         )
-        if is_owner(actor_level) and trust_rules.owner_override:
+        if is_owner(actor_level) and _agreement_owner_override(trust_rules, agreement_defaults):
             events.extend(
                 _approve_proposal(
                     ai_profile=ai_profile,
@@ -363,6 +364,12 @@ def _target_space_for_proposal(proposal) -> str | None:
     return None
 
 
+def _agreement_owner_override(trust_rules, agreement_defaults: dict | None) -> bool:
+    if agreement_defaults and agreement_defaults.get("owner_override") is not None:
+        return bool(agreement_defaults.get("owner_override"))
+    return bool(getattr(trust_rules, "owner_override", True))
+
+
 def apply_agreement_action(
     *,
     ai_profile: str,
@@ -384,6 +391,7 @@ def apply_agreement_action(
     identity: dict | None,
     state: dict | None,
     budget_configs: list[BudgetConfig] | None = None,
+    agreement_defaults: dict | None = None,
 ) -> list[dict]:
     link_tracker = LinkTracker(short_term=short_term, semantic=semantic, profile=profile)
     events: list[dict] = []
@@ -423,6 +431,7 @@ def apply_agreement_action(
         session_phase=session_phase,
         link_tracker=link_tracker,
         identity=identity,
+        agreement_defaults=agreement_defaults,
         events=events,
         budget_enforcer=budget_enforcer,
     )

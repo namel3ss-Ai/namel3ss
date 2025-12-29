@@ -78,6 +78,7 @@ def _promote_items(
     link_tracker: LinkTracker,
     agent_id: str | None,
     budget_enforcer,
+    agreement_defaults: dict | None = None,
 ) -> tuple[list[MemoryItem], list[dict]]:
     promoted: list[MemoryItem] = []
     events: list[dict] = []
@@ -214,6 +215,7 @@ def _promote_items(
             agreements=agreements,
             events=events,
             trust_rules_emitted=trust_rules_emitted,
+            agreement_defaults=agreement_defaults,
         )
         if handled:
             continue

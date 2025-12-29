@@ -45,6 +45,10 @@ Nesting rules:
 - Buttons call flows by name; actions are deterministic (`call_flow`, `submit_form`).
 - State is visible in Studio; UI manifest lists actions and elements with stable IDs.
 
+## 4.1) UI explanation output
+- The ui manifest can be explained with `n3 see`.
+- Output is deterministic and lists pages, elements, and action availability.
+
 ## 5) Theming (Phases 1–5)
 - `app: theme is "light"|"dark"|"system"` (default `system`).
 - `theme_tokens:` allowed tokens/values (closed):

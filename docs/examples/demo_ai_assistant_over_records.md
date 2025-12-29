@@ -7,6 +7,7 @@
 - Memory tour with preference, decision, fact, promotion, conflict, denial, phases, diff, lanes, and agreements
 - Memory budgets, compaction, and recall cache events
 - Memory persistence and wake up report
+- Memory packs and overrides
 - Agent lanes and handoff board
 - UI with cards, form, table, and assistant action
 
@@ -15,6 +16,14 @@
 n3 examples/demo_ai_assistant_over_records.ai check
 n3 examples/demo_ai_assistant_over_records.ai ui
 n3 examples/demo_ai_assistant_over_records.ai studio
+```
+
+## Memory CLI quick check
+Run from a project folder that contains `app.ai` (the memory CLI auto-detects it).
+```bash
+n3 memory "what did I just say?"
+n3 memory why
+n3 memory show
 ```
 
 ## Key concepts
@@ -33,6 +42,9 @@ n3 examples/demo_ai_assistant_over_records.ai studio
 - Stop Studio and run it again in the same folder
 - In Traces, look for memory_wake_up_report lines
 - If restore fails, look for memory_restore_failed
+- In Traces, look for memory_pack_loaded and memory_pack_merged
+- Open Rules and find the Memory packs section
+- Check the pack override summary lines
 - In Traces, switch to Plain view and expand memory events
 - In Traces, open the Memory budget section for budget lines
 - Use the memory filters to show budget, compaction, and cache events
@@ -100,3 +112,6 @@ N3_IDENTITY_TRUST_LEVEL=owner n3 examples/demo_ai_assistant_over_records.ai stud
 35. Open the Memory budget section and read the budget lines
 36. Stop Studio and run it again in the same folder
 37. Confirm memory_wake_up_report shows restored memory lines
+38. Confirm memory_pack_loaded shows pack name and version
+39. Confirm memory_pack_merged lists pack ids in order
+40. Confirm Memory packs shows override lines

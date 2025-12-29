@@ -1,0 +1,33 @@
+name: "Phases diff"
+ai_profile:
+  name: "assistant"
+  memory:
+    short_term: 2
+    semantic: false
+    profile: false
+steps:
+  - record:
+    input: "Phase one note."
+    output: "ok"
+    tool_events: []
+  - admin:
+    action: "advance_phase"
+    payload:
+      token: "phase-2"
+      name: "Phase Two"
+      reason: "manual"
+  - record:
+    input: "Phase two note."
+    output: "ok"
+    tool_events: []
+  - admin:
+    action: "advance_phase"
+    payload:
+      diff_from: "phase-1"
+      diff_to: "phase-2"
+      diff_space: "session"
+      diff_lane: "my"
+  - record:
+    input: "Trigger phase diff."
+    output: "ok"
+    tool_events: []

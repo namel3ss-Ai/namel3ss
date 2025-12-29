@@ -1,0 +1,13 @@
+scenario.id: 006_team_lane_agreement
+scenario.name: Team lane agreement
+steps.total: 2
+steps.recall: 0
+steps.record: 1
+steps.admin: 1
+memory.short_term: 2
+memory.semantic: 1
+memory.profile: 0
+cache.session:anonymous:my.semantic: 1
+cache.session:anonymous:my.short_term: 4
+phase.project:unknown:team.current: phase-1
+phase.session:anonymous:my.current: phase-1

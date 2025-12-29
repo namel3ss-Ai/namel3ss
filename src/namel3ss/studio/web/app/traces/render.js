@@ -76,6 +76,9 @@
         if (traces.appendWakeUpSection) {
           traces.appendWakeUpSection(details, trace);
         }
+        if (traces.appendMemoryPackSection) {
+          traces.appendMemoryPackSection(details, trace);
+        }
         traces.appendMemoryBudgetSection(details, trace, phaseId);
         traces.appendMemoryEventsSection(details, trace, phaseId, state.getTraceRenderMode());
         traces.appendTraceSection(details, "Tool calls", trace.tool_calls, false, state.getTraceRenderMode());

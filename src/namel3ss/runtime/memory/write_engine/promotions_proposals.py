@@ -40,6 +40,7 @@ def _maybe_propose_promotion(
     agreements: ProposalStore,
     events: list[dict],
     trust_rules_emitted: bool,
+    agreement_defaults: dict | None = None,
 ) -> tuple[bool, bool]:
     if not proposal_required(target_lane):
         return False, trust_rules_emitted
@@ -106,7 +107,8 @@ def _maybe_propose_promotion(
         event_type=event_type,
     )
     approvals_required = merge_required_approvals(
-        required_approvals(trust_rules), rule_approval_check.required_approvals
+        _agreement_approval_count(trust_rules, agreement_defaults),
+        rule_approval_check.required_approvals,
     )
     proposal = agreements.create_proposal(
         team_id=team_id or "unknown",
@@ -115,7 +117,7 @@ def _maybe_propose_promotion(
         proposed_by=proposal_actor_id,
         reason_code=reason,
         approval_count_required=approvals_required,
-        owner_override=trust_rules.owner_override,
+        owner_override=_agreement_owner_override(trust_rules, agreement_defaults),
         ai_profile=ai_profile,
     )
     events.append(
@@ -128,6 +130,18 @@ def _maybe_propose_promotion(
         )
     )
     return True, trust_rules_emitted
+
+
+def _agreement_approval_count(trust_rules, agreement_defaults: dict | None) -> int:
+    if agreement_defaults and agreement_defaults.get("approval_count_required") is not None:
+        return int(agreement_defaults.get("approval_count_required"))
+    return required_approvals(trust_rules)
+
+
+def _agreement_owner_override(trust_rules, agreement_defaults: dict | None) -> bool:
+    if agreement_defaults and agreement_defaults.get("owner_override") is not None:
+        return bool(agreement_defaults.get("owner_override"))
+    return bool(getattr(trust_rules, "owner_override", True))
 
 
 __all__ = ["_maybe_propose_promotion"]

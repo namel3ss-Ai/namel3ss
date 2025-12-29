@@ -5,8 +5,10 @@ from namel3ss.ir import nodes as ir
 from namel3ss.runtime.ai.trace import AITrace
 from namel3ss.runtime.executor.ai_runner import run_ai_with_tools
 from namel3ss.runtime.executor.context import ExecutionContext
-from namel3ss.runtime.memory.manager import MemoryManager
+import namel3ss.runtime.memory.api as memory_api
+from namel3ss.runtime.memory.api import MemoryManager
 from namel3ss.runtime.memory_explain import append_explanation_events
+from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
 from namel3ss.traces.builders import build_memory_recall, build_memory_write
 from namel3ss.traces.redact import redact_memory_context
@@ -51,6 +53,13 @@ def run_agent_call(ctx: ExecutionContext, agent_name: str, input_expr, line: int
     user_input = evaluate_expression(ctx, input_expr)
     if not isinstance(user_input, str):
         raise Namel3ssError("Agent input must be a string", line=line, column=column)
+    record_step(
+        ctx,
+        kind="ai_call",
+        what=f"asked ai {ai_profile.name}",
+        line=line,
+        column=column,
+    )
     profile_override = ir.AIDecl(
         name=ai_profile.name,
         model=ai_profile.model,
@@ -61,7 +70,8 @@ def run_agent_call(ctx: ExecutionContext, agent_name: str, input_expr, line: int
         line=ai_profile.line,
         column=ai_profile.column,
     )
-    memory_context, recall_events, recall_meta = ctx.memory_manager.recall_context_with_events(
+    recall_pack = memory_api.recall_with_events(
+        ctx.memory_manager,
         profile_override,
         user_input,
         ctx.state,
@@ -70,7 +80,11 @@ def run_agent_call(ctx: ExecutionContext, agent_name: str, input_expr, line: int
         app_path=getattr(ctx, "app_path", None),
         agent_id=agent.name,
     )
+    memory_context = recall_pack.payload
+    recall_events = recall_pack.events
+    recall_meta = recall_pack.meta
     recalled = _flatten_memory_context(memory_context)
+    deterministic_hash = recall_pack.proof.get("recall_hash") or ctx.memory_manager.recall_hash(recalled)
     canonical_events: list[dict] = []
     canonical_events.append(
         build_memory_recall(
@@ -79,7 +93,7 @@ def run_agent_call(ctx: ExecutionContext, agent_name: str, input_expr, line: int
             query=user_input,
             recalled=recalled,
             policy=_memory_policy(profile_override, ctx.memory_manager),
-            deterministic_hash=ctx.memory_manager.recall_hash(recalled),
+            deterministic_hash=deterministic_hash,
             spaces_consulted=recall_meta.get("spaces_consulted"),
             recall_counts=recall_meta.get("recall_counts"),
             phase_counts=recall_meta.get("phase_counts"),
@@ -97,7 +111,8 @@ def run_agent_call(ctx: ExecutionContext, agent_name: str, input_expr, line: int
         tool_events,
         canonical_events=canonical_events,
     )
-    written, governance_events = ctx.memory_manager.record_interaction_with_events(
+    record_pack = memory_api.record_with_events(
+        ctx.memory_manager,
         profile_override,
         ctx.state,
         user_input,
@@ -108,6 +123,8 @@ def run_agent_call(ctx: ExecutionContext, agent_name: str, input_expr, line: int
         app_path=getattr(ctx, "app_path", None),
         agent_id=agent.name,
     )
+    written = record_pack.payload
+    governance_events = record_pack.events
     canonical_events.append(
         build_memory_write(
             ai_profile=profile_override.name,

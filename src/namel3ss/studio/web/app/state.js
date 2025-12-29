@@ -9,6 +9,7 @@
     cachedTraces: [],
     cachedAgreements: {},
     cachedRules: {},
+    cachedMemoryPacks: {},
     cachedHandoffs: {},
     cachedLint: {},
     cachedTools: {},
@@ -23,6 +24,9 @@
       memory_cache_miss: true,
       memory_wake_up_report: true,
       memory_restore_failed: true,
+      memory_pack_loaded: true,
+      memory_pack_merged: true,
+      memory_pack_overrides: true,
     },
     traceRenderMode: "plain",
     tracePhaseMode: "current",
@@ -90,6 +94,13 @@
   function setCachedRules(value) {
     global.cachedRules = value;
     return global.cachedRules;
+  }
+  function getCachedMemoryPacks() {
+    return global.cachedMemoryPacks;
+  }
+  function setCachedMemoryPacks(value) {
+    global.cachedMemoryPacks = value || {};
+    return global.cachedMemoryPacks;
   }
   function getCachedHandoffs() {
     return global.cachedHandoffs;
@@ -286,6 +297,8 @@
   state.setCachedAgreements = setCachedAgreements;
   state.getCachedRules = getCachedRules;
   state.setCachedRules = setCachedRules;
+  state.getCachedMemoryPacks = getCachedMemoryPacks;
+  state.setCachedMemoryPacks = setCachedMemoryPacks;
   state.getCachedHandoffs = getCachedHandoffs;
   state.setCachedHandoffs = setCachedHandoffs;
   state.getCachedLint = getCachedLint;

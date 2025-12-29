@@ -10,10 +10,12 @@ from namel3ss.runtime.ai.providers.registry import get_provider
 from namel3ss.runtime.ai.trace import AITrace
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
+from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.runtime.providers.capabilities import get_provider_capabilities
 from namel3ss.runtime.tools.field_schema import build_json_schema
 from namel3ss.runtime.tools.registry import execute_tool
-from namel3ss.runtime.memory.manager import MemoryManager
+import namel3ss.runtime.memory.api as memory_api
+from namel3ss.runtime.memory.api import MemoryManager
 from namel3ss.runtime.memory_explain import append_explanation_events
 from namel3ss.traces.builders import (
     build_ai_call_completed,
@@ -38,7 +40,15 @@ def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
     user_input = evaluate_expression(ctx, expr.input_expr)
     if not isinstance(user_input, str):
         raise Namel3ssError("AI input must be a string", line=expr.line, column=expr.column)
-    memory_context, recall_events, recall_meta = ctx.memory_manager.recall_context_with_events(
+    record_step(
+        ctx,
+        kind="ai_call",
+        what=f"asked ai {expr.ai_name}",
+        line=expr.line,
+        column=expr.column,
+    )
+    recall_pack = memory_api.recall_with_events(
+        ctx.memory_manager,
         profile,
         user_input,
         ctx.state,
@@ -46,7 +56,11 @@ def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
         project_root=ctx.project_root,
         app_path=getattr(ctx, "app_path", None),
     )
+    memory_context = recall_pack.payload
+    recall_events = recall_pack.events
+    recall_meta = recall_pack.meta
     recalled = _flatten_memory_context(memory_context)
+    deterministic_hash = recall_pack.proof.get("recall_hash") or ctx.memory_manager.recall_hash(recalled)
     canonical_events: list[dict] = []
     canonical_events.append(
         build_memory_recall(
@@ -55,7 +69,7 @@ def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
             query=user_input,
             recalled=recalled,
             policy=_memory_policy(profile, ctx.memory_manager),
-            deterministic_hash=ctx.memory_manager.recall_hash(recalled),
+            deterministic_hash=deterministic_hash,
             spaces_consulted=recall_meta.get("spaces_consulted"),
             recall_counts=recall_meta.get("recall_counts"),
             phase_counts=recall_meta.get("phase_counts"),
@@ -73,7 +87,8 @@ def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
         tool_events,
         canonical_events=canonical_events,
     )
-    written, governance_events = ctx.memory_manager.record_interaction_with_events(
+    record_pack = memory_api.record_with_events(
+        ctx.memory_manager,
         profile,
         ctx.state,
         user_input,
@@ -83,6 +98,8 @@ def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
         project_root=ctx.project_root,
         app_path=getattr(ctx, "app_path", None),
     )
+    written = record_pack.payload
+    governance_events = record_pack.events
     canonical_events.append(
         build_memory_write(
             ai_profile=profile.name,

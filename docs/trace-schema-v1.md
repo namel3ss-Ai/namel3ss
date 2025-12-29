@@ -58,6 +58,9 @@ Memory events include:
 - memory_cache_miss
 - memory_wake_up_report
 - memory_restore_failed
+- memory_pack_loaded
+- memory_pack_merged
+- memory_pack_overrides
 - memory_deleted
 - memory_phase_diff
 - memory_team_summary
@@ -89,6 +92,11 @@ Memory cache events include type, space, lane, phase_id, title, and lines.
 ### Memory restore events
 Memory wake up report events include type, project_id, title, and lines.
 Memory restore failed events include type, project_id, title, and lines.
+
+### Memory pack events
+Memory pack loaded events include type, pack_id, pack_version, title, and lines.
+Memory pack merged events include type, title, and lines with pack ids in order.
+Memory pack overrides events include type, title, and override lines.
 
 ## Capability check traces v1
 Every denied capability check must include:

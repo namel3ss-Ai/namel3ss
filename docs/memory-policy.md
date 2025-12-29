@@ -22,6 +22,11 @@ Budgets define soft limits for memory.
 Compaction and low value removal are used when limits are hit.
 Cache settings are part of the budget config.
 
+## Packs
+Packs can set trust, agreement defaults, budgets, lanes, and phase defaults.
+Local overrides can replace pack values.
+Pack changes are traced.
+
 ## Authority
 Authority controls overwrites in conflicts.
 Order from highest to lowest:
@@ -101,6 +106,11 @@ Governance trace events include:
 Persistence trace events include:
 - `memory_wake_up_report`
 - `memory_restore_failed`
+
+Pack trace events include:
+- `memory_pack_loaded`
+- `memory_pack_merged`
+- `memory_pack_overrides`
 
 See the memory docs for explanations, links, impact, and lanes.
 

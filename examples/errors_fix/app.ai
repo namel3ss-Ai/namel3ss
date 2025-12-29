@@ -1,0 +1,7 @@
+page "home":
+  title is "Admin area"
+  button "Admin":
+    calls flow "admin_only"
+
+flow "admin_only": requires identity.role is "admin"
+  return "ok"

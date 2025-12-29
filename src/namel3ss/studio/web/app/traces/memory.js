@@ -9,6 +9,11 @@
     "memory_cache_hit",
     "memory_cache_miss",
   ]);
+  const packEventTypes = new Set([
+    "memory_pack_loaded",
+    "memory_pack_merged",
+    "memory_pack_overrides",
+  ]);
   const wakeUpEventTypes = new Set(["memory_wake_up_report", "memory_restore_failed"]);
 
   function buildBudgetEventEntries(trace) {
@@ -26,6 +31,16 @@
     const events = trace.canonical_events || [];
     events.forEach((event, index) => {
       if (event && wakeUpEventTypes.has(event.type)) {
+        entries.push({ event, index });
+      }
+    });
+    return entries;
+  }
+  function buildPackEventEntries(trace) {
+    const entries = [];
+    const events = trace.canonical_events || [];
+    events.forEach((event, index) => {
+      if (event && packEventTypes.has(event.type)) {
         entries.push({ event, index });
       }
     });
@@ -69,6 +84,16 @@
     return [];
   }
   function wakeUpLinesForEvent(event) {
+    if (!event || typeof event !== "object") return [];
+    const lines = [];
+    if (event.title) lines.push(event.title);
+    const detail = Array.isArray(event.lines) ? event.lines : [];
+    detail.forEach((line) => {
+      if (line) lines.push(line);
+    });
+    return lines;
+  }
+  function packLinesForEvent(event) {
     if (!event || typeof event !== "object") return [];
     const lines = [];
     if (event.title) lines.push(event.title);
@@ -246,6 +271,23 @@
       details.appendChild(wrapper);
     });
   }
+  function appendMemoryPackSection(details, trace) {
+    const filters = state.getMemoryBudgetFilters ? state.getMemoryBudgetFilters() : {};
+    const entries = buildPackEventEntries(trace);
+    if (!entries.length) return;
+    entries.forEach((entry) => {
+      if (filters[entry.event.type] === false) return;
+      const lines = packLinesForEvent(entry.event);
+      if (!lines.length) return;
+      const wrapper = document.createElement("div");
+      const heading = document.createElement("div");
+      heading.className = "inline-label";
+      heading.textContent = "Memory packs";
+      wrapper.appendChild(heading);
+      wrapper.appendChild(utils.createCodeBlock(lines.join("\n")));
+      details.appendChild(wrapper);
+    });
+  }
   function appendMemoryEventsSection(details, trace, phaseId, renderMode = "json") {
     const laneMode = state.getTraceLaneMode();
     const phaseMode = state.getTracePhaseMode();
@@ -387,6 +429,7 @@
 
   traces.appendMemoryBudgetSection = appendMemoryBudgetSection;
   traces.appendWakeUpSection = appendWakeUpSection;
+  traces.appendMemoryPackSection = appendMemoryPackSection;
   traces.appendMemoryEventsSection = appendMemoryEventsSection;
   traces.filterMemoryEventForPhase = filterMemoryEventForPhase;
   traces.filterMemoryEventForLane = filterMemoryEventForLane;

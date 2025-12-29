@@ -1,0 +1,11 @@
+scenario.id: 001_basic_recall
+scenario.name: Basic recall
+steps.total: 2
+steps.recall: 1
+steps.record: 1
+steps.admin: 0
+memory.short_term: 2
+memory.semantic: 0
+memory.profile: 0
+cache.session:anonymous:my.short_term: 4
+phase.session:anonymous:my.current: phase-1

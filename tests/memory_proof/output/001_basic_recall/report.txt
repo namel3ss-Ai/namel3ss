@@ -1,0 +1,4 @@
+Memory proof: ok
+Scenario: 001_basic_recall - Basic recall
+Invariant notes:
+- TODO: memory_deleted explanation field is not emitted yet.

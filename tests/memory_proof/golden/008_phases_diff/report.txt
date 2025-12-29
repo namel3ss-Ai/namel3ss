@@ -1,0 +1,2 @@
+Memory proof: ok
+Scenario: 008_phases_diff - Phases diff

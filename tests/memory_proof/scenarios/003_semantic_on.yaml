@@ -1,0 +1,14 @@
+name: "Semantic memory on"
+ai_profile:
+  name: "assistant"
+  memory:
+    short_term: 1
+    semantic: true
+    profile: false
+steps:
+  - record:
+    input: "Remember this for me: I prefer concise updates."
+    output: "ok"
+    tool_events: []
+  - recall:
+    input: "concise updates"
