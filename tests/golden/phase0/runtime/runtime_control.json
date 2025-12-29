@@ -1,0 +1,173 @@
+{
+  "execution_steps": [
+    {
+      "because": null,
+      "column": 1,
+      "data": {},
+      "id": "step:0001",
+      "kind": "flow_start",
+      "line": 3,
+      "what": "flow \"control\" started"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0002",
+      "kind": "statement_let",
+      "line": 4,
+      "what": "set local total"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {
+        "condition": "total > 1",
+        "value": true
+      },
+      "id": "step:0003",
+      "kind": "decision_if",
+      "line": 5,
+      "what": "if total > 1 was true"
+    },
+    {
+      "because": "condition was true",
+      "column": 3,
+      "data": {},
+      "id": "step:0004",
+      "kind": "branch_taken",
+      "line": 5,
+      "what": "took then branch"
+    },
+    {
+      "because": "condition was true",
+      "column": 3,
+      "data": {},
+      "id": "step:0005",
+      "kind": "branch_skipped",
+      "line": 5,
+      "what": "skipped else branch"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0006",
+      "kind": "statement_set",
+      "line": 6,
+      "what": "set state.label"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {
+        "count": 2
+      },
+      "id": "step:0007",
+      "kind": "decision_repeat",
+      "line": 9,
+      "what": "repeat 2 times"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0008",
+      "kind": "statement_set",
+      "line": 10,
+      "what": "set state.counter"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0009",
+      "kind": "statement_set",
+      "line": 10,
+      "what": "set state.counter"
+    },
+    {
+      "because": "count was 2",
+      "column": 3,
+      "data": {},
+      "id": "step:0010",
+      "kind": "branch_taken",
+      "line": 9,
+      "what": "ran repeat body 2 times"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {
+        "subject": "2"
+      },
+      "id": "step:0011",
+      "kind": "decision_match",
+      "line": 11,
+      "what": "match 2"
+    },
+    {
+      "because": "subject != pattern",
+      "column": 12,
+      "data": {},
+      "id": "step:0012",
+      "kind": "case_skipped",
+      "line": 13,
+      "what": "case 1 skipped"
+    },
+    {
+      "because": "subject == pattern",
+      "column": 12,
+      "data": {},
+      "id": "step:0013",
+      "kind": "case_taken",
+      "line": 15,
+      "what": "case 2 matched"
+    },
+    {
+      "because": null,
+      "column": 9,
+      "data": {},
+      "id": "step:0014",
+      "kind": "statement_set",
+      "line": 16,
+      "what": "set state.match"
+    },
+    {
+      "because": "matched an earlier case",
+      "column": 3,
+      "data": {},
+      "id": "step:0015",
+      "kind": "otherwise_skipped",
+      "line": 11,
+      "what": "otherwise branch skipped"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0016",
+      "kind": "statement_return",
+      "line": 19,
+      "what": "returned a value"
+    },
+    {
+      "because": "completed successfully",
+      "column": 1,
+      "data": {},
+      "id": "step:0017",
+      "kind": "flow_end",
+      "line": 3,
+      "what": "flow \"control\" ended"
+    }
+  ],
+  "last_value": "two",
+  "runtime_theme": "system",
+  "state": {
+    "counter": "2",
+    "label": "big",
+    "match": "two"
+  },
+  "theme_source": null,
+  "traces": []
+}

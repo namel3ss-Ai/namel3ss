@@ -1,0 +1,287 @@
+{
+  "agents": [
+    {
+      "ai_name": "assistant",
+      "column": 1,
+      "line": 22,
+      "name": "planner",
+      "system_prompt": "Plan step-by-step.",
+      "type": "AgentDecl"
+    },
+    {
+      "ai_name": "assistant",
+      "column": 1,
+      "line": 26,
+      "name": "critic",
+      "system_prompt": "Find risks and gaps.",
+      "type": "AgentDecl"
+    },
+    {
+      "ai_name": "assistant",
+      "column": 1,
+      "line": 30,
+      "name": "researcher",
+      "system_prompt": "Add supporting details.",
+      "type": "AgentDecl"
+    }
+  ],
+  "ais": [
+    {
+      "column": 1,
+      "exposed_tools": [
+        "echo"
+      ],
+      "line": 12,
+      "memory": {
+        "column": 1,
+        "line": 12,
+        "profile": true,
+        "semantic": true,
+        "short_term": 5,
+        "type": "AIMemory"
+      },
+      "model": "gpt-4.1",
+      "name": "assistant",
+      "provider": null,
+      "system_prompt": "You are a helpful multi-agent assistant.",
+      "type": "AIDecl"
+    }
+  ],
+  "app_theme": "system",
+  "app_theme_column": null,
+  "app_theme_line": null,
+  "capsule": null,
+  "column": null,
+  "flows": [
+    {
+      "audited": false,
+      "body": [
+        {
+          "column": 3,
+          "constant": false,
+          "expression": {
+            "column": 15,
+            "line": 35,
+            "type": "Literal",
+            "value": "Plan a 3-step launch checklist for Namel3ss"
+          },
+          "line": 35,
+          "name": "task",
+          "type": "Let"
+        },
+        {
+          "agent_name": "planner",
+          "column": 13,
+          "input_expr": {
+            "column": 35,
+            "line": 36,
+            "name": "task",
+            "type": "VarReference"
+          },
+          "line": 36,
+          "target": "plan",
+          "type": "RunAgentStmt"
+        },
+        {
+          "column": 3,
+          "entries": [
+            {
+              "agent_name": "critic",
+              "column": 11,
+              "input_expr": {
+                "column": 32,
+                "line": 38,
+                "name": "plan",
+                "type": "VarReference"
+              },
+              "line": 38,
+              "type": "ParallelAgentEntry"
+            },
+            {
+              "agent_name": "researcher",
+              "column": 11,
+              "input_expr": {
+                "column": 36,
+                "line": 39,
+                "name": "plan",
+                "type": "VarReference"
+              },
+              "line": 39,
+              "type": "ParallelAgentEntry"
+            }
+          ],
+          "line": 37,
+          "target": "feedback",
+          "type": "RunAgentsParallelStmt"
+        },
+        {
+          "ai_name": "assistant",
+          "column": 3,
+          "input_expr": {
+            "column": 34,
+            "line": 41,
+            "name": "plan",
+            "type": "VarReference"
+          },
+          "line": 41,
+          "target": "final",
+          "type": "AskAIStmt"
+        },
+        {
+          "column": 3,
+          "expression": {
+            "column": 21,
+            "line": 42,
+            "name": "plan",
+            "type": "VarReference"
+          },
+          "line": 42,
+          "target": {
+            "column": 7,
+            "line": 42,
+            "path": [
+              "plan"
+            ],
+            "type": "StatePath"
+          },
+          "type": "Set"
+        },
+        {
+          "column": 3,
+          "expression": {
+            "column": 25,
+            "line": 43,
+            "name": "feedback",
+            "type": "VarReference"
+          },
+          "line": 43,
+          "target": {
+            "column": 7,
+            "line": 43,
+            "path": [
+              "feedback"
+            ],
+            "type": "StatePath"
+          },
+          "type": "Set"
+        },
+        {
+          "column": 3,
+          "expression": {
+            "column": 22,
+            "line": 44,
+            "name": "final",
+            "type": "VarReference"
+          },
+          "line": 44,
+          "target": {
+            "column": 7,
+            "line": 44,
+            "path": [
+              "final"
+            ],
+            "type": "StatePath"
+          },
+          "type": "Set"
+        },
+        {
+          "column": 3,
+          "expression": {
+            "column": 10,
+            "line": 45,
+            "name": "final",
+            "type": "VarReference"
+          },
+          "line": 45,
+          "type": "Return"
+        }
+      ],
+      "column": 1,
+      "line": 34,
+      "name": "run_workflow",
+      "requires": null,
+      "type": "Flow"
+    }
+  ],
+  "identity": null,
+  "line": null,
+  "pages": [
+    {
+      "column": 1,
+      "items": [
+        {
+          "column": 3,
+          "line": 48,
+          "type": "TitleItem",
+          "value": "Multi-Agent Workflow"
+        },
+        {
+          "column": 3,
+          "line": 49,
+          "type": "TextItem",
+          "value": "Planner plus critic and researcher."
+        },
+        {
+          "column": 3,
+          "flow_name": "run_workflow",
+          "label": "Run workflow",
+          "line": 50,
+          "type": "ButtonItem"
+        }
+      ],
+      "line": 47,
+      "name": "workflow",
+      "requires": null,
+      "type": "PageDecl"
+    }
+  ],
+  "records": [],
+  "spec_version": "1.0",
+  "theme_preference": {
+    "allow_override": [
+      false,
+      null,
+      null
+    ],
+    "persist": [
+      "none",
+      null,
+      null
+    ]
+  },
+  "theme_tokens": {},
+  "tools": [
+    {
+      "capabilities": [],
+      "column": 1,
+      "input_fields": [
+        {
+          "column": 5,
+          "line": 7,
+          "name": "value",
+          "required": true,
+          "type": "ToolField",
+          "type_name": "json"
+        }
+      ],
+      "kind": "builtin",
+      "line": 3,
+      "name": "echo",
+      "output_fields": [
+        {
+          "column": 5,
+          "line": 10,
+          "name": "echo",
+          "required": true,
+          "type": "ToolField",
+          "type_name": "json"
+        }
+      ],
+      "purity": "impure",
+      "timeout_seconds": null,
+      "type": "ToolDecl"
+    }
+  ],
+  "type": "Program",
+  "uses": []
+}

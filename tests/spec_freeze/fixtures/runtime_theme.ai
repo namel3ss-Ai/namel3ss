@@ -1,0 +1,6 @@
+spec is "1.0"
+
+flow "theme_demo":
+  set theme to "light"
+  set state.status is "ok"
+  return state.status

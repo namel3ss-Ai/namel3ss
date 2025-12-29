@@ -1,0 +1,19 @@
+spec is "1.0"
+
+flow "control":
+  let total is 2
+  if total is greater than 1:
+    set state.label is "big"
+  else:
+    set state.label is "small"
+  repeat up to 2 times:
+    set state.counter is total
+  match total:
+    with:
+      when 1:
+        set state.match is "one"
+      when 2:
+        set state.match is "two"
+      otherwise:
+        set state.match is "other"
+  return state.match
