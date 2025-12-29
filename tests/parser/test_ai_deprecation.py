@@ -8,6 +8,8 @@ def test_old_ask_ai_expression_is_rejected():
     source = '''ai "assistant":
   model is "gpt-4.1"
 
+spec is "1.0"
+
 flow "demo":
   let reply is ask ai "assistant" with input: "Hello"
   return reply

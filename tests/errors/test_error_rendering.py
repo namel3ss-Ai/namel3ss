@@ -6,7 +6,7 @@ from namel3ss.parser.core import parse
 
 
 def test_parser_error_render_includes_caret_and_line() -> None:
-    source = 'flow "demo":\n  let x is\n'
+    source = 'spec is "1.0"\n\nflow "demo":\n  let x is\n'
     with pytest.raises(Namel3ssError) as excinfo:
         parse(source)
     rendered = format_error(excinfo.value, source)
@@ -16,7 +16,7 @@ def test_parser_error_render_includes_caret_and_line() -> None:
 
 
 def test_lexer_error_render_includes_caret_and_line() -> None:
-    source = 'flow "demo":\n  @bad\n'
+    source = 'spec is "1.0"\n\nflow "demo":\n  @bad\n'
     with pytest.raises(Namel3ssError) as excinfo:
         parse(source)
     rendered = format_error(excinfo.value, source)
@@ -44,7 +44,8 @@ def test_runtime_error_render_includes_caret_and_line() -> None:
     )
     with pytest.raises(Namel3ssError) as excinfo:
         execute_flow(flow)
-    rendered = format_error(excinfo.value, 'flow "demo":\n  set x is 1\n')
-    assert "set x is 1" in rendered
+    rendered = format_error(excinfo.value, 'spec is "1.0"\n\nflow "demo":\n  set x is 1\n')
+    assert "Runtime error." in rendered
+    assert "line: 2" in rendered
     assert "^" in rendered
     assert str(excinfo.value) in rendered

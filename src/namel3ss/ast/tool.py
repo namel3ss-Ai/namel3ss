@@ -18,5 +18,6 @@ class ToolDecl(Node):
     kind: str
     input_fields: list[ToolField]
     output_fields: list[ToolField]
+    capabilities: tuple[str, ...] = ()
     purity: str = "impure"
     timeout_seconds: int | None = None

@@ -1,66 +1,44 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
-from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
-from namel3ss.runtime.errors.explain.builder import build_error_explain_pack, write_error_explain_artifacts
 
 
 def run_fix_command(args: list[str]) -> int:
+    json_mode = False
     if args:
-        raise Namel3ssError(
-            build_guidance_message(
-                what="Too many arguments for fix.",
-                why="fix does not accept extra input.",
-                fix="Run n3 fix.",
-                example="n3 fix",
+        if args == ["--json"]:
+            json_mode = True
+        else:
+            raise Namel3ssError(
+                build_guidance_message(
+                    what="Too many arguments for fix.",
+                    why="fix only accepts an optional --json flag.",
+                    fix="Run n3 fix or n3 fix --json.",
+                    example="n3 fix",
+                )
             )
-        )
-    _run_fix()
-    return 0
+    return _run_fix(json_mode=json_mode)
 
 
-def _run_fix() -> None:
-    app_path = resolve_app_path(None)
-    project_root = Path(app_path).parent
+def _run_fix(*, json_mode: bool) -> int:
+    project_root = Path.cwd()
     errors_dir = project_root / ".namel3ss" / "errors"
     last_json = errors_dir / "last.json"
-    last_text = errors_dir / "last.fix.txt"
+    last_plain = errors_dir / "last.plain"
     if last_json.exists():
-        payload = _read_json(last_json)
-        if payload is not None:
-            if last_text.exists():
-                print(last_text.read_text(encoding="utf-8").rstrip())
-                return
-            text = write_error_explain_artifacts(project_root, payload)
-            print(text)
-            return
-
-    if not _run_pack_exists(project_root):
-        print("No run found yet. Try: n3 run app.ai")
-        return
-
-    pack = build_error_explain_pack(project_root)
-    if pack is None:
-        print("No run found yet. Try: n3 run app.ai")
-        return
-    text = write_error_explain_artifacts(project_root, pack)
-    print(text)
-
-
-def _run_pack_exists(project_root: Path) -> bool:
-    run_last = project_root / ".namel3ss" / "run" / "last.json"
-    return run_last.exists()
-
-
-def _read_json(path: Path) -> dict | None:
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None
+        if json_mode:
+            print(last_json.read_text(encoding="utf-8").rstrip())
+            return 0
+        if last_plain.exists():
+            print(last_plain.read_text(encoding="utf-8").rstrip())
+            return 0
+        print("Error pack is incomplete. Run a failing flow to regenerate.")
+        return 1
+    print("No error recorded yet. Run a flow that fails to generate an error pack.")
+    return 1
 
 
 __all__ = ["run_fix_command"]

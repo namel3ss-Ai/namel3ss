@@ -1,0 +1,23 @@
+# Phase B2: fix
+
+`n3 fix` shows the last runtime failure in a deterministic, inspectable format.
+
+## What it is
+- A stable error contract written when a run fails.
+- A calm, short error summary you can re-print later.
+
+## What it includes
+- Error id, boundary, and kind.
+- What happened, why, and how to fix.
+- Where it happened (flow, statement, line/column when known).
+
+## What it does NOT include
+- A Python traceback.
+- Inferred causes beyond the exception and runtime context.
+
+## Artifacts
+Artifacts are written under:
+- `.namel3ss/errors/last.json`
+- `.namel3ss/errors/last.plain`
+- `.namel3ss/errors/last.fix.txt`
+- `.namel3ss/errors/history/<error_id>.json`

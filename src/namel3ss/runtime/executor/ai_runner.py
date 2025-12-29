@@ -13,7 +13,8 @@ from namel3ss.runtime.executor.expr_eval import evaluate_expression
 from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.runtime.providers.capabilities import get_provider_capabilities
 from namel3ss.runtime.tools.field_schema import build_json_schema
-from namel3ss.runtime.tools.registry import execute_tool
+from namel3ss.runtime.tools.executor import execute_tool_call
+from namel3ss.runtime.boundary import mark_boundary
 import namel3ss.runtime.memory.api as memory_api
 from namel3ss.runtime.memory.api import MemoryManager
 from namel3ss.runtime.memory_explain import append_explanation_events
@@ -30,106 +31,120 @@ from namel3ss.secrets import collect_secret_values
 
 
 def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
-    if expr.ai_name not in ctx.ai_profiles:
-        raise Namel3ssError(
-            f"Unknown AI '{expr.ai_name}'",
+    try:
+        if expr.ai_name not in ctx.ai_profiles:
+            raise Namel3ssError(
+                f"Unknown AI '{expr.ai_name}'",
+                line=expr.line,
+                column=expr.column,
+            )
+        profile = ctx.ai_profiles[expr.ai_name]
+        user_input = evaluate_expression(ctx, expr.input_expr)
+        if not isinstance(user_input, str):
+            raise Namel3ssError("AI input must be a string", line=expr.line, column=expr.column)
+        record_step(
+            ctx,
+            kind="ai_call",
+            what=f"asked ai {expr.ai_name}",
             line=expr.line,
             column=expr.column,
         )
-    profile = ctx.ai_profiles[expr.ai_name]
-    user_input = evaluate_expression(ctx, expr.input_expr)
-    if not isinstance(user_input, str):
-        raise Namel3ssError("AI input must be a string", line=expr.line, column=expr.column)
-    record_step(
-        ctx,
-        kind="ai_call",
-        what=f"asked ai {expr.ai_name}",
-        line=expr.line,
-        column=expr.column,
-    )
-    recall_pack = memory_api.recall_with_events(
-        ctx.memory_manager,
-        profile,
-        user_input,
-        ctx.state,
-        identity=ctx.identity,
-        project_root=ctx.project_root,
-        app_path=getattr(ctx, "app_path", None),
-    )
-    memory_context = recall_pack.payload
-    recall_events = recall_pack.events
-    recall_meta = recall_pack.meta
-    recalled = _flatten_memory_context(memory_context)
-    deterministic_hash = recall_pack.proof.get("recall_hash") or ctx.memory_manager.recall_hash(recalled)
-    canonical_events: list[dict] = []
-    canonical_events.append(
-        build_memory_recall(
-            ai_profile=profile.name,
-            session=ctx.memory_manager.session_id(ctx.state),
-            query=user_input,
-            recalled=recalled,
-            policy=_memory_policy(profile, ctx.memory_manager),
-            deterministic_hash=deterministic_hash,
-            spaces_consulted=recall_meta.get("spaces_consulted"),
-            recall_counts=recall_meta.get("recall_counts"),
-            phase_counts=recall_meta.get("phase_counts"),
-            current_phase=recall_meta.get("current_phase"),
+        try:
+            recall_pack = memory_api.recall_with_events(
+                ctx.memory_manager,
+                profile,
+                user_input,
+                ctx.state,
+                identity=ctx.identity,
+                project_root=ctx.project_root,
+                app_path=getattr(ctx, "app_path", None),
+            )
+        except Exception as err:
+            mark_boundary(err, "memory")
+            raise
+        memory_context = recall_pack.payload
+        recall_events = recall_pack.events
+        recall_meta = recall_pack.meta
+        recalled = _flatten_memory_context(memory_context)
+        deterministic_hash = recall_pack.proof.get("recall_hash") or ctx.memory_manager.recall_hash(recalled)
+        canonical_events: list[dict] = []
+        canonical_events.append(
+            build_memory_recall(
+                ai_profile=profile.name,
+                session=ctx.memory_manager.session_id(ctx.state),
+                query=user_input,
+                recalled=recalled,
+                policy=_memory_policy(profile, ctx.memory_manager),
+                deterministic_hash=deterministic_hash,
+                spaces_consulted=recall_meta.get("spaces_consulted"),
+                recall_counts=recall_meta.get("recall_counts"),
+                phase_counts=recall_meta.get("phase_counts"),
+                current_phase=recall_meta.get("current_phase"),
+            )
         )
-    )
-    if recall_events:
-        canonical_events.extend(recall_events)
-    tool_events: list[dict] = []
-    response_output, canonical_events = run_ai_with_tools(
-        ctx,
-        profile,
-        user_input,
-        memory_context,
-        tool_events,
-        canonical_events=canonical_events,
-    )
-    record_pack = memory_api.record_with_events(
-        ctx.memory_manager,
-        profile,
-        ctx.state,
-        user_input,
-        response_output,
-        tool_events,
-        identity=ctx.identity,
-        project_root=ctx.project_root,
-        app_path=getattr(ctx, "app_path", None),
-    )
-    written = record_pack.payload
-    governance_events = record_pack.events
-    canonical_events.append(
-        build_memory_write(
-            ai_profile=profile.name,
-            session=ctx.memory_manager.session_id(ctx.state),
-            written=written,
-            reason="interaction_recorded",
+        if recall_events:
+            canonical_events.extend(recall_events)
+        tool_events: list[dict] = []
+        response_output, canonical_events = run_ai_with_tools(
+            ctx,
+            profile,
+            user_input,
+            memory_context,
+            tool_events,
+            canonical_events=canonical_events,
         )
-    )
-    if governance_events:
-        canonical_events.extend(governance_events)
-    canonical_events = append_explanation_events(canonical_events)
-    trace = AITrace(
-        ai_name=expr.ai_name,
-        ai_profile_name=expr.ai_name,
-        agent_name=None,
-        model=profile.model,
-        system_prompt=profile.system_prompt,
-        input=user_input,
-        output=response_output,
-        memory=redact_memory_context(memory_context),
-        tool_calls=[e for e in tool_events if e.get("type") == "call"],
-        tool_results=[e for e in tool_events if e.get("type") == "result"],
-        canonical_events=canonical_events,
-    )
-    ctx.traces.append(trace)
-    if expr.target in ctx.constants:
-        raise Namel3ssError(f"Cannot assign to constant '{expr.target}'", line=expr.line, column=expr.column)
-    ctx.locals[expr.target] = response_output
-    ctx.last_value = response_output
-    return response_output
+        try:
+            record_pack = memory_api.record_with_events(
+                ctx.memory_manager,
+                profile,
+                ctx.state,
+                user_input,
+                response_output,
+                tool_events,
+                identity=ctx.identity,
+                project_root=ctx.project_root,
+                app_path=getattr(ctx, "app_path", None),
+            )
+        except Exception as err:
+            mark_boundary(err, "memory")
+            raise
+        written = record_pack.payload
+        governance_events = record_pack.events
+        canonical_events.append(
+            build_memory_write(
+                ai_profile=profile.name,
+                session=ctx.memory_manager.session_id(ctx.state),
+                written=written,
+                reason="interaction_recorded",
+            )
+        )
+        if governance_events:
+            canonical_events.extend(governance_events)
+        canonical_events = append_explanation_events(canonical_events)
+        trace = AITrace(
+            ai_name=expr.ai_name,
+            ai_profile_name=expr.ai_name,
+            agent_name=None,
+            model=profile.model,
+            system_prompt=profile.system_prompt,
+            input=user_input,
+            output=response_output,
+            memory=redact_memory_context(memory_context),
+            tool_calls=[e for e in tool_events if e.get("type") == "call"],
+            tool_results=[e for e in tool_events if e.get("type") == "result"],
+            canonical_events=canonical_events,
+        )
+        ctx.traces.append(trace)
+        _flush_pending_tool_traces(ctx)
+        if expr.target in ctx.constants:
+            raise Namel3ssError(f"Cannot assign to constant '{expr.target}'", line=expr.line, column=expr.column)
+        ctx.locals[expr.target] = response_output
+        ctx.last_value = response_output
+        return response_output
+    except Exception as err:
+        _flush_pending_tool_traces(ctx)
+        mark_boundary(err, "ai")
+        raise
 
 
 def run_ai_with_tools(
@@ -256,18 +271,27 @@ def run_ai_with_tools(
                 )
             )
         policy = ToolCallPolicy(allow_tools=True, max_calls=3, strict_json=True, retry_on_parse_error=False, max_total_turns=6)
-        output_text = run_ai_tool_pipeline(
-            adapter=adapter,
-            call_id=call_id,
-            provider_name=provider_name,
-            model=profile.model,
-            messages=messages,
-            tools=tool_decls,
-            policy=policy,
-            tool_executor=execute_tool,
-            canonical_events=canonical_events,
-            tool_events=tool_events,
-        )
+        def _tool_executor(tool_name: str, args: dict[str, object]) -> dict[str, object]:
+            outcome = execute_tool_call(ctx, tool_name, dict(args))
+            return outcome.result_value if isinstance(outcome.result_value, dict) else {"result": outcome.result_value}
+
+        previous_source = ctx.tool_call_source
+        ctx.tool_call_source = "ai"
+        try:
+            output_text = run_ai_tool_pipeline(
+                adapter=adapter,
+                call_id=call_id,
+                provider_name=provider_name,
+                model=profile.model,
+                messages=messages,
+                tools=tool_decls,
+                policy=policy,
+                tool_executor=_tool_executor,
+                canonical_events=canonical_events,
+                tool_events=tool_events,
+            )
+        finally:
+            ctx.tool_call_source = previous_source
         duration_ms = int((time.monotonic() - ai_start) * 1000)
         canonical_events.append(
             build_ai_call_completed(
@@ -293,6 +317,7 @@ def run_ai_with_tools(
         )
         return output_text, canonical_events
     except Exception as err:
+        mark_boundary(err, "ai")
         if not ai_failed_emitted:
             duration_ms = int((time.monotonic() - ai_start) * 1000)
             canonical_events.append(
@@ -375,3 +400,10 @@ def _record_ai_event(
         event["error_type"] = error.__class__.__name__
         event["error_message"] = str(error)
     record_event(Path(ctx.project_root), event, secret_values=secret_values)
+
+
+def _flush_pending_tool_traces(ctx: ExecutionContext) -> None:
+    if not ctx.pending_tool_traces:
+        return
+    ctx.traces.extend(ctx.pending_tool_traces)
+    ctx.pending_tool_traces.clear()

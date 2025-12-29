@@ -9,6 +9,8 @@ def _field(program, name):
 
 def test_canonical_types_remain_canonical():
     src = '''
+spec is "1.0"
+
 record "User":
   field "name" is text
   field "age" is number
@@ -27,6 +29,8 @@ record "User":
 
 def test_alias_types_normalize_in_ast_and_ir():
     src = '''
+spec is "1.0"
+
 record "User":
   field "name" is string
   field "age" is int

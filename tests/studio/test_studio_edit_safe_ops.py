@@ -9,6 +9,8 @@ from namel3ss.studio.session import SessionState
 
 
 APP_SOURCE = '''
+spec is "1.0"
+
 flow "demo":
   return "ok"
 

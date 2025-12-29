@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 from namel3ss.runtime.execution.normalize import SKIP_KINDS
-from namel3ss.runtime.tools.explain.decision import ToolDecision
-
 from .model import ErrorState
 
 
@@ -26,12 +24,12 @@ def link_error_to_artifacts(error: ErrorState, packs: dict) -> list[str]:
 
     tools = packs.get("tools")
     if isinstance(tools, dict):
-        decisions = _decisions(tools)
-        for decision in decisions:
-            if decision.status == "blocked":
-                lines.append(_blocked_tool_line(decision))
-            elif decision.status == "error":
-                lines.append(_error_tool_line(decision))
+        entries = _tool_entries(tools)
+        for entry in entries:
+            if entry.get("result") == "blocked":
+                lines.append(_blocked_tool_line(entry))
+            elif entry.get("result") == "error":
+                lines.append(_error_tool_line(entry))
 
     ui = packs.get("ui")
     if isinstance(ui, dict):
@@ -60,27 +58,59 @@ def _step_line(step: dict) -> str:
     return _ensure_period(what)
 
 
-def _blocked_tool_line(decision: ToolDecision) -> str:
-    reason = decision.permission.reasons[0] if decision.permission.reasons else None
-    if reason:
-        return f'tool "{decision.tool_name}" was blocked because {reason}.'
-    return f'tool "{decision.tool_name}" was blocked.'
+def _blocked_tool_line(entry: dict) -> str:
+    reason = entry.get("reason")
+    tool_name = entry.get("tool") or "tool"
+    if reason and reason != "unknown":
+        return f'tool "{tool_name}" was blocked because {reason}.'
+    return f'tool "{tool_name}" was blocked.'
 
 
-def _error_tool_line(decision: ToolDecision) -> str:
-    message = decision.effect.error_message or decision.effect.error_type
+def _error_tool_line(entry: dict) -> str:
+    tool_name = entry.get("tool") or "tool"
+    message = entry.get("error_message") or entry.get("error_type")
     if message:
-        return f'tool "{decision.tool_name}" failed: {message}.'
-    return f'tool "{decision.tool_name}" failed.'
+        return f'tool "{tool_name}" failed: {message}.'
+    return f'tool "{tool_name}" failed.'
 
 
-def _decisions(tools: dict) -> list[ToolDecision]:
+def _tool_entries(tools: dict) -> list[dict]:
+    if any(key in tools for key in ("allowed", "blocked", "errors")):
+        entries: list[dict] = []
+        for key in ("allowed", "blocked", "errors"):
+            values = tools.get(key) or []
+            if isinstance(values, list):
+                entries.extend([item for item in values if isinstance(item, dict)])
+        return entries
     decisions = tools.get("decisions") or []
-    parsed: list[ToolDecision] = []
+    if not isinstance(decisions, list):
+        return []
+    entries: list[dict] = []
     for entry in decisions:
         if isinstance(entry, dict):
-            parsed.append(ToolDecision.from_dict(entry))
-    return parsed
+            entries.append(_entry_from_decision(entry))
+    return entries
+
+
+def _entry_from_decision(entry: dict) -> dict:
+    tool_name = str(entry.get("tool_name") or "tool")
+    status = str(entry.get("status") or "")
+    permission = entry.get("permission") if isinstance(entry.get("permission"), dict) else {}
+    reasons = permission.get("reasons") if isinstance(permission.get("reasons"), list) else []
+    capabilities = permission.get("capabilities_used") if isinstance(permission.get("capabilities_used"), list) else []
+    effect = entry.get("effect") if isinstance(entry.get("effect"), dict) else {}
+    reason = str(reasons[0]) if reasons else "unknown"
+    capability = str(capabilities[0]) if capabilities else "none"
+    result = status if status in {"ok", "blocked", "error"} else "ok"
+    return {
+        "tool": tool_name,
+        "decision": "blocked" if result == "blocked" else "allowed",
+        "capability": capability,
+        "reason": reason,
+        "result": result,
+        "error_message": effect.get("error_message"),
+        "error_type": effect.get("error_type"),
+    }
 
 
 def _strip_period(text: str) -> str:

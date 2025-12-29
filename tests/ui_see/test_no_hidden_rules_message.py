@@ -17,6 +17,8 @@ def test_no_hidden_rules_message(tmp_path: Path) -> None:
 page "home":
   title is "Hello"
 
+spec is "1.0"
+
 flow "demo":
   return "ok"
 """.lstrip(),

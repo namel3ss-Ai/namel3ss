@@ -1,0 +1,26 @@
+tool "ok tool":
+  implemented using python
+
+  input:
+    name is text
+
+  output:
+    message is text
+
+tool "blocked tool":
+  implemented using python
+
+  input:
+    name is text
+
+  output:
+    message is text
+
+spec is "1.0"
+
+flow "demo":
+  let ok is ok tool:
+    name is "Ada"
+  let blocked is blocked tool:
+    name is "Ada"
+  return ok

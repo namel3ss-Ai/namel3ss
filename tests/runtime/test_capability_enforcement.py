@@ -45,6 +45,8 @@ def test_builtin_pack_blocks_network(tmp_path: Path) -> None:
     headers is json
     data is json
 
+spec is "1.0"
+
 flow "demo":
   let response is get json from web:
     url is "https://example.com/data"
@@ -67,6 +69,8 @@ def test_builtin_pack_blocks_filesystem_write(tmp_path: Path) -> None:
   output:
     ok is boolean
     path is text
+
+spec is "1.0"
 
 flow "demo":
   let result is write text file:

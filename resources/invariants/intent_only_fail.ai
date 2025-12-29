@@ -1,3 +1,5 @@
+spec is "1.0"
+
 flow "demo":
   let entry is "tools.echo:run"
   let schema is "{\"type\": \"object\"}"

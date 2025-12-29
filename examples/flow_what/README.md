@@ -1,20 +1,13 @@
-# flow what example
+# flow_what
 
-This example shows flow intent and outcome with `n3 what`.
+This example shows run outcome summaries with `n3 what`.
 
-## Setup
-```bash
-pip install -e .
-```
+Run:
+- `cd examples/flow_what && n3 run app.ai`
+- `cd examples/flow_what && n3 with`
+- `cd examples/flow_what && n3 what`
 
-## Run
-```bash
-n3 run app.ai
-n3 with
-n3 what
-```
-
-## What to look for
-- Intent and audited lines.
-- Tool summary and outcome status.
-- Skipped else branch under "What did not happen".
+What to look for:
+- Outcome status (ok/partial/error).
+- Store/state/memory flags.
+- What did not happen entries when a persistence step is skipped or fails.

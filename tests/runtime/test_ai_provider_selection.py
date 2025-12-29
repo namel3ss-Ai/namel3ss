@@ -4,7 +4,9 @@ from namel3ss.runtime.ai.provider import AIProvider, AIResponse
 from namel3ss.runtime.executor import Executor
 
 
-PROGRAM_SOURCE = '''ai "assistant":
+PROGRAM_SOURCE = '''spec is "1.0"
+
+ai "assistant":
   model is "gpt-4.1"
 
 flow "demo":

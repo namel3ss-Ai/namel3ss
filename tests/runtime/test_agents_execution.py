@@ -14,6 +14,8 @@ agent "builder":
   ai is "assistant"
   system_prompt is "You are a builder. Execute the plan."
 
+spec is "1.0"
+
 flow "demo":
   run agent "planner" with input: "Build a CRM" as plan
   run agent "builder" with input: plan as result

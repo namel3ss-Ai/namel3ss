@@ -8,6 +8,8 @@ SOURCE = '''ai "assistant":
 agent "planner":
   ai is "assistant"
 
+spec is "1.0"
+
 flow "demo":
   run agent "planner" with input: "Hi" as reply
 '''

@@ -15,9 +15,16 @@ from namel3ss.parser.core import parse  # noqa: E402
 from namel3ss.runtime.executor import Executor  # noqa: E402
 
 
+def _ensure_spec(code: str) -> str:
+    for line in code.splitlines():
+        if line.strip().startswith('spec is "'):
+            return code
+    return 'spec is "1.0"\n\n' + code.lstrip("\n")
+
+
 def parse_program(code: str):
     """Parse source into an AST program."""
-    return parse(code)
+    return parse(_ensure_spec(code))
 
 
 def lower_ir_program(code: str):

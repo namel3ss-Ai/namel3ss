@@ -10,6 +10,8 @@ from namel3ss.studio.session import SessionState
 
 
 APP_SOURCE = '''
+spec is "1.0"
+
 record "User":
   name string must be present
 

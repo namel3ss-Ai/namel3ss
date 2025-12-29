@@ -10,6 +10,8 @@ APP_SOURCE = '''ai "assistant":
   provider is "openai"
   model is "gpt-4.1"
 
+spec is "1.0"
+
 flow "demo":
   return "ok"
 '''

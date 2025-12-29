@@ -166,6 +166,7 @@ def _merge_programs(
             combined_pages.extend(_exported_pages(program.pages, name, exports_map))
 
     return ast.Program(
+        spec_version=app_ast.spec_version,
         app_theme=app_ast.app_theme,
         app_theme_line=app_ast.app_theme_line,
         app_theme_column=app_ast.app_theme_column,
@@ -229,6 +230,7 @@ def _load_module(
         capsule_path,
         allow_legacy_type_aliases=allow_legacy_type_aliases,
         allow_capsule=True,
+        require_spec=False,
         parse_cache=parse_cache,
     )
     if capsule_program.capsule is None:
@@ -261,6 +263,7 @@ def _load_module(
             source,
             path,
             allow_legacy_type_aliases=allow_legacy_type_aliases,
+            require_spec=False,
             parse_cache=parse_cache,
         )
         if program.app_theme_line is not None:
@@ -425,6 +428,7 @@ def _parse_source(
     *,
     allow_legacy_type_aliases: bool,
     allow_capsule: bool = False,
+    require_spec: bool = True,
     parse_cache: ParseCache | None = None,
 ) -> ast.Program:
     digest = _source_digest(source)
@@ -437,6 +441,7 @@ def _parse_source(
             source,
             allow_legacy_type_aliases=allow_legacy_type_aliases,
             allow_capsule=allow_capsule,
+            require_spec=require_spec,
         )
         if parse_cache is not None:
             parse_cache[path] = (digest, copy.deepcopy(parsed))

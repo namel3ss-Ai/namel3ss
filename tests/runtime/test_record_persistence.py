@@ -10,6 +10,8 @@ RECORD_DECL = '''record "User":
   name string must be present
   age int must be greater than 18
 
+spec is "1.0"
+
 flow "demo":
   save User
 '''
@@ -38,6 +40,8 @@ def test_presence_length_pattern_errors():
   slug string must have length at least 3
   tag string must match pattern "^[a-z]+$"
 
+spec is "1.0"
+
 flow "demo":
   save Doc
 '''
@@ -50,6 +54,8 @@ flow "demo":
 def test_find_query_returns_results():
     source = '''record "User":
   email string must be unique
+
+spec is "1.0"
 
 flow "demo":
   save User

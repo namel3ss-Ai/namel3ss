@@ -12,7 +12,7 @@ FIXTURES_ROOT = Path(__file__).resolve().parents[1] / "fixtures" / "registry" / 
 
 def test_studio_registry_api_flow(tmp_path: Path) -> None:
     app_path = tmp_path / "app.ai"
-    app_path.write_text('flow "demo":\n  return "ok"\n', encoding="utf-8")
+    app_path.write_text('spec is "1.0"\n\nflow "demo":\n  return "ok"\n', encoding="utf-8")
     bundle_path = FIXTURES_ROOT / "sample.local-0.1.0.n3pack.zip"
     digest = _signature_from_bundle(bundle_path)
     add_trusted_key(tmp_path, TrustedKey(key_id="test.key", public_key=digest))

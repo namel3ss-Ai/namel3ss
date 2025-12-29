@@ -7,6 +7,8 @@ def test_lowering_record_declares_schema():
   email string must be unique
   age int
 
+spec is "1.0"
+
 flow "demo":
   save User
 '''

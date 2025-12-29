@@ -1,40 +1,16 @@
 {
-  "ok": false,
-  "api_version": "tools.v1",
-  "decisions": [
+  "tools_called": 1,
+  "allowed": [],
+  "blocked": [
     {
-      "id": "tool:1",
-      "tool_name": "send email",
-      "status": "blocked",
-      "intent": {
-        "what": "called tool send email",
-        "because": null,
-        "flow_name": "demo",
-        "step_id": "step:0004"
-      },
-      "permission": {
-        "allowed": false,
-        "reasons": ["network is not allowed"],
-        "capabilities_used": ["network"],
-        "unsafe_override": false
-      },
-      "effect": {
-        "duration_ms": 12,
-        "input_summary": null,
-        "output_summary": null,
-        "error_type": "CapabilityViolation",
-        "error_message": "network blocked"
-      },
-      "details": {
-        "runner": "local"
-      }
+      "tool": "send email",
+      "decision": "blocked",
+      "capability": "network",
+      "reason": "policy_denied",
+      "result": "blocked"
     }
   ],
-  "summary": "Tools: 1 total, 0 ok, 1 blocked, 0 error.",
-  "counts": {
-    "total": 1,
-    "ok": 0,
-    "blocked": 1,
-    "error": 0
-  }
+  "errors": [],
+  "none_used": false,
+  "notes": []
 }

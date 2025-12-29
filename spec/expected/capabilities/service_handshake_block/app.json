@@ -38,7 +38,11 @@
       "status": "error",
       "error_type": "CapabilityViolation",
       "error_message": "What happened: Tool \"service tool\" cannot run on the service runner.\nWhy: Service enforcement is none. Missing guarantees: filesystem_write.\nFix: Update the service to enforce the guarantees or switch runners.\nExample: n3 tools set-runner \"service tool\" --runner local",
-      "duration_ms": 0
+      "duration_ms": 0,
+      "decision": "allowed",
+      "capability": "none",
+      "reason": "policy_allowed",
+      "result": "error"
     }
   ]
 }

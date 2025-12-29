@@ -1,22 +1,27 @@
-import json
-from pathlib import Path
-
-from namel3ss.runtime.tools.explain.builder import build_tool_explain_pack
-from namel3ss.runtime.tools.explain.decision import ToolDecision
-from namel3ss.runtime.tools.explain.render_plain import render_with
-
-FIXTURE_DIR = Path(__file__).parent / "fixtures"
-
-
-def _load_fixture(name: str) -> dict:
-    return json.loads((FIXTURE_DIR / name).read_text(encoding="utf-8"))
+from namel3ss.tools_with.builder import build_tools_with_pack
+from namel3ss.tools_with.render_plain import render_with
 
 
 def test_render_with_is_deterministic() -> None:
-    execution_last = _load_fixture("execution_last.json")
-    run_last = _load_fixture("run_last.json")
-    pack = build_tool_explain_pack(execution_last, run_last)
-    decisions = [ToolDecision.from_dict(item) for item in pack.get("decisions", [])]
-    text_one = render_with(decisions)
-    text_two = render_with(decisions)
+    traces = [
+        {
+            "type": "tool_call",
+            "tool": "alpha",
+            "decision": "allowed",
+            "capability": "none",
+            "reason": "policy_allowed",
+            "result": "ok",
+        },
+        {
+            "type": "tool_call",
+            "tool": "beta",
+            "decision": "blocked",
+            "capability": "network",
+            "reason": "policy_denied",
+            "result": "blocked",
+        },
+    ]
+    pack = build_tools_with_pack(traces, project_root=None)
+    text_one = render_with(pack)
+    text_two = render_with(pack)
     assert text_one == text_two

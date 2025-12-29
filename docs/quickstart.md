@@ -29,6 +29,8 @@ Run any `.ai` app with the file-first CLI.
 - What mode: `n3 what`
 - See mode: `n3 see`
 - Fix mode: `n3 fix`
+- Exists mode: `n3 exists app.ai`
+- When mode: `n3 when app.ai`
 - Memory recall: `n3 memory "hello"` (run from a folder with `app.ai`)
 - Memory explain: `n3 memory why`
 - Memory show: `n3 memory show`
@@ -51,6 +53,11 @@ Formatter and linter:
 
 Try this:
 - Run `n3 run app.ai`, then `n3 how`, `n3 with`, `n3 what`, and `n3 see`.
+- Run a flow, then run `n3 what`.
+- Run a tool example, then run `n3 with`.
+- Try `n3 exists app.ai`.
+- Run `n3 when app.ai` before running flows.
+- Run a failing example then `n3 fix`.
 - If something fails, try: `n3 fix`.
 
 Memory proof harness (dev):

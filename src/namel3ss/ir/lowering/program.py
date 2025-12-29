@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import Dict, List
 
 from namel3ss.ast import nodes as ast
+from namel3ss.errors.base import Namel3ssError
+from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir.lowering.agents import _lower_agents
 from namel3ss.ir.lowering.ai import _lower_ai_decls
 from namel3ss.ir.lowering.flow import lower_flow
@@ -41,6 +43,15 @@ def _flow_has_theme_change(flow: Flow) -> bool:
 
 
 def lower_program(program: ast.Program) -> Program:
+    if not getattr(program, "spec_version", None):
+        raise Namel3ssError(
+            build_guidance_message(
+                what="Spec declaration is missing.",
+                why="Programs must declare a spec version before lowering.",
+                fix='Add a spec declaration at the top of the file.',
+                example='spec is \"1.0\"',
+            )
+        )
     record_schemas = [_lower_record(record) for record in program.records]
     identity_schema = _lower_identity(program.identity) if program.identity else None
     tool_map = _lower_tools(program.tools)
@@ -52,6 +63,7 @@ def lower_program(program: ast.Program) -> Program:
     pages = [_lower_page(page, record_map, flow_names) for page in program.pages]
     theme_runtime_supported = any(_flow_has_theme_change(flow) for flow in flow_irs)
     return Program(
+        spec_version=str(program.spec_version),
         theme=program.app_theme,
         theme_tokens={name: val for name, (val, _, _) in program.theme_tokens.items()},
         theme_runtime_supported=theme_runtime_supported,

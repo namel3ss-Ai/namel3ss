@@ -138,4 +138,4 @@ def _hash_file(path: Path) -> str:
 
 
 def _write_app(tmp_path: Path) -> None:
-    (tmp_path / "app.ai").write_text('flow "demo":\n  return "ok"\n', encoding="utf-8")
+    (tmp_path / "app.ai").write_text('spec is "1.0"\n\nflow "demo":\n  return "ok"\n', encoding="utf-8")

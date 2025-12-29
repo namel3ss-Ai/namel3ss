@@ -1,0 +1,5 @@
+spec is "1.0"
+
+flow "fail":
+  if "no":
+    return "ok"

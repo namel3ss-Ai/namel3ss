@@ -5,8 +5,6 @@ from pathlib import Path
 
 from namel3ss.cli.app_loader import load_program
 from namel3ss.runtime.execution.normalize import SKIP_KINDS, format_expression, summarize_value
-from namel3ss.runtime.tools.explain.decision import ToolDecision
-
 from .effects import (
     expected_effects_from_memory,
     expected_effects_from_steps,
@@ -33,15 +31,15 @@ def build_flow_explain_pack(project_root: Path, app_path: str | None = None) -> 
 
     flow_name = _flow_name(run_last, execution_last)
     steps = _execution_steps(execution_last)
-    decisions = _tool_decisions(tools_last)
+    tool_entries = _tool_entries(tools_last)
 
-    intent = _build_intent(flow_name, app_path, steps, decisions, memory_last)
-    outcome = _build_outcome(run_last, execution_last, steps, decisions, memory_last)
+    intent = _build_intent(flow_name, app_path, steps, tool_entries, memory_last)
+    outcome = _build_outcome(run_last, execution_last, steps, tool_entries, memory_last)
     summary = FlowSummary(
         intent=intent,
         outcome=outcome,
-        reasons=_build_reasons(steps, decisions, memory_last),
-        what_not=_build_what_not(steps, decisions, memory_last),
+        reasons=_build_reasons(steps, tool_entries, memory_last),
+        what_not=_build_what_not(steps, tool_entries, memory_last),
     )
 
     status = summary.outcome.status
@@ -69,14 +67,14 @@ def _build_intent(
     flow_name: str,
     app_path: str | None,
     steps: list[dict],
-    decisions: list[ToolDecision],
+    tool_entries: list[dict],
     memory_last: dict | None,
 ) -> FlowIntent:
-    purpose = _purpose_text(flow_name, decisions)
+    purpose = _purpose_text(flow_name, tool_entries)
     requires, audited = _flow_policy(app_path, flow_name)
     expected: list[str] = []
     expected.extend(expected_effects_from_steps(steps))
-    expected.extend(expected_effects_from_tools(decisions))
+    expected.extend(expected_effects_from_tools(tool_entries))
     expected.extend(expected_effects_from_memory(memory_last))
     expected = unique_items(expected)
     return FlowIntent(
@@ -92,10 +90,10 @@ def _build_outcome(
     run_last: dict | None,
     execution_last: dict | None,
     steps: list[dict],
-    decisions: list[ToolDecision],
+    tool_entries: list[dict],
     memory_last: dict | None,
 ) -> FlowOutcome:
-    tool_summary = summarize_tool_decisions(decisions)
+    tool_summary = summarize_tool_decisions(tool_entries)
     memory_summary = summarize_memory(memory_last)
     skipped_summary = _summarize_skips(steps, tool_summary)
     ok = _run_ok(run_last, execution_last)
@@ -112,7 +110,7 @@ def _build_outcome(
     )
 
 
-def _build_reasons(steps: list[dict], decisions: list[ToolDecision], memory_last: dict | None) -> list[str]:
+def _build_reasons(steps: list[dict], tool_entries: list[dict], memory_last: dict | None) -> list[str]:
     lines: list[str] = []
     for step in steps:
         if step.get("kind") in {
@@ -133,24 +131,24 @@ def _build_reasons(steps: list[dict], decisions: list[ToolDecision], memory_last
     written = memory_write_count(memory_last)
     if written and written > 0:
         lines.append(f"wrote {written} memory items.")
-    for decision in decisions:
-        if decision.status != "blocked":
+    for entry in tool_entries:
+        if entry.get("result") != "blocked":
             continue
-        lines.append(_tool_blocked_line(decision, verb="was blocked"))
+        lines.append(_tool_blocked_line(entry, verb="was blocked"))
     return normalize_lines(lines)
 
 
-def _build_what_not(steps: list[dict], decisions: list[ToolDecision], memory_last: dict | None) -> list[str]:
+def _build_what_not(steps: list[dict], tool_entries: list[dict], memory_last: dict | None) -> list[str]:
     lines: list[str] = []
     for step in steps:
         if step.get("kind") in SKIP_KINDS:
             line = _step_line(step)
             if line:
                 lines.append(line)
-    for decision in decisions:
-        if decision.status != "blocked":
+    for entry in tool_entries:
+        if entry.get("result") != "blocked":
             continue
-        lines.append(_tool_blocked_line(decision, verb="did not run"))
+        lines.append(_tool_blocked_line(entry, verb="did not run"))
     lines.extend(_memory_skip_lines(memory_last))
     return normalize_lines(lines)
 
@@ -162,8 +160,8 @@ def _flow_name(run_last: dict | None, execution_last: dict | None) -> str:
     return "unknown"
 
 
-def _purpose_text(flow_name: str, decisions: list[ToolDecision]) -> str:
-    tool_name = _primary_tool(decisions)
+def _purpose_text(flow_name: str, tool_entries: list[dict]) -> str:
+    tool_name = _primary_tool(tool_entries)
     if tool_name and flow_name != "unknown":
         return f"run flow \"{flow_name}\" to use tool \"{tool_name}\""
     if flow_name != "unknown":
@@ -195,15 +193,24 @@ def _execution_steps(execution_last: dict | None) -> list[dict]:
     return [step for step in steps if isinstance(step, dict)]
 
 
-def _tool_decisions(tools_last: dict | None) -> list[ToolDecision]:
+def _tool_entries(tools_last: dict | None) -> list[dict]:
     if not isinstance(tools_last, dict):
         return []
+    if any(key in tools_last for key in ("allowed", "blocked", "errors")):
+        entries: list[dict] = []
+        for key in ("allowed", "blocked", "errors"):
+            values = tools_last.get(key) or []
+            if isinstance(values, list):
+                entries.extend([item for item in values if isinstance(item, dict)])
+        return entries
     decisions = tools_last.get("decisions") or []
-    result: list[ToolDecision] = []
+    if not isinstance(decisions, list):
+        return []
+    entries: list[dict] = []
     for entry in decisions:
         if isinstance(entry, dict):
-            result.append(ToolDecision.from_dict(entry))
-    return result
+            entries.append(_entry_from_decision(entry))
+    return entries
 
 
 def _summarize_skips(steps: list[dict], tool_summary: dict) -> dict:
@@ -258,12 +265,10 @@ def _step_line(step: dict) -> str | None:
     return _ensure_period(what)
 
 
-def _tool_blocked_line(decision: ToolDecision, *, verb: str) -> str:
-    name = decision.tool_name or "tool"
-    reason = None
-    if decision.permission.reasons:
-        reason = decision.permission.reasons[0]
-    if reason:
+def _tool_blocked_line(entry: dict, *, verb: str) -> str:
+    name = entry.get("tool") or "tool"
+    reason = entry.get("reason")
+    if reason and reason != "unknown":
         return f'tool "{name}" {verb} because {reason}.'
     return f'tool "{name}" {verb}. No explicit reason recorded.'
 
@@ -312,11 +317,29 @@ def _summary_text(flow_name: str, status: str) -> str:
     return f"Flow \"{label}\" status: {status}."
 
 
-def _primary_tool(decisions: list[ToolDecision]) -> str | None:
-    for decision in decisions:
-        if decision.tool_name:
-            return decision.tool_name
+def _primary_tool(tool_entries: list[dict]) -> str | None:
+    for entry in tool_entries:
+        if entry.get("tool"):
+            return str(entry.get("tool"))
     return None
+
+
+def _entry_from_decision(entry: dict) -> dict:
+    tool_name = str(entry.get("tool_name") or "tool")
+    status = str(entry.get("status") or "")
+    permission = entry.get("permission") if isinstance(entry.get("permission"), dict) else {}
+    reasons = permission.get("reasons") if isinstance(permission.get("reasons"), list) else []
+    capabilities = permission.get("capabilities_used") if isinstance(permission.get("capabilities_used"), list) else []
+    reason = str(reasons[0]) if reasons else "unknown"
+    capability = str(capabilities[0]) if capabilities else "none"
+    result = status if status in {"ok", "blocked", "error"} else "ok"
+    return {
+        "tool": tool_name,
+        "decision": "blocked" if result == "blocked" else "allowed",
+        "capability": capability,
+        "reason": reason,
+        "result": result,
+    }
 
 
 def _load_last_run(root: Path) -> dict | None:

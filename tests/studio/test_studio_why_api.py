@@ -6,6 +6,7 @@ from namel3ss.studio.why_api import get_why_payload
 def _write_basic_app(root: Path) -> None:
     app = root / "app.ai"
     app.write_text(
+        'spec is "1.0"\n\n'
         'identity "User":\n'
         '  field "role" is text must be present\n\n'
         'flow "demo": requires identity.role is "admin"\n'

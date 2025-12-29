@@ -14,7 +14,7 @@ def test_manifest_includes_theme():
 
 
 def test_manifest_reflects_runtime_theme():
-    source = 'flow "demo":\n  set theme to "dark"\n'
+    source = 'spec is "1.0"\n\nflow "demo":\n  set theme to "dark"\n'
     program = lower_ir_program(source)
     from namel3ss.ui.manifest import build_manifest
     data = build_manifest(program, state={}, store=None, runtime_theme="dark")

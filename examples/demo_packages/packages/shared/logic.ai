@@ -1,2 +1,4 @@
+spec is "1.0"
+
 flow "shared_flow":
   return "shared ok"

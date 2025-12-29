@@ -4,6 +4,8 @@ from namel3ss.lint.engine import lint_source
 SOURCE = '''record "User":
   name string
 
+spec is "1.0"
+
 flow "demo":
   save User
 '''

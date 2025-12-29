@@ -16,6 +16,8 @@ def _find_position(source: str, needle: str) -> tuple[int, int]:
 def test_editor_fix_and_apply(tmp_path: Path) -> None:
     app_path = tmp_path / "app.ai"
     source = """
+spec is "1.0"
+
 record "Customer":
   name text
 
@@ -44,6 +46,8 @@ flow "create_customer":
 def test_editor_rename_preview_and_apply(tmp_path: Path) -> None:
     app_path = tmp_path / "app.ai"
     source = """
+spec is "1.0"
+
 record "Customer":
   name text
 

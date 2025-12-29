@@ -10,7 +10,7 @@ from tests.conftest import lower_ir_program
 
 
 def test_insert_row_error_payload():
-    source = 'page "home":\n  row:\n    column:\n      text is "hi"\n'
+    source = 'spec is "1.0"\n\npage "home":\n  row:\n    column:\n      text is "hi"\n'
     program = lower_ir_program(source)
     manifest = build_manifest(program, state={}, store=MemoryStore())
     row_el = manifest["pages"][0]["elements"][0]
@@ -31,7 +31,7 @@ def test_insert_row_error_payload():
 
 
 def test_execute_action_unknown_returns_error_payload():
-    source = 'flow "demo":\n  return "ok"\n'
+    source = 'spec is "1.0"\n\nflow "demo":\n  return "ok"\n'
     payload = execute_action(source, session=None, action_id="unknown", payload={})
     assert payload["ok"] is False
     assert payload.get("kind") == "engine"

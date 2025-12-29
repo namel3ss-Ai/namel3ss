@@ -1,47 +1,50 @@
 {
+  "actions": {
+    "page.customers.form.customer": {
+      "id": "page.customers.form.customer",
+      "record": "Customer",
+      "type": "submit_form"
+    }
+  },
   "pages": [
     {
-      "name": "Customers",
-      "slug": "customers",
       "elements": [
         {
-          "type": "title",
-          "value": "Customers",
+          "column": 3,
           "element_id": "page.customers.title.0",
+          "index": 0,
+          "line": 8,
           "page": "Customers",
           "page_slug": "customers",
-          "index": 0,
-          "line": 6,
-          "column": 3
+          "type": "title",
+          "value": "Customers"
         },
         {
-          "type": "form",
-          "element_id": "page.customers.form_item.1",
-          "id": "page.customers.form.customer",
           "action_id": "page.customers.form.customer",
-          "record": "Customer",
+          "column": 3,
+          "element_id": "page.customers.form_item.1",
           "fields": [
             {
+              "constraints": [],
               "name": "name",
-              "type": "text",
-              "constraints": []
+              "type": "text"
             },
             {
+              "constraints": [],
               "name": "age",
-              "type": "number",
-              "constraints": []
+              "type": "number"
             }
           ],
+          "id": "page.customers.form.customer",
+          "index": 1,
+          "line": 9,
           "page": "Customers",
           "page_slug": "customers",
-          "index": 1,
-          "line": 7,
-          "column": 3
+          "record": "Customer",
+          "type": "form"
         },
         {
-          "type": "table",
-          "id": "page.customers.table.customer",
-          "record": "Customer",
+          "column": 3,
           "columns": [
             {
               "name": "name",
@@ -52,37 +55,34 @@
               "type": "number"
             }
           ],
-          "rows": [],
           "element_id": "page.customers.table.2",
+          "id": "page.customers.table.customer",
+          "index": 2,
+          "line": 10,
           "page": "Customers",
           "page_slug": "customers",
-          "index": 2,
-          "line": 8,
-          "column": 3
+          "record": "Customer",
+          "rows": [],
+          "type": "table"
         }
-      ]
+      ],
+      "name": "Customers",
+      "slug": "customers"
     }
   ],
-  "actions": {
-    "page.customers.form.customer": {
-      "id": "page.customers.form.customer",
-      "type": "submit_form",
-      "record": "Customer"
-    }
-  },
   "theme": {
-    "schema_version": "1",
-    "setting": "system",
     "current": "system",
-    "persisted_current": null,
     "effective": "light",
-    "source": "app",
-    "runtime_supported": false,
-    "tokens": {},
+    "persisted_current": null,
     "preference": {
       "allow_override": false,
       "persist": "none"
-    }
+    },
+    "runtime_supported": false,
+    "schema_version": "1",
+    "setting": "system",
+    "source": "app",
+    "tokens": {}
   },
   "ui": {
     "persistence": {

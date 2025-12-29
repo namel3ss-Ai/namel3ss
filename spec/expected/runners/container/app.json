@@ -36,7 +36,11 @@
         ],
         "count": 1
       },
-      "duration_ms": 0
+      "duration_ms": 0,
+      "decision": "allowed",
+      "capability": "none",
+      "reason": "policy_allowed",
+      "result": "ok"
     }
   ]
 }

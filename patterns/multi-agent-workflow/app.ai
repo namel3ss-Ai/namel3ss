@@ -1,3 +1,5 @@
+spec is "1.0"
+
 identity "User":
   field "email" is text must be present
   field "role" is text must be present

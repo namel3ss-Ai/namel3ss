@@ -16,12 +16,12 @@ def _normalize(text: str) -> str:
 
 
 def test_unsupported_operator_error_snapshot() -> None:
-    source = 'flow "demo":\n  return 1 ^ 2\n'
+    source = 'spec is "1.0"\n\nflow "demo":\n  return 1 ^ 2\n'
     with pytest.raises(Namel3ssError) as excinfo:
         parse(source)
     rendered = format_error(excinfo.value, source)
     expected = (
-        "[line 2, col 12] What happened: Unsupported character '^' in namel3ss source.\n"
+        "[line 4, col 12] What happened: Unsupported character '^' in namel3ss source.\n"
         "Why: Only supported operators are +, -, *, / and comparison words like `is greater than`.\n"
         "Fix: Remove the character or rewrite using supported arithmetic/comparison syntax.\n"
         "Example: Use `total + 2.5` or `if price is greater than 10:`.\n"
@@ -32,7 +32,7 @@ def test_unsupported_operator_error_snapshot() -> None:
 
 
 def test_unknown_flow_message_snapshot() -> None:
-    program = lower_ir_program('flow "demo":\n  return "ok"\n')
+    program = lower_ir_program('spec is "1.0"\n\nflow "demo":\n  return "ok"\n')
     with pytest.raises(Namel3ssError) as excinfo:
         execute_program_flow(program, "missing")
     expected = (

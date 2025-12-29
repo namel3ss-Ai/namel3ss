@@ -25,6 +25,7 @@ class Flow(Node):
 
 @dataclass
 class Program(Node):
+    spec_version: str
     theme: str
     theme_tokens: Dict[str, str]
     theme_runtime_supported: bool

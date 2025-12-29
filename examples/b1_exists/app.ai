@@ -1,0 +1,15 @@
+spec is "1.0"
+
+record "Note":
+  field "text" is text must be present
+
+flow "add_note":
+  set state.note.text is input.values.text
+  create "Note" with state.note as note
+  return note
+
+page "home":
+  title is "Notes"
+  form is "Note"
+  button "Add note":
+    calls flow "add_note"

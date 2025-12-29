@@ -14,6 +14,8 @@ SOURCE = '''ai "assistant":
     semantic is true
     profile is true
 
+spec is "1.0"
+
 flow "demo":
   ask ai "assistant" with input: "Remember this for me: I prefer concise updates." as first
   ask ai "assistant" with input: "My name is Ada." as second

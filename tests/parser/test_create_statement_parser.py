@@ -5,6 +5,8 @@ from tests.conftest import lower_ir_program
 SOURCE = '''record "Order":
   total number
 
+spec is "1.0"
+
 flow "demo":
   create "Order" with state.order as order
   return order

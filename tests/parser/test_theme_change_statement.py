@@ -6,7 +6,7 @@ from tests.conftest import lower_ir_program, parse_program
 
 
 def test_parse_set_theme_statement():
-    source = 'flow "demo":\n  set theme to "dark"\n'
+    source = 'spec is "1.0"\n\nflow "demo":\n  set theme to "dark"\n'
     program = parse_program(source)
     stmt = program.flows[0].body[0]
     assert stmt.value == "dark"
@@ -14,13 +14,13 @@ def test_parse_set_theme_statement():
 
 
 def test_invalid_theme_value_raises():
-    source = 'flow "demo":\n  set theme to "blue"\n'
+    source = 'spec is "1.0"\n\nflow "demo":\n  set theme to "blue"\n'
     with pytest.raises(Namel3ssError):
         parse_program(source)
 
 
 def test_lowering_theme_change_and_flag():
-    source = 'flow "demo":\n  set theme to "dark"\n'
+    source = 'spec is "1.0"\n\nflow "demo":\n  set theme to "dark"\n'
     program_ir = lower_ir_program(source)
     stmt = program_ir.flows[0].body[0]
     assert isinstance(stmt, IRThemeChange)

@@ -3,7 +3,9 @@ from decimal import Decimal
 from tests.conftest import lower_ir_program
 
 
-SOURCE = '''flow "demo":
+SOURCE = '''spec is "1.0"
+
+flow "demo":
   let total is 10.50
   return total
 '''

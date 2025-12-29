@@ -8,7 +8,7 @@ from namel3ss.ir import nodes as ir
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.utils.numbers import is_number, to_decimal
-from namel3ss.runtime.tools.python_runtime import execute_python_tool_call
+from namel3ss.runtime.tools.executor import execute_tool_call
 
 
 def evaluate_expression(ctx: ExecutionContext, expr: ir.Expression) -> object:
@@ -190,13 +190,14 @@ def evaluate_expression(ctx: ExecutionContext, expr: ir.Expression) -> object:
                     column=arg.column,
                 )
             payload[arg.name] = evaluate_expression(ctx, arg.value)
-        return execute_python_tool_call(
+        outcome = execute_tool_call(
             ctx,
-            tool_name=expr.tool_name,
-            payload=payload,
+            expr.tool_name,
+            payload,
             line=expr.line,
             column=expr.column,
         )
+        return outcome.result_value
 
     raise Namel3ssError(f"Unsupported expression type: {type(expr)}", line=expr.line, column=expr.column)
 

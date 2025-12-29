@@ -30,8 +30,10 @@ from namel3ss.cli.why_mode import run_why_command
 from namel3ss.cli.with_mode import run_with_command
 from namel3ss.cli.how_mode import run_how_command
 from namel3ss.cli.what_mode import run_what_command
+from namel3ss.cli.when_mode import run_when_command
 from namel3ss.cli.see_mode import run_see_command
 from namel3ss.cli.fix_mode import run_fix_command
+from namel3ss.cli.exists_mode import run_exists_command
 from namel3ss.cli.status_mode import run_status_command
 from namel3ss.cli.studio_mode import run_studio
 from namel3ss.cli.test_mode import run_test_command
@@ -86,8 +88,10 @@ RESERVED = {
     "how",
     "with",
     "what",
+    "when",
     "see",
     "fix",
+    "exists",
     "kit",
     "editor",
     "run",
@@ -162,10 +166,14 @@ def main(argv: list[str] | None = None) -> int:
             return run_with_command(args[1:])
         if cmd == "what":
             return run_what_command(args[1:])
+        if cmd == "when":
+            return run_when_command(args[1:])
         if cmd == "see":
             return run_see_command(args[1:])
         if cmd == "fix":
             return run_fix_command(args[1:])
+        if cmd == "exists":
+            return run_exists_command(args[1:])
         if cmd == "kit":
             return run_kit_command(args[1:])
         if cmd == "editor":
@@ -359,9 +367,11 @@ def _print_usage() -> None:
   n3 why [app.ai] [--json]         # plain-English explanation of the app
   n3 how                           # plain-English explanation of the last run
   n3 with                          # explain tool usage and blocks from the last run
-  n3 what                          # explain flow intent and outcome from the last run
+  n3 what                          # show the last run outcome
+  n3 when [app.ai] [--json]        # check spec compatibility
   n3 see                           # explain the last UI manifest
-  n3 fix                           # explain the last error and recovery options
+  n3 fix [--json]                  # show the last runtime error summary
+  n3 exists [app.ai] [--json]      # contract summary (uses .namel3ss/contract/last.* when present)
   n3 kit [app.ai] [--format md]    # adoption kit summary (writes .namel3ss/kit)
   n3 editor [app.ai] [--port N]    # start the editor service (use --json for details)
   n3 check [app.ai]                # validate (alias: n3 <app.ai> check)

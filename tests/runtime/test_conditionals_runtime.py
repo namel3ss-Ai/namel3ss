@@ -2,7 +2,9 @@ from tests.conftest import run_flow
 
 
 def test_if_at_least_branch():
-    source = '''flow "demo":
+    source = '''spec is "1.0"
+
+flow "demo":
   let total is 10
   if total is at least 10:
     return "yes"
@@ -14,7 +16,9 @@ def test_if_at_least_branch():
 
 
 def test_if_at_most_branch():
-    source = '''flow "demo":
+    source = '''spec is "1.0"
+
+flow "demo":
   let total is 5
   if total is at most 5:
     return "ok"
@@ -26,7 +30,9 @@ def test_if_at_most_branch():
 
 
 def test_if_not_equal_branch():
-    source = '''flow "demo":
+    source = '''spec is "1.0"
+
+flow "demo":
   let total is 3
   if total is not 4:
     return "ne"
@@ -38,7 +44,9 @@ def test_if_not_equal_branch():
 
 
 def test_nested_if_executes_inner_branch():
-    source = '''flow "demo":
+    source = '''spec is "1.0"
+
+flow "demo":
   let total is 12
   if total is greater than 10:
     if total is less than 20:

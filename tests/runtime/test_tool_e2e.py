@@ -28,6 +28,8 @@ tool "greeter":
     message is text
     ok is boolean
 
+spec is "1.0"
+
 flow "demo":
   let lower is convert text to lowercase:
     text is input.text

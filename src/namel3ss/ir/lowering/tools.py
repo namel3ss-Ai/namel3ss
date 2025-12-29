@@ -35,6 +35,7 @@ def _lower_tools(tools: List[ast.ToolDecl]) -> Dict[str, ToolDecl]:
                 )
                 for field in tool.output_fields
             ],
+            capabilities=tuple(tool.capabilities or ()),
             purity=tool.purity,
             timeout_seconds=tool.timeout_seconds,
             line=tool.line,

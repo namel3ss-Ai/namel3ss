@@ -83,6 +83,8 @@ def test_service_runner_success(tmp_path: Path) -> None:
     message is text
     ok is boolean
 
+spec is "1.0"
+
 flow "demo":
   let result is greeter:
     name is input.name
@@ -122,6 +124,8 @@ def test_service_runner_error(tmp_path: Path) -> None:
   output:
     message is text
 
+spec is "1.0"
+
 flow "demo":
   let result is greeter:
     name is input.name
@@ -156,6 +160,8 @@ def test_service_runner_timeout(monkeypatch, tmp_path: Path) -> None:
   output:
     message is text
 
+spec is "1.0"
+
 flow "demo":
   let result is greeter:
     name is input.name
@@ -189,6 +195,8 @@ def test_service_runner_handshake_blocks_unenforced(tmp_path: Path) -> None:
 
   output:
     ok is boolean
+
+spec is "1.0"
 
 flow "demo":
   let result is service tool:
@@ -234,6 +242,8 @@ def test_service_runner_handshake_allows_enforced(tmp_path: Path) -> None:
 
   output:
     ok is boolean
+
+spec is "1.0"
 
 flow "demo":
   let result is service tool:

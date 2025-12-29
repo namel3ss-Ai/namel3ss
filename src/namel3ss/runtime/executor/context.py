@@ -37,3 +37,5 @@ class ExecutionContext:
     record_changes: list[dict] = field(default_factory=list)
     execution_steps: list[dict] = field(default_factory=list)
     execution_step_counter: int = 0
+    pending_tool_traces: list[dict] = field(default_factory=list)
+    tool_call_source: str | None = None

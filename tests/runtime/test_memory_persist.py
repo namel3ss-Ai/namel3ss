@@ -23,6 +23,8 @@ SOURCE = '''ai "assistant":
   memory:
     short_term is 2
 
+spec is "1.0"
+
 flow "demo":
   ask ai "assistant" with input: "Hello" as reply
   return reply

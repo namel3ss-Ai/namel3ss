@@ -1,3 +1,5 @@
+spec is "1.0"
+
 ai "assistant":
   provider is "openai"
   model is "gpt-4.1"

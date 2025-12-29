@@ -44,14 +44,14 @@ def _zip_bytes(root: Path, prefix: str) -> bytes:
 
 def test_cli_pkg_commands(monkeypatch, tmp_path, capsys):
     app = tmp_path / "app.ai"
-    app.write_text('flow "demo":\n  return "ok"\n', encoding="utf-8")
+    app.write_text('spec is "1.0"\n\nflow "demo":\n  return "ok"\n', encoding="utf-8")
     manifest = tmp_path / "namel3ss.toml"
     manifest.write_text('[dependencies]\ndemo = "github:owner/demo@v0.1.0"\n', encoding="utf-8")
 
     package_root = tmp_path / "package_src"
     package_root.mkdir()
     (package_root / "capsule.ai").write_text('capsule "demo":\n  exports:\n    flow "run"\n', encoding="utf-8")
-    (package_root / "logic.ai").write_text('flow "run":\n  return "ok"\n', encoding="utf-8")
+    (package_root / "logic.ai").write_text('spec is "1.0"\n\nflow "run":\n  return "ok"\n', encoding="utf-8")
     (package_root / "LICENSE").write_text("MIT", encoding="utf-8")
     metadata = {
         "name": "demo",

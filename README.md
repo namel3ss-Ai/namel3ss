@@ -16,6 +16,11 @@ Start here:
 - [Flow explanations](docs/flow-what.md)
 - [UI explanations](docs/ui-see.md)
 - [Error explanations](docs/errors-fix.md)
+- [Phase B1: exists](docs/phase-b1-exists.md)
+- [Phase B2: fix](docs/phase-b2-fix.md)
+- [Phase B3: what](docs/phase-b3-what.md)
+- [Phase B4: when](docs/phase-b4-when.md)
+- [Phase B5: with](docs/phase-b5-with.md)
 - [Publishing packs](docs/publishing-packs.md)
 - [Registry](docs/registry.md)
 - [Editor](docs/editor.md)
@@ -149,6 +154,124 @@ Memory explanations docs at docs/memory-explanations.md.
 Memory proof harness docs at docs/memory-proof.md.
 See docs/memory.md, docs/memory-policy.md, docs/memory-lanes.md, docs/memory-agreement.md, docs/memory-spaces.md, and docs/memory-phases.md for the full schema and governance rules.
 
+### Phase B1: exists
+10-second demo:
+```bash
+n3 exists app.ai
+```
+
+Example output (trimmed):
+```
+namel3ss exists
+
+Spec
+- version: contract.v1
+- source hash: <sha256>
+
+Program summary
+- flows: 1 (demo)
+- records: none recorded
+- pages: none recorded
+
+Features used
+- none recorded
+
+Capabilities required
+- none recorded
+```
+
+### Phase B2: fix
+10-second demo:
+```bash
+n3 app.ai flow "fail"
+n3 fix
+```
+
+Example output (trimmed):
+```
+error: Runtime error.
+
+What happened
+- Runtime error.
+
+Why
+- Error message: <message>
+
+How to fix
+- Review the error message and try again.
+```
+
+### Phase B3: what
+10-second demo:
+```bash
+n3 run app.ai
+n3 what
+```
+
+Example output (trimmed):
+```
+run outcome
+
+Status
+- ok
+
+Store
+- began: yes
+- committed: yes
+- commit_failed: no
+
+What did not happen
+- none recorded
+```
+
+### Phase B4: when
+10-second demo:
+```bash
+n3 when app.ai
+```
+
+Example output (trimmed):
+```
+spec check
+
+Declared
+- spec: 1.0
+
+Engine supports
+- 1.0
+
+Required capabilities
+- none recorded
+
+Unsupported capabilities
+- none recorded
+
+Result
+- status: compatible
+- Spec version "1.0" is compatible.
+```
+
+### Phase B5: with
+10-second demo:
+```bash
+n3 run app.ai
+n3 with
+```
+
+Example output (trimmed):
+```
+tools used
+
+Allowed
+- greet someone (ok)
+
+Blocked
+- send email (reason: policy_denied, capability: network)
+
+Errors
+- none recorded
+```
+
 ### Explainable execution (Phase 3)
 Flows record deterministic execution steps and can explain how they ran.
 ```bash
@@ -180,18 +303,21 @@ n3 with
 
 Example output:
 ```
-Tools used in the last run
-- greet someone
-  - intent: called tool greet someone
-  - blocked
-  - runner: local
-  - result: blocked
-  - why: network: guarantee_blocked
+tools used
+
+Allowed
+- greet someone (ok)
+
+Blocked
+- send email (reason: policy_denied, capability: network)
+
+Errors
+- none recorded
 ```
 Tools with docs at docs/tools-with.md.
 
 ### Explainable flows (Phase 5)
-Flows summarize intent, outcome, and what did not happen.
+Flows summarize run outcome and persistence actions.
 ```bash
 n3 run app.ai
 n3 with
@@ -200,22 +326,17 @@ n3 what
 
 Example output:
 ```
-What the flow did
-Flow: demo
+run outcome
 
-Intent
-- run flow "demo" to use tool "greet someone".
-- audited: no.
+Status
+- ok
 
-Outcome
-- status: partial.
-- tools: ok 1, blocked 0, error 0.
-
-Why
-- took then branch because condition was true.
+Store
+- began: yes
+- committed: yes
 
 What did not happen
-- skipped else branch because condition was true.
+- none recorded
 ```
 Flow what docs at docs/flow-what.md.
 
@@ -267,6 +388,34 @@ Recovery options
 - Provide identity: Provide identity fields and run again.
 ```
 Errors fix docs at docs/errors-fix.md.
+
+### Explainable builds (Phase 8)
+Builds explain why this app exists in its current form.
+```bash
+n3 exists
+n3 exists --diff
+```
+
+Example output:
+```
+Why this app exists in this form
+
+Build
+- id: 1a2b3c
+- source: 9f8e7d6c5b4a
+- created: 2024-01-01T00:00:00+00:00
+
+What this build guarantees
+- execution explanations recorded (how)
+
+What this build constrains
+- No constraints were recorded.
+
+What changed since last build
+- files changed: 1
+- changed: app.ai
+```
+Build exists docs at docs/build-exists.md.
 
 ### Tools
 Tools are explicit, local functions with schema-validated inputs/outputs. Python code lives in `tools/*.py` (no inline Python). The `.ai` file stays intent-only; Python wiring lives in `.namel3ss/tools.yaml`.

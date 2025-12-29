@@ -17,6 +17,7 @@ from namel3ss.parser.tool import parse_tool
 
 
 def parse_program(parser) -> ast.Program:
+    spec_version: str | None = None
     app_theme = "system"
     app_line = None
     app_column = None
@@ -35,6 +36,23 @@ def parse_program(parser) -> ast.Program:
         if parser._match("NEWLINE"):
             continue
         tok = parser._current()
+        if tok.type == "SPEC":
+            if spec_version is not None:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Spec is declared more than once.",
+                        why="The spec declaration must appear only once at the program root.",
+                        fix="Keep a single spec declaration.",
+                        example='spec is \"1.0\"',
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            parser._advance()
+            parser._expect("IS", "Expected 'is' after spec.")
+            value = parser._expect("STRING", "Expected a quoted spec version.").value
+            spec_version = str(value or "").strip()
+            continue
         if tok.type == "IDENT" and tok.value == "use":
             uses.append(parse_use_decl(parser))
             continue
@@ -121,6 +139,16 @@ def parse_program(parser) -> ast.Program:
             pages.append(parse_page(parser))
             continue
         raise Namel3ssError("Unexpected top-level token", line=tok.line, column=tok.column)
+    if parser.require_spec and not parser.allow_capsule:
+        if not spec_version:
+            raise Namel3ssError(
+                build_guidance_message(
+                    what="Spec declaration is missing.",
+                    why="Every program must declare the spec version at the root.",
+                    fix='Add a spec declaration at the top of the file.',
+                    example='spec is \"1.0\"',
+                )
+            )
     if parser.allow_capsule and capsule is None:
         raise Namel3ssError(
             build_guidance_message(
@@ -131,6 +159,7 @@ def parse_program(parser) -> ast.Program:
             )
         )
     return ast.Program(
+        spec_version=spec_version,
         app_theme=app_theme,
         app_theme_line=app_line,
         app_theme_column=app_column,

@@ -1,3 +1,5 @@
+spec is "1.0"
+
 record "Account":
   tenant_key is identity.tenant_id
   field "name" is text must be present

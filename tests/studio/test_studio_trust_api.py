@@ -8,7 +8,7 @@ from namel3ss.studio import trust_api
 
 def test_trust_payloads_and_redaction(tmp_path: Path, monkeypatch) -> None:
     app_path = tmp_path / "app.ai"
-    app_path.write_text('flow "demo":\n  return "ok"\n', encoding="utf-8")
+    app_path.write_text('spec is "1.0"\n\nflow "demo":\n  return "ok"\n', encoding="utf-8")
 
     secret = "supersecret-value"
     monkeypatch.setenv("NAMEL3SS_OPENAI_API_KEY", secret)

@@ -13,6 +13,8 @@ SOURCE = '''tool "greeter":
   output:
     message is text
 
+spec is "1.0"
+
 flow "demo":
   let result is greeter:
     name is input.name

@@ -18,6 +18,8 @@ page "home":
   title is "Hello"
   text is "Welcome"
 
+spec is "1.0"
+
 flow "demo":
   return "ok"
 """.lstrip(),

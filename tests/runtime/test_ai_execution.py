@@ -2,7 +2,9 @@ from namel3ss.runtime.ui.actions import handle_action
 from tests.conftest import lower_ir_program
 
 
-SOURCE = '''ai "assistant":
+SOURCE = '''spec is "1.0"
+
+ai "assistant":
   model is "gpt-4.1"
 
 flow "demo":

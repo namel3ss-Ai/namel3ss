@@ -1,3 +1,5 @@
+spec is "1.0"
+
 tool "write text file":
   implemented using python
 

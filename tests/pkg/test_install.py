@@ -46,7 +46,7 @@ def test_install_from_resolution(tmp_path: Path) -> None:
     package_root = tmp_path / "package_src"
     package_root.mkdir()
     (package_root / "capsule.ai").write_text('capsule "demo":\n  exports:\n    flow "run"\n', encoding="utf-8")
-    (package_root / "logic.ai").write_text('flow "run":\n  return "ok"\n', encoding="utf-8")
+    (package_root / "logic.ai").write_text('spec is "1.0"\n\nflow "run":\n  return "ok"\n', encoding="utf-8")
     (package_root / "LICENSE").write_text("MIT", encoding="utf-8")
     metadata = {
         "name": "demo",

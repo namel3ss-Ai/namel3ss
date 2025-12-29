@@ -5,7 +5,9 @@ from namel3ss.ir import nodes as ir
 from tests.conftest import lower_ir_program, run_flow
 
 
-GOLDEN_FLOW = '''flow "demo":
+GOLDEN_FLOW = '''spec is "1.0"
+
+flow "demo":
   let x is 10
   if x is greater than 5:
     set state.result is "ok"

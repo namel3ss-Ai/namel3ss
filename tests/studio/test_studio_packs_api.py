@@ -9,7 +9,7 @@ from namel3ss.studio import api
 
 def test_studio_packs_payload_includes_pack(tmp_path: Path) -> None:
     app_path = tmp_path / "app.ai"
-    app_path.write_text('flow "demo":\n  return "ok"\n', encoding="utf-8")
+    app_path.write_text('spec is "1.0"\n\nflow "demo":\n  return "ok"\n', encoding="utf-8")
     fixture_root = Path(__file__).resolve().parents[1] / "fixtures" / "packs" / "pack_good_unverified"
     manifest = parse_pack_manifest(fixture_root / "pack.yaml")
     pack_dest = tmp_path / ".namel3ss" / "packs" / manifest.pack_id

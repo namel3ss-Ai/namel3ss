@@ -19,6 +19,8 @@ def test_actions_blocked_reason_is_printed(tmp_path: Path) -> None:
     app_path = _write_app(
         tmp_path,
         """
+spec is "1.0"
+
 page "home":
   button "Delete":
     calls flow "delete"

@@ -7,6 +7,8 @@ from namel3ss.pkg.lockfile import LOCKFILE_FILENAME
 APP_SOURCE = '''record "Item":
   name text
 
+spec is "1.0"
+
 flow "demo":
   return "ok"
 '''

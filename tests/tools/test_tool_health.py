@@ -21,6 +21,8 @@ TOOL_SOURCE = '''tool "greeter":
   output:
     ok is boolean
 
+spec is "1.0"
+
 flow "demo":
   return "ok"
 '''
@@ -83,7 +85,7 @@ def test_health_container_runner_missing_runtime(tmp_path: Path, monkeypatch) ->
 
 def test_health_pack_collisions(tmp_path: Path) -> None:
     app_path = tmp_path / "app.ai"
-    app_path.write_text('flow "demo":\n  return "ok"\n', encoding="utf-8")
+    app_path.write_text('spec is "1.0"\n\nflow "demo":\n  return "ok"\n', encoding="utf-8")
     pack_a = _install_pack(tmp_path, "pack_collision_a")
     pack_b = _install_pack(tmp_path, "pack_collision_b")
     write_pack_config(

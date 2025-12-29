@@ -11,7 +11,7 @@ from namel3ss.studio import data_api
 
 def test_data_summary_and_audit_redaction(tmp_path: Path, monkeypatch) -> None:
     app_path = tmp_path / "app.ai"
-    app_path.write_text('flow "demo":\n  return "ok"\n', encoding="utf-8")
+    app_path.write_text('spec is "1.0"\n\nflow "demo":\n  return "ok"\n', encoding="utf-8")
 
     db_path = (tmp_path / "data.db").as_posix()
     (tmp_path / "namel3ss.toml").write_text(

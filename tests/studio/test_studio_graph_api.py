@@ -12,7 +12,7 @@ def _write_file(path: Path, content: str) -> None:
 def test_graph_and_exports_payloads(tmp_path: Path) -> None:
     app_path = tmp_path / "app.ai"
     app_path.write_text(
-        'use "local" as local\nuse "shared" as shared\n\nflow "demo":\n  return "ok"\n',
+        'use "local" as local\nuse "shared" as shared\n\nspec is "1.0"\n\nflow "demo":\n  return "ok"\n',
         encoding="utf-8",
     )
     _write_file(

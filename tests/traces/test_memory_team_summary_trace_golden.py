@@ -14,6 +14,8 @@ SOURCE = '''ai "assistant":
     semantic is true
     profile is false
 
+spec is "1.0"
+
 flow "demo":
   ask ai "assistant" with input: "Remember this for the project: We decided to ship weekly." as first
   set state._memory_phase_token is "phase-2"

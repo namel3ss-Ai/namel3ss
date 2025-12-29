@@ -63,6 +63,8 @@ def test_python_sandbox_blocks_filesystem_write(tmp_path: Path) -> None:
   output:
     ok is boolean
 
+spec is "1.0"
+
 flow "demo":
   let result is user writes file:
     path is "blocked.txt"
@@ -94,6 +96,8 @@ def test_python_sandbox_blocks_network(tmp_path: Path) -> None:
 
   output:
     ok is boolean
+
+spec is "1.0"
 
 flow "demo":
   let result is user fetches web:

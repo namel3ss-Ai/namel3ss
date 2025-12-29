@@ -30,7 +30,7 @@ def _write_checksums(root: Path) -> None:
 def _make_package(root: Path) -> None:
     root.mkdir(parents=True, exist_ok=True)
     (root / "capsule.ai").write_text('capsule "demo":\n  exports:\n    flow "run"\n', encoding="utf-8")
-    (root / "logic.ai").write_text('flow "run":\n  return "ok"\n', encoding="utf-8")
+    (root / "logic.ai").write_text('spec is "1.0"\n\nflow "run":\n  return "ok"\n', encoding="utf-8")
     (root / "LICENSE").write_text("MIT", encoding="utf-8")
     (root / "README.md").write_text("Demo package README.\n", encoding="utf-8")
     metadata = {

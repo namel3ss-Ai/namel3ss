@@ -13,6 +13,8 @@ SOURCE = '''ai "assistant":
     short_term is 2
     semantic is true
 
+spec is "1.0"
+
 flow "demo":
   ask ai "assistant" with input: "Hello" as first
   ask ai "assistant" with input: "Hello" as second

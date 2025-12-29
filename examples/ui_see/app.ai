@@ -1,3 +1,5 @@
+spec is "1.0"
+
 record "Profile":
   field "name" is text must be present
   field "role" is text

@@ -14,7 +14,9 @@ from namel3ss.runtime.packs.verification import compute_pack_digest
 FIXTURES_ROOT = Path(__file__).resolve().parents[1] / "fixtures" / "packs_authoring"
 
 
-BASE_SOURCE = '''record "Item":
+BASE_SOURCE = '''spec is "1.0"
+
+record "Item":
   field "name" is text
 
 flow "demo":
@@ -22,7 +24,9 @@ flow "demo":
 '''
 
 
-MUTATING_SOURCE = '''record "Item":
+MUTATING_SOURCE = '''spec is "1.0"
+
+record "Item":
   field "name" is text
 
 flow "seed":
@@ -131,6 +135,8 @@ def test_verify_prod_fails_on_unsafe_override(tmp_path, capsys, monkeypatch):
   output:
     ok is boolean
 
+spec is "1.0"
+
 flow "demo":
   return "ok"
 '''
@@ -163,6 +169,8 @@ def test_verify_prod_allows_unsafe_with_flag(tmp_path, capsys, monkeypatch):
 
   output:
     ok is boolean
+
+spec is "1.0"
 
 flow "demo":
   return "ok"

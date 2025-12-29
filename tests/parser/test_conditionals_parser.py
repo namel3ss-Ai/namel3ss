@@ -4,7 +4,9 @@ from namel3ss.errors.base import Namel3ssError
 from tests.conftest import lower_ir_program, parse_program
 
 
-SOURCE = '''flow "demo":
+SOURCE = '''spec is "1.0"
+
+flow "demo":
   if total is at least 10:
     return true
   if total is at most 5:
@@ -23,7 +25,7 @@ def test_condition_comparison_kinds():
 
 
 def test_if_indentation_guidance_error():
-    source = 'flow "demo":\n  if true:\n  return "bad"\n'
+    source = 'spec is "1.0"\n\nflow "demo":\n  if true:\n  return "bad"\n'
     with pytest.raises(Namel3ssError) as excinfo:
         parse_program(source)
     expected = (

@@ -21,7 +21,7 @@ def test_curly_brace_parse_error_message(capsys):
     from tempfile import NamedTemporaryFile
 
     with NamedTemporaryFile("w", suffix=".ai", delete=False) as tmp:
-        tmp.write("flow \"bad\":\n  {")
+        tmp.write("spec is \"1.0\"\n\nflow \"bad\":\n  {")
         path = tmp.name
     rc = cli_main([path, "check"])
     assert rc == 1
@@ -34,8 +34,8 @@ def test_strict_alias_rejection_message():
     try:
         from namel3ss.parser.core import parse
 
-        parse('record "X":\n field "a" is int', allow_legacy_type_aliases=False)
+        parse('spec is "1.0"\n\nrecord "X":\n field "a" is int', allow_legacy_type_aliases=False)
     except Namel3ssError as err:
-        msg = format_error(err, 'record "X":\n field "a" is int')
+        msg = format_error(err, 'spec is "1.0"\n\nrecord "X":\n field "a" is int')
         assert "Use 'number'" in msg
         assert "Fix" in msg

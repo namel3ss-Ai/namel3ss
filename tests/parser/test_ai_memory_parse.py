@@ -9,6 +9,8 @@ SOURCE = '''ai "assistant":
     semantic is true
     profile is true
 
+spec is "1.0"
+
 flow "demo":
   ask ai "assistant" with input: "Hello" as reply
 '''

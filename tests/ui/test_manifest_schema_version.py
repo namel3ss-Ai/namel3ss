@@ -7,7 +7,7 @@ from namel3ss.runtime.store.memory_store import MemoryStore
 
 
 def test_manifest_has_schema_version():
-    source = 'record "User":\n  field "email" is text must be present\npage "home":\n  title is "Hi"\n'
+    source = 'spec is "1.0"\n\nrecord "User":\n  field "email" is text must be present\npage "home":\n  title is "Hi"\n'
     ir = lower_program(parse(source))
     manifest = build_manifest(ir, state={}, store=MemoryStore())
     assert manifest["theme"]["schema_version"] == "1"

@@ -5,7 +5,9 @@ import urllib.request
 from namel3ss.runtime.service_runner import ServiceRunner
 
 
-APP_SOURCE = '''flow "demo":
+APP_SOURCE = '''spec is "1.0"
+
+flow "demo":
   return "ok"
 '''
 

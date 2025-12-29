@@ -9,7 +9,7 @@ from namel3ss.pkg.lockfile import LOCKFILE_FILENAME
 def _write_project(root: Path) -> None:
     (root / "packages").mkdir()
     (root / LOCKFILE_FILENAME).write_text('{"lockfile_version":1,"roots":[],"packages":[]}', encoding="utf-8")
-    (root / "app.ai").write_text('flow "demo":\n  return "ok"\n', encoding="utf-8")
+    (root / "app.ai").write_text('spec is "1.0"\n\nflow "demo":\n  return "ok"\n', encoding="utf-8")
     kit_state = root / ".namel3ss"
     kit_state.mkdir(parents=True)
     (kit_state / "verify.json").write_text(json.dumps({"status": "ok", "checks": []}), encoding="utf-8")

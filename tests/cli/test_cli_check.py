@@ -1,7 +1,9 @@
 from namel3ss.cli.main import main
 
 
-SOURCE = '''flow "demo":
+SOURCE = '''spec is "1.0"
+
+flow "demo":
   return "ok"
 '''
 

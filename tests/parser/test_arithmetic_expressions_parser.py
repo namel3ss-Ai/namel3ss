@@ -4,7 +4,9 @@ from namel3ss.ir import nodes as ir
 from tests.conftest import lower_ir_program
 
 
-SOURCE = '''flow "demo":
+SOURCE = '''spec is "1.0"
+
+flow "demo":
   let total is 2 + 3 * 4
   let grouped is (2 + 3) * 4
   let neg is -2 + 3

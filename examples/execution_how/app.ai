@@ -1,3 +1,5 @@
+spec is "1.0"
+
 flow "demo":
   let total is 2
 

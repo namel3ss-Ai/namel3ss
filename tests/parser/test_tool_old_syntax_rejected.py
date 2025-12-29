@@ -11,6 +11,8 @@ def test_old_tool_decl_syntax_rejected():
   input_schema is json
   output_schema is json
 
+spec is "1.0"
+
 flow "demo":
   return "ok"
 '''
@@ -28,6 +30,8 @@ def test_old_tool_call_syntax_rejected():
 
   output:
     message is text
+
+spec is "1.0"
 
 flow "demo":
   let result is call tool "greeter" with input: input

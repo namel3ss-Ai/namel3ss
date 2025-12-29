@@ -11,6 +11,7 @@ KEYWORDS = {
     "flow": "FLOW",
     "page": "PAGE",
     "app": "APP",
+    "spec": "SPEC",
     "ai": "AI",
     "ask": "ASK",
     "with": "WITH",

@@ -8,6 +8,7 @@ def _write_project(root: Path) -> None:
     (root / "packages").mkdir()
     (root / "namel3ss.lock.json").write_text('{"lockfile_version":1,"roots":[],"packages":[]}', encoding="utf-8")
     (root / "app.ai").write_text(
+        'spec is "1.0"\n\n'
         'identity "User":\n'
         '  field "role" is text must be present\n\n'
         'use "inventory" as inv\n\n'

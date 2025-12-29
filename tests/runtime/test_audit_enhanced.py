@@ -7,7 +7,9 @@ from namel3ss.ir.nodes import lower_program
 from namel3ss.parser.core import parse
 
 
-SOURCE = '''record "Item":
+SOURCE = '''spec is "1.0"
+
+record "Item":
   field "name" is text
 
 flow "seed": audited

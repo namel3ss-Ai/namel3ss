@@ -19,6 +19,7 @@ class Flow(Node):
 
 @dataclass
 class Program(Node):
+    spec_version: str | None
     app_theme: str
     app_theme_line: int | None
     app_theme_column: int | None

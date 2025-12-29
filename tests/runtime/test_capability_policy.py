@@ -32,6 +32,8 @@ def test_policy_downgrade_enforced_at_runtime(tmp_path: Path) -> None:
     headers is json
     data is json
 
+spec is "1.0"
+
 flow "demo":
   let response is get json from web:
     url is "https://example.com/data"
@@ -54,7 +56,7 @@ flow "demo":
 
 def test_policy_blocks_pack_enable(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     app_path = tmp_path / "app.ai"
-    app_path.write_text('flow "demo":\n  return "ok"\n', encoding="utf-8")
+    app_path.write_text('spec is "1.0"\n\nflow "demo":\n  return "ok"\n', encoding="utf-8")
     policy_path = tmp_path / ".namel3ss" / "trust" / "policy.toml"
     policy_path.parent.mkdir(parents=True, exist_ok=True)
     policy_path.write_text('allowed_capabilities = { network = "none" }\n', encoding="utf-8")

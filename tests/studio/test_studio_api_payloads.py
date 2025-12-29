@@ -1,7 +1,9 @@
 from namel3ss.studio import api
 
 
-SOURCE = '''record "User":
+SOURCE = '''spec is "1.0"
+
+record "User":
   name string
 
 flow "one":
@@ -30,7 +32,7 @@ def test_summary_ui_actions_lint_payloads():
 
 
 def test_error_payload_includes_caret():
-    bad_source = 'flow "demo"\n  return "ok"\n'
+    bad_source = 'spec is "1.0"\n\nflow "demo"\n  return "ok"\n'
     summary = api.get_summary_payload(bad_source, "bad.ai")
     assert summary["ok"] is False
     assert "^" in summary["error"]

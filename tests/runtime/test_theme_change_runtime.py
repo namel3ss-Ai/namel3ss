@@ -3,7 +3,7 @@ from tests.conftest import lower_ir_program
 
 
 def test_theme_change_executes_without_state_mutation():
-    source = 'flow "demo":\n  set theme to "dark"\n'
+    source = 'spec is "1.0"\n\nflow "demo":\n  set theme to "dark"\n'
     program_ir = lower_ir_program(source)
     result = execute_program_flow(program_ir, "demo", state={}, input={})
     assert result.state == {}

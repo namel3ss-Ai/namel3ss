@@ -1,3 +1,5 @@
+spec is "1.0"
+
 page "home":
   title is "Admin area"
   button "Admin":

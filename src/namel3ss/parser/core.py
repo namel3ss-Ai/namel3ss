@@ -45,11 +45,13 @@ class Parser:
         allow_legacy_type_aliases: bool = True,
         *,
         allow_capsule: bool = False,
+        require_spec: bool = True,
     ) -> None:
         self.tokens = tokens
         self.position = 0
         self.allow_legacy_type_aliases = allow_legacy_type_aliases
         self.allow_capsule = allow_capsule
+        self.require_spec = require_spec
 
     @classmethod
     def parse(
@@ -58,10 +60,16 @@ class Parser:
         allow_legacy_type_aliases: bool = True,
         *,
         allow_capsule: bool = False,
+        require_spec: bool = True,
     ) -> ast.Program:
         lexer = Lexer(source)
         tokens = lexer.tokenize()
-        parser = cls(tokens, allow_legacy_type_aliases=allow_legacy_type_aliases, allow_capsule=allow_capsule)
+        parser = cls(
+            tokens,
+            allow_legacy_type_aliases=allow_legacy_type_aliases,
+            allow_capsule=allow_capsule,
+            require_spec=require_spec,
+        )
         program = parser._parse_program()
         parser._expect("EOF")
         return program
@@ -185,5 +193,11 @@ def parse(
     allow_legacy_type_aliases: bool = True,
     *,
     allow_capsule: bool = False,
+    require_spec: bool = True,
 ) -> ast.Program:
-    return Parser.parse(source, allow_legacy_type_aliases=allow_legacy_type_aliases, allow_capsule=allow_capsule)
+    return Parser.parse(
+        source,
+        allow_legacy_type_aliases=allow_legacy_type_aliases,
+        allow_capsule=allow_capsule,
+        require_spec=require_spec,
+    )

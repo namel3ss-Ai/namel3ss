@@ -1,3 +1,5 @@
+spec is "1.0"
+
 record "Customer":
   field "name" is text
   field "age" is number

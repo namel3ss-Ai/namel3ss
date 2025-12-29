@@ -2,7 +2,9 @@ from namel3ss.lint.engine import lint_source
 
 
 def test_unknown_flow_and_record():
-    source = '''record "User":
+    source = '''spec is "1.0"
+
+record "User":
   name string
 
 page "home":

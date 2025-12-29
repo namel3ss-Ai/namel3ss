@@ -39,7 +39,11 @@
       "status": "error",
       "error_type": "CapabilityViolation",
       "error_message": "What happened: Tool \"user writes file\" cannot write to the filesystem.\nWhy: Effective guarantees forbid filesystem access (blocked.txt).\nFix: Remove the restriction or choose a tool that does not need the capability.\nExample: [capability_overrides]\\n\"user writes file\" = { no_filesystem_write = true }",
-      "duration_ms": 0
+      "duration_ms": 0,
+      "decision": "allowed",
+      "capability": "none",
+      "reason": "policy_allowed",
+      "result": "error"
     }
   ]
 }

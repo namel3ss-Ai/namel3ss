@@ -1,68 +1,68 @@
 {
-  "pages": [
-    {
-      "name": "Home",
-      "slug": "home",
-      "elements": [
-        {
-          "type": "title",
-          "value": "Welcome",
-          "element_id": "page.home.title.0",
-          "page": "Home",
-          "page_slug": "home",
-          "index": 0,
-          "line": 2,
-          "column": 3
-        },
-        {
-          "type": "text",
-          "value": "Hello",
-          "element_id": "page.home.text.1",
-          "page": "Home",
-          "page_slug": "home",
-          "index": 1,
-          "line": 3,
-          "column": 3
-        },
-        {
-          "type": "button",
-          "label": "Run",
-          "id": "page.home.button.run",
-          "action_id": "page.home.button.run",
-          "action": {
-            "type": "call_flow",
-            "flow": "demo"
-          },
-          "element_id": "page.home.button_item.2",
-          "page": "Home",
-          "page_slug": "home",
-          "index": 2,
-          "line": 4,
-          "column": 3
-        }
-      ]
-    }
-  ],
   "actions": {
     "page.home.button.run": {
+      "flow": "demo",
       "id": "page.home.button.run",
-      "type": "call_flow",
-      "flow": "demo"
+      "type": "call_flow"
     }
   },
+  "pages": [
+    {
+      "elements": [
+        {
+          "column": 3,
+          "element_id": "page.home.title.0",
+          "index": 0,
+          "line": 4,
+          "page": "Home",
+          "page_slug": "home",
+          "type": "title",
+          "value": "Welcome"
+        },
+        {
+          "column": 3,
+          "element_id": "page.home.text.1",
+          "index": 1,
+          "line": 5,
+          "page": "Home",
+          "page_slug": "home",
+          "type": "text",
+          "value": "Hello"
+        },
+        {
+          "action": {
+            "flow": "demo",
+            "type": "call_flow"
+          },
+          "action_id": "page.home.button.run",
+          "column": 3,
+          "element_id": "page.home.button_item.2",
+          "id": "page.home.button.run",
+          "index": 2,
+          "label": "Run",
+          "line": 6,
+          "page": "Home",
+          "page_slug": "home",
+          "type": "button"
+        }
+      ],
+      "name": "Home",
+      "slug": "home"
+    }
+  ],
   "theme": {
-    "schema_version": "1",
-    "setting": "system",
     "current": "system",
-    "persisted_current": null,
     "effective": "light",
-    "source": "app",
-    "runtime_supported": false,
-    "tokens": {},
+    "persisted_current": null,
     "preference": {
       "allow_override": false,
       "persist": "none"
-    }
+    },
+    "runtime_supported": false,
+    "schema_version": "1",
+    "setting": "system",
+    "source": "app",
+    "tokens": {}
   },
   "ui": {
     "persistence": {

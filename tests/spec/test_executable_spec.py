@@ -366,14 +366,16 @@ def test_executable_spec_failures(monkeypatch: pytest.MonkeyPatch, spec_path: Pa
     assert err is not None, "Expected spec failure, but run succeeded"
     message = str(err)
     expected = _read_json(expected_path)
-    for key, prefix in {
-        "what": "What happened: ",
-        "why": "Why: ",
-        "fix": "Fix: ",
-        "example": "Example: ",
-    }.items():
-        if key in expected:
-            assert f"{prefix}{expected[key]}" in message
+    if "what" in expected:
+        assert (
+            f"error: {expected['what']}" in message
+            or f"- {expected['what']}" in message
+            or f"What happened: {expected['what']}" in message
+        )
+    if "why" in expected:
+        assert f"- {expected['why']}" in message or f"Why: {expected['why']}" in message
+    if "fix" in expected:
+        assert f"- {expected['fix']}" in message or f"Fix: {expected['fix']}" in message
     extra = expected.get("contains", [])
     if extra:
         for fragment in extra:

@@ -13,7 +13,9 @@ def _manifest(source):
 
 
 def test_insert_text_into_root():
-    source = '''flow "go":
+    source = '''spec is "1.0"
+
+flow "go":
   return "ok"
 
 page "home":
@@ -35,7 +37,9 @@ page "home":
 
 
 def test_insert_into_row_requires_column():
-    source = '''page "home":
+    source = '''spec is "1.0"
+
+page "home":
   row:
     column:
       text is "A"
@@ -53,7 +57,9 @@ def test_insert_into_row_requires_column():
 
 
 def test_move_down_reorders():
-    source = '''page "home":
+    source = '''spec is "1.0"
+
+page "home":
   title is "First"
   text is "Second"
 '''

@@ -6,6 +6,8 @@ SOURCE = '''ai "assistant":
   model is "gpt-4.1"
   system_prompt is "You are helpful"
 
+spec is "1.0"
+
 flow "demo":
   ask ai "assistant" with input: "Hello" as reply
 '''

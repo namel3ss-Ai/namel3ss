@@ -15,6 +15,8 @@ TOOL_SOURCE = '''tool "get data":
   output:
     data is json
 
+spec is "1.0"
+
 flow "demo":
   return "ok"
 '''
@@ -134,6 +136,8 @@ tool "get data":
 
   output:
     data is json
+
+spec is "1.0"
 
 flow "demo":
   return "ok"

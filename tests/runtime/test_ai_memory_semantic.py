@@ -9,6 +9,8 @@ SOURCE = '''ai "assistant":
   memory:
     semantic is true
 
+spec is "1.0"
+
 flow "demo":
   ask ai "assistant" with input: "We decided to use weekly releases." as first
   ask ai "assistant" with input: "weekly" as second

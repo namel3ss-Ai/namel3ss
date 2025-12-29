@@ -8,6 +8,8 @@ def test_agent_references_unknown_ai():
     source = '''agent "planner":
   ai is "missing"
 
+spec is "1.0"
+
 flow "demo":
   run agent "planner" with input: "hi" as out
 '''
@@ -19,6 +21,8 @@ def test_run_agent_unknown_agent():
     source = '''ai "assistant":
   model is "gpt-4.1"
 
+spec is "1.0"
+
 flow "demo":
   run agent "ghost" with input: "hi" as out
 '''
@@ -29,6 +33,8 @@ flow "demo":
 def test_parallel_agent_unknown_agent():
     source = '''ai "assistant":
   model is "gpt-4.1"
+
+spec is "1.0"
 
 flow "demo":
   run agents in parallel:

@@ -25,6 +25,8 @@ def test_python_tool_call_success_traces_event():
     message is text
     ok is boolean
 
+spec is "1.0"
+
 flow "demo":
   let result is greeter:
     name is input.name
@@ -69,6 +71,8 @@ def test_python_tool_schema_mismatch_error():
     message is text
     ok is boolean
 
+spec is "1.0"
+
 flow "demo":
   let result is bad_output:
     name is input.name
@@ -98,6 +102,8 @@ def test_python_tool_missing_module_error():
 
   output:
     message is text
+
+spec is "1.0"
 
 flow "demo":
   let result is missing:
@@ -129,6 +135,8 @@ def test_python_tool_missing_binding_error_includes_guidance(tmp_path: Path) -> 
 
   output:
     message is text
+
+spec is "1.0"
 
 flow "demo":
   let result is greeter:
@@ -171,6 +179,8 @@ def test_python_tool_uses_venv_python(monkeypatch, tmp_path):
 
   output:
     ok is boolean
+
+spec is "1.0"
 
 flow "demo":
   let result is greeter:
@@ -231,6 +241,8 @@ def test_python_tool_uses_system_python_without_venv(monkeypatch, tmp_path):
   output:
     ok is boolean
 
+spec is "1.0"
+
 flow "demo":
   let result is greeter:
     name is input.name
@@ -286,6 +298,8 @@ def test_python_tool_failure_surfaces_error(monkeypatch, tmp_path):
   output:
     ok is boolean
 
+spec is "1.0"
+
 flow "demo":
   let result is greeter:
     name is input.name
@@ -337,6 +351,8 @@ def test_python_tool_invalid_venv_python_path(tmp_path):
 
   output:
     ok is boolean
+
+spec is "1.0"
 
 flow "demo":
   let result is greeter:

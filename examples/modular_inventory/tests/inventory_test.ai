@@ -1,3 +1,5 @@
+spec is "1.0"
+
 use "inventory" as inv
 
 test "seed flow":

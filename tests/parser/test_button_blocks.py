@@ -4,7 +4,9 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.parser.core import parse
 
 
-VALID = '''page "Home":
+VALID = '''spec is "1.0"
+
+page "Home":
   button "Run":
     calls flow "demo"
 '''
@@ -15,7 +17,9 @@ def test_button_block_parses():
 
 
 def test_one_line_button_rejected():
-    src = '''page "Home":
+    src = '''spec is "1.0"
+
+page "Home":
   button "Run" calls flow "demo"
 '''
     with pytest.raises(Namel3ssError) as excinfo:
@@ -24,7 +28,9 @@ def test_one_line_button_rejected():
 
 
 def test_button_missing_calls():
-    src = '''page "Home":
+    src = '''spec is "1.0"
+
+page "Home":
   button "Run":
     title is "bad"
 '''

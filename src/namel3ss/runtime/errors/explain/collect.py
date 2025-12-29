@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 
 from namel3ss.runtime.errors.explain.model import ErrorState, ErrorWhere
-from namel3ss.runtime.tools.explain.decision import ToolDecision
 
 
 def collect_last_error(project_root: Path) -> ErrorState | None:
@@ -48,17 +47,13 @@ def collect_last_error(project_root: Path) -> ErrorState | None:
 def _tool_error(tools_last: dict | None) -> tuple[str | None, str | None]:
     if not isinstance(tools_last, dict):
         return None, None
-    decisions = tools_last.get("decisions") or []
-    parsed: list[ToolDecision] = []
-    for entry in decisions:
-        if isinstance(entry, dict):
-            parsed.append(ToolDecision.from_dict(entry))
-    for decision in parsed:
-        if decision.status == "blocked":
-            return decision.tool_name, "permission"
-    for decision in parsed:
-        if decision.status == "error":
-            return decision.tool_name, "tool"
+    entries = _tool_entries(tools_last)
+    for entry in entries:
+        if entry.get("result") == "blocked":
+            return entry.get("tool"), "permission"
+    for entry in entries:
+        if entry.get("result") == "error":
+            return entry.get("tool"), "tool"
     return None, None
 
 
@@ -108,6 +103,42 @@ def _parse_guidance(message: str | None) -> tuple[str | None, str | None]:
         elif line.startswith("Why:"):
             why = line.replace("Why:", "").strip()
     return what, why
+
+
+def _tool_entries(tools_last: dict) -> list[dict]:
+    if any(key in tools_last for key in ("allowed", "blocked", "errors")):
+        entries: list[dict] = []
+        for key in ("allowed", "blocked", "errors"):
+            values = tools_last.get(key) or []
+            if isinstance(values, list):
+                entries.extend([item for item in values if isinstance(item, dict)])
+        return entries
+    decisions = tools_last.get("decisions") or []
+    if not isinstance(decisions, list):
+        return []
+    entries: list[dict] = []
+    for entry in decisions:
+        if isinstance(entry, dict):
+            entries.append(_entry_from_decision(entry))
+    return entries
+
+
+def _entry_from_decision(entry: dict) -> dict:
+    tool_name = str(entry.get("tool_name") or "tool")
+    status = str(entry.get("status") or "")
+    permission = entry.get("permission") if isinstance(entry.get("permission"), dict) else {}
+    reasons = permission.get("reasons") if isinstance(permission.get("reasons"), list) else []
+    capabilities = permission.get("capabilities_used") if isinstance(permission.get("capabilities_used"), list) else []
+    reason = str(reasons[0]) if reasons else "unknown"
+    capability = str(capabilities[0]) if capabilities else "none"
+    result = status if status in {"ok", "blocked", "error"} else "ok"
+    return {
+        "tool": tool_name,
+        "decision": "blocked" if result == "blocked" else "allowed",
+        "capability": capability,
+        "reason": reason,
+        "result": result,
+    }
 
 
 def _load_json(path: Path) -> dict | None:

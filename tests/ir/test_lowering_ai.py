@@ -5,6 +5,8 @@ from tests.conftest import lower_ir_program
 SOURCE = '''ai "assistant":
   model is "gpt-4.1"
 
+spec is "1.0"
+
 flow "demo":
   ask ai "assistant" with input: "hi" as reply
 '''

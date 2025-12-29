@@ -6,7 +6,6 @@ import json
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.executor import execute_program_flow
-from namel3ss.runtime.errors.explain.builder import build_error_explain_pack, write_error_explain_artifacts
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.preferences.factory import preference_store_for_app, app_pref_key
 from namel3ss.secrets import collect_secret_values, redact_payload
@@ -48,7 +47,6 @@ def run_flow(program_ir, flow_name: str | None = None) -> dict:
             payload["error_step_id"] = error_step_id
         redacted = redact_payload(payload, secret_values)  # type: ignore[return-value]
         _write_last_run(program_ir, redacted)
-        _write_last_error_pack(program_ir)
         raise
     traces = [_trace_to_dict(t) for t in result.traces]
     payload = {
@@ -60,7 +58,6 @@ def run_flow(program_ir, flow_name: str | None = None) -> dict:
     }
     redacted = redact_payload(payload, secret_values)  # type: ignore[return-value]
     _write_last_run(program_ir, redacted)
-    _write_last_error_pack(program_ir)
     return redacted
 
 
@@ -117,13 +114,10 @@ def _write_last_error_pack(program_ir) -> None:
     project_root = getattr(program_ir, "project_root", None)
     if not project_root:
         return
-    try:
-        root = Path(project_root)
-        pack = build_error_explain_pack(root)
-        if pack is None:
-            return
-        write_error_explain_artifacts(root, pack)
-    except Exception:
+    errors_dir = Path(project_root) / ".namel3ss" / "errors"
+    last_json = errors_dir / "last.json"
+    last_plain = errors_dir / "last.plain"
+    if last_json.exists() and last_plain.exists():
         return
 
 

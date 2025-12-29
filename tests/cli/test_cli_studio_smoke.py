@@ -1,7 +1,7 @@
 from namel3ss.cli.main import main
 
 
-SOURCE = 'flow "demo":\n  return "ok"\n'
+SOURCE = 'spec is "1.0"\n\nflow "demo":\n  return "ok"\n'
 
 
 def test_studio_dry_run(tmp_path, capsys):

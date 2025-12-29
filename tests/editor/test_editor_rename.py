@@ -16,6 +16,7 @@ def _make_project(tmp_path: Path) -> tuple[Path, Path, Path]:
     app = tmp_path / "app.ai"
     _write(
         app,
+        'spec is "1.0"\n\n'
         'use "inventory" as inv\n'
         'page "home":\n'
         '  title is "Home"\n'

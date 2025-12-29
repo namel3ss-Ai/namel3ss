@@ -1,3 +1,5 @@
+spec is "1.0"
+
 use "auth-basic" as auth
 
 page "home":

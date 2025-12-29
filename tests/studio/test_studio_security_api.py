@@ -17,6 +17,8 @@ SOURCE = '''tool "get json from web":
     headers is json
     data is json
 
+spec is "1.0"
+
 flow "demo":
   return "ok"
 '''

@@ -22,6 +22,8 @@ agent "a3":
 agent "a4":
   ai is "assistant"
 
+spec is "1.0"
+
 flow "demo":
   run agents in parallel:
     agent "a1" with input: "x"
@@ -42,6 +44,8 @@ def test_unknown_agent_errors():
 
 agent "known":
   ai is "assistant"
+
+spec is "1.0"
 
 flow "demo":
   run agent "missing" with input: "x" as out

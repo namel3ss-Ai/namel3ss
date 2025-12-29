@@ -24,6 +24,8 @@ def test_tool_pack_slugify_executes(tmp_path: Path) -> None:
   output:
     text is text
 
+spec is "1.0"
+
 flow "demo":
   let result is slugify text:
     text is input.text
@@ -56,6 +58,8 @@ def test_tool_pack_collision_errors(tmp_path: Path) -> None:
 
   output:
     text is text
+
+spec is "1.0"
 
 flow "demo":
   let result is slugify text:
@@ -90,6 +94,8 @@ def test_installed_pack_executes_when_verified_and_enabled(tmp_path: Path) -> No
   output:
     message is text
     ok is boolean
+
+spec is "1.0"
 
 flow "demo":
   let result is say hello:

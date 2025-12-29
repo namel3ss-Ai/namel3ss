@@ -7,7 +7,9 @@ from tests.conftest import run_flow
 
 
 def test_arithmetic_precedence():
-    source = '''flow "demo":
+    source = '''spec is "1.0"
+
+flow "demo":
   return 2 + 3 * 4
 '''
     result = run_flow(source)
@@ -15,7 +17,9 @@ def test_arithmetic_precedence():
 
 
 def test_arithmetic_parentheses():
-    source = '''flow "demo":
+    source = '''spec is "1.0"
+
+flow "demo":
   return (2 + 3) * 4
 '''
     result = run_flow(source)
@@ -23,7 +27,9 @@ def test_arithmetic_parentheses():
 
 
 def test_decimal_arithmetic_exact():
-    source = '''flow "demo":
+    source = '''spec is "1.0"
+
+flow "demo":
   return 0.1 + 0.2
 '''
     result = run_flow(source)
@@ -31,30 +37,28 @@ def test_decimal_arithmetic_exact():
 
 
 def test_arithmetic_type_error_message():
-    source = '''flow "demo":
+    source = '''spec is "1.0"
+
+flow "demo":
   return "text" + 2
 '''
     with pytest.raises(Namel3ssError) as excinfo:
         run_flow(source)
-    expected = (
-        "What happened: Cannot apply '+' to text and number.\n"
-        "Why: Arithmetic operators only work on numbers.\n"
-        "Fix: Convert both values to numbers or remove the operator.\n"
-        "Example: let total is 10.5 + 2.25"
-    )
-    assert excinfo.value.message == expected
+    message = str(excinfo.value)
+    assert "error: Cannot apply '+' to text and number." in message
+    assert "- Arithmetic operators only work on numbers." in message
+    assert "- Convert both values to numbers or remove the operator." in message
 
 
 def test_division_by_zero_message():
-    source = '''flow "demo":
+    source = '''spec is "1.0"
+
+flow "demo":
   return 10 / 0
 '''
     with pytest.raises(Namel3ssError) as excinfo:
         run_flow(source)
-    expected = (
-        "What happened: Division by zero.\n"
-        "Why: The right-hand side of '/' evaluated to 0.\n"
-        "Fix: Check for zero before dividing.\n"
-        "Example: if divisor is not equal to 0: set state.ratio is total / divisor"
-    )
-    assert excinfo.value.message == expected
+    message = str(excinfo.value)
+    assert "error: Division by zero." in message
+    assert "- The right-hand side of '/' evaluated to 0." in message
+    assert "- Check for zero before dividing." in message

@@ -11,7 +11,7 @@ from namel3ss.cli.main import main
 
 
 def _write_app(root: Path) -> None:
-    (root / "app.ai").write_text('flow "demo":\n  return "ok"\n', encoding="utf-8")
+    (root / "app.ai").write_text('spec is "1.0"\n\nflow "demo":\n  return "ok"\n', encoding="utf-8")
 
 
 def test_deps_status_detects_none(tmp_path, capsys):

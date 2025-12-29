@@ -45,7 +45,7 @@ def _zip_bytes(root: Path, prefix: str) -> bytes:
 
 def test_cli_pkg_search_info_add(monkeypatch, tmp_path, capsys):
     app = tmp_path / "app.ai"
-    app.write_text('flow "demo":\n  return "ok"\n', encoding="utf-8")
+    app.write_text('spec is "1.0"\n\nflow "demo":\n  return "ok"\n', encoding="utf-8")
 
     index_path = Path("tests/fixtures/pkg_index.json").resolve()
     monkeypatch.setenv(INDEX_PATH_ENV, str(index_path))
@@ -53,7 +53,7 @@ def test_cli_pkg_search_info_add(monkeypatch, tmp_path, capsys):
     package_root = tmp_path / "package_src"
     package_root.mkdir()
     (package_root / "capsule.ai").write_text('capsule "demo":\n  exports:\n    flow "run"\n', encoding="utf-8")
-    (package_root / "logic.ai").write_text('flow "run":\n  return "ok"\n', encoding="utf-8")
+    (package_root / "logic.ai").write_text('spec is "1.0"\n\nflow "run":\n  return "ok"\n', encoding="utf-8")
     (package_root / "LICENSE").write_text("MIT", encoding="utf-8")
     (package_root / "README.md").write_text("Demo package README.\n", encoding="utf-8")
     metadata = {

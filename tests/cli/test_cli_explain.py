@@ -4,7 +4,9 @@ from namel3ss.cli.main import main
 from namel3ss.pkg.lockfile import LOCKFILE_FILENAME
 
 
-APP_SOURCE = '''flow "demo":
+APP_SOURCE = '''spec is "1.0"
+
+flow "demo":
   return "ok"
 '''
 

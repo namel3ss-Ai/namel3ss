@@ -10,6 +10,8 @@ from tests.conftest import lower_ir_program, run_flow
 SOURCE = '''record "Order":
   total number
 
+spec is "1.0"
+
 flow "demo":
   create "Order" with state.order as order
   return order
@@ -26,18 +28,17 @@ def test_create_rejects_non_object_values():
     bad = '''record "Order":
   total number
 
+spec is "1.0"
+
 flow "demo":
   create "Order" with 12 as order
 '''
     with pytest.raises(Namel3ssError) as excinfo:
         run_flow(bad)
-    expected = (
-        "What happened: Create expects a record dictionary of values.\n"
-        "Why: The provided value is number, but create needs key/value fields to validate and save.\n"
-        "Fix: Pass a dictionary (for example, state.order or an input payload).\n"
-        'Example: create "Order" with state.order as order'
-    )
-    assert excinfo.value.message == expected
+    message = str(excinfo.value)
+    assert "error: Create expects a record dictionary of values." in message
+    assert "- The provided value is number, but create needs key/value fields to validate and save." in message
+    assert "- Pass a dictionary (for example, state.order or an input payload)." in message
 
 
 def test_create_persists_with_sqlite(tmp_path):

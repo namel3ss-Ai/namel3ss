@@ -3,7 +3,9 @@ import json
 from namel3ss.cli.main import main
 
 
-SOURCE = '''flow "one":
+SOURCE = '''spec is "1.0"
+
+flow "one":
   return "a"
 
 flow "two":

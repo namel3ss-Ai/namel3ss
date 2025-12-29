@@ -1,69 +1,69 @@
 {
-  "schema_version": 1,
-  "proof_id": "<proof_id>",
   "app": {
-    "name": "app",
-    "project_root": "spec/programs/governance/proof",
+    "content_hash": "d83af0c23ed290ec23ae7501384f4ebc05ac1ca1e9b8f343cb23474eaaa27e59",
     "entry_path": "spec/programs/governance/proof/app.ai",
     "entry_relative_path": "app.ai",
-    "content_hash": "11beb53dcf3dcec291131a3541fac21a6b5232cabb35ac846329feabe08e05b7"
-  },
-  "engine": {
-    "target": "local"
-  },
-  "persistence": {
-    "target": "memory",
-    "descriptor": null
-  },
-  "capsules": {
-    "graph": {
-      "nodes": [
-        "(app)"
-      ],
-      "edges": []
-    },
-    "modules": []
-  },
-  "capabilities": {
-    "tools": []
-  },
-  "packages": {
-    "status": "present",
-    "path": "spec/programs/governance/proof/namel3ss.lock.json",
-    "lockfile_version": 1,
-    "lockfile": {
-      "lockfile_version": 1,
-      "roots": [],
-      "packages": []
-    },
-    "packages": []
-  },
-  "identity": {
-    "identities": [],
-    "requires": {
-      "flows": [],
-      "pages": [],
-      "flow_count": 0,
-      "page_count": 0
-    },
-    "tenant_scoping": {
-      "records": [],
-      "count": 0
-    }
-  },
-  "governance": {
-    "checks": [],
-    "status": "unknown"
+    "name": "app",
+    "project_root": "spec/programs/governance/proof"
   },
   "audit": {
     "audited_flows": [],
     "count": 0
   },
   "build": {
-    "build_id": "spec",
     "artifact_path": ".namel3ss/build/local/spec",
+    "build_id": "spec",
     "snapshot_hash": "spec"
   },
+  "capabilities": {
+    "tools": []
+  },
+  "capsules": {
+    "graph": {
+      "edges": [],
+      "nodes": [
+        "(app)"
+      ]
+    },
+    "modules": []
+  },
+  "engine": {
+    "target": "local"
+  },
+  "governance": {
+    "checks": [],
+    "status": "unknown"
+  },
+  "identity": {
+    "identities": [],
+    "requires": {
+      "flow_count": 0,
+      "flows": [],
+      "page_count": 0,
+      "pages": []
+    },
+    "tenant_scoping": {
+      "count": 0,
+      "records": []
+    }
+  },
+  "packages": {
+    "lockfile": {
+      "lockfile_version": 1,
+      "packages": [],
+      "roots": []
+    },
+    "lockfile_version": 1,
+    "packages": [],
+    "path": "spec/programs/governance/proof/namel3ss.lock.json",
+    "status": "present"
+  },
+  "persistence": {
+    "descriptor": null,
+    "target": "memory"
+  },
+  "proof_id": "<proof_id>",
+  "schema_version": 1,
   "schema_versions": {
     "lock": 1,
     "observe": 1

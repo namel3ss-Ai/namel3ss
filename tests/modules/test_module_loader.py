@@ -17,6 +17,7 @@ def test_module_exports_flow_and_record(tmp_path: Path) -> None:
     app = tmp_path / "app.ai"
     _write(
         app,
+        'spec is "1.0"\n\n'
         'use "inventory" as inv\n'
         'page "home":\n'
         '  button "Calc":\n'
@@ -47,6 +48,7 @@ def test_unexported_symbol_is_blocked(tmp_path: Path) -> None:
     app = tmp_path / "app.ai"
     _write(
         app,
+        'spec is "1.0"\n\n'
         'use "inventory" as inv\n'
         'page "home":\n'
         '  button "Calc":\n'
@@ -72,7 +74,7 @@ def test_unexported_symbol_is_blocked(tmp_path: Path) -> None:
 
 def test_module_cycle_detection(tmp_path: Path) -> None:
     app = tmp_path / "app.ai"
-    _write(app, 'use "alpha" as a\nflow "demo":\n  return "ok"\n')
+    _write(app, 'spec is "1.0"\n\nuse "alpha" as a\nflow "demo":\n  return "ok"\n')
     _write(
         tmp_path / "modules" / "alpha" / "capsule.ai",
         'capsule "alpha":\n'
@@ -106,6 +108,7 @@ def test_package_fallback_for_modules(tmp_path: Path) -> None:
     app = tmp_path / "app.ai"
     _write(
         app,
+        'spec is "1.0"\n\n'
         'use "inventory" as inv\n'
         'flow "demo":\n'
         '  return "ok"\n',

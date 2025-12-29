@@ -31,6 +31,9 @@ Artifacts live in `.namel3ss/build/<target>/<build-id>/` and include:
 - program summary,
 - target bundle (service README with health endpoint info; edge stub README).
 
+Build manifests live in `.namel3ss/build/last.json` and history under `.namel3ss/build/history/`.
+Use `n3 exists` to explain why a build exists and what changed.
+
 ## Promote and rollback (ship)
 
 ```

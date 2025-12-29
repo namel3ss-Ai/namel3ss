@@ -19,6 +19,8 @@ TOOL_SOURCE = '''tool "greeter":
   output:
     message is text
 
+spec is "1.0"
+
 flow "demo":
   return "ok"
 '''
@@ -31,6 +33,8 @@ PACK_SOURCE = '''tool "slugify text":
 
   output:
     text is text
+
+spec is "1.0"
 
 flow "demo":
   return "ok"
@@ -172,7 +176,7 @@ def test_doctor_reports_tool_collisions(tmp_path: Path, monkeypatch, capsys) -> 
 
 
 def test_doctor_warns_on_unverified_pack(tmp_path: Path, monkeypatch, capsys) -> None:
-    (tmp_path / "app.ai").write_text('flow "demo":\n  return "ok"\n', encoding="utf-8")
+    (tmp_path / "app.ai").write_text('spec is "1.0"\n\nflow "demo":\n  return "ok"\n', encoding="utf-8")
     fixture_root = Path(__file__).resolve().parents[1] / "fixtures" / "packs" / "pack_good_unverified"
     pack_dest = tmp_path / ".namel3ss" / "packs" / "sample.unverified"
     shutil.copytree(fixture_root, pack_dest)

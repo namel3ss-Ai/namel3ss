@@ -1,34 +1,30 @@
-# Flow What
+# Run Outcome (What)
 
-Explainable flows show intent, outcome, why, and what did not happen.
-Output is deterministic and based only on runtime facts.
-It never includes AI chain-of-thought or guessed intent.
+`n3 what` shows a deterministic run outcome based on recorded runtime facts.
+It is calm, short, and does not guess why something happened.
 
 ## Quick use
-Run a flow, then ask what it did:
+Run a flow, then read the outcome:
 ```bash
 n3 run app.ai
-n3 with
 n3 what
 ```
 
 ## What it includes
-- Flow intent (name, requires, audited, expected effects).
-- Outcome status (ok/partial/error) and return summary if available.
-- Tool outcome summary (ok/blocked/error counts).
-- Memory write summary when available.
-- Why lines from branch, match, and loop decisions.
-- What did not happen (skipped branches and blocked tools).
+- Status (ok/partial/error).
+- Store begin/commit/rollback results.
+- State save attempts and results.
+- Memory persistence attempts and results.
+- A factual list of what did not happen.
 
 ## What it does not include
-- AI chain-of-thought.
-- Guessed intent or hidden prompts.
-- Tool implementation details beyond the facts recorded.
+- Timings or durations.
+- Inferred causes beyond recorded facts.
 
 ## Artifacts
 After a run, the runtime saves:
-- `.namel3ss/flow/last.json`
-- `.namel3ss/flow/last.plain`
+- `.namel3ss/outcome/last.json`
+- `.namel3ss/outcome/last.plain`
 
 The `n3 what` command writes:
-- `.namel3ss/flow/last.what.txt`
+- `.namel3ss/outcome/last.what.txt`

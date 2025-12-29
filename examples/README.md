@@ -62,7 +62,7 @@ What to look for:
 - Blocked tool reasons if you disable capability access.
 
 ## flow_what
-A small flow showing intent and outcome summaries.
+A small flow showing run outcome summaries.
 
 Run:
 - `cd examples/flow_what && n3 run app.ai`
@@ -70,8 +70,8 @@ Run:
 - `cd examples/flow_what && n3 what`
 
 What to look for:
-- Intent and outcome lines.
-- Skipped else branch under \"What did not happen\".
+- Store/state/memory outcome lines.
+- What did not happen bullets when persistence is skipped or fails.
 
 ## ui_see
 A small ui manifest explanation demo.
@@ -95,6 +95,63 @@ Run:
 What to look for:
 - Error kind and flow name.
 - Recovery option to provide identity.
+
+## b2_fix
+A minimal runtime error pack demo.
+
+Run:
+- `cd examples/b2_fix && n3 app.ai flow "fail"`
+- `cd examples/b2_fix && n3 fix`
+
+What to look for:
+- Deterministic error id and summary.
+- Error artifacts under `.namel3ss/errors/`.
+
+## b3_what
+A minimal run outcome pack demo.
+
+Run:
+- `cd examples/b3_what && n3 run app.ai`
+- `cd examples/b3_what && n3 what`
+
+What to look for:
+- Outcome status and store/state/memory flags.
+- Artifacts under `.namel3ss/outcome/`.
+
+## b4_when
+A minimal spec check demo.
+
+Run:
+- `cd examples/b4_when`
+- `n3 when app.ai`
+- `n3 run app.ai`
+
+What to look for:
+- Declared spec and supported versions.
+- Artifacts under `.namel3ss/spec/`.
+
+## b5_with
+A minimal tool gate + proof pack demo.
+
+Run:
+- `cd examples/b5_with`
+- `n3 run app.ai flow "demo"`
+- `n3 with`
+
+What to look for:
+- Allowed vs blocked tool entries.
+- Artifacts under `.namel3ss/tools/`.
+
+## b1_exists
+A minimal contract summary demo.
+
+Run:
+- `cd examples/b1_exists && n3 exists app.ai`
+- `cd examples/b1_exists && n3 app.ai flow "add_note"`
+
+What to look for:
+- Deterministic program summary.
+- Features used and required capabilities.
 
 ## demo_ai_assistant_ui.ai
 A lightweight AI assistant UI using the mock provider by default, with graceful messaging when real keys are missing.

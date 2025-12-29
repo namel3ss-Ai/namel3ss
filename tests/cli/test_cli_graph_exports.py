@@ -11,7 +11,7 @@ def _write(path: Path, content: str) -> None:
 
 def test_cli_graph_and_exports_json(tmp_path, capsys):
     app = tmp_path / "app.ai"
-    _write(app, 'use "inventory" as inv\nflow "demo":\n  return "ok"\n')
+    _write(app, 'use "inventory" as inv\nspec is "1.0"\n\nflow "demo":\n  return "ok"\n')
     _write(
         tmp_path / "modules" / "inventory" / "capsule.ai",
         'capsule "inventory":\n'

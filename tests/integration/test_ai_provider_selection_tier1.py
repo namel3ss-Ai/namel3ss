@@ -21,7 +21,9 @@ def _run_with_provider(monkeypatch, provider_name: str):
         return stub
 
     monkeypatch.setattr("namel3ss.runtime.executor.ai_runner.get_provider", fake_get_provider)
-    source = f'''ai "assistant":
+    source = f'''spec is "1.0"
+
+ai "assistant":
   provider is "{provider_name}"
   model is "{provider_name}-model"
 

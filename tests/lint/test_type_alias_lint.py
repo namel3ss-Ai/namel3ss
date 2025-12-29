@@ -6,7 +6,8 @@ def _finding_codes(findings):
 
 
 def test_alias_types_warn_with_replacement_message():
-    src = '''
+    src = '''spec is "1.0"
+
 record "User":
   field "age" is int
 '''
@@ -18,7 +19,8 @@ record "User":
 
 
 def test_strict_mode_escalates_alias_to_error():
-    src = '''
+    src = '''spec is "1.0"
+
 record "User":
   field "name" is string
 '''
@@ -28,7 +30,8 @@ record "User":
 
 
 def test_canonical_types_do_not_warn():
-    src = '''
+    src = '''spec is "1.0"
+
 record "User":
   field "name" is text
 '''
@@ -37,7 +40,8 @@ record "User":
 
 
 def test_relaxed_mode_downgrades_alias():
-    src = '''
+    src = '''spec is "1.0"
+
 record "User":
   field "age" is int
 '''

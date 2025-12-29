@@ -3,7 +3,9 @@ import json
 from namel3ss.cli.main import main
 
 
-SOURCE = '''record "Item":
+SOURCE = '''spec is "1.0"
+
+record "Item":
   name string
 
 flow "demo":
@@ -41,7 +43,9 @@ def test_invalid_payload_errors(tmp_path, capsys):
     assert err.strip() == expected
 
 
-FORM_SOURCE = '''record "User":
+FORM_SOURCE = '''spec is "1.0"
+
+record "User":
   name string
   email string
 

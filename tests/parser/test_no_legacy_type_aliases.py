@@ -6,6 +6,8 @@ from namel3ss.parser.core import parse
 
 def test_aliases_allowed_by_default():
     src = '''
+spec is "1.0"
+
 record "User":
   field "age" is int
 '''
@@ -23,6 +25,8 @@ record "User":
 )
 def test_aliases_rejected_when_strict(alias: str, canonical: str):
     src = f'''
+spec is "1.0"
+
 record "User":
   field "age" is {alias}
 '''

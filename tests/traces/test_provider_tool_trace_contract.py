@@ -20,6 +20,8 @@ ai "assistant":
   tools:
     expose "echo"
 
+spec is "1.0"
+
 flow "demo":
   ask ai "assistant" with input: "hi" as reply
   return reply

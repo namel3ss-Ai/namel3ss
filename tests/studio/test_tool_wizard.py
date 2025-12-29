@@ -10,7 +10,7 @@ FIXTURES = Path(__file__).resolve().parent.parent / "fixtures" / "tool_wizard"
 
 def test_tool_wizard_generates_files(tmp_path: Path) -> None:
     app_path = tmp_path / "app.ai"
-    app_path.write_text('flow "demo":\n  return "ok"\n', encoding="utf-8")
+    app_path.write_text('spec is "1.0"\n\nflow "demo":\n  return "ok"\n', encoding="utf-8")
     payload = {
         "tool_name": "greeter",
         "purity": "pure",
@@ -32,7 +32,7 @@ def test_tool_wizard_generates_files(tmp_path: Path) -> None:
 
 def test_tool_wizard_conflict_does_not_overwrite(tmp_path: Path) -> None:
     app_path = tmp_path / "app.ai"
-    app_path.write_text('flow "demo":\n  return "ok"\n', encoding="utf-8")
+    app_path.write_text('spec is "1.0"\n\nflow "demo":\n  return "ok"\n', encoding="utf-8")
     tools_dir = tmp_path / "tools"
     tools_dir.mkdir()
     tool_path = tools_dir / "greeter.py"
@@ -52,7 +52,7 @@ def test_tool_wizard_conflict_does_not_overwrite(tmp_path: Path) -> None:
 
 def test_tool_wizard_preview_does_not_write_files(tmp_path: Path) -> None:
     app_path = tmp_path / "app.ai"
-    app_path.write_text('flow "demo":\n  return "ok"\n', encoding="utf-8")
+    app_path.write_text('spec is "1.0"\n\nflow "demo":\n  return "ok"\n', encoding="utf-8")
     payload = {
         "tool_name": "greeter",
         "purity": "pure",

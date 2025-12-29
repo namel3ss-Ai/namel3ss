@@ -112,6 +112,6 @@ Tool calls also emit ToolDecision summaries used by `n3 with`.
 Blocked tools report the capability reason from `capability_check` events.
 Artifacts are saved under `.namel3ss/tools/last.json` and `last.with.txt`.
 
-## Flow explanations
-Flow runs emit a flow explain pack used by `n3 what`.
-Artifacts are saved under `.namel3ss/flow/last.json` and `last.what.txt`.
+## Run outcomes
+Flow runs emit an outcome pack used by `n3 what`.
+Artifacts are saved under `.namel3ss/outcome/last.json` and `last.what.txt`.

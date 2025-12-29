@@ -7,7 +7,9 @@ from namel3ss.parser.core import parse
 
 def test_lowering_preserves_provider():
     program = parse(
-        '''ai "assistant":
+        '''spec is "1.0"
+
+ai "assistant":
   provider is "ollama"
   model is "llama3.1"
 '''
@@ -18,7 +20,9 @@ def test_lowering_preserves_provider():
 
 def test_lowering_defaults_to_mock_provider():
     program = parse(
-        '''ai "assistant":
+        '''spec is "1.0"
+
+ai "assistant":
   model is "gpt-4.1"
 '''
     )
@@ -28,7 +32,9 @@ def test_lowering_defaults_to_mock_provider():
 
 def test_lowering_unknown_provider_errors():
     program = parse(
-        '''ai "assistant":
+        '''spec is "1.0"
+
+ai "assistant":
   provider is "unknown"
   model is "gpt-4.1"
 '''

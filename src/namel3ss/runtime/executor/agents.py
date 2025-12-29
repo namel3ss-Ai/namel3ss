@@ -3,7 +3,7 @@ from __future__ import annotations
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.ai.trace import AITrace
-from namel3ss.runtime.executor.ai_runner import run_ai_with_tools
+from namel3ss.runtime.executor.ai_runner import run_ai_with_tools, _flush_pending_tool_traces
 from namel3ss.runtime.executor.context import ExecutionContext
 import namel3ss.runtime.memory.api as memory_api
 from namel3ss.runtime.memory.api import MemoryManager
@@ -15,12 +15,17 @@ from namel3ss.traces.redact import redact_memory_context
 
 
 def execute_run_agent(ctx: ExecutionContext, stmt: ir.RunAgentStmt) -> None:
-    output, trace = run_agent_call(ctx, stmt.agent_name, stmt.input_expr, stmt.line, stmt.column)
-    ctx.traces.append(trace)
-    if stmt.target in ctx.constants:
-        raise Namel3ssError(f"Cannot assign to constant '{stmt.target}'", line=stmt.line, column=stmt.column)
-    ctx.locals[stmt.target] = output
-    ctx.last_value = output
+    try:
+        output, trace = run_agent_call(ctx, stmt.agent_name, stmt.input_expr, stmt.line, stmt.column)
+        ctx.traces.append(trace)
+        _flush_pending_tool_traces(ctx)
+        if stmt.target in ctx.constants:
+            raise Namel3ssError(f"Cannot assign to constant '{stmt.target}'", line=stmt.line, column=stmt.column)
+        ctx.locals[stmt.target] = output
+        ctx.last_value = output
+    except Exception:
+        _flush_pending_tool_traces(ctx)
+        raise
 
 
 def execute_run_agents_parallel(ctx: ExecutionContext, stmt: ir.RunAgentsParallelStmt) -> None:
@@ -32,12 +37,14 @@ def execute_run_agents_parallel(ctx: ExecutionContext, stmt: ir.RunAgentsParalle
         try:
             output, trace = run_agent_call(ctx, entry.agent_name, entry.input_expr, entry.line, entry.column)
         except Namel3ssError as err:
+            _flush_pending_tool_traces(ctx)
             raise Namel3ssError(f"Agent '{entry.agent_name}' failed: {err}", line=entry.line, column=entry.column) from err
         results.append(output)
         child_traces.append(_trace_to_dict(trace))
     ctx.locals[stmt.target] = results
     ctx.last_value = results
     ctx.traces.append({"type": "parallel_agents", "target": stmt.target, "agents": child_traces})
+    _flush_pending_tool_traces(ctx)
 
 
 def run_agent_call(ctx: ExecutionContext, agent_name: str, input_expr, line: int | None, column: int | None):

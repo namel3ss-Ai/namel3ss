@@ -14,6 +14,7 @@ def test_cli_test_runner_json(tmp_path, capsys):
     app = tmp_path / "app.ai"
     _write(
         app,
+        'spec is "1.0"\n\n'
         'use "inventory" as inv\n'
         'flow "ok":\n'
         '  return "ok"\n'

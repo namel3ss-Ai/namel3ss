@@ -1,3 +1,5 @@
+spec is "1.0"
+
 record "AdminItem":
   label text must be present
   state text

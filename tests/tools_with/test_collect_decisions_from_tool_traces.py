@@ -1,22 +1,27 @@
-import json
-from pathlib import Path
-
-from namel3ss.runtime.tools.explain.collector import collect_tool_decisions
-
-FIXTURE_DIR = Path(__file__).parent / "fixtures"
+from namel3ss.tools_with.builder import build_tools_with_pack
 
 
-def _load_fixture(name: str) -> dict:
-    return json.loads((FIXTURE_DIR / name).read_text(encoding="utf-8"))
-
-
-def test_collect_decisions_from_tool_traces() -> None:
-    execution_last = _load_fixture("execution_last.json")
-    run_last = _load_fixture("run_last.json")
-    decisions = collect_tool_decisions(execution_last=execution_last, run_payload=run_last)
-    assert len(decisions) == 1
-    decision = decisions[0]
-    assert decision.tool_name == "greet someone"
-    assert decision.status == "blocked"
-    assert decision.permission.allowed is False
-    assert any("guarantee_blocked" in reason for reason in decision.permission.reasons)
+def test_build_tools_with_pack_from_traces() -> None:
+    traces = [
+        {
+            "type": "tool_call",
+            "tool": "greet someone",
+            "decision": "blocked",
+            "capability": "network",
+            "reason": "policy_denied",
+            "result": "blocked",
+        },
+        {
+            "type": "tool_call",
+            "tool": "echo",
+            "decision": "allowed",
+            "capability": "none",
+            "reason": "policy_allowed",
+            "result": "ok",
+        },
+    ]
+    pack = build_tools_with_pack(traces, project_root=None)
+    assert pack.tools_called == 2
+    assert len(pack.allowed) == 1
+    assert len(pack.blocked) == 1
+    assert len(pack.errors) == 0

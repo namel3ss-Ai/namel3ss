@@ -14,7 +14,9 @@ def test_ai_missing_model_errors():
 
 
 def test_unknown_ai_in_ask_errors():
-    source = '''flow "demo":
+    source = '''spec is "1.0"
+
+flow "demo":
   ask ai "missing" with input: "hi" as reply
 '''
     program = lower_ir_program(source)

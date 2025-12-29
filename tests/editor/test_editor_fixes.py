@@ -33,6 +33,7 @@ def test_missing_export_fix(tmp_path: Path) -> None:
     app = tmp_path / "app.ai"
     _write(
         app,
+        'spec is "1.0"\n\n'
         'use "inventory" as inv\n'
         'page "home":\n'
         '  button "Run":\n'
@@ -69,6 +70,7 @@ def test_requires_fix(tmp_path: Path) -> None:
     app = tmp_path / "app.ai"
     _write(
         app,
+        'spec is "1.0"\n\n'
         'record "Order":\n'
         "  id text\n\n"
         'flow "save_order":\n'
@@ -93,6 +95,7 @@ def test_diagnostics_do_not_leak_env(tmp_path: Path, monkeypatch) -> None:
     app = tmp_path / "app.ai"
     _write(
         app,
+        'spec is "1.0"\n\n'
         'ai "assistant":\n'
         '  provider is "openai"\n'
         '  model is "gpt-4.1"\n',

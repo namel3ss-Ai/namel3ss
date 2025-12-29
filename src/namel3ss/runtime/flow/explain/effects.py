@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from namel3ss.runtime.tools.explain.decision import ToolDecision
 
 
 def expected_effects_from_steps(steps: list[dict]) -> list[str]:
@@ -14,8 +13,8 @@ def expected_effects_from_steps(steps: list[dict]) -> list[str]:
     return effects
 
 
-def expected_effects_from_tools(decisions: list[ToolDecision]) -> list[str]:
-    if decisions:
+def expected_effects_from_tools(tool_entries: list[dict]) -> list[str]:
+    if tool_entries:
         return ["may call tools"]
     return []
 
@@ -27,14 +26,15 @@ def expected_effects_from_memory(memory_pack: dict | None) -> list[str]:
     return []
 
 
-def summarize_tool_decisions(decisions: list[ToolDecision]) -> dict:
-    counts = {"total": len(decisions), "ok": 0, "blocked": 0, "error": 0}
-    for decision in decisions:
-        if decision.status == "ok":
+def summarize_tool_decisions(tool_entries: list[dict]) -> dict:
+    counts = {"total": len(tool_entries), "ok": 0, "blocked": 0, "error": 0}
+    for entry in tool_entries:
+        result = entry.get("result")
+        if result == "ok":
             counts["ok"] += 1
-        elif decision.status == "blocked":
+        elif result == "blocked":
             counts["blocked"] += 1
-        elif decision.status == "error":
+        elif result == "error":
             counts["error"] += 1
     return counts
 

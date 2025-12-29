@@ -6,7 +6,7 @@ from tests.conftest import lower_ir_program
 
 
 def test_unknown_action_id_errors():
-    program = lower_ir_program('flow "demo":\n  return "ok"\n')
+    program = lower_ir_program('spec is "1.0"\n\nflow "demo":\n  return "ok"\n')
     with pytest.raises(Namel3ssError) as exc:
         handle_action(program, action_id="page.home.button.missing")
     assert "unknown action" in str(exc.value).lower()

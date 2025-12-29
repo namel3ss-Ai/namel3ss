@@ -22,6 +22,8 @@ def test_capability_check_trace_schema_v1(tmp_path: Path) -> None:
     headers is json
     data is json
 
+spec is "1.0"
+
 flow "demo":
   let response is get json from web:
     url is "https://example.com/data"

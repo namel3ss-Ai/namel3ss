@@ -24,6 +24,12 @@ from namel3ss.schema.identity import IdentitySchema
 from namel3ss.schema.records import RecordSchema
 from namel3ss.secrets import collect_secret_values
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.errors.runtime.api import build_runtime_error
+from namel3ss.errors.runtime.model import RuntimeWhere
+from namel3ss.outcome.builder import build_outcome_pack
+from namel3ss.outcome.model import MemoryOutcome, StateOutcome, StoreOutcome
+from namel3ss.runtime.boundary import attach_project_root, attach_secret_values, boundary_from_error, mark_boundary
+from namel3ss.tools_with.api import build_tools_pack
 
 
 class Executor:
@@ -50,6 +56,7 @@ class Executor:
         default_ai_provider = ai_provider or MockProvider()
         provider_cache = {"mock": default_ai_provider}
         resolved_store = resolve_store(store, config=resolved_config)
+        self._state_loaded_from_store = initial_state is None
         starting_state = initial_state if initial_state is not None else resolved_store.load_state()
         resolved_identity = identity if identity is not None else resolve_identity(resolved_config, identity_schema)
         self.ctx = ExecutionContext(
@@ -104,6 +111,19 @@ class Executor:
         )
         error: Exception | None = None
         store_started = False
+        store_began = False
+        store_committed = False
+        store_commit_failed = False
+        store_rolled_back = False
+        store_rollback_failed = False
+        state_save_attempted = False
+        state_save_succeeded = False
+        state_save_failed = False
+        memory_persist_attempted = False
+        memory_persist_succeeded = False
+        memory_persist_failed = False
+        self.ctx.current_statement = None
+        self.ctx.current_statement_index = None
         try:
             enforce_requires(
                 self.ctx,
@@ -115,10 +135,17 @@ class Executor:
             audit_before = None
             if getattr(self.ctx.flow, "audited", False):
                 audit_before = copy.deepcopy(self.ctx.state)
-            self.ctx.store.begin()
+            try:
+                self.ctx.store.begin()
+                store_began = True
+            except Exception as err:
+                mark_boundary(err, "store", action="begin")
+                raise
             store_started = True
             try:
-                for stmt in self.ctx.flow.body:
+                for idx, stmt in enumerate(self.ctx.flow.body, start=1):
+                    self.ctx.current_statement = stmt
+                    self.ctx.current_statement_index = idx
                     execute_statement(self.ctx, stmt)
             except _ReturnSignal as signal:
                 self.ctx.last_value = signal.value
@@ -134,26 +161,83 @@ class Executor:
                     project_root=self.ctx.project_root,
                     secret_values=secret_values,
                 )
-            self.ctx.store.save_state(self.ctx.state)
-            self.ctx.store.commit()
+            try:
+                state_save_attempted = True
+                self.ctx.store.save_state(self.ctx.state)
+                state_save_succeeded = True
+            except Exception as err:
+                state_save_failed = True
+                mark_boundary(err, "store", action="save_state")
+                raise
+            try:
+                self.ctx.store.commit()
+                store_committed = True
+            except Exception as err:
+                store_commit_failed = True
+                mark_boundary(err, "store", action="commit")
+                raise
             secret_values = collect_secret_values(self.ctx.config)
-            self.ctx.memory_manager.persist(
-                project_root=self.ctx.project_root,
-                app_path=self.ctx.app_path,
-                secret_values=secret_values,
-            )
+            try:
+                memory_persist_attempted = True
+                self.ctx.memory_manager.persist(
+                    project_root=self.ctx.project_root,
+                    app_path=self.ctx.app_path,
+                    secret_values=secret_values,
+                )
+                memory_persist_succeeded = True
+            except Exception as err:
+                memory_persist_failed = True
+                mark_boundary(err, "memory", action="persist")
+                raise
         except Exception as exc:
             error = exc
             _record_error_step(self.ctx, exc)
             if store_started:
                 try:
                     self.ctx.store.rollback()
+                    store_rolled_back = True
                 except Exception:
+                    store_rollback_failed = True
                     pass
-            raise
+            attach_project_root(exc, self.ctx.project_root)
+            attach_secret_values(exc, collect_secret_values(self.ctx.config))
+            boundary = boundary_from_error(exc) or "engine"
+            where = _build_runtime_where(self.ctx, exc)
+            pack, message, _ = build_runtime_error(boundary=boundary, err=exc, where=where, traces=_dict_traces(self.ctx.traces))
+            self.ctx.traces.append(
+                {
+                    "type": "runtime_error",
+                    "error_id": pack.error.error_id,
+                    "boundary": pack.error.boundary,
+                    "kind": pack.error.kind,
+                }
+            )
+            raise Namel3ssError(
+                message,
+                line=where.line,
+                column=where.column,
+                details={"error_id": pack.error.error_id},
+            ) from exc
         finally:
             _record_flow_end(self.ctx, ok=error is None)
             _persist_execution_artifacts(self.ctx, ok=error is None, error=error)
+            _write_tools_with_pack(self.ctx)
+            _write_run_outcome(
+                self.ctx,
+                store_began=store_began,
+                store_committed=store_committed,
+                store_commit_failed=store_commit_failed,
+                store_rolled_back=store_rolled_back,
+                store_rollback_failed=store_rollback_failed,
+                state_save_attempted=state_save_attempted,
+                state_save_succeeded=state_save_succeeded,
+                state_save_failed=state_save_failed,
+                memory_persist_attempted=memory_persist_attempted,
+                memory_persist_succeeded=memory_persist_succeeded,
+                memory_persist_failed=memory_persist_failed,
+                error_escaped=error is not None,
+                state_loaded_from_store=self._state_loaded_from_store,
+            )
         self.last_value = self.ctx.last_value
         self.agent_calls = self.ctx.agent_calls
         return ExecutionResult(
@@ -223,6 +307,67 @@ def _build_execution_pack(ctx: ExecutionContext, *, ok: bool, error: Exception |
     return pack
 
 
+def _write_run_outcome(
+    ctx: ExecutionContext,
+    *,
+    store_began: bool,
+    store_committed: bool,
+    store_commit_failed: bool,
+    store_rolled_back: bool,
+    store_rollback_failed: bool,
+    state_save_attempted: bool,
+    state_save_succeeded: bool,
+    state_save_failed: bool,
+    memory_persist_attempted: bool,
+    memory_persist_succeeded: bool,
+    memory_persist_failed: bool,
+    error_escaped: bool,
+    state_loaded_from_store: bool | None,
+) -> None:
+    store = StoreOutcome(
+        began=store_began,
+        committed=store_committed,
+        commit_failed=store_commit_failed,
+        rolled_back=store_rolled_back,
+        rollback_failed=store_rollback_failed,
+    )
+    state = StateOutcome(
+        loaded_from_store=state_loaded_from_store,
+        save_attempted=state_save_attempted,
+        save_succeeded=state_save_succeeded,
+        save_failed=state_save_failed,
+    )
+    memory = MemoryOutcome(
+        persist_attempted=memory_persist_attempted,
+        persist_succeeded=memory_persist_succeeded,
+        persist_failed=memory_persist_failed,
+        skipped_reason=None,
+    )
+    try:
+        build_outcome_pack(
+            flow_name=ctx.flow.name,
+            store=store,
+            state=state,
+            memory=memory,
+            record_changes_count=len(ctx.record_changes or []),
+            execution_steps_count=len(ctx.execution_steps or []),
+            traces_count=len(ctx.traces or []),
+            error_escaped=error_escaped,
+            project_root=ctx.project_root,
+        )
+    except Exception:
+        return
+
+
+def _write_tools_with_pack(ctx: ExecutionContext) -> None:
+    if not ctx.project_root:
+        return
+    try:
+        build_tools_pack(ctx.traces, project_root=ctx.project_root)
+    except Exception:
+        return
+
+
 def _summary_text(flow_name: str, *, ok: bool, error: Exception | None, step_count: int) -> str:
     if ok:
         return f'Flow "{flow_name}" ran with {step_count} steps.'
@@ -241,3 +386,61 @@ def _trace_summaries(traces: list) -> list[dict]:
             }
         )
     return summaries
+
+
+def _build_runtime_where(ctx: ExecutionContext, error: Exception) -> RuntimeWhere:
+    stmt = getattr(ctx, "current_statement", None)
+    idx = getattr(ctx, "current_statement_index", None)
+    stmt_kind = _statement_kind(stmt)
+    line = getattr(error, "line", None)
+    column = getattr(error, "column", None)
+    if line is None and stmt is not None:
+        line = getattr(stmt, "line", None)
+        column = getattr(stmt, "column", None)
+    return RuntimeWhere(
+        flow_name=getattr(ctx.flow, "name", None),
+        statement_kind=stmt_kind,
+        statement_index=idx,
+        line=line,
+        column=column,
+    )
+
+
+def _statement_kind(stmt: object) -> str | None:
+    if stmt is None:
+        return None
+    if isinstance(stmt, ir.AskAIStmt):
+        return "ask_ai"
+    if isinstance(stmt, ir.Save):
+        return "save"
+    if isinstance(stmt, ir.Create):
+        return "create"
+    if isinstance(stmt, ir.Find):
+        return "find"
+    if isinstance(stmt, ir.If):
+        return "if"
+    if isinstance(stmt, ir.Match):
+        return "match"
+    if isinstance(stmt, ir.TryCatch):
+        return "try"
+    if isinstance(stmt, ir.Repeat):
+        return "repeat"
+    if isinstance(stmt, ir.ForEach):
+        return "for_each"
+    if isinstance(stmt, ir.Set):
+        return "set"
+    if isinstance(stmt, ir.Let):
+        return "let"
+    if isinstance(stmt, ir.Return):
+        return "return"
+    if isinstance(stmt, ir.ThemeChange):
+        return "theme"
+    if isinstance(stmt, ir.RunAgentStmt):
+        return "run_agent"
+    if isinstance(stmt, ir.RunAgentsParallelStmt):
+        return "run_agents_parallel"
+    return None
+
+
+def _dict_traces(traces: list) -> list[dict]:
+    return [trace for trace in traces if isinstance(trace, dict)]

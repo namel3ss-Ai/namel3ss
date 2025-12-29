@@ -3,7 +3,7 @@ import json
 from namel3ss.cli.main import main
 
 
-GOOD = 'flow "demo":\n  return "ok"\n'
+GOOD = 'spec is "1.0"\n\nflow "demo":\n  return "ok"\n'
 BAD = 'flow is "demo"\n'
 
 
@@ -47,6 +47,8 @@ def test_cli_lint_tool_warnings_do_not_fail_without_strict(tmp_path, capsys):
   output:
     data is json
 
+spec is "1.0"
+
 flow "demo":
   return "ok"
 '''
@@ -69,6 +71,8 @@ def test_cli_lint_strict_tools_fails_on_tool_warnings(tmp_path, capsys):
   output:
     data is json
 
+spec is "1.0"
+
 flow "demo":
   return "ok"
 '''
@@ -90,6 +94,8 @@ def test_cli_lint_fails_on_tool_collision(tmp_path, capsys):
 
   output:
     text is text
+
+spec is "1.0"
 
 flow "demo":
   return "ok"
@@ -118,6 +124,8 @@ def test_cli_lint_fails_on_invalid_runner(tmp_path, capsys):
 
   output:
     data is json
+
+spec is "1.0"
 
 flow "demo":
   return "ok"

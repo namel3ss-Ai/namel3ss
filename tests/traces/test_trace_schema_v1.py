@@ -127,6 +127,8 @@ tool "slugify text":
   output:
     text is text
 
+spec is "1.0"
+
 flow "demo":
   let local_result is local echo:
     payload is input.payload

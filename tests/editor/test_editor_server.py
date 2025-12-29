@@ -26,7 +26,7 @@ def _get(url: str) -> dict:
 
 def test_editor_server_health_and_diagnose(tmp_path: Path) -> None:
     app = tmp_path / "app.ai"
-    _write(app, 'flow "demo":\n  return "ok"\n')
+    _write(app, 'spec is "1.0"\n\nflow "demo":\n  return "ok"\n')
     server = EditorServer(app, port=0)
     server.start(background=True)
     try:

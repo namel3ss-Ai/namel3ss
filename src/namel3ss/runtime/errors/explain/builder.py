@@ -8,7 +8,6 @@ from namel3ss.runtime.errors.explain.link import link_error_to_artifacts
 from namel3ss.runtime.errors.explain.model import ErrorState, RecoveryOption
 from namel3ss.runtime.errors.explain.normalize import build_plain_text, write_last_error
 from namel3ss.runtime.errors.explain.render_plain import render_fix
-from namel3ss.runtime.tools.explain.decision import ToolDecision
 
 API_VERSION = "errors.v1"
 
@@ -59,8 +58,8 @@ def infer_recovery_options(error: ErrorState, packs: dict) -> list[RecoveryOptio
 
     tools = packs.get("tools")
     if isinstance(tools, dict):
-        decisions = _decisions(tools)
-        if _blocked_for_network(decisions):
+        entries = _tool_entries(tools)
+        if _blocked_for_network(entries):
             options.append(
                 RecoveryOption(
                     id="request_permission",
@@ -69,7 +68,7 @@ def infer_recovery_options(error: ErrorState, packs: dict) -> list[RecoveryOptio
                     source="inferred",
                 )
             )
-        if _blocked_for_sandbox(decisions):
+        if _blocked_for_sandbox(entries):
             options.append(
                 RecoveryOption(
                     id="enable_sandbox",
@@ -78,7 +77,7 @@ def infer_recovery_options(error: ErrorState, packs: dict) -> list[RecoveryOptio
                     source="inferred",
                 )
             )
-        if _tool_timed_out(decisions):
+        if _tool_timed_out(entries):
             options.append(
                 RecoveryOption(
                     id="retry",
@@ -102,35 +101,33 @@ def _mentions_identity(error: ErrorState) -> bool:
     return False
 
 
-def _blocked_for_network(decisions: list[ToolDecision]) -> bool:
-    for decision in decisions:
-        if decision.status != "blocked":
+def _blocked_for_network(entries: list[dict]) -> bool:
+    for entry in entries:
+        if entry.get("result") != "blocked":
             continue
-        reasons = decision.permission.reasons or []
-        caps = decision.permission.capabilities_used or []
-        if any("network" in str(item).lower() for item in reasons + caps):
+        reason = str(entry.get("reason") or "").lower()
+        capability = str(entry.get("capability") or "").lower()
+        if "network" in reason or "network" in capability:
             return True
     return False
 
 
-def _blocked_for_sandbox(decisions: list[ToolDecision]) -> bool:
-    for decision in decisions:
-        if decision.status != "blocked":
+def _blocked_for_sandbox(entries: list[dict]) -> bool:
+    for entry in entries:
+        if entry.get("result") != "blocked":
             continue
-        reasons = decision.permission.reasons or []
-        if any("sandbox" in str(item).lower() for item in reasons):
-            return True
-        if any("coverage_missing" in str(item).lower() for item in reasons):
+        reason = str(entry.get("reason") or "").lower()
+        if "sandbox" in reason or "coverage_missing" in reason:
             return True
     return False
 
 
-def _tool_timed_out(decisions: list[ToolDecision]) -> bool:
-    for decision in decisions:
-        if decision.status not in {"error", "blocked"}:
+def _tool_timed_out(entries: list[dict]) -> bool:
+    for entry in entries:
+        if entry.get("result") not in {"error", "blocked"}:
             continue
-        message = decision.effect.error_message or ""
-        error_type = decision.effect.error_type or ""
+        message = str(entry.get("error_message") or "")
+        error_type = str(entry.get("error_type") or "")
         combined = f"{message} {error_type}".lower()
         if "timeout" in combined:
             return True
@@ -166,13 +163,43 @@ def _with_updates(error: ErrorState, impact: list[str], options: list[RecoveryOp
     )
 
 
-def _decisions(tools: dict) -> list[ToolDecision]:
+def _tool_entries(tools: dict) -> list[dict]:
+    if any(key in tools for key in ("allowed", "blocked", "errors")):
+        entries: list[dict] = []
+        for key in ("allowed", "blocked", "errors"):
+            values = tools.get(key) or []
+            if isinstance(values, list):
+                entries.extend([item for item in values if isinstance(item, dict)])
+        return entries
     decisions = tools.get("decisions") or []
-    parsed: list[ToolDecision] = []
+    if not isinstance(decisions, list):
+        return []
+    entries: list[dict] = []
     for entry in decisions:
         if isinstance(entry, dict):
-            parsed.append(ToolDecision.from_dict(entry))
-    return parsed
+            entries.append(_entry_from_decision(entry))
+    return entries
+
+
+def _entry_from_decision(entry: dict) -> dict:
+    tool_name = str(entry.get("tool_name") or "tool")
+    status = str(entry.get("status") or "")
+    permission = entry.get("permission") if isinstance(entry.get("permission"), dict) else {}
+    reasons = permission.get("reasons") if isinstance(permission.get("reasons"), list) else []
+    capabilities = permission.get("capabilities_used") if isinstance(permission.get("capabilities_used"), list) else []
+    effect = entry.get("effect") if isinstance(entry.get("effect"), dict) else {}
+    reason = str(reasons[0]) if reasons else "unknown"
+    capability = str(capabilities[0]) if capabilities else "none"
+    result = status if status in {"ok", "blocked", "error"} else "ok"
+    return {
+        "tool": tool_name,
+        "decision": "blocked" if result == "blocked" else "allowed",
+        "capability": capability,
+        "reason": reason,
+        "result": result,
+        "error_message": effect.get("error_message"),
+        "error_type": effect.get("error_type"),
+    }
 
 
 def _load_packs(root: Path) -> dict:
