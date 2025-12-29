@@ -6,6 +6,7 @@ from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.parser.decl.tool import _old_tool_syntax_message
+from namel3ss.parser.expr.collections import looks_like_list_expression, looks_like_map_expression
 
 
 def parse_tool_call_expr(parser) -> ast.ToolCallExpr:
@@ -45,6 +46,11 @@ def parse_tool_call_expr(parser) -> ast.ToolCallExpr:
 def looks_like_tool_call(parser) -> bool:
     if parser._current().type in {"ASK", "CALL"}:
         return False
+    tok = parser._current()
+    if tok.type == "IDENT" and tok.value == "list" and looks_like_list_expression(parser):
+        return False
+    if tok.type == "IDENT" and tok.value == "map" and looks_like_map_expression(parser):
+        return False
     pos = parser.position
     while pos < len(parser.tokens):
         tok = parser.tokens[pos]
@@ -59,6 +65,55 @@ def looks_like_tool_call(parser) -> bool:
 def parse_old_tool_call(parser):
     tok = parser._current()
     raise Namel3ssError(_old_tool_syntax_message(), line=tok.line, column=tok.column)
+
+
+def parse_call_function_expr(parser) -> ast.CallFunctionExpr:
+    call_tok = parser._advance()
+    if not _match_word(parser, "function"):
+        raise Namel3ssError(_old_tool_syntax_message(), line=call_tok.line, column=call_tok.column)
+    name_tok = parser._expect("STRING", "Expected function name string")
+    parser._expect("COLON", "Expected ':' after function name")
+    parser._expect("NEWLINE", "Expected newline after function call")
+    if not parser._match("INDENT"):
+        return ast.CallFunctionExpr(
+            function_name=name_tok.value,
+            arguments=[],
+            line=call_tok.line,
+            column=call_tok.column,
+        )
+    arguments: List[ast.FunctionCallArg] = []
+    seen = set()
+    while parser._current().type != "DEDENT":
+        if parser._match("NEWLINE"):
+            continue
+        arg_name, arg_line, arg_column = _read_phrase_until(parser, stop_type="IS", context="function argument")
+        parser._expect("IS", "Expected 'is' after argument name")
+        value_expr = parser._parse_expression()
+        if arg_name in seen:
+            raise Namel3ssError(
+                f"Duplicate function argument '{arg_name}'",
+                line=arg_line,
+                column=arg_column,
+            )
+        seen.add(arg_name)
+        arguments.append(
+            ast.FunctionCallArg(
+                name=arg_name,
+                value=value_expr,
+                line=arg_line,
+                column=arg_column,
+            )
+        )
+        parser._match("NEWLINE")
+    parser._expect("DEDENT", "Expected end of function call")
+    while parser._match("NEWLINE"):
+        pass
+    return ast.CallFunctionExpr(
+        function_name=name_tok.value,
+        arguments=arguments,
+        line=call_tok.line,
+        column=call_tok.column,
+    )
 
 
 def parse_ask_expression(parser):
@@ -115,9 +170,18 @@ def _phrase_text(tokens) -> str:
     return " ".join(parts).strip()
 
 
+def _match_word(parser, value: str) -> bool:
+    tok = parser._current()
+    if tok.type != "IDENT" or tok.value != value:
+        return False
+    parser._advance()
+    return True
+
+
 __all__ = [
     "looks_like_tool_call",
     "parse_ask_expression",
+    "parse_call_function_expr",
     "parse_old_tool_call",
     "parse_tool_call_expr",
 ]

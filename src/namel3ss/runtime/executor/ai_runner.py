@@ -10,6 +10,7 @@ from namel3ss.runtime.ai.providers.registry import get_provider
 from namel3ss.runtime.ai.trace import AITrace
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
+from namel3ss.runtime.executor.parallel.isolation import ensure_ai_call_allowed
 from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.runtime.providers.capabilities import get_provider_capabilities
 from namel3ss.runtime.tools.field_schema import build_json_schema
@@ -32,6 +33,7 @@ from namel3ss.secrets import collect_secret_values
 
 def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
     try:
+        ensure_ai_call_allowed(ctx, expr.ai_name, line=expr.line, column=expr.column)
         if expr.ai_name not in ctx.ai_profiles:
             raise Namel3ssError(
                 f"Unknown AI '{expr.ai_name}'",

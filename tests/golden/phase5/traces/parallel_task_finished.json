@@ -1,0 +1,24 @@
+[
+  {
+    "type": "parallel_task_finished",
+    "trace_version": "2024-10-01",
+    "task_name": "alpha",
+    "status": "ok",
+    "title": "Parallel task finished",
+    "lines": [
+      "Task alpha finished.",
+      "Local updates are alpha."
+    ]
+  },
+  {
+    "type": "parallel_task_finished",
+    "trace_version": "2024-10-01",
+    "task_name": "beta",
+    "status": "ok",
+    "title": "Parallel task finished",
+    "lines": [
+      "Task beta finished.",
+      "Local updates are beta."
+    ]
+  }
+]

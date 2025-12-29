@@ -1,6 +1,7 @@
-# Packages (Capsule Dependencies)
+# Packages and Capsules
 
-Packages let you reuse Capsules across projects. A package is just a Capsule stored under `packages/<name>/` with metadata and checksums.
+Packages let you reuse capsules across projects. A package is a capsule stored under `packages/<name>/` with metadata and checksums.
+Use module files for local reuse inside a project.
 
 Key idea:
 - pkg = reusable Capsules, installed locally, never executed.

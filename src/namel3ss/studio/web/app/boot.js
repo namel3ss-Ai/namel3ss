@@ -31,6 +31,8 @@
     setup.setupTracePhaseToggle();
     setup.setupTraceLaneToggle();
     setup.setupTraceMemoryFilters();
+    setup.setupTraceModuleFilters();
+    setup.setupTraceParallelFilters();
     setup.setupToolsFilter();
     api.loadVersion();
     setup.setupHelpModal();

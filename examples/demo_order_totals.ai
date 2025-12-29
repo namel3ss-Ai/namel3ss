@@ -8,22 +8,34 @@ record "OrderSummary":
   total number must be greater than 0
   tier text
 
+define function "apply discount":
+  input:
+    base is number
+  output:
+    total is number
+    tier is text
+  if base is at least 100:
+    return map:
+      "total" is base * 0.9
+      "tier" is "discount"
+  return map:
+    "total" is base
+    "tier" is "standard"
+
 flow "compute_total":
   let base is state.order.price * state.order.quantity
-  if base is at least 100:
-    let final is base * 0.9
-    let tier is "discount"
-  else:
-    let final is base
-    let tier is "standard"
-  set state.summary.total is final
-  set state.summary.tier is tier
+  let checks is 0
+  repeat while checks is less than 1 limit 2:
+    set checks is checks + 1
+  let summary is call function "apply discount":
+    base is base
+  set state.summary is summary
   create "OrderSummary" with state.summary as summary
   return summary
 
 page "home":
   title is "Order totals"
-  text is "Submit an order, then compute the total (10% off at 100+)."
+  text is "Submit an order, then compute the total. Ten percent off at 100 or more."
   form is "Order"
   button "Compute total":
     calls flow "compute_total"

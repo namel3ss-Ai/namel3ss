@@ -39,9 +39,9 @@ class SourceTracker:
         if is_override and previous != source:
             self._overrides.append(OverrideEntry(field=field, from_source=previous, to_source=source))
 
-    def apply_rules(self, rules: list[str], source: str, *, is_override: bool = False) -> None:
+    def apply_rules(self, rule_sources: list[RuleSource], source: str, *, is_override: bool = False) -> None:
         self.apply_field("rules", source, is_override=is_override)
-        self._rule_sources = [RuleSource(text=text, source=source) for text in rules]
+        self._rule_sources = list(rule_sources)
 
     def snapshot(self) -> SourceMap:
         return SourceMap(

@@ -61,11 +61,16 @@ def parse_capsule_decl(parser) -> ast.CapsuleDecl:
                 if parser._match("NEWLINE"):
                     continue
                 export_tok = parser._current()
-                if export_tok.type not in ALLOWED_EXPORT_KINDS:
+                export_kind = None
+                if export_tok.type in ALLOWED_EXPORT_KINDS:
+                    export_kind = ALLOWED_EXPORT_KINDS[export_tok.type]
+                elif export_tok.type == "IDENT" and export_tok.value == "function":
+                    export_kind = "function"
+                if export_kind is None:
                     raise Namel3ssError(
                         build_guidance_message(
                             what="Unsupported export entry in capsule.",
-                            why="Exports must be record, flow, page, ai, agent, or tool names.",
+                            why="Exports must be record, flow, page, ai, agent, tool, or function names.",
                             fix="List exported symbols with their type.",
                             example='exports:\n  record "Product"\n  flow "calc_total"',
                         ),
@@ -88,7 +93,7 @@ def parse_capsule_decl(parser) -> ast.CapsuleDecl:
                 parser._advance()
                 exports.append(
                     ast.CapsuleExport(
-                        kind=ALLOWED_EXPORT_KINDS[export_tok.type],
+                        kind=export_kind,
                         name=name_tok.value,
                         line=export_tok.line,
                         column=export_tok.column,

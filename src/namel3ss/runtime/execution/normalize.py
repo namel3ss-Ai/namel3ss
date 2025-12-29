@@ -41,9 +41,11 @@ def summarize_value(value: object, limit: int = 80) -> str:
     if value is None:
         return "null"
     if isinstance(value, list):
-        return f"list({len(value)})"
+        count = len(value)
+        return f"list with {count} items"
     if isinstance(value, dict):
-        return f"object({len(value)})"
+        count = len(value)
+        return f"object with {count} keys"
     return type(value).__name__
 
 
@@ -64,7 +66,34 @@ def format_expression(expr: ir.Expression) -> str:
         op = _comparison_op(expr.kind)
         return f"{format_expression(expr.left)} {op} {format_expression(expr.right)}"
     if isinstance(expr, ir.ToolCallExpr):
-        return f"{expr.tool_name}(...)"
+        return f"call tool {expr.tool_name}"
+    if isinstance(expr, ir.CallFunctionExpr):
+        return f"call function {expr.function_name}"
+    if isinstance(expr, ir.ListExpr):
+        return f"list with {len(expr.items)} items"
+    if isinstance(expr, ir.MapExpr):
+        return f"map with {len(expr.entries)} entries"
+    if isinstance(expr, ir.ListOpExpr):
+        target = format_expression(expr.target)
+        if expr.kind == "length":
+            return f"list length of {target}"
+        if expr.kind == "append":
+            value = format_expression(expr.value) if expr.value is not None else "value"
+            return f"list append {target} with {value}"
+        if expr.kind == "get":
+            index = format_expression(expr.index) if expr.index is not None else "index"
+            return f"list get {target} at {index}"
+    if isinstance(expr, ir.MapOpExpr):
+        target = format_expression(expr.target)
+        if expr.kind == "get":
+            key = format_expression(expr.key) if expr.key is not None else "key"
+            return f"map get {target} key {key}"
+        if expr.kind == "set":
+            key = format_expression(expr.key) if expr.key is not None else "key"
+            value = format_expression(expr.value) if expr.value is not None else "value"
+            return f"map set {target} key {key} value {value}"
+        if expr.kind == "keys":
+            return f"map keys of {target}"
     return "expression"
 
 

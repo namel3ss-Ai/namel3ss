@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Dict, Iterable
 
 from namel3ss.module_loader import load_project
-from namel3ss.module_loader.core import ParseCache, SourceOverrides
+from namel3ss.module_loader.source_io import ParseCache, SourceOverrides
 
 
 def normalize_path(path: Path, root: Path) -> str:

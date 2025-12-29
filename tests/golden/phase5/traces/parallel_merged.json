@@ -1,0 +1,9 @@
+{
+  "type": "parallel_merged",
+  "trace_version": "2024-10-01",
+  "title": "Parallel merged",
+  "lines": [
+    "Task alpha updated locals alpha.",
+    "Task beta updated locals beta."
+  ]
+}

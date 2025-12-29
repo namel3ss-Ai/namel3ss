@@ -22,6 +22,8 @@ System defaults are the base.
 Packs load in a stable order by folder name.
 Later packs override earlier packs.
 Local overrides override packs.
+Rules append in pack order.
+Duplicate rules keep the last source.
 
 ## Local overrides
 Local overrides live under dot namel3ss as memory_overrides.toml or memory_overrides.yaml.
@@ -41,3 +43,6 @@ Trace events show pack load and merge.
 ## Protected scope
 Packs do not include personal memory data.
 Pack rules are read only by default.
+
+## Capability id
+runtime.memory_packs

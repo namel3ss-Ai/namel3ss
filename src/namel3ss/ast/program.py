@@ -26,6 +26,7 @@ class Program(Node):
     theme_tokens: Dict[str, tuple[str, int | None, int | None]]
     theme_preference: Dict[str, tuple[object, int | None, int | None]]
     records: List["RecordDecl"]
+    functions: List["FunctionDecl"]
     flows: List[Flow]
     pages: List["PageDecl"]
     ais: List["AIDecl"]

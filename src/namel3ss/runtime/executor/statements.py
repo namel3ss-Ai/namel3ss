@@ -8,6 +8,7 @@ from namel3ss.runtime.executor.agents import execute_run_agent, execute_run_agen
 from namel3ss.runtime.executor.assign import assign
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
+from namel3ss.runtime.executor.parallel.scheduler import execute_parallel_block
 from namel3ss.runtime.execution.normalize import format_assignable, format_expression, summarize_value
 from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.runtime.executor.records_ops import handle_create, handle_find, handle_save
@@ -31,6 +32,10 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
         ctx.last_value = value
         return
     if isinstance(stmt, ir.Set):
+        if getattr(ctx, "parallel_mode", False) and isinstance(stmt.target, ir.StatePath):
+            raise Namel3ssError("Parallel tasks cannot change state", line=stmt.line, column=stmt.column)
+        if getattr(ctx, "call_stack", []) and isinstance(stmt.target, ir.StatePath):
+            raise Namel3ssError("Functions cannot change state", line=stmt.line, column=stmt.column)
         value = evaluate_expression(ctx, stmt.expression)
         assign(ctx, stmt.target, value, stmt)
         record_step(
@@ -149,6 +154,71 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
             column=stmt.column,
         )
         return
+    if isinstance(stmt, ir.RepeatWhile):
+        if stmt.limit <= 0:
+            raise Namel3ssError("Loop limit must be greater than zero", line=stmt.line, column=stmt.column)
+        record_step(
+            ctx,
+            kind="loop_start",
+            what=f"loop start with limit {stmt.limit}",
+            data={"limit": stmt.limit},
+            line=stmt.line,
+            column=stmt.column,
+        )
+        iterations = 0
+        skipped = 0
+        detail_limit = 5
+        while iterations < stmt.limit:
+            condition_value = evaluate_expression(ctx, stmt.condition)
+            if not isinstance(condition_value, bool):
+                raise Namel3ssError(
+                    _condition_type_message(condition_value),
+                    line=stmt.line,
+                    column=stmt.column,
+                )
+            if not condition_value:
+                break
+            iterations += 1
+            if iterations <= detail_limit:
+                record_step(
+                    ctx,
+                    kind="loop_iteration",
+                    what=f"loop iteration {iterations}",
+                    data={"iteration": iterations},
+                    line=stmt.line,
+                    column=stmt.column,
+                )
+            else:
+                skipped += 1
+            for child in stmt.body:
+                execute_statement(ctx, child)
+        if iterations >= stmt.limit:
+            record_step(
+                ctx,
+                kind="loop_limit_hit",
+                what="loop limit hit",
+                data={"limit": stmt.limit},
+                line=stmt.limit_line or stmt.line,
+                column=stmt.limit_column or stmt.column,
+            )
+            raise Namel3ssError("Loop limit hit", line=stmt.limit_line or stmt.line, column=stmt.limit_column or stmt.column)
+        if skipped > 0:
+            record_step(
+                ctx,
+                kind="loop_iteration",
+                what=f"skipped {skipped} iterations",
+                data={"skipped": skipped},
+                line=stmt.line,
+                column=stmt.column,
+            )
+        record_step(
+            ctx,
+            kind="loop_end",
+            what=f"loop ended after {iterations} iterations",
+            line=stmt.line,
+            column=stmt.column,
+        )
+        return
     if isinstance(stmt, ir.ForEach):
         iterable_value = evaluate_expression(ctx, stmt.iterable)
         if not isinstance(iterable_value, list):
@@ -157,7 +227,7 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
         record_step(
             ctx,
             kind="decision_for_each",
-            what=f"for each {stmt.name} in list ({count})",
+            what=f"for each {stmt.name} in list of {count} items",
             data={"count": count},
             line=stmt.line,
             column=stmt.column,
@@ -289,9 +359,13 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
             )
         return
     if isinstance(stmt, ir.AskAIStmt):
+        if getattr(ctx, "call_stack", []):
+            raise Namel3ssError("Functions cannot call ai", line=stmt.line, column=stmt.column)
         execute_ask_ai(ctx, stmt)
         return
     if isinstance(stmt, ir.RunAgentStmt):
+        if getattr(ctx, "call_stack", []):
+            raise Namel3ssError("Functions cannot call agents", line=stmt.line, column=stmt.column)
         record_step(
             ctx,
             kind="statement_run_agent",
@@ -302,6 +376,8 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
         execute_run_agent(ctx, stmt)
         return
     if isinstance(stmt, ir.RunAgentsParallelStmt):
+        if getattr(ctx, "call_stack", []):
+            raise Namel3ssError("Functions cannot call agents", line=stmt.line, column=stmt.column)
         record_step(
             ctx,
             kind="statement_run_agents_parallel",
@@ -311,7 +387,14 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
         )
         execute_run_agents_parallel(ctx, stmt)
         return
+    if isinstance(stmt, ir.ParallelBlock):
+        execute_parallel_block(ctx, stmt, execute_statement)
+        return
     if isinstance(stmt, ir.Save):
+        if getattr(ctx, "parallel_mode", False):
+            raise Namel3ssError("Parallel tasks cannot write records", line=stmt.line, column=stmt.column)
+        if getattr(ctx, "call_stack", []):
+            raise Namel3ssError("Functions cannot write records", line=stmt.line, column=stmt.column)
         handle_save(ctx, stmt)
         record_step(
             ctx,
@@ -322,6 +405,10 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
         )
         return
     if isinstance(stmt, ir.Create):
+        if getattr(ctx, "parallel_mode", False):
+            raise Namel3ssError("Parallel tasks cannot write records", line=stmt.line, column=stmt.column)
+        if getattr(ctx, "call_stack", []):
+            raise Namel3ssError("Functions cannot write records", line=stmt.line, column=stmt.column)
         handle_create(ctx, stmt)
         record_step(
             ctx,
@@ -332,6 +419,8 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
         )
         return
     if isinstance(stmt, ir.Find):
+        if getattr(ctx, "call_stack", []):
+            raise Namel3ssError("Functions cannot read records", line=stmt.line, column=stmt.column)
         handle_find(ctx, stmt)
         record_step(
             ctx,
@@ -342,6 +431,10 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
         )
         return
     if isinstance(stmt, ir.ThemeChange):
+        if getattr(ctx, "parallel_mode", False):
+            raise Namel3ssError("Parallel tasks cannot change theme", line=stmt.line, column=stmt.column)
+        if getattr(ctx, "call_stack", []):
+            raise Namel3ssError("Functions cannot change theme", line=stmt.line, column=stmt.column)
         if stmt.value not in {"light", "dark", "system"}:
             raise Namel3ssError("Theme must be one of: light, dark, system", line=stmt.line, column=stmt.column)
         ctx.runtime_theme = stmt.value

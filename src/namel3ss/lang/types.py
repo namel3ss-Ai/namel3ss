@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Tuple
 
-CANONICAL_TYPES = {"text", "number", "boolean", "json"}
+CANONICAL_TYPES = {"text", "number", "boolean", "json", "list", "map"}
 
 LEGACY_TYPE_ALIASES = {
     "string": "text",

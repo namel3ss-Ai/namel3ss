@@ -7,6 +7,11 @@ Studio is the command center for namel3ss. It stays fast and minimal while surfa
 - Click a node to see source, version/license (for packages), and exported symbols.
 - Data comes from the same engine graph and exports used by `n3 graph` and `n3 exports`.
 
+## Modules
+- Shows module files loaded from use module statements.
+- Lists merge order, provided items, and overrides.
+- Module traces are visible under the Traces tab.
+
 ## Trust
 - Engine status: active target, proof id, build id, persistence target.
 - Proof: open and copy the latest proof JSON.

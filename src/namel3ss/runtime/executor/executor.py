@@ -45,6 +45,7 @@ class Executor:
         memory_manager: Optional[MemoryManager] = None,
         agents: Optional[Dict[str, ir.AgentDecl]] = None,
         tools: Optional[Dict[str, ir.ToolDecl]] = None,
+        functions: Optional[Dict[str, ir.FunctionDecl]] = None,
         config: Optional[AppConfig] = None,
         runtime_theme: Optional[str] = None,
         identity_schema: IdentitySchema | None = None,
@@ -72,6 +73,7 @@ class Executor:
             ai_profiles=ai_profiles or {},
             agents=agents or {},
             tools=tools or {},
+            functions=functions or {},
             traces=[],
             memory_manager=memory_manager or MemoryManager(project_root=project_root, app_path=app_path),
             agent_calls=0,
@@ -439,6 +441,8 @@ def _statement_kind(stmt: object) -> str | None:
         return "run_agent"
     if isinstance(stmt, ir.RunAgentsParallelStmt):
         return "run_agents_parallel"
+    if isinstance(stmt, ir.ParallelBlock):
+        return "parallel"
     return None
 
 

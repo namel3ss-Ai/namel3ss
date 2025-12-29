@@ -130,3 +130,6 @@ n3 tools set-runner "<tool name>" --runner local|service|container
 n3 tools unbind "<tool name>"
 n3 tools format                    # normalize tools.yaml
 ```
+
+## Capability id
+runtime.tools

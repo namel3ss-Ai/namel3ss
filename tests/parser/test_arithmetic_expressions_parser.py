@@ -31,3 +31,15 @@ def test_unary_minus_in_ir():
     assert expr.op == "+"
     assert isinstance(expr.left, ir.UnaryOp)
     assert expr.left.op == "-"
+
+
+def test_modulo_in_ir():
+    source = '''spec is "1.0"
+
+flow "demo":
+  let remainder is 10 % 4
+'''
+    program = lower_ir_program(source)
+    expr = program.flows[0].body[0].expression
+    assert isinstance(expr, ir.BinaryOp)
+    assert expr.op == "%"

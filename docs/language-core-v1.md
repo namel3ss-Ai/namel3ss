@@ -7,7 +7,7 @@ The following keywords are reserved and stable for Core v1; do not repurpose or 
 
 ```
 module import from as expose
-fn return break continue defer
+return break continue defer
 let const mut
 if else match when
 for while loop in

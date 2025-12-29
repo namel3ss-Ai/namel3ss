@@ -28,6 +28,16 @@
       memory_pack_merged: true,
       memory_pack_overrides: true,
     },
+    moduleTraceFilters: {
+      module_loaded: true,
+      module_merged: true,
+      module_overrides: true,
+    },
+    parallelTraceFilters: {
+      parallel_started: true,
+      parallel_task_finished: true,
+      parallel_merged: true,
+    },
     traceRenderMode: "plain",
     tracePhaseMode: "current",
     traceLaneMode: "my",
@@ -161,6 +171,28 @@
   function setMemoryBudgetFilter(type, enabled) {
     const next = { ...getMemoryBudgetFilters(), [type]: enabled };
     return setMemoryBudgetFilters(next);
+  }
+  function getModuleTraceFilters() {
+    return global.moduleTraceFilters;
+  }
+  function setModuleTraceFilters(value) {
+    global.moduleTraceFilters = value || defaults.moduleTraceFilters;
+    return global.moduleTraceFilters;
+  }
+  function setModuleTraceFilter(type, enabled) {
+    const next = { ...getModuleTraceFilters(), [type]: enabled };
+    return setModuleTraceFilters(next);
+  }
+  function getParallelTraceFilters() {
+    return global.parallelTraceFilters;
+  }
+  function setParallelTraceFilters(value) {
+    global.parallelTraceFilters = value || defaults.parallelTraceFilters;
+    return global.parallelTraceFilters;
+  }
+  function setParallelTraceFilter(type, enabled) {
+    const next = { ...getParallelTraceFilters(), [type]: enabled };
+    return setParallelTraceFilters(next);
   }
   function getTraceFilterTimer() {
     return traceFilterTimer;
@@ -316,6 +348,12 @@
   state.getMemoryBudgetFilters = getMemoryBudgetFilters;
   state.setMemoryBudgetFilters = setMemoryBudgetFilters;
   state.setMemoryBudgetFilter = setMemoryBudgetFilter;
+  state.getModuleTraceFilters = getModuleTraceFilters;
+  state.setModuleTraceFilters = setModuleTraceFilters;
+  state.setModuleTraceFilter = setModuleTraceFilter;
+  state.getParallelTraceFilters = getParallelTraceFilters;
+  state.setParallelTraceFilters = setParallelTraceFilters;
+  state.setParallelTraceFilter = setParallelTraceFilter;
   state.getTraceFilterTimer = getTraceFilterTimer;
   state.setTraceFilterTimer = setTraceFilterTimer;
   state.getTraceRenderMode = getTraceRenderMode;

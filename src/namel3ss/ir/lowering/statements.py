@@ -12,7 +12,10 @@ from namel3ss.ir.model.statements import (
     Let,
     Match,
     MatchCase,
+    ParallelBlock,
+    ParallelTask,
     Repeat,
+    RepeatWhile,
     Return,
     Save,
     Set,
@@ -52,10 +55,34 @@ def _lower_statement(stmt: ast.Statement, agents) -> IRStatement:
             line=stmt.line,
             column=stmt.column,
         )
+    if isinstance(stmt, ast.ParallelBlock):
+        return ParallelBlock(
+            tasks=[
+                ParallelTask(
+                    name=task.name,
+                    body=[_lower_statement(s, agents) for s in task.body],
+                    line=task.line,
+                    column=task.column,
+                )
+                for task in stmt.tasks
+            ],
+            line=stmt.line,
+            column=stmt.column,
+        )
     if isinstance(stmt, ast.Repeat):
         return Repeat(
             count=_lower_expression(stmt.count),
             body=[_lower_statement(s, agents) for s in stmt.body],
+            line=stmt.line,
+            column=stmt.column,
+        )
+    if isinstance(stmt, ast.RepeatWhile):
+        return RepeatWhile(
+            condition=_lower_expression(stmt.condition),
+            limit=stmt.limit,
+            body=[_lower_statement(s, agents) for s in stmt.body],
+            limit_line=getattr(stmt, "limit_line", None),
+            limit_column=getattr(stmt, "limit_column", None),
             line=stmt.line,
             column=stmt.column,
         )

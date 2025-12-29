@@ -14,6 +14,8 @@
     if (!needle) return true;
     const eventTypes = (trace.canonical_events || []).map((event) => event.type).join(" ");
     const values = [
+      trace.type,
+      trace.title,
       trace.provider,
       trace.model,
       trace.ai_name,
@@ -22,6 +24,7 @@
       trace.input,
       trace.output,
       trace.result,
+      trace.lines,
       eventTypes,
     ]
       .map((v) => (typeof v === "string" ? v : v ? JSON.stringify(v) : ""))
@@ -30,13 +33,35 @@
     return values.includes(needle);
   }
 
+  function isModuleTrace(trace) {
+    const type = trace && typeof trace.type === "string" ? trace.type : "";
+    return type === "module_loaded" || type === "module_merged" || type === "module_overrides";
+  }
+
+  function isParallelTrace(trace) {
+    const type = trace && typeof trace.type === "string" ? trace.type : "";
+    return type === "parallel_started" || type === "parallel_task_finished" || type === "parallel_merged";
+  }
+
   function renderTraces(data) {
     const cachedTraces = state.setCachedTraces(Array.isArray(data) ? data : state.getCachedTraces());
     state.setSelectedTrace(null);
     const container = document.getElementById("traces");
     if (!container) return;
     container.innerHTML = "";
-    const filtered = cachedTraces.filter((t) => matchTrace(t, state.getTraceFilterText()));
+    const filtered = cachedTraces
+      .filter((t) => matchTrace(t, state.getTraceFilterText()))
+      .filter((t) => {
+        if (isModuleTrace(t)) {
+          const filters = state.getModuleTraceFilters() || {};
+          return filters[t.type] !== false;
+        }
+        if (isParallelTrace(t)) {
+          const filters = state.getParallelTraceFilters() || {};
+          return filters[t.type] !== false;
+        }
+        return true;
+      });
     const traceItems = filtered.slice().reverse();
     if (!traceItems.length) {
       const message = cachedTraces.length
@@ -67,7 +92,13 @@
       header.appendChild(meta);
       const details = document.createElement("div");
       details.className = "trace-details";
-      if (trace.type === "parallel_agents" && Array.isArray(trace.agents)) {
+      if (isModuleTrace(trace)) {
+        const label = trace.title || "Module event";
+        traces.appendTraceSection(details, label, trace.lines || trace, false, state.getTraceRenderMode());
+      } else if (isParallelTrace(trace)) {
+        const label = trace.title || "Parallel";
+        traces.appendTraceSection(details, label, trace.lines || trace, false, state.getTraceRenderMode());
+      } else if (trace.type === "parallel_agents" && Array.isArray(trace.agents)) {
         traces.appendTraceSection(details, "Agents", trace.agents, false, state.getTraceRenderMode());
       } else {
         traces.appendTraceSection(details, "Input", trace.input, false, state.getTraceRenderMode());

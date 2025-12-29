@@ -60,6 +60,11 @@ from .memory_views import (
     build_memory_restore_failed,
     build_memory_wake_up_report,
 )
+from .parallel import (
+    build_parallel_merged,
+    build_parallel_started,
+    build_parallel_task_finished,
+)
 
 __all__ = [
     "build_ai_call_completed",
@@ -91,6 +96,9 @@ __all__ = [
     "build_memory_wake_up_report",
     "build_memory_restore_failed",
     "build_memory_team_summary",
+    "build_parallel_started",
+    "build_parallel_task_finished",
+    "build_parallel_merged",
     "build_memory_proposed",
     "build_memory_approved",
     "build_memory_rejected",

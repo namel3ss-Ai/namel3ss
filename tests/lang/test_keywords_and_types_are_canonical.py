@@ -108,7 +108,7 @@ def test_keyword_list_is_stable() -> None:
 
 
 def test_types_are_canonical() -> None:
-    assert CANONICAL_TYPES == {"text", "number", "boolean", "json"}
+    assert CANONICAL_TYPES == {"text", "number", "boolean", "json", "list", "map"}
     assert LEGACY_TYPE_ALIASES == {
         "string": "text",
         "str": "text",
@@ -118,6 +118,8 @@ def test_types_are_canonical() -> None:
     }
     assert canonicalize_type_name("text") == ("text", False)
     assert canonicalize_type_name("json") == ("json", False)
+    assert canonicalize_type_name("list") == ("list", False)
+    assert canonicalize_type_name("map") == ("map", False)
     assert canonicalize_type_name("string") == ("text", True)
     assert canonicalize_type_name("int") == ("number", True)
     assert canonicalize_type_name("bool") == ("boolean", True)

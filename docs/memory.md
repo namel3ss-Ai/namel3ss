@@ -86,6 +86,8 @@ See docs/memory-budgets.md for details.
 Memory packs reuse trust, agreement defaults, budgets, lane defaults, phase defaults, and rules.
 Packs load from packs memory under the project root.
 Local overrides live under dot namel3ss.
+Rules append in pack order.
+Duplicate rules keep the last source.
 Studio shows pack summary and overrides.
 See docs/memory-packs.md for details.
 
@@ -205,3 +207,7 @@ Studio also shows a Memory budget section in the Traces panel.
 - Regression tests verify AI outputs remain unchanged
 
 See the memory docs for policy, phases, agreements, trust, explanations, connections, impact, and lanes.
+
+## Capability ids
+runtime.memory
+runtime.memory_packs

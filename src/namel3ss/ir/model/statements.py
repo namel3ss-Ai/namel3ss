@@ -33,9 +33,29 @@ class Return(Statement):
 
 
 @dataclass
+class ParallelTask(Node):
+    name: str
+    body: List[Statement]
+
+
+@dataclass
+class ParallelBlock(Statement):
+    tasks: List[ParallelTask]
+
+
+@dataclass
 class Repeat(Statement):
     count: Expression
     body: List[Statement]
+
+
+@dataclass
+class RepeatWhile(Statement):
+    condition: Expression
+    limit: int
+    body: List[Statement]
+    limit_line: int | None = None
+    limit_column: int | None = None
 
 
 @dataclass

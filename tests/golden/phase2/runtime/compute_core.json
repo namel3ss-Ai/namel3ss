@@ -1,0 +1,252 @@
+{
+  "execution_steps": [
+    {
+      "because": null,
+      "column": 1,
+      "data": {},
+      "id": "step:0001",
+      "kind": "flow_start",
+      "line": 12,
+      "what": "flow \"core_demo\" started"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0002",
+      "kind": "statement_let",
+      "line": 13,
+      "what": "set local base"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0003",
+      "kind": "statement_let",
+      "line": 14,
+      "what": "set local remainder"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0004",
+      "kind": "statement_let",
+      "line": 15,
+      "what": "set local adjusted"
+    },
+    {
+      "because": null,
+      "column": 18,
+      "data": {},
+      "id": "step:0005",
+      "kind": "function_enter",
+      "line": 16,
+      "what": "entered function apply tax"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0006",
+      "kind": "statement_return",
+      "line": 9,
+      "what": "returned a value"
+    },
+    {
+      "because": null,
+      "column": 18,
+      "data": {},
+      "id": "step:0007",
+      "kind": "function_return",
+      "line": 16,
+      "what": "returned from apply tax"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0008",
+      "kind": "statement_let",
+      "line": 16,
+      "what": "set local summary"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0009",
+      "kind": "statement_let",
+      "line": 18,
+      "what": "set local numbers"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0010",
+      "kind": "statement_let",
+      "line": 21,
+      "what": "set local numbers2"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0011",
+      "kind": "statement_let",
+      "line": 22,
+      "what": "set local count"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0012",
+      "kind": "statement_let",
+      "line": 23,
+      "what": "set local data"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0013",
+      "kind": "statement_let",
+      "line": 26,
+      "what": "set local data2"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0014",
+      "kind": "statement_let",
+      "line": 27,
+      "what": "set local keys"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0015",
+      "kind": "statement_let",
+      "line": 28,
+      "what": "set local first_key"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0016",
+      "kind": "statement_let",
+      "line": 29,
+      "what": "set local i"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {
+        "limit": 3
+      },
+      "id": "step:0017",
+      "kind": "loop_start",
+      "line": 30,
+      "what": "loop start with limit 3"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {
+        "iteration": 1
+      },
+      "id": "step:0018",
+      "kind": "loop_iteration",
+      "line": 30,
+      "what": "loop iteration 1"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0019",
+      "kind": "statement_set",
+      "line": 31,
+      "what": "set i"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {
+        "iteration": 2
+      },
+      "id": "step:0020",
+      "kind": "loop_iteration",
+      "line": 30,
+      "what": "loop iteration 2"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0021",
+      "kind": "statement_set",
+      "line": 31,
+      "what": "set i"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0022",
+      "kind": "loop_end",
+      "line": 30,
+      "what": "loop ended after 2 iterations"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {
+        "condition": "adjusted > 10 and first_key == \"count\"",
+        "value": true
+      },
+      "id": "step:0023",
+      "kind": "decision_if",
+      "line": 32,
+      "what": "if adjusted > 10 and first_key == \"count\" was true"
+    },
+    {
+      "because": "condition was true",
+      "column": 3,
+      "data": {},
+      "id": "step:0024",
+      "kind": "branch_taken",
+      "line": 32,
+      "what": "took then branch"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0025",
+      "kind": "statement_return",
+      "line": 33,
+      "what": "returned a value"
+    },
+    {
+      "because": "completed successfully",
+      "column": 1,
+      "data": {},
+      "id": "step:0026",
+      "kind": "flow_end",
+      "line": 12,
+      "what": "flow \"core_demo\" ended"
+    }
+  ],
+  "last_value": 3,
+  "runtime_theme": "system",
+  "state": {},
+  "theme_source": null,
+  "traces": []
+}

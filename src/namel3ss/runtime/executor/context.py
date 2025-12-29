@@ -13,6 +13,13 @@ from namel3ss.schema.records import RecordSchema
 
 
 @dataclass
+class CallFrame:
+    function_name: str
+    locals: Dict[str, object]
+    return_target: str | None
+
+
+@dataclass
 class ExecutionContext:
     flow: ir.Flow
     schemas: Dict[str, RecordSchema]
@@ -26,6 +33,7 @@ class ExecutionContext:
     ai_profiles: Dict[str, ir.AIDecl]
     agents: Dict[str, ir.AgentDecl]
     tools: Dict[str, ir.ToolDecl]
+    functions: Dict[str, ir.FunctionDecl]
     traces: list[AITrace]
     memory_manager: MemoryManager
     agent_calls: int
@@ -39,3 +47,6 @@ class ExecutionContext:
     execution_step_counter: int = 0
     pending_tool_traces: list[dict] = field(default_factory=list)
     tool_call_source: str | None = None
+    call_stack: list[CallFrame] = field(default_factory=list)
+    parallel_mode: bool = False
+    parallel_task: str | None = None

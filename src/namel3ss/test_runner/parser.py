@@ -18,6 +18,9 @@ from namel3ss.test_runner.types import (
 )
 
 
+USE_MODULE_RE = re.compile(
+    r'^use\s+module\s+"(?P<module>[^"]+)"\s+as\s+(?P<alias>[A-Za-z_][A-Za-z0-9_]*)\s*$'
+)
 USE_RE = re.compile(r'^use\s+"(?P<module>[^"]+)"\s+as\s+(?P<alias>[A-Za-z_][A-Za-z0-9_]*)\s*$')
 TEST_RE = re.compile(r'^test\s+"(?P<name>[^"]+)"\s*:\s*$')
 RUN_RE = re.compile(
@@ -44,7 +47,8 @@ def parse_test_file(path: Path) -> TestFile:
         if line.startswith("#"):
             i += 1
             continue
-        use_match = USE_RE.match(line)
+        module_match = USE_MODULE_RE.match(line)
+        use_match = module_match or USE_RE.match(line)
         if use_match:
             if indent != 0:
                 raise Namel3ssError(
@@ -61,6 +65,7 @@ def parse_test_file(path: Path) -> TestFile:
                 UseDecl(
                     module=use_match.group("module"),
                     alias=use_match.group("alias"),
+                    module_path=module_match.group("module") if module_match else None,
                     line=i + 1,
                     column=indent + 1,
                 )

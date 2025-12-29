@@ -5,6 +5,7 @@ from namel3ss.ir import nodes as ir
 from namel3ss.runtime.ai.trace import AITrace
 from namel3ss.runtime.executor.ai_runner import run_ai_with_tools, _flush_pending_tool_traces
 from namel3ss.runtime.executor.context import ExecutionContext
+from namel3ss.runtime.executor.parallel.isolation import ensure_agent_call_allowed
 import namel3ss.runtime.memory.api as memory_api
 from namel3ss.runtime.memory.api import MemoryManager
 from namel3ss.runtime.memory_explain import append_explanation_events
@@ -48,6 +49,7 @@ def execute_run_agents_parallel(ctx: ExecutionContext, stmt: ir.RunAgentsParalle
 
 
 def run_agent_call(ctx: ExecutionContext, agent_name: str, input_expr, line: int | None, column: int | None):
+    ensure_agent_call_allowed(ctx, agent_name, line=line, column=column)
     ctx.agent_calls += 1
     if ctx.agent_calls > 5:
         raise Namel3ssError("Agent call limit exceeded in flow")

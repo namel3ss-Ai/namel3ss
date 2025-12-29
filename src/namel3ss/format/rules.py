@@ -30,6 +30,9 @@ def normalize_spacing(line: str) -> str:
         return ""
 
     # headers with names
+    m = re.match(r'^define\s+function\s+"([^"]+)"\s*:?\s*$', rest, re.IGNORECASE)
+    if m:
+        return f'{indent}define function "{m.group(1)}":'
     m = re.match(r'^(flow|page|record|ai|agent|tool)\s+"([^"]+)"\s*:?\s*$', rest)
     if m:
         return f'{indent}{m.group(1)} "{m.group(2)}":'
@@ -60,7 +63,7 @@ def normalize_spacing(line: str) -> str:
     # record field declarations to canonical "field \"name\" is <type> ..."
     field_pattern = re.compile(
         r'^(?:field\s+"([^"]+)"\s+)?([A-Za-z_][A-Za-z0-9_]*)\s+(?:is\s+)?'
-        r'(string|str|int|integer|number|boolean|bool|json)(\s+.+)?$'
+        r'(string|str|int|integer|number|boolean|bool|json|list|map)(\s+.+)?$'
     )
     m = field_pattern.match(rest)
     if m:

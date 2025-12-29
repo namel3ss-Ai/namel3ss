@@ -1,0 +1,12 @@
+{
+  "type": "module_loaded",
+  "trace_version": "2024-10-01",
+  "module_path": "modules/common.ai",
+  "module_alias": "common",
+  "title": "module loaded",
+  "lines": [
+    "module common loaded",
+    "path modules/common.ai",
+    "provides functions: value"
+  ]
+}

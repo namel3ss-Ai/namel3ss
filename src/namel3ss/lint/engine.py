@@ -7,6 +7,7 @@ from namel3ss.lexer.tokens import KEYWORDS
 from namel3ss.lint.semantic import lint_semantic
 from namel3ss.lint.text_scan import scan_text
 from namel3ss.lint.types import Finding
+from namel3ss.lint.functions import lint_functions
 from namel3ss.runtime.tools.bindings import bindings_path
 from namel3ss.tools.health.analyze import analyze_tool_health
 from namel3ss.types import normalize_type_name
@@ -38,6 +39,7 @@ def lint_source(source: str, strict: bool = True, allow_legacy_type_aliases: boo
     findings.extend(_lint_theme(ast_program))
     findings.extend(_lint_theme_preference(ast_program))
     findings.extend(_lint_record_types(ast_program, strict=strict))
+    findings.extend(lint_functions(ast_program))
     flow_names = {flow.name for flow in ast_program.flows}
     record_names = {record.name for record in ast_program.records}
 
@@ -77,12 +79,14 @@ def lint_project(project: ProjectLoadResult, strict: bool = True) -> list[Findin
     _tag(_lint_theme(project.app_ast), app_path)
     _tag(_lint_theme_preference(project.app_ast), app_path)
     _tag(_lint_record_types(project.app_ast, strict=strict), app_path)
+    _tag(lint_functions(project.app_ast), app_path)
 
     for module in project.modules.values():
         for program, path in zip(module.programs, module.files):
             file_path = path.as_posix()
             _tag(_lint_reserved_identifiers(program), file_path)
             _tag(_lint_record_types(program, strict=strict), file_path)
+            _tag(lint_functions(program), file_path)
 
     findings.extend(lint_semantic(project.program))
     findings.extend(_lint_tool_health(project))
@@ -141,11 +145,11 @@ def _lint_record_types(ast_program, strict: bool) -> list[Finding]:
                     )
                 )
             canonical, was_alias = normalize_type_name(field.type_name)
-            if canonical not in {"text", "number", "boolean", "json"}:
+            if canonical not in {"text", "number", "boolean", "json", "list", "map"}:
                 findings.append(
                     Finding(
                         code="N3LINT_UNKNOWN_TYPE",
-                        message="Unsupported field type. Allowed: text, number, boolean, json.",
+                        message="Unsupported field type. Allowed: text, number, boolean, json, list, map.",
                         line=field.type_line,
                         column=field.type_column,
                         severity="error",

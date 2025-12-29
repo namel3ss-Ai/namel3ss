@@ -52,6 +52,7 @@ def run_flow(
         initial_state=initial_state,
         store=store,
         input_data=input_data,
+        functions=ir_program.functions,
         runtime_theme=getattr(ir_program, "theme", None),
         identity_schema=getattr(ir_program, "identity", None),
         identity=identity,

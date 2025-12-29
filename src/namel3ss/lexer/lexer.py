@@ -100,6 +100,11 @@ class Lexer:
                 i += 1
                 column += 1
                 continue
+            if ch == "%":
+                tokens.append(Token("PERCENT", "%", line_no, column))
+                i += 1
+                column += 1
+                continue
             if ch == "(":
                 tokens.append(Token("LPAREN", "(", line_no, column))
                 i += 1

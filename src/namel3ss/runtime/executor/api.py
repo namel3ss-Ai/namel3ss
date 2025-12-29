@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Dict, Optional
+import copy
 from pathlib import Path
 
 from namel3ss.config.loader import load_config
@@ -30,6 +31,7 @@ def execute_flow(
     ai_provider: Optional[AIProvider] = None,
     ai_profiles: Optional[Dict[str, ir.AIDecl]] = None,
     tools: Optional[Dict[str, ir.ToolDecl]] = None,
+    functions: Optional[Dict[str, ir.FunctionDecl]] = None,
     identity: Optional[Dict[str, object]] = None,
 ) -> ExecutionResult:
     return Executor(
@@ -40,6 +42,7 @@ def execute_flow(
         ai_provider=ai_provider,
         ai_profiles=ai_profiles,
         tools=tools,
+        functions=functions,
         store=resolve_store(None),
         project_root=None,
         identity=identity,
@@ -100,6 +103,7 @@ def execute_program_flow(
         ai_profiles=program.ais,
         agents=program.agents,
         tools=program.tools,
+        functions=program.functions,
         memory_manager=memory_manager,
         runtime_theme=resolution.setting_used.value,
         config=resolved_config,
@@ -108,6 +112,9 @@ def execute_program_flow(
         project_root=resolved_root,
         app_path=getattr(program, "app_path", None),
     )
+    module_traces = getattr(program, "module_traces", None)
+    if module_traces:
+        executor.ctx.traces.extend(copy.deepcopy(module_traces))
     actor = actor_summary(executor.ctx.identity)
     status = "ok"
     result: ExecutionResult | None = None

@@ -1,0 +1,34 @@
+spec is "1.0"
+
+define function "apply tax":
+  input:
+    subtotal is number
+  output:
+    total is number
+    note is optional text
+  return map:
+    "total" is subtotal + 1
+
+flow "core_demo":
+  let base is 2 + 3 * 4
+  let remainder is 10 % 4
+  let adjusted is base + remainder
+  let summary is call function "apply tax":
+    subtotal is adjusted
+  let numbers is list:
+    1
+    2
+  let numbers2 is list append numbers with 3
+  let count is list length of numbers2
+  let data is map:
+    "count" is count
+    "label" is "ok"
+  let data2 is map set data key "extra" value "yes"
+  let keys is map keys data2
+  let first_key is list get keys at 0
+  let i is 0
+  repeat while i is less than 2 limit 3:
+    set i is i + 1
+  if adjusted is greater than 10 and first_key is equal to "count":
+    return map get data key "count"
+  return map get summary key "total"

@@ -5,7 +5,13 @@ from dataclasses import dataclass, replace
 from namel3ss.runtime.memory_budget.defaults import default_budget_configs
 from namel3ss.runtime.memory_budget.model import BudgetConfig
 from namel3ss.runtime.memory_packs.format import MemoryOverrides, MemoryPack
-from namel3ss.runtime.memory_packs.sources import SourceMap, SourceTracker, SOURCE_OVERRIDE, pack_source
+from namel3ss.runtime.memory_packs.sources import (
+    RuleSource,
+    SourceMap,
+    SourceTracker,
+    SOURCE_OVERRIDE,
+    pack_source,
+)
 from namel3ss.runtime.memory_policy.defaults import default_contract
 from namel3ss.runtime.memory_policy.model import LanePolicy, PhasePolicy
 from namel3ss.runtime.memory_trust.model import TrustRules
@@ -33,6 +39,7 @@ class EffectiveMemoryPackSetup:
 def merge_packs(*, packs: list[MemoryPack], overrides: MemoryOverrides | None) -> EffectiveMemoryPackSetup:
     base_contract = default_contract(write_policy="normal", forget_policy="decay")
     rules: list[str] = []
+    rule_sources: list[RuleSource] = []
     trust = base_contract.trust
     agreement = AgreementDefaults(
         approval_count_required=int(base_contract.trust.approval_count_required),
@@ -46,8 +53,12 @@ def merge_packs(*, packs: list[MemoryPack], overrides: MemoryOverrides | None) -
     for pack in packs:
         source = pack_source(pack.pack_id)
         if pack.rules is not None:
-            rules = list(pack.rules)
-            tracker.apply_rules(rules, source)
+            rules, rule_sources = _append_rules(
+                rule_sources=rule_sources,
+                new_rules=pack.rules,
+                source=source,
+            )
+            tracker.apply_rules(rule_sources, source)
         if pack.trust is not None:
             trust, trust_fields = _apply_trust(trust, pack.trust)
             for field in trust_fields:
@@ -71,8 +82,12 @@ def merge_packs(*, packs: list[MemoryPack], overrides: MemoryOverrides | None) -
     if overrides is not None:
         source = SOURCE_OVERRIDE
         if overrides.rules is not None:
-            rules = list(overrides.rules)
-            tracker.apply_rules(rules, source, is_override=True)
+            rules, rule_sources = _append_rules(
+                rule_sources=rule_sources,
+                new_rules=overrides.rules,
+                source=source,
+            )
+            tracker.apply_rules(rule_sources, source, is_override=True)
         if overrides.trust is not None:
             trust, trust_fields = _apply_trust(trust, overrides.trust)
             for field in trust_fields:
@@ -202,6 +217,31 @@ def _sorted_budgets(budgets: list[BudgetConfig]) -> list[BudgetConfig]:
         budgets,
         key=lambda cfg: (cfg.space, cfg.lane, cfg.phase, cfg.owner),
     )
+
+
+def _append_rules(
+    *,
+    rule_sources: list[RuleSource],
+    new_rules: list[str],
+    source: str,
+) -> tuple[list[str], list[RuleSource]]:
+    entries = list(rule_sources)
+    for text in new_rules:
+        entries.append(RuleSource(text=str(text), source=source))
+    entries = _dedupe_rules(entries)
+    return [entry.text for entry in entries], entries
+
+
+def _dedupe_rules(entries: list[RuleSource]) -> list[RuleSource]:
+    seen: set[str] = set()
+    deduped: list[RuleSource] = []
+    for entry in reversed(entries):
+        if entry.text in seen:
+            continue
+        seen.add(entry.text)
+        deduped.append(entry)
+    deduped.reverse()
+    return deduped
 
 
 __all__ = [

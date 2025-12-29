@@ -48,10 +48,15 @@ def parse_additive(parser) -> ast.Expression:
 
 def parse_multiplicative(parser) -> ast.Expression:
     expr = parse_unary(parser)
-    while parser._match("STAR", "SLASH"):
+    while parser._match("STAR", "SLASH", "PERCENT"):
         op_tok = parser.tokens[parser.position - 1]
         right = parse_unary(parser)
-        op = "*" if op_tok.type == "STAR" else "/"
+        if op_tok.type == "STAR":
+            op = "*"
+        elif op_tok.type == "SLASH":
+            op = "/"
+        else:
+            op = "%"
         expr = ast.BinaryOp(op=op, left=expr, right=right, line=op_tok.line, column=op_tok.column)
     return expr
 

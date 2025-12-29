@@ -10,6 +10,9 @@ from namel3ss.cli.targets_store import build_dir
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.graduation.matrix import build_capability_matrix
+from namel3ss.graduation.render import render_graduation_lines, render_summary_lines
+from namel3ss.graduation.rules import evaluate_graduation
 
 
 def run_status_command(args: list[str]) -> int:
@@ -49,6 +52,11 @@ def run_status_command(args: list[str]) -> int:
     prev_target = previous.get("target") or "none"
     prev_build = previous.get("build_id") or "none"
     lines.append(f"Rollback target: {prev_target} (build {prev_build})")
+    matrix = build_capability_matrix()
+    report = evaluate_graduation(matrix)
+    lines.append("Graduation summary")
+    lines.extend(render_summary_lines(matrix))
+    lines.extend(render_graduation_lines(report))
     print("\n".join(lines))
     return 0
 

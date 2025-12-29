@@ -1,0 +1,8 @@
+{
+  "type": "module_overrides",
+  "trace_version": "2024-10-01",
+  "title": "module overrides",
+  "lines": [
+    "function value overridden by module common, was from main file"
+  ]
+}

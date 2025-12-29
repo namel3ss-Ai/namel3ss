@@ -1,25 +1,30 @@
 from __future__ import annotations
 
-import copy
-import hashlib
 from pathlib import Path
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir.nodes import lower_program
 from namel3ss.module_loader.graph import build_graph, topo_sort
+from namel3ss.module_loader.source_io import (
+    ParseCache,
+    SourceOverrides,
+    _has_override,
+    _parse_source,
+    _read_source,
+)
 from namel3ss.module_loader.resolve import collect_definitions, qualify, resolve_program
 from namel3ss.module_loader.types import ModuleExports, ModuleInfo, ProjectLoadResult
-from namel3ss.parser.core import parse
+from namel3ss.module_loader.module_files import (
+    apply_module_file_results,
+    collect_module_file_defs,
+    load_module_file_results,
+)
 
 
 ROOT_NODE = "(app)"
-
-
-ParseCache = Dict[Path, Tuple[str, ast.Program]]
-SourceOverrides = Dict[Path, str]
 
 
 def load_project(
@@ -53,10 +58,16 @@ def load_project(
     )
 
     app_uses = list(app_ast.uses)
-    app_aliases = _normalize_uses(app_uses, context_label="App")
-    load_uses = list(app_uses)
+    legacy_app_uses = [use for use in app_uses if not use.module_path]
+    module_file_uses = [use for use in app_uses if use.module_path]
+    app_aliases = _normalize_uses(legacy_app_uses, context_label="App")
+    load_uses = list(legacy_app_uses)
     if extra_uses:
-        load_uses.extend(list(extra_uses))
+        extra_list = list(extra_uses)
+        legacy_extra = [use for use in extra_list if not use.module_path]
+        module_extra = [use for use in extra_list if use.module_path]
+        load_uses.extend(legacy_extra)
+        module_file_uses.extend(module_extra)
 
     modules: Dict[str, ModuleInfo] = {}
     for use in load_uses:
@@ -78,6 +89,14 @@ def load_project(
     module_defs = {name: collect_definitions(info.programs) for name, info in modules.items()}
     _validate_exports(modules, module_defs)
 
+    module_file_results, module_file_sources = load_module_file_results(
+        root,
+        module_file_uses,
+        allow_legacy_type_aliases=allow_legacy_type_aliases,
+        spec_version=app_ast.spec_version,
+    )
+    module_file_defs = collect_module_file_defs(module_file_results)
+
     combined = _merge_programs(
         app_ast,
         modules,
@@ -85,6 +104,7 @@ def load_project(
         module_defs,
         exports_map,
         module_order,
+        extra_defs=module_file_defs,
     )
     program_ir = lower_program(combined)
     setattr(program_ir, "project_root", root)
@@ -95,9 +115,17 @@ def load_project(
     setattr(program_ir, "public_flows", public_flows)
     setattr(program_ir, "entry_flows", entry_flows)
 
+    program_ir = apply_module_file_results(
+        program_ir,
+        module_file_results=module_file_results,
+        module_file_sources=module_file_sources,
+        sources=sources,
+        app_path=app_file,
+    )
+
     graph_with_root = build_graph(
         [ROOT_NODE, *modules.keys()],
-        [(ROOT_NODE, use.module) for use in app_uses] + edges,
+        [(ROOT_NODE, use.module) for use in legacy_app_uses] + edges,
     )
 
     return ProjectLoadResult(
@@ -118,17 +146,24 @@ def _merge_programs(
     module_defs: Dict[str, Dict[str, set[str]]],
     exports_map: Dict[str, ModuleExports],
     module_order: List[str],
+    *,
+    extra_defs: Dict[str, set[str]] | None = None,
 ) -> ast.Program:
+    local_defs = collect_definitions([app_ast])
+    if extra_defs:
+        for kind, names in extra_defs.items():
+            local_defs.setdefault(kind, set()).update(names)
     resolve_program(
         app_ast,
         module_name=None,
         alias_map=app_aliases,
-        local_defs=collect_definitions([app_ast]),
+        local_defs=local_defs,
         exports_map=exports_map,
         context_label="App",
     )
 
     combined_records = list(app_ast.records)
+    combined_functions = list(getattr(app_ast, "functions", []))
     combined_flows = list(app_ast.flows)
     combined_pages = list(app_ast.pages)
     combined_ais = list(app_ast.ais)
@@ -159,6 +194,7 @@ def _merge_programs(
                 context_label=f"Module {name}",
             )
             combined_records.extend(program.records)
+            combined_functions.extend(getattr(program, "functions", []))
             combined_flows.extend(program.flows)
             combined_ais.extend(program.ais)
             combined_tools.extend(program.tools)
@@ -173,6 +209,7 @@ def _merge_programs(
         theme_tokens=app_ast.theme_tokens,
         theme_preference=app_ast.theme_preference,
         records=combined_records,
+        functions=combined_functions,
         flows=combined_flows,
         pages=combined_pages,
         ais=combined_ais,
@@ -282,6 +319,20 @@ def _load_module(
     uses = list(capsule_program.uses)
     for program in programs:
         uses.extend(program.uses)
+    module_file_uses = [use for use in uses if use.module_path]
+    if module_file_uses:
+        first = module_file_uses[0]
+        raise Namel3ssError(
+            build_guidance_message(
+                what="Use module is not allowed inside capsule modules.",
+                why="Capsule modules only import other capsules.",
+                fix="Move use module statements to app.ai.",
+                example='use module "modules/common.ai" as common',
+            ),
+            line=first.line,
+            column=first.column,
+        )
+    uses = [use for use in uses if not use.module_path]
 
     exports = ModuleExports()
     for export in capsule_decl.exports:
@@ -411,57 +462,3 @@ def _normalize_uses(uses: Iterable[ast.UseDecl], *, context_label: str) -> Dict[
         alias_map[use.alias] = use.module
         module_map[use.module] = use.alias
     return alias_map
-
-
-def _read_source(path: Path, source_overrides: SourceOverrides | None) -> str:
-    if _has_override(path, source_overrides):
-        return source_overrides[path]  # type: ignore[index]
-    try:
-        return path.read_text(encoding="utf-8")
-    except FileNotFoundError as err:
-        raise Namel3ssError(f"File not found: {path}") from err
-
-
-def _parse_source(
-    source: str,
-    path: Path,
-    *,
-    allow_legacy_type_aliases: bool,
-    allow_capsule: bool = False,
-    require_spec: bool = True,
-    parse_cache: ParseCache | None = None,
-) -> ast.Program:
-    digest = _source_digest(source)
-    if parse_cache is not None:
-        cached = parse_cache.get(path)
-        if cached and cached[0] == digest:
-            return copy.deepcopy(cached[1])
-    try:
-        parsed = parse(
-            source,
-            allow_legacy_type_aliases=allow_legacy_type_aliases,
-            allow_capsule=allow_capsule,
-            require_spec=require_spec,
-        )
-        if parse_cache is not None:
-            parse_cache[path] = (digest, copy.deepcopy(parsed))
-        return parsed
-    except Namel3ssError as err:
-        raise Namel3ssError(
-            err.message,
-            line=err.line,
-            column=err.column,
-            end_line=err.end_line,
-            end_column=err.end_column,
-            details={"file": path.as_posix()},
-        ) from err
-
-
-def _has_override(path: Path, source_overrides: SourceOverrides | None) -> bool:
-    if not source_overrides:
-        return False
-    return path in source_overrides
-
-
-def _source_digest(source: str) -> str:
-    return hashlib.sha256(source.encode("utf-8")).hexdigest()

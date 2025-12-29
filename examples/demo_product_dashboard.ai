@@ -31,6 +31,15 @@ flow "clear_orders":
 flow "refresh_orders":
   return "ok"
 
+flow "parallel_demo":
+  parallel:
+    run "alpha":
+      let alpha_total is 10 + 5
+      return alpha_total
+    run "beta":
+      let beta_total is 8 * 2
+      return beta_total
+
 page "home":
   title is "Product dashboard"
   section "Overview":
@@ -45,6 +54,12 @@ page "home":
           text is "Clear demo state."
           button "Clear":
             calls flow "clear_orders"
+    row:
+      column:
+        card "Parallel demo":
+          text is "Parallel demo runs tasks in name order."
+          button "Run parallel demo":
+            calls flow "parallel_demo"
   divider
   section "Orders":
     row:

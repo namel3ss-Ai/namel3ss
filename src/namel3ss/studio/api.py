@@ -25,6 +25,9 @@ from namel3ss.runtime.packs.config import read_pack_config
 from namel3ss.tools.health.analyze import analyze_tool_health
 from namel3ss.ui.manifest import build_manifest
 from namel3ss.version import get_version
+from namel3ss.graduation.matrix import build_capability_matrix
+from namel3ss.graduation.render import render_graduation_lines, render_matrix_lines, render_summary_lines
+from namel3ss.graduation.rules import evaluate_graduation
 
 
 def _load_program(source: str):
@@ -32,9 +35,15 @@ def _load_program(source: str):
     return lower_program(ast_program)
 
 
+def _load_project_program(source: str, path: str):
+    app_file = Path(path)
+    project = load_project(app_file, source_overrides={app_file: source})
+    return project.program
+
+
 def get_summary_payload(source: str, path: str) -> dict:
     try:
-        program_ir = _load_program(source)
+        program_ir = _load_project_program(source, path)
         counts = {
             "records": len(program_ir.records),
             "flows": len(program_ir.flows),
@@ -43,7 +52,26 @@ def get_summary_payload(source: str, path: str) -> dict:
             "agents": len(program_ir.agents),
             "tools": len(program_ir.tools),
         }
-        return {"ok": True, "file": path, "counts": counts}
+        payload = {"ok": True, "file": path, "counts": counts}
+        module_summary = getattr(program_ir, "module_summary", None)
+        if module_summary:
+            payload["module_summary"] = module_summary
+        matrix = build_capability_matrix()
+        report = evaluate_graduation(matrix)
+        payload["graduation"] = {
+            "summary": matrix.get("summary", {}),
+            "capabilities": matrix.get("capabilities", []),
+            "summary_lines": render_summary_lines(matrix),
+            "matrix_lines": render_matrix_lines(matrix),
+            "graduation_lines": render_graduation_lines(report),
+            "report": {
+                "ai_language_ready": report.ai_language_ready,
+                "beta_ready": report.beta_ready,
+                "missing_ai_language": list(report.missing_ai_language),
+                "missing_beta": list(report.missing_beta),
+            },
+        }
+        return payload
     except Namel3ssError as err:
         return {"ok": False, "error": format_error(err, source)}
 

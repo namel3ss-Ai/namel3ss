@@ -115,3 +115,7 @@ Artifacts are saved under `.namel3ss/tools/last.json` and `last.with.txt`.
 ## Run outcomes
 Flow runs emit an outcome pack used by `n3 what`.
 Artifacts are saved under `.namel3ss/outcome/last.json` and `last.what.txt`.
+
+## Graduation mapping
+Capability id runtime.tools
+Matrix source src/namel3ss/graduation/capabilities.py

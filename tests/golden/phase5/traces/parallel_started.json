@@ -1,0 +1,9 @@
+{
+  "type": "parallel_started",
+  "trace_version": "2024-10-01",
+  "title": "Parallel started",
+  "lines": [
+    "alpha",
+    "beta"
+  ]
+}

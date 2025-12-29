@@ -26,6 +26,8 @@ Cache settings are part of the budget config.
 Packs can set trust, agreement defaults, budgets, lanes, and phase defaults.
 Local overrides can replace pack values.
 Pack changes are traced.
+Rules append in pack order.
+Duplicate rules keep the last source.
 
 ## Authority
 Authority controls overwrites in conflicts.

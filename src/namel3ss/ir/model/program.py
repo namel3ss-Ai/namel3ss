@@ -10,6 +10,7 @@ from namel3ss.ir.model.expressions import Expression
 from namel3ss.ir.model.ai import AIDecl
 from namel3ss.ir.model.agents import AgentDecl
 from namel3ss.ir.model.tools import ToolDecl
+from namel3ss.ir.functions.model import FunctionDecl
 from namel3ss.schema import records as schema
 if TYPE_CHECKING:  # pragma: no cover - typing-only
     from namel3ss.schema.identity import IdentitySchema
@@ -31,6 +32,7 @@ class Program(Node):
     theme_runtime_supported: bool
     theme_preference: Dict[str, object]
     records: List[schema.RecordSchema]
+    functions: Dict[str, FunctionDecl]
     flows: List[Flow]
     pages: List[Page]
     ais: Dict[str, AIDecl]

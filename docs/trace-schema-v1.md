@@ -97,6 +97,12 @@ Memory restore failed events include type, project_id, title, and lines.
 Memory pack loaded events include type, pack_id, pack_version, title, and lines.
 Memory pack merged events include type, title, and lines with pack ids in order.
 Memory pack overrides events include type, title, and override lines.
+Override lines describe the field and sources.
+
+### Parallel events
+Parallel started events include type, title, and lines with task names in order.
+Parallel task finished events include type, task_name, status, title, and lines.
+Parallel merged events include type, title, and lines with merge summary.
 
 ## Capability check traces v1
 Every denied capability check must include:

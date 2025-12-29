@@ -1,0 +1,64 @@
+spec is "1.0"
+
+tool "echo":
+  implemented using builtin
+  purity is "pure"
+
+  input:
+    text is text
+
+  output:
+    text is text
+
+ai "assistant":
+  provider is "mock"
+  model is "demo"
+  system_prompt is "Be brief and clear."
+
+use module "modules/pricing.ai" as pricing
+
+record "Order":
+  price number must be greater than 0
+  quantity number must be greater than 0
+
+define function "apply tax":
+  input:
+    subtotal is number
+  output:
+    total is number
+  return subtotal * 1.05
+
+flow "demo":
+  let base is state.order.price * state.order.quantity
+  let taxed is call function "apply tax":
+    subtotal is base
+  let discounted is call function "price with discount":
+    base is taxed
+  let totals is list:
+    base
+    taxed
+    discounted
+  let summary is map:
+    "total" is discounted
+    "note" is "ok"
+  repeat while base is less than 1 limit 1:
+    set base is base + 1
+  parallel:
+    run "alpha":
+      let alpha_note is echo:
+        text is "alpha"
+      return alpha_note.text
+    run "beta":
+      let beta_note is echo:
+        text is "beta"
+      return beta_note.text
+  ask ai "assistant" with input: "summarize total" as reply
+  set state.summary is summary
+  return summary
+
+page "home":
+  title is "Flagship demo"
+  text is "Functions, tools, memory packs, and parallel tasks."
+  form is "Order"
+  button "Run demo":
+    calls flow "demo"

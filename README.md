@@ -127,6 +127,8 @@ Studio shows the wake up report in the Traces panel.
 Studio shows a Memory budget section in the Traces panel.
 Memory packs provide reusable defaults for trust, agreement, budgets, lanes, phase, and rules.
 Local overrides are explicit and traced.
+Rules append in pack order.
+Duplicate rules keep the last source.
 Studio shows a Memory packs section in the Rules panel.
 Memory recall can be inspected from the CLI, which stores a proof pack under `.namel3ss/memory/last.json`.
 The `n3 memory why` command renders a deterministic explanation from that proof pack.
@@ -152,6 +154,7 @@ Memory persistence docs at docs/memory-persist.md.
 Memory packs docs at docs/memory-packs.md.
 Memory explanations docs at docs/memory-explanations.md.
 Memory proof harness docs at docs/memory-proof.md.
+Concurrency docs at docs/concurrency.md.
 See docs/memory.md, docs/memory-policy.md, docs/memory-lanes.md, docs/memory-agreement.md, docs/memory-spaces.md, and docs/memory-phases.md for the full schema and governance rules.
 
 ### Phase B1: exists
@@ -587,14 +590,25 @@ The "3" in namel3ss is not decoration. It's a promise.
 
 If you cannot understand the basics of namel3ss in 3 minutes, we consider that a design failure — and we will redesign it.
 
-In v0.1.0 alpha (a1/a2), the Rule of 3 applies primarily to language structure, mental model, and tooling flow. Full computational expressiveness is out of scope for this alpha.
+In v0.1.0 alpha, the Rule of 3 applies to language structure, mental model, and tooling flow.
+Compute core now includes define function, operators, bounded loops, list values, and map values.
+
+---
+
+## Graduation truth
+AI language definition is in docs/ai-language-definition.md
+Graduation matrix is generated from src/namel3ss/graduation
+Beta checklist is in docs/beta-checklist.md
 
 ---
 
 ## What you can build today
 CRUD dashboards (records → forms/tables → validation). Internal tools and admin panels. AI assistants over your records (with memory and traces). Multi-agent workflows (sequential + parallel orchestration). Prototypes that stay readable as they grow.
+Compute core supports define function, bounded loops, list values, map values, and deterministic parallel tasks.
 
-In v0.1.0 alpha (a1/a2), namel3ss prioritizes structural clarity and intent over computation. Arithmetic operations, conditional logic (if/else, loops), and reusable functions/modules are intentionally limited or not yet supported. This is a design choice — full computational expressiveness is planned for future versions.
+In v0.1.0 alpha, namel3ss prioritizes structural clarity and intent with real computation.
+Arithmetic, comparisons, bounded loops, and define function are shipped.
+Modules, memory packs, and deterministic parallel blocks are shipped.
 
 ---
 

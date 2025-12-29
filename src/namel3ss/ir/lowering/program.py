@@ -8,13 +8,14 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir.lowering.agents import _lower_agents
 from namel3ss.ir.lowering.ai import _lower_ai_decls
 from namel3ss.ir.lowering.flow import lower_flow
+from namel3ss.ir.functions.lowering import lower_functions
 from namel3ss.ir.lowering.identity import _lower_identity
 from namel3ss.ir.lowering.pages import _lower_page
 from namel3ss.ir.lowering.records import _lower_record
 from namel3ss.ir.lowering.tools import _lower_tools
 from namel3ss.ir.model.agents import RunAgentsParallelStmt
 from namel3ss.ir.model.program import Flow, Program
-from namel3ss.ir.model.statements import ThemeChange, If, Repeat, ForEach, Match, MatchCase, TryCatch
+from namel3ss.ir.model.statements import ThemeChange, If, Repeat, RepeatWhile, ForEach, Match, MatchCase, TryCatch, ParallelBlock
 from namel3ss.schema import records as schema
 
 
@@ -25,6 +26,8 @@ def _statement_has_theme_change(stmt) -> bool:
         return any(_statement_has_theme_change(s) for s in stmt.then_body) or any(_statement_has_theme_change(s) for s in stmt.else_body)
     if isinstance(stmt, Repeat):
         return any(_statement_has_theme_change(s) for s in stmt.body)
+    if isinstance(stmt, RepeatWhile):
+        return any(_statement_has_theme_change(s) for s in stmt.body)
     if isinstance(stmt, ForEach):
         return any(_statement_has_theme_change(s) for s in stmt.body)
     if isinstance(stmt, Match):
@@ -33,6 +36,8 @@ def _statement_has_theme_change(stmt) -> bool:
         return any(_statement_has_theme_change(s) for s in stmt.body)
     if isinstance(stmt, TryCatch):
         return any(_statement_has_theme_change(s) for s in stmt.try_body) or any(_statement_has_theme_change(s) for s in stmt.catch_body)
+    if isinstance(stmt, ParallelBlock):
+        return any(_statement_has_theme_change(s) for task in stmt.tasks for s in task.body)
     if isinstance(stmt, RunAgentsParallelStmt):
         return any(_statement_has_theme_change(e) for e in stmt.entries)
     return False
@@ -57,6 +62,7 @@ def lower_program(program: ast.Program) -> Program:
     tool_map = _lower_tools(program.tools)
     ai_map = _lower_ai_decls(program.ais, tool_map)
     agent_map = _lower_agents(program.agents, ai_map)
+    function_map = lower_functions(program.functions, agent_map)
     flow_irs: List[Flow] = [lower_flow(flow, agent_map) for flow in program.flows]
     record_map: Dict[str, schema.RecordSchema] = {rec.name: rec for rec in record_schemas}
     flow_names = {flow.name for flow in flow_irs}
@@ -72,6 +78,7 @@ def lower_program(program: ast.Program) -> Program:
             "persist": program.theme_preference.get("persist", ("none", None, None))[0],
         },
         records=record_schemas,
+        functions=function_map,
         flows=flow_irs,
         pages=pages,
         ais=ai_map,

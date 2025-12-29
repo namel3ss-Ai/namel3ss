@@ -55,6 +55,7 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
     from namel3ss.parser.decl.app import parse_app
     from namel3ss.parser.decl.capsule import parse_capsule_decl
     from namel3ss.parser.decl.flow import parse_flow
+    from namel3ss.parser.decl.function import parse_function_decl
     from namel3ss.parser.decl.identity import parse_identity
     from namel3ss.parser.decl.page import parse_page
     from namel3ss.parser.decl.record import parse_record
@@ -64,6 +65,7 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
 
     return (
         TopLevelRule("spec", "SPEC", parse_spec_decl),
+        TopLevelRule("function", "IDENT", parse_function_decl, token_value="define"),
         TopLevelRule("use", "IDENT", parse_use_decl, token_value="use"),
         TopLevelRule("capsule", "IDENT", parse_capsule_decl, token_value="capsule"),
         TopLevelRule("identity", "IDENT", parse_identity, token_value="identity"),
@@ -85,6 +87,7 @@ def statement_rules() -> tuple[StatementRule, ...]:
     from namel3ss.parser.stmt.if_stmt import parse_if
     from namel3ss.parser.stmt.let import parse_let
     from namel3ss.parser.stmt.match import parse_match
+    from namel3ss.parser.stmt.parallel import parse_parallel
     from namel3ss.parser.stmt.repeat import parse_repeat
     from namel3ss.parser.stmt.return_stmt import parse_return
     from namel3ss.parser.stmt.run_agent import parse_run_agent_stmt, parse_run_agents_parallel
@@ -100,6 +103,7 @@ def statement_rules() -> tuple[StatementRule, ...]:
         StatementRule("if", "IF", parse_if),
         StatementRule("return", "RETURN", parse_return),
         StatementRule("ask", "ASK", parse_ask_stmt),
+        StatementRule("parallel", "PARALLEL", parse_parallel),
         StatementRule("run_agents_parallel", "RUN", parse_run_agents_parallel, predicate=_is_run_agents_parallel),
         StatementRule("run_agent", "RUN", parse_run_agent_stmt, predicate=_is_run_agent),
         StatementRule("repeat", "REPEAT", parse_repeat),
@@ -113,7 +117,7 @@ def statement_rules() -> tuple[StatementRule, ...]:
 
 
 def expression_rules() -> tuple[ExpressionRule, ...]:
-    from namel3ss.parser.expr.calls import parse_ask_expression, parse_old_tool_call
+    from namel3ss.parser.expr.calls import parse_ask_expression, parse_call_function_expr
     from namel3ss.parser.expr.literals import (
         parse_boolean_literal,
         parse_number_literal,
@@ -131,7 +135,7 @@ def expression_rules() -> tuple[ExpressionRule, ...]:
         ExpressionRule("input", "INPUT", parse_reference_expr),
         ExpressionRule("state", "STATE", parse_state_path),
         ExpressionRule("grouped", "LPAREN", parse_grouped_expression),
-        ExpressionRule("call", "CALL", parse_old_tool_call),
+        ExpressionRule("call", "CALL", parse_call_function_expr),
         ExpressionRule("ask", "ASK", parse_ask_expression),
     )
 

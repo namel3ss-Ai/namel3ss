@@ -8,7 +8,7 @@ from namel3ss.parser.decl.record import type_from_token
 from namel3ss.utils.numbers import decimal_is_int, is_number, to_decimal
 
 
-_SUPPORTED_FIELD_TYPES = {"text", "number", "boolean", "json"}
+_SUPPORTED_FIELD_TYPES = {"text", "number", "boolean", "json", "list", "map"}
 
 
 def parse_tool(parser) -> ast.ToolDecl:

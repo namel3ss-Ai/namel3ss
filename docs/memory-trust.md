@@ -26,6 +26,7 @@ The same person cannot approve twice.
 ## Packs
 Trust defaults can come from memory packs.
 Local overrides can change the defaults.
+Pack order is deterministic.
 The source is tracked and traced.
 
 ## Why actions are blocked

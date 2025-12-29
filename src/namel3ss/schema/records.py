@@ -17,6 +17,8 @@ SUPPORTED_TYPES = {
     "boolean",
     "bool",
     "json",
+    "list",
+    "map",
 }
 
 TENANT_KEY_FIELD = "__n3_tenant_key"

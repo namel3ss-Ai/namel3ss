@@ -36,6 +36,16 @@ flow "demo":
     assert result.last_value == Decimal("0.3")
 
 
+def test_modulo_result():
+    source = '''spec is "1.0"
+
+flow "demo":
+  return 10 % 4
+'''
+    result = run_flow(source)
+    assert result.last_value == Decimal("2")
+
+
 def test_arithmetic_type_error_message():
     source = '''spec is "1.0"
 
@@ -62,3 +72,17 @@ flow "demo":
     assert "error: Division by zero." in message
     assert "- The right-hand side of '/' evaluated to 0." in message
     assert "- Check for zero before dividing." in message
+
+
+def test_modulo_by_zero_message():
+    source = '''spec is "1.0"
+
+flow "demo":
+  return 10 % 0
+'''
+    with pytest.raises(Namel3ssError) as excinfo:
+        run_flow(source)
+    message = str(excinfo.value)
+    assert "error: Modulo by zero." in message
+    assert "- The right-hand side of '%' evaluated to 0." in message
+    assert "- Check for zero before modulo." in message

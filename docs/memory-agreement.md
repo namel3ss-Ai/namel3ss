@@ -14,6 +14,7 @@ Rejecting removes the proposal.
 ## Agreement defaults
 Approval count and owner override can be set by memory packs.
 Local overrides can replace pack defaults.
+Pack order is deterministic.
 
 ## Rules and agreement
 Rules are proposed like other team memory.

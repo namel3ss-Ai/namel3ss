@@ -1,6 +1,6 @@
 # Targets and promotion (Phase 5)
 
-Targets describe how an app should run, using the same `.ai` file and capsules:
+Targets describe how an app should run, using the same `.ai` file and module files:
 
 - `local` — dev mode (preferred persistence: SQLite).
 - `service` — long-running server with `/health` and `/version` (preferred persistence: Postgres).

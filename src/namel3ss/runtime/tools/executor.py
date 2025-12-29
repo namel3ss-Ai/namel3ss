@@ -6,6 +6,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.boundary import mark_boundary
 from namel3ss.runtime.executor.context import ExecutionContext
+from namel3ss.runtime.executor.parallel.isolation import ensure_tool_call_allowed
 from namel3ss.runtime.tools.gate import gate_tool_call
 from namel3ss.runtime.tools.outcome import ToolCallOutcome, ToolDecision
 from namel3ss.runtime.tools.policy import load_tool_policy, normalize_capabilities
@@ -22,6 +23,7 @@ def execute_tool_call(
     line: int | None = None,
     column: int | None = None,
 ) -> ToolCallOutcome:
+    ensure_tool_call_allowed(ctx, tool_name, line=line, column=column)
     tool_decl = ctx.tools.get(tool_name)
     builtin_fallback = ctx.tool_call_source == "ai" and is_builtin_tool(tool_name)
     tool_kind = tool_decl.kind if tool_decl else ("builtin" if builtin_fallback else None)

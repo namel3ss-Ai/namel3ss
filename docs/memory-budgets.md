@@ -25,6 +25,7 @@ Cache events show when a hit or miss happens.
 ## Packs
 Budgets can be set by memory packs.
 Local overrides can replace pack budgets.
+Pack order is deterministic.
 
 ## Studio view
 Open the Traces panel.

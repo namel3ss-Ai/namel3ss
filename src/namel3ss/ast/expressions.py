@@ -65,4 +65,36 @@ class ToolCallArg(Node):
     value: Expression
 
 
+@dataclass
+class ListExpr(Expression):
+    items: List[Expression]
+
+
+@dataclass
+class MapEntry(Node):
+    key: Expression
+    value: Expression
+
+
+@dataclass
+class MapExpr(Expression):
+    entries: List[MapEntry]
+
+
+@dataclass
+class ListOpExpr(Expression):
+    kind: str
+    target: Expression
+    value: Expression | None = None
+    index: Expression | None = None
+
+
+@dataclass
+class MapOpExpr(Expression):
+    kind: str
+    target: Expression
+    key: Expression | None = None
+    value: Expression | None = None
+
+
 Assignable = Union[VarReference, StatePath]

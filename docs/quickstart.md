@@ -11,7 +11,7 @@ Run any `.ai` app with the file-first CLI.
 - Scaffold: `n3 new <template> [project_name]` (templates: `crud`, `ai-assistant`, `multi-agent`)
 - Example: `n3 new crud my_app` then `cd my_app`
 - The app file lives at `app.ai`; commands below assume you are in the project directory.
-- Multi-file apps use modules under `modules/<name>/capsule.ai`.
+- Multi file apps use module files like `modules/inventory.ai`.
 
 ## Core commands
 

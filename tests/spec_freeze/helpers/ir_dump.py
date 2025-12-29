@@ -17,7 +17,10 @@ def _to_data(value: Any, *, field_name: str | None = None) -> Any:
     if is_dataclass(value):
         data = {"type": value.__class__.__name__}
         for field in fields(value):
-            data[field.name] = _to_data(getattr(value, field.name), field_name=field.name)
+            field_value = getattr(value, field.name)
+            if field.name == "functions" and not field_value:
+                continue
+            data[field.name] = _to_data(field_value, field_name=field.name)
         return data
     if isinstance(value, dict):
         return {key: _to_data(value[key], field_name=key) for key in sorted(value.keys(), key=str)}

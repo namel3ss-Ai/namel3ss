@@ -1,66 +1,39 @@
 # Modules and Tests
 
-This page covers the Phase 2 project structure: Capsules (modules) and the built-in test runner.
+This page covers module files and the built in test runner.
 
-## Capsules (modules)
+## Module files
 
-Modules live under `modules/<name>/` and are defined by a capsule contract:
+Modules are plain ai files.
+A module can define functions, records, tools, and pages.
+Modules do not define flows, ai profiles, agents, or app theme.
 
-```
-modules/inventory/capsule.ai
-modules/inventory/logic.ai
-```
-
-`capsule.ai` declares the public API:
-
-```ai
-capsule "inventory":
-  exports:
-    record "Product"
-    flow "seed_item"
-```
-
-Everything else in the module stays private.
+Example paths
+modules/inventory.ai
+modules/pricing.ai
 
 ## Using modules
 
-Import a module with `use` and a required alias:
+Use module with a path and an alias.
 
-```ai
-use "inventory" as inv
+use module "modules/inventory.ai" as inv
 
-page "home":
-  form is "inv.Product"
-  button "Seed":
-    calls flow "inv.seed_item"
-  table is "inv.Product"
-```
+Imported items are used by name in your app.
+Aliases are for trace and provenance.
 
-Rules:
-- Modules resolve only from `modules/<name>/capsule.ai`.
-- Cross-module references must be alias-qualified (for example `inv.Product`).
-- Only exports listed in `capsule.ai` are visible outside the module.
+Rules
+- Paths are relative to the project root.
+- Conflicts are errors unless allow override is declared.
+- Later use module statements are merged later.
 
-Inspect the module graph and exports:
+## Capsules and packages
 
-```
-n3 app.ai graph
-n3 app.ai exports
-```
+Capsules are the package format used under packages.
+Capsules still use the legacy use syntax.
 
-## Tests (`n3 test`)
+## Tests
 
-Test files live under `tests/` and must end with `*_test.ai`.
-
-```ai
-test "smoke":
-  run flow "seed_item" with input: {} as result
-  expect value is "seeded"
-```
-
-Run tests from the project root:
-
-```
+Test files live under tests and end with _test.ai.
+Run tests from the project root.
 n3 test
 n3 test --json
-```
