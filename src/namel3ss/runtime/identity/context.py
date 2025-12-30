@@ -9,7 +9,7 @@ from namel3ss.ir import nodes as ir
 from namel3ss.runtime.validators.constraints import collect_validation_errors
 from namel3ss.schema.identity import IdentitySchema
 from namel3ss.schema.records import FieldSchema, RecordSchema
-from namel3ss.utils.numbers import is_number
+from namel3ss.utils.numbers import is_number, to_decimal
 
 
 def resolve_identity(config: AppConfig | None, schema: IdentitySchema | None) -> dict:
@@ -76,6 +76,12 @@ def _literal_eval(expr: ir.Expression | None) -> object:
         return None
     if isinstance(expr, ir.Literal):
         return expr.value
+    if isinstance(expr, ir.UnaryOp) and expr.op in {"+", "-"}:
+        if isinstance(expr.operand, ir.Literal):
+            value = expr.operand.value
+            if is_number(value):
+                numeric = to_decimal(value)
+                return numeric if expr.op == "+" else -numeric
     raise Namel3ssError(
         build_guidance_message(
             what="Identity constraint requires a literal value.",

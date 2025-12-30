@@ -124,20 +124,20 @@ def _summarize_packages(project_root: Path) -> str:
     for pkg in sorted(packages, key=lambda p: p.get("name", "")):
         name = pkg.get("name")
         license_id = pkg.get("license") or pkg.get("license_file") or "unknown"
-        parts.append(f"{name} ({license_id})")
+        parts.append(f"{name} license {license_id}")
     return ", ".join(parts)
 
 
 def _format_capsules(capsules: list[dict]) -> str:
     if not capsules:
         return "none"
-    return ", ".join(f"{c['name']} ({c['source']})" for c in capsules)
+    return ", ".join(f"{c['name']} source {c['source']}" for c in capsules)
 
 
 def _format_persistence(persistence: dict) -> str:
     target = persistence.get("target") or "memory"
     descriptor = persistence.get("descriptor")
-    return f"{target} ({descriptor})" if descriptor else str(target)
+    return f"{target} {descriptor}" if descriptor else str(target)
 
 
 def _format_identity(program) -> str:

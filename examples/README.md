@@ -38,91 +38,91 @@ What to click:
 - Submit an order with price + quantity.
 - Click "Compute total" and inspect State for the computed total.
 
-## execution_how
+## control_flow
 A tiny flow that shows explainable execution (if/else, repeat, match).
 
 Run:
-- `cd examples/execution_how && n3 run app.ai`
-- `cd examples/execution_how && n3 how`
+- `cd examples/control_flow && n3 run app.ai`
+- `cd examples/control_flow && n3 how`
 
 What to look for:
 - Branch taken and skipped lines.
 - Repeat body skipped when count is 0.
 - Match case taken and otherwise skipped.
 
-## tools_with
+## tool_usage
 A minimal tool call with explainable tool output.
 
 Run:
-- `cd examples/tools_with && n3 run app.ai`
-- `cd examples/tools_with && n3 with`
+- `cd examples/tool_usage && n3 run app.ai`
+- `cd examples/tool_usage && n3 with`
 
 What to look for:
 - Tool intent and permission lines.
 - Blocked tool reasons if you disable capability access.
 
-## flow_what
+## flow_branching
 A small flow showing run outcome summaries.
 
 Run:
-- `cd examples/flow_what && n3 run app.ai`
-- `cd examples/flow_what && n3 with`
-- `cd examples/flow_what && n3 what`
+- `cd examples/flow_branching && n3 run app.ai`
+- `cd examples/flow_branching && n3 with`
+- `cd examples/flow_branching && n3 what`
 
 What to look for:
 - Store/state/memory outcome lines.
 - What did not happen bullets when persistence is skipped or fails.
 
-## ui_see
+## ui_access_control
 A small ui manifest explanation demo.
 
 Run:
-- `cd examples/ui_see && n3 check`
-- `cd examples/ui_see && n3 ui`
-- `cd examples/ui_see && n3 see`
+- `cd examples/ui_access_control && n3 check`
+- `cd examples/ui_access_control && n3 ui`
+- `cd examples/ui_access_control && n3 see`
 
 What to look for:
 - Page list and element summaries.
 - Action availability with requires details.
 
-## errors_fix
+## access_control
 A minimal error example for `n3 fix`.
 
 Run:
-- `cd examples/errors_fix && n3 run app.ai`
-- `cd examples/errors_fix && n3 fix`
+- `cd examples/access_control && n3 run app.ai`
+- `cd examples/access_control && n3 fix`
 
 What to look for:
 - Error kind and flow name.
 - Recovery option to provide identity.
 
-## b2_fix
+## error_guidance
 A minimal runtime error pack demo.
 
 Run:
-- `cd examples/b2_fix && n3 app.ai flow "fail"`
-- `cd examples/b2_fix && n3 fix`
+- `cd examples/error_guidance && n3 app.ai flow "fail"`
+- `cd examples/error_guidance && n3 fix`
 
 What to look for:
 - Deterministic error id and summary.
 - Error artifacts under `.namel3ss/errors/`.
 
-## b3_what
+## record_roundtrip
 A minimal run outcome pack demo.
 
 Run:
-- `cd examples/b3_what && n3 run app.ai`
-- `cd examples/b3_what && n3 what`
+- `cd examples/record_roundtrip && n3 run app.ai`
+- `cd examples/record_roundtrip && n3 what`
 
 What to look for:
 - Outcome status and store/state/memory flags.
 - Artifacts under `.namel3ss/outcome/`.
 
-## b4_when
+## record_decl_variants
 A minimal spec check demo.
 
 Run:
-- `cd examples/b4_when`
+- `cd examples/record_decl_variants`
 - `n3 when app.ai`
 - `n3 run app.ai`
 
@@ -130,11 +130,11 @@ What to look for:
 - Declared spec and supported versions.
 - Artifacts under `.namel3ss/spec/`.
 
-## b5_with
+## tool_permissions
 A minimal tool gate + proof pack demo.
 
 Run:
-- `cd examples/b5_with`
+- `cd examples/tool_permissions`
 - `n3 run app.ai flow "demo"`
 - `n3 with`
 
@@ -142,12 +142,12 @@ What to look for:
 - Allowed vs blocked tool entries.
 - Artifacts under `.namel3ss/tools/`.
 
-## b1_exists
+## notes_basic
 A minimal contract summary demo.
 
 Run:
-- `cd examples/b1_exists && n3 exists app.ai`
-- `cd examples/b1_exists && n3 app.ai flow "add_note"`
+- `cd examples/notes_basic && n3 exists app.ai`
+- `cd examples/notes_basic && n3 app.ai flow "add_note"`
 
 What to look for:
 - Deterministic program summary.
@@ -175,10 +175,10 @@ Run:
 - `n3 examples/modular_inventory/app.ai exports`
 - `cd examples/modular_inventory && n3 test`
 
-## demo_packages
+## module_imports
 Local module + external package layout with `packages/` and lockfile.
 
 Run:
-- `n3 examples/demo_packages/app.ai ui`
-- `cd examples/demo_packages && n3 pkg tree`
-- `cd examples/demo_packages && n3 pkg why shared`
+- `n3 examples/module_imports/app.ai ui`
+- `cd examples/module_imports && n3 pkg tree`
+- `cd examples/module_imports && n3 pkg why shared`

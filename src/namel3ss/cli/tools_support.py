@@ -189,7 +189,7 @@ def print_dry_run(payload: dict) -> None:
         print("Tool stubs:")
         for stub in payload["stubs"]:
             status = "exists" if stub["exists"] else "create"
-            print(f"- {stub['path']} ({status})")
+            print(f"- {stub['path']} status {status}")
     if payload["conflicts"]:
         print("Conflicts:")
         for path in payload["conflicts"]:

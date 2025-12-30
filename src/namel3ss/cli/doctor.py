@@ -42,7 +42,7 @@ def _python_check() -> DoctorCheck:
     version_str = ".".join(map(str, version_tuple))
     supported = version_tuple >= MIN_PYTHON
     status = "ok" if supported else "error"
-    message = f"Python {version_str} (requires {SUPPORTED_PYTHON_RANGE})"
+    message = f"Python {version_str} requires {SUPPORTED_PYTHON_RANGE}"
     fix = "Install Python 3.10+ and re-run `pip install namel3ss`."
     return DoctorCheck(id="python_version", status=status, message=message, fix=fix)
 
@@ -68,7 +68,7 @@ def _import_path_check() -> DoctorCheck:
     pythonpath = os.getenv("PYTHONPATH") or ""
     shadowed = _find_shadow_paths(origin)
     if shadowed:
-        message = f"namel3ss import may be shadowed (using {origin}, also found {', '.join(shadowed)})"
+        message = f"namel3ss import may be shadowed. Using {origin}, also found {', '.join(shadowed)}"
         fix = "Clear PYTHONPATH or remove extra namel3ss copies so the installed CLI is used."
         return DoctorCheck(id="import_path", status="warning", message=message, fix=fix)
     if pythonpath:
@@ -83,8 +83,8 @@ def _import_path_check() -> DoctorCheck:
 def _optional_dependencies_check(config: AppConfig | None) -> DoctorCheck:
     target = _resolve_target(config)
     if target == "postgres" and not _has_postgres_driver():
-        message = "Postgres driver missing (psycopg not installed)."
-        fix = 'Install the postgres extra: pip install "namel3ss[postgres]".'
+        message = "Postgres driver missing. psycopg not installed."
+        fix = "Install postgres support with pip, then re-run n3 doctor."
         return DoctorCheck(id="optional_dependencies", status="error", message=message, fix=fix)
     message = "Optional dependencies: install psycopg only if you use Postgres."
     fix = "No action needed."
@@ -111,7 +111,7 @@ def _persistence_check(config: AppConfig | None) -> DoctorCheck:
         fix = "Set N3_PERSIST_TARGET to sqlite, postgres, edge, or memory."
         return DoctorCheck(id="persistence", status="error", message=message, fix=fix)
     if target == "memory":
-        message = "Persistence disabled (memory store)."
+        message = "Persistence disabled in memory store."
         fix = "Set N3_PERSIST_TARGET=sqlite to persist to .namel3ss/data.db."
         return DoctorCheck(id="persistence", status="warning", message=message, fix=fix)
     if target == "sqlite":
@@ -139,7 +139,7 @@ def _persistence_check(config: AppConfig | None) -> DoctorCheck:
             fix = "Set N3_DATABASE_URL to a valid postgres:// URL."
             return DoctorCheck(id="persistence", status="error", message=message, fix=fix)
         redacted = _redact_url(url)
-        message = f"Persistence target postgres with N3_DATABASE_URL set ({redacted})."
+        message = f"Persistence target postgres with N3_DATABASE_URL set {redacted}."
         fix = "No action needed."
         return DoctorCheck(id="persistence", status="ok", message=message, fix=fix)
     if target == "edge":
@@ -149,7 +149,7 @@ def _persistence_check(config: AppConfig | None) -> DoctorCheck:
             fix = "Set N3_EDGE_KV_URL or switch to sqlite/postgres."
             return DoctorCheck(id="persistence", status="error", message=message, fix=fix)
         redacted = _redact_url(url)
-        message = f"Persistence target edge configured ({redacted})."
+        message = f"Persistence target edge configured {redacted}."
         fix = "Use sqlite/postgres unless you are testing edge integrations."
         return DoctorCheck(id="persistence", status="warning", message=message, fix=fix)
     return DoctorCheck(id="persistence", status="warning", message="Persistence target unknown.", fix="Check N3_PERSIST_TARGET.")
@@ -157,7 +157,7 @@ def _persistence_check(config: AppConfig | None) -> DoctorCheck:
 
 def _config_sources_check(sources: list[ConfigSource]) -> DoctorCheck:
     if not sources:
-        message = "Config sources: defaults only (no env/.env/namel3ss.toml)."
+        message = "Config sources: defaults only. No env, .env, or namel3ss.toml."
         fix = "Add .env or namel3ss.toml for defaults, or set environment variables."
         return DoctorCheck(id="config_sources", status="warning", message=message, fix=fix)
     parts = []
@@ -165,7 +165,7 @@ def _config_sources_check(sources: list[ConfigSource]) -> DoctorCheck:
         if source.kind == "env":
             parts.append("env")
         elif source.path:
-            parts.append(f"{source.kind} ({source.path})")
+            parts.append(f"{source.kind} {source.path}")
         else:
             parts.append(source.kind)
     message = f"Config sources: {', '.join(parts)}"
@@ -256,7 +256,7 @@ def _studio_assets_check() -> DoctorCheck:
 
 def _cli_path_check() -> DoctorCheck:
     n3_path = shutil.which("n3") or sys.argv[0]
-    message = f"n3 executable resolved to {n3_path} (namel3ss {get_version()})"
+    message = f"n3 executable resolved to {n3_path} namel3ss {get_version()}"
     fix = "If this is unexpected, ensure your virtualenv/bin is first on PATH."
     return DoctorCheck(id="cli_entrypoint", status="ok", message=message, fix=fix)
 

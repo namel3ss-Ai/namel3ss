@@ -84,6 +84,7 @@ KEYWORDS = {
     "constant": "CONSTANT",
     "true": "BOOLEAN",
     "false": "BOOLEAN",
+    "null": "NULL",
     "string": "TYPE_STRING",
     "str": "TYPE_STRING",
     "int": "TYPE_INT",

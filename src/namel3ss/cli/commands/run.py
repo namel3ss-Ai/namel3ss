@@ -11,7 +11,7 @@ from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.cli.io.json_io import dumps_pretty
 from namel3ss.cli.io.read_source import read_source
 from namel3ss.runtime.preferences.factory import preference_store_for_app, app_pref_key
-from namel3ss.cli.redaction import redact_cli_text
+from namel3ss.cli.text_output import prepare_cli_text
 from namel3ss.secrets import collect_secret_values, redact_payload
 from namel3ss.cli.runner import collect_ai_outputs, unwrap_ai_outputs
 
@@ -50,7 +50,7 @@ def run(args) -> int:
         print(dumps_pretty(redacted))
         return 0
     except Namel3ssError as err:
-        print(redact_cli_text(format_error(err, source)), file=sys.stderr)
+        print(prepare_cli_text(format_error(err, source)), file=sys.stderr)
         return 1
 
 

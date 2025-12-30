@@ -48,13 +48,13 @@ def _run_status(app_path, target: str, *, json_mode: bool) -> int:
     if json_mode:
         print(dumps_pretty(payload))
         return 0
-    print(f"Secrets status (target: {target})")
+    print(f"Secrets status target {target}")
     if not refs:
         print("No secrets required for this app.")
         return 0
     for ref in refs:
         state = "available" if ref.available else "missing"
-        print(f"- {ref.name}: {state} ({ref.source})")
+        print(f"- {ref.name}: {state} source {ref.source}")
     return 0
 
 
@@ -69,7 +69,7 @@ def _run_audit(project_root, *, json_mode: bool) -> int:
         print("No secret access recorded yet.")
         return 0
     for entry in events:
-        line = f"- {entry.get('secret_name')} by {entry.get('caller')} (target: {entry.get('target')})"
+        line = f"- {entry.get('secret_name')} by {entry.get('caller')} target {entry.get('target')}"
         print(line)
     return 0
 

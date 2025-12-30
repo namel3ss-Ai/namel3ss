@@ -59,8 +59,10 @@ def run_discover(args: list[str], *, json_mode: bool) -> int:
         pack_name = entry.get("pack_name")
         pack_version = entry.get("pack_version")
         trusted = "trusted" if match.trusted else "unverified"
-        blocked = " blocked" if match.blocked else ""
-        print(f"- {pack_name} ({pack_id}@{pack_version}) [{trusted}, risk={match.risk}{blocked}]")
+        line = f"- {pack_name} {pack_id}@{pack_version} status {trusted} risk {match.risk}"
+        if match.blocked:
+            line += " blocked"
+        print(line)
         tools = entry.get("tools") if isinstance(entry.get("tools"), list) else []
         if tools:
             print(f"  tools: {', '.join(str(tool) for tool in tools)}")
@@ -100,7 +102,9 @@ def _next_value(args: list[str], idx: int, flag: str) -> str:
 
 def _print_usage() -> None:
     usage = """Usage:
-  n3 discover "<intent phrase>" [--capability network|filesystem|secrets|subprocess|env] [--risk low|medium|high] [--json]
+  n3 discover intent_phrase --capability network|filesystem|secrets|subprocess|env --risk low|medium|high --json
+  Notes:
+    flags are optional unless stated
 """
     print(usage.strip())
 

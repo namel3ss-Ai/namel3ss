@@ -27,8 +27,22 @@ def constraints_to_ui(constraint: Optional[schema.FieldConstraint]) -> list[dict
         return [{"kind": "pattern", "value": constraint.pattern}]
     if kind == "gt":
         return [{"kind": "greater_than", "value": _literal_value(constraint.expression)}]
+    if kind == "gte":
+        return [{"kind": "at_least", "value": _literal_value(constraint.expression)}]
     if kind == "lt":
         return [{"kind": "less_than", "value": _literal_value(constraint.expression)}]
+    if kind == "lte":
+        return [{"kind": "at_most", "value": _literal_value(constraint.expression)}]
+    if kind == "between":
+        return [
+            {
+                "kind": "between",
+                "min": _literal_value(constraint.expression),
+                "max": _literal_value(constraint.expression_high),
+            }
+        ]
+    if kind == "int":
+        return [{"kind": "integer"}]
     if kind == "len_min":
         return [{"kind": "length_min", "value": _literal_value(constraint.expression)}]
     if kind == "len_max":

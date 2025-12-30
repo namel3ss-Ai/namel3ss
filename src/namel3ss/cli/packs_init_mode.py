@@ -51,7 +51,9 @@ def run_packs_init(args: list[str], *, json_mode: bool) -> int:
 
 def _print_usage() -> None:
     usage = """Usage:
-  n3 packs init <pack_id> [--dir <path>] [--no-code] [--json]
+  n3 packs init pack_id --dir path --no-code --json
+  Notes:
+    flags are optional unless stated
 """
     print(usage.strip())
 

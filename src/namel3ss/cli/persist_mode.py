@@ -43,7 +43,7 @@ def _status(app_path: str) -> int:
 def _reset(app_path: str, confirmed: bool) -> int:
     config = load_config(app_path=Path(app_path))
     if config.persistence.target == "edge":
-        print("Persistence target: edge (not implemented). Nothing to reset.")
+        print("Persistence target: edge not implemented. Nothing to reset.")
         print("Guidance: use sqlite for local dev or postgres for production.")
         return 1
     store = create_store(config=config)
@@ -84,7 +84,7 @@ def _print_disabled_message(meta: PersistenceMetadata, target: str) -> None:
         print("Persistence is enabled but not using SQLite. Nothing to reset.")
         print(f"Target: {target}")
         return
-    print("Persistence disabled (memory store). Nothing to reset.")
+    print("Persistence disabled in memory store. Nothing to reset.")
     print(f"Guidance: set N3_PERSIST_TARGET=sqlite to enable SQLite at {DEFAULT_DB_PATH_POSIX}.")
 
 

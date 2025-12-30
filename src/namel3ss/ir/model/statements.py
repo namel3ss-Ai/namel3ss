@@ -104,5 +104,24 @@ class Find(Statement):
 
 
 @dataclass
+class UpdateField(Node):
+    name: str
+    expression: Expression
+
+
+@dataclass
+class Update(Statement):
+    record_name: str
+    predicate: Expression
+    updates: List[UpdateField]
+
+
+@dataclass
+class Delete(Statement):
+    record_name: str
+    predicate: Expression
+
+
+@dataclass
 class ThemeChange(Statement):
     value: str

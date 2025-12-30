@@ -6,7 +6,7 @@ from pathlib import Path
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.render import format_error
-from namel3ss.cli.redaction import redact_cli_text
+from namel3ss.cli.text_output import prepare_cli_text
 from namel3ss.ir.nodes import lower_program
 from namel3ss.parser.core import parse
 from namel3ss.runtime.identity.context import resolve_identity
@@ -28,5 +28,5 @@ def run(args) -> int:
         print(dumps_pretty(manifest))
         return 0
     except Namel3ssError as err:
-        print(redact_cli_text(format_error(err, source)), file=sys.stderr)
+        print(prepare_cli_text(format_error(err, source)), file=sys.stderr)
         return 1

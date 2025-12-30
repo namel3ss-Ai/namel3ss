@@ -15,7 +15,14 @@ def resolve_app_path(app_path: str | None) -> Path:
     if app_path:
         path = Path(app_path)
         if not path.exists():
-            raise Namel3ssError(f"App file '{app_path}' not found")
+            raise Namel3ssError(
+                build_guidance_message(
+                    what=f"App file not found: {app_path}.",
+                    why="The path does not exist.",
+                    fix="Check the path or run from the project folder.",
+                    example="n3 app.ai check",
+                )
+            )
         return path.resolve()
     root = Path.cwd()
     ai_files = sorted(root.glob("*.ai"))

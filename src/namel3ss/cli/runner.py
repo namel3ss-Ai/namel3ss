@@ -72,7 +72,7 @@ def _select_flow(program_ir, flow_name: str | None) -> str:
     candidates = entry_flows or [flow.name for flow in program_ir.flows]
     if len(candidates) == 1:
         return candidates[0]
-    raise Namel3ssError('Multiple flows found; use: n3 <app.ai> flow "<name>"')
+    raise Namel3ssError('Multiple flows found. Use: n3 app.ai flow "flow_name"')
 
 
 def _unknown_flow_message(flow_name: str, flows: list[str]) -> str:

@@ -131,8 +131,8 @@ def _print_section(title: str, items: list[dict], *, show_entry: bool) -> None:
             extra.append(f"entry: {item['entry']}")
         if show_entry and item.get("runner"):
             extra.append(f"runner: {item['runner']}")
-        suffix = f" ({', '.join(extra)})" if extra else ""
-        print(f"- {item['name']} [{status}]{suffix}")
+        suffix = f" {', '.join(extra)}" if extra else ""
+        print(f"- {item['name']} status {status}{suffix}")
 
 
 __all__ = ["run_tools_list"]

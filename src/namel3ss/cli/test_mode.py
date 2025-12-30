@@ -62,8 +62,8 @@ def run_test_command(*, json_mode: bool) -> int:
 
     for r in results:
         status = "PASS" if r.status == "pass" else "FAIL"
-        print(f"{status} {r.name} ({r.duration_ms:.2f}ms)")
+        print(f"{status} {r.name} duration {r.duration_ms:.2f}ms")
         if r.error:
             print(f"  {r.error}")
-    print(f"Summary: {passed} passed, {failed} failed, {len(results)} total ({duration_ms:.2f}ms)")
+    print(f"Summary: {passed} passed, {failed} failed, {len(results)} total duration {duration_ms:.2f}ms")
     return 0 if failed == 0 else 1

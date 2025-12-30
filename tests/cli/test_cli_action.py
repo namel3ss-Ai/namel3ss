@@ -38,7 +38,7 @@ def test_invalid_payload_errors(tmp_path, capsys):
         "What happened: Invalid JSON payload.\n"
         "Why: JSON parsing failed at line 1, column 2: Expecting property name enclosed in double quotes.\n"
         "Fix: Ensure the payload is valid JSON with double-quoted keys/strings.\n"
-        'Example: {"values":{"name":"Ada"}}'
+        'Example: "values":"name":"Ada"'
     )
     assert err.strip() == expected
 

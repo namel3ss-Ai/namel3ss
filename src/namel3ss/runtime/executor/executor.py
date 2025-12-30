@@ -419,6 +419,10 @@ def _statement_kind(stmt: object) -> str | None:
         return "create"
     if isinstance(stmt, ir.Find):
         return "find"
+    if isinstance(stmt, ir.Update):
+        return "update"
+    if isinstance(stmt, ir.Delete):
+        return "delete"
     if isinstance(stmt, ir.If):
         return "if"
     if isinstance(stmt, ir.Match):

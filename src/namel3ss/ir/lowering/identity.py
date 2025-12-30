@@ -14,6 +14,9 @@ def _lower_identity(identity: ast.IdentityDecl) -> IdentitySchema:
             constraint = schema.FieldConstraint(
                 kind=field.constraint.kind,
                 expression=_lower_expression(field.constraint.expression) if field.constraint.expression else None,
+                expression_high=_lower_expression(field.constraint.expression_high)
+                if field.constraint.expression_high
+                else None,
                 pattern=field.constraint.pattern,
             )
         fields.append(

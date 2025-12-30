@@ -45,13 +45,13 @@ def run_status_command(args: list[str]) -> int:
             _, meta = load_build_metadata(project_root, active_target, active_build)
             lines.append(f"Build lock status: {meta.get('lockfile_status', 'n/a')}")
         except Exception:
-            lines.append("Build metadata: unavailable (re-run build if needed)")
+            lines.append("Build metadata: unavailable, re-run build if needed")
     last_target = last.get("target") or "none"
     last_build = last.get("build_id") or "none"
-    lines.append(f"Last promote: {last_target} (build {last_build})")
+    lines.append(f"Last promote: {last_target} build {last_build}")
     prev_target = previous.get("target") or "none"
     prev_build = previous.get("build_id") or "none"
-    lines.append(f"Rollback target: {prev_target} (build {prev_build})")
+    lines.append(f"Rollback target: {prev_target} build {prev_build}")
     matrix = build_capability_matrix()
     report = evaluate_graduation(matrix)
     lines.append("Graduation summary")

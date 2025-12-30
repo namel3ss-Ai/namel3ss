@@ -55,7 +55,9 @@ def run_packs_bundle(args: list[str], *, json_mode: bool) -> int:
 
 def _print_usage() -> None:
     usage = """Usage:
-  n3 packs bundle <path_or_pack_id> [--out <dir>] [--json]
+  n3 packs bundle path_or_pack --out dir --json
+  Notes:
+    flags are optional unless stated
 """
     print(usage.strip())
 

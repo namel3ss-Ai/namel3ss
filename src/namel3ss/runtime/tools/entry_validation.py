@@ -26,7 +26,7 @@ def validate_python_tool_entry(
             build_guidance_message(
                 what=f'Tool "{tool_name}" entry must be "module:function".',
                 why="The entry string is missing a ':' separator.",
-                fix='Bind the tool using `n3 tools bind "<tool name>" --entry "tools.my_tool:run"`.',
+                fix='Bind the tool using `n3 tools bind "tool_name" --entry "tools.my_tool:run"`.',
                 example=_tool_example(tool_name, entry),
             ),
             line=line,
@@ -40,7 +40,7 @@ def validate_python_tool_entry(
             build_guidance_message(
                 what=f'Tool "{tool_name}" entry must be "module:function".',
                 why="The entry string is missing a module or function name.",
-                fix='Bind the tool using `n3 tools bind "<tool name>" --entry "tools.my_tool:run"`.',
+                fix='Bind the tool using `n3 tools bind "tool_name" --entry "tools.my_tool:run"`.',
                 example=_tool_example(tool_name, entry),
             ),
             line=line,
@@ -95,7 +95,7 @@ def validate_node_tool_entry(
             build_guidance_message(
                 what=f'Tool "{tool_name}" entry must be "module:function".',
                 why="The entry string is missing a ':' separator.",
-                fix='Bind the tool using `n3 tools bind "<tool name>" --entry "tools.my_tool:run"`.',
+                fix='Bind the tool using `n3 tools bind "tool_name" --entry "tools.my_tool:run"`.',
                 example=_node_entry_example(tool_name, entry),
             ),
             line=line,
@@ -109,7 +109,7 @@ def validate_node_tool_entry(
             build_guidance_message(
                 what=f'Tool "{tool_name}" entry must be "module:function".',
                 why="The entry string is missing a module or function name.",
-                fix='Bind the tool using `n3 tools bind "<tool name>" --entry "tools.my_tool:run"`.',
+                fix='Bind the tool using `n3 tools bind "tool_name" --entry "tools.my_tool:run"`.',
                 example=_node_entry_example(tool_name, entry),
             ),
             line=line,

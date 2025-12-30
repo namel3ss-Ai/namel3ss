@@ -126,8 +126,8 @@ def _run_recall(selector: str | None, text: str) -> None:
     counts = _count_context(pack.payload)
     total = sum(counts.values())
     recap = (
-        f"Recalled: {total} items (short_term {counts['short_term']}, "
-        f"semantic {counts['semantic']}, profile {counts['profile']})."
+        f"Recalled: {total} items. "
+        f"short_term {counts['short_term']}, semantic {counts['semantic']}, profile {counts['profile']}."
     )
     print(recap)
 

@@ -32,8 +32,10 @@ def run_registry(args: list[str]) -> int:
 
 def _print_usage() -> None:
     usage = """Usage:
-  n3 registry add <bundle_path> [--json]
-  n3 registry build [--json]
+  n3 registry add bundle_path --json
+  n3 registry build --json
+  Notes:
+    flags are optional unless stated
 """
     print(usage.strip())
 

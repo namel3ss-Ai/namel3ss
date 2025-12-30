@@ -168,9 +168,9 @@ def _persistence_summary(config) -> dict:
     if target == "sqlite":
         descriptor = config.persistence.db_path
     elif target == "postgres":
-        descriptor = "postgres (url set)" if config.persistence.database_url else "postgres (missing url)"
+        descriptor = "postgres url set" if config.persistence.database_url else "postgres url missing"
     elif target == "edge":
-        descriptor = "edge (url set)" if config.persistence.edge_kv_url else "edge (missing url)"
+        descriptor = "edge url set" if config.persistence.edge_kv_url else "edge url missing"
     elif target == "memory":
         descriptor = "memory"
     return {"target": target, "descriptor": descriptor}

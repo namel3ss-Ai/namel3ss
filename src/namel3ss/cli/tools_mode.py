@@ -143,7 +143,8 @@ def _run_status(args: list[str], *, json_mode: bool) -> int:
         return 0
 
     print(f"App root: {payload['app_root']}")
-    print(f"Bindings: {payload['bindings_path']} ({'present' if bindings_present else 'missing'})")
+    status_label = "present" if bindings_present else "missing"
+    print(f"Bindings: {payload['bindings_path']} status {status_label}")
     if not report.bindings_valid and report.bindings_error:
         print("Bindings file invalid:")
         print(report.bindings_error)
@@ -190,7 +191,7 @@ def _run_status(args: list[str], *, json_mode: bool) -> int:
         for name in sorted(report.bindings):
             binding = report.bindings[name]
             runner = binding.runner or "local"
-            print(f"- {name} (runner: {runner})")
+            print(f"- {name} runner {runner}")
     return 0
 
 
@@ -311,7 +312,7 @@ def _run_bind_from_app(args: list[str], *, json_mode: bool) -> int:
         print("Tool stubs:")
         for stub in plan.stubs:
             status = "overwritten" if stub.exists and config.allow_overwrite else "created" if not stub.exists else "skipped"
-            print(f"- {stub.path} ({status})")
+            print(f"- {stub.path} status {status}")
     print(f"Bindings file: {path}")
     return 0
 
@@ -417,15 +418,18 @@ def _is_python_tool(report, name: str) -> bool:
 
 def _print_usage() -> None:
     usage = """Usage:
-  n3 tools status [app.ai] [--json]
-  n3 tools list [app.ai] [--json]
-  n3 tools search "<query>" [app.ai] [--json]
-  n3 tools bind "<tool name>" --entry "module:function" [--json]
-  n3 tools bind --from-app [app.ai] [--convention slug-run] [--dry] [--yes] [--overwrite] [--json]
-  n3 tools bind --auto [app.ai] [--dry] [--yes] [--overwrite] [--json]
-  n3 tools set-runner "<tool name>" --runner local|service|container [--url ...] [--image ...] [--command ...] [--env ...] [--json]
-  n3 tools unbind "<tool name>" [--json]
-  n3 tools format [app.ai] [--json]
+  n3 tools status app.ai --json
+  n3 tools list app.ai --json
+  n3 tools search query app.ai --json
+  n3 tools bind tool_name --entry module:function --json
+  n3 tools bind --from-app app.ai --convention slug-run --dry --yes --overwrite --json
+  n3 tools bind --auto app.ai --dry --yes --overwrite --json
+  n3 tools set-runner tool_name --runner local|service|container --url URL --image IMAGE --command CMD --env KEY=VALUE --json
+  n3 tools unbind tool_name --json
+  n3 tools format app.ai --json
+  Notes:
+    app.ai is optional and defaults to app.ai in the current folder
+    flags are optional unless stated
 """
     print(usage.strip())
 

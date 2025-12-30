@@ -6,6 +6,7 @@ from namel3ss.ir.model.agents import ParallelAgentEntry, RunAgentStmt, RunAgents
 from namel3ss.ir.model.ai import AskAIStmt
 from namel3ss.ir.model.statements import (
     Create,
+    Delete,
     Find,
     ForEach,
     If,
@@ -21,6 +22,8 @@ from namel3ss.ir.model.statements import (
     Set,
     ThemeChange,
     TryCatch,
+    Update,
+    UpdateField,
 )
 from namel3ss.ir.model.statements import Statement as IRStatement
 
@@ -138,6 +141,29 @@ def _lower_statement(stmt: ast.Statement, agents) -> IRStatement:
         )
     if isinstance(stmt, ast.Find):
         return Find(record_name=stmt.record_name, predicate=_lower_expression(stmt.predicate), line=stmt.line, column=stmt.column)
+    if isinstance(stmt, ast.Update):
+        return Update(
+            record_name=stmt.record_name,
+            predicate=_lower_expression(stmt.predicate),
+            updates=[
+                UpdateField(
+                    name=update.name,
+                    expression=_lower_expression(update.expression),
+                    line=update.line,
+                    column=update.column,
+                )
+                for update in stmt.updates
+            ],
+            line=stmt.line,
+            column=stmt.column,
+        )
+    if isinstance(stmt, ast.Delete):
+        return Delete(
+            record_name=stmt.record_name,
+            predicate=_lower_expression(stmt.predicate),
+            line=stmt.line,
+            column=stmt.column,
+        )
     if isinstance(stmt, ast.ThemeChange):
         return ThemeChange(value=stmt.value, line=stmt.line, column=stmt.column)
     if isinstance(stmt, ast.RunAgentStmt):

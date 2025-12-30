@@ -8,7 +8,12 @@ def expected_effects_from_steps(steps: list[dict]) -> list[str]:
     effects: list[str] = []
     if _has_step_kind(steps, "tool_call"):
         effects.append("may call tools")
-    if _has_step_kind(steps, "statement_save") or _has_step_kind(steps, "statement_create"):
+    if (
+        _has_step_kind(steps, "statement_save")
+        or _has_step_kind(steps, "statement_create")
+        or _has_step_kind(steps, "statement_update")
+        or _has_step_kind(steps, "statement_delete")
+    ):
         effects.append("may write records")
     return effects
 

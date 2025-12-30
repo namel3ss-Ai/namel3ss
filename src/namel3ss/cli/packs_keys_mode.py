@@ -80,8 +80,10 @@ def _parse_add_args(args: list[str]) -> tuple[str, str]:
 
 def _print_usage() -> None:
     usage = """Usage:
-  n3 packs keys add --id <id> --public-key <path> [--json]
-  n3 packs keys list [--json]
+  n3 packs keys add --id id --public-key path --json
+  n3 packs keys list --json
+  Notes:
+    flags are optional unless stated
 """
     print(usage.strip())
 

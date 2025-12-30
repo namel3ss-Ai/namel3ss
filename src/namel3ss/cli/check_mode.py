@@ -8,7 +8,7 @@ from namel3ss.module_loader import load_project
 from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.ui.manifest import build_manifest
-from namel3ss.cli.redaction import redact_cli_text
+from namel3ss.cli.text_output import prepare_cli_text
 
 
 def run_check(path: str, allow_legacy_type_aliases: bool = True) -> int:
@@ -19,15 +19,20 @@ def run_check(path: str, allow_legacy_type_aliases: bool = True) -> int:
         sources = project.sources
         sections.append("Parse: OK")
     except Namel3ssError as err:
-        sections.append(f"Parse: FAIL\n{redact_cli_text(format_error(err, locals().get('sources', '')))}")
+        sections.append(f"Parse: FAIL\n{prepare_cli_text(format_error(err, locals().get('sources', '')))}")
         print("\n".join(sections))
         return 1
 
     findings = lint_project(project)
     if findings:
-        sections.append(f"Lint: FAIL ({len(findings)} findings)")
+        sections.append(f"Lint: FAIL {len(findings)} findings")
         for f in findings:
-            sections.append(f"- {f.code} {f.severity} {f.message} ({f.line}:{f.column})")
+            location = ""
+            if f.line:
+                location = f" line {f.line}"
+                if f.column:
+                    location += f" col {f.column}"
+            sections.append(f"- {f.code} {f.severity} {f.message}{location}")
         sections.append("Fix: run `n3 app.ai format` or address the findings above, then re-run `n3 app.ai lint`.")
     else:
         sections.append("Lint: OK")
@@ -39,7 +44,7 @@ def run_check(path: str, allow_legacy_type_aliases: bool = True) -> int:
         manifest = build_manifest(program_ir, state={}, store=MemoryStore(), identity=identity)
         sections.append("Manifest: OK")
     except Namel3ssError as err:
-        sections.append(f"Manifest: FAIL\n{redact_cli_text(format_error(err, sources))}")
+        sections.append(f"Manifest: FAIL\n{prepare_cli_text(format_error(err, sources))}")
 
     if manifest and manifest.get("actions") is not None:
         sections.append(f"Actions: {len(manifest.get('actions', {}))} discovered")

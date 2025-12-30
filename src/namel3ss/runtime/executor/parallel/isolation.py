@@ -32,7 +32,7 @@ def _validate_statement(ctx, stmt: ir.Statement) -> None:
         raise Namel3ssError("Nested parallel blocks are not allowed", line=stmt.line, column=stmt.column)
     if isinstance(stmt, ir.Set) and isinstance(stmt.target, ir.StatePath):
         raise Namel3ssError("Parallel tasks cannot change state", line=stmt.line, column=stmt.column)
-    if isinstance(stmt, (ir.Save, ir.Create)):
+    if isinstance(stmt, (ir.Save, ir.Create, ir.Update, ir.Delete)):
         raise Namel3ssError("Parallel tasks cannot write records", line=stmt.line, column=stmt.column)
     if isinstance(stmt, ir.ThemeChange):
         raise Namel3ssError("Parallel tasks cannot change theme", line=stmt.line, column=stmt.column)
@@ -108,6 +108,12 @@ def _scan_statement_expressions(ctx, stmt: ir.Statement) -> None:
     elif isinstance(stmt, ir.Create):
         _scan_expression(ctx, stmt.values)
     elif isinstance(stmt, ir.Find):
+        _scan_expression(ctx, stmt.predicate)
+    elif isinstance(stmt, ir.Update):
+        _scan_expression(ctx, stmt.predicate)
+        for update in stmt.updates:
+            _scan_expression(ctx, update.expression)
+    elif isinstance(stmt, ir.Delete):
         _scan_expression(ctx, stmt.predicate)
 
 

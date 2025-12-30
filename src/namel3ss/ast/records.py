@@ -9,8 +9,9 @@ from namel3ss.ast.expressions import Expression
 
 @dataclass
 class FieldConstraint(Node):
-    kind: str  # present, unique, gt, lt, pattern, len_min, len_max
+    kind: str  # present, unique, gt, gte, lt, lte, between, int, pattern, len_min, len_max
     expression: Optional[Expression] = None
+    expression_high: Optional[Expression] = None
     pattern: Optional[str] = None
 
 

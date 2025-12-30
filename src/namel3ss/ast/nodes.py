@@ -51,6 +51,7 @@ from namel3ss.ast.program import Flow, Program
 from namel3ss.ast.identity import IdentityDecl
 from namel3ss.ast.statements import (
     AskAIStmt,
+    Delete,
     Find,
     ForEach,
     If,
@@ -66,6 +67,8 @@ from namel3ss.ast.statements import (
     Return,
     RunAgentStmt,
     RunAgentsParallelStmt,
+    Update,
+    UpdateField,
     Create,
     Save,
     Set,
@@ -100,6 +103,9 @@ __all__ = [
     "Create",
     "Save",
     "Find",
+    "UpdateField",
+    "Update",
+    "Delete",
     "Expression",
     "Literal",
     "VarReference",

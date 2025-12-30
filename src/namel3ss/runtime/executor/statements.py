@@ -11,7 +11,7 @@ from namel3ss.runtime.executor.expr_eval import evaluate_expression
 from namel3ss.runtime.executor.parallel.scheduler import execute_parallel_block
 from namel3ss.runtime.execution.normalize import format_assignable, format_expression, summarize_value
 from namel3ss.runtime.execution.recorder import record_step
-from namel3ss.runtime.executor.records_ops import handle_create, handle_find, handle_save
+from namel3ss.runtime.executor.records_ops import handle_create, handle_delete, handle_find, handle_save, handle_update
 from namel3ss.runtime.executor.signals import _ReturnSignal
 from namel3ss.utils.numbers import decimal_is_int, is_number, to_decimal
 
@@ -391,32 +391,10 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
         execute_parallel_block(ctx, stmt, execute_statement)
         return
     if isinstance(stmt, ir.Save):
-        if getattr(ctx, "parallel_mode", False):
-            raise Namel3ssError("Parallel tasks cannot write records", line=stmt.line, column=stmt.column)
-        if getattr(ctx, "call_stack", []):
-            raise Namel3ssError("Functions cannot write records", line=stmt.line, column=stmt.column)
-        handle_save(ctx, stmt)
-        record_step(
-            ctx,
-            kind="statement_save",
-            what=f"saved {stmt.record_name}",
-            line=stmt.line,
-            column=stmt.column,
-        )
+        _run_record_write(ctx, stmt, handle_save, kind="statement_save", verb="saved")
         return
     if isinstance(stmt, ir.Create):
-        if getattr(ctx, "parallel_mode", False):
-            raise Namel3ssError("Parallel tasks cannot write records", line=stmt.line, column=stmt.column)
-        if getattr(ctx, "call_stack", []):
-            raise Namel3ssError("Functions cannot write records", line=stmt.line, column=stmt.column)
-        handle_create(ctx, stmt)
-        record_step(
-            ctx,
-            kind="statement_create",
-            what=f"created {stmt.record_name}",
-            line=stmt.line,
-            column=stmt.column,
-        )
+        _run_record_write(ctx, stmt, handle_create, kind="statement_create", verb="created")
         return
     if isinstance(stmt, ir.Find):
         if getattr(ctx, "call_stack", []):
@@ -429,6 +407,12 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
             line=stmt.line,
             column=stmt.column,
         )
+        return
+    if isinstance(stmt, ir.Update):
+        _run_record_write(ctx, stmt, handle_update, kind="statement_update", verb="updated")
+        return
+    if isinstance(stmt, ir.Delete):
+        _run_record_write(ctx, stmt, handle_delete, kind="statement_delete", verb="deleted")
         return
     if isinstance(stmt, ir.ThemeChange):
         if getattr(ctx, "parallel_mode", False):
@@ -449,6 +433,21 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
         ctx.last_value = stmt.value
         return
     raise Namel3ssError(f"Unsupported statement type: {type(stmt)}", line=stmt.line, column=stmt.column)
+
+
+def _run_record_write(ctx: ExecutionContext, stmt: ir.Statement, handler, *, kind: str, verb: str) -> None:
+    if getattr(ctx, "parallel_mode", False):
+        raise Namel3ssError("Parallel tasks cannot write records", line=stmt.line, column=stmt.column)
+    if getattr(ctx, "call_stack", []):
+        raise Namel3ssError("Functions cannot write records", line=stmt.line, column=stmt.column)
+    handler(ctx, stmt)
+    record_step(
+        ctx,
+        kind=kind,
+        what=f"{verb} {stmt.record_name}",
+        line=stmt.line,
+        column=stmt.column,
+    )
 
 
 def _condition_type_message(value: object) -> str:

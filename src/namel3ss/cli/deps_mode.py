@@ -86,7 +86,8 @@ def _run_status(app_root: Path, *, json_mode: bool) -> int:
         return 0
 
     print(f"App root: {payload['app_root']}")
-    print(f"Venv: {payload['venv_path']} ({'present' if payload['exists'] else 'missing'})")
+    venv_status = "present" if payload["exists"] else "missing"
+    print(f"Venv: {payload['venv_path']} status {venv_status}")
     print(f"Python: {payload['python_path']}")
     print(f"Dependencies: {payload['dependency_file_detected'] or 'none'}")
     print(f"Lockfile: {payload['lockfile_detected'] or 'none'}")
@@ -187,7 +188,7 @@ def _run_lock(app_root: Path, tail: list[str], *, json_mode: bool) -> int:
 def _run_clean(app_root: Path, tail: list[str], *, json_mode: bool) -> int:
     yes = "--yes" in tail
     if not yes and not json_mode:
-        response = input("Remove .venv and tool caches? [y/N] ").strip().lower()
+        response = input("Remove .venv and tool caches? y or N ").strip().lower()
         if response not in {"y", "yes"}:
             print("Aborted.")
             return 0
@@ -344,11 +345,13 @@ def _remove_venv(app_root: Path) -> None:
 
 def _print_usage() -> None:
     usage = """Usage:
-  n3 deps status [--json]            # show python env status
-  n3 deps install [--force] [--python <path>] [--json]
-  n3 deps sync [--json]              # install from lockfile if present
-  n3 deps lock [--json]              # write requirements.lock.txt
-  n3 deps clean [--yes] [--json]     # remove .venv and caches
+  n3 deps status --json            # show python env status
+  n3 deps install --force --python PATH --json
+  n3 deps sync --json              # install from lockfile if present
+  n3 deps lock --json              # write requirements.lock.txt
+  n3 deps clean --yes --json       # remove .venv and caches
+  Notes:
+    flags are optional unless stated
 """
     print(usage.strip())
 

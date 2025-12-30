@@ -1,0 +1,168 @@
+spec is "1.0"
+
+record "User":
+  field "id" is number must be present
+  field "name" is text must be present
+  field "role" is text must be present
+
+record "Task":
+  field "id" is number must be present
+  field "title" is text must be present
+  field "assignee" is text must be present
+  field "status" is text must be present
+  field "priority" is text must be present
+
+record "Status":
+  field "message" is text must be present
+
+flow "seed_users":
+  set state.user.id is 1
+  set state.user.name is "Ava Admin"
+  set state.user.role is "admin"
+  create "User" with state.user as user
+  set state.user.id is 2
+  set state.user.name is "Ben Member"
+  set state.user.role is "member"
+  create "User" with state.user as user
+  set state.user.id is 3
+  set state.user.name is "Cora Member"
+  set state.user.role is "member"
+  create "User" with state.user as user
+  set state.error is null
+  set state.status.message is "No errors ✅"
+  create "Status" with state.status as status
+  return "seeded users"
+
+flow "seed_tasks":
+  set state.task.id is 101
+  set state.task.title is "Draft roadmap"
+  set state.task.assignee is "Ava Admin"
+  set state.task.status is "Todo"
+  set state.task.priority is "High"
+  create "Task" with state.task as task
+  set state.task.id is 102
+  set state.task.title is "Review onboarding"
+  set state.task.assignee is "Ben Member"
+  set state.task.status is "Doing"
+  set state.task.priority is "Med"
+  create "Task" with state.task as task
+  set state.task.id is 103
+  set state.task.title is "QA checklist"
+  set state.task.assignee is "Cora Member"
+  set state.task.status is "Todo"
+  set state.task.priority is "Low"
+  create "Task" with state.task as task
+  set state.task.id is 104
+  set state.task.title is "Release notes"
+  set state.task.assignee is "Ava Admin"
+  set state.task.status is "Done"
+  set state.task.priority is "Med"
+  create "Task" with state.task as task
+  set state.task.id is 105
+  set state.task.title is "Bug triage"
+  set state.task.assignee is "Ben Member"
+  set state.task.status is "Doing"
+  set state.task.priority is "High"
+  create "Task" with state.task as task
+  set state.error is null
+  set state.status.message is "No errors ✅"
+  create "Status" with state.status as status
+  return "seeded tasks"
+
+flow "reset_state":
+  set state.task.id is null
+  set state.task.title is null
+  set state.task.assignee is null
+  set state.task.status is null
+  set state.task.priority is null
+  set state.error is null
+  set state.status.message is "No errors ✅"
+  create "Status" with state.status as status
+  return "reset"
+
+flow "create_task":
+  set state.task.id is input.values.id
+  set state.task.title is input.values.title
+  set state.task.assignee is input.values.assignee
+  set state.task.status is input.values.status
+  set state.task.priority is input.values.priority
+  create "Task" with state.task as task
+  set state.error is null
+  set state.status.message is "No errors ✅"
+  create "Status" with state.status as status
+  return "created"
+
+flow "move_status":
+  find "Task" where id is input.values.id
+  let total is list length of task_results
+  if total is less than 1:
+    set state.error is "Task not found."
+    set state.status.message is state.error
+    create "Status" with state.status as status
+    return "missing"
+  let idx is total - 1
+  let current is list get task_results at idx
+  set state.task.id is current.id
+  set state.task.title is current.title
+  set state.task.assignee is current.assignee
+  set state.task.status is input.values.status
+  set state.task.priority is current.priority
+  create "Task" with state.task as task
+  set state.error is null
+  set state.status.message is "No errors ✅"
+  create "Status" with state.status as status
+  return state.task.status
+
+flow "mark_done": requires identity.role is "admin"
+  find "Task" where id is input.values.id
+  let total is list length of task_results
+  if total is less than 1:
+    set state.error is "Task not found."
+    set state.status.message is state.error
+    create "Status" with state.status as status
+    return "missing"
+  let idx is total - 1
+  let current is list get task_results at idx
+  set state.task.id is current.id
+  set state.task.title is current.title
+  set state.task.assignee is current.assignee
+  set state.task.status is "Done"
+  set state.task.priority is current.priority
+  create "Task" with state.task as task
+  set state.error is null
+  set state.status.message is "No errors ✅"
+  create "Status" with state.status as status
+  return "done"
+
+page "home":
+  title is "Task Manager"
+  section "Quick actions":
+    row:
+      column:
+        button "Seed Users":
+          calls flow "seed_users"
+      column:
+        button "Seed Tasks":
+          calls flow "seed_tasks"
+      column:
+        button "Reset":
+          calls flow "reset_state"
+  section "Create task":
+    card "New task":
+      form is "Task"
+      button "Create task":
+        calls flow "create_task"
+  section "Tasks":
+    card "Task board":
+      table is "Task"
+  section "Admin actions":
+    card "Mark Done":
+      table is "Task"
+      button "Mark Done (admin)":
+        calls flow "mark_done"
+    card "Move status":
+      text is "Use the same task id to move status."
+      button "Move status":
+        calls flow "move_status"
+  card "Status":
+    table is "Status"

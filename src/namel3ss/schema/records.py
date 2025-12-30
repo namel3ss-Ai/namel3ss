@@ -28,8 +28,9 @@ SYSTEM_FIELDS = {TENANT_KEY_FIELD, EXPIRES_AT_FIELD}
 
 @dataclass
 class FieldConstraint:
-    kind: str  # present, unique, gt, lt, pattern, len_min, len_max
+    kind: str  # present, unique, gt, gte, lt, lte, between, int, pattern, len_min, len_max
     expression: Optional[ir.Expression] = None
+    expression_high: Optional[ir.Expression] = None
     pattern: Optional[str] = None
 
 
@@ -68,10 +69,19 @@ class RecordSchema:
             seen.add(f.name)
             if f.type_name not in SUPPORTED_TYPES:
                 raise Namel3ssError(f"Unsupported field type '{f.type_name}' in record '{self.name}'")
-            if f.constraint and f.constraint.kind in {"gt", "lt", "len_min", "len_max"} and f.constraint.expression is None:
+            if (
+                f.constraint
+                and f.constraint.kind in {"gt", "gte", "lt", "lte", "len_min", "len_max"}
+                and f.constraint.expression is None
+            ):
                 raise Namel3ssError(
                     f"Constraint '{f.constraint.kind}' requires an expression in record '{self.name}' field '{f.name}'"
                 )
+            if f.constraint and f.constraint.kind == "between":
+                if f.constraint.expression is None or f.constraint.expression_high is None:
+                    raise Namel3ssError(
+                        f"Constraint 'between' requires two expressions in record '{self.name}' field '{f.name}'"
+                    )
             if f.constraint and f.constraint.kind == "pattern" and not f.constraint.pattern:
                 raise Namel3ssError(
                     f"Constraint 'pattern' requires a regex string in record '{self.name}' field '{f.name}'"

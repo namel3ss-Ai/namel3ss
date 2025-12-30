@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import re
 import sqlite3
 from decimal import Decimal
 from pathlib import Path
@@ -12,6 +11,8 @@ from namel3ss.schema.records import EXPIRES_AT_FIELD, TENANT_KEY_FIELD, RecordSc
 from namel3ss.runtime.storage.metadata import PersistenceMetadata
 from namel3ss.runtime.store.memory_store import Contains
 from namel3ss.runtime.storage.base import RecordScope
+from namel3ss.runtime.storage.predicate import PredicatePlan
+from namel3ss.runtime.storage.sql_helpers import escape_like, quote_identifier, slug_identifier
 from namel3ss.runtime.storage.state_codec import decode_state, encode_state
 from namel3ss.utils.json_tools import dumps as json_dumps
 from namel3ss.utils.numbers import decimal_is_int, decimal_to_str, is_number, to_decimal
@@ -20,19 +21,10 @@ from namel3ss.utils.numbers import decimal_is_int, decimal_to_str, is_number, to
 SCHEMA_VERSION = 2
 
 
-def _slug(name: str) -> str:
-    slug = re.sub(r"[^a-zA-Z0-9_]", "_", name).lower()
-    return slug or "unnamed"
-
-
-def _quote_ident(name: str) -> str:
-    escaped = name.replace('"', '""')
-    return f'"{escaped}"'
-
-
 class SQLiteStore:
     def __init__(self, db_path: str | Path) -> None:
         self.db_path = Path(db_path)
+        self.dialect = "sqlite"
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         try:
             self.conn = sqlite3.connect(self.db_path)
@@ -57,7 +49,7 @@ class SQLiteStore:
         cursor = self.conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
         tables = [row["name"] for row in cursor.fetchall() if not row["name"].startswith("sqlite_")]
         for table in tables:
-            self.conn.execute(f"DROP TABLE IF EXISTS {_quote_ident(table)}")
+            self.conn.execute(f"DROP TABLE IF EXISTS {quote_identifier(table)}")
         self.conn.commit()
         self._prepared_tables.clear()
         self._prepared_indexes.clear()
@@ -108,17 +100,17 @@ class SQLiteStore:
         )
 
     def _ensure_table(self, schema: RecordSchema) -> None:
-        table = _slug(schema.name)
+        table = slug_identifier(schema.name)
         if table not in self._prepared_tables:
             id_col = "id" if "id" in schema.field_map else "_id"
-            columns = [f"{_quote_ident(id_col)} INTEGER PRIMARY KEY AUTOINCREMENT"]
+            columns = [f"{quote_identifier(id_col)} INTEGER PRIMARY KEY AUTOINCREMENT"]
             for field in schema.storage_fields():
-                col_name = _slug(field.name)
+                col_name = slug_identifier(field.name)
                 col_type = self._sql_type(field.type_name)
                 if col_name == id_col:
                     continue
-                columns.append(f"{_quote_ident(col_name)} {col_type}")
-            stmt = f"CREATE TABLE IF NOT EXISTS {_quote_ident(table)} ({', '.join(columns)})"
+                columns.append(f"{quote_identifier(col_name)} {col_type}")
+            stmt = f"CREATE TABLE IF NOT EXISTS {quote_identifier(table)} ({', '.join(columns)})"
             self.conn.execute(stmt)
             self._prepared_tables.add(table)
         self._ensure_columns(schema)
@@ -126,16 +118,16 @@ class SQLiteStore:
         self.conn.commit()
 
     def _ensure_columns(self, schema: RecordSchema) -> None:
-        table = _slug(schema.name)
+        table = slug_identifier(schema.name)
         existing = self._existing_columns(table)
         id_col = "id" if "id" in schema.field_map else "_id"
         for field in schema.storage_fields():
-            col_name = _slug(field.name)
+            col_name = slug_identifier(field.name)
             if col_name == id_col or col_name in existing:
                 continue
             col_type = self._sql_type(field.type_name)
             self.conn.execute(
-                f"ALTER TABLE {_quote_ident(table)} ADD COLUMN {_quote_ident(col_name)} {col_type}"
+                f"ALTER TABLE {quote_identifier(table)} ADD COLUMN {quote_identifier(col_name)} {col_type}"
             )
         if not self.conn.in_transaction:
             self.conn.commit()
@@ -145,13 +137,13 @@ class SQLiteStore:
         return {row["name"] for row in rows}
 
     def _ensure_indexes(self, schema: RecordSchema) -> None:
-        table = _slug(schema.name)
+        table = slug_identifier(schema.name)
         prepared = self._prepared_indexes.setdefault(table, set())
         if not prepared:
             prepared.update(self._existing_indexes(table))
-        tenant_col = _slug(TENANT_KEY_FIELD) if schema.tenant_key else None
+        tenant_col = slug_identifier(TENANT_KEY_FIELD) if schema.tenant_key else None
         for field in schema.unique_fields:
-            col = _slug(field)
+            col = slug_identifier(field)
             if tenant_col:
                 index_name = self._index_name(table, f"{tenant_col}_{col}")
             else:
@@ -159,12 +151,12 @@ class SQLiteStore:
             if index_name in prepared:
                 continue
             if tenant_col:
-                columns = f"{_quote_ident(tenant_col)}, {_quote_ident(col)}"
+                columns = f"{quote_identifier(tenant_col)}, {quote_identifier(col)}"
             else:
-                columns = f"{_quote_ident(col)}"
+                columns = f"{quote_identifier(col)}"
             self.conn.execute(
-                f"CREATE UNIQUE INDEX IF NOT EXISTS {_quote_ident(index_name)} "
-                f"ON {_quote_ident(table)} ({columns})"
+                f"CREATE UNIQUE INDEX IF NOT EXISTS {quote_identifier(index_name)} "
+                f"ON {quote_identifier(table)} ({columns})"
             )
             prepared.add(index_name)
 
@@ -214,7 +206,7 @@ class SQLiteStore:
     def _deserialize_row(self, schema: RecordSchema, row: sqlite3.Row) -> dict:
         data: dict = {}
         for field in schema.fields:
-            col = _slug(field.name)
+            col = slug_identifier(field.name)
             if col not in row.keys():
                 continue
             val = row[col]
@@ -247,11 +239,11 @@ class SQLiteStore:
         for field in schema.storage_fields():
             if field.name == id_col:
                 continue
-            col_names.append(_quote_ident(_slug(field.name)))
+            col_names.append(quote_identifier(slug_identifier(field.name)))
             values.append(self._serialize_value(field.type_name, record.get(field.name)))
         columns_clause = ", ".join(col_names)
         placeholders = ", ".join(["?"] * len(values))
-        stmt = f"INSERT INTO {_quote_ident(_slug(schema.name))} ({columns_clause}) VALUES ({placeholders})"
+        stmt = f"INSERT INTO {quote_identifier(slug_identifier(schema.name))} ({columns_clause}) VALUES ({placeholders})"
         try:
             self.conn.execute(stmt, values)
             if not self.conn.in_transaction:
@@ -262,14 +254,60 @@ class SQLiteStore:
         rec[id_col] = self.conn.execute("SELECT last_insert_rowid()").fetchone()[0]
         return rec
 
+    def update(self, schema: RecordSchema, record: dict) -> dict:
+        self._ensure_table(schema)
+        id_col = "id" if "id" in schema.field_map else "_id"
+        if id_col not in record:
+            raise Namel3ssError(f"Record '{schema.name}' update requires {id_col}")
+        assignments = []
+        values = []
+        for field in schema.fields:
+            if field.name == id_col:
+                continue
+            assignments.append(f"{quote_identifier(slug_identifier(field.name))} = ?")
+            values.append(self._serialize_value(field.type_name, record.get(field.name)))
+        values.append(record[id_col])
+        stmt = (
+            f"UPDATE {quote_identifier(slug_identifier(schema.name))} SET {', '.join(assignments)} "
+            f"WHERE {quote_identifier(id_col)} = ?"
+        )
+        try:
+            cursor = self.conn.execute(stmt, values)
+            if not self.conn.in_transaction:
+                self.conn.commit()
+        except sqlite3.IntegrityError as err:
+            raise Namel3ssError(f"Record '{schema.name}' violates constraints: {err}") from err
+        if cursor.rowcount == 0:
+            raise Namel3ssError(f"Record '{schema.name}' with {id_col}={record[id_col]} was not found")
+        return record
+
+    def delete(self, schema: RecordSchema, record_id: object) -> bool:
+        self._ensure_table(schema)
+        id_col = "id" if "id" in schema.field_map else "_id"
+        stmt = f"DELETE FROM {quote_identifier(slug_identifier(schema.name))} WHERE {quote_identifier(id_col)} = ?"
+        cursor = self.conn.execute(stmt, [record_id])
+        if not self.conn.in_transaction:
+            self.conn.commit()
+        return cursor.rowcount > 0
+
     def find(self, schema: RecordSchema, predicate, scope: RecordScope | None = None) -> List[dict]:
         scope = scope or RecordScope()
         self._ensure_table(schema)
         self._cleanup_expired(schema, scope)
+        if isinstance(predicate, PredicatePlan):
+            if predicate.sql:
+                scope_clause, scope_params = self._scope_where(schema, scope)
+                clauses = [clause for clause in [scope_clause, predicate.sql.clause] if clause]
+                sql = f"SELECT * FROM {quote_identifier(slug_identifier(schema.name))}"
+                if clauses:
+                    sql += " WHERE " + " AND ".join(clauses)
+                cursor = self.conn.execute(sql, [*scope_params, *predicate.sql.params])
+                return [self._deserialize_row(schema, row) for row in cursor.fetchall()]
+            predicate = predicate.predicate
         if isinstance(predicate, dict):
             return self._find_by_filters(schema, predicate, scope)
         where_clause, params = self._scope_where(schema, scope)
-        sql = f"SELECT * FROM {_quote_ident(_slug(schema.name))}"
+        sql = f"SELECT * FROM {quote_identifier(slug_identifier(schema.name))}"
         if where_clause:
             sql += f" WHERE {where_clause}"
         cursor = self.conn.execute(sql, params)
@@ -288,14 +326,14 @@ class SQLiteStore:
         id_col = "id" if "id" in schema.field_map else "_id"
         where_clause, params = self._scope_where(schema, scope)
         sql = (
-            f"SELECT * FROM {_quote_ident(_slug(schema.name))} "
-            f"ORDER BY {_quote_ident(id_col)} ASC LIMIT ?"
+            f"SELECT * FROM {quote_identifier(slug_identifier(schema.name))} "
+            f"ORDER BY {quote_identifier(id_col)} ASC LIMIT ?"
         )
         params = list(params) + [limit]
         if where_clause:
             sql = (
-                f"SELECT * FROM {_quote_ident(_slug(schema.name))} "
-                f"WHERE {where_clause} ORDER BY {_quote_ident(id_col)} ASC LIMIT ?"
+                f"SELECT * FROM {quote_identifier(slug_identifier(schema.name))} "
+                f"WHERE {where_clause} ORDER BY {quote_identifier(id_col)} ASC LIMIT ?"
             )
         cursor = self.conn.execute(sql, params)
         return [self._deserialize_row(schema, row) for row in cursor.fetchall()]
@@ -309,12 +347,12 @@ class SQLiteStore:
             val = record.get(field)
             if val is None:
                 continue
-            col = _slug(field)
-            clauses = [f"{_quote_ident(col)} = ?"]
+            col = slug_identifier(field)
+            clauses = [f"{quote_identifier(col)} = ?"]
             params = [self._serialize_value(schema.field_map[field].type_name, val)]
             if schema.tenant_key:
-                tenant_col = _slug(TENANT_KEY_FIELD)
-                clauses.append(f"{_quote_ident(tenant_col)} = ?")
+                tenant_col = slug_identifier(TENANT_KEY_FIELD)
+                clauses.append(f"{quote_identifier(tenant_col)} = ?")
                 params.append(tenant_value)
             ttl_clause, ttl_params = self._ttl_clause(schema, scope)
             if ttl_clause:
@@ -322,7 +360,7 @@ class SQLiteStore:
                 params.extend(ttl_params)
             where_clause = " AND ".join(clauses)
             cursor = self.conn.execute(
-                f"SELECT 1 FROM {_quote_ident(_slug(schema.name))} WHERE {where_clause} LIMIT 1",
+                f"SELECT 1 FROM {quote_identifier(slug_identifier(schema.name))} WHERE {where_clause} LIMIT 1",
                 params,
             )
             if cursor.fetchone():
@@ -332,7 +370,7 @@ class SQLiteStore:
     def _find_by_filters(self, schema: RecordSchema, filters: dict[str, Any], scope: RecordScope) -> List[dict]:
         scope_clause, scope_params = self._scope_where(schema, scope)
         where_clause, params = self._build_where_clause(schema, filters)
-        table = _quote_ident(_slug(schema.name))
+        table = quote_identifier(slug_identifier(schema.name))
         clauses = [clause for clause in [scope_clause, where_clause] if clause]
         sql = f"SELECT * FROM {table}"
         if clauses:
@@ -344,15 +382,15 @@ class SQLiteStore:
         parts: list[str] = []
         params: list[Any] = []
         for field, expected in filters.items():
-            col = _slug(field)
+            col = slug_identifier(field)
             field_schema = schema.field_map.get(field)
             if field_schema is None:
                 raise Namel3ssError(f"Unknown field '{field}' for record '{schema.name}'")
             if isinstance(expected, Contains):
-                parts.append(f"{_quote_ident(col)} LIKE ? ESCAPE '\\'")
-                params.append(f"%{_escape_like(expected.value)}%")
+                parts.append(f"{quote_identifier(col)} LIKE ? ESCAPE '\\'")
+                params.append(f"%{escape_like(expected.value)}%")
                 continue
-            parts.append(f"{_quote_ident(col)} = ?")
+            parts.append(f"{quote_identifier(col)} = ?")
             params.append(self._serialize_value(field_schema.type_name if field_schema else "text", expected))
         return " AND ".join(parts), params
 
@@ -360,8 +398,8 @@ class SQLiteStore:
         clauses: list[str] = []
         params: list[Any] = []
         if schema.tenant_key and scope.tenant_value is not None:
-            tenant_col = _slug(TENANT_KEY_FIELD)
-            clauses.append(f"{_quote_ident(tenant_col)} = ?")
+            tenant_col = slug_identifier(TENANT_KEY_FIELD)
+            clauses.append(f"{quote_identifier(tenant_col)} = ?")
             params.append(scope.tenant_value)
         ttl_clause, ttl_params = self._ttl_clause(schema, scope)
         if ttl_clause:
@@ -372,14 +410,14 @@ class SQLiteStore:
     def _ttl_clause(self, schema: RecordSchema, scope: RecordScope) -> tuple[str, list[Any]]:
         if schema.ttl_hours is None or scope.now is None:
             return "", []
-        col = _quote_ident(_slug(EXPIRES_AT_FIELD))
+        col = quote_identifier(slug_identifier(EXPIRES_AT_FIELD))
         return f"{col} IS NOT NULL AND CAST({col} AS REAL) > ?", [float(scope.now)]
 
     def _cleanup_expired(self, schema: RecordSchema, scope: RecordScope) -> None:
         if schema.ttl_hours is None or scope.now is None:
             return
-        table = _quote_ident(_slug(schema.name))
-        col = _quote_ident(_slug(EXPIRES_AT_FIELD))
+        table = quote_identifier(slug_identifier(schema.name))
+        col = quote_identifier(slug_identifier(EXPIRES_AT_FIELD))
         self.conn.execute(
             f"DELETE FROM {table} WHERE {col} IS NULL OR CAST({col} AS REAL) <= ?",
             (float(scope.now),),
@@ -418,8 +456,3 @@ class SQLiteStore:
             path=self.db_path.as_posix(),
             schema_version=SCHEMA_VERSION,
         )
-
-
-def _escape_like(value: str) -> str:
-    # Escape %, _, and backslash for LIKE patterns.
-    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")

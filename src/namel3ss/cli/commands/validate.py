@@ -4,7 +4,7 @@ import sys
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.render import format_error
-from namel3ss.cli.redaction import redact_cli_text
+from namel3ss.cli.text_output import prepare_cli_text
 from namel3ss.ir.nodes import lower_program
 from namel3ss.parser.core import parse
 
@@ -20,5 +20,5 @@ def run(args) -> int:
         print("Validation succeeded.")
         return 0
     except Namel3ssError as err:
-        print(redact_cli_text(format_error(err, source)), file=sys.stderr)
+        print(prepare_cli_text(format_error(err, source)), file=sys.stderr)
         return 1

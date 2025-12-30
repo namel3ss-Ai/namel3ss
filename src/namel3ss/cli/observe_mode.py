@@ -125,7 +125,7 @@ def _print_human(events: list[dict]) -> None:
         kind = event.get("type", "event")
         detail = event.get("flow_name") or event.get("action_id") or event.get("ai_name") or ""
         suffix = f" {detail}" if detail else ""
-        print(f"[{ts}] {kind}{suffix}")
+        print(f"time {ts} {kind}{suffix}")
 
 
 __all__ = ["run_observe_command"]

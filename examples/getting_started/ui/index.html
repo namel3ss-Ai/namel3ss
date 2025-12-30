@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>First use UI</title>
+    <style>
+      body {
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        margin: 32px;
+      }
+      button {
+        padding: 8px 12px;
+      }
+      pre {
+        background: #f3f3f3;
+        padding: 12px;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>First use UI</h1>
+    <p>This page loads the UI contract from the service runner.</p>
+    <button id="load">Load contract</button>
+    <pre id="out"></pre>
+    <script>
+      const button = document.getElementById("load");
+      const output = document.getElementById("out");
+      button.addEventListener("click", async () => {
+        output.textContent = "Loading";
+        const resp = await fetch("/api/ui/contract/ui.json");
+        const data = await resp.json();
+        output.textContent = JSON.stringify(data, null, 2);
+      });
+    </script>
+  </body>
+</html>

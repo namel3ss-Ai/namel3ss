@@ -23,7 +23,7 @@ flow "demo":
     assert len(started) == 1
     assert len(merged) == 1
 
-    golden_dir = Path("tests/golden/phase5/traces")
+    golden_dir = Path("tests/golden/parallel_traces/traces")
     expected_started = json.loads((golden_dir / "parallel_started.json").read_text(encoding="utf-8"))
     expected_finished = json.loads((golden_dir / "parallel_task_finished.json").read_text(encoding="utf-8"))
     expected_merged = json.loads((golden_dir / "parallel_merged.json").read_text(encoding="utf-8"))

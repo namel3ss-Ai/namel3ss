@@ -28,6 +28,7 @@ class TemplateSpec:
 
 
 TEMPLATES: tuple[TemplateSpec, ...] = (
+    TemplateSpec(name="starter", directory="starter", description="Small app with one page and one flow."),
     TemplateSpec(name="crud", directory="crud", description="CRUD dashboard with form and table."),
     TemplateSpec(
         name="ai-assistant",
@@ -50,7 +51,7 @@ def run_new(args: list[str]) -> int:
         return 0
     if args[0] in {"pkg", "package"}:
         if len(args) < 2:
-            raise Namel3ssError("Usage: n3 new pkg <name>")
+            raise Namel3ssError("Usage: n3 new pkg name")
         target = scaffold_package(args[1], Path.cwd())
         print(f"Created package at {target}")
         print("Next steps:")
@@ -59,7 +60,7 @@ def run_new(args: list[str]) -> int:
         print("  n3 test")
         return 0
     if len(args) > 2:
-        raise Namel3ssError("Usage: n3 new <template> [project_name]")
+        raise Namel3ssError("Usage: n3 new template name")
     template_name = args[0]
     template = _resolve_template(template_name)
     project_input = args[1] if len(args) == 2 else template.name
@@ -67,7 +68,7 @@ def run_new(args: list[str]) -> int:
 
     template_dir = _templates_root() / template.directory
     if not template_dir.exists():
-        raise Namel3ssError(f"Template '{template.name}' is not installed (missing {template_dir}).")
+        raise Namel3ssError(f"Template '{template.name}' is not installed. Missing {template_dir}.")
 
     target_dir = Path.cwd() / project_name
     if target_dir.exists():
@@ -85,7 +86,12 @@ def run_new(args: list[str]) -> int:
     if findings:
         print("Lint findings:")
         for finding in findings:
-            location = f"[line {finding.line}, col {finding.column}] " if finding.line else ""
+            location = ""
+            if finding.line:
+                location = f"line {finding.line}"
+                if finding.column:
+                    location += f" col {finding.column}"
+                location = f"{location} "
             print(f"  - {location}{finding.code}: {finding.message}")
 
     _print_success_message(project_name, target_dir)
@@ -151,7 +157,5 @@ def _rewrite_with_project_name(path: Path, project_name: str) -> str:
 
 def _print_success_message(project_name: str, target_dir: Path) -> None:
     print(f"Created project at {target_dir}")
-    print("Next steps:")
-    print(f"  cd {project_name}")
-    print("  n3 app.ai studio")
-    print("  n3 app.ai actions")
+    print("Next step")
+    print(f"  cd {project_name} and run n3 app.ai")

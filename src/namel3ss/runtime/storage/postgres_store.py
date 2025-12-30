@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import re
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, Dict, List
@@ -14,21 +13,13 @@ from namel3ss.runtime.storage.metadata import PersistenceMetadata
 from namel3ss.runtime.store.memory_store import Contains
 from namel3ss.runtime.storage.state_codec import decode_state, encode_state
 from namel3ss.runtime.storage.base import RecordScope
+from namel3ss.runtime.storage.predicate import PredicatePlan
+from namel3ss.runtime.storage.sql_helpers import escape_like, quote_identifier, slug_identifier
 from namel3ss.utils.json_tools import dumps as json_dumps
 from namel3ss.utils.numbers import decimal_is_int, is_number, to_decimal
 
 
 SCHEMA_VERSION = 1
-
-
-def _slug(name: str) -> str:
-    slug = re.sub(r"[^a-zA-Z0-9_]", "_", name).lower()
-    return slug or "unnamed"
-
-
-def _quote_ident(name: str) -> str:
-    escaped = name.replace('"', '""')
-    return f'"{escaped}"'
 
 
 class PostgresStore:
@@ -42,6 +33,7 @@ class PostgresStore:
             self.conn = psycopg.connect(database_url, row_factory=dict_row)
         except Exception as err:
             raise Namel3ssError(f"Could not open Postgres store: {err}") from err
+        self.dialect = "postgres"
         self.conn.autocommit = False
         self.database_url = database_url
         self._prepared_tables: set[str] = set()
@@ -61,7 +53,7 @@ class PostgresStore:
     def clear(self) -> None:
         tables = self._list_tables()
         for table in tables:
-            self.conn.execute(f"DROP TABLE IF EXISTS {_quote_ident(table)} CASCADE")
+            self.conn.execute(f"DROP TABLE IF EXISTS {quote_identifier(table)} CASCADE")
         self.conn.commit()
         self._prepared_tables.clear()
         self._prepared_indexes.clear()
@@ -99,17 +91,17 @@ class PostgresStore:
         self.conn.commit()
 
     def _ensure_table(self, schema: RecordSchema) -> None:
-        table = _slug(schema.name)
+        table = slug_identifier(schema.name)
         if table not in self._prepared_tables:
             id_col = "id" if "id" in schema.field_map else "_id"
-            columns = [f"{_quote_ident(id_col)} BIGSERIAL PRIMARY KEY"]
+            columns = [f"{quote_identifier(id_col)} BIGSERIAL PRIMARY KEY"]
             for field in schema.storage_fields():
-                col_name = _slug(field.name)
+                col_name = slug_identifier(field.name)
                 col_type = self._sql_type(field.type_name)
                 if col_name == id_col:
                     continue
-                columns.append(f"{_quote_ident(col_name)} {col_type}")
-            stmt = f"CREATE TABLE IF NOT EXISTS {_quote_ident(table)} ({', '.join(columns)})"
+                columns.append(f"{quote_identifier(col_name)} {col_type}")
+            stmt = f"CREATE TABLE IF NOT EXISTS {quote_identifier(table)} ({', '.join(columns)})"
             self.conn.execute(stmt)
             self._prepared_tables.add(table)
         self._ensure_columns(schema)
@@ -117,16 +109,16 @@ class PostgresStore:
         self.conn.commit()
 
     def _ensure_columns(self, schema: RecordSchema) -> None:
-        table = _slug(schema.name)
+        table = slug_identifier(schema.name)
         existing = self._existing_columns(table)
         id_col = "id" if "id" in schema.field_map else "_id"
         for field in schema.storage_fields():
-            col_name = _slug(field.name)
+            col_name = slug_identifier(field.name)
             if col_name == id_col or col_name in existing:
                 continue
             col_type = self._sql_type(field.type_name)
             self.conn.execute(
-                f"ALTER TABLE {_quote_ident(table)} ADD COLUMN {_quote_ident(col_name)} {col_type}"
+                f"ALTER TABLE {quote_identifier(table)} ADD COLUMN {quote_identifier(col_name)} {col_type}"
             )
         if not self.conn.autocommit:
             self.conn.commit()
@@ -140,13 +132,13 @@ class PostgresStore:
         return {row["column_name"] for row in rows}
 
     def _ensure_indexes(self, schema: RecordSchema) -> None:
-        table = _slug(schema.name)
+        table = slug_identifier(schema.name)
         prepared = self._prepared_indexes.setdefault(table, set())
         if not prepared:
             prepared.update(self._existing_indexes(table))
-        tenant_col = _slug(TENANT_KEY_FIELD) if schema.tenant_key else None
+        tenant_col = slug_identifier(TENANT_KEY_FIELD) if schema.tenant_key else None
         for field in schema.unique_fields:
-            col = _slug(field)
+            col = slug_identifier(field)
             if tenant_col:
                 index_name = self._index_name(table, f"{tenant_col}_{col}")
             else:
@@ -154,12 +146,12 @@ class PostgresStore:
             if index_name in prepared:
                 continue
             if tenant_col:
-                columns = f"{_quote_ident(tenant_col)}, {_quote_ident(col)}"
+                columns = f"{quote_identifier(tenant_col)}, {quote_identifier(col)}"
             else:
-                columns = f"{_quote_ident(col)}"
+                columns = f"{quote_identifier(col)}"
             self.conn.execute(
-                f"CREATE UNIQUE INDEX IF NOT EXISTS {_quote_ident(index_name)} "
-                f"ON {_quote_ident(table)} ({columns})"
+                f"CREATE UNIQUE INDEX IF NOT EXISTS {quote_identifier(index_name)} "
+                f"ON {quote_identifier(table)} ({columns})"
             )
             prepared.add(index_name)
 
@@ -212,7 +204,7 @@ class PostgresStore:
     def _deserialize_row(self, schema: RecordSchema, row: dict) -> dict:
         data: dict = {}
         for field in schema.fields:
-            col = _slug(field.name)
+            col = slug_identifier(field.name)
             if col not in row:
                 continue
             val = row[col]
@@ -245,13 +237,13 @@ class PostgresStore:
         for field in schema.storage_fields():
             if field.name == id_col:
                 continue
-            col_names.append(_quote_ident(_slug(field.name)))
+            col_names.append(quote_identifier(slug_identifier(field.name)))
             values.append(self._serialize_value(field.type_name, record.get(field.name)))
         columns_clause = ", ".join(col_names)
         placeholders = ", ".join(["%s"] * len(values))
         stmt = (
-            f"INSERT INTO {_quote_ident(_slug(schema.name))} ({columns_clause}) "
-            f"VALUES ({placeholders}) RETURNING {_quote_ident(id_col)}"
+            f"INSERT INTO {quote_identifier(slug_identifier(schema.name))} ({columns_clause}) "
+            f"VALUES ({placeholders}) RETURNING {quote_identifier(id_col)}"
         )
         try:
             cursor = self.conn.execute(stmt, values)
@@ -265,14 +257,60 @@ class PostgresStore:
             self.conn.commit()
         return rec
 
+    def update(self, schema: RecordSchema, record: dict) -> dict:
+        self._ensure_table(schema)
+        id_col = "id" if "id" in schema.field_map else "_id"
+        if id_col not in record:
+            raise Namel3ssError(f"Record '{schema.name}' update requires {id_col}")
+        assignments = []
+        values = []
+        for field in schema.fields:
+            if field.name == id_col:
+                continue
+            assignments.append(f"{quote_identifier(slug_identifier(field.name))} = %s")
+            values.append(self._serialize_value(field.type_name, record.get(field.name)))
+        values.append(record[id_col])
+        stmt = (
+            f"UPDATE {quote_identifier(slug_identifier(schema.name))} SET {', '.join(assignments)} "
+            f"WHERE {quote_identifier(id_col)} = %s"
+        )
+        try:
+            cursor = self.conn.execute(stmt, values)
+        except Exception as err:
+            raise Namel3ssError(f"Record '{schema.name}' violates constraints: {err}") from err
+        if cursor.rowcount == 0:
+            raise Namel3ssError(f"Record '{schema.name}' with {id_col}={record[id_col]} was not found")
+        if not self.conn.autocommit:
+            self.conn.commit()
+        return record
+
+    def delete(self, schema: RecordSchema, record_id: object) -> bool:
+        self._ensure_table(schema)
+        id_col = "id" if "id" in schema.field_map else "_id"
+        stmt = f"DELETE FROM {quote_identifier(slug_identifier(schema.name))} WHERE {quote_identifier(id_col)} = %s"
+        cursor = self.conn.execute(stmt, [record_id])
+        if not self.conn.autocommit:
+            self.conn.commit()
+        return cursor.rowcount > 0
+
     def find(self, schema: RecordSchema, predicate, scope: RecordScope | None = None) -> List[dict]:
         scope = scope or RecordScope()
         self._ensure_table(schema)
         self._cleanup_expired(schema, scope)
+        if isinstance(predicate, PredicatePlan):
+            if predicate.sql:
+                scope_clause, scope_params = self._scope_where(schema, scope)
+                clauses = [clause for clause in [scope_clause, predicate.sql.clause] if clause]
+                sql = f"SELECT * FROM {quote_identifier(slug_identifier(schema.name))}"
+                if clauses:
+                    sql += " WHERE " + " AND ".join(clauses)
+                cursor = self.conn.execute(sql, [*scope_params, *predicate.sql.params])
+                return [self._deserialize_row(schema, row) for row in cursor.fetchall()]
+            predicate = predicate.predicate
         if isinstance(predicate, dict):
             return self._find_by_filters(schema, predicate, scope)
         where_clause, params = self._scope_where(schema, scope)
-        sql = f"SELECT * FROM {_quote_ident(_slug(schema.name))}"
+        sql = f"SELECT * FROM {quote_identifier(slug_identifier(schema.name))}"
         if where_clause:
             sql += f" WHERE {where_clause}"
         cursor = self.conn.execute(sql, params)
@@ -291,14 +329,14 @@ class PostgresStore:
         id_col = "id" if "id" in schema.field_map else "_id"
         where_clause, params = self._scope_where(schema, scope)
         sql = (
-            f"SELECT * FROM {_quote_ident(_slug(schema.name))} "
-            f"ORDER BY {_quote_ident(id_col)} ASC LIMIT %s"
+            f"SELECT * FROM {quote_identifier(slug_identifier(schema.name))} "
+            f"ORDER BY {quote_identifier(id_col)} ASC LIMIT %s"
         )
         params = list(params) + [limit]
         if where_clause:
             sql = (
-                f"SELECT * FROM {_quote_ident(_slug(schema.name))} "
-                f"WHERE {where_clause} ORDER BY {_quote_ident(id_col)} ASC LIMIT %s"
+                f"SELECT * FROM {quote_identifier(slug_identifier(schema.name))} "
+                f"WHERE {where_clause} ORDER BY {quote_identifier(id_col)} ASC LIMIT %s"
             )
         cursor = self.conn.execute(sql, params)
         return [self._deserialize_row(schema, row) for row in cursor.fetchall()]
@@ -312,12 +350,12 @@ class PostgresStore:
             val = record.get(field)
             if val is None:
                 continue
-            col = _slug(field)
-            clauses = [f"{_quote_ident(col)} = %s"]
+            col = slug_identifier(field)
+            clauses = [f"{quote_identifier(col)} = %s"]
             params = [self._serialize_value(schema.field_map[field].type_name, val)]
             if schema.tenant_key:
-                tenant_col = _slug(TENANT_KEY_FIELD)
-                clauses.append(f"{_quote_ident(tenant_col)} = %s")
+                tenant_col = slug_identifier(TENANT_KEY_FIELD)
+                clauses.append(f"{quote_identifier(tenant_col)} = %s")
                 params.append(tenant_value)
             ttl_clause, ttl_params = self._ttl_clause(schema, scope)
             if ttl_clause:
@@ -325,7 +363,7 @@ class PostgresStore:
                 params.extend(ttl_params)
             where_clause = " AND ".join(clauses)
             cursor = self.conn.execute(
-                f"SELECT 1 FROM {_quote_ident(_slug(schema.name))} WHERE {where_clause} LIMIT 1",
+                f"SELECT 1 FROM {quote_identifier(slug_identifier(schema.name))} WHERE {where_clause} LIMIT 1",
                 params,
             )
             if cursor.fetchone():
@@ -335,7 +373,7 @@ class PostgresStore:
     def _find_by_filters(self, schema: RecordSchema, filters: dict[str, Any], scope: RecordScope) -> List[dict]:
         scope_clause, scope_params = self._scope_where(schema, scope)
         where_clause, params = self._build_where_clause(schema, filters)
-        table = _quote_ident(_slug(schema.name))
+        table = quote_identifier(slug_identifier(schema.name))
         clauses = [clause for clause in [scope_clause, where_clause] if clause]
         sql = f"SELECT * FROM {table}"
         if clauses:
@@ -347,15 +385,15 @@ class PostgresStore:
         parts: list[str] = []
         params: list[Any] = []
         for field, expected in filters.items():
-            col = _slug(field)
+            col = slug_identifier(field)
             field_schema = schema.field_map.get(field)
             if field_schema is None:
                 raise Namel3ssError(f"Unknown field '{field}' for record '{schema.name}'")
             if isinstance(expected, Contains):
-                parts.append(f"{_quote_ident(col)} LIKE %s ESCAPE '\\\\'")
-                params.append(f"%{_escape_like(expected.value)}%")
+                parts.append(f"{quote_identifier(col)} LIKE %s ESCAPE '\\\\'")
+                params.append(f"%{escape_like(expected.value)}%")
                 continue
-            parts.append(f"{_quote_ident(col)} = %s")
+            parts.append(f"{quote_identifier(col)} = %s")
             params.append(self._serialize_value(field_schema.type_name if field_schema else "text", expected))
         return " AND ".join(parts), params
 
@@ -363,8 +401,8 @@ class PostgresStore:
         clauses: list[str] = []
         params: list[Any] = []
         if schema.tenant_key and scope.tenant_value is not None:
-            tenant_col = _slug(TENANT_KEY_FIELD)
-            clauses.append(f"{_quote_ident(tenant_col)} = %s")
+            tenant_col = slug_identifier(TENANT_KEY_FIELD)
+            clauses.append(f"{quote_identifier(tenant_col)} = %s")
             params.append(scope.tenant_value)
         ttl_clause, ttl_params = self._ttl_clause(schema, scope)
         if ttl_clause:
@@ -375,14 +413,14 @@ class PostgresStore:
     def _ttl_clause(self, schema: RecordSchema, scope: RecordScope) -> tuple[str, list[Any]]:
         if schema.ttl_hours is None or scope.now is None:
             return "", []
-        col = _quote_ident(_slug(EXPIRES_AT_FIELD))
+        col = quote_identifier(slug_identifier(EXPIRES_AT_FIELD))
         return f"{col} IS NOT NULL AND {col} > %s", [scope.now]
 
     def _cleanup_expired(self, schema: RecordSchema, scope: RecordScope) -> None:
         if schema.ttl_hours is None or scope.now is None:
             return
-        table = _quote_ident(_slug(schema.name))
-        col = _quote_ident(_slug(EXPIRES_AT_FIELD))
+        table = quote_identifier(slug_identifier(schema.name))
+        col = quote_identifier(slug_identifier(EXPIRES_AT_FIELD))
         self.conn.execute(
             f"DELETE FROM {table} WHERE {col} IS NULL OR {col} <= %s",
             (scope.now,),
@@ -428,12 +466,6 @@ class PostgresStore:
             "SELECT tablename FROM pg_tables WHERE schemaname = 'public'"
         ).fetchall()
         return [row["tablename"] for row in rows]
-
-
-def _escape_like(value: str) -> str:
-    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-
-
 def _missing_driver_message() -> str:
     return build_guidance_message(
         what="Postgres persistence requires a driver.",

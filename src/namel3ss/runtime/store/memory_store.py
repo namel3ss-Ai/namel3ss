@@ -5,6 +5,7 @@ from typing import Dict, List, Callable, Optional, Any
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.schema.records import EXPIRES_AT_FIELD, SYSTEM_FIELDS, TENANT_KEY_FIELD, RecordSchema
+from namel3ss.runtime.storage.predicate import PredicatePlan
 from namel3ss.runtime.storage.metadata import PersistenceMetadata
 from namel3ss.runtime.storage.base import RecordScope
 from namel3ss.utils.numbers import is_number, to_decimal
@@ -62,6 +63,60 @@ class MemoryStore:
         self._data[rec_name].append(record)
         return _strip_system_fields(record)
 
+    def update(self, schema: RecordSchema, record: dict) -> dict:
+        rec_name = schema.name
+        records = self._data.get(rec_name, [])
+        id_col = "id" if "id" in schema.field_map else "_id"
+        record_id = record.get(id_col)
+        if record_id is None:
+            raise Namel3ssError(f"Record '{rec_name}' update requires {id_col}")
+        existing = None
+        for stored in records:
+            if stored.get(id_col) == record_id:
+                existing = stored
+                break
+        if existing is None:
+            raise Namel3ssError(f"Record '{rec_name}' with {id_col}={record_id} was not found")
+
+        updated = dict(existing)
+        for field in schema.fields:
+            if field.name in record:
+                updated[field.name] = record.get(field.name)
+
+        indexes = self._unique_indexes.setdefault(rec_name, {})
+        for field in schema.unique_fields:
+            idx = indexes.setdefault(field, {})
+            old_value = existing.get(field)
+            new_value = updated.get(field)
+            old_key = _unique_key(schema, existing, old_value) if old_value is not None else None
+            new_key = _unique_key(schema, existing, new_value) if new_value is not None else None
+            if new_key is not None and new_key in idx and idx[new_key] is not existing:
+                raise Namel3ssError(f"Record '{rec_name}' violates unique constraint on '{field}'")
+            if old_key is not None and old_key != new_key:
+                idx.pop(old_key, None)
+            if new_key is not None:
+                idx[new_key] = existing
+
+        existing.update(updated)
+        return _strip_system_fields(existing)
+
+    def delete(self, schema: RecordSchema, record_id: object) -> bool:
+        rec_name = schema.name
+        records = self._data.get(rec_name, [])
+        id_col = "id" if "id" in schema.field_map else "_id"
+        for idx, stored in enumerate(list(records)):
+            if stored.get(id_col) != record_id:
+                continue
+            records.pop(idx)
+            for field in schema.unique_fields:
+                value = stored.get(field)
+                if value is None:
+                    continue
+                key = _unique_key(schema, stored, value)
+                self._unique_indexes.get(rec_name, {}).get(field, {}).pop(key, None)
+            return True
+        return False
+
     def find(
         self,
         schema: RecordSchema,
@@ -70,6 +125,8 @@ class MemoryStore:
     ) -> List[dict]:
         scope = scope or RecordScope()
         self._cleanup_expired(schema, scope)
+        if isinstance(predicate, PredicatePlan):
+            predicate = predicate.predicate
         records = self._data.get(schema.name, [])
         if isinstance(predicate, dict):
             return [

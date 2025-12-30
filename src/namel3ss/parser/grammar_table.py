@@ -94,6 +94,8 @@ def statement_rules() -> tuple[StatementRule, ...]:
     from namel3ss.parser.stmt.save import parse_save
     from namel3ss.parser.stmt.set import parse_set
     from namel3ss.parser.stmt.theme import parse_set_theme
+    from namel3ss.parser.stmt.update import parse_update
+    from namel3ss.parser.stmt.delete import parse_delete
     from namel3ss.parser.stmt.trycatch import parse_try
 
     return (
@@ -113,6 +115,8 @@ def statement_rules() -> tuple[StatementRule, ...]:
         StatementRule("save", "SAVE", parse_save),
         StatementRule("create", "CREATE", parse_create),
         StatementRule("find", "FIND", parse_find),
+        StatementRule("update", "IDENT", parse_update, token_value="update"),
+        StatementRule("delete", "IDENT", parse_delete, token_value="delete"),
     )
 
 
@@ -120,6 +124,7 @@ def expression_rules() -> tuple[ExpressionRule, ...]:
     from namel3ss.parser.expr.calls import parse_ask_expression, parse_call_function_expr
     from namel3ss.parser.expr.literals import (
         parse_boolean_literal,
+        parse_null_literal,
         parse_number_literal,
         parse_string_literal,
     )
@@ -131,6 +136,7 @@ def expression_rules() -> tuple[ExpressionRule, ...]:
         ExpressionRule("number", "NUMBER", parse_number_literal),
         ExpressionRule("string", "STRING", parse_string_literal),
         ExpressionRule("boolean", "BOOLEAN", parse_boolean_literal),
+        ExpressionRule("null", "NULL", parse_null_literal),
         ExpressionRule("identifier", "IDENT", parse_reference_expr),
         ExpressionRule("input", "INPUT", parse_reference_expr),
         ExpressionRule("state", "STATE", parse_state_path),

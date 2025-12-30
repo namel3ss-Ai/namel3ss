@@ -2,6 +2,7 @@ from namel3ss.ir.model.base import Expression, Node, Statement
 from namel3ss.ir.model.program import Flow, Program
 from namel3ss.ir.model.statements import (
     Create,
+    Delete,
     Find,
     ForEach,
     If,
@@ -15,6 +16,8 @@ from namel3ss.ir.model.statements import (
     Return,
     Save,
     Set,
+    Update,
+    UpdateField,
     ThemeChange,
     TryCatch,
 )
@@ -83,6 +86,9 @@ __all__ = [
     "ThemeChange",
     "TryCatch",
     "Find",
+    "UpdateField",
+    "Update",
+    "Delete",
     "AttrAccess",
     "BinaryOp",
     "Comparison",

@@ -23,7 +23,7 @@ def run_packs_review(args: list[str], *, json_mode: bool) -> int:
         print(dumps_pretty(review.payload))
         return 0 if review.status != "fail" else 1
     print(f"Pack review: {review.status}")
-    print(f"Pack: {review.payload['pack_id']} ({review.payload['version']})")
+    print(f"Pack: {review.payload['pack_id']} version {review.payload['version']}")
     print(f"Tools: {', '.join(review.payload['tools'])}")
     print(f"Runners: {', '.join(review.payload['runners'])}")
     collisions = review.payload.get("collisions") or []
@@ -41,7 +41,9 @@ def run_packs_review(args: list[str], *, json_mode: bool) -> int:
 
 def _print_usage() -> None:
     usage = """Usage:
-  n3 packs review <path_or_pack_id> [--json]
+  n3 packs review path_or_pack --json
+  Notes:
+    flags are optional unless stated
 """
     print(usage.strip())
 

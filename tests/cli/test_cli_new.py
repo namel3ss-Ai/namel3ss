@@ -17,6 +17,11 @@ def _validate_app_file(app_path: Path) -> None:
     lower_program(ast_program)
 
 
+def _assert_bracketless(text: str) -> None:
+    for ch in "[]{}()":
+        assert ch not in text
+
+
 def test_new_crud_scaffolds(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     code = main(["new", "crud", "my_app"])
@@ -29,6 +34,22 @@ def test_new_crud_scaffolds(tmp_path, monkeypatch, capsys):
     readme = (project_dir / "README.md").read_text(encoding="utf-8")
     assert "{{PROJECT_NAME}}" not in readme
     assert "my_app" in readme
+
+
+def test_new_starter_scaffolds(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    code = main(["new", "starter", "first_run"])
+    out = capsys.readouterr().out
+    project_dir = tmp_path / "first_run"
+    assert code == 0
+    assert project_dir.exists()
+    assert "Created project" in out
+    assert "Next step" in out
+    _assert_bracketless(out)
+    _validate_app_file(project_dir / "app.ai")
+    readme = (project_dir / "README.md").read_text(encoding="utf-8")
+    assert "{{PROJECT_NAME}}" not in readme
+    assert "first_run" in readme
 
 
 def test_new_ai_assistant_defaults_name(tmp_path, monkeypatch):
@@ -71,5 +92,5 @@ def test_new_lists_templates(capsys):
     assert code == 0
     out = captured.out
     assert "Available templates" in out
-    for name in ["crud", "ai-assistant", "multi-agent"]:
+    for name in ["starter", "crud", "ai-assistant", "multi-agent"]:
         assert name in out

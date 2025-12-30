@@ -1,0 +1,35 @@
+spec is "1.0"
+
+tool "format greeting":
+  implemented using python
+  purity is "pure"
+
+  input:
+    name is text
+
+  output:
+    message is text
+
+record "Note":
+  field "title" is text must be present
+  field "body" is text
+
+flow "demo":
+  try:
+    let result is format greeting:
+      name is "Ada"
+    return result
+  with catch err:
+    return "Tool not bound yet. Run n3 tools bind --auto."
+
+page "home":
+  title is "{{PROJECT_NAME}}"
+  text is "Start here."
+  section "Notes":
+    card "Add note":
+      form is "Note"
+    card "Saved notes":
+      table is "Note"
+  card "Actions":
+    button "Run demo":
+      calls flow "demo"

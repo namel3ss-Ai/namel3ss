@@ -36,6 +36,23 @@ def save_record_or_raise(
     return saved
 
 
+def validate_record_values(
+    record_name: str,
+    values: Dict[str, object],
+    schemas: Dict[str, RecordSchema],
+    line: int | None = None,
+    column: int | None = None,
+) -> Dict[str, object]:
+    schema = _get_schema(record_name, schemas)
+    type_errors = _type_errors(schema, values)
+    if type_errors:
+        raise Namel3ssError(type_errors[0]["message"], line=line, column=column)
+    constraint_errors = collect_validation_errors(schema, values, _literal_eval)
+    if constraint_errors:
+        raise Namel3ssError(constraint_errors[0]["message"], line=line, column=column)
+    return values
+
+
 def save_record_with_errors(
     record_name: str,
     values: Dict[str, object],
@@ -133,6 +150,12 @@ def _literal_eval(expr: ir.Expression | None) -> object:
         return None
     if isinstance(expr, ir.Literal):
         return expr.value
+    if isinstance(expr, ir.UnaryOp) and expr.op in {"+", "-"}:
+        if isinstance(expr.operand, ir.Literal):
+            value = expr.operand.value
+            if is_number(value):
+                numeric = to_decimal(value)
+                return numeric if expr.op == "+" else -numeric
     raise Namel3ssError("Only literal expressions supported in schema constraints for forms")
 
 

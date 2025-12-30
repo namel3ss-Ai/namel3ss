@@ -16,6 +16,9 @@ def _lower_record(record: ast.RecordDecl) -> schema.RecordSchema:
             constraint = schema.FieldConstraint(
                 kind=field.constraint.kind,
                 expression=_lower_expression(field.constraint.expression) if field.constraint.expression else None,
+                expression_high=_lower_expression(field.constraint.expression_high)
+                if field.constraint.expression_high
+                else None,
                 pattern=field.constraint.pattern,
             )
         fields.append(

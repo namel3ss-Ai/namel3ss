@@ -37,9 +37,12 @@ def run_packs_status(args: list[str], *, json_mode: bool) -> int:
         source_info = _pack_source_info(pack)
         caps = _pack_capabilities_summary(pack)
         summary = _caps_summary_text(caps)
-        source_label = f", source={source_info.get('source_type')}" if source_info else ""
-        caps_label = f", caps={summary}" if summary else ""
-        print(f"- {pack.pack_id} ({status}, {verify}{source_label}{caps_label})")
+        line = f"- {pack.pack_id} status {status} verify {verify}"
+        if source_info:
+            line += f" source {source_info.get('source_type')}"
+        if summary:
+            line += f" caps {summary}"
+        print(line)
     if payload["collisions"]:
         print("Pack tool collisions:")
         for tool_name in payload["collisions"]:

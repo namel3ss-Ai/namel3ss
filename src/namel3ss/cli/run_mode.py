@@ -12,7 +12,7 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.errors.render import format_error
 from namel3ss.runtime.service_runner import DEFAULT_SERVICE_PORT, ServiceRunner
 from namel3ss.utils.json_tools import dumps_pretty
-from namel3ss.cli.redaction import redact_cli_text
+from namel3ss.cli.text_output import prepare_cli_text
 from namel3ss.secrets import set_audit_root, set_engine_target
 from namel3ss.traces.plain import format_plain
 
@@ -39,7 +39,7 @@ def run_run_command(args: list[str]) -> int:
             port = params.port or DEFAULT_SERVICE_PORT
             runner = ServiceRunner(run_path, target.name, build_id=build_id, port=port)
             if params.dry:
-                print(f"Service runner (dry): http://127.0.0.1:{port}/health")
+                print(f"Service runner dry http://127.0.0.1:{port}/health")
                 print(f"Build: {build_id or 'working-copy'}")
                 return 0
             try:
@@ -61,7 +61,7 @@ def run_run_command(args: list[str]) -> int:
         )
     except Namel3ssError as err:
         message = format_error(err, sources)
-        print(redact_cli_text(message), file=sys.stderr)
+        print(prepare_cli_text(message), file=sys.stderr)
         return 1
 
 

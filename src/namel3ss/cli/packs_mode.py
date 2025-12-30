@@ -72,19 +72,21 @@ def run_packs(args: list[str]) -> int:
 
 def _print_usage() -> None:
     usage = """Usage:
-  n3 packs add <path_or_zip|pack_id@version> [--from <registry_id>] [--json]
-  n3 packs init <pack_id> [--dir <path>] [--no-code] [--json]
-  n3 packs validate <path_or_pack_id> [--strict] [--json]
-  n3 packs review <path_or_pack_id> [--json]
-  n3 packs bundle <path_or_pack_id> [--out <dir>] [--json]
-  n3 packs sign <path_or_pack_id> --key-id <id> --private-key <path> [--json]
-  n3 packs remove <pack_id> --yes [--json]
-  n3 packs status [--json]
-  n3 packs verify <pack_id> [--json]
-  n3 packs enable <pack_id> [--json]
-  n3 packs disable <pack_id> [--json]
-  n3 packs keys add --id <id> --public-key <path> [--json]
-  n3 packs keys list [--json]
+  n3 packs add path_or_pack --from registry_id --json
+  n3 packs init pack_id --dir path --no-code --json
+  n3 packs validate path_or_pack --strict --json
+  n3 packs review path_or_pack --json
+  n3 packs bundle path_or_pack --out dir --json
+  n3 packs sign path_or_pack --key-id id --private-key path --json
+  n3 packs remove pack_id --yes --json
+  n3 packs status --json
+  n3 packs verify pack_id --json
+  n3 packs enable pack_id --json
+  n3 packs disable pack_id --json
+  n3 packs keys add --id id --public-key path --json
+  n3 packs keys list --json
+  Notes:
+    flags are optional unless stated
 """
     print(usage.strip())
 

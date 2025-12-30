@@ -166,7 +166,7 @@ def _run_search(query: str, json_mode: bool) -> int:
     for result in results:
         entry = result.entry
         tags = ", ".join(entry.tags)
-        print(f"{entry.name} ({entry.trust_tier}) - {entry.description}")
+        print(f"{entry.name} trust {entry.trust_tier} - {entry.description}")
         if tags:
             print(f"  tags: {tags}")
         print(f"  install: n3 pkg add {entry.source_spec()}")
@@ -190,7 +190,7 @@ def _run_info(name: str, json_mode: bool) -> int:
     if json_mode:
         print(dumps_pretty(payload))
         return 0
-    print(f"{entry.name} ({entry.trust_tier})")
+    print(f"{entry.name} trust {entry.trust_tier}")
     print(entry.description)
     print(f"source: {entry.source}")
     print(f"recommended: {entry.recommended}")
@@ -212,7 +212,7 @@ def _run_validate(target: str, json_mode: bool, strict_mode: bool) -> int:
         return 0
     for issue in report.issues:
         prefix = "ERROR" if issue.severity == "error" else "WARN"
-        location = f" ({issue.path})" if issue.path else ""
+        location = f" path {issue.path}" if issue.path else ""
         print(f"{prefix}: {issue.message}{location}")
     return 0 if report.status == "ok" else 1
 
@@ -348,18 +348,20 @@ def _print_changes(changes) -> None:
 
 def _print_usage() -> None:
     usage = """Usage:
-  n3 pkg add <spec|name>  # add dependency from source or index
-  n3 pkg search <query>   # search the official index
-  n3 pkg info <name>      # show index entry details
-  n3 pkg validate <path>  # validate a package folder or github spec
-  n3 pkg install          # install from manifest/lockfile
-  n3 pkg plan             # preview changes
-  n3 pkg tree             # show dependency tree
-  n3 pkg why <name>       # explain why a package is installed
-  n3 pkg verify           # verify checksums and licenses
-  n3 pkg licenses         # list package licenses
-  n3 pkg <cmd> --json     # JSON output for any command
+  n3 pkg add spec_or_name  # add dependency from source or index
+  n3 pkg search query      # search the official index
+  n3 pkg info name         # show index entry details
+  n3 pkg validate path     # validate a package folder or github spec
+  n3 pkg install           # install from manifest or lockfile
+  n3 pkg plan              # preview changes
+  n3 pkg tree              # show dependency tree
+  n3 pkg why name          # explain why a package is installed
+  n3 pkg verify            # verify checksums and licenses
+  n3 pkg licenses          # list package licenses
+  n3 pkg command --json    # JSON output for any command
   n3 pkg validate --strict # fail on warnings
+  Notes:
+    flags are optional unless stated
 """
     print(usage.strip())
 

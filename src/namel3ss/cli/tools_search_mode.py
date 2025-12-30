@@ -83,7 +83,9 @@ def run_tools_search(args: list[str], *, json_mode: bool) -> int:
             meta.append(f"pack: {item['pack_id']}")
         if item.get("runner"):
             meta.append(f"runner: {item['runner']}")
-        print(f"- {item['name']} ({', '.join(meta)})")
+        meta_text = ", ".join(meta)
+        suffix = f" {meta_text}" if meta_text else ""
+        print(f"- {item['name']}{suffix}")
         print(f"  Use: {item['usage']}")
         if item.get("fix"):
             print(f"  Fix: {item['fix']}")

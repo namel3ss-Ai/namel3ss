@@ -18,7 +18,7 @@ def run_exports(path: str, *, json_mode: bool) -> tuple[dict | None, str | None]
         lines.append(f"{name}:")
         exports = modules[name].exports.kinds()
         if not exports:
-            lines.append("  (no exports)")
+            lines.append("  no exports")
             continue
         for kind in sorted(exports.keys()):
             symbols = ", ".join(exports[kind])

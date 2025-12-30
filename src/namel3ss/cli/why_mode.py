@@ -96,7 +96,7 @@ def _build_non_technical_lines(payload: dict) -> list[str]:
 def _format_capsules(capsules: list[dict]) -> str:
     if not capsules:
         return "none"
-    parts = [f"{item.get('name')} ({item.get('source')})" for item in capsules]
+    parts = [f"{item.get('name')} source {item.get('source')}" for item in capsules]
     return ", ".join(parts)
 
 
@@ -119,7 +119,7 @@ def _format_persistence(persistence: dict) -> str:
     target = persistence.get("target") or "memory"
     descriptor = persistence.get("descriptor")
     if descriptor:
-        return f"{target} ({descriptor})"
+        return f"{target} {descriptor}"
     return str(target)
 
 

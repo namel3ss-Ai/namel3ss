@@ -75,9 +75,8 @@ def resolve_tool_binding(
             what=f'Tool "{tool_name}" is not bound to a {kind_label} entry.',
             why="Tool declarations no longer include module paths; bindings live in .namel3ss/tools.yaml.",
             fix=(
-                "Check bindings with `n3 tools status`, then run "
-                f'`n3 tools bind "{tool_name}" --entry "tools.{slug}:run"` '
-                "or `n3 tools bind --auto`."
+                "Run `n3 tools status` then "
+                f'`n3 tools bind "{tool_name}" --entry "tools.{slug}:run"`.'
             ),
             example=_bindings_example(tool_name, tool_kind),
         ),

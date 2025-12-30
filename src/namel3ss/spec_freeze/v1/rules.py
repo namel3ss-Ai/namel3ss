@@ -5,7 +5,7 @@ from pathlib import Path
 # Phase 0 freeze rules for tests.
 # These constants define what counts as a breaking change in frozen outputs.
 
-PHASE0_ROOT = Path("tests/golden/phase0")
+PHASE0_ROOT = Path("tests/golden/core_examples")
 PARSER_GOLDEN_DIR = PHASE0_ROOT / "parser"
 IR_GOLDEN_DIR = PHASE0_ROOT / "ir"
 RUNTIME_GOLDEN_DIR = PHASE0_ROOT / "runtime"

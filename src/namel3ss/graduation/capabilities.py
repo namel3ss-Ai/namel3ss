@@ -119,7 +119,7 @@ _CAPABILITIES = (
             "tests/runtime/test_agents_parallel.py",
         ),
         examples=(
-            "examples/demo_multi_agent_workflow.ai",
+            "examples/demo_multi_agent_orchestration.ai",
         ),
     ),
     _cap(

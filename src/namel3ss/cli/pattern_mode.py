@@ -218,11 +218,13 @@ def _run_verify_report(pattern_root: Path) -> dict:
 
 def _print_usage() -> None:
     usage = """Usage:
-  n3 pattern list                 # list available patterns
-  n3 pattern new <name> [target]  # scaffold a pattern project
-  n3 pattern run <name>           # print run instructions
-  n3 pattern verify <name>        # run tests + verify for a pattern
-  n3 pattern <cmd> --json         # JSON output for any command
+  n3 pattern list            # list available patterns
+  n3 pattern new name target # scaffold a pattern project
+  n3 pattern run name        # print run instructions
+  n3 pattern verify name     # run tests and verify for a pattern
+  n3 pattern command --json  # JSON output for any command
+  Notes:
+    flags are optional unless stated
 """
     print(usage.strip())
 

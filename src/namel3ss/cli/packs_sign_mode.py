@@ -64,13 +64,15 @@ def run_packs_sign(args: list[str], *, json_mode: bool) -> int:
     if json_mode:
         print(dumps_pretty(payload))
         return 0
-    print(f"Pack signed: {result.pack_id} ({result.digest})")
+    print(f"Pack signed: {result.pack_id} digest {result.digest}")
     return 0
 
 
 def _print_usage() -> None:
     usage = """Usage:
-  n3 packs sign <path_or_pack_id> --key-id <id> --private-key <path> [--json]
+  n3 packs sign path_or_pack --key-id id --private-key path --json
+  Notes:
+    flags are optional unless stated
 """
     print(usage.strip())
 

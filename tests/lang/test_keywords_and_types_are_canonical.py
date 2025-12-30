@@ -85,6 +85,7 @@ def test_keyword_list_is_stable() -> None:
         "constant",
         "true",
         "false",
+        "null",
         "string",
         "str",
         "int",

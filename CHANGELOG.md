@@ -7,7 +7,7 @@ No breaking changes without an explicit changelog entry.
 - Package manifest `namel3ss.toml` and lockfile `namel3ss.lock.json`.
 - GitHub-backed package installs into `packages/` with checksum and license verification.
 - `n3 pkg` commands: add/install/plan/tree/why/verify/licenses (+ `--json`).
-- Packages docs and demo example (`docs/packages.md`, `examples/demo_packages/`).
+- Packages docs and demo example (`docs/packages.md`, `examples/module_imports/`).
 - Python tool venv support with per-app `.venv`, dependency detection, and `n3 deps` commands.
 - Tool traces now include python env metadata and dependency source.
 - Studio Tool Wizard for generating python tool skeletons.
