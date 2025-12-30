@@ -50,7 +50,16 @@ include-package-data = true
 where = ["src"]
 
 [tool.setuptools.package-data]
-"namel3ss.templates" = ["**/*.ai", "**/*.md"]
+"namel3ss.templates" = [
+    "**/*.ai",
+    "**/*.md",
+    "**/*.toml",
+    "**/*.json",
+    "**/*.html",
+    "**/*.css",
+    "**/*.js",
+    "**/.gitignore",
+]
 "namel3ss.studio.web" = ["**/*"]
 
 [project.scripts]

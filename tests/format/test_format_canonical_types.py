@@ -9,9 +9,10 @@ record "User":
   field "active" is bool
 '''
     formatted = format_source(src)
-    assert 'field "name" is text' in formatted
-    assert 'field "age" is number' in formatted
-    assert 'field "active" is boolean' in formatted
+    assert "fields:" in formatted
+    assert "name is text" in formatted
+    assert "age is number" in formatted
+    assert "active is boolean" in formatted
 
 
 def test_formatter_is_idempotent():

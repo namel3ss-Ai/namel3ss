@@ -1,19 +1,21 @@
 spec is "1.0"
 
 record "Product":
-  field "sku" is text must be present
-  field "name" is text must be present
-  field "price" is number must be greater than 0
+  fields:
+    sku is text must be present
+    name is text must be present
+    price is number must be greater than 0
 
 record "Inventory":
   field "sku" is text must be present
   field "quantity" is number must be at least 0
 
 record "Order":
-  field "id" is number must be present
-  field "sku" is text must be present
-  field "quantity" is number must be greater than 0
-  field "status" is text must be present
+  fields:
+    id is number must be present
+    sku is text must be present
+    quantity is number must be greater than 0
+    status is text must be present
 
 record "Alert":
   field "sku" is text must be present
@@ -23,30 +25,34 @@ record "Status":
   field "message" is text must be present
 
 flow "seed_products":
-  set state.product.sku is "SKU-100"
-  set state.product.name is "Widget Alpha"
-  set state.product.price is 25
+  set state.product with:
+    sku is "SKU-100"
+    name is "Widget Alpha"
+    price is 25
   create "Product" with state.product as product
   set state.inventory.sku is "SKU-100"
   set state.inventory.quantity is 10
   create "Inventory" with state.inventory as inventory
-  set state.product.sku is "SKU-200"
-  set state.product.name is "Widget Bravo"
-  set state.product.price is 45
+  set state.product with:
+    sku is "SKU-200"
+    name is "Widget Bravo"
+    price is 45
   create "Product" with state.product as product
   set state.inventory.sku is "SKU-200"
   set state.inventory.quantity is 5
   create "Inventory" with state.inventory as inventory
-  set state.product.sku is "SKU-300"
-  set state.product.name is "Widget Charlie"
-  set state.product.price is 30
+  set state.product with:
+    sku is "SKU-300"
+    name is "Widget Charlie"
+    price is 30
   create "Product" with state.product as product
   set state.inventory.sku is "SKU-300"
   set state.inventory.quantity is 2
   create "Inventory" with state.inventory as inventory
-  set state.product.sku is "SKU-400"
-  set state.product.name is "Widget Delta"
-  set state.product.price is 15
+  set state.product with:
+    sku is "SKU-400"
+    name is "Widget Delta"
+    price is 15
   create "Product" with state.product as product
   set state.inventory.sku is "SKU-400"
   set state.inventory.quantity is 8
@@ -57,10 +63,11 @@ flow "seed_products":
   return "seeded"
 
 flow "reset_state":
-  set state.order.id is null
-  set state.order.sku is null
-  set state.order.quantity is null
-  set state.order.status is null
+  set state.order with:
+    id is null
+    sku is null
+    quantity is null
+    status is null
   set state.error is null
   set state.status.message is "No errors ✅"
   create "Status" with state.status as status
@@ -70,10 +77,11 @@ flow "place_order":
   find "Inventory" where sku is input.values.sku
   let count is list length of inventory_results
   if count is less than 1:
-    set state.order.id is input.values.id
-    set state.order.sku is input.values.sku
-    set state.order.quantity is input.values.quantity
-    set state.order.status is "Rejected"
+    set state.order with:
+      id is input.values.id
+      sku is input.values.sku
+      quantity is input.values.quantity
+      status is "Rejected"
     create "Order" with state.order as order
     set state.alert.sku is input.values.sku
     set state.alert.message is "Unknown SKU."
@@ -85,10 +93,11 @@ flow "place_order":
   let idx is count - 1
   let stock is list get inventory_results at idx
   if stock.quantity is less than input.values.quantity:
-    set state.order.id is input.values.id
-    set state.order.sku is input.values.sku
-    set state.order.quantity is input.values.quantity
-    set state.order.status is "Rejected"
+    set state.order with:
+      id is input.values.id
+      sku is input.values.sku
+      quantity is input.values.quantity
+      status is "Rejected"
     create "Order" with state.order as order
     set state.alert.sku is input.values.sku
     set state.alert.message is "Insufficient stock."
@@ -97,10 +106,11 @@ flow "place_order":
     set state.status.message is state.error
     create "Status" with state.status as status
     return "rejected"
-  set state.order.id is input.values.id
-  set state.order.sku is input.values.sku
-  set state.order.quantity is input.values.quantity
-  set state.order.status is "Placed"
+  set state.order with:
+    id is input.values.id
+    sku is input.values.sku
+    quantity is input.values.quantity
+    status is "Placed"
   create "Order" with state.order as order
   let remaining is stock.quantity - input.values.quantity
   update "Inventory" where sku is stock.sku set:

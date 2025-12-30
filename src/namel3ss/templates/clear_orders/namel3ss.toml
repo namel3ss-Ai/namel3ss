@@ -1,0 +1,3 @@
+[persistence]
+target = "sqlite"
+db_path = ".namel3ss/data.db"

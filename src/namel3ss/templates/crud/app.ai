@@ -1,21 +1,24 @@
 spec is "1.0"
 
 record "Customer":
-  field "name" is text must be present
-  field "email" is text must match pattern ".+@.+"
-  field "plan" is text must be present
-  field "age" is number must be greater than 17
+  fields:
+    name is text must be present
+    email is text must match pattern ".+@.+"
+    plan is text must be present
+    age is number must be greater than 17
 
 flow "seed_customers":
-  set state.customer.name is "Alice"
-  set state.customer.email is "alice@example.com"
-  set state.customer.plan is "Starter"
-  set state.customer.age is 21
+  set state.customer with:
+    name is "Alice"
+    email is "alice@example.com"
+    plan is "Starter"
+    age is 21
   create "Customer" with state.customer as customer
-  set state.customer.name is "Bob"
-  set state.customer.email is "bob@example.com"
-  set state.customer.plan is "Pro"
-  set state.customer.age is 30
+  set state.customer with:
+    name is "Bob"
+    email is "bob@example.com"
+    plan is "Pro"
+    age is 30
   create "Customer" with state.customer as customer
   return "seeded"
 

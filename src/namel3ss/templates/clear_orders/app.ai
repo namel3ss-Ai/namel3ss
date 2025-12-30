@@ -1,0 +1,274 @@
+spec is "1.0"
+
+ai "assistant":
+  provider is "mock"
+  model is "clearorders"
+
+record "Order":
+  fields:
+    order_id is text must be present
+    customer is text must be present
+    region is text must be present
+    segment is text must be present
+    total_usd is number must be present
+    shipping is text must be present
+    delivery_days is number must be present
+    returned is boolean must be present
+    return_reason is text
+    satisfaction is number must be present
+    order_date is text must be present
+
+record "Question":
+  field "question" is text must be present
+
+record "Answer":
+  field "text" is text must be present
+
+record "ExplanationStat":
+  fields:
+    key is text must be present
+    value_number is number
+    value_text is text
+
+flow "seed_orders":
+  find "Order" where true
+  let existing is list length of order_results
+  if existing is greater than 0:
+    return "seeded"
+  set state.order with:
+    order_id is "O-1001"
+    customer is "Acme Co"
+    region is "West"
+    segment is "SMB"
+    total_usd is 1200
+    shipping is "Standard"
+    delivery_days is 6
+    returned is true
+    return_reason is "Late delivery"
+    satisfaction is 2
+    order_date is "2024-06-01"
+  create "Order" with state.order as order
+  set state.order with:
+    order_id is "O-1002"
+    customer is "Brightline"
+    region is "West"
+    segment is "Consumer"
+    total_usd is 450
+    shipping is "Express"
+    delivery_days is 6
+    returned is true
+    return_reason is "Damaged item"
+    satisfaction is 2
+    order_date is "2024-06-02"
+  create "Order" with state.order as order
+  set state.order with:
+    order_id is "O-1003"
+    customer is "Canyon Outfitters"
+    region is "West"
+    segment is "Enterprise"
+    total_usd is 2200
+    shipping is "Standard"
+    delivery_days is 6
+    returned is true
+    return_reason is "Not as described"
+    satisfaction is 2
+    order_date is "2024-06-04"
+  create "Order" with state.order as order
+  set state.order with:
+    order_id is "O-1004"
+    customer is "Delta Works"
+    region is "West"
+    segment is "SMB"
+    total_usd is 980
+    shipping is "Express"
+    delivery_days is 6
+    returned is true
+    return_reason is "Late delivery"
+    satisfaction is 2
+    order_date is "2024-06-05"
+  create "Order" with state.order as order
+  set state.order with:
+    order_id is "O-1005"
+    customer is "Evergreen"
+    region is "East"
+    segment is "Consumer"
+    total_usd is 300
+    shipping is "Standard"
+    delivery_days is 3
+    returned is false
+    return_reason is null
+    satisfaction is 4
+    order_date is "2024-06-06"
+  create "Order" with state.order as order
+  set state.order with:
+    order_id is "O-1006"
+    customer is "Foxtail"
+    region is "East"
+    segment is "SMB"
+    total_usd is 780
+    shipping is "Standard"
+    delivery_days is 4
+    returned is false
+    return_reason is null
+    satisfaction is 3
+    order_date is "2024-06-07"
+  create "Order" with state.order as order
+  set state.order with:
+    order_id is "O-1007"
+    customer is "Goldline"
+    region is "Central"
+    segment is "Enterprise"
+    total_usd is 1500
+    shipping is "Standard"
+    delivery_days is 2
+    returned is false
+    return_reason is null
+    satisfaction is 5
+    order_date is "2024-06-08"
+  create "Order" with state.order as order
+  set state.order with:
+    order_id is "O-1008"
+    customer is "Highland"
+    region is "Central"
+    segment is "Consumer"
+    total_usd is 220
+    shipping is "Standard"
+    delivery_days is 3
+    returned is false
+    return_reason is null
+    satisfaction is 4
+    order_date is "2024-06-09"
+  create "Order" with state.order as order
+  set state.order with:
+    order_id is "O-1009"
+    customer is "Ionix"
+    region is "South"
+    segment is "SMB"
+    total_usd is 640
+    shipping is "Standard"
+    delivery_days is 4
+    returned is false
+    return_reason is null
+    satisfaction is 3
+    order_date is "2024-06-10"
+  create "Order" with state.order as order
+  set state.order with:
+    order_id is "O-1010"
+    customer is "Juniper"
+    region is "South"
+    segment is "Consumer"
+    total_usd is 510
+    shipping is "Express"
+    delivery_days is 2
+    returned is false
+    return_reason is null
+    satisfaction is 4
+    order_date is "2024-06-11"
+  create "Order" with state.order as order
+  set state.order with:
+    order_id is "O-1011"
+    customer is "Kite & Co"
+    region is "East"
+    segment is "Enterprise"
+    total_usd is 1980
+    shipping is "Standard"
+    delivery_days is 3
+    returned is false
+    return_reason is null
+    satisfaction is 5
+    order_date is "2024-06-12"
+  create "Order" with state.order as order
+  set state.order with:
+    order_id is "O-1012"
+    customer is "Lumen"
+    region is "Central"
+    segment is "SMB"
+    total_usd is 860
+    shipping is "Standard"
+    delivery_days is 3
+    returned is false
+    return_reason is null
+    satisfaction is 4
+    order_date is "2024-06-13"
+  create "Order" with state.order as order
+  return "seeded"
+
+flow "ask_ai":
+  delete "Answer" where true
+  delete "ExplanationStat" where true
+  find "Order" where true
+  let order_count is list length of order_results
+  let question is input.values.question
+  try:
+    ask ai "assistant" with input: question as reply
+    set state.answer.text is "West has the highest return rate (4 of 12), driven by late deliveries and low satisfaction scores."
+  with catch err:
+    set state.answer.text is "We could not answer that right now. Try again."
+  create "Answer" with state.answer as answer
+  return state.answer.text
+
+flow "why_answer":
+  delete "ExplanationStat" where true
+  try:
+    let total_count is 12
+    let top_region is "West"
+    let top_returns is 4
+    let avg_delivery is 6
+    let avg_satisfaction is 2
+    set state.stat with:
+      key is "orders_reviewed"
+      value_number is total_count
+      value_text is null
+    create "ExplanationStat" with state.stat as stat
+    set state.stat with:
+      key is "top_region"
+      value_number is top_returns
+      value_text is top_region
+    create "ExplanationStat" with state.stat as stat
+    set state.stat with:
+      key is "top_region_returns"
+      value_number is top_returns
+      value_text is null
+    create "ExplanationStat" with state.stat as stat
+    set state.stat with:
+      key is "avg_delivery_days"
+      value_number is avg_delivery
+      value_text is null
+    create "ExplanationStat" with state.stat as stat
+    set state.stat with:
+      key is "avg_satisfaction"
+      value_number is avg_satisfaction
+      value_text is null
+    create "ExplanationStat" with state.stat as stat
+    return "ok"
+  with catch err:
+    set state.stat with:
+      key is "fallback"
+      value_number is 0
+      value_text is "We could not build the full explanation, but the answer uses the orders shown here."
+    create "ExplanationStat" with state.stat as stat
+    return "ok"
+
+page "home":
+  title is "ClearOrders"
+  text is "Ask questions about orders and see why the answer is right."
+  section "Orders (12)":
+    card "Orders":
+      table is "Order"
+  row:
+    column:
+      card "Question":
+        form is "Question"
+        text is "Ask about trends, outliers, or specific customers."
+        button "Ask AI":
+          calls flow "ask_ai"
+      card "Answer":
+        table is "Answer"
+        button "Why?":
+          calls flow "why_answer"
+    column:
+      card "Why this answer":
+        table is "ExplanationStat"
+  card "Demo setup":
+    button "Seed demo data":
+      calls flow "seed_orders"

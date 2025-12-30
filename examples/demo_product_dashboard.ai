@@ -1,26 +1,30 @@
 spec is "1.0"
 
 record "Order":
-  field "id" is number must be present
-  field "customer" is text must be present
-  field "total" is number must be present
-  field "status" is text must be present
+  fields:
+    id is number must be present
+    customer is text must be present
+    total is number must be present
+    status is text must be present
 
 flow "seed_orders":
-  set state.order.id is 101
-  set state.order.customer is "Acme Corp"
-  set state.order.total is 240
-  set state.order.status is "processing"
+  set state.order with:
+    id is 101
+    customer is "Acme Corp"
+    total is 240
+    status is "processing"
   create "Order" with state.order as order
-  set state.order.id is 102
-  set state.order.customer is "Bright Traders"
-  set state.order.total is 120
-  set state.order.status is "shipped"
+  set state.order with:
+    id is 102
+    customer is "Bright Traders"
+    total is 120
+    status is "shipped"
   create "Order" with state.order as order
-  set state.order.id is 103
-  set state.order.customer is "Northwind"
-  set state.order.total is 86
-  set state.order.status is "processing"
+  set state.order with:
+    id is 103
+    customer is "Northwind"
+    total is 86
+    status is "processing"
   create "Order" with state.order as order
   return "seeded"
 

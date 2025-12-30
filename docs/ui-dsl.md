@@ -78,9 +78,10 @@ Nesting rules:
 Anti-example (not canonical):
 ```
 record "User":
-  field "email" is string must be present   # use text
-  field "age" is int must be greater than 17 # use number
-  field "active" is bool must be present     # use boolean
+  fields:
+    email is string must be present   # use text
+    age is int must be greater than 17 # use number
+    active is bool must be present     # use boolean
 ```
 
 ## 6) Intentionally missing

@@ -105,13 +105,13 @@ class Parser(TokenStream):
         return parse_block(self)
 
     # Statements
-    def _parse_statement(self) -> ast.Statement:
+    def _parse_statement(self) -> ast.Statement | list[ast.Statement]:
         return parse_statement(self)
 
     def _parse_let(self) -> ast.Let:
         return parse_let(self)
 
-    def _parse_set(self) -> ast.Set:
+    def _parse_set(self) -> ast.Set | list[ast.Set]:
         return parse_set(self)
 
     def _parse_if(self) -> ast.If:

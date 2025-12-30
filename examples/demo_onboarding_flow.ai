@@ -1,20 +1,22 @@
 spec is "1.0"
 
 record "Applicant":
-  field "email" is text must match pattern ".+@.+"
-  field "name" is text must be present
-  field "role" is text must be present
-  field "bio" is text must have length at least 10
+  fields:
+    email is text must match pattern ".+@.+"
+    name is text must be present
+    role is text must be present
+    bio is text must have length at least 10
 
 flow "start_onboarding":
   set state.step is "profile"
   return "started"
 
 flow "save_profile":
-  set state.applicant.email is input.values.email
-  set state.applicant.name is input.values.name
-  set state.applicant.role is input.values.role
-  set state.applicant.bio is input.values.bio
+  set state.applicant with:
+    email is input.values.email
+    name is input.values.name
+    role is input.values.role
+    bio is input.values.bio
   create "Applicant" with state.applicant as applicant
   set state.step is "review"
   return "profile saved"
@@ -25,10 +27,11 @@ flow "confirm_profile":
   return "confirmed"
 
 flow "reset_applicant":
-  set state.applicant.email is null
-  set state.applicant.name is null
-  set state.applicant.role is null
-  set state.applicant.bio is null
+  set state.applicant with:
+    email is null
+    name is null
+    role is null
+    bio is null
   set state.confirmed is false
   set state.step is "profile"
   return "reset"

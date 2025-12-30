@@ -43,7 +43,11 @@ def parse_function_decl(parser) -> ast.FunctionDecl:
             outputs = _parse_function_fields(parser, section_name="output", allow_optional=True)
             continue
         saw_body = True
-        body.append(parser._parse_statement())
+        stmt = parser._parse_statement()
+        if isinstance(stmt, list):
+            body.extend(stmt)
+        else:
+            body.append(stmt)
         while parser._match("NEWLINE"):
             pass
 

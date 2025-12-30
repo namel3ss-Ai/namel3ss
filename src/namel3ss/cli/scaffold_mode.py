@@ -28,6 +28,12 @@ class TemplateSpec:
 
 
 TEMPLATES: tuple[TemplateSpec, ...] = (
+    TemplateSpec(
+        name="demo",
+        directory="clear_orders",
+        description="ClearOrders demo for explainable answers over structured data.",
+        aliases=("clear-orders", "clear_orders"),
+    ),
     TemplateSpec(name="starter", directory="starter", description="Small app with one page and one flow."),
     TemplateSpec(name="crud", directory="crud", description="CRUD dashboard with form and table."),
     TemplateSpec(
@@ -130,7 +136,7 @@ def _normalize_project_name(name: str) -> str:
 def _prepare_readme(target_dir: Path, project_name: str) -> None:
     readme_path = target_dir / "README.md"
     if not readme_path.exists():
-        raise Namel3ssError(f"Template is missing README.md at {readme_path}")
+        return
     _rewrite_with_project_name(readme_path, project_name)
 
 

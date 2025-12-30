@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from typing import List
 
+from namel3ss.lang.keywords import is_keyword
 from namel3ss.types import normalize_type_name
 
 
@@ -115,3 +116,162 @@ def collapse_blank_lines(lines: List[str]) -> List[str]:
     while cleaned and cleaned[-1] == "":
         cleaned.pop()
     return cleaned
+
+
+_FIELD_LINE_RE = re.compile(r'^(\s*)field\s+"([^"]+)"\s+is\s+(.+)$')
+_RECORD_HEADER_RE = re.compile(r'^\s*record\s+"[^"]+"\s*:$')
+_TOOL_HEADER_RE = re.compile(r'^\s*tool\s+"[^"]+"\s*:$')
+_FIELDS_HEADER_RE = re.compile(r'^\s*fields\s*:$')
+_TOOL_SECTION_RE = re.compile(r'^\s*(input|output)\s*:$')
+_VALID_FIELD_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+_ALLOWED_KEYWORD_FIELD_NAMES = {"title", "text", "form", "table", "button", "page"}
+
+
+def normalize_record_fields(lines: List[str]) -> List[str]:
+    normalized: List[str] = []
+    idx = 0
+    while idx < len(lines):
+        line = lines[idx]
+        if _RECORD_HEADER_RE.match(line):
+            record_indent = _line_indent(line)
+            normalized.append(line)
+            idx += 1
+            block_lines, idx = _collect_block(lines, idx, record_indent)
+            normalized.extend(_normalize_record_block(block_lines, record_indent))
+            continue
+        if _TOOL_HEADER_RE.match(line):
+            tool_indent = _line_indent(line)
+            normalized.append(line)
+            idx += 1
+            block_lines, idx = _collect_block(lines, idx, tool_indent)
+            normalized.extend(_normalize_tool_block(block_lines, tool_indent))
+            continue
+        normalized.append(line)
+        idx += 1
+    return normalized
+
+
+def _normalize_record_block(lines: List[str], record_indent: int) -> List[str]:
+    normalized: List[str] = []
+    idx = 0
+    body_indent = record_indent + 2
+    while idx < len(lines):
+        line = lines[idx]
+        if line.strip() == "":
+            normalized.append(line)
+            idx += 1
+            continue
+        indent = _line_indent(line)
+        if indent == body_indent and _FIELDS_HEADER_RE.match(line):
+            normalized.append(line)
+            idx += 1
+            block_lines, idx = _collect_block(lines, idx, indent)
+            normalized.extend(_normalize_fields_block(block_lines))
+            continue
+        if indent == body_indent:
+            run_start = idx
+            run_lines: List[str] = []
+            run_names: List[str] = []
+            while idx < len(lines):
+                next_line = lines[idx]
+                if next_line.strip() == "":
+                    break
+                if _line_indent(next_line) != body_indent:
+                    break
+                match = _FIELD_LINE_RE.match(next_line)
+                if not match:
+                    break
+                run_lines.append(next_line)
+                run_names.append(match.group(2))
+                idx += 1
+            if run_lines:
+                if len(run_lines) >= 3 and all(_is_field_identifier(name) for name in run_names):
+                    normalized.append(" " * body_indent + "fields:")
+                    for field_line, name in zip(run_lines, run_names):
+                        tail = _FIELD_LINE_RE.match(field_line).group(3)
+                        normalized.append(" " * (body_indent + 2) + f"{name} is {tail}")
+                    continue
+                normalized.extend(run_lines)
+                continue
+            idx = run_start
+        normalized.append(line)
+        idx += 1
+    return normalized
+
+
+def _normalize_tool_block(lines: List[str], tool_indent: int) -> List[str]:
+    normalized: List[str] = []
+    idx = 0
+    body_indent = tool_indent + 2
+    while idx < len(lines):
+        line = lines[idx]
+        if line.strip() == "":
+            normalized.append(line)
+            idx += 1
+            continue
+        indent = _line_indent(line)
+        if indent == body_indent and _TOOL_SECTION_RE.match(line):
+            normalized.append(line)
+            idx += 1
+            block_lines, idx = _collect_block(lines, idx, indent)
+            normalized.extend(_normalize_tool_fields(block_lines))
+            continue
+        normalized.append(line)
+        idx += 1
+    return normalized
+
+
+def _normalize_fields_block(lines: List[str]) -> List[str]:
+    normalized: List[str] = []
+    for line in lines:
+        match = _FIELD_LINE_RE.match(line)
+        if match and _is_field_identifier(match.group(2)):
+            indent = match.group(1)
+            name = match.group(2)
+            tail = match.group(3)
+            normalized.append(f"{indent}{name} is {tail}")
+        else:
+            normalized.append(line)
+    return normalized
+
+
+def _normalize_tool_fields(lines: List[str]) -> List[str]:
+    normalized: List[str] = []
+    for line in lines:
+        match = _FIELD_LINE_RE.match(line)
+        if match:
+            indent = match.group(1)
+            name = match.group(2)
+            tail = match.group(3)
+            normalized.append(f"{indent}{name} is {tail}")
+        else:
+            normalized.append(line)
+    return normalized
+
+
+def _is_field_identifier(name: str) -> bool:
+    if not _VALID_FIELD_NAME_RE.match(name):
+        return False
+    if is_keyword(name) and name not in _ALLOWED_KEYWORD_FIELD_NAMES:
+        return False
+    return True
+
+
+def _collect_block(lines: List[str], start_idx: int, parent_indent: int) -> tuple[List[str], int]:
+    block_lines: List[str] = []
+    idx = start_idx
+    while idx < len(lines):
+        line = lines[idx]
+        if line.strip() == "":
+            block_lines.append(line)
+            idx += 1
+            continue
+        if _line_indent(line) <= parent_indent:
+            break
+        block_lines.append(line)
+        idx += 1
+    return block_lines, idx
+
+
+def _line_indent(line: str) -> int:
+    return len(line) - len(line.lstrip(" "))

@@ -16,7 +16,7 @@ from namel3ss.cli.format_mode import run_format
 from namel3ss.cli.graph_mode import run_graph
 from namel3ss.cli.json_io import dumps_pretty, parse_payload
 from namel3ss.cli.lint_mode import run_lint
-from namel3ss.cli.new_mode import run_new
+from namel3ss.cli.scaffold_mode import run_new
 from namel3ss.cli.persist_mode import run_data, run_persist
 from namel3ss.cli.promote_mode import run_promote_command
 from namel3ss.cli.proof_mode import run_proof_command

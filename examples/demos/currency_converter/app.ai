@@ -20,11 +20,12 @@ record "ConversionRequest":
   field "amount" is number must be greater than 0
 
 record "ConversionResult":
-  field "rate" is number must be greater than 0
-  field "converted" is number must be greater than 0
-  field "source" is text must be present
-  field "last_updated" is text must be present
-  field "stale" is boolean must be present
+  fields:
+    rate is number must be greater than 0
+    converted is number must be greater than 0
+    source is text must be present
+    last_updated is text must be present
+    stale is boolean must be present
 
 record "RateCache":
   field "pair" is text must be present
@@ -34,9 +35,10 @@ record "Status":
   field "message" is text must be present
 
 flow "seed_defaults":
-  set state.request.from is "EUR"
-  set state.request.to is "USD"
-  set state.request.amount is 50
+  set state.request with:
+    from is "EUR"
+    to is "USD"
+    amount is 50
   set state.error is null
   set state.status.message is "No errors ✅"
   delete "Status" where true
@@ -44,9 +46,10 @@ flow "seed_defaults":
   return "seeded"
 
 flow "reset_state":
-  set state.request.from is null
-  set state.request.to is null
-  set state.request.amount is null
+  set state.request with:
+    from is null
+    to is null
+    amount is null
   set state.error is null
   set state.status.message is "No errors ✅"
   delete "Status" where true
@@ -75,11 +78,12 @@ flow "convert":
   delete "RateCache" where pair is result.pair
   create "RateCache" with state.rate_cache as rate_cache
   let converted is amount * rate
-  set state.conversion_result.rate is rate
-  set state.conversion_result.converted is converted
-  set state.conversion_result.source is source
-  set state.conversion_result.last_updated is last_updated
-  set state.conversion_result.stale is stale
+  set state.conversion_result with:
+    rate is rate
+    converted is converted
+    source is source
+    last_updated is last_updated
+    stale is stale
   create "ConversionResult" with state.conversion_result as conversion_result
   set state.error is null
   set state.status.message is "No errors ✅"

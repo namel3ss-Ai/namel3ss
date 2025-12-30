@@ -17,15 +17,17 @@ record "WeatherRequest":
   field "city" is text must be present
 
 record "WeatherDay":
-  field "date" is text must be present
-  field "condition" is text must be present
-  field "temperature" is number must be present
+  fields:
+    date is text must be present
+    condition is text must be present
+    temperature is number must be present
 
 record "WeatherStatus":
-  field "source" is text must be present
-  field "note" is text
-  field "last_updated" is text must be present
-  field "stale" is boolean must be present
+  fields:
+    source is text must be present
+    note is text
+    last_updated is text must be present
+    stale is boolean must be present
 
 record "Status":
   field "message" is text must be present
@@ -52,14 +54,16 @@ flow "get_forecast":
   delete "WeatherDay" where true
   delete "WeatherStatus" where true
   for each day in result.days:
-    set state.weather_day.date is day.date
-    set state.weather_day.condition is day.condition
-    set state.weather_day.temperature is day.temperature
+    set state.weather_day with:
+      date is day.date
+      condition is day.condition
+      temperature is day.temperature
     create "WeatherDay" with state.weather_day as weather_day
-  set state.weather_status.source is result.source
-  set state.weather_status.note is result.note
-  set state.weather_status.last_updated is result.last_updated
-  set state.weather_status.stale is result.stale
+  set state.weather_status with:
+    source is result.source
+    note is result.note
+    last_updated is result.last_updated
+    stale is result.stale
   create "WeatherStatus" with state.weather_status as weather_status
   set state.error is null
   set state.status.message is "No errors ✅"

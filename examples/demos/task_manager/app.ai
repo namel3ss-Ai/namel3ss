@@ -1,32 +1,37 @@
 spec is "1.0"
 
 record "User":
-  field "id" is number must be present
-  field "name" is text must be present
-  field "role" is text must be present
+  fields:
+    id is number must be present
+    name is text must be present
+    role is text must be present
 
 record "Task":
-  field "id" is number must be present
-  field "title" is text must be present
-  field "assignee" is text must be present
-  field "status" is text must be present
-  field "priority" is text must be present
+  fields:
+    id is number must be present
+    title is text must be present
+    assignee is text must be present
+    status is text must be present
+    priority is text must be present
 
 record "Status":
   field "message" is text must be present
 
 flow "seed_users":
-  set state.user.id is 1
-  set state.user.name is "Ava Admin"
-  set state.user.role is "admin"
+  set state.user with:
+    id is 1
+    name is "Ava Admin"
+    role is "admin"
   create "User" with state.user as user
-  set state.user.id is 2
-  set state.user.name is "Ben Member"
-  set state.user.role is "member"
+  set state.user with:
+    id is 2
+    name is "Ben Member"
+    role is "member"
   create "User" with state.user as user
-  set state.user.id is 3
-  set state.user.name is "Cora Member"
-  set state.user.role is "member"
+  set state.user with:
+    id is 3
+    name is "Cora Member"
+    role is "member"
   create "User" with state.user as user
   set state.error is null
   set state.status.message is "No errors ✅"
@@ -34,35 +39,40 @@ flow "seed_users":
   return "seeded users"
 
 flow "seed_tasks":
-  set state.task.id is 101
-  set state.task.title is "Draft roadmap"
-  set state.task.assignee is "Ava Admin"
-  set state.task.status is "Todo"
-  set state.task.priority is "High"
+  set state.task with:
+    id is 101
+    title is "Draft roadmap"
+    assignee is "Ava Admin"
+    status is "Todo"
+    priority is "High"
   create "Task" with state.task as task
-  set state.task.id is 102
-  set state.task.title is "Review onboarding"
-  set state.task.assignee is "Ben Member"
-  set state.task.status is "Doing"
-  set state.task.priority is "Med"
+  set state.task with:
+    id is 102
+    title is "Review onboarding"
+    assignee is "Ben Member"
+    status is "Doing"
+    priority is "Med"
   create "Task" with state.task as task
-  set state.task.id is 103
-  set state.task.title is "QA checklist"
-  set state.task.assignee is "Cora Member"
-  set state.task.status is "Todo"
-  set state.task.priority is "Low"
+  set state.task with:
+    id is 103
+    title is "QA checklist"
+    assignee is "Cora Member"
+    status is "Todo"
+    priority is "Low"
   create "Task" with state.task as task
-  set state.task.id is 104
-  set state.task.title is "Release notes"
-  set state.task.assignee is "Ava Admin"
-  set state.task.status is "Done"
-  set state.task.priority is "Med"
+  set state.task with:
+    id is 104
+    title is "Release notes"
+    assignee is "Ava Admin"
+    status is "Done"
+    priority is "Med"
   create "Task" with state.task as task
-  set state.task.id is 105
-  set state.task.title is "Bug triage"
-  set state.task.assignee is "Ben Member"
-  set state.task.status is "Doing"
-  set state.task.priority is "High"
+  set state.task with:
+    id is 105
+    title is "Bug triage"
+    assignee is "Ben Member"
+    status is "Doing"
+    priority is "High"
   create "Task" with state.task as task
   set state.error is null
   set state.status.message is "No errors ✅"
@@ -70,22 +80,24 @@ flow "seed_tasks":
   return "seeded tasks"
 
 flow "reset_state":
-  set state.task.id is null
-  set state.task.title is null
-  set state.task.assignee is null
-  set state.task.status is null
-  set state.task.priority is null
+  set state.task with:
+    id is null
+    title is null
+    assignee is null
+    status is null
+    priority is null
   set state.error is null
   set state.status.message is "No errors ✅"
   create "Status" with state.status as status
   return "reset"
 
 flow "create_task":
-  set state.task.id is input.values.id
-  set state.task.title is input.values.title
-  set state.task.assignee is input.values.assignee
-  set state.task.status is input.values.status
-  set state.task.priority is input.values.priority
+  set state.task with:
+    id is input.values.id
+    title is input.values.title
+    assignee is input.values.assignee
+    status is input.values.status
+    priority is input.values.priority
   create "Task" with state.task as task
   set state.error is null
   set state.status.message is "No errors ✅"
@@ -102,11 +114,12 @@ flow "move_status":
     return "missing"
   let idx is total - 1
   let current is list get task_results at idx
-  set state.task.id is current.id
-  set state.task.title is current.title
-  set state.task.assignee is current.assignee
-  set state.task.status is input.values.status
-  set state.task.priority is current.priority
+  set state.task with:
+    id is current.id
+    title is current.title
+    assignee is current.assignee
+    status is input.values.status
+    priority is current.priority
   create "Task" with state.task as task
   set state.error is null
   set state.status.message is "No errors ✅"
@@ -123,11 +136,12 @@ flow "mark_done": requires identity.role is "admin"
     return "missing"
   let idx is total - 1
   let current is list get task_results at idx
-  set state.task.id is current.id
-  set state.task.title is current.title
-  set state.task.assignee is current.assignee
-  set state.task.status is "Done"
-  set state.task.priority is current.priority
+  set state.task with:
+    id is current.id
+    title is current.title
+    assignee is current.assignee
+    status is "Done"
+    priority is current.priority
   create "Task" with state.task as task
   set state.error is null
   set state.status.message is "No errors ✅"

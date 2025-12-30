@@ -73,7 +73,7 @@ def test_record_fields_with_is_and_constraints_parse_and_lower():
 
 def test_formatter_keeps_is_in_field_lines():
     formatted = format_source(SOURCE)
-    for line in formatted.splitlines():
-        if line.strip().startswith("field"):
-            assert " is " in line
+    assert "fields:" in formatted
+    assert "email is text must be present" in formatted
+    assert "name is text must be unique" in formatted
     assert 'field "email" string must be present' not in formatted

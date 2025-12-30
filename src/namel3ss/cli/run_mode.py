@@ -4,6 +4,7 @@ from pathlib import Path
 from namel3ss.cli.app_loader import load_program
 from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.cli.builds import app_path_from_metadata, load_build_metadata, read_latest_build_id
+from namel3ss.cli.demo_support import CLEARORDERS_NAME, is_clearorders_demo
 from namel3ss.cli.promotion_state import load_state
 from namel3ss.cli.runner import run_flow
 from namel3ss.cli.targets import parse_target
@@ -21,9 +22,13 @@ def run_run_command(args: list[str]) -> int:
     sources: dict = {}
     try:
         params = _parse_args(args)
-        target = parse_target(params.target_raw)
         app_path = resolve_app_path(params.app_arg)
         project_root = app_path.parent
+        demo_default = None
+        is_demo = params.target_raw is None and is_clearorders_demo(project_root)
+        if is_demo:
+            demo_default = "service"
+        target = parse_target(params.target_raw or demo_default)
         set_engine_target(target.name)
         set_audit_root(project_root)
         run_path, build_id = _resolve_run_path(target.name, project_root, app_path, params.build_id)
@@ -42,6 +47,9 @@ def run_run_command(args: list[str]) -> int:
                 print(f"Service runner dry http://127.0.0.1:{port}/health")
                 print(f"Build: {build_id or 'working-copy'}")
                 return 0
+            if is_demo:
+                print(f"Running {CLEARORDERS_NAME} at: http://127.0.0.1:{port}/")
+                print("Press Ctrl+C to stop.")
             try:
                 runner.start(background=False)
             except KeyboardInterrupt:

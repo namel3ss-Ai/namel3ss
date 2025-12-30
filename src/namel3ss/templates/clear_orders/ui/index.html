@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ClearOrders</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <div>
+          <div class="badge">Live Orders</div>
+          <h1>ClearOrders</h1>
+          <p>Explainable answers over structured order data, ready in minutes.</p>
+        </div>
+      </header>
+
+      <section class="panel orders-panel">
+        <div class="panel-head">
+          <h2>Orders (12)</h2>
+          <span>Seeded demo data</span>
+        </div>
+        <div class="table-wrap">
+          <div id="ordersLoading" class="table-state">Loading orders...</div>
+          <div id="ordersEmpty" class="table-state" style="display: none;">
+            No orders loaded. Re-run the demo to restore data.
+          </div>
+          <table class="orders-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Region</th>
+                <th>Segment</th>
+                <th>Total ($)</th>
+                <th>Shipping</th>
+                <th>Delivery Days</th>
+                <th>Returned</th>
+                <th>Satisfaction</th>
+                <th>Order Date</th>
+                <th>Return Reason</th>
+              </tr>
+            </thead>
+            <tbody id="ordersBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="left-column">
+          <section class="panel question-panel">
+            <h3>Ask a question</h3>
+            <p class="hint">Ask about returns, delivery times, or specific customers.</p>
+            <div class="input-row">
+              <input
+                id="questionInput"
+                type="text"
+                placeholder="Which region has the most returns?"
+                aria-label="Question"
+              />
+              <button class="primary" id="askButton">Ask AI</button>
+            </div>
+            <div id="questionHint" class="hint"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h3>Answer</h3>
+            </div>
+            <div id="answerText" class="answer-text empty">Ask a question to see an answer.</div>
+            <div>
+              <button class="secondary" id="whyButton" disabled>Why?</button>
+            </div>
+          </section>
+        </div>
+
+        <div class="right-column">
+          <section class="panel why-panel" id="whyPanel" data-open="false">
+            <div class="panel-head">
+              <h3>Why this answer</h3>
+            </div>
+            <div id="whyPlaceholder" class="why-placeholder">Click Why? to see the explanation.</div>
+            <ul id="whyList" class="why-list" style="display: none;"></ul>
+          </section>
+        </div>
+      </section>
+    </div>
+    <script src="./app.js"></script>
+  </body>
+</html>

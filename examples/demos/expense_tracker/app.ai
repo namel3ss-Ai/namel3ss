@@ -1,10 +1,11 @@
 spec is "1.0"
 
 record "Expense":
-  field "date" is text must be present
-  field "category" is text must be present
-  field "amount" is number must be greater than 0
-  field "note" is text
+  fields:
+    date is text must be present
+    category is text must be present
+    amount is number must be greater than 0
+    note is text
 
 record "CategoryTotal":
   field "category" is text must be present
@@ -14,45 +15,53 @@ record "Status":
   field "message" is text must be present
 
 flow "seed_expenses":
-  set state.expense.date is "2024-04-01"
-  set state.expense.category is "Travel"
-  set state.expense.amount is 120
-  set state.expense.note is "Client visit"
+  set state.expense with:
+    date is "2024-04-01"
+    category is "Travel"
+    amount is 120
+    note is "Client visit"
   create "Expense" with state.expense as expense
-  set state.expense.date is "2024-04-02"
-  set state.expense.category is "Meals"
-  set state.expense.amount is 24
-  set state.expense.note is "Team lunch"
+  set state.expense with:
+    date is "2024-04-02"
+    category is "Meals"
+    amount is 24
+    note is "Team lunch"
   create "Expense" with state.expense as expense
-  set state.expense.date is "2024-04-03"
-  set state.expense.category is "Supplies"
-  set state.expense.amount is 65
-  set state.expense.note is "Printer ink"
+  set state.expense with:
+    date is "2024-04-03"
+    category is "Supplies"
+    amount is 65
+    note is "Printer ink"
   create "Expense" with state.expense as expense
-  set state.expense.date is "2024-04-04"
-  set state.expense.category is "Utilities"
-  set state.expense.amount is 98
-  set state.expense.note is "Cloud hosting"
+  set state.expense with:
+    date is "2024-04-04"
+    category is "Utilities"
+    amount is 98
+    note is "Cloud hosting"
   create "Expense" with state.expense as expense
-  set state.expense.date is "2024-04-05"
-  set state.expense.category is "Travel"
-  set state.expense.amount is 45
-  set state.expense.note is "Taxi"
+  set state.expense with:
+    date is "2024-04-05"
+    category is "Travel"
+    amount is 45
+    note is "Taxi"
   create "Expense" with state.expense as expense
-  set state.expense.date is "2024-04-06"
-  set state.expense.category is "Meals"
-  set state.expense.amount is 18
-  set state.expense.note is "Coffee"
+  set state.expense with:
+    date is "2024-04-06"
+    category is "Meals"
+    amount is 18
+    note is "Coffee"
   create "Expense" with state.expense as expense
-  set state.expense.date is "2024-04-07"
-  set state.expense.category is "Supplies"
-  set state.expense.amount is 32
-  set state.expense.note is "Notebooks"
+  set state.expense with:
+    date is "2024-04-07"
+    category is "Supplies"
+    amount is 32
+    note is "Notebooks"
   create "Expense" with state.expense as expense
-  set state.expense.date is "2024-04-08"
-  set state.expense.category is "Utilities"
-  set state.expense.amount is 110
-  set state.expense.note is "Monitoring"
+  set state.expense with:
+    date is "2024-04-08"
+    category is "Utilities"
+    amount is 110
+    note is "Monitoring"
   create "Expense" with state.expense as expense
   set state.error is null
   set state.status.message is "No errors ✅"
@@ -60,10 +69,11 @@ flow "seed_expenses":
   return "seeded"
 
 flow "create_expense":
-  set state.expense.date is input.values.date
-  set state.expense.category is input.values.category
-  set state.expense.amount is input.values.amount
-  set state.expense.note is input.values.note
+  set state.expense with:
+    date is input.values.date
+    category is input.values.category
+    amount is input.values.amount
+    note is input.values.note
   create "Expense" with state.expense as expense
   set state.error is null
   set state.status.message is "No errors ✅"
@@ -71,10 +81,11 @@ flow "create_expense":
   return "created"
 
 flow "reset_state":
-  set state.expense.date is null
-  set state.expense.category is null
-  set state.expense.amount is null
-  set state.expense.note is null
+  set state.expense with:
+    date is null
+    category is null
+    amount is null
+    note is null
   set state.error is null
   set state.status.message is "No errors ✅"
   create "Status" with state.status as status

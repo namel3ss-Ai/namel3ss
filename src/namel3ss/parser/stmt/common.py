@@ -7,7 +7,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.parser.grammar_table import select_statement_rule
 
 
-def parse_statement(parser) -> ast.Statement:
+def parse_statement(parser) -> ast.Statement | list[ast.Statement]:
     tok = parser._current()
     rule = select_statement_rule(parser)
     if rule is not None:
@@ -22,7 +22,11 @@ def parse_statements(parser, until: Set[str]) -> List[ast.Statement]:
     while parser._current().type not in until:
         if parser._match("NEWLINE"):
             continue
-        statements.append(parser._parse_statement())
+        stmt = parser._parse_statement()
+        if isinstance(stmt, list):
+            statements.extend(stmt)
+        else:
+            statements.append(stmt)
     return statements
 
 
