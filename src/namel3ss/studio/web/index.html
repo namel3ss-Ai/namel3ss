@@ -8,494 +8,78 @@
   <link rel="stylesheet" href="/studio_ui.css">
   <link rel="stylesheet" href="/studio_panels.css">
   <link rel="stylesheet" href="/theme_tokens.css">
-  <link rel="stylesheet" href="/tool_wizard.css">
 </head>
 <body class="studio-root">
   <div class="studio-shell">
-    <header class="topbar">
+    <header class="topbar" data-testid="studio-topbar">
       <div class="topbar-left">
-        <div class="brand">
-          <img src="namel3ss_horizontal_logo.svg" alt="namel3ss studio logo">
-          <span class="sr-only">Namel3ss Studio</span>
-        </div>
-        <div class="file-name" id="fileName"></div>
+        <div class="studio-title">namel3ss Studio</div>
       </div>
       <div class="topbar-actions">
-        <button class="btn primary" id="refresh" title="Reload UI and actions (non-destructive)">Refresh</button>
-        <button class="btn secondary" id="reset" title="Clear state and store">Reset</button>
-        <button class="btn secondary" id="toolWizardButton" title="Generate a Python tool skeleton">Tool Wizard</button>
-        <button class="btn secondary hidden" id="seed">Seed</button>
-        <label for="themeSelect" id="themeLabel">Theme</label>
-        <select id="themeSelect" class="theme-select">
-          <option value="system">System</option>
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-        </select>
-        <button class="btn ghost small" id="learnToggle" aria-pressed="false">Learn</button>
-        <button class="btn ghost small" id="helpButton">Help</button>
-        <div class="version" id="versionLabel"></div>
+        <button class="btn primary hidden" id="run" title="Run the default flow" data-testid="studio-run-button">Run ▸</button>
+        <div id="toast" class="toast run-status" aria-live="polite"></div>
       </div>
     </header>
-    <div class="truth-bar" id="truthBar">
-      <div class="truth-item" id="truthStore"></div>
-      <div class="truth-item" id="truthRuntime"></div>
-      <div class="truth-item" id="truthEffective"></div>
-      <div class="truth-item" id="truthPersisted"></div>
-      <div class="truth-item" id="truthOverride"></div>
-    </div>
-    <div id="helpModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-      <div class="modal-content">
-        <div class="modal-header">
-          <div id="helpTitle" class="section-title">Help</div>
-          <button class="btn ghost small" id="helpClose">Close</button>
-        </div>
-        <div class="modal-body">
-          <p><a href="docs/quickstart.md" target="_blank">Quickstart</a></p>
-          <p><a href="docs/first-5-minutes.md" target="_blank">First 5 minutes</a></p>
-          <p><a href="docs/what-you-can-build-today.md" target="_blank">What you can build today</a></p>
-          <p><a href="examples/README.md" target="_blank">Examples</a></p>
-          <p>Debug tip: run <code>n3 app.ai lint</code> or <code>n3 app.ai check</code> if something feels off.</p>
-        </div>
-      </div>
-    </div>
-    <div id="toolWizardModal" class="modal hidden tool-wizard-modal" role="dialog" aria-modal="true" aria-labelledby="toolWizardTitle">
-      <div class="modal-content">
-        <div class="modal-header">
-          <div id="toolWizardTitle" class="section-title">Tool Wizard</div>
-          <button class="btn ghost small" id="toolWizardClose">Close</button>
-        </div>
-        <div class="modal-body">
-          <form id="toolWizardForm" class="ui-form">
-            <label>
-              Tool name
-              <input id="toolWizardName" type="text" placeholder="greeter">
-            </label>
-            <label>
-              Purity
-              <select id="toolWizardPurity">
-                <option value="impure">impure</option>
-                <option value="pure">pure</option>
-              </select>
-            </label>
-            <label>
-              Timeout seconds (optional)
-              <input id="toolWizardTimeout" type="number" min="1" placeholder="10">
-            </label>
-            <label>
-              Input fields (one per line, name:type, optional with ?)
-              <textarea id="toolWizardInput" rows="4" placeholder="name:text&#10;age?:number"></textarea>
-            </label>
-            <label>
-              Output fields (one per line, name:type, optional with ?)
-              <textarea id="toolWizardOutput" rows="4" placeholder="message:text&#10;ok:boolean"></textarea>
-            </label>
-            <div class="tool-wizard-preview">
-              <div class="tool-wizard-preview-title">Preview</div>
-              <pre id="toolWizardPreview" class="tool-wizard-preview-body"></pre>
-            </div>
-            <div id="toolWizardStatus" class="tool-wizard-status"></div>
-            <div id="toolWizardConflict" class="tool-wizard-conflict hidden">
-              <div id="toolWizardConflictMessage"></div>
-              <button class="btn secondary small" id="toolWizardUseSuggestion" type="button">Use suggested names</button>
-              <button class="btn secondary small" id="toolWizardReuseExisting" type="button">Reuse existing</button>
-            </div>
-            <div class="tool-wizard-actions">
-              <button class="btn secondary" type="button" id="toolWizardPreviewButton">Preview</button>
-              <button class="btn primary" type="submit">Create tool</button>
-              <button class="btn ghost" type="button" id="toolWizardCancel">Cancel</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-    <div id="toast" class="toast" aria-live="polite"></div>
     <div class="shell-body">
-      <aside class="inspector">
-        <div class="panel inspector-panel">
-          <div class="panel-header">
-            <div class="section-title">Inspector</div>
-          </div>
-          <div id="inspectorBody" class="panel-body inspector-body"></div>
-        </div>
-        <div class="tabs" role="tablist">
-          <button class="tab active" data-tab="summary">Summary</button>
-          <button class="tab" data-tab="graph">Graph</button>
-          <button class="tab" data-tab="trust">Trust</button>
-          <button class="tab" data-tab="rules">Rules</button>
-          <button class="tab" data-tab="handoff">Handoff</button>
-          <button class="tab" data-tab="data">Data</button>
-          <button class="tab" data-tab="fix">Fix</button>
-          <button class="tab" data-tab="state">State</button>
-          <button class="tab" data-tab="actions">Actions</button>
-          <button class="tab" data-tab="tools">Tools</button>
-          <button class="tab" data-tab="packs">Packs</button>
-          <button class="tab" data-tab="packages">Packages</button>
-          <button class="tab" data-tab="discover">Discover</button>
-          <button class="tab" data-tab="security">Security</button>
-          <button class="tab" data-tab="traces">Traces</button>
-          <button class="tab" data-tab="lint">Lint Findings</button>
-        </div>
-        <div class="tab-panels">
-          <div class="panel active" data-tab="summary">
-            <div class="panel-header">
-              <div class="section-title">Summary</div>
-              <button class="btn ghost small" id="summaryCopy">Copy JSON</button>
-            </div>
-            <div id="summary" class="panel-body"></div>
-          </div>
-          <div class="panel" data-tab="graph">
-            <div class="panel-header">
-              <div class="section-title">Graph</div>
-              <button class="btn ghost small" id="graphRefresh">Refresh</button>
-            </div>
-            <div class="graph-layout">
-              <div class="panel-body graph-wrap">
-                <div id="graphCanvas" class="graph-canvas"></div>
-              </div>
-              <div class="panel-body graph-details" id="graphDetails"></div>
-            </div>
-          </div>
-          <div class="panel" data-tab="trust">
-            <div class="panel-header">
-              <div class="section-title">Trust</div>
-              <button class="btn ghost small" id="trustRefresh">Refresh</button>
-            </div>
-            <div class="trust-grid">
-              <div class="panel-body" id="trustStatus"></div>
-              <div class="panel-body" id="trustProof"></div>
-              <div class="panel-body" id="trustVerify"></div>
-              <div class="panel-body" id="trustSecrets"></div>
-              <div class="panel-body" id="trustObserve"></div>
-              <div class="panel-body" id="trustExplain"></div>
-              <div class="panel-body" id="trustWhy"></div>
-            </div>
-          </div>
-          <div class="panel" data-tab="rules">
-            <div class="panel-header">
-              <div class="section-title">Rules</div>
-              <button class="btn ghost small" id="rulesRefresh">Refresh</button>
-            </div>
-            <div id="rulesPanel" class="panel-body">
-              <div class="panel-stack">
-                <div class="panel-section">
-                  <div class="panel-section-title">Memory packs</div>
-                </div>
-                <div id="memoryPacksPanel"></div>
-                <div class="panel-section">
-                  <div class="panel-section-title">Propose rule</div>
-                </div>
-                <div class="rules-form">
-                  <input id="rulesText" type="text" placeholder="Only approvers can approve team proposals">
-                  <select id="rulesScope" aria-label="Rule scope">
-                    <option value="team">Team scope</option>
-                    <option value="system">System scope</option>
-                  </select>
-                  <input id="rulesPriority" type="number" min="0" placeholder="Priority">
-                  <button class="btn primary" id="rulesPropose">Propose</button>
-                </div>
-                <div class="panel-section">
-                  <div class="panel-section-title">Active rules</div>
-                </div>
-                <div class="rules-grid">
-                  <div>
-                    <div class="panel-section-title">Team</div>
-                    <div id="rulesActiveTeam"></div>
-                  </div>
-                  <div>
-                    <div class="panel-section-title">System</div>
-                    <div id="rulesActiveSystem"></div>
-                  </div>
-                </div>
-                <div class="panel-section">
-                  <div class="panel-section-title">Pending rules</div>
-                </div>
-                <div class="rules-grid">
-                  <div>
-                    <div class="panel-section-title">Team</div>
-                    <div id="rulesPendingTeam"></div>
-                  </div>
-                  <div>
-                    <div class="panel-section-title">System</div>
-                    <div id="rulesPendingSystem"></div>
-                  </div>
-                </div>
-                <div class="status-banner">See Traces for rule decisions and explain.</div>
-              </div>
-            </div>
-          </div>
-          <div class="panel" data-tab="handoff">
-            <div class="panel-header">
-              <div class="section-title">Handoff</div>
-              <button class="btn ghost small" id="handoffRefresh">Refresh</button>
-            </div>
-            <div id="handoffPanel" class="panel-body">
-              <div class="panel-stack">
-                <div class="panel-section">
-                  <div class="panel-section-title">Create handoff</div>
-                </div>
-                <div class="handoff-form">
-                  <label>
-                    From agent
-                    <select id="handoffFrom" aria-label="From agent"></select>
-                  </label>
-                  <label>
-                    To agent
-                    <select id="handoffTo" aria-label="To agent"></select>
-                  </label>
-                  <button class="btn primary" id="handoffCreate">Create handoff</button>
-                </div>
-                <div class="panel-section">
-                  <div class="panel-section-title">Agents</div>
-                </div>
-                <div id="handoffAgents"></div>
-                <div class="panel-section">
-                  <div class="panel-section-title">Packets</div>
-                </div>
-                <div id="handoffPackets"></div>
-                <div class="status-banner">See Traces for handoff decisions and briefing.</div>
-              </div>
-            </div>
-          </div>
-          <div class="panel" data-tab="data">
-            <div class="panel-header">
-              <div class="section-title">Data & Identity</div>
-              <button class="btn ghost small" id="dataRefresh">Refresh</button>
-            </div>
-            <div class="data-grid">
-              <div class="panel-body" id="dataSummary"></div>
-              <div class="panel-body" id="auditTimeline">
-                <div class="audit-controls">
-                  <select id="auditFilterKind" aria-label="Audit filter type">
-                    <option value="">Filter (any)</option>
-                    <option value="flow">Flow</option>
-                    <option value="action">Action</option>
-                  </select>
-                  <input id="auditFilterText" type="text" placeholder="Search…" aria-label="Audit filter text">
-                  <button class="btn secondary small" id="auditFilterApply">Apply</button>
-                </div>
-                <div id="auditEvents"></div>
-              </div>
-            </div>
-          </div>
-          <div class="panel" data-tab="fix">
-            <div class="panel-header">
-              <div class="section-title">Guided Fixes</div>
-              <button class="btn ghost small" id="fixRefresh">Refresh</button>
-            </div>
-            <div class="fix-grid">
-              <div class="panel-body" id="fixDiagnostics"></div>
-              <div class="panel-body" id="fixPreview"></div>
-              <div class="panel-body" id="fixRename"></div>
-            </div>
-          </div>
-          <div class="panel" data-tab="state">
-            <div class="panel-header">
-              <div class="section-title">State</div>
-              <button class="btn ghost small" id="stateCopy">Copy JSON</button>
-            </div>
-            <div id="state" class="panel-body"></div>
-          </div>
-          <div class="panel" data-tab="actions">
-            <div class="panel-header">
-              <div class="section-title">Actions</div>
-              <button class="btn ghost small" id="actionsCopy">Copy JSON</button>
-            </div>
-            <div id="actions" class="panel-body"></div>
-          </div>
-          <div class="panel" data-tab="tools">
-            <div class="panel-header">
-              <div class="section-title">Tools</div>
-              <div class="panel-actions">
-                <button class="btn ghost small" id="toolsAutoBind">Auto-bind missing tools</button>
-                <button class="btn ghost small" id="toolsOpenWizard">Tool Wizard</button>
-                <button class="btn ghost small" id="toolsFixToggle">Fixes</button>
-                <button class="btn ghost small" id="toolsCopy">Copy JSON</button>
-              </div>
-            </div>
-            <div class="control-row">
-              <input id="toolsFilter" type="text" placeholder="Filter tools…" aria-label="Filter tools">
-            </div>
-            <div id="toolsFixPanel" class="panel-body hidden"></div>
-            <div id="tools" class="panel-body"></div>
-          </div>
-          <div class="panel" data-tab="packs">
-            <div class="panel-header">
-              <div class="section-title">Packs</div>
-              <div class="panel-actions">
-                <button class="btn ghost small" id="packsRefresh">Refresh</button>
-                <button class="btn ghost small" id="packsCopy">Copy JSON</button>
-              </div>
-            </div>
-            <div class="control-row">
-              <input id="packsPath" type="text" placeholder="Add pack path…" aria-label="Pack path">
-              <button class="btn secondary small" id="packsAdd">Add pack</button>
-            </div>
-            <div id="packs" class="panel-body"></div>
-          </div>
-          <div class="panel" data-tab="packages">
-            <div class="panel-header">
-              <div class="section-title">Packages</div>
-              <div class="panel-actions">
-                <button class="btn ghost small" id="packagesCopy">Copy JSON</button>
-              </div>
-            </div>
-            <div class="control-row">
-              <input id="packagesQuery" type="text" placeholder="Search packages…" aria-label="Package search query">
-              <button class="btn secondary small" id="packagesSearch">Search</button>
-            </div>
-            <div id="packagesResults" class="panel-body"></div>
-          </div>
-          <div class="panel" data-tab="discover">
-            <div class="panel-header">
-              <div class="section-title">Discover</div>
-              <div class="panel-actions">
-                <button class="btn ghost small" id="discoverCopy">Copy JSON</button>
-              </div>
-            </div>
-            <div class="control-row">
-              <input id="discoverPhrase" type="text" placeholder="Intent phrase…" aria-label="Intent phrase">
-            </div>
-            <div class="control-row">
-              <select id="discoverCapability" aria-label="Capability filter">
-                <option value="">Capability (any)</option>
-                <option value="network">network</option>
-                <option value="filesystem">filesystem</option>
-                <option value="secrets">secrets</option>
-                <option value="subprocess">subprocess</option>
-                <option value="env">env</option>
-              </select>
-              <select id="discoverRisk" aria-label="Risk filter">
-                <option value="">Risk (any)</option>
-                <option value="low">low</option>
-                <option value="medium">medium</option>
-                <option value="high">high</option>
-              </select>
-              <button class="btn secondary small" id="discoverSearch">Search</button>
-            </div>
-            <div id="discoverResults" class="panel-body"></div>
-          </div>
-          <div class="panel" data-tab="security">
-            <div class="panel-header">
-              <div class="section-title">Security Lens</div>
-              <div class="panel-actions">
-                <button class="btn ghost small" id="securityRefresh">Refresh</button>
-                <button class="btn ghost small" id="securityCopy">Copy JSON</button>
-              </div>
-            </div>
-            <div id="security" class="panel-body"></div>
-          </div>
-          <div class="panel" data-tab="traces">
-            <div class="panel-header">
-              <div class="section-title">Traces</div>
-              <div class="panel-actions">
-                <button class="btn ghost small" id="traceFormatPlain" aria-pressed="true">Plain</button>
-                <button class="btn ghost small" id="traceFormatJson" aria-pressed="false">JSON</button>
-                <button class="btn ghost small" id="tracePhaseCurrent" aria-pressed="true">Phase: current</button>
-                <button class="btn ghost small" id="tracePhaseHistory" aria-pressed="false">Show history</button>
-                <button class="btn ghost small" id="traceLaneMy" aria-pressed="true">Lane my</button>
-                <button class="btn ghost small" id="traceLaneTeam" aria-pressed="false">Lane team</button>
-                <button class="btn ghost small" id="traceLaneSystem" aria-pressed="false">Lane system</button>
-                <button class="btn ghost small" id="tracesCopy">Copy JSON</button>
-              </div>
-            </div>
-            <div class="control-row">
-              <input id="tracesFilter" type="text" placeholder="Filter traces…" aria-label="Filter traces">
-              <div class="control-actions">
-                <button class="btn ghost small" id="traceCopyOutput">Copy output</button>
-                <button class="btn ghost small" id="traceCopyJson">Copy trace JSON</button>
-              </div>
-            </div>
-            <div class="control-row trace-budget-filters">
-              <div class="inline-label">Memory filters</div>
-              <button class="btn ghost small" id="traceMemoryBudget" aria-pressed="true">Budget</button>
-              <button class="btn ghost small" id="traceMemoryCompaction" aria-pressed="true">Compaction</button>
-              <button class="btn ghost small" id="traceMemoryCacheHit" aria-pressed="true">Cache hit</button>
-              <button class="btn ghost small" id="traceMemoryCacheMiss" aria-pressed="true">Cache miss</button>
-              <button class="btn ghost small" id="traceMemoryWakeUp" aria-pressed="true">Wake up</button>
-              <button class="btn ghost small" id="traceMemoryRestoreFailed" aria-pressed="true">Restore failed</button>
-              <button class="btn ghost small" id="traceMemoryPackLoaded" aria-pressed="true">Pack loaded</button>
-              <button class="btn ghost small" id="traceMemoryPackMerged" aria-pressed="true">Pack merged</button>
-              <button class="btn ghost small" id="traceMemoryPackOverrides" aria-pressed="true">Pack overrides</button>
-            </div>
-            <div class="control-row trace-module-filters">
-              <div class="inline-label">Module filters</div>
-              <button class="btn ghost small" id="traceModuleLoaded" aria-pressed="true">Module loaded</button>
-              <button class="btn ghost small" id="traceModuleMerged" aria-pressed="true">Module merged</button>
-              <button class="btn ghost small" id="traceModuleOverrides" aria-pressed="true">Module overrides</button>
-            </div>
-            <div class="control-row trace-parallel-filters">
-              <div class="inline-label">Parallel filters</div>
-              <button class="btn ghost small" id="traceParallelStarted" aria-pressed="true">Parallel started</button>
-              <button class="btn ghost small" id="traceParallelTaskFinished" aria-pressed="true">Task finished</button>
-              <button class="btn ghost small" id="traceParallelMerged" aria-pressed="true">Parallel merged</button>
-            </div>
-            <div id="teamAgreements" class="panel-body team-agreements hidden">
-              <div class="inline-label">Team agreements</div>
-              <div id="teamTrust" class="trust-panel">
-                <div class="inline-label">Team trust</div>
-                <div id="teamTrustLines" class="trust-lines"></div>
-                <div id="teamTrustNotice" class="trust-notice"></div>
-              </div>
-              <div id="teamAgreementSummary" class="agreement-summary"></div>
-              <div id="teamAgreementsList"></div>
-            </div>
-            <div id="traces" class="panel-body"></div>
-          </div>
-          <div class="panel" data-tab="lint">
-            <div class="panel-header">
-              <div class="section-title">Lint Findings</div>
-              <button class="btn ghost small" id="lintCopy">Copy JSON</button>
-            </div>
-            <div id="lint" class="panel-body"></div>
-          </div>
-        </div>
-      </aside>
-      <section class="preview">
+      <section class="preview" data-testid="studio-preview">
         <div class="panel">
-          <div class="panel-header preview-header">
-            <div class="section-title">UI Preview</div>
-            <div class="preview-controls">
-              <label for="addElementSelect">Add element</label>
-              <select id="addElementSelect">
-                <option value="title">Title</option>
-                <option value="text">Text</option>
-                <option value="button">Button</option>
-                <option value="form">Form</option>
-                <option value="table">Table</option>
-                <option value="section">Section</option>
-                <option value="card">Card</option>
-                <option value="row">Row</option>
-                <option value="column">Column</option>
-                <option value="divider">Divider</option>
-                <option value="image">Image</option>
-              </select>
-              <button class="btn secondary small" id="addElementButton">Add</button>
-              <button class="btn ghost small" id="moveUp">Move up</button>
-              <button class="btn ghost small" id="moveDown">Move down</button>
-              <label for="pageSelect">Page</label>
-              <select id="pageSelect"></select>
-            </div>
-          </div>
-          <div id="ui" class="panel-body ui-body"></div>
+          <div id="ui" class="panel-body ui-body" data-testid="studio-preview-canvas"></div>
         </div>
       </section>
+    </div>
+  </div>
+  <div class="dock" id="dock" role="tablist" data-testid="studio-dock">
+    <div class="dock-inner">
+      <button class="tab" data-tab="graph" data-testid="studio-dock-item-graph">Graph</button>
+      <button class="tab" data-tab="traces" data-testid="studio-dock-item-traces">Traces</button>
+      <button class="tab" data-tab="memory" data-testid="studio-dock-item-memory">Memory</button>
+      <button class="tab" data-tab="why" data-testid="studio-dock-item-why">Why</button>
+    </div>
+  </div>
+  <div class="sheet-backdrop hidden" id="sheetBackdrop" data-testid="studio-backdrop"></div>
+  <div class="sheet hidden" id="sheet" data-testid="studio-sheet">
+    <div class="sheet-inner">
+      <div class="tab-panels">
+        <div class="panel" data-tab="graph">
+          <div class="panel-header">
+            <div class="section-title">Graph</div>
+          </div>
+          <div class="graph-layout">
+            <div class="panel-body graph-wrap">
+              <div id="graphCanvas" class="graph-canvas"></div>
+            </div>
+            <div class="panel-body graph-details" id="graphDetails"></div>
+          </div>
+        </div>
+        <div class="panel" data-tab="traces">
+          <div class="panel-header">
+            <div class="section-title">Traces</div>
+          </div>
+          <div class="control-row">
+            <input id="tracesFilter" type="text" placeholder="Filter traces..." aria-label="Filter traces">
+          </div>
+          <div id="traces" class="panel-body"></div>
+        </div>
+        <div class="panel" data-tab="memory">
+          <div class="panel-header">
+            <div class="section-title">Memory</div>
+          </div>
+          <div id="memory" class="panel-body"></div>
+        </div>
+        <div class="panel" data-tab="why">
+          <div class="panel-header">
+            <div class="section-title">Why</div>
+          </div>
+          <div id="why" class="panel-body"></div>
+        </div>
+      </div>
     </div>
   </div>
   <script src="/ui_renderer.js"></script>
   <script src="/theme_tokens.js"></script>
   <script src="/theme_runtime.js"></script>
-  <script src="/theme_preference.js"></script>
-  <script src="/trust_bar.js"></script>
   <script src="/trace_utils.js"></script>
-  <script src="/learning_overlay.js"></script>
   <script src="/app.js"></script>
   <script src="/graph_panel.js"></script>
-  <script src="/trust_panel.js"></script>
-  <script src="/data_panel.js"></script>
-  <script src="/fix_panel.js"></script>
-  <script src="/pkg_panel.js"></script>
-  <script src="/registry.js"></script>
-  <script src="/ui_controls.js"></script>
-  <script src="/tool_wizard.js"></script>
 </body>
 </html>

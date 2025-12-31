@@ -2,69 +2,32 @@ let renderUI = (manifest) => {
   const select = document.getElementById("pageSelect");
   const uiContainer = document.getElementById("ui");
   const pages = manifest.pages || [];
-  const currentSelection = select.value;
-  select.innerHTML = "";
-  pages.forEach((p, idx) => {
-    const opt = document.createElement("option");
-    opt.value = p.name;
-    opt.textContent = p.name;
-    if (p.name === currentSelection || (currentSelection === "" && idx === 0)) {
-      opt.selected = true;
-    }
-    select.appendChild(opt);
-  });
+  const emptyMessage = "Run your app to see it here.";
+  if (!uiContainer) return;
+  const currentSelection = select ? select.value : "";
+  if (select) {
+    select.innerHTML = "";
+    pages.forEach((p, idx) => {
+      const opt = document.createElement("option");
+      opt.value = p.name;
+      opt.textContent = p.name;
+      if (p.name === currentSelection || (currentSelection === "" && idx === 0)) {
+        opt.selected = true;
+      }
+      select.appendChild(opt);
+    });
+  }
   function renderChildren(container, children, pageName) {
     (children || []).forEach((child) => {
       const node = renderElement(child, pageName);
       container.appendChild(node);
     });
   }
-  function attachSelection(node, el, pageName) {
-    node.dataset.elementId = el.element_id;
-    node.onclick = (e) => {
-      e.stopPropagation();
-      window.selectElementFromUI(el, pageName, node);
-    };
-  }
-  function makeEditable(textEl, el, pageName, op) {
-    textEl.classList.add("editable");
-    textEl.onclick = (e) => {
-      e.stopPropagation();
-      if (textEl.classList.contains("editing")) return;
-      textEl.classList.add("editing");
-      const input = document.createElement(el.type === "text" ? "textarea" : "input");
-      input.value = el.value || el.label || "";
-      input.className = "inline-input";
-      textEl.replaceWith(input);
-      input.focus();
-      const cancel = () => {
-        input.replaceWith(textEl);
-        textEl.classList.remove("editing");
-      };
-      input.onkeydown = (ev) => {
-        if (ev.key === "Escape") {
-          cancel();
-        }
-        if (ev.key === "Enter" && ev.shiftKey === false && el.type !== "text") {
-          ev.preventDefault();
-          confirm();
-        }
-      };
-      input.onblur = cancel;
-      const confirm = () => {
-        const newValue = input.value;
-        cancel();
-        window.requestEditValue(el, pageName, op, newValue);
-      };
-      input.onchange = confirm;
-    };
-  }
   function renderElement(el, pageName) {
     if (!el) return document.createElement("div");
     if (el.type === "section") {
       const section = document.createElement("div");
       section.className = "ui-element ui-section";
-      attachSelection(section, el, pageName);
       if (el.label) {
         const header = document.createElement("div");
         header.className = "ui-section-title";
@@ -77,7 +40,6 @@ let renderUI = (manifest) => {
     if (el.type === "card") {
       const card = document.createElement("div");
       card.className = "ui-element ui-card";
-      attachSelection(card, el, pageName);
       if (el.label) {
         const header = document.createElement("div");
         header.className = "ui-card-title";
@@ -90,27 +52,23 @@ let renderUI = (manifest) => {
     if (el.type === "row") {
       const row = document.createElement("div");
       row.className = "ui-row";
-      attachSelection(row, el, pageName);
       renderChildren(row, el.children, pageName);
       return row;
     }
     if (el.type === "column") {
       const col = document.createElement("div");
       col.className = "ui-column";
-      attachSelection(col, el, pageName);
       renderChildren(col, el.children, pageName);
       return col;
     }
     if (el.type === "divider") {
       const hr = document.createElement("hr");
       hr.className = "ui-divider";
-      attachSelection(hr, el, pageName);
       return hr;
     }
     if (el.type === "image") {
       const wrapper = document.createElement("div");
       wrapper.className = "ui-element ui-image-wrapper";
-      attachSelection(wrapper, el, pageName);
       const img = document.createElement("img");
       img.className = "ui-image";
       img.src = el.src || "";
@@ -121,16 +79,13 @@ let renderUI = (manifest) => {
     }
     const wrapper = document.createElement("div");
     wrapper.className = "ui-element";
-    attachSelection(wrapper, el, pageName);
     if (el.type === "title") {
       const h = document.createElement("h3");
       h.textContent = el.value;
-      makeEditable(h, el, pageName, "set_title");
       wrapper.appendChild(h);
     } else if (el.type === "text") {
       const p = document.createElement("p");
       p.textContent = el.value;
-      makeEditable(p, el, pageName, "set_text");
       wrapper.appendChild(p);
     } else if (el.type === "button") {
       const actions = document.createElement("div");
@@ -142,12 +97,7 @@ let renderUI = (manifest) => {
         e.stopPropagation();
         executeAction(el.action_id, {});
       };
-      const rename = document.createElement("button");
-      rename.className = "btn ghost small editable";
-      rename.textContent = el.label;
-      makeEditable(rename, el, pageName, "set_button_label");
       actions.appendChild(btn);
-      actions.appendChild(rename);
       wrapper.appendChild(actions);
     } else if (el.type === "form") {
       const formTitle = document.createElement("div");
@@ -216,31 +166,35 @@ let renderUI = (manifest) => {
     uiContainer.innerHTML = "";
     const page = pages.find((p) => p.name === pageName) || pages[0];
     if (!page) {
-      showEmpty(uiContainer, "No pages");
+      showEmpty(uiContainer, emptyMessage);
       return;
     }
     page.elements.forEach((el) => {
       uiContainer.appendChild(renderElement(el, page.name));
     });
   }
-  select.onchange = (e) => renderPage(e.target.value);
-  const initialPage = select.value || (pages[0] ? pages[0].name : "");
+  if (select) {
+    select.onchange = (e) => renderPage(e.target.value);
+  }
+  const initialPage = (select && select.value) || (pages[0] ? pages[0].name : "");
   if (initialPage) {
     renderPage(initialPage);
   } else {
-    showEmpty(uiContainer, "No pages");
+    showEmpty(uiContainer, emptyMessage);
   }
 };
 
-window.selectElementFromUI = (element, pageName, node) => {
-  document.querySelectorAll(".ui-element").forEach((el) => el.classList.remove("selected"));
-  if (node && node.classList) node.classList.add("selected");
-  selectedElement = element;
-  selectedPage = pageName;
-  selectedElementId = element.element_id;
-  renderInspector(element, pageName);
+let renderUIError = (detail) => {
+  const select = document.getElementById("pageSelect");
+  const uiContainer = document.getElementById("ui");
+  const emptyMessage = "Run your app to see it here.";
+  if (!uiContainer) return;
+  if (select) select.innerHTML = "";
+  if (typeof showError === "function") {
+    showError(uiContainer, detail);
+  } else if (typeof showEmpty === "function") {
+    showEmpty(uiContainer, emptyMessage);
+  }
 };
 
-window.requestEditValue = (element, pageName, op, newValue) => {
-  performEdit(op, element.element_id, pageName, newValue);
-};
+window.renderUIError = renderUIError;

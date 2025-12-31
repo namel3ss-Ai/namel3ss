@@ -1,4 +1,6 @@
 (() => {
+const utils = (window.N3App && window.N3App.utils) || {};
+const fetchJson = utils.fetchJson || ((path) => fetch(path).then((res) => res.json()));
 let cachedGraph = null;
 let selectedGraphNodeId = null;
 
@@ -187,6 +189,5 @@ function showStatus(container, message, kind) {
 }
 
 setupGraphPanel();
-refreshGraphPanel();
 window.refreshGraphPanel = refreshGraphPanel;
 })();

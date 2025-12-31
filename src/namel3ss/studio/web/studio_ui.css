@@ -118,15 +118,12 @@
   border-radius: 8px;
 }
 .toast {
-  position: fixed;
-  top: 12px;
-  right: 12px;
-  padding: 10px 14px;
-  background: #000;
-  color: #fff;
-  border-radius: 10px;
-  font-size: 12px;
   display: none;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  border-radius: 0;
+  font-size: 12px;
 }
 
 .modal {
