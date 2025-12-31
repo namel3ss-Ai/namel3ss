@@ -57,7 +57,7 @@ def test_studio_guardrail_topbar_invariants():
 
 
 def test_studio_guardrail_behavior_invariants():
-    tabs_js = _read("src/namel3ss/studio/web/app/setup/tabs.js")
+    tabs_js = _read("src/namel3ss/studio/web/studio/dock.js")
     styles = _read("src/namel3ss/studio/web/styles.css")
 
     assert "backdrop.addEventListener" in tabs_js
@@ -65,3 +65,8 @@ def test_studio_guardrail_behavior_invariants():
     assert "setActive(null)" in tabs_js
     assert ".sheet .panel-body" in styles
     assert "overflow: auto" in styles
+
+
+def test_studio_guardrail_script_order():
+    html = _read("src/namel3ss/studio/web/index.html")
+    assert html.find("/ui_renderer.js") < html.find("/app.js")

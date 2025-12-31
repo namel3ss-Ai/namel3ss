@@ -39,3 +39,14 @@ def test_strict_alias_rejection_message():
         msg = format_error(err, 'spec is "1.0"\n\nrecord "X":\n field "a" is int')
         assert "Use 'number'" in msg
         assert "Fix" in msg
+
+
+def test_run_directory_path_reports_extension_error(tmp_path, capsys):
+    app_dir = tmp_path / "demo"
+    app_dir.mkdir()
+    rc = cli_main(["run", str(app_dir)])
+    captured = capsys.readouterr()
+    combined = f"{captured.out}{captured.err}"
+    assert rc == 1
+    assert "namel3ss apps use the .ai extension." in combined
+    assert "NameError: name 'sys' is not defined" not in combined

@@ -8,6 +8,8 @@ const state = {
   loadingWhy: false,
 };
 
+const UI_ERROR_MESSAGE = "Couldn't update the page. Try again.";
+
 const ELEMENTS = {
   ordersBody: document.getElementById("ordersBody"),
   ordersLoading: document.getElementById("ordersLoading"),
@@ -28,49 +30,93 @@ const ACTION_IDS = {
   why: "page.home.button.why",
 };
 
+function safeSetText(element, text) {
+  if (!element) return false;
+  element.textContent = text;
+  return true;
+}
+
+function safeToggleClass(element, className, enabled) {
+  if (!element) return false;
+  element.classList.toggle(className, enabled);
+  return true;
+}
+
+function safeSetDisplay(element, show) {
+  if (!element) return false;
+  element.style.display = show ? "block" : "none";
+  return true;
+}
+
+function safeSetDisabled(element, disabled) {
+  if (!element) return false;
+  element.disabled = disabled;
+  return true;
+}
+
+function safeSetDataset(element, key, value) {
+  if (!element) return false;
+  element.dataset[key] = value;
+  return true;
+}
+
+function logUpdateError(context, err) {
+  console.error(`[ClearOrders] ${context}`, err);
+}
 
 function setHint(message, isError = false) {
-  ELEMENTS.questionHint.textContent = message || "";
-  ELEMENTS.questionHint.classList.toggle("error", isError);
+  safeSetText(ELEMENTS.questionHint, message || "");
+  safeToggleClass(ELEMENTS.questionHint, "error", isError);
 }
 
 function setAnswer(text, isEmpty = false) {
-  ELEMENTS.answerText.textContent = text;
-  ELEMENTS.answerText.classList.toggle("empty", isEmpty);
+  safeSetText(ELEMENTS.answerText, text);
+  safeToggleClass(ELEMENTS.answerText, "empty", isEmpty);
+}
+
+function showAnswerError() {
+  setAnswer(UI_ERROR_MESSAGE, false);
 }
 
 function setAskLoading(isLoading) {
   state.asking = isLoading;
-  ELEMENTS.askButton.disabled = isLoading;
-  ELEMENTS.askButton.textContent = isLoading ? "Asking..." : "Ask AI";
+  safeSetDisabled(ELEMENTS.askButton, isLoading);
+  safeSetText(ELEMENTS.askButton, isLoading ? "Asking..." : "Ask AI");
 }
 
 function setWhyLoading(isLoading) {
   state.loadingWhy = isLoading;
-  ELEMENTS.whyButton.disabled = isLoading || !state.answer;
-  ELEMENTS.whyButton.textContent = isLoading ? "Loading..." : "Why?";
+  safeSetDisabled(ELEMENTS.whyButton, isLoading || !state.answer);
+  safeSetText(ELEMENTS.whyButton, isLoading ? "Loading..." : "Why?");
 }
 
 function showOrdersLoading(show) {
-  ELEMENTS.ordersLoading.style.display = show ? "block" : "none";
+  safeSetDisplay(ELEMENTS.ordersLoading, show);
 }
 
 function showOrdersEmpty(show) {
-  ELEMENTS.ordersEmpty.style.display = show ? "block" : "none";
+  safeSetDisplay(ELEMENTS.ordersEmpty, show);
 }
 
 function showWhyPlaceholder(show) {
-  ELEMENTS.whyPlaceholder.style.display = show ? "block" : "none";
-  ELEMENTS.whyList.style.display = show ? "none" : "block";
+  safeSetDisplay(ELEMENTS.whyPlaceholder, show);
+  safeSetDisplay(ELEMENTS.whyList, !show);
 }
 
 async function postAction(actionId, payload) {
+  if (typeof fetch !== "function") {
+    throw new Error("Fetch is unavailable in this environment.");
+  }
   const res = await fetch("/api/action", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ id: actionId, payload: payload || {} }),
   });
-  return res.json();
+  try {
+    return await res.json();
+  } catch (err) {
+    throw new Error("Unable to parse the response.");
+  }
 }
 
 function flattenElements(elements) {
@@ -99,6 +145,7 @@ function findTableRows(manifest, recordName) {
 
 function renderOrders(rows) {
   state.orders = rows || [];
+  if (!ELEMENTS.ordersBody) return;
   ELEMENTS.ordersBody.innerHTML = "";
   showOrdersLoading(false);
   if (!rows || rows.length === 0) {
@@ -128,7 +175,8 @@ function renderOrders(rows) {
 }
 
 function renderAnswer(rows) {
-  const text = rows.length ? rows[rows.length - 1].text || "" : "";
+  const list = Array.isArray(rows) ? rows : [];
+  const text = list.length ? list[list.length - 1].text || "" : "";
   state.answer = text.trim();
   if (!state.answer) {
     setAnswer("Ask a question to see an answer.", true);
@@ -197,6 +245,7 @@ function buildBullets(stats) {
 
 function renderWhy(stats) {
   state.stats = stats || [];
+  if (!ELEMENTS.whyList || !ELEMENTS.whyPanel) return;
   const bullets = buildBullets(state.stats);
   ELEMENTS.whyList.innerHTML = "";
   if (!state.whyOpen) {
@@ -211,7 +260,7 @@ function renderWhy(stats) {
     frag.appendChild(li);
   });
   ELEMENTS.whyList.appendChild(frag);
-  ELEMENTS.whyPanel.dataset.open = "true";
+  safeSetDataset(ELEMENTS.whyPanel, "open", "true");
 }
 
 function updateFromManifest(manifest) {
@@ -224,44 +273,66 @@ function updateFromManifest(manifest) {
   renderWhy(stats);
 }
 
+function applyManifest(manifest, context) {
+  if (!manifest) return false;
+  try {
+    updateFromManifest(manifest);
+    return true;
+  } catch (err) {
+    logUpdateError(`${context} update failed`, err);
+    showAnswerError();
+    return false;
+  }
+}
+
 async function seedOrders() {
   showOrdersLoading(true);
   try {
     const data = await postAction(ACTION_IDS.seed, {});
     if (data && data.ui) {
-      updateFromManifest(data.ui);
+      applyManifest(data.ui, "seed");
       return;
     }
     showOrdersLoading(false);
     showOrdersEmpty(true);
   } catch (err) {
+    logUpdateError("seed request failed", err);
     showOrdersLoading(false);
     showOrdersEmpty(true);
   }
 }
 
 async function askQuestion() {
+  if (!ELEMENTS.questionInput) {
+    logUpdateError("question input missing", new Error("Input not found"));
+    showAnswerError();
+    return;
+  }
   const question = ELEMENTS.questionInput.value.trim();
   if (question.length < 6) {
     setHint("Please ask a specific question about regions, returns, or delivery time.", true);
     return;
   }
   state.whyOpen = false;
-  ELEMENTS.whyPanel.dataset.open = "false";
+  safeSetDataset(ELEMENTS.whyPanel, "open", "false");
   showWhyPlaceholder(true);
   setHint("", false);
   setAskLoading(true);
   try {
     const data = await postAction(ACTION_IDS.ask, { values: { question } });
     if (!data || !data.ok) {
-      setAnswer("We could not answer that right now. Try again.", false);
+      showAnswerError();
       return;
     }
-    if (data.ui) {
-      updateFromManifest(data.ui);
+    const nextManifest = data.ui || state.manifest;
+    if (nextManifest) {
+      applyManifest(nextManifest, "ask");
+    } else {
+      showAnswerError();
     }
   } catch (err) {
-    setAnswer("We could not answer that right now. Try again.", false);
+    logUpdateError("ask request failed", err);
+    showAnswerError();
   } finally {
     setAskLoading(false);
     setWhyLoading(false);
@@ -274,9 +345,10 @@ async function showWhy() {
   try {
     const data = await postAction(ACTION_IDS.why, {});
     if (data && data.ui) {
-      updateFromManifest(data.ui);
+      applyManifest(data.ui, "why");
     }
   } catch (err) {
+    logUpdateError("why request failed", err);
     renderWhy([{ key: "fallback", value_text: "We could not build the full explanation, but the answer uses the orders shown here." }]);
   } finally {
     setWhyLoading(false);
@@ -284,17 +356,23 @@ async function showWhy() {
 }
 
 function bindEvents() {
-  ELEMENTS.askButton.addEventListener("click", () => {
-    askQuestion();
-  });
-  ELEMENTS.questionInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
+  if (ELEMENTS.askButton) {
+    ELEMENTS.askButton.addEventListener("click", () => {
       askQuestion();
-    }
-  });
-  ELEMENTS.whyButton.addEventListener("click", () => {
-    showWhy();
-  });
+    });
+  }
+  if (ELEMENTS.questionInput) {
+    ELEMENTS.questionInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        askQuestion();
+      }
+    });
+  }
+  if (ELEMENTS.whyButton) {
+    ELEMENTS.whyButton.addEventListener("click", () => {
+      showWhy();
+    });
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {

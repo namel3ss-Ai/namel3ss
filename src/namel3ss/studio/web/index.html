@@ -16,7 +16,7 @@
         <div class="studio-title">namel3ss Studio</div>
       </div>
       <div class="topbar-actions">
-        <button class="btn primary hidden" id="run" title="Run the default flow" data-testid="studio-run-button">Run ▸</button>
+        <button class="btn primary" id="run" title="Run the default flow" data-testid="studio-run-button" disabled>Run ▸</button>
         <div id="toast" class="toast run-status" aria-live="polite"></div>
       </div>
     </header>
@@ -79,7 +79,16 @@
   <script src="/theme_tokens.js"></script>
   <script src="/theme_runtime.js"></script>
   <script src="/trace_utils.js"></script>
-  <script src="/app.js"></script>
+  <script src="/studio/dom.js"></script>
+  <script src="/studio/net.js"></script>
+  <script src="/studio/state.js"></script>
+  <script src="/studio/run.js"></script>
+  <script src="/studio/refresh.js"></script>
+  <script src="/studio/traces.js"></script>
+  <script src="/studio/memory.js"></script>
+  <script src="/studio/why.js"></script>
   <script src="/graph_panel.js"></script>
+  <script src="/studio/dock.js"></script>
+  <script src="/app.js"></script>
 </body>
 </html>

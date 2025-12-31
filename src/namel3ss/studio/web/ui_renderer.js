@@ -197,4 +197,5 @@ let renderUIError = (detail) => {
   }
 };
 
+window.renderUI = renderUI;
 window.renderUIError = renderUIError;
