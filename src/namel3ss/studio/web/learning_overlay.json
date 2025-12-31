@@ -10,8 +10,8 @@
     },
     {
       "id": "trust",
-      "title": "Why proof matters",
-      "body": "Proof is the engine snapshot used to verify trust posture. Keep it current.",
+      "title": "Why run summaries matter",
+      "body": "Run summaries capture the snapshot used to verify trust posture. Keep them current.",
       "doc": "docs/models/proof.md",
       "selector": "[data-tab='trust'] .panel-header"
     },

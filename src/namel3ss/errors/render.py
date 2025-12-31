@@ -46,3 +46,49 @@ def format_error(err: Namel3ssError, source: Optional[object] = None) -> str:
     caret_line = " " * (caret_pos - 1) + "^"
     prefix = f"File: {file_path}\n" if file_path else ""
     return f"{prefix}{base}\n{line_text}\n{caret_line}"
+
+
+def format_first_run_error(err: Namel3ssError) -> str:
+    parts = _parse_guidance(str(err))
+    what = parts.get("what") or _fallback_line(str(err))
+    why = parts.get("why") or "The app could not complete the request."
+    fix = parts.get("fix") or "Review the input and try again."
+    next_step = parts.get("example") or "Run the command again after updating the input."
+    lines = [
+        "Something went wrong",
+        "What happened",
+        f"- {what}",
+        "Why",
+        f"- {why}",
+        "How to resolve it",
+        f"- {fix}",
+        "Suggested next step",
+        f"- {next_step}",
+    ]
+    return "\n".join(lines)
+
+
+def _parse_guidance(text: str) -> dict[str, str]:
+    parts: dict[str, str] = {}
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("What happened:"):
+            parts["what"] = stripped.replace("What happened:", "", 1).strip()
+        elif stripped.startswith("Why:"):
+            parts["why"] = stripped.replace("Why:", "", 1).strip()
+        elif stripped.startswith("Fix:"):
+            parts["fix"] = stripped.replace("Fix:", "", 1).strip()
+        elif stripped.startswith("Example:"):
+            parts["example"] = stripped.replace("Example:", "", 1).strip()
+    return parts
+
+
+def _fallback_line(text: str) -> str:
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped:
+            return stripped
+    return "An unexpected error occurred."
+
+
+__all__ = ["format_error", "format_first_run_error"]

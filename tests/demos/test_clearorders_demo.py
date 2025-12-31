@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import re
+import pytest
 
 from namel3ss.cli.main import main as cli_main
 from namel3ss.cli.app_loader import load_program
@@ -132,6 +133,7 @@ def test_clearorders_answer_and_explanation():
     manifest = build_manifest(program, state={}, store=store)
     answers = _table_rows(manifest, "Answer")
     stats = _table_rows(manifest, "ExplanationStat")
+    orders = _table_rows(manifest, "Order")
 
     assert answers
     answer_text = str(answers[-1].get("text") or "")
@@ -145,6 +147,24 @@ def test_clearorders_answer_and_explanation():
     assert len(bullets) >= 3
     for bullet in bullets:
         _assert_no_forbidden_terms(bullet)
+
+    returned = [row for row in orders if row.get("returned") is True]
+    returns_by_region: dict[str, int] = {}
+    for row in returned:
+        region = row.get("region")
+        if not region:
+            continue
+        returns_by_region[str(region)] = returns_by_region.get(str(region), 0) + 1
+    top_region, top_returns = sorted(returns_by_region.items(), key=lambda item: (-item[1], item[0]))[0]
+    avg_delivery = sum(row.get("delivery_days", 0) for row in returned) / len(returned)
+    avg_satisfaction = sum(row.get("satisfaction", 0) for row in returned) / len(returned)
+
+    mapped = {row.get("key"): row for row in stats}
+    assert mapped["orders_reviewed"]["value_number"] == len(orders)
+    assert mapped["top_region"]["value_text"] == top_region
+    assert mapped["top_region_returns"]["value_number"] == top_returns
+    assert mapped["avg_delivery_days"]["value_number"] == pytest.approx(avg_delivery)
+    assert mapped["avg_satisfaction"]["value_number"] == pytest.approx(avg_satisfaction)
 
 
 def test_clearorders_ui_copy_avoids_forbidden_terms():
@@ -191,6 +211,7 @@ def test_clearorders_run_prints_url(tmp_path, monkeypatch, capsys):
     out = capsys.readouterr().out.strip().splitlines()
     assert code == 0
     assert out == [
-        f"Running ClearOrders at: http://127.0.0.1:{DEFAULT_SERVICE_PORT}/",
-        "Press Ctrl+C to stop.",
+        "Running ClearOrders",
+        f"Open: http://127.0.0.1:{DEFAULT_SERVICE_PORT}",
+        "Press Ctrl+C to stop",
     ]

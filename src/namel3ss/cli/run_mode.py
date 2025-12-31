@@ -6,25 +6,29 @@ from namel3ss.cli.app_loader import load_program
 from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.cli.builds import app_path_from_metadata, load_build_metadata, read_latest_build_id
 from namel3ss.cli.demo_support import CLEARORDERS_NAME, is_clearorders_demo
+from namel3ss.cli.first_run import is_first_run
 from namel3ss.cli.promotion_state import load_state
 from namel3ss.cli.runner import run_flow
 from namel3ss.cli.targets import parse_target
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
-from namel3ss.errors.render import format_error
+from namel3ss.errors.render import format_error, format_first_run_error
 from namel3ss.runtime.service_runner import DEFAULT_SERVICE_PORT, ServiceRunner
 from namel3ss.utils.json_tools import dumps_pretty
-from namel3ss.cli.text_output import prepare_cli_text
+from namel3ss.cli.text_output import prepare_cli_text, prepare_first_run_text
 from namel3ss.secrets import set_audit_root, set_engine_target
 from namel3ss.traces.plain import format_plain
 
 
 def run_run_command(args: list[str]) -> int:
     sources: dict = {}
+    project_root: Path | None = None
+    first_run = is_first_run(None, args)
     try:
         params = _parse_args(args)
         app_path = resolve_app_path(params.app_arg)
         project_root = app_path.parent
+        first_run = is_first_run(project_root, args)
         demo_default = None
         is_demo = params.target_raw is None and is_clearorders_demo(project_root)
         if is_demo:
@@ -49,8 +53,13 @@ def run_run_command(args: list[str]) -> int:
                 print(f"Build: {build_id or 'working-copy'}")
                 return 0
             if is_demo:
-                print(f"Running {CLEARORDERS_NAME} at: http://127.0.0.1:{port}/")
-                print("Press Ctrl+C to stop.")
+                if first_run:
+                    print(f"Running {CLEARORDERS_NAME}")
+                    print(f"Open: http://127.0.0.1:{port}")
+                    print("Press Ctrl+C to stop")
+                else:
+                    print(f"Running {CLEARORDERS_NAME} at: http://127.0.0.1:{port}/")
+                    print("Press Ctrl+C to stop.")
             try:
                 runner.start(background=False)
             except KeyboardInterrupt:
@@ -69,8 +78,12 @@ def run_run_command(args: list[str]) -> int:
             )
         )
     except Namel3ssError as err:
-        message = format_error(err, sources)
-        print(prepare_cli_text(message), file=sys.stderr)
+        if first_run:
+            message = format_first_run_error(err)
+            print(prepare_first_run_text(message), file=sys.stderr)
+        else:
+            message = format_error(err, sources)
+            print(prepare_cli_text(message), file=sys.stderr)
         return 1
 
 
@@ -155,6 +168,9 @@ def _parse_args(args: list[str]) -> _RunParams:
             json_mode = True
             i += 1
             continue
+        if arg == "--first-run":
+            i += 1
+            continue
         if arg == "--dry":
             dry = True
             i += 1
@@ -163,7 +179,7 @@ def _parse_args(args: list[str]) -> _RunParams:
             raise Namel3ssError(
                 build_guidance_message(
                     what=f"Unknown flag '{arg}'.",
-                    why="Supported flags: --target, --port, --build, --dry, --json.",
+                    why="Supported flags: --target, --port, --build, --dry, --json, --first-run.",
                     fix="Remove the unsupported flag.",
                     example="n3 run --target local",
                 )

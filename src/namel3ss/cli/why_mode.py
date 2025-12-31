@@ -3,11 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from namel3ss.cli.app_path import resolve_app_path
+from namel3ss.cli.first_run import is_first_run
 from namel3ss.cli.learning_support import (
     build_learning_context,
     collect_capsules,
     collect_requires,
     require_app_path,
+    summarize_pages,
+    summarize_records,
 )
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
@@ -21,17 +24,23 @@ class _WhyParams:
     app_arg: str | None
     json_mode: bool
     audience: str
+    technical: bool
 
 
 def run_why_command(args: list[str]) -> int:
     params = _parse_args(args)
     app_path = resolve_app_path(params.app_arg)
     require_app_path(app_path)
-    payload = build_why_payload(app_path)
-    if params.json_mode:
-        print(dumps_pretty(payload))
+    if params.json_mode or params.technical or not is_first_run(app_path.parent, args):
+        payload = build_why_payload(app_path)
+        if params.json_mode:
+            print(dumps_pretty(payload))
+            return 0
+        lines = build_why_lines(payload, audience=params.audience)
+        _write_human_lines(lines)
         return 0
-    lines = build_why_lines(payload, audience=params.audience)
+    ctx = build_learning_context(app_path)
+    lines = _build_first_run_lines(ctx)
     _write_human_lines(lines)
     return 0
 
@@ -131,11 +140,19 @@ def _parse_args(args: list[str]) -> _WhyParams:
     app_arg = None
     json_mode = False
     audience = "default"
+    technical = False
     i = 0
     while i < len(args):
         arg = args[i]
         if arg == "--json":
             json_mode = True
+            i += 1
+            continue
+        if arg == "--technical":
+            technical = True
+            i += 1
+            continue
+        if arg == "--first-run":
             i += 1
             continue
         if arg == "--non-technical":
@@ -146,7 +163,7 @@ def _parse_args(args: list[str]) -> _WhyParams:
             raise Namel3ssError(
                 build_guidance_message(
                     what=f"Unknown flag '{arg}'.",
-                    why="Supported flags: --json, --non-technical.",
+                    why="Supported flags: --json, --non-technical, --technical.",
                     fix="Remove the unsupported flag.",
                     example="n3 why --json",
                 )
@@ -163,7 +180,55 @@ def _parse_args(args: list[str]) -> _WhyParams:
                 example="n3 why app.ai",
             )
         )
-    return _WhyParams(app_arg=app_arg, json_mode=json_mode, audience=audience)
+    return _WhyParams(app_arg=app_arg, json_mode=json_mode, audience=audience, technical=technical)
+
+
+def _build_first_run_lines(ctx) -> list[str]:
+    pages = summarize_pages(ctx.program)
+    records = summarize_records(ctx.program)
+    flows = sorted(flow.name for flow in ctx.program.flows)
+    ai_names = sorted(ctx.program.ais.keys()) if getattr(ctx.program, "ais", None) else []
+    tool_names = sorted(ctx.program.tools.keys()) if getattr(ctx.program, "tools", None) else []
+
+    lines = ["What this app does"]
+    screen_label = _pluralize(len(pages), "screen")
+    action_label = _pluralize(len(flows), "action")
+    lines.append(f"- Provides {len(pages)} {screen_label} with {len(flows)} {action_label}.")
+    if pages:
+        sample_pages = ", ".join(pages[:3])
+        suffix = "…" if len(pages) > 3 else ""
+        lines.append(f"- Screens include: {sample_pages}{suffix}.")
+
+    lines.append("What data it works with")
+    if records:
+        sample_records = ", ".join(records[:5])
+        suffix = "…" if len(records) > 5 else ""
+        lines.append(f"- Records: {sample_records}{suffix}.")
+    else:
+        lines.append("- No records are defined.")
+
+    lines.append("How AI is involved")
+    if ai_names:
+        sample_ai = ", ".join(ai_names[:3])
+        suffix = "…" if len(ai_names) > 3 else ""
+        lines.append(f"- Uses AI profiles: {sample_ai}{suffix}.")
+    else:
+        lines.append("- No AI calls are defined.")
+
+    lines.append("External tools")
+    if tool_names:
+        sample_tools = ", ".join(tool_names[:3])
+        suffix = "…" if len(tool_names) > 3 else ""
+        lines.append(f"- Tool integrations: {sample_tools}{suffix}.")
+    else:
+        lines.append("- No external tools are configured.")
+    return lines[:20]
+
+
+def _pluralize(count: int, singular: str, plural: str | None = None) -> str:
+    if count == 1:
+        return singular
+    return plural or f"{singular}s"
 
 
 __all__ = ["build_why_payload", "build_why_lines", "run_why_command", "_write_human_lines"]

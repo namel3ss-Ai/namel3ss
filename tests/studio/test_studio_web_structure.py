@@ -76,7 +76,7 @@ def test_studio_memory_panel_structure():
 def test_studio_why_panel_structure():
     js = Path("src/namel3ss/studio/web/studio/why.js").read_text(encoding="utf-8")
     assert "Why this app is safe to run." in js
-    for heading in ["Summary", "Engine target", "Access rules"]:
+    for heading in ["Summary", "Execution environment", "Access rules", "Run summary"]:
         assert heading in js
     assert "why-list" in js
     assert "createCodeBlock" not in js

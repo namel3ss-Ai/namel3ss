@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+from pathlib import Path
 
 from namel3ss.cli.actions_mode import list_actions
 from namel3ss.cli.aliases import canonical_command
@@ -48,8 +49,9 @@ from namel3ss.cli.discover_mode import run_discover
 from namel3ss.cli.verify_mode import run_verify_command
 from namel3ss.cli.memory_mode import run_memory_command
 from namel3ss.errors.base import Namel3ssError
-from namel3ss.errors.render import format_error
-from namel3ss.cli.text_output import prepare_cli_text
+from namel3ss.cli.first_run import is_first_run
+from namel3ss.errors.render import format_error, format_first_run_error
+from namel3ss.cli.text_output import prepare_cli_text, prepare_first_run_text
 from namel3ss.version import get_version
 from namel3ss.traces.plain import format_plain
 
@@ -116,7 +118,11 @@ def _allow_aliases_from_flags(flags: list[str]) -> bool:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = sys.argv[1:] if argv is None else argv
+    args = sys.argv[1:] if argv is None else list(argv)
+    first_run_args = list(args)
+    if "--first-run" in args:
+        os.environ["N3_FIRST_RUN"] = "1"
+        args = [arg for arg in args if arg != "--first-run"]
     context: dict = {}
     try:
         if not args:
@@ -209,8 +215,13 @@ def main(argv: list[str] | None = None) -> int:
         remainder = args[1:]
         return _handle_app_commands(path, remainder, context)
     except Namel3ssError as err:
-        message = format_error(err, context.get("sources", ""))
-        print(prepare_cli_text(message), file=sys.stderr)
+        first_run = is_first_run(context.get("project_root"), first_run_args)
+        if first_run:
+            message = format_first_run_error(err)
+            print(prepare_first_run_text(message), file=sys.stderr)
+        else:
+            message = format_error(err, context.get("sources", ""))
+            print(prepare_cli_text(message), file=sys.stderr)
         return 1
 
 
@@ -228,6 +239,11 @@ def _run_default(program_ir, *, json_mode: bool) -> int:
 
 
 def _handle_app_commands(path: str, remainder: list[str], context: dict | None = None) -> int:
+    if context is not None:
+        try:
+            context["project_root"] = Path(path).resolve().parent
+        except Exception:
+            pass
     canonical_first = canonical_command(remainder[0]) if remainder else None
     if remainder and canonical_first == "check":
         allow_aliases = _allow_aliases_from_flags(remainder[1:])

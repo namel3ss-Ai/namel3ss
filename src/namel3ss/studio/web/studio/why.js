@@ -38,12 +38,12 @@
     const proof = payload.proof_id || "none";
     const verify = payload.verify_status || "unknown";
     return [
-      `Engine target: ${engine}.`,
+      `Execution environment: ${engine}.`,
       `App shape: ${pages} pages, ${flows} flows, ${records} records.`,
       `Capsules: ${formatCapsules(payload.capsules || [])}.`,
       `Access rules: ${formatRequires(payload.requires || [])}.`,
       `Persistence: ${formatPersistence(payload.persistence)}.`,
-      `Proof: ${proof}.`,
+      `Run summary: ${proof}.`,
       `Verify: ${verify}.`,
     ];
   }
