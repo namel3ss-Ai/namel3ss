@@ -42,7 +42,7 @@ def _wait_for_health(port: int) -> None:
 
 def _free_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.bind(("127.0.0.1", 0))
+        sock.bind(("0.0.0.0", 0))
         return int(sock.getsockname()[1])
 
 

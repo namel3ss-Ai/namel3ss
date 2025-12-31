@@ -106,3 +106,11 @@ def test_studio_boot_checks_render_ui_before_refresh():
     assert "renderUI" in js
     assert "refreshUI" in js
     assert js.find("typeof window.renderUI") < js.find("root.refresh.refreshUI()")
+
+
+def test_studio_codeblock_renderer():
+    js = Path("src/namel3ss/studio/web/ui_renderer.js").read_text(encoding="utf-8")
+    assert "n3-codeblock" in js
+    assert 'startsWith("$ ")' in js
+    css = Path("src/namel3ss/studio/web/styles.css").read_text(encoding="utf-8")
+    assert ".n3-codeblock" in css

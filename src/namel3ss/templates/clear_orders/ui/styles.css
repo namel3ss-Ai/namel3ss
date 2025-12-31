@@ -65,6 +65,16 @@ body::after {
   animation: fadeIn 0.8s ease-out;
 }
 
+.page-view {
+  display: none;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.page-view.is-active {
+  display: flex;
+}
+
 .hero {
   display: flex;
   flex-wrap: wrap;
@@ -84,6 +94,19 @@ body::after {
   color: var(--muted);
   font-size: 16px;
   max-width: 560px;
+}
+
+.hero-subtitle {
+  margin: 8px 0 0;
+  font-size: 18px;
+  color: var(--ink);
+}
+
+.hero-kicker {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+  max-width: 520px;
 }
 
 .hero .badge {
@@ -126,6 +149,57 @@ body::after {
 .panel-head span {
   color: var(--muted);
   font-size: 14px;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.card-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.quote {
+  font-family: "Newsreader", "Georgia", serif;
+  font-size: 18px;
+  color: #2a241f;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.actions-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.code-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.code-card {
+  background: linear-gradient(145deg, rgba(43, 140, 127, 0.08), rgba(255, 255, 255, 0.95));
+}
+
+.n3-codeblock {
+  background: #0f1113;
+  color: #f4f0e9;
+  border-radius: 14px;
+  padding: 16px;
+  margin: 0;
+  font-family: "SFMono-Regular", "Menlo", "Consolas", "Liberation Mono", monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  box-shadow: 0 12px 22px rgba(10, 10, 10, 0.15);
 }
 
 .orders-panel {
@@ -327,6 +401,10 @@ button:disabled {
 
 @media (max-width: 980px) {
   .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card-grid {
     grid-template-columns: 1fr;
   }
 }

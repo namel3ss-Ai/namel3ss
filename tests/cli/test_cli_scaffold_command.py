@@ -52,6 +52,19 @@ def test_new_starter_scaffolds(tmp_path, monkeypatch, capsys):
     assert "first_run" in readme
 
 
+def test_new_demo_output_is_minimal(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    code = main(["new", "demo", "demo_app"])
+    out = capsys.readouterr().out.strip().splitlines()
+    project_dir = tmp_path / "demo_app"
+    assert code == 0
+    assert project_dir.exists()
+    assert out == [
+        f"Created project at {project_dir}",
+        "Run: cd demo_app && n3 run",
+    ]
+
+
 def test_new_ai_assistant_defaults_name(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     code = main(["new", "ai-assistant"])

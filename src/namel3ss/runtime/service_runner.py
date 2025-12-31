@@ -8,8 +8,10 @@ from typing import Any, Dict
 from urllib.parse import urlparse
 
 from namel3ss.cli.app_loader import load_program
+from namel3ss.cli.demo_support import is_clearorders_demo
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
+from namel3ss.runtime.executor import execute_program_flow
 from namel3ss.ui.actions.dispatch import dispatch_ui_action
 from namel3ss.ui.export.contract import build_ui_contract_payload
 from namel3ss.ui.external.detect import resolve_external_ui_root
@@ -161,11 +163,22 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
 
 
 class ServiceRunner:
-    def __init__(self, app_path: Path, target: str, build_id: str | None = None, port: int = DEFAULT_SERVICE_PORT):
+    def __init__(
+        self,
+        app_path: Path,
+        target: str,
+        build_id: str | None = None,
+        port: int = DEFAULT_SERVICE_PORT,
+        *,
+        auto_seed: bool = False,
+        seed_flow: str = "seed_orders",
+    ):
         self.app_path = Path(app_path).resolve()
         self.target = target
         self.build_id = build_id
         self.port = port or DEFAULT_SERVICE_PORT
+        self.auto_seed = auto_seed
+        self.seed_flow = seed_flow
         self.server: HTTPServer | None = None
         self._thread: threading.Thread | None = None
         self.program_summary: Dict[str, object] = {}
@@ -173,6 +186,8 @@ class ServiceRunner:
     def start(self, *, background: bool = False) -> None:
         program_ir, _ = load_program(self.app_path.as_posix())
         self.program_summary = _summarize_program(program_ir)
+        if _should_auto_seed(program_ir, self.auto_seed, self.seed_flow):
+            _seed_flow(program_ir, self.seed_flow)
         external_ui_root = resolve_external_ui_root(
             getattr(program_ir, "project_root", None),
             getattr(program_ir, "app_path", None),
@@ -228,6 +243,39 @@ def _contract_kind_for_path(path: str) -> str | None:
     if path in {"/api/ui/contract/schema", "/api/ui/contract/schema.json"}:
         return "schema"
     return None
+
+
+def _should_auto_seed(program_ir, enabled: bool, flow_name: str) -> bool:
+    if not enabled or not flow_name:
+        return False
+    flows = [flow.name for flow in getattr(program_ir, "flows", []) if getattr(flow, "name", None)]
+    if flow_name not in flows:
+        return False
+    project_root = _resolve_project_root(program_ir)
+    if not project_root:
+        return False
+    return is_clearorders_demo(project_root)
+
+
+def _resolve_project_root(program_ir) -> Path | None:
+    root = getattr(program_ir, "project_root", None)
+    if isinstance(root, Path):
+        return root
+    if isinstance(root, str) and root:
+        return Path(root)
+    app_path = getattr(program_ir, "app_path", None)
+    if isinstance(app_path, Path):
+        return app_path.parent
+    if isinstance(app_path, str) and app_path:
+        return Path(app_path).parent
+    return None
+
+
+def _seed_flow(program_ir, flow_name: str) -> None:
+    try:
+        execute_program_flow(program_ir, flow_name)
+    except Exception:
+        pass
 
 
 __all__ = ["DEFAULT_SERVICE_PORT", "ServiceRunner"]

@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 import re
+import socket
 import pytest
 
 from namel3ss.cli.main import main as cli_main
 from namel3ss.cli.app_loader import load_program
 from namel3ss.runtime.executor import execute_program_flow
-from namel3ss.runtime.service_runner import DEFAULT_SERVICE_PORT, ServiceRunner
+from namel3ss.runtime.service_runner import ServiceRunner
 from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.ui.manifest import build_manifest
 
@@ -22,6 +23,12 @@ def _template_root() -> Path:
     return _repo_root() / "src" / "namel3ss" / "templates" / "clear_orders"
 
 
+def _free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("0.0.0.0", 0))
+        return int(sock.getsockname()[1])
+
+
 def _flatten_elements(elements: list[dict]) -> list[dict]:
     flattened: list[dict] = []
     for element in elements:
@@ -29,6 +36,13 @@ def _flatten_elements(elements: list[dict]) -> list[dict]:
         if element.get("children"):
             flattened.extend(_flatten_elements(element["children"]))
     return flattened
+
+
+def _page_by_name(manifest: dict, name: str) -> dict | None:
+    for page in manifest.get("pages", []):
+        if page.get("name") == name:
+            return page
+    return None
 
 
 def _table_rows(manifest: dict, record_name: str) -> list[dict]:
@@ -97,9 +111,9 @@ def test_clearorders_ui_manifest_elements():
     store = MemoryStore()
     execute_program_flow(program, "seed_orders", store=store)
     manifest = build_manifest(program, state={}, store=store)
-    pages = manifest.get("pages", [])
-    assert pages
-    elements = _flatten_elements(pages[0].get("elements", []))
+    home = _page_by_name(manifest, "home")
+    assert home
+    elements = _flatten_elements(home.get("elements", []))
     titles = [element.get("value") for element in elements if element.get("type") == "title"]
     assert "ClearOrders" in titles
     tables = {element.get("record") for element in elements if element.get("type") == "table"}
@@ -116,6 +130,49 @@ def test_clearorders_ui_manifest_elements():
 
     labels = " ".join(str(label or "") for label in buttons | set(titles) | sections)
     _assert_no_forbidden_terms(labels)
+
+
+def test_clearorders_intro_page_copy():
+    app_path = _template_root() / "app.ai"
+    program, _ = load_program(str(app_path))
+    manifest = build_manifest(program, state={}, store=MemoryStore())
+    intro = _page_by_name(manifest, "intro")
+    assert intro
+    elements = _flatten_elements(intro.get("elements", []))
+    titles = [element.get("value") for element in elements if element.get("type") == "title"]
+    assert "ClearOrders" in titles
+    texts = [element.get("value") for element in elements if element.get("type") == "text"]
+    assert "A demo you can trust." in texts
+    assert "A small dataset... A human explanation." in texts
+    assert "You get the data, the answer, and the reasoning in one place." in " ".join(texts)
+    labels = {element.get("label") for element in elements if element.get("label")}
+    assert "What you see" in labels
+    assert "Why it matters" in labels
+    assert "Get started" in labels
+    assert "Open demo" in labels
+    combined = " ".join([*texts, *labels])
+    _assert_no_forbidden_terms(combined)
+
+
+def test_clearorders_get_started_page_copy():
+    app_path = _template_root() / "app.ai"
+    program, _ = load_program(str(app_path))
+    manifest = build_manifest(program, state={}, store=MemoryStore())
+    get_started = _page_by_name(manifest, "get_started")
+    assert get_started
+    elements = _flatten_elements(get_started.get("elements", []))
+    labels = {element.get("label") for element in elements if element.get("label")}
+    assert "Install" in labels
+    assert "Run the demo" in labels
+    assert "Open Studio (optional)" in labels
+    assert "Back" in labels
+    assert "Open demo" in labels
+    texts = [element.get("value") for element in elements if element.get("type") == "text"]
+    assert "$ pip install namel3ss" in texts
+    assert "$ n3 new demo && cd demo && n3 run" in texts
+    assert "$ n3 app.ai studio" in texts
+    combined = " ".join([*texts, *labels])
+    _assert_no_forbidden_terms(combined)
 
 
 def test_clearorders_answer_and_explanation():
@@ -207,11 +264,12 @@ def test_clearorders_run_prints_url(tmp_path, monkeypatch, capsys):
     project_dir = tmp_path / "demo"
     monkeypatch.chdir(project_dir)
     monkeypatch.setattr(ServiceRunner, "start", lambda *args, **kwargs: None)
-    code = cli_main(["run"])
+    port = _free_port()
+    code = cli_main(["run", "--port", str(port)])
     out = capsys.readouterr().out.strip().splitlines()
     assert code == 0
     assert out == [
         "Running ClearOrders",
-        f"Open: http://127.0.0.1:{DEFAULT_SERVICE_PORT}",
+        f"Open: http://127.0.0.1:{port}/",
         "Press Ctrl+C to stop",
     ]

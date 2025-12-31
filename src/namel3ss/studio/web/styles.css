@@ -144,6 +144,19 @@
   background: transparent;
   padding: 0;
 }
+.n3-codeblock {
+  background: #0f1113;
+  color: #f3f1ee;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 0 0 8px 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 12.5px;
+  line-height: 1.5;
+  border: 1px solid #1f2226;
+  box-shadow: 0 10px 20px rgba(15, 17, 19, 0.18);
+  white-space: pre-wrap;
+}
 .dock {
   position: fixed;
   left: 0;

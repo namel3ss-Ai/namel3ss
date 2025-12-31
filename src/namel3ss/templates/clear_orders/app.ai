@@ -249,6 +249,55 @@ flow "why_answer":
     create "ExplanationStat" with state.stat as stat
     return "ok"
 
+flow "nav_intro":
+  return "intro"
+
+flow "nav_get_started":
+  return "get_started"
+
+flow "nav_home":
+  return "home"
+
+page "intro":
+  title is "ClearOrders"
+  text is "A demo you can trust."
+  text is "A small dataset... A human explanation."
+  row:
+    column:
+      card "What you see":
+        text is "- 12 sample orders across regions and segments."
+        text is "- Ask AI for returns insights."
+        text is "- Why panel with the key drivers."
+    column:
+      card "Why it matters":
+        text is "You get the data, the answer, and the reasoning in one place."
+  row:
+    column:
+      button "Get started":
+        calls flow "nav_get_started"
+      button "Open demo":
+        calls flow "nav_home"
+
+page "get_started":
+  title is "Get started"
+  text is "Run the demo in minutes."
+  row:
+    column:
+      card "Install":
+        text is "$ pip install namel3ss"
+    column:
+      card "Run the demo":
+        text is "$ n3 new demo && cd demo && n3 run"
+    column:
+      card "Open Studio (optional)":
+        text is "$ n3 app.ai studio"
+  row:
+    column:
+      button "Back":
+        calls flow "nav_intro"
+      button "Open demo":
+        calls flow "nav_home"
+
 page "home":
   title is "ClearOrders"
   text is "Ask questions about orders and see why the answer is right."

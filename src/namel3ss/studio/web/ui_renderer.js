@@ -84,9 +84,17 @@ let renderUI = (manifest) => {
       h.textContent = el.value;
       wrapper.appendChild(h);
     } else if (el.type === "text") {
-      const p = document.createElement("p");
-      p.textContent = el.value;
-      wrapper.appendChild(p);
+      const value = typeof el.value === "string" ? el.value : String(el.value || "");
+      if (value.startsWith("$ ")) {
+        const pre = document.createElement("pre");
+        pre.className = "n3-codeblock";
+        pre.textContent = value;
+        wrapper.appendChild(pre);
+      } else {
+        const p = document.createElement("p");
+        p.textContent = value;
+        wrapper.appendChild(p);
+      }
     } else if (el.type === "button") {
       const actions = document.createElement("div");
       actions.className = "ui-buttons";

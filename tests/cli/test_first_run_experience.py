@@ -1,7 +1,8 @@
 from pathlib import Path
+import socket
 
 from namel3ss.cli.main import main
-from namel3ss.runtime.service_runner import DEFAULT_SERVICE_PORT, ServiceRunner
+from namel3ss.runtime.service_runner import ServiceRunner
 
 FORBIDDEN_TERMS = (
     "ir",
@@ -48,6 +49,12 @@ def _write_basic_app(root: Path) -> None:
     )
 
 
+def _free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("0.0.0.0", 0))
+        return int(sock.getsockname()[1])
+
+
 def test_first_run_error_output_is_clean(tmp_path, monkeypatch, capsys):
     _write_basic_app(tmp_path)
     monkeypatch.chdir(tmp_path)
@@ -90,11 +97,33 @@ def test_first_run_demo_run_output(tmp_path, monkeypatch, capsys):
     (tmp_path / ".namel3ss" / "demo.json").write_text('{"name":"ClearOrders"}', encoding="utf-8")
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(ServiceRunner, "start", lambda *args, **kwargs: None)
-    code = main(["run"])
+    port = _free_port()
+    code = main(["run", "--port", str(port)])
     out = capsys.readouterr().out.strip().splitlines()
     assert code == 0
     assert out == [
         "Running ClearOrders",
-        f"Open: http://127.0.0.1:{DEFAULT_SERVICE_PORT}",
+        f"Open: http://127.0.0.1:{port}/",
         "Press Ctrl+C to stop",
     ]
+
+
+def test_run_demo_opens_url_disabled_in_ci(tmp_path, monkeypatch, capsys):
+    _write_basic_app(tmp_path)
+    (tmp_path / ".namel3ss").mkdir()
+    (tmp_path / ".namel3ss" / "demo.json").write_text('{"name":"ClearOrders"}', encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("CI", "1")
+    monkeypatch.setattr("namel3ss.cli.open_url._has_tty", lambda *args, **kwargs: True)
+    monkeypatch.setattr(ServiceRunner, "start", lambda *args, **kwargs: None)
+    opened = {"count": 0}
+
+    def fake_open_url(_url: str) -> bool:
+        opened["count"] += 1
+        return True
+
+    monkeypatch.setattr("namel3ss.cli.run_mode.open_url", fake_open_url)
+    code = main(["run", "--port", str(_free_port())])
+    capsys.readouterr()
+    assert code == 0
+    assert opened["count"] == 0

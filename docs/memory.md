@@ -206,7 +206,22 @@ Studio also shows a Memory budget section in the Traces panel.
 - Retention and decay use deterministic counters
 - Regression tests verify AI outputs remain unchanged
 
-See the memory docs for policy, phases, agreements, trust, explanations, connections, impact, and lanes.
+## Reference
+- [Memory policy](memory-policy.md)
+- [Memory lanes](memory-lanes.md)
+- [Memory agreement](memory-agreement.md)
+- [Memory spaces](memory-spaces.md)
+- [Memory phases](memory-phases.md)
+- [Memory trust](memory-trust.md)
+- [Memory rules](memory-rules.md)
+- [Memory handoff](memory-handoff.md)
+- [Memory budgets](memory-budgets.md)
+- [Memory persistence](memory-persist.md)
+- [Memory packs](memory-packs.md)
+- [Memory explanations](memory-explanations.md)
+- [Memory proof harness](memory-proof.md)
+- [Memory connections](memory-connections.md)
+- [Memory impact](memory-impact.md)
 
 ## Capability ids
 runtime.memory

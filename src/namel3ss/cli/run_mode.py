@@ -7,6 +7,7 @@ from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.cli.builds import app_path_from_metadata, load_build_metadata, read_latest_build_id
 from namel3ss.cli.demo_support import CLEARORDERS_NAME, is_clearorders_demo
 from namel3ss.cli.first_run import is_first_run
+from namel3ss.cli.open_url import open_url, should_open_url
 from namel3ss.cli.promotion_state import load_state
 from namel3ss.cli.runner import run_flow
 from namel3ss.cli.targets import parse_target
@@ -47,18 +48,27 @@ def run_run_command(args: list[str]) -> int:
             return 0
         if target.name == "service":
             port = params.port or DEFAULT_SERVICE_PORT
-            runner = ServiceRunner(run_path, target.name, build_id=build_id, port=port)
+            runner = ServiceRunner(
+                run_path,
+                target.name,
+                build_id=build_id,
+                port=port,
+                auto_seed=bool(is_demo and first_run and not params.dry),
+            )
             if params.dry:
                 print(f"Service runner dry http://127.0.0.1:{port}/health")
                 print(f"Build: {build_id or 'working-copy'}")
                 return 0
             if is_demo:
+                url = f"http://127.0.0.1:{port}/"
                 if first_run:
                     print(f"Running {CLEARORDERS_NAME}")
-                    print(f"Open: http://127.0.0.1:{port}")
+                    print(f"Open: {url}")
                     print("Press Ctrl+C to stop")
+                    if should_open_url(params.no_open):
+                        open_url(url)
                 else:
-                    print(f"Running {CLEARORDERS_NAME} at: http://127.0.0.1:{port}/")
+                    print(f"Running {CLEARORDERS_NAME} at: {url}")
                     print("Press Ctrl+C to stop.")
             try:
                 runner.start(background=False)
@@ -96,6 +106,7 @@ class _RunParams:
         build_id: str | None,
         dry: bool,
         json_mode: bool,
+        no_open: bool,
     ):
         self.app_arg = app_arg
         self.target_raw = target_raw
@@ -103,6 +114,7 @@ class _RunParams:
         self.build_id = build_id
         self.dry = dry
         self.json_mode = json_mode
+        self.no_open = no_open
 
 
 def _parse_args(args: list[str]) -> _RunParams:
@@ -112,6 +124,7 @@ def _parse_args(args: list[str]) -> _RunParams:
     build_id = None
     dry = False
     json_mode = False
+    no_open = False
     i = 0
     while i < len(args):
         arg = args[i]
@@ -168,6 +181,10 @@ def _parse_args(args: list[str]) -> _RunParams:
             json_mode = True
             i += 1
             continue
+        if arg == "--no-open":
+            no_open = True
+            i += 1
+            continue
         if arg == "--first-run":
             i += 1
             continue
@@ -179,7 +196,7 @@ def _parse_args(args: list[str]) -> _RunParams:
             raise Namel3ssError(
                 build_guidance_message(
                     what=f"Unknown flag '{arg}'.",
-                    why="Supported flags: --target, --port, --build, --dry, --json, --first-run.",
+                    why="Supported flags: --target, --port, --build, --dry, --json, --first-run, --no-open.",
                     fix="Remove the unsupported flag.",
                     example="n3 run --target local",
                 )
@@ -196,7 +213,7 @@ def _parse_args(args: list[str]) -> _RunParams:
                 example="n3 run app.ai --target local",
             )
         )
-    return _RunParams(app_arg, target, port, build_id, dry, json_mode)
+    return _RunParams(app_arg, target, port, build_id, dry, json_mode, no_open)
 
 
 def _resolve_run_path(target: str, project_root: Path, app_path: Path, build_id: str | None) -> tuple[Path, str | None]:

@@ -100,7 +100,7 @@ def run_new(args: list[str]) -> int:
                 location = f"{location} "
             print(f"  - {location}{finding.code}: {finding.message}")
 
-    _print_success_message(project_name, target_dir)
+    _print_success_message(template, project_name, target_dir)
     return 0
 
 
@@ -161,7 +161,10 @@ def _rewrite_with_project_name(path: Path, project_name: str) -> str:
     return updated
 
 
-def _print_success_message(project_name: str, target_dir: Path) -> None:
+def _print_success_message(template: TemplateSpec, project_name: str, target_dir: Path) -> None:
     print(f"Created project at {target_dir}")
+    if template.name == "demo":
+        print(f"Run: cd {project_name} && n3 run")
+        return
     print("Next step")
     print(f"  cd {project_name} and run n3 app.ai")

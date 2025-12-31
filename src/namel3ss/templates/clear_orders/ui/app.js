@@ -30,6 +30,8 @@ const ACTION_IDS = {
   why: "page.home.button.why",
 };
 
+const DEFAULT_PAGE = "intro";
+
 function safeSetText(element, text) {
   if (!element) return false;
   element.textContent = text;
@@ -375,7 +377,34 @@ function bindEvents() {
   }
 }
 
+function setActivePage(name) {
+  const pages = document.querySelectorAll(".page-view");
+  let matched = false;
+  pages.forEach((page) => {
+    const isActive = page.dataset.page === name;
+    page.classList.toggle("is-active", isActive);
+    if (isActive) matched = true;
+  });
+  if (!matched && pages.length) {
+    pages[0].classList.add("is-active");
+  }
+}
+
+function bindNavigation() {
+  const buttons = document.querySelectorAll("[data-nav]");
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const target = button.dataset.nav;
+      if (target) {
+        setActivePage(target);
+      }
+    });
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  setActivePage(DEFAULT_PAGE);
+  bindNavigation();
   bindEvents();
   showOrdersLoading(true);
   showWhyPlaceholder(true);
