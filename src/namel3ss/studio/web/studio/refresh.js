@@ -21,22 +21,51 @@
   function applyManifest(manifest) {
     if (!manifest) return;
     state.setCachedManifest(manifest);
-    if (typeof window.renderUI === "function") {
-      window.renderUI(manifest);
+    updateAppNameFromManifest(manifest);
+    if (root.preview && root.preview.applyManifest) {
+      root.preview.applyManifest(manifest);
+    }
+    if (typeof window.renderData === "function") {
+      window.renderData(manifest);
     }
     applyThemeFromManifest(manifest);
     if (root.run && root.run.updateSeedAction) {
       root.run.updateSeedAction(manifest);
     }
+    if (root.run && root.run.updateResetAction) {
+      root.run.updateResetAction(manifest);
+    }
+    if (root.menu && root.menu.updateMenuState) {
+      root.menu.updateMenuState();
+    }
+  }
+
+  function updateAppNameFromManifest(manifest) {
+    const label = document.getElementById("appName");
+    if (!label || !manifest || !manifest.pages) return;
+    for (const page of manifest.pages) {
+      const queue = Array.isArray(page.elements) ? [...page.elements] : [];
+      while (queue.length) {
+        const element = queue.shift();
+        if (!element) continue;
+        if (element.type === "title" && element.value) {
+          label.textContent = element.value;
+          return;
+        }
+        if (Array.isArray(element.children)) {
+          queue.push(...element.children);
+        }
+      }
+    }
   }
 
   async function refreshUI() {
-    const container = document.getElementById("ui");
+    const container = document.getElementById("previewShell");
     try {
       const payload = await net.fetchJson("/api/ui");
       if (payload && payload.ok === false) {
-        if (typeof window.renderUIError === "function") {
-          window.renderUIError(payload.error || "Unable to load UI");
+        if (root.preview && root.preview.renderError) {
+          root.preview.renderError(payload.error || "Unable to load UI");
         } else {
           dom.showError(container, payload.error || "Unable to load UI");
         }
@@ -45,10 +74,31 @@
       applyManifest(payload);
     } catch (err) {
       const detail = err && err.message ? err.message : "Unable to load UI";
-      dom.showError(container, detail);
+      if (root.preview && root.preview.renderError) {
+        root.preview.renderError(detail);
+      } else {
+        dom.showError(container, detail);
+      }
+    }
+  }
+
+  async function refreshSummary() {
+    const label = document.getElementById("appName");
+    if (!label) return;
+    if (label.textContent && label.textContent !== "App") return;
+    try {
+      const payload = await net.fetchJson("/api/summary");
+      const file = payload && payload.file ? String(payload.file) : "";
+      const parts = file.split(/[/\\\\]/).filter(Boolean);
+      let name = parts.length > 1 ? parts[parts.length - 2] : parts[parts.length - 1];
+      if (!name) name = "App";
+      label.textContent = name;
+    } catch (err) {
+      label.textContent = "App";
     }
   }
 
   refresh.applyManifest = applyManifest;
   refresh.refreshUI = refreshUI;
+  refresh.refreshSummary = refreshSummary;
 })();

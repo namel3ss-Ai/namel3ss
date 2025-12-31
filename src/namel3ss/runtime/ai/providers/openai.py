@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from namel3ss.config.model import OpenAIConfig
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.ai.http.client import post_json
@@ -19,7 +21,15 @@ class OpenAIProvider(AIProvider):
         return cls(api_key=config.api_key, base_url=config.base_url)
 
     def ask(self, *, model: str, system_prompt: str | None, user_input: str, tools=None, memory=None, tool_results=None):
-        key = require_env("openai", "NAMEL3SS_OPENAI_API_KEY", self.api_key)
+        key = self.api_key
+        if key is None or str(key).strip() == "":
+            fallback = os.getenv("OPENAI_API_KEY")
+            if fallback is not None and str(fallback).strip() != "":
+                key = require_env("openai", "OPENAI_API_KEY", fallback)
+            else:
+                key = require_env("openai", "NAMEL3SS_OPENAI_API_KEY", self.api_key)
+        else:
+            key = require_env("openai", "NAMEL3SS_OPENAI_API_KEY", key)
         url = f"{self.base_url}/v1/responses"
         payload = {"model": model, "input": user_input}
         if system_prompt:

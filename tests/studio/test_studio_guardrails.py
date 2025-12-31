@@ -10,10 +10,9 @@ def test_studio_guardrail_layout_invariants():
     html = _read("src/namel3ss/studio/web/index.html")
     html_lower = html.lower()
 
-    assert 'data-testid="studio-preview"' in html
-    assert 'data-testid="studio-preview-canvas"' in html
+    assert 'data-testid="studio-canvas"' in html
     assert 'data-testid="studio-dock"' in html
-    assert html.find('data-testid="studio-preview"') < html.find('data-testid="studio-dock"')
+    assert html.find('data-testid="studio-canvas"') < html.find('data-testid="studio-dock"')
     assert "pageSelect" not in html
     assert "preview-header" not in html
     assert "preview-controls" not in html
@@ -22,14 +21,9 @@ def test_studio_guardrail_layout_invariants():
         assert forbidden not in html_lower
 
     dock_items = re.findall(r'data-testid="studio-dock-item-[^"]+"', html)
-    assert len(dock_items) == 4
-    for label in ["Graph", "Traces", "Memory", "Why"]:
+    assert len(dock_items) == 6
+    for label in ["Preview", "Why", "Data", "Traces", "Memory", "Graph"]:
         assert label in html
-
-    assert 'data-testid="studio-sheet"' in html
-    assert 'data-testid="studio-backdrop"' in html
-    assert 'class="sheet hidden"' in html
-    assert 'class="sheet-backdrop hidden"' in html
 
 
 def test_studio_guardrail_topbar_invariants():
@@ -40,7 +34,7 @@ def test_studio_guardrail_topbar_invariants():
     assert "namel3ss studio" in html_lower
     assert 'data-testid="studio-run-button"' in html
     assert "Run ▸" in html
-    assert html.count('class="btn primary') == 1
+    assert html.count('class="btn primary') >= 2
 
     for forbidden in [
         "Settings",
@@ -60,10 +54,7 @@ def test_studio_guardrail_behavior_invariants():
     tabs_js = _read("src/namel3ss/studio/web/studio/dock.js")
     styles = _read("src/namel3ss/studio/web/styles.css")
 
-    assert "backdrop.addEventListener" in tabs_js
-    assert "event.key === \"Escape\"" in tabs_js
-    assert "setActive(null)" in tabs_js
-    assert ".sheet .panel-body" in styles
+    assert "setActive(activeTab" in tabs_js
     assert "overflow: auto" in styles
 
 

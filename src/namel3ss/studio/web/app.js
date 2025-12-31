@@ -7,6 +7,9 @@
     if (!root.refresh || typeof root.refresh.refreshUI !== "function") missing.push("refresh");
     if (!root.run || typeof root.run.setupRunButton !== "function") missing.push("run");
     if (!root.dock || typeof root.dock.setupDock !== "function") missing.push("dock");
+    if (!root.preview || typeof root.preview.setupPreview !== "function") missing.push("preview");
+    if (typeof window.renderData !== "function") missing.push("data");
+    if (!root.menu || typeof root.menu.setupMenu !== "function") missing.push("menu");
     if (typeof window.renderTraces !== "function") missing.push("traces");
     if (typeof window.renderMemory !== "function") missing.push("memory");
     if (typeof window.refreshGraphPanel !== "function") missing.push("graph");
@@ -17,8 +20,11 @@
 
     root.run.setupRunButton();
     if (root.traces && root.traces.setupFilter) root.traces.setupFilter();
+    if (root.preview && root.preview.setupPreview) root.preview.setupPreview();
+    if (root.menu && root.menu.setupMenu) root.menu.setupMenu();
     root.dock.setupDock();
     root.refresh.refreshUI();
+    if (root.refresh && root.refresh.refreshSummary) root.refresh.refreshSummary();
   }
 
   if (document.readyState === "loading") {

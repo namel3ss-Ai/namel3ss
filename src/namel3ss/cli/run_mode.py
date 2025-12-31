@@ -1,4 +1,5 @@
 from __future__ import annotations
+import re
 import sys
 from pathlib import Path
 
@@ -61,14 +62,19 @@ def run_run_command(args: list[str]) -> int:
                 return 0
             if is_demo:
                 url = f"http://127.0.0.1:{port}/"
+                demo_provider = _detect_demo_provider(run_path)
                 if first_run:
                     print(f"Running {CLEARORDERS_NAME}")
                     print(f"Open: {url}")
+                    if demo_provider == "openai":
+                        print("AI provider: OpenAI")
                     print("Press Ctrl+C to stop")
                     if should_open_url(params.no_open):
                         open_url(url)
                 else:
                     print(f"Running {CLEARORDERS_NAME} at: {url}")
+                    if demo_provider == "openai":
+                        print("AI provider: OpenAI")
                     print("Press Ctrl+C to stop.")
             try:
                 runner.start(background=False)
@@ -231,6 +237,17 @@ def _resolve_run_path(target: str, project_root: Path, app_path: Path, build_id:
         build_path, meta = load_build_metadata(project_root, target, chosen_build)
         return app_path_from_metadata(build_path, meta), chosen_build
     return app_path, None
+
+
+def _detect_demo_provider(app_path: Path) -> str | None:
+    try:
+        contents = app_path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    match = re.search(r'provider\\s+is\\s+"([^"]+)"', contents)
+    if not match:
+        return None
+    return match.group(1).strip().lower()
 
 
 __all__ = ["run_run_command"]

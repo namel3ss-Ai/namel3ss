@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 import shutil
 from dataclasses import dataclass
@@ -51,6 +52,13 @@ TEMPLATES: tuple[TemplateSpec, ...] = (
 )
 
 
+@dataclass(frozen=True)
+class DemoSettings:
+    provider: str
+    model: str
+    system_prompt: str
+
+
 def run_new(args: list[str]) -> int:
     if not args:
         print(render_templates_list())
@@ -80,10 +88,13 @@ def run_new(args: list[str]) -> int:
     if target_dir.exists():
         raise Namel3ssError(f"Directory already exists: {target_dir}")
 
+    demo_settings = _resolve_demo_settings() if template.name == "demo" else None
     try:
         shutil.copytree(template_dir, target_dir)
         _prepare_readme(target_dir, project_name)
-        formatted_source = _prepare_app_file(target_dir, project_name)
+        formatted_source = _prepare_app_file(target_dir, project_name, template, demo_settings)
+        if demo_settings and demo_settings.provider == "openai":
+            _write_demo_env_example(target_dir)
     except Exception:
         shutil.rmtree(target_dir, ignore_errors=True)
         raise
@@ -140,11 +151,18 @@ def _prepare_readme(target_dir: Path, project_name: str) -> None:
     _rewrite_with_project_name(readme_path, project_name)
 
 
-def _prepare_app_file(target_dir: Path, project_name: str) -> str:
+def _prepare_app_file(
+    target_dir: Path,
+    project_name: str,
+    template: TemplateSpec,
+    demo_settings: DemoSettings | None,
+) -> str:
     app_path = target_dir / "app.ai"
     if not app_path.exists():
         raise Namel3ssError(f"Template is missing app.ai at {app_path}")
     raw = _rewrite_with_project_name(app_path, project_name)
+    if template.name == "demo" and demo_settings:
+        raw = _apply_demo_tokens(raw, demo_settings)
     formatted = format_source(raw)
     app_mode = app_path.stat().st_mode
     app_path.write_text(formatted, encoding="utf-8")
@@ -159,6 +177,41 @@ def _rewrite_with_project_name(path: Path, project_name: str) -> str:
     path.write_text(updated, encoding="utf-8")
     path.chmod(original_mode)
     return updated
+
+
+def _resolve_demo_settings() -> DemoSettings:
+    provider_env = os.getenv("N3_DEMO_PROVIDER", "").strip().lower()
+    provider = "openai" if provider_env == "openai" else "mock"
+    model = os.getenv("N3_DEMO_MODEL", "").strip() or "gpt-4o-mini"
+    system_prompt = (
+        "You are a concise analytics assistant. Answer in 1-3 bullet points. "
+        "If the dataset does not contain enough information, say what is missing."
+    )
+    return DemoSettings(provider=provider, model=model, system_prompt=system_prompt)
+
+
+def _apply_demo_tokens(contents: str, settings: DemoSettings) -> str:
+    replaced = contents
+    replaced = replaced.replace("DEMO_PROVIDER", settings.provider)
+    replaced = replaced.replace("DEMO_MODEL", settings.model)
+    replaced = replaced.replace("DEMO_SYSTEM_PROMPT", settings.system_prompt)
+    return replaced
+
+
+def _write_demo_env_example(target_dir: Path) -> None:
+    env_path = target_dir / ".env.example"
+    if env_path.exists():
+        return
+    lines = [
+        "# OpenAI (choose one)",
+        "OPENAI_API_KEY=",
+        "NAMEL3SS_OPENAI_API_KEY=",
+        "",
+        "# Optional",
+        "N3_DEMO_MODEL=gpt-4o-mini",
+        "",
+    ]
+    env_path.write_text("\n".join(lines), encoding="utf-8")
 
 
 def _print_success_message(template: TemplateSpec, project_name: str, target_dir: Path) -> None:

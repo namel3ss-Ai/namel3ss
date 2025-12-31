@@ -15,66 +15,88 @@
       <div class="topbar-left">
         <div class="studio-title">namel3ss Studio</div>
       </div>
+      <div class="topbar-center">
+        <div class="app-title" id="appName" data-testid="studio-app-name">App</div>
+      </div>
       <div class="topbar-actions">
         <button class="btn primary" id="run" title="Run the default flow" data-testid="studio-run-button" disabled>Run ▸</button>
+        <button
+          class="btn ghost icon-button"
+          id="studioMenuToggle"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-controls="studioMenu"
+          title="Developer actions"
+        >
+          ⋯
+        </button>
+        <div class="menu hidden" id="studioMenu" role="menu" data-testid="studio-menu">
+          <button class="menu-item" data-action="seed" role="menuitem">Seed demo data</button>
+          <button class="menu-item" data-action="reset" role="menuitem">Reset state</button>
+          <button class="menu-item" data-action="replay" role="menuitem">Replay last run</button>
+          <button class="menu-item" data-action="export" role="menuitem">Export trace</button>
+        </div>
         <div id="toast" class="toast run-status" aria-live="polite"></div>
       </div>
     </header>
-    <div class="shell-body">
-      <section class="preview" data-testid="studio-preview">
-        <div class="panel">
-          <div id="ui" class="panel-body ui-body" data-testid="studio-preview-canvas"></div>
+    <main class="canvas" id="canvas" data-testid="studio-canvas">
+      <section class="canvas-mode active" data-mode="preview" aria-labelledby="dock-preview">
+        <div class="preview-shell" id="previewShell">
+          <div class="preview-prompt">Ask a question to begin.</div>
+          <div class="preview-input">
+            <input
+              id="previewQuestion"
+              type="text"
+              placeholder="Which region has the most returns?"
+              aria-label="Question"
+            />
+            <button class="btn primary" id="previewAsk">Ask AI</button>
+          </div>
+          <div class="preview-hint" id="previewHint" aria-live="polite"></div>
+          <div class="preview-answer">
+            <div class="preview-answer-label">Answer</div>
+            <div id="previewAnswer" class="preview-answer-text empty">Ask a question to see an answer.</div>
+            <button class="btn ghost preview-why hidden" id="previewWhy">Why?</button>
+          </div>
         </div>
       </section>
-    </div>
-  </div>
-  <div class="dock" id="dock" role="tablist" data-testid="studio-dock">
-    <div class="dock-inner">
-      <button class="tab" data-tab="graph" data-testid="studio-dock-item-graph">Graph</button>
-      <button class="tab" data-tab="traces" data-testid="studio-dock-item-traces">Traces</button>
-      <button class="tab" data-tab="memory" data-testid="studio-dock-item-memory">Memory</button>
-      <button class="tab" data-tab="why" data-testid="studio-dock-item-why">Why</button>
-    </div>
-  </div>
-  <div class="sheet-backdrop hidden" id="sheetBackdrop" data-testid="studio-backdrop"></div>
-  <div class="sheet hidden" id="sheet" data-testid="studio-sheet">
-    <div class="sheet-inner">
-      <div class="tab-panels">
-        <div class="panel" data-tab="graph">
-          <div class="panel-header">
-            <div class="section-title">Graph</div>
-          </div>
-          <div class="graph-layout">
-            <div class="panel-body graph-wrap">
-              <div id="graphCanvas" class="graph-canvas"></div>
-            </div>
-            <div class="panel-body graph-details" id="graphDetails"></div>
-          </div>
-        </div>
-        <div class="panel" data-tab="traces">
-          <div class="panel-header">
-            <div class="section-title">Traces</div>
-          </div>
+      <section class="canvas-mode" data-mode="why" aria-labelledby="dock-why">
+        <div id="why" class="canvas-panel"></div>
+      </section>
+      <section class="canvas-mode" data-mode="data" aria-labelledby="dock-data">
+        <div id="data" class="canvas-panel"></div>
+      </section>
+      <section class="canvas-mode" data-mode="traces" aria-labelledby="dock-traces">
+        <div class="canvas-panel">
           <div class="control-row">
             <input id="tracesFilter" type="text" placeholder="Filter traces..." aria-label="Filter traces">
           </div>
-          <div id="traces" class="panel-body"></div>
+          <div id="traces"></div>
         </div>
-        <div class="panel" data-tab="memory">
-          <div class="panel-header">
-            <div class="section-title">Memory</div>
+      </section>
+      <section class="canvas-mode" data-mode="memory" aria-labelledby="dock-memory">
+        <div id="memory" class="canvas-panel"></div>
+      </section>
+      <section class="canvas-mode" data-mode="graph" aria-labelledby="dock-graph">
+        <div class="graph-layout canvas-panel">
+          <div class="graph-wrap">
+            <div id="graphCanvas" class="graph-canvas"></div>
           </div>
-          <div id="memory" class="panel-body"></div>
+          <div class="graph-details" id="graphDetails"></div>
         </div>
-        <div class="panel" data-tab="why">
-          <div class="panel-header">
-            <div class="section-title">Why</div>
-          </div>
-          <div id="why" class="panel-body"></div>
-        </div>
-      </div>
-    </div>
+      </section>
+    </main>
   </div>
+  <footer class="dock" id="dock" role="tablist" data-testid="studio-dock">
+    <div class="dock-inner">
+      <button class="tab" data-tab="preview" id="dock-preview" data-testid="studio-dock-item-preview">Preview</button>
+      <button class="tab" data-tab="why" id="dock-why" data-testid="studio-dock-item-why">Why</button>
+      <button class="tab" data-tab="data" id="dock-data" data-testid="studio-dock-item-data">Data</button>
+      <button class="tab" data-tab="traces" id="dock-traces" data-testid="studio-dock-item-traces">Traces</button>
+      <button class="tab" data-tab="memory" id="dock-memory" data-testid="studio-dock-item-memory">Memory</button>
+      <button class="tab" data-tab="graph" id="dock-graph" data-testid="studio-dock-item-graph">Graph</button>
+    </div>
+  </footer>
   <script src="/ui_renderer.js"></script>
   <script src="/theme_tokens.js"></script>
   <script src="/theme_runtime.js"></script>
@@ -87,7 +109,10 @@
   <script src="/studio/traces.js"></script>
   <script src="/studio/memory.js"></script>
   <script src="/studio/why.js"></script>
+  <script src="/studio/preview.js"></script>
+  <script src="/studio/data.js"></script>
   <script src="/graph_panel.js"></script>
+  <script src="/studio/menu.js"></script>
   <script src="/studio/dock.js"></script>
   <script src="/app.js"></script>
 </body>

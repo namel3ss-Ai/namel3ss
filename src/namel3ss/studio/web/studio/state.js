@@ -5,6 +5,8 @@
   let cachedManifest = null;
   let cachedTraces = [];
   let seedActionId = null;
+  let resetActionId = null;
+  let lastAction = null;
   let themeSetting = "system";
   let runtimeTheme = null;
 
@@ -34,6 +36,20 @@
     seedActionId = value || null;
     return seedActionId;
   }
+  function getResetActionId() {
+    return resetActionId;
+  }
+  function setResetActionId(value) {
+    resetActionId = value || null;
+    return resetActionId;
+  }
+  function getLastAction() {
+    return lastAction;
+  }
+  function setLastAction(value) {
+    lastAction = value || null;
+    return lastAction;
+  }
   function getThemeSetting() {
     return themeSetting;
   }
@@ -59,6 +75,10 @@
   state.setCachedTraces = setCachedTraces;
   state.getSeedActionId = getSeedActionId;
   state.setSeedActionId = setSeedActionId;
+  state.getResetActionId = getResetActionId;
+  state.setResetActionId = setResetActionId;
+  state.getLastAction = getLastAction;
+  state.setLastAction = setLastAction;
   state.getThemeSetting = getThemeSetting;
   state.setThemeSetting = setThemeSetting;
   state.getRuntimeTheme = getRuntimeTheme;

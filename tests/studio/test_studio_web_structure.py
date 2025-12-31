@@ -4,7 +4,7 @@ from pathlib import Path
 def test_studio_html_structure():
     html = Path("src/namel3ss/studio/web/index.html").read_text(encoding="utf-8")
     assert "namel3ss Studio" in html
-    for label in ["Graph", "Traces", "Memory", "Why"]:
+    for label in ["Preview", "Why", "Data", "Traces", "Memory", "Graph"]:
         assert label in html
     for label in [
         "Summary",
@@ -28,21 +28,24 @@ def test_studio_html_structure():
         assert label not in html
     for element_id in [
         "run",
-        "ui",
+        "previewQuestion",
+        "previewAsk",
+        "previewAnswer",
+        "previewWhy",
         "traces",
         "tracesFilter",
         "memory",
         "why",
+        "data",
         "dock",
-        "sheet",
-        "sheetBackdrop",
+        "studioMenu",
         "toast",
     ]:
         assert f'id="{element_id}"' in html
     assert "pageSelect" not in html
     assert "preview-header" not in html
     assert "Run ▸" in html
-    assert html.count('class="btn primary') == 1
+    assert html.count('class="btn primary') >= 2
     assert "studio-panels" not in html
     for removed_id in ["themeSelect", "toolWizardButton", "reset", "helpButton", "learnToggle", "versionLabel"]:
         assert f'id="{removed_id}"' not in html

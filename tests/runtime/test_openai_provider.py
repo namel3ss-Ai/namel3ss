@@ -44,10 +44,28 @@ def test_openai_provider_sends_expected_payload(monkeypatch):
 
 
 def test_openai_provider_missing_key(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("NAMEL3SS_OPENAI_API_KEY", raising=False)
     provider = OpenAIProvider(api_key=None)
     with pytest.raises(Namel3ssError) as err:
         provider.ask(model="gpt-4.1", system_prompt=None, user_input="hi")
     assert "Missing OPENAI_API_KEY" in str(err.value)
+
+
+def test_openai_provider_falls_back_to_openai_env(monkeypatch):
+    captured = {}
+
+    def fake_post_json(**kwargs):
+        captured["headers"] = kwargs["headers"]
+        return {"output_text": "hello"}
+
+    monkeypatch.setenv("OPENAI_API_KEY", "env-key")
+    monkeypatch.delenv("NAMEL3SS_OPENAI_API_KEY", raising=False)
+    monkeypatch.setattr("namel3ss.runtime.ai.providers.openai.post_json", fake_post_json)
+    provider = OpenAIProvider(api_key=None)
+    resp = provider.ask(model="gpt-4.1", system_prompt=None, user_input="hi")
+    assert resp.output == "hello"
+    assert captured["headers"]["Authorization"] == "Bearer env-key"
 
 
 def test_openai_provider_http_errors(monkeypatch):

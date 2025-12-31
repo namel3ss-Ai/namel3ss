@@ -10,6 +10,7 @@
   let runLabel = "Run";
 
   const PREFERRED_SEED_FLOWS = ["seed", "seed_data", "seed_demo", "demo_seed", "seed_customers"];
+  const PREFERRED_RESET_FLOWS = ["reset", "reset_state", "reset_demo", "reset_dashboard", "clear_state"];
 
   function getRunButton() {
     return document.getElementById("run");
@@ -58,11 +59,28 @@
     setRunButtonBusy(false);
   }
 
+  function detectResetAction(manifest) {
+    const actions = manifest && manifest.actions ? Object.values(manifest.actions) : [];
+    const callFlows = actions.filter((action) => action && action.type === "call_flow");
+    if (!callFlows.length) return null;
+    for (const name of PREFERRED_RESET_FLOWS) {
+      const found = callFlows.find((action) => action.flow === name);
+      if (found) return found.id || found.action_id || null;
+    }
+    return null;
+  }
+
+  function updateResetAction(manifest) {
+    const resetActionId = detectResetAction(manifest);
+    state.setResetActionId(resetActionId);
+  }
+
   async function executeAction(actionId, payload) {
     if (!actionId) {
       setRunStatus("error", dom.buildErrorLines("No action selected."));
       return { ok: false, error: "No action selected." };
     }
+    state.setLastAction({ id: actionId, payload: payload || {} });
     setRunButtonBusy(true);
     setRunStatus("running", [RUNNING_LABEL]);
     try {
@@ -85,6 +103,7 @@
       return { ok: false, error: detail };
     } finally {
       setRunButtonBusy(false);
+      if (root.menu && root.menu.updateMenuState) root.menu.updateMenuState();
     }
   }
 
@@ -95,6 +114,43 @@
       return;
     }
     await executeAction(seedActionId, {});
+  }
+
+  async function runResetAction() {
+    const resetActionId = state.getResetActionId();
+    if (!resetActionId) {
+      setRunStatus("error", dom.buildErrorLines("No reset action found."));
+      return;
+    }
+    await executeAction(resetActionId, {});
+  }
+
+  async function replayLastAction() {
+    const lastAction = state.getLastAction();
+    if (!lastAction) {
+      setRunStatus("error", dom.buildErrorLines("No prior action to replay."));
+      return;
+    }
+    await executeAction(lastAction.id, lastAction.payload || {});
+  }
+
+  function exportTraces() {
+    const traces = state.getCachedTraces() || [];
+    if (!traces.length) {
+      setRunStatus("error", dom.buildErrorLines("No traces available to export."));
+      return;
+    }
+    const payload = JSON.stringify(traces, null, 2);
+    const blob = new Blob([payload], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "namel3ss-traces.json";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setRunStatus("success", ["Trace exported."]);
   }
 
   function setupRunButton() {
@@ -108,8 +164,12 @@
 
   run.setupRunButton = setupRunButton;
   run.updateSeedAction = updateSeedAction;
+  run.updateResetAction = updateResetAction;
   run.executeAction = executeAction;
   run.runSeedAction = runSeedAction;
+  run.runResetAction = runResetAction;
+  run.replayLastAction = replayLastAction;
+  run.exportTraces = exportTraces;
 
   window.executeAction = executeAction;
 })();

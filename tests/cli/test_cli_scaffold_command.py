@@ -65,6 +65,38 @@ def test_new_demo_output_is_minimal(tmp_path, monkeypatch, capsys):
     ]
 
 
+def test_new_demo_defaults_to_mock(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("N3_DEMO_PROVIDER", raising=False)
+    monkeypatch.delenv("N3_DEMO_MODEL", raising=False)
+    code = main(["new", "demo", "demo_app"])
+    project_dir = tmp_path / "demo_app"
+    assert code == 0
+    source = (project_dir / "app.ai").read_text(encoding="utf-8")
+    assert 'provider is "mock"' in source
+    assert 'model is "gpt-4o-mini"' in source
+    assert "DEMO_PROVIDER" not in source
+    assert "DEMO_MODEL" not in source
+    assert "DEMO_SYSTEM_PROMPT" not in source
+    assert not (project_dir / ".env.example").exists()
+
+
+def test_new_demo_openai_env_controls_provider_and_model(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("N3_DEMO_PROVIDER", "openai")
+    monkeypatch.setenv("N3_DEMO_MODEL", "gpt-test-mini")
+    code = main(["new", "demo", "demo_app"])
+    project_dir = tmp_path / "demo_app"
+    assert code == 0
+    source = (project_dir / "app.ai").read_text(encoding="utf-8")
+    assert 'provider is "openai"' in source
+    assert 'model is "gpt-test-mini"' in source
+    env_example = (project_dir / ".env.example").read_text(encoding="utf-8")
+    assert "OPENAI_API_KEY=" in env_example
+    assert "NAMEL3SS_OPENAI_API_KEY=" in env_example
+    assert "N3_DEMO_MODEL=gpt-4o-mini" in env_example
+
+
 def test_new_ai_assistant_defaults_name(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     code = main(["new", "ai-assistant"])
