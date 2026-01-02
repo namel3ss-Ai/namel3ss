@@ -4,6 +4,7 @@
   const dom = root.dom;
   const errors = root.errors || (root.errors = {});
   const secrets = root.secrets || {};
+  const guidance = root.guidance || {};
 
   const PROVIDER_LABELS = {
     openai: "OpenAI",
@@ -63,6 +64,52 @@
       return result;
     }
     return value;
+  }
+
+  function getLastRunError() {
+    if (!state || typeof state.getCachedLastRunError !== "function") return null;
+    return state.getCachedLastRunError();
+  }
+
+  function extractErrorText(payload) {
+    if (!payload) return "";
+    if (typeof payload === "string") return payload;
+    if (payload.error) return payload.error;
+    if (payload.message) return payload.message;
+    return "";
+  }
+
+  function parseGuidanceSections(text) {
+    const parsed = guidance.parseGuidance ? guidance.parseGuidance(text) : { raw: text };
+    return {
+      what: redactText(parsed.what || parsed.raw || ""),
+      why: redactText(parsed.why || ""),
+      fix: redactText(parsed.fix || ""),
+      where: redactText(parsed.where || ""),
+      example: redactText(parsed.example || ""),
+      raw: redactText(parsed.raw || ""),
+    };
+  }
+
+  function shouldShowSetupForError(text) {
+    const value = String(text || "");
+    if (/NAMEL3SS_[A-Z0-9_]+/.test(value)) return true;
+    if (/_API_KEY/.test(value)) return true;
+    return /secret|api key/i.test(value);
+  }
+
+  function resolveErrorLocation(payload, parsedWhere) {
+    if (parsedWhere) return parsedWhere;
+    const location = payload && payload.location ? payload.location : null;
+    const file = payload && payload.details ? payload.details.file : null;
+    if (!location || (!location.line && !location.column) && !file) return "";
+    const parts = [];
+    if (file) parts.push(`File: ${file}`);
+    if (location && location.line) {
+      const col = location.column ? `, column ${location.column}` : "";
+      parts.push(`line ${location.line}${col}`);
+    }
+    return parts.join(" ");
   }
 
   function getStaticAiContextDiagnostics() {
@@ -243,6 +290,13 @@
   function updateErrorBanner(diagnostic) {
     const banner = document.getElementById("errorBanner");
     if (!banner) return;
+    const runError = getLastRunError();
+    if (runError) {
+      banner.textContent = "Run failed. Click for details.";
+      banner.classList.remove("hidden");
+      banner.onclick = () => openTab("errors");
+      return;
+    }
     if (!diagnostic) {
       banner.classList.add("hidden");
       banner.textContent = "";
@@ -264,6 +318,20 @@
     title.textContent = label;
     const text = document.createElement("div");
     text.className = "error-field-value";
+    text.textContent = value ? String(value) : "-";
+    row.appendChild(title);
+    row.appendChild(text);
+    return row;
+  }
+
+  function buildDetailRow(label, value) {
+    const row = document.createElement("div");
+    row.className = "error-detail";
+    const title = document.createElement("div");
+    title.className = "error-detail-label";
+    title.textContent = label;
+    const text = document.createElement("div");
+    text.className = "error-detail-value";
     text.textContent = value ? String(value) : "-";
     row.appendChild(title);
     row.appendChild(text);
@@ -431,12 +499,107 @@
     return card;
   }
 
+  function buildRunErrorCard(payload) {
+    const card = document.createElement("div");
+    card.className = "error-card";
+    const rawText = extractErrorText(payload);
+    const parsed = parseGuidanceSections(rawText);
+    const where = resolveErrorLocation(payload, parsed.where);
+
+    const header = document.createElement("div");
+    header.className = "error-card-header";
+    const title = document.createElement("div");
+    title.className = "error-card-title";
+    title.textContent = "Last run error";
+    const badge = document.createElement("span");
+    badge.className = "error-badge";
+    badge.textContent = "run error";
+    header.appendChild(title);
+    header.appendChild(badge);
+
+    const detailStack = document.createElement("div");
+    detailStack.className = "error-details";
+    if (parsed.what) {
+      detailStack.appendChild(buildDetailRow("What happened", parsed.what));
+    } else if (parsed.raw) {
+      detailStack.appendChild(buildDetailRow("What happened", parsed.raw));
+    }
+    if (where) {
+      detailStack.appendChild(buildDetailRow("Where", where));
+    }
+    if (parsed.why) {
+      detailStack.appendChild(buildDetailRow("Why", parsed.why));
+    }
+
+    const fixText = [parsed.fix, parsed.example].filter(Boolean).join("\n");
+    const stepsTitle = document.createElement("div");
+    stepsTitle.className = "panel-section-title";
+    stepsTitle.textContent = "How to fix";
+    const steps = document.createElement("div");
+    steps.className = "code-block fix-steps";
+    steps.textContent = normalizeLineBreaks(fixText);
+
+    const actions = document.createElement("div");
+    actions.className = "json-actions";
+    const copyError = document.createElement("button");
+    copyError.type = "button";
+    copyError.className = "btn ghost";
+    copyError.textContent = "Copy error JSON";
+    copyError.onclick = () => copyText(payload);
+    actions.appendChild(copyError);
+
+    if (fixText) {
+      const copyFix = document.createElement("button");
+      copyFix.type = "button";
+      copyFix.className = "btn ghost";
+      copyFix.textContent = "Copy fix steps";
+      copyFix.onclick = () => copyText(fixText);
+      actions.appendChild(copyFix);
+    }
+
+    if (shouldShowSetupForError(parsed.raw || parsed.fix || parsed.what)) {
+      const openSetup = document.createElement("button");
+      openSetup.type = "button";
+      openSetup.className = "btn ghost";
+      openSetup.textContent = "Open Setup";
+      openSetup.onclick = () => openTab("setup");
+      actions.appendChild(openSetup);
+    }
+
+    if (where) {
+      const openGraph = document.createElement("button");
+      openGraph.type = "button";
+      openGraph.className = "btn ghost";
+      openGraph.textContent = "Open Graph";
+      openGraph.onclick = () => openTab("graph");
+      actions.appendChild(openGraph);
+    }
+
+    const openTraces = document.createElement("button");
+    openTraces.type = "button";
+    openTraces.className = "btn ghost";
+    openTraces.textContent = "Open Traces";
+    openTraces.onclick = () => openTab("traces");
+    actions.appendChild(openTraces);
+
+    card.appendChild(header);
+    card.appendChild(detailStack);
+    if (fixText) {
+      card.appendChild(stepsTitle);
+      card.appendChild(steps);
+    }
+    card.appendChild(actions);
+    return card;
+  }
+
   function renderErrors(nextTraces) {
     const panel = document.getElementById("errors");
     if (!panel) return;
     const traces = Array.isArray(nextTraces) ? nextTraces : (state && state.getCachedTraces ? state.getCachedTraces() : []);
+    const runError = getLastRunError();
     const event = getLatestProviderError(traces);
     const providerDiagnostic = event && event.diagnostic ? sanitizeDiagnostic(event.diagnostic || {}) : null;
+    const safeRunError = runError ? sanitizeDiagnostic(runError) : null;
     const staticDiagnostics = getStaticAiContextDiagnostics().map((item) => sanitizeDiagnostic(item));
     const runtimeDiagnostics = collectRuntimeAiContextDiagnostics(traces).map((item) => sanitizeDiagnostic(item));
     const seen = new Set();
@@ -448,7 +611,7 @@
       return true;
     });
 
-    if (!providerDiagnostic && !aiDiagnostics.length) {
+    if (!providerDiagnostic && !aiDiagnostics.length && !safeRunError) {
       updateErrorBanner(null);
       dom.showEmpty(panel, "No provider errors yet.");
       return;
@@ -458,6 +621,9 @@
     panel.innerHTML = "";
     const stack = document.createElement("div");
     stack.className = "panel-stack";
+    if (safeRunError) {
+      stack.appendChild(buildRunErrorCard(safeRunError));
+    }
     if (providerDiagnostic) {
       stack.appendChild(buildProviderErrorCard(providerDiagnostic));
     }

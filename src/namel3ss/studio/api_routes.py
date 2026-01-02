@@ -33,7 +33,7 @@ def handle_api_get(handler: Any) -> None:
         _respond_with_source(handler, source, get_ui_payload, kind="manifest", include_session=True)
         return
     if handler.path == "/api/actions":
-        _respond_with_source(handler, source, get_actions_payload, kind="manifest")
+        _respond_with_source(handler, source, get_actions_payload, kind="manifest", include_app_path=True)
         return
     if handler.path == "/api/lint":
         payload = get_lint_payload(source)

@@ -114,6 +114,25 @@
   font-size: 13px;
   color: #333;
 }
+.error-details {
+  display: grid;
+  gap: 8px;
+}
+.error-detail {
+  display: grid;
+  gap: 4px;
+}
+.error-detail-label {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 11px;
+  color: #777;
+}
+.error-detail-value {
+  font-size: 13px;
+  color: #333;
+  white-space: pre-line;
+}
 .error-why {
   margin: 0;
   padding-left: 18px;

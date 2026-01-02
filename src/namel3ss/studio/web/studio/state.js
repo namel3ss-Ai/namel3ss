@@ -6,6 +6,7 @@
   let cachedSummary = null;
   let cachedTraces = [];
   let cachedDiagnostics = null;
+  let cachedLastRunError = null;
   let seedActionId = null;
   let resetActionId = null;
   let lastAction = null;
@@ -44,6 +45,13 @@
   function setCachedDiagnostics(value) {
     cachedDiagnostics = value || null;
     return cachedDiagnostics;
+  }
+  function getCachedLastRunError() {
+    return cachedLastRunError;
+  }
+  function setCachedLastRunError(value) {
+    cachedLastRunError = value || null;
+    return cachedLastRunError;
   }
   function getSeedActionId() {
     return seedActionId;
@@ -93,6 +101,8 @@
   state.setCachedTraces = setCachedTraces;
   state.getCachedDiagnostics = getCachedDiagnostics;
   state.setCachedDiagnostics = setCachedDiagnostics;
+  state.getCachedLastRunError = getCachedLastRunError;
+  state.setCachedLastRunError = setCachedLastRunError;
   state.getSeedActionId = getSeedActionId;
   state.setSeedActionId = setSeedActionId;
   state.getResetActionId = getResetActionId;

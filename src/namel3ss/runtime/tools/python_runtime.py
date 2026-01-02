@@ -301,9 +301,9 @@ def _resolve_project_root(
         raise Namel3ssError(
             build_guidance_message(
                 what=f'Tool "{tool_name}" cannot resolve tools/ without a project root.',
-                why="The engine was started without a project root path.",
-                fix="Run the app from its project root or pass project_root to the executor.",
-                example=_tool_example(tool_name),
+                why="tools.yaml and tools/ are relative to the project root.",
+                fix="Run Studio from the folder that contains app.ai or pass app_path explicitly.",
+                example="cd <project-root> && n3 studio app.ai",
             ),
             line=line,
             column=column,

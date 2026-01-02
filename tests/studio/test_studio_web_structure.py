@@ -4,6 +4,7 @@ from pathlib import Path
 def test_studio_html_structure():
     html = Path("src/namel3ss/studio/web/index.html").read_text(encoding="utf-8")
     assert "namel3ss Studio" in html
+    assert "/studio/guidance.js" in html
     for label in ["Preview", "Why", "Data", "Errors", "Traces", "Memory", "Setup", "Graph"]:
         assert label in html
     for label in [
@@ -64,6 +65,7 @@ def test_studio_run_button_state_logic():
     assert "button.disabled = true" in js
     assert "Running..." in js
     assert "Run complete." in js
+    assert "setCachedLastRunError" in js
 
 
 def test_studio_traces_timeline_rendering():

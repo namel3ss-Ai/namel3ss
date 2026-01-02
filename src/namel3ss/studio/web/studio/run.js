@@ -98,13 +98,28 @@
         window.renderTraces(data.traces);
       }
       if (data && data.ok === false) {
+        if (state && typeof state.setCachedLastRunError === "function") {
+          state.setCachedLastRunError(data);
+        }
+        if (root.errors && typeof root.errors.renderErrors === "function") {
+          root.errors.renderErrors();
+        }
         setRunStatus("error", dom.buildErrorLines(data));
       } else {
+        if (state && typeof state.setCachedLastRunError === "function") {
+          state.setCachedLastRunError(null);
+        }
         setRunStatus("success", [SUCCESS_LABEL]);
       }
       return data;
     } catch (err) {
       const detail = err && err.message ? err.message : String(err);
+      if (state && typeof state.setCachedLastRunError === "function") {
+        state.setCachedLastRunError({ ok: false, error: detail, kind: "network" });
+      }
+      if (root.errors && typeof root.errors.renderErrors === "function") {
+        root.errors.renderErrors();
+      }
       setRunStatus("error", dom.buildErrorLines(detail));
       return { ok: false, error: detail };
     } finally {

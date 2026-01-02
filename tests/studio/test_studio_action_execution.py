@@ -32,19 +32,19 @@ def test_action_flow_and_form_execution(tmp_path: Path) -> None:
     app_file.write_text(APP_SOURCE, encoding="utf-8")
     session = SessionState()
 
-    call_resp = execute_action(APP_SOURCE, session, "page.home.button.run", {})
+    call_resp = execute_action(APP_SOURCE, session, "page.home.button.run", {}, app_path=app_file.as_posix())
     assert call_resp["ok"] is True
     assert call_resp["result"] == "hi"
     assert isinstance(call_resp["state"], dict)
 
-    bad_form = execute_action(APP_SOURCE, session, "page.home.form.user", {})
+    bad_form = execute_action(APP_SOURCE, session, "page.home.form.user", {}, app_path=app_file.as_posix())
     assert bad_form["ok"] is False
 
-    good_form = execute_action(APP_SOURCE, session, "page.home.form.user", {"values": {"name": "Alice"}})
+    good_form = execute_action(APP_SOURCE, session, "page.home.form.user", {"values": {"name": "Alice"}}, app_path=app_file.as_posix())
     assert good_form["ok"] is True
     assert session.state.get("user", {}).get("name") == "Alice"
 
-    manifest = get_ui_payload(APP_SOURCE, session)
+    manifest = get_ui_payload(APP_SOURCE, session, app_path=app_file.as_posix())
     tables = [el for p in manifest.get("pages", []) for el in p.get("elements", []) if el.get("type") == "table"]
     assert tables
     assert any(row.get("name") == "Alice" for row in tables[0].get("rows", []))
