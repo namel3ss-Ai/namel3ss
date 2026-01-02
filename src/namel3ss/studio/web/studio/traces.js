@@ -170,7 +170,12 @@
     const needle = filterText.trim().toLowerCase();
     const filtered = cached.filter((trace) => matchTrace(trace || {}, needle));
     if (!filtered.length) {
-      const message = cached.length ? "No traces match filter." : "No traces yet. Run your app.";
+      const hasRun = state && typeof state.getLastAction === "function" && state.getLastAction();
+      const message = cached.length
+        ? "No traces match filter."
+        : hasRun
+          ? "This action emitted no traces."
+          : "No traces yet. Run your app.";
       dom.showEmpty(container, message);
       if (window.renderMemory) window.renderMemory(cached);
       return;

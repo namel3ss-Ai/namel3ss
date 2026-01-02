@@ -216,10 +216,13 @@ def _handle_submit_form(
     if not isinstance(record, str):
         raise Namel3ssError("Invalid record reference in form action")
     values = payload["values"]
+    trace = _submit_form_trace(record, values)
     set_state_record(state, record, values)
     schemas = {schema.name: schema for schema in program_ir.records}
     saved, errors = save_record_with_errors(record, values, schemas, state, store, identity=identity)
     if errors:
+        trace["ok"] = False
+        trace["errors"] = [err.get("field") for err in errors if err.get("field")]
         response = {
             "ok": False,
             "state": state,
@@ -231,7 +234,7 @@ def _handle_submit_form(
                 runtime_theme=runtime_theme,
                 identity=identity,
             ),
-            "traces": [],
+            "traces": [trace],
         }
         _ensure_json_serializable(response)
         if secret_values:
@@ -251,7 +254,7 @@ def _handle_submit_form(
             runtime_theme=runtime_theme,
             identity=identity,
         ),
-        "traces": [],
+        "traces": [trace],
     }
     _ensure_json_serializable(response)
     if secret_values:
@@ -263,6 +266,11 @@ def _trace_to_dict(trace) -> dict:
     if hasattr(trace, "__dict__"):
         return trace.__dict__
     return dict(trace)
+
+
+def _submit_form_trace(record: str, values: dict) -> dict:
+    fields = sorted({str(key) for key in values.keys()})
+    return {"type": "submit_form", "record": record, "ok": True, "fields": fields}
 
 
 def _normalize_submit_payload(payload: dict | None) -> dict:

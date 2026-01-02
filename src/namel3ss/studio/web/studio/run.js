@@ -3,6 +3,7 @@
   const state = root.state;
   const dom = root.dom;
   const net = root.net;
+  const actionResult = root.actionResult || {};
   const run = root.run || (root.run = {});
 
   const RUNNING_LABEL = "Running...";
@@ -94,31 +95,19 @@
       if (data && data.ui && root.refresh && root.refresh.applyManifest) {
         root.refresh.applyManifest(data.ui);
       }
-      if (data && Array.isArray(data.traces) && window.renderTraces) {
-        window.renderTraces(data.traces);
+      if (actionResult && typeof actionResult.applyActionResult === "function") {
+        actionResult.applyActionResult(data);
       }
       if (data && data.ok === false) {
-        if (state && typeof state.setCachedLastRunError === "function") {
-          state.setCachedLastRunError(data);
-        }
-        if (root.errors && typeof root.errors.renderErrors === "function") {
-          root.errors.renderErrors();
-        }
         setRunStatus("error", dom.buildErrorLines(data));
       } else {
-        if (state && typeof state.setCachedLastRunError === "function") {
-          state.setCachedLastRunError(null);
-        }
         setRunStatus("success", [SUCCESS_LABEL]);
       }
       return data;
     } catch (err) {
       const detail = err && err.message ? err.message : String(err);
-      if (state && typeof state.setCachedLastRunError === "function") {
-        state.setCachedLastRunError({ ok: false, error: detail, kind: "engine" });
-      }
-      if (root.errors && typeof root.errors.renderErrors === "function") {
-        root.errors.renderErrors();
+      if (actionResult && typeof actionResult.applyActionResult === "function") {
+        actionResult.applyActionResult({ ok: false, error: detail, kind: "engine" });
       }
       setRunStatus("error", dom.buildErrorLines(detail));
       return { ok: false, error: detail };

@@ -70,7 +70,9 @@
 
     const entries = collectMemoryEntries(tracesList);
     if (!entries.length) {
-      wrapper.appendChild(dom.buildEmpty("No memory events yet. Run your app."));
+      const hasRun = state && typeof state.getLastAction === "function" && state.getLastAction();
+      const message = hasRun ? "No memory events for this action." : "No memory events yet. Run your app.";
+      wrapper.appendChild(dom.buildEmpty(message));
       panel.appendChild(wrapper);
       return;
     }

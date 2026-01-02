@@ -7,8 +7,11 @@ def test_studio_html_structure():
     assert "/studio/guidance.js" in html
     guidance_idx = html.index("/studio/guidance.js")
     dom_idx = html.index("/studio/dom.js")
+    action_result_idx = html.index("/studio/action_result.js")
     errors_idx = html.index("/studio/errors.js")
+    run_idx = html.index("/studio/run.js")
     assert guidance_idx < dom_idx < errors_idx
+    assert action_result_idx < run_idx
     for label in ["Preview", "Why", "Data", "Errors", "Traces", "Memory", "Setup", "Graph"]:
         assert label in html
     for label in [
@@ -69,7 +72,7 @@ def test_studio_run_button_state_logic():
     assert "button.disabled = true" in js
     assert "Running..." in js
     assert "Run complete." in js
-    assert "setCachedLastRunError" in js
+    assert "applyActionResult" in js
 
 
 def test_studio_traces_timeline_rendering():

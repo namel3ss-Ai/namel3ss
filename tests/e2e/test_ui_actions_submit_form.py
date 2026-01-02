@@ -25,6 +25,8 @@ def test_submit_form_saves_record_and_updates_ui():
         store=store,
     )
     assert response["ok"] is True
+    assert response["traces"]
+    assert response["traces"][0]["type"] == "submit_form"
     records = store.list_records(program.records[0])
     assert len(records) == 1
     assert records[0]["email"] == "a@b.com"
@@ -42,6 +44,8 @@ def test_submit_form_returns_validation_errors():
         store=store,
     )
     assert response["ok"] is False
+    assert response["traces"]
+    assert response["traces"][0]["type"] == "submit_form"
     assert any(err["field"] == "name" and err["code"] == "present" for err in response["errors"])
 
 
