@@ -115,7 +115,7 @@
     } catch (err) {
       const detail = err && err.message ? err.message : String(err);
       if (state && typeof state.setCachedLastRunError === "function") {
-        state.setCachedLastRunError({ ok: false, error: detail, kind: "network" });
+        state.setCachedLastRunError({ ok: false, error: detail, kind: "engine" });
       }
       if (root.errors && typeof root.errors.renderErrors === "function") {
         root.errors.renderErrors();

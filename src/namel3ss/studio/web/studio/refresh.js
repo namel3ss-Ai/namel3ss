@@ -59,17 +59,33 @@
     }
   }
 
+  function setManifestError(detail) {
+    if (state && typeof state.setCachedLastRunError === "function") {
+      state.setCachedLastRunError({ ok: false, error: detail, kind: "manifest" });
+    }
+    if (root.errors && typeof root.errors.renderErrors === "function") {
+      root.errors.renderErrors();
+    }
+  }
+
+  function clearManifestErrorIfPresent() {
+    if (!state || typeof state.getCachedLastRunError !== "function") return;
+    const current = state.getCachedLastRunError();
+    if (!current || current.kind !== "manifest") return;
+    if (typeof state.setCachedLastRunError === "function") {
+      state.setCachedLastRunError(null);
+    }
+    if (root.errors && typeof root.errors.renderErrors === "function") {
+      root.errors.renderErrors();
+    }
+  }
+
   async function refreshUI() {
     const container = document.getElementById("previewShell");
     try {
       const payload = await net.fetchJson("/api/ui");
       if (payload && payload.ok === false) {
-        if (state && typeof state.setCachedLastRunError === "function") {
-          state.setCachedLastRunError(payload);
-        }
-        if (root.errors && typeof root.errors.renderErrors === "function") {
-          root.errors.renderErrors();
-        }
+        setManifestError(payload.error || "Unable to load UI");
         if (root.preview && root.preview.renderError) {
           root.preview.renderError(payload.error || "Unable to load UI");
         } else {
@@ -77,21 +93,14 @@
         }
         return;
       }
-      if (state && typeof state.setCachedLastRunError === "function") {
-        state.setCachedLastRunError(null);
-      }
+      clearManifestErrorIfPresent();
       applyManifest(payload);
       if (root.setup && root.setup.refreshSetup) {
         root.setup.refreshSetup();
       }
     } catch (err) {
       const detail = err && err.message ? err.message : "Unable to load UI";
-      if (state && typeof state.setCachedLastRunError === "function") {
-        state.setCachedLastRunError({ ok: false, error: detail, kind: "network" });
-      }
-      if (root.errors && typeof root.errors.renderErrors === "function") {
-        root.errors.renderErrors();
-      }
+      setManifestError(detail);
       if (root.preview && root.preview.renderError) {
         root.preview.renderError(detail);
       } else {

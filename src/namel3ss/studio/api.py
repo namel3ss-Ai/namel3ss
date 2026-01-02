@@ -43,6 +43,7 @@ def _load_project_program(source: str, path: str):
 def get_summary_payload(source: str, path: str) -> dict:
     try:
         program_ir = _load_project_program(source, path)
+        file_value = Path(path).as_posix() if path else ""
         ai_providers = sorted(
             {
                 (ai.provider or "").lower()
@@ -58,7 +59,7 @@ def get_summary_payload(source: str, path: str) -> dict:
             "agents": len(program_ir.agents),
             "tools": len(program_ir.tools),
         }
-        payload = {"ok": True, "file": path, "counts": counts, "ai_providers": ai_providers}
+        payload = {"ok": True, "file": file_value, "counts": counts, "ai_providers": ai_providers}
         module_summary = getattr(program_ir, "module_summary", None)
         if module_summary:
             payload["module_summary"] = module_summary

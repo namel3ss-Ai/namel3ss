@@ -20,9 +20,13 @@ def test_studio_errors_panel_behavior():
     assert "Open Traces" in js
     assert "Fix steps" in js
     assert "What happened" in js
+    assert "Where" in js
+    assert "Why" in js
+    assert "How to fix" in js
     assert "openTab(\"errors\")" in js
     assert "Bearer" in js
     assert "sk-" in js
     assert "fix-steps" in js
     assert 'replaceAll("\\\\n", "\\n")' in js
     assert "normalizeLineBreaks(buildFixSteps" in js
+    assert "(none found)" in js

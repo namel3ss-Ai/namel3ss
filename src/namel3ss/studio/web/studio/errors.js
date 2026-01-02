@@ -131,6 +131,15 @@
   function hasContextMarkers(text) {
     if (!text) return false;
     const lower = String(text).toLowerCase();
+    const emptyMarkers = [
+      "(none found)",
+      "no records found",
+      "no orders found",
+      "no data found",
+      "0 records",
+      "0 orders",
+    ];
+    if (emptyMarkers.some((marker) => lower.includes(marker))) return true;
     if (lower.includes("records:") || lower.includes("record:") || lower.includes("data:")) return true;
     if (/\bn\s*=\s*\d+/.test(lower)) return true;
     const lines = String(text)

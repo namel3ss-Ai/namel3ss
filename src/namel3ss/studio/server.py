@@ -6,8 +6,10 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.runtime.storage.factory import create_store
 from namel3ss.studio.api_routes import handle_api_get, handle_api_post
 from namel3ss.studio.session import SessionState
 from namel3ss.utils.json_tools import dumps as json_dumps
@@ -25,7 +27,7 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
         return self.server.session_state  # type: ignore[attr-defined]
 
     def _respond_json(self, payload: dict, status: int = 200) -> None:
-        data = json_dumps(payload).encode("utf-8")
+        data = json_dumps(to_json_safe(payload)).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(data)))
@@ -94,7 +96,7 @@ def start_server(app_path: str | Path, port: int) -> None:
     server = HTTPServer(("127.0.0.1", port), handler)
     server.app_path = app_file  # type: ignore[attr-defined]
     server.project_root = app_file.parent  # type: ignore[attr-defined]
-    server.session_state = SessionState()  # type: ignore[attr-defined]
+    server.session_state = build_session_state(app_file)  # type: ignore[attr-defined]
     print(f"Studio: http://127.0.0.1:{port}/")
     try:
         server.serve_forever()
@@ -125,4 +127,36 @@ def require_app_path(app_path: str | Path | None) -> Path:
     return path.resolve()
 
 
-__all__ = ["StudioRequestHandler", "start_server", "require_app_path"]
+def build_session_state(app_path: Path) -> SessionState:
+    config = load_config(app_path=app_path, root=app_path.parent)
+    store = create_store(config=config)
+    return SessionState(store=store)
+
+
+def to_json_safe(value: Any) -> Any:
+    if isinstance(value, Path):
+        return value.as_posix()
+    if isinstance(value, dict):
+        return {to_json_safe_key(key): to_json_safe(item) for key, item in value.items()}
+    if isinstance(value, tuple):
+        return [to_json_safe(item) for item in value]
+    if isinstance(value, list):
+        return [to_json_safe(item) for item in value]
+    if isinstance(value, set):
+        return [to_json_safe(item) for item in sorted(value, key=lambda item: str(item))]
+    return value
+
+
+def to_json_safe_key(value: Any) -> str:
+    if isinstance(value, Path):
+        return value.as_posix()
+    return str(value)
+
+
+__all__ = [
+    "StudioRequestHandler",
+    "start_server",
+    "require_app_path",
+    "build_session_state",
+    "to_json_safe",
+]

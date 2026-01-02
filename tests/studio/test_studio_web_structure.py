@@ -5,6 +5,10 @@ def test_studio_html_structure():
     html = Path("src/namel3ss/studio/web/index.html").read_text(encoding="utf-8")
     assert "namel3ss Studio" in html
     assert "/studio/guidance.js" in html
+    guidance_idx = html.index("/studio/guidance.js")
+    dom_idx = html.index("/studio/dom.js")
+    errors_idx = html.index("/studio/errors.js")
+    assert guidance_idx < dom_idx < errors_idx
     for label in ["Preview", "Why", "Data", "Errors", "Traces", "Memory", "Setup", "Graph"]:
         assert label in html
     for label in [

@@ -10,6 +10,14 @@ from namel3ss.runtime.records.state_paths import record_state_path
 
 _QUESTION_WORDS = ("which", "what", "why", "how", "lowest", "highest", "top", "most", "least")
 _MAX_QUESTION_LENGTH = 400
+_EMPTY_CONTEXT_MARKERS = (
+    "(none found)",
+    "no records found",
+    "no orders found",
+    "no data found",
+    "0 records",
+    "0 orders",
+)
 
 
 @dataclass
@@ -317,6 +325,8 @@ def _has_data_usage(traces: list[dict]) -> bool:
 
 def _has_context_markers(text: str) -> bool:
     lower = text.lower()
+    if any(marker in lower for marker in _EMPTY_CONTEXT_MARKERS):
+        return True
     if re.search(r"\\brecords?\\s*:", lower):
         return True
     if re.search(r"\\bdata\\s*:", lower):

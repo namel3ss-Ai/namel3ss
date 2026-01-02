@@ -83,6 +83,18 @@ def test_ai_context_runtime_detection():
     assert any(item.get("id") == "AI_CONTEXT_LIKELY_MISSING" for item in diagnostics)
 
 
+def test_ai_context_runtime_detection_empty_context():
+    traces = [
+        {"type": "tool_call", "tool": "fetch", "status": "ok"},
+        {
+            "ai_name": "assistant",
+            "input": "Orders: (none found)\n\nQuestion: Which region has the lowest returns?",
+        },
+    ]
+    diagnostics = collect_runtime_ai_context_diagnostics(traces)
+    assert not any(item.get("id") == "AI_CONTEXT_LIKELY_MISSING" for item in diagnostics)
+
+
 def test_ai_context_no_query_guard():
     diagnostics = _diagnostics_for(SOURCE_NO_QUERY)
     assert not diagnostics
