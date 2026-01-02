@@ -182,7 +182,13 @@ def _rewrite_with_project_name(path: Path, project_name: str) -> str:
 def _resolve_demo_settings() -> DemoSettings:
     provider_env = os.getenv("N3_DEMO_PROVIDER", "").strip().lower()
     provider = "openai" if provider_env == "openai" else "mock"
-    model = os.getenv("N3_DEMO_MODEL", "").strip() or "gpt-4o-mini"
+    model_env = os.getenv("N3_DEMO_MODEL", "").strip()
+    if model_env:
+        model = model_env
+    elif provider == "openai":
+        model = "gpt-4o-mini"
+    else:
+        model = "mock-model"
     system_prompt = (
         "You are a concise analytics assistant. Answer in 1-3 bullet points. "
         "If the dataset does not contain enough information, say what is missing."
@@ -195,6 +201,10 @@ def _apply_demo_tokens(contents: str, settings: DemoSettings) -> str:
     replaced = replaced.replace("DEMO_PROVIDER", settings.provider)
     replaced = replaced.replace("DEMO_MODEL", settings.model)
     replaced = replaced.replace("DEMO_SYSTEM_PROMPT", settings.system_prompt)
+    if "DEMO_PROVIDER" not in contents:
+        replaced = replaced.replace('provider is "mock"', f'provider is "{settings.provider}"', 1)
+    if "DEMO_MODEL" not in contents:
+        replaced = replaced.replace('model is "mock-model"', f'model is "{settings.model}"', 1)
     return replaced
 
 

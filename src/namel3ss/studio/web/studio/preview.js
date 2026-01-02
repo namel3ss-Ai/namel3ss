@@ -83,7 +83,18 @@
     const rows = table && Array.isArray(table.rows) ? table.rows : [];
     if (!rows.length) return "";
     const row = rows[rows.length - 1] || {};
-    return row.text || "";
+    const text = row.text;
+    if (text && typeof text === "object") {
+      if (typeof text.output === "string") return text.output;
+      if (typeof text.output_text === "string") return text.output_text;
+      try {
+        return JSON.stringify(text);
+      } catch (err) {
+        return "";
+      }
+    }
+    if (typeof text === "string") return text;
+    return text ? String(text) : "";
   }
 
   function findActionIdByFlow(manifest, flowName) {

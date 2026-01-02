@@ -29,6 +29,9 @@ def test_summary_ui_actions_lint_payloads():
     assert ids == sorted(ids)
     lint = api.get_lint_payload(SOURCE)
     assert "findings" in lint
+    diagnostics = api.get_diagnostics_payload(SOURCE, "app.ai")
+    assert diagnostics["ok"] is True
+    assert "diagnostics" in diagnostics
 
 
 def test_error_payload_includes_caret():

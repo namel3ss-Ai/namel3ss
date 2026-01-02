@@ -40,7 +40,31 @@ def test_openai_provider_sends_expected_payload(monkeypatch):
     assert captured["headers"]["content-type"] == "application/json"
     assert captured["body"]["model"] == "gpt-4.1"
     assert captured["body"]["input"] == "hi"
-    assert captured["body"]["system"] == "sys"
+    assert captured["body"]["instructions"] == "sys"
+    assert "system" not in captured["body"]
+
+
+@pytest.mark.parametrize(
+    "base_url",
+    [
+        "https://api.openai.com",
+        "https://api.openai.com/",
+        "https://api.openai.com/v1",
+        "https://api.openai.com/v1/",
+    ],
+)
+def test_openai_provider_normalizes_base_url(monkeypatch, base_url):
+    captured = {}
+
+    def fake_post_json(**kwargs):
+        captured["url"] = kwargs["url"]
+        return {"output_text": "ok"}
+
+    monkeypatch.setattr("namel3ss.runtime.ai.providers.openai.post_json", fake_post_json)
+    provider = OpenAIProvider(api_key="token", base_url=base_url)
+    resp = provider.ask(model="gpt-4.1", system_prompt=None, user_input="hi")
+    assert resp.output == "ok"
+    assert captured["url"] == "https://api.openai.com/v1/responses"
 
 
 def test_openai_provider_missing_key(monkeypatch):
@@ -49,7 +73,7 @@ def test_openai_provider_missing_key(monkeypatch):
     provider = OpenAIProvider(api_key=None)
     with pytest.raises(Namel3ssError) as err:
         provider.ask(model="gpt-4.1", system_prompt=None, user_input="hi")
-    assert "Missing OPENAI_API_KEY" in str(err.value)
+    assert "Missing OpenAI API key" in str(err.value)
 
 
 def test_openai_provider_falls_back_to_openai_env(monkeypatch):
@@ -68,6 +92,22 @@ def test_openai_provider_falls_back_to_openai_env(monkeypatch):
     assert captured["headers"]["Authorization"] == "Bearer env-key"
 
 
+def test_openai_provider_prefers_namel3ss_env(monkeypatch):
+    captured = {}
+
+    def fake_post_json(**kwargs):
+        captured["headers"] = kwargs["headers"]
+        return {"output_text": "hello"}
+
+    monkeypatch.setenv("OPENAI_API_KEY", "openai-key")
+    monkeypatch.setenv("NAMEL3SS_OPENAI_API_KEY", "namel3ss-key")
+    monkeypatch.setattr("namel3ss.runtime.ai.providers.openai.post_json", fake_post_json)
+    provider = OpenAIProvider(api_key=None)
+    resp = provider.ask(model="gpt-4.1", system_prompt=None, user_input="hi")
+    assert resp.output == "hello"
+    assert captured["headers"]["Authorization"] == "Bearer namel3ss-key"
+
+
 def test_openai_provider_http_errors(monkeypatch):
     provider = OpenAIProvider(api_key="token")
 
@@ -77,7 +117,14 @@ def test_openai_provider_http_errors(monkeypatch):
     monkeypatch.setattr("namel3ss.runtime.ai.providers.openai.post_json", fake_post_json)
     with pytest.raises(Namel3ssError) as err:
         provider.ask(model="gpt-4.1", system_prompt=None, user_input="hi")
-    assert "authentication failed" in str(err.value)
+    message = str(err.value)
+    diagnostic = err.value.details.get("diagnostic") if isinstance(err.value.details, dict) else None
+    assert "provider=openai" in message
+    assert "/v1/responses" in message
+    assert "status=401" in message
+    assert diagnostic["provider"] == "openai"
+    assert diagnostic["url"].endswith("/v1/responses")
+    assert diagnostic["status"] == 401
 
     def fake_post_json2(**kwargs):
         raise map_http_error("openai", URLError("bad"))
@@ -85,7 +132,44 @@ def test_openai_provider_http_errors(monkeypatch):
     monkeypatch.setattr("namel3ss.runtime.ai.providers.openai.post_json", fake_post_json2)
     with pytest.raises(Namel3ssError) as err:
         provider.ask(model="gpt-4.1", system_prompt=None, user_input="hi")
-    assert "unreachable" in str(err.value)
+    message = str(err.value)
+    diagnostic = err.value.details.get("diagnostic") if isinstance(err.value.details, dict) else None
+    assert "provider=openai" in message
+    assert "/v1/responses" in message
+    assert "unreachable" in message
+    assert diagnostic["provider"] == "openai"
+    assert diagnostic["url"].endswith("/v1/responses")
+
+
+def test_openai_provider_error_diagnostics_redacted(monkeypatch):
+    def fake_post_json(**kwargs):
+        details = {
+            "status": 401,
+            "error": {
+                "code": "invalid_api_key",
+                "type": "invalid_request_error",
+                "message": "Invalid API key: sk-test-secret",
+            },
+        }
+        raise Namel3ssError("Provider 'openai' authentication failed", details=details)
+
+    monkeypatch.setattr("namel3ss.runtime.ai.providers.openai.post_json", fake_post_json)
+    provider = OpenAIProvider(api_key="sk-test-secret")
+    with pytest.raises(Namel3ssError) as err:
+        provider.ask(model="gpt-4.1", system_prompt=None, user_input="hi")
+    message = str(err.value)
+    diagnostic = err.value.details.get("diagnostic") if isinstance(err.value.details, dict) else None
+    assert "provider=openai" in message
+    assert "/v1/responses" in message
+    assert "status=401" in message
+    assert "code=invalid_api_key" in message
+    assert "type=invalid_request_error" in message
+    assert "sk-" not in message
+    assert diagnostic["provider"] == "openai"
+    assert diagnostic["code"] == "invalid_api_key"
+    assert diagnostic["type"] == "invalid_request_error"
+    assert diagnostic["message"]
+    assert "sk-" not in diagnostic["message"]
 
 
 def test_openai_provider_bad_shape(monkeypatch):

@@ -80,6 +80,18 @@ def build_ai_call_failed(
     return event
 
 
+def build_ai_provider_error(
+    *,
+    call_id: str,
+    provider: str,
+    model: str,
+    diagnostic: dict[str, object],
+) -> dict:
+    event = _base_event(TraceEventType.AI_PROVIDER_ERROR, call_id=call_id, provider=provider, model=model)
+    event["diagnostic"] = diagnostic
+    return event
+
+
 def build_tool_call_requested(
     *,
     call_id: str,

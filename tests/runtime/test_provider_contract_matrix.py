@@ -36,11 +36,27 @@ PROVIDERS = {
 
 
 @pytest.mark.parametrize("name", ["openai", "anthropic", "gemini", "mistral"])
-def test_missing_key_errors(name):
+def test_missing_key_errors(name, monkeypatch):
+    env_map = {
+        "openai": ["NAMEL3SS_OPENAI_API_KEY", "OPENAI_API_KEY"],
+        "anthropic": ["NAMEL3SS_ANTHROPIC_API_KEY"],
+        "gemini": ["NAMEL3SS_GEMINI_API_KEY"],
+        "mistral": ["NAMEL3SS_MISTRAL_API_KEY"],
+    }
+    for key in env_map.get(name, []):
+        monkeypatch.delenv(key, raising=False)
     provider = PROVIDERS[name]().__class__(api_key=None)
     with pytest.raises(Namel3ssError) as err:
         provider.ask(model="m", system_prompt=None, user_input="hi")
-    assert f"Missing {name.upper()}_API_KEY" in str(err.value)
+    message = str(err.value)
+    if name == "openai":
+        assert "Missing OpenAI API key" in message
+    elif name == "anthropic":
+        assert "Missing Anthropic API key" in message
+    elif name == "gemini":
+        assert "Missing Gemini API key" in message
+    elif name == "mistral":
+        assert "Missing Mistral API key" in message
 
 
 @pytest.mark.parametrize("name", ["ollama", "openai", "anthropic", "gemini", "mistral"])
@@ -53,7 +69,13 @@ def test_unreachable_errors(monkeypatch, name):
     monkeypatch.setattr("namel3ss.runtime.ai.http.client.urlopen", fake_urlopen)
     with pytest.raises(Namel3ssError) as err:
         provider.ask(model="m", system_prompt=None, user_input="hi")
-    assert str(err.value) == f"Provider '{name}' unreachable"
+    if name == "openai":
+        message = str(err.value)
+        assert "provider=openai" in message
+        assert "/v1/responses" in message
+        assert "unreachable" in message
+    else:
+        assert str(err.value) == f"Provider '{name}' unreachable"
 
 
 @pytest.mark.parametrize("name", ["ollama", "openai", "anthropic", "gemini", "mistral"])
@@ -66,7 +88,13 @@ def test_invalid_json_errors(monkeypatch, name):
     monkeypatch.setattr("namel3ss.runtime.ai.http.client.urlopen", fake_urlopen)
     with pytest.raises(Namel3ssError) as err:
         provider.ask(model="m", system_prompt=None, user_input="hi")
-    assert str(err.value) == f"Provider '{name}' returned an invalid response"
+    if name == "openai":
+        message = str(err.value)
+        assert "provider=openai" in message
+        assert "/v1/responses" in message
+        assert "invalid response" in message
+    else:
+        assert str(err.value) == f"Provider '{name}' returned an invalid response"
 
 
 @pytest.mark.parametrize("name", ["ollama", "openai", "anthropic", "gemini", "mistral"])
@@ -79,7 +107,13 @@ def test_invalid_shape_errors(monkeypatch, name):
     monkeypatch.setattr("namel3ss.runtime.ai.http.client.urlopen", fake_urlopen)
     with pytest.raises(Namel3ssError) as err:
         provider.ask(model="m", system_prompt=None, user_input="hi")
-    assert str(err.value) == f"Provider '{name}' returned an invalid response"
+    if name == "openai":
+        message = str(err.value)
+        assert "provider=openai" in message
+        assert "/v1/responses" in message
+        assert "invalid response" in message
+    else:
+        assert str(err.value) == f"Provider '{name}' returned an invalid response"
 
 
 @pytest.mark.parametrize("name", ["openai", "anthropic", "gemini", "mistral"])
@@ -98,4 +132,10 @@ def test_empty_output_errors(monkeypatch, name):
     monkeypatch.setattr("namel3ss.runtime.ai.http.client.urlopen", fake_urlopen)
     with pytest.raises(Namel3ssError) as err:
         provider.ask(model="m", system_prompt=None, user_input="hi")
-    assert str(err.value) == f"Provider '{name}' returned an invalid response"
+    if name == "openai":
+        message = str(err.value)
+        assert "provider=openai" in message
+        assert "/v1/responses" in message
+        assert "invalid response" in message
+    else:
+        assert str(err.value) == f"Provider '{name}' returned an invalid response"

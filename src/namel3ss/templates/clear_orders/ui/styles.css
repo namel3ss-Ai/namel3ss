@@ -262,6 +262,39 @@ body::after {
   background: linear-gradient(145deg, rgba(243, 111, 90, 0.08), rgba(255, 255, 255, 0.9));
 }
 
+.ai-mode-panel {
+  border-left: 4px solid var(--teal);
+}
+
+.ai-mode-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-mode-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.ai-mode-label {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 11px;
+}
+
+.ai-mode-value {
+  font-weight: 600;
+}
+
+.ai-mode-hint {
+  font-size: 13px;
+  color: var(--muted);
+}
+
 .input-row {
   display: flex;
   flex-wrap: wrap;

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from namel3ss.config.model import GeminiConfig
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.ai.http.client import post_json
@@ -18,7 +20,7 @@ class GeminiProvider(AIProvider):
         return cls(api_key=config.api_key)
 
     def ask(self, *, model: str, system_prompt: str | None, user_input: str, tools=None, memory=None, tool_results=None):
-        key = require_env("gemini", "NAMEL3SS_GEMINI_API_KEY", self.api_key)
+        key = _resolve_api_key(self.api_key)
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
         text = user_input if not system_prompt else f"{system_prompt}\n{user_input}"
         payload = {"contents": [{"role": "user", "parts": [{"text": text}]}]}
@@ -48,3 +50,18 @@ def _extract_text(result: dict) -> str | None:
                 if texts:
                     return "\n".join(texts)
     return None
+
+
+def _resolve_api_key(api_key: str | None) -> str:
+    if api_key is not None and str(api_key).strip() != "":
+        return api_key
+    preferred = os.getenv("NAMEL3SS_GEMINI_API_KEY")
+    if preferred is not None and str(preferred).strip() != "":
+        return require_env("gemini", "NAMEL3SS_GEMINI_API_KEY", preferred)
+    for alias in ("GEMINI_API_KEY", "GOOGLE_API_KEY"):
+        fallback = os.getenv(alias)
+        if fallback is not None and str(fallback).strip() != "":
+            return require_env("gemini", alias, fallback)
+    raise Namel3ssError(
+        "Missing Gemini API key. Set NAMEL3SS_GEMINI_API_KEY (preferred) or GEMINI_API_KEY/GOOGLE_API_KEY."
+    )

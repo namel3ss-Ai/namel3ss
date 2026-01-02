@@ -1,16 +1,21 @@
 from __future__ import annotations
 
 from pathlib import Path
+import io
+import json
 import re
 import socket
+from urllib.error import HTTPError
 import pytest
 
 from namel3ss.cli.main import main as cli_main
 from namel3ss.cli.app_loader import load_program
+from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.executor import execute_program_flow
 from namel3ss.runtime.service_runner import ServiceRunner
 from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.ui.manifest import build_manifest
+from namel3ss.traces.schema import TraceEventType
 
 FORBIDDEN_TERMS = ("ir", "contract", "capability", "policy", "determinism", "pack", "schema")
 
@@ -175,12 +180,16 @@ def test_clearorders_get_started_page_copy():
     _assert_no_forbidden_terms(combined)
 
 
-def test_clearorders_answer_and_explanation():
+def test_clearorders_answer_and_explanation(monkeypatch):
     app_path = _template_root() / "app.ai"
     program, _ = load_program(str(app_path))
     store = MemoryStore()
+    monkeypatch.delenv("NAMEL3SS_OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setattr("namel3ss.secrets.discovery.load_dotenv_for_path", lambda _: {})
+    monkeypatch.setattr("namel3ss.config.loader.load_dotenv_for_path", lambda _: {})
     execute_program_flow(program, "seed_orders", store=store)
-    execute_program_flow(
+    result = execute_program_flow(
         program,
         "ask_ai",
         store=store,
@@ -193,11 +202,58 @@ def test_clearorders_answer_and_explanation():
     orders = _table_rows(manifest, "Order")
 
     assert answers
+    assert isinstance(answers[-1].get("text"), str)
     answer_text = str(answers[-1].get("text") or "")
     assert answer_text.strip()
+    assert "[object Object]" not in answer_text
     _assert_no_forbidden_terms(answer_text)
+    assert result.state.get("status", {}).get("message") == "AI Mode: Mock (set keys to use OpenAI)"
 
     assert len(stats) >= 3
+
+
+def test_clearorders_falls_back_to_mock_on_openai_failure(monkeypatch):
+    app_path = _template_root() / "app.ai"
+    program, _ = load_program(str(app_path))
+    store = MemoryStore()
+
+    body = json.dumps(
+        {
+            "error": {
+                "code": "invalid_api_key",
+                "type": "invalid_request_error",
+                "message": "Invalid API key: sk-test-secret",
+            }
+        }
+    ).encode()
+
+    def fake_urlopen(req, timeout=None):
+        raise HTTPError(url=req.get_full_url(), code=401, msg="Unauthorized", hdrs=None, fp=io.BytesIO(body))
+
+    monkeypatch.setenv("NAMEL3SS_OPENAI_API_KEY", "sk-test-secret")
+    monkeypatch.setattr("namel3ss.runtime.ai.http.client.urlopen", fake_urlopen)
+    execute_program_flow(program, "seed_orders", store=store)
+    result = execute_program_flow(
+        program,
+        "ask_ai",
+        store=store,
+        input={"values": {"question": "Which region has the most returns?"}},
+    )
+    execute_program_flow(program, "why_answer", store=store)
+    manifest = build_manifest(program, state={}, store=store)
+    stats = _table_rows(manifest, "ExplanationStat")
+    orders = _table_rows(manifest, "Order")
+    assert "[mock-model]" in result.last_value
+    assert result.state.get("status", {}).get("message") == (
+        "OpenAI auth failed - set keys in Setup. Using mock (see Traces)."
+    )
+    error_events = []
+    for trace in result.traces:
+        events = trace.canonical_events if hasattr(trace, "canonical_events") else trace.get("canonical_events", [])
+        for event in events:
+            if event.get("type") == TraceEventType.AI_PROVIDER_ERROR:
+                error_events.append(event)
+    assert error_events
     stats_text = " ".join(str(row.get("value_text") or "") for row in stats)
     _assert_no_forbidden_terms(stats_text)
     bullets = _build_demo_bullets(stats)
@@ -222,6 +278,139 @@ def test_clearorders_answer_and_explanation():
     assert mapped["top_region_returns"]["value_number"] == top_returns
     assert mapped["avg_delivery_days"]["value_number"] == pytest.approx(avg_delivery)
     assert mapped["avg_satisfaction"]["value_number"] == pytest.approx(avg_satisfaction)
+
+
+def test_clearorders_model_access_downgrades(monkeypatch):
+    app_path = _template_root() / "app.ai"
+    program, _ = load_program(str(app_path))
+    store = MemoryStore()
+    calls: list[str] = []
+
+    def fake_post_json(**kwargs):
+        model = kwargs.get("payload", {}).get("model")
+        calls.append(model)
+        if model == "gpt-4.1":
+            details = {
+                "status": 404,
+                "error": {
+                    "code": "model_not_found",
+                    "type": "invalid_request_error",
+                    "message": "model not found",
+                },
+            }
+            raise Namel3ssError("Provider 'openai' returned an invalid response", details=details)
+        return {"output_text": "Downgraded response"}
+
+    monkeypatch.setenv("NAMEL3SS_OPENAI_API_KEY", "sk-test-secret")
+    monkeypatch.setattr("namel3ss.runtime.ai.providers.openai.post_json", fake_post_json)
+    execute_program_flow(program, "seed_orders", store=store)
+    result = execute_program_flow(
+        program,
+        "ask_ai",
+        store=store,
+        input={"values": {"question": "Which region has the most returns?"}},
+    )
+    assert result.last_value == "Downgraded response"
+    status = result.state.get("status", {}).get("message") or ""
+    assert "model downgraded to gpt-4o-mini" in status
+    assert calls == ["gpt-4.1", "gpt-4o-mini"]
+
+
+def test_clearorders_rate_limit_no_retry(monkeypatch):
+    app_path = _template_root() / "app.ai"
+    program, _ = load_program(str(app_path))
+    store = MemoryStore()
+    calls: list[str] = []
+
+    def fake_post_json(**kwargs):
+        model = kwargs.get("payload", {}).get("model")
+        calls.append(model)
+        details = {
+            "status": 429,
+            "error": {
+                "code": "rate_limit",
+                "type": "rate_limit_error",
+                "message": "Rate limit exceeded",
+            },
+        }
+        raise Namel3ssError("Provider 'openai' returned an invalid response", details=details)
+
+    monkeypatch.setenv("NAMEL3SS_OPENAI_API_KEY", "sk-test-secret")
+    monkeypatch.setattr("namel3ss.runtime.ai.providers.openai.post_json", fake_post_json)
+    execute_program_flow(program, "seed_orders", store=store)
+    result = execute_program_flow(
+        program,
+        "ask_ai",
+        store=store,
+        input={"values": {"question": "Which region has the most returns?"}},
+    )
+    assert "[mock-model]" in result.last_value
+    status = result.state.get("status", {}).get("message") or ""
+    assert "rate-limited" in status
+    assert calls == ["gpt-4.1"]
+
+
+def test_clearorders_auth_failure_no_retry(monkeypatch):
+    app_path = _template_root() / "app.ai"
+    program, _ = load_program(str(app_path))
+    store = MemoryStore()
+    calls: list[str] = []
+
+    def fake_post_json(**kwargs):
+        model = kwargs.get("payload", {}).get("model")
+        calls.append(model)
+        details = {
+            "status": 401,
+            "error": {
+                "code": "invalid_api_key",
+                "type": "invalid_request_error",
+                "message": "Invalid API key",
+            },
+        }
+        raise Namel3ssError("Provider 'openai' authentication failed", details=details)
+
+    monkeypatch.setenv("NAMEL3SS_OPENAI_API_KEY", "sk-test-secret")
+    monkeypatch.setattr("namel3ss.runtime.ai.providers.openai.post_json", fake_post_json)
+    execute_program_flow(program, "seed_orders", store=store)
+    result = execute_program_flow(
+        program,
+        "ask_ai",
+        store=store,
+        input={"values": {"question": "Which region has the most returns?"}},
+    )
+    assert "[mock-model]" in result.last_value
+    status = result.state.get("status", {}).get("message") or ""
+    assert "auth failed" in status
+    assert calls == ["gpt-4.1"]
+
+
+def test_clearorders_uses_openai_when_key_present(monkeypatch):
+    app_path = _template_root() / "app.ai"
+    program, _ = load_program(str(app_path))
+    store = MemoryStore()
+    captured = {}
+
+    def fake_post_json(**kwargs):
+        captured["url"] = kwargs.get("url")
+        captured["payload"] = kwargs.get("payload")
+        return {"output_text": "OpenAI response"}
+
+    monkeypatch.setenv("NAMEL3SS_OPENAI_API_KEY", "sk-test-secret")
+    monkeypatch.setattr("namel3ss.runtime.ai.providers.openai.post_json", fake_post_json)
+    execute_program_flow(program, "seed_orders", store=store)
+    result = execute_program_flow(
+        program,
+        "ask_ai",
+        store=store,
+        input={"values": {"question": "Which region has the most returns?"}},
+    )
+    assert result.last_value == "OpenAI response"
+    assert result.state.get("status", {}).get("message") == "AI Mode: OpenAI ✅"
+    assert str(captured.get("url", "")).endswith("/v1/responses")
+    prompt = (captured.get("payload") or {}).get("input") or ""
+    assert "Orders (N=" in prompt
+    assert "region=" in prompt
+    assert prompt.count("region=") <= 25
 
 
 def test_clearorders_ui_copy_avoids_forbidden_terms():

@@ -7,4 +7,6 @@ Run it with:
 - `n3 app.ai studio`
 - `n3 app.ai actions`
 
-Put any API keys in a local `.env` (not committed).
+## Secrets setup
+
+This app may require secrets depending on providers/targets. Studio → Setup shows what’s missing.

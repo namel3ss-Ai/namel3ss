@@ -3,6 +3,7 @@ from __future__ import annotations
 from namel3ss.format.rules import (
     collapse_blank_lines,
     migrate_buttons,
+    normalize_function_fields,
     normalize_indentation,
     normalize_record_fields,
     normalize_spacing,
@@ -16,6 +17,7 @@ def format_source(source: str) -> str:
     lines = [normalize_spacing(line) for line in lines]
     lines = normalize_indentation(lines)
     lines = normalize_record_fields(lines)
+    lines = normalize_function_fields(lines)
     lines = collapse_blank_lines(lines)
     formatted = "\n".join(lines)
     if formatted and not formatted.endswith("\n"):

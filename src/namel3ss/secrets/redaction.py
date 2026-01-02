@@ -7,6 +7,11 @@ from namel3ss.config.model import AppConfig
 
 
 _KNOWN_ENV_VARS = {
+    "ANTHROPIC_API_KEY",
+    "GEMINI_API_KEY",
+    "GOOGLE_API_KEY",
+    "MISTRAL_API_KEY",
+    "OPENAI_API_KEY",
     "NAMEL3SS_OPENAI_API_KEY",
     "NAMEL3SS_ANTHROPIC_API_KEY",
     "NAMEL3SS_GEMINI_API_KEY",

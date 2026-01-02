@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from namel3ss.config.model import MistralConfig
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.ai.http.client import post_json
@@ -18,7 +20,7 @@ class MistralProvider(AIProvider):
         return cls(api_key=config.api_key)
 
     def ask(self, *, model: str, system_prompt: str | None, user_input: str, tools=None, memory=None, tool_results=None):
-        key = require_env("mistral", "NAMEL3SS_MISTRAL_API_KEY", self.api_key)
+        key = _resolve_api_key(self.api_key)
         url = "https://api.mistral.ai/v1/chat/completions"
         messages = []
         if system_prompt:
@@ -49,3 +51,17 @@ def _extract_text(result: dict) -> str | None:
             if isinstance(content, str):
                 return content
     return None
+
+
+def _resolve_api_key(api_key: str | None) -> str:
+    if api_key is not None and str(api_key).strip() != "":
+        return api_key
+    preferred = os.getenv("NAMEL3SS_MISTRAL_API_KEY")
+    if preferred is not None and str(preferred).strip() != "":
+        return require_env("mistral", "NAMEL3SS_MISTRAL_API_KEY", preferred)
+    fallback = os.getenv("MISTRAL_API_KEY")
+    if fallback is not None and str(fallback).strip() != "":
+        return require_env("mistral", "MISTRAL_API_KEY", fallback)
+    raise Namel3ssError(
+        "Missing Mistral API key. Set NAMEL3SS_MISTRAL_API_KEY (preferred) or MISTRAL_API_KEY."
+    )

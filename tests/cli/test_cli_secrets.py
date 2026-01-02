@@ -26,12 +26,21 @@ def test_secrets_status_reports_missing_and_available(tmp_path, capsys, monkeypa
     _write_app(tmp_path)
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("NAMEL3SS_OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     code = main(["secrets", "status", "--json"])
     payload = json.loads(capsys.readouterr().out)
     assert code == 0
     secret = payload["secrets"][0]
     assert secret["name"] == "NAMEL3SS_OPENAI_API_KEY"
     assert secret["available"] is False
+
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    code = main(["secrets", "status", "--json"])
+    payload = json.loads(capsys.readouterr().out)
+    assert code == 0
+    secret = payload["secrets"][0]
+    assert secret["available"] is True
+    assert secret["source"] == "env"
 
     monkeypatch.setenv("NAMEL3SS_OPENAI_API_KEY", "sk-test")
     code = main(["secrets", "status", "--json"])

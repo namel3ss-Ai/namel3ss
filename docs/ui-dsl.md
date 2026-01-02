@@ -6,7 +6,7 @@ This is the authoritative, frozen description of the UI DSL for v0.1.x. It is se
 - Declarative, semantic UI that maps to flows and records.
 - Deterministic structure; no per-component styling knobs.
 - Text-first: intent over pixels.
-- Studio panels (Inspector, Packs, Discover) are tooling views; they are not part of the UI DSL contract.
+- Studio panels (Setup, Graph, Traces, Memory, etc.) are tooling views; they are not part of the UI DSL contract.
 
 ## 2) Core blocks and naming rules
 - `page "name":`

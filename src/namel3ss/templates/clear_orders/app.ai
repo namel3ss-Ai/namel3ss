@@ -1,8 +1,30 @@
 spec is "1.0"
 
+tool "format orders prompt":
+  implemented using python
+
+  input:
+    orders is json
+    question is text
+    limit is number
+
+  output:
+    prompt is text
+
 ai "assistant":
   provider is "mock"
-  model is "clearorders"
+  model is "mock-model"
+  system_prompt is "You help analyze orders and draft customer replies for ClearOrders."
+
+ai "assistant_openai":
+  provider is "openai"
+  model is "gpt-4.1"
+  system_prompt is "You help analyze orders and draft customer replies for ClearOrders."
+
+ai "assistant_openai_fallback":
+  provider is "openai"
+  model is "gpt-4o-mini"
+  system_prompt is "You help analyze orders and draft customer replies for ClearOrders."
 
 record "Order":
   fields:
@@ -22,6 +44,12 @@ record "Question":
   field "question" is text must be present
 
 record "Answer":
+  field "text" is text must be present
+
+record "DraftRequest":
+  field "prompt" is text must be present
+
+record "DraftReply":
   field "text" is text must be present
 
 record "ExplanationStat":
@@ -193,19 +221,161 @@ flow "seed_orders":
   create "Order" with state.order as order
   return "seeded"
 
+define function "select ai provider":
+  input:
+    openai_available is boolean
+  output:
+    provider is text
+    mode is text
+  if openai_available is true:
+    return map:
+      "provider" is "assistant_openai"
+      "mode" is "real"
+  return map:
+    "provider" is "assistant"
+    "mode" is "mock"
+
 flow "ask_ai":
   delete "Answer" where true
   delete "ExplanationStat" where true
   find "Order" where true
   let order_count is list length of order_results
   let question is input.values.question
-  try:
-    ask ai "assistant" with input: question as reply
-    set state.answer.text is "West has the highest return rate (4 of 12), driven by late deliveries and low satisfaction scores."
-  with catch err:
-    set state.answer.text is "We could not answer that right now. Try again."
+  let prompt_result is format orders prompt:
+    orders is order_results
+    question is question
+    limit is 25
+  let prompt is map get prompt_result key "prompt"
+  set state.status.message is null
+  let openai_status is map get secrets key "NAMEL3SS_OPENAI_API_KEY"
+  let selection is call function "select ai provider":
+    openai_available is openai_status.available
+  set state.ai_provider_selected is selection.provider
+  set state.ai_mode is selection.mode
+  let selected is selection.provider
+  if selected is "assistant_openai":
+    try:
+      ask ai "assistant_openai" with input: prompt as reply
+      set state.status.message is "AI Mode: OpenAI ✅"
+      set state.answer.text is reply
+    with catch err:
+      let category is err.details.diagnostic.category
+      if category is "model_access":
+        try:
+          ask ai "assistant_openai_fallback" with input: prompt as reply
+          set state.status.message is "AI Mode: OpenAI ✅ (model downgraded to gpt-4o-mini)"
+          set state.answer.text is reply
+        with catch err:
+          set state.status.message is "OpenAI failed - using mock (see Traces)."
+          set state.ai_provider_selected is "assistant"
+          set state.ai_mode is "mock"
+          ask ai "assistant" with input: prompt as reply
+          set state.answer.text is reply
+      else:
+        if category is "server" or category is "network":
+          try:
+            ask ai "assistant_openai" with input: prompt as reply
+            set state.status.message is "AI Mode: OpenAI ✅"
+            set state.answer.text is reply
+          with catch err:
+            set state.status.message is "OpenAI unavailable - using mock (see Traces)."
+            set state.ai_provider_selected is "assistant"
+            set state.ai_mode is "mock"
+            ask ai "assistant" with input: prompt as reply
+            set state.answer.text is reply
+        else:
+          if category is "rate_limit":
+            set state.status.message is "OpenAI rate-limited - try again in a moment. Using mock (see Traces)."
+            set state.ai_provider_selected is "assistant"
+            set state.ai_mode is "mock"
+            ask ai "assistant" with input: prompt as reply
+            set state.answer.text is reply
+          else:
+            if category is "auth" or category is "missing_key":
+              set state.status.message is "OpenAI auth failed - set keys in Setup. Using mock (see Traces)."
+              set state.ai_provider_selected is "assistant"
+              set state.ai_mode is "mock"
+              ask ai "assistant" with input: prompt as reply
+              set state.answer.text is reply
+            else:
+              set state.status.message is "OpenAI failed - using mock (see Traces)."
+              set state.ai_provider_selected is "assistant"
+              set state.ai_mode is "mock"
+              ask ai "assistant" with input: prompt as reply
+              set state.answer.text is reply
+  else:
+    ask ai "assistant" with input: prompt as reply
+    set state.answer.text is reply
+    set state.status.message is "AI Mode: Mock (set keys to use OpenAI)"
   create "Answer" with state.answer as answer
   return state.answer.text
+
+flow "draft_reply":
+  delete "DraftReply" where true
+  let prompt is input.values.prompt
+  set state.status.message is null
+  let openai_status is map get secrets key "NAMEL3SS_OPENAI_API_KEY"
+  let selection is call function "select ai provider":
+    openai_available is openai_status.available
+  set state.ai_provider_selected is selection.provider
+  set state.ai_mode is selection.mode
+  let selected is selection.provider
+  if selected is "assistant_openai":
+    try:
+      ask ai "assistant_openai" with input: prompt as reply
+      set state.status.message is "AI Mode: OpenAI ✅"
+      set state.draft.text is reply
+    with catch err:
+      let category is err.details.diagnostic.category
+      if category is "model_access":
+        try:
+          ask ai "assistant_openai_fallback" with input: prompt as reply
+          set state.status.message is "AI Mode: OpenAI ✅ (model downgraded to gpt-4o-mini)"
+          set state.draft.text is reply
+        with catch err:
+          set state.status.message is "OpenAI failed - using mock (see Traces)."
+          set state.ai_provider_selected is "assistant"
+          set state.ai_mode is "mock"
+          ask ai "assistant" with input: prompt as reply
+          set state.draft.text is reply
+      else:
+        if category is "server" or category is "network":
+          try:
+            ask ai "assistant_openai" with input: prompt as reply
+            set state.status.message is "AI Mode: OpenAI ✅"
+            set state.draft.text is reply
+          with catch err:
+            set state.status.message is "OpenAI unavailable - using mock (see Traces)."
+            set state.ai_provider_selected is "assistant"
+            set state.ai_mode is "mock"
+            ask ai "assistant" with input: prompt as reply
+            set state.draft.text is reply
+        else:
+          if category is "rate_limit":
+            set state.status.message is "OpenAI rate-limited - try again in a moment. Using mock (see Traces)."
+            set state.ai_provider_selected is "assistant"
+            set state.ai_mode is "mock"
+            ask ai "assistant" with input: prompt as reply
+            set state.draft.text is reply
+          else:
+            if category is "auth" or category is "missing_key":
+              set state.status.message is "OpenAI auth failed - set keys in Setup. Using mock (see Traces)."
+              set state.ai_provider_selected is "assistant"
+              set state.ai_mode is "mock"
+              ask ai "assistant" with input: prompt as reply
+              set state.draft.text is reply
+            else:
+              set state.status.message is "OpenAI failed - using mock (see Traces)."
+              set state.ai_provider_selected is "assistant"
+              set state.ai_mode is "mock"
+              ask ai "assistant" with input: prompt as reply
+              set state.draft.text is reply
+  else:
+    ask ai "assistant" with input: prompt as reply
+    set state.draft.text is reply
+    set state.status.message is "AI Mode: Mock (set keys to use OpenAI)"
+  create "DraftReply" with state.draft as draft
+  return state.draft.text
 
 flow "why_answer":
   delete "ExplanationStat" where true
@@ -315,6 +485,13 @@ page "home":
         table is "Answer"
         button "Why?":
           calls flow "why_answer"
+      card "AI helper":
+        form is "DraftRequest"
+        text is "Draft a customer reply. Include order ID and issue in your prompt."
+        button "Draft reply":
+          calls flow "draft_reply"
+      card "Draft reply":
+        table is "DraftReply"
     column:
       card "Why this answer":
         table is "ExplanationStat"

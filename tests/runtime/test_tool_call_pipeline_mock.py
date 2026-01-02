@@ -42,7 +42,7 @@ def test_pipeline_executes_tool_and_returns_output():
         ai_provider=provider,
         ai_profiles=program.ais,
     )
-    assert result.last_value["text"] == "[done]"
+    assert result.last_value == "[done]"
     trace = result.traces[0]
     event_types = [event["type"] for event in trace.canonical_events]
     assert "tool_call_requested" in event_types

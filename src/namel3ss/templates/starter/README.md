@@ -14,3 +14,7 @@ Bind the tool:
 
 Export UI contract:
 - n3 app.ai ui export
+
+## Secrets setup
+
+This app may require secrets depending on providers/targets. Studio → Setup shows what’s missing.

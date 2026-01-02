@@ -7,6 +7,7 @@ class TraceEventType:
     AI_CALL_STARTED = "ai_call_started"
     AI_CALL_COMPLETED = "ai_call_completed"
     AI_CALL_FAILED = "ai_call_failed"
+    AI_PROVIDER_ERROR = "ai_provider_error"
     TOOL_CALL_REQUESTED = "tool_call_requested"
     TOOL_CALL_COMPLETED = "tool_call_completed"
     TOOL_CALL_FAILED = "tool_call_failed"

@@ -381,6 +381,7 @@ def _print_usage() -> None:
   n3 memory show                  # show last recall details
   n3 memory @assistant text       # recall with named AI profile
   n3 verify app.ai --prod --json  # governance checks
+  n3 verify --dx --json           # DX promise gate (repo)
   n3 secrets app.ai               # secret status and audit, subcommands status audit
   n3 observe app.ai --since T --json # engine observability stream
   n3 explain app.ai --json        # explain engine state

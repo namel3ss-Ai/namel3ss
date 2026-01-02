@@ -3,6 +3,7 @@
   const dock = root.dock || (root.dock = {});
 
   let activeTab = "preview";
+  let activateTab = null;
 
   function runPanelHook(tabName) {
     if (tabName === "preview" && root.preview && root.preview.applyManifest) {
@@ -17,6 +18,10 @@
       window.renderTraces();
       return;
     }
+    if (tabName === "errors" && typeof window.renderErrors === "function") {
+      window.renderErrors();
+      return;
+    }
     if (tabName === "memory" && typeof window.renderMemory === "function") {
       window.renderMemory();
       return;
@@ -27,6 +32,10 @@
     }
     if (tabName === "data" && typeof window.renderData === "function") {
       window.renderData();
+      return;
+    }
+    if (tabName === "setup" && root.setup && typeof root.setup.refreshSetup === "function") {
+      root.setup.refreshSetup();
     }
   }
 
@@ -40,6 +49,7 @@
       modes.forEach((mode) => mode.classList.toggle("active", mode.dataset.mode === activeTab));
       if (activeTab) runPanelHook(activeTab);
     };
+    activateTab = setActive;
 
     tabs.forEach((tab) => {
       tab.addEventListener("click", () => {
@@ -52,5 +62,12 @@
     setActive(activeTab || "preview");
   }
 
+  function setActiveTab(name) {
+    if (activateTab) {
+      activateTab(name);
+    }
+  }
+
   dock.setupDock = setupDock;
+  dock.setActiveTab = setActiveTab;
 })();

@@ -1,3 +1,4 @@
+import ssl
 from urllib.error import HTTPError, URLError
 
 import pytest
@@ -33,3 +34,18 @@ def test_map_http_error_unreachable():
 def test_map_http_error_invalid():
     err = map_http_error("ollama", Exception("boom"))
     assert str(err) == "Provider 'ollama' returned an invalid response"
+
+
+def test_map_http_error_network_details_redacted():
+    err = map_http_error(
+        "ollama",
+        URLError(ssl.SSLError("CERTIFICATE_VERIFY_FAILED sk-test Bearer token")),
+    )
+    diagnostic = err.details.get("diagnostic", {}) if isinstance(err.details, dict) else {}
+    network_error = diagnostic.get("network_error") if isinstance(diagnostic, dict) else None
+    assert network_error
+    assert network_error.get("name") == "SSLError"
+    assert "CERTIFICATE_VERIFY_FAILED" in str(network_error.get("message", ""))
+    assert "sk-" not in str(network_error.get("message", ""))
+    assert "Bearer" not in str(network_error.get("message", ""))
+    assert "unreachable" in str(diagnostic.get("message", ""))

@@ -22,7 +22,8 @@ from namel3ss.runtime.memory.api import MemoryManager
 from namel3ss.runtime.storage.factory import resolve_store
 from namel3ss.schema.identity import IdentitySchema
 from namel3ss.schema.records import RecordSchema
-from namel3ss.secrets import collect_secret_values
+from namel3ss.secrets import collect_secret_values, discover_required_secrets_for_profiles
+from namel3ss.secrets.context import get_engine_target
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.runtime.api import build_runtime_error
 from namel3ss.errors.runtime.model import RuntimeWhere
@@ -60,17 +61,19 @@ class Executor:
         self._state_loaded_from_store = initial_state is None
         starting_state = initial_state if initial_state is not None else resolved_store.load_state()
         resolved_identity = identity if identity is not None else resolve_identity(resolved_config, identity_schema)
+        ai_profiles = ai_profiles or {}
+        secrets_map = _build_secrets_map(ai_profiles, resolved_config, app_path)
         self.ctx = ExecutionContext(
             flow=flow,
             schemas=schemas or {},
             state=starting_state or {},
-            locals={"input": input_data or {}},
+            locals={"input": input_data or {}, "secrets": secrets_map},
             identity=resolved_identity,
             constants=set(),
             last_value=None,
             store=resolved_store,
             ai_provider=default_ai_provider,
-            ai_profiles=ai_profiles or {},
+            ai_profiles=ai_profiles,
             agents=agents or {},
             tools=tools or {},
             functions=functions or {},
@@ -452,3 +455,15 @@ def _statement_kind(stmt: object) -> str | None:
 
 def _dict_traces(traces: list) -> list[dict]:
     return [trace for trace in traces if isinstance(trace, dict)]
+
+
+def _build_secrets_map(ai_profiles: dict, config: AppConfig, app_path: str | None) -> dict[str, dict[str, object]]:
+    path_value = None
+    if app_path:
+        path_value = Path(app_path) if not isinstance(app_path, Path) else app_path
+    target = get_engine_target()
+    refs = discover_required_secrets_for_profiles(ai_profiles, config, target=target, app_path=path_value)
+    return {
+        ref.name: {"name": ref.name, "available": ref.available, "source": ref.source, "target": ref.target}
+        for ref in refs
+    }

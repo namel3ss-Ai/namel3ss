@@ -4,14 +4,13 @@ from pathlib import Path
 def test_studio_html_structure():
     html = Path("src/namel3ss/studio/web/index.html").read_text(encoding="utf-8")
     assert "namel3ss Studio" in html
-    for label in ["Preview", "Why", "Data", "Traces", "Memory", "Graph"]:
+    for label in ["Preview", "Why", "Data", "Errors", "Traces", "Memory", "Setup", "Graph"]:
         assert label in html
     for label in [
         "Summary",
         "Trust",
         "Rules",
         "Handoff",
-        "Data",
         "Fix",
         "State",
         "Actions",
@@ -28,18 +27,27 @@ def test_studio_html_structure():
         assert label not in html
     for element_id in [
         "run",
+        "aiModeBadge",
+        "aiModeBadgeText",
+        "aiModeBadgeSetup",
         "previewQuestion",
         "previewAsk",
         "previewAnswer",
         "previewWhy",
+        "errors",
+        "errorBanner",
         "traces",
         "tracesFilter",
         "memory",
+        "setup",
+        "setupBanner",
         "why",
         "data",
         "dock",
+        "dock-errors",
         "studioMenu",
         "toast",
+        "secretsModal",
     ]:
         assert f'id="{element_id}"' in html
     assert "pageSelect" not in html

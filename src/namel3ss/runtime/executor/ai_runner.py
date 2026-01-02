@@ -7,6 +7,7 @@ from pathlib import Path
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.ai.providers.registry import get_provider
+from namel3ss.runtime.ai.providers._shared.parse import normalize_ai_text
 from namel3ss.runtime.ai.trace import AITrace
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
@@ -16,13 +17,14 @@ from namel3ss.runtime.providers.capabilities import get_provider_capabilities
 from namel3ss.runtime.tools.field_schema import build_json_schema
 from namel3ss.runtime.tools.executor import execute_tool_call
 from namel3ss.runtime.boundary import mark_boundary
-from namel3ss.runtime.values.normalize import ensure_object, unwrap_text
+from namel3ss.runtime.values.normalize import unwrap_text
 import namel3ss.runtime.memory.api as memory_api
 from namel3ss.runtime.memory.api import MemoryManager
 from namel3ss.runtime.memory_explain import append_explanation_events
 from namel3ss.traces.builders import (
     build_ai_call_completed,
     build_ai_call_failed,
+    build_ai_provider_error,
     build_ai_call_started,
     build_memory_recall,
     build_memory_write,
@@ -32,7 +34,7 @@ from namel3ss.observe import record_event, summarize_value
 from namel3ss.secrets import collect_secret_values
 
 
-def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> dict:
+def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
     try:
         ensure_ai_call_allowed(ctx, expr.ai_name, line=expr.line, column=expr.column)
         if expr.ai_name not in ctx.ai_profiles:
@@ -96,6 +98,7 @@ def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> dict:
             memory_context,
             tool_events,
             canonical_events=canonical_events,
+            agent_name=None,
         )
         try:
             record_pack = memory_api.record_with_events(
@@ -140,12 +143,18 @@ def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> dict:
         )
         ctx.traces.append(trace)
         _flush_pending_tool_traces(ctx)
-        output_value = ensure_object(response_output, key="text")
         if expr.target in ctx.constants:
             raise Namel3ssError(f"Cannot assign to constant '{expr.target}'", line=expr.line, column=expr.column)
-        ctx.locals[expr.target] = output_value
-        ctx.last_value = output_value
-        return output_value
+        provider_name = (getattr(profile, "provider", "mock") or "mock").lower()
+        secret_values = collect_secret_values(ctx.config)
+        output_text = normalize_ai_text(
+            response_output,
+            provider_name=provider_name,
+            secret_values=secret_values,
+        )
+        ctx.locals[expr.target] = output_text
+        ctx.last_value = output_text
+        return output_text
     except Exception as err:
         _flush_pending_tool_traces(ctx)
         mark_boundary(err, "ai")
@@ -160,8 +169,10 @@ def run_ai_with_tools(
     tool_events: list[dict],
     *,
     canonical_events: list[dict] | None = None,
+    agent_name: str | None = None,
 ) -> tuple[str, list[dict]]:
     provider_name = (getattr(profile, "provider", "mock") or "mock").lower()
+    secret_values = collect_secret_values(ctx.config)
     call_id = uuid.uuid4().hex
     canonical_events = canonical_events or []
     ai_start = time.monotonic()
@@ -193,9 +204,8 @@ def run_ai_with_tools(
             memory=memory_context,
             tool_results=[],
         )
-        if not hasattr(response, "output") or not isinstance(response.output, str):
-            raise Namel3ssError("AI response must be a string")
-        return response.output
+        output = response.output if hasattr(response, "output") else response
+        return normalize_ai_text(output, provider_name=provider_name, secret_values=secret_values)
 
     try:
         if not profile.exposed_tools or not capabilities.supports_tools:
@@ -223,6 +233,7 @@ def run_ai_with_tools(
                 started_at=wall_start,
                 duration_ms=duration_ms,
             )
+            ctx.last_ai_provider = provider_name
             return output_text, canonical_events
 
         from namel3ss.runtime.tool_calls.model import ToolCallPolicy, ToolDeclaration
@@ -255,6 +266,7 @@ def run_ai_with_tools(
                 started_at=wall_start,
                 duration_ms=duration_ms,
             )
+            ctx.last_ai_provider = provider_name
             return output_text, canonical_events
 
         messages: list[dict] = []
@@ -295,6 +307,7 @@ def run_ai_with_tools(
                 canonical_events=canonical_events,
                 tool_events=tool_events,
             )
+            output_text = normalize_ai_text(output_text, provider_name=provider_name, secret_values=secret_values)
         finally:
             ctx.tool_call_source = previous_source
         duration_ms = int((time.monotonic() - ai_start) * 1000)
@@ -320,9 +333,20 @@ def run_ai_with_tools(
             started_at=wall_start,
             duration_ms=duration_ms,
         )
+        ctx.last_ai_provider = provider_name
         return output_text, canonical_events
     except Exception as err:
         mark_boundary(err, "ai")
+        diagnostic = _extract_provider_diagnostic(err)
+        if diagnostic:
+            canonical_events.append(
+                build_ai_provider_error(
+                    call_id=call_id,
+                    provider=provider_name,
+                    model=profile.model,
+                    diagnostic=diagnostic,
+                )
+            )
         if not ai_failed_emitted:
             duration_ms = int((time.monotonic() - ai_start) * 1000)
             canonical_events.append(
@@ -347,6 +371,15 @@ def run_ai_with_tools(
             started_at=wall_start,
             duration_ms=int((time.monotonic() - ai_start) * 1000),
             error=err,
+        )
+        _append_ai_error_trace(
+            ctx,
+            profile,
+            agent_name,
+            user_input,
+            memory_context,
+            tool_events,
+            canonical_events,
         )
         raise
 
@@ -412,3 +445,52 @@ def _flush_pending_tool_traces(ctx: ExecutionContext) -> None:
         return
     ctx.traces.extend(ctx.pending_tool_traces)
     ctx.pending_tool_traces.clear()
+
+
+def _extract_provider_diagnostic(err: Exception) -> dict[str, object] | None:
+    if not isinstance(err, Namel3ssError):
+        return None
+    details = err.details
+    if not isinstance(details, dict):
+        return None
+    diagnostic = details.get("diagnostic")
+    if not isinstance(diagnostic, dict):
+        return None
+    keys = (
+        "provider",
+        "url",
+        "status",
+        "code",
+        "type",
+        "message",
+        "category",
+        "hint",
+        "severity",
+        "network_error",
+    )
+    return {key: diagnostic.get(key) for key in keys}
+
+
+def _append_ai_error_trace(
+    ctx: ExecutionContext,
+    profile: ir.AIDecl,
+    agent_name: str | None,
+    user_input: str,
+    memory_context: dict,
+    tool_events: list[dict],
+    canonical_events: list[dict],
+) -> None:
+    trace = AITrace(
+        ai_name=profile.name,
+        ai_profile_name=profile.name,
+        agent_name=agent_name,
+        model=profile.model,
+        system_prompt=profile.system_prompt,
+        input=user_input,
+        output="",
+        memory=redact_memory_context(memory_context),
+        tool_calls=[e for e in tool_events if e.get("type") == "call"],
+        tool_results=[e for e in tool_events if e.get("type") == "result"],
+        canonical_events=canonical_events,
+    )
+    ctx.traces.append(trace)

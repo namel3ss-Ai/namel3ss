@@ -22,6 +22,9 @@ const ELEMENTS = {
   whyPanel: document.getElementById("whyPanel"),
   whyList: document.getElementById("whyList"),
   whyPlaceholder: document.getElementById("whyPlaceholder"),
+  aiModeValue: document.getElementById("aiModeValue"),
+  aiProviderValue: document.getElementById("aiProviderValue"),
+  aiModeHint: document.getElementById("aiModeHint"),
 };
 
 const ACTION_IDS = {
@@ -74,6 +77,36 @@ function setHint(message, isError = false) {
 function setAnswer(text, isEmpty = false) {
   safeSetText(ELEMENTS.answerText, text);
   safeToggleClass(ELEMENTS.answerText, "empty", isEmpty);
+}
+
+function applyStatusMessage(status) {
+  const message = status && status.message ? status.message : "";
+  if (message) {
+    setHint(message, true);
+    return;
+  }
+  setHint("", false);
+}
+
+function formatAiMode(state) {
+  const mode = state && state.ai_mode ? String(state.ai_mode) : "mock";
+  const provider = state && state.ai_provider_selected ? String(state.ai_provider_selected) : "assistant";
+  const label = mode === "real" && provider === "assistant_openai" ? "OpenAI" : "Mock";
+  return { mode, provider, label };
+}
+
+function applyAiMode(stateData) {
+  const info = formatAiMode(stateData || {});
+  safeSetText(ELEMENTS.aiModeValue, info.label);
+  safeSetText(ELEMENTS.aiProviderValue, info.provider);
+  if (info.label === "Mock") {
+    safeSetText(
+      ELEMENTS.aiModeHint,
+      "Add NAMEL3SS_OPENAI_API_KEY or OPENAI_API_KEY and refresh."
+    );
+  } else {
+    safeSetText(ELEMENTS.aiModeHint, "");
+  }
 }
 
 function showAnswerError() {
@@ -293,6 +326,7 @@ async function seedOrders() {
     const data = await postAction(ACTION_IDS.seed, {});
     if (data && data.ui) {
       applyManifest(data.ui, "seed");
+      applyAiMode(data.state);
       return;
     }
     showOrdersLoading(false);
@@ -329,6 +363,8 @@ async function askQuestion() {
     const nextManifest = data.ui || state.manifest;
     if (nextManifest) {
       applyManifest(nextManifest, "ask");
+      applyStatusMessage(data.state ? data.state.status : null);
+      applyAiMode(data.state);
     } else {
       showAnswerError();
     }
@@ -348,6 +384,7 @@ async function showWhy() {
     const data = await postAction(ACTION_IDS.why, {});
     if (data && data.ui) {
       applyManifest(data.ui, "why");
+      applyAiMode(data.state);
     }
   } catch (err) {
     logUpdateError("why request failed", err);

@@ -48,3 +48,21 @@ def test_openai_adapter_handles_malformed_tool_call(monkeypatch):
     result = adapter.run_model(messages=[{"role": "user", "content": "hi"}], tools=[], policy=ToolCallPolicy())
     assert isinstance(result, AssistantError)
     assert "Malformed" in result.error_message
+
+
+def test_openai_adapter_normalizes_base_url(monkeypatch):
+    captured = {}
+
+    def fake_post_json(**kwargs):
+        captured["url"] = kwargs["url"]
+        return {"choices": [{"message": {"content": "ok"}}]}
+
+    adapter = OpenAIChatCompletionsAdapter(
+        api_key="test",
+        base_url="https://api.openai.com/v1/",
+        model="gpt-4.1",
+    )
+    monkeypatch.setattr("namel3ss.runtime.providers.openai.tool_calls_adapter.post_json", fake_post_json)
+    result = adapter.run_model(messages=[{"role": "user", "content": "hi"}], tools=[], policy=ToolCallPolicy())
+    assert isinstance(result, AssistantText)
+    assert captured["url"] == "https://api.openai.com/v1/chat/completions"

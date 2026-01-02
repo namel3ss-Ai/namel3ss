@@ -3,7 +3,9 @@
   const state = root.state || (root.state = {});
 
   let cachedManifest = null;
+  let cachedSummary = null;
   let cachedTraces = [];
+  let cachedDiagnostics = null;
   let seedActionId = null;
   let resetActionId = null;
   let lastAction = null;
@@ -22,12 +24,26 @@
     cachedManifest = value || null;
     return cachedManifest;
   }
+  function getCachedSummary() {
+    return cachedSummary;
+  }
+  function setCachedSummary(value) {
+    cachedSummary = value || null;
+    return cachedSummary;
+  }
   function getCachedTraces() {
     return cachedTraces;
   }
   function setCachedTraces(value) {
     cachedTraces = Array.isArray(value) ? value : cachedTraces;
     return cachedTraces;
+  }
+  function getCachedDiagnostics() {
+    return cachedDiagnostics;
+  }
+  function setCachedDiagnostics(value) {
+    cachedDiagnostics = value || null;
+    return cachedDiagnostics;
   }
   function getSeedActionId() {
     return seedActionId;
@@ -71,8 +87,12 @@
 
   state.getCachedManifest = getCachedManifest;
   state.setCachedManifest = setCachedManifest;
+  state.getCachedSummary = getCachedSummary;
+  state.setCachedSummary = setCachedSummary;
   state.getCachedTraces = getCachedTraces;
   state.setCachedTraces = setCachedTraces;
+  state.getCachedDiagnostics = getCachedDiagnostics;
+  state.setCachedDiagnostics = setCachedDiagnostics;
   state.getSeedActionId = getSeedActionId;
   state.setSeedActionId = setSeedActionId;
   state.getResetActionId = getResetActionId;

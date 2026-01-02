@@ -19,6 +19,10 @@
         <div class="app-title" id="appName" data-testid="studio-app-name">App</div>
       </div>
       <div class="topbar-actions">
+        <div class="ai-mode-badge hidden" id="aiModeBadge" data-testid="studio-ai-mode-badge">
+          <span id="aiModeBadgeText">AI: Mock</span>
+          <button class="btn ghost ai-mode-badge-button hidden" id="aiModeBadgeSetup">Open Setup</button>
+        </div>
         <button class="btn primary" id="run" title="Run the default flow" data-testid="studio-run-button" disabled>Run ▸</button>
         <button
           class="btn ghost icon-button"
@@ -39,6 +43,8 @@
         <div id="toast" class="toast run-status" aria-live="polite"></div>
       </div>
     </header>
+    <div id="errorBanner" class="error-banner hidden" role="status" aria-live="polite" data-testid="studio-error-banner"></div>
+    <div id="setupBanner" class="setup-banner hidden" role="status" aria-live="polite" data-testid="studio-setup-banner"></div>
     <main class="canvas" id="canvas" data-testid="studio-canvas">
       <section class="canvas-mode active" data-mode="preview" aria-labelledby="dock-preview">
         <div class="preview-shell" id="previewShell">
@@ -66,6 +72,9 @@
       <section class="canvas-mode" data-mode="data" aria-labelledby="dock-data">
         <div id="data" class="canvas-panel"></div>
       </section>
+      <section class="canvas-mode" data-mode="errors" aria-labelledby="dock-errors">
+        <div id="errors" class="canvas-panel"></div>
+      </section>
       <section class="canvas-mode" data-mode="traces" aria-labelledby="dock-traces">
         <div class="canvas-panel">
           <div class="control-row">
@@ -76,6 +85,9 @@
       </section>
       <section class="canvas-mode" data-mode="memory" aria-labelledby="dock-memory">
         <div id="memory" class="canvas-panel"></div>
+      </section>
+      <section class="canvas-mode" data-mode="setup" aria-labelledby="dock-setup">
+        <div id="setup" class="canvas-panel"></div>
       </section>
       <section class="canvas-mode" data-mode="graph" aria-labelledby="dock-graph">
         <div class="graph-layout canvas-panel">
@@ -92,11 +104,28 @@
       <button class="tab" data-tab="preview" id="dock-preview" data-testid="studio-dock-item-preview">Preview</button>
       <button class="tab" data-tab="why" id="dock-why" data-testid="studio-dock-item-why">Why</button>
       <button class="tab" data-tab="data" id="dock-data" data-testid="studio-dock-item-data">Data</button>
+      <button class="tab" data-tab="errors" id="dock-errors" data-testid="studio-dock-item-errors">Errors</button>
       <button class="tab" data-tab="traces" id="dock-traces" data-testid="studio-dock-item-traces">Traces</button>
       <button class="tab" data-tab="memory" id="dock-memory" data-testid="studio-dock-item-memory">Memory</button>
+      <button class="tab" data-tab="setup" id="dock-setup" data-testid="studio-dock-item-setup">Setup</button>
       <button class="tab" data-tab="graph" id="dock-graph" data-testid="studio-dock-item-graph">Graph</button>
     </div>
   </footer>
+  <div id="secretsModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="secretsModalTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div id="secretsModalTitle" class="section-title">Missing secrets</div>
+        <button class="btn ghost" id="secretsModalClose" aria-label="Close">Close</button>
+      </div>
+      <div class="modal-body">
+        <p id="secretsModalBody">This action may require secrets that are missing.</p>
+        <div class="ui-buttons">
+          <button class="btn ghost" id="secretsModalSetup">Open Setup</button>
+          <button class="btn primary" id="secretsModalContinue">Run anyway</button>
+        </div>
+      </div>
+    </div>
+  </div>
   <script src="/ui_renderer.js"></script>
   <script src="/theme_tokens.js"></script>
   <script src="/theme_runtime.js"></script>
@@ -106,8 +135,11 @@
   <script src="/studio/state.js"></script>
   <script src="/studio/run.js"></script>
   <script src="/studio/refresh.js"></script>
+  <script src="/studio/secret_keys.js"></script>
   <script src="/studio/traces.js"></script>
+  <script src="/studio/errors.js"></script>
   <script src="/studio/memory.js"></script>
+  <script src="/studio/setup.js"></script>
   <script src="/studio/why.js"></script>
   <script src="/studio/preview.js"></script>
   <script src="/studio/data.js"></script>

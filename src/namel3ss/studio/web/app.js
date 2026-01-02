@@ -11,7 +11,9 @@
     if (typeof window.renderData !== "function") missing.push("data");
     if (!root.menu || typeof root.menu.setupMenu !== "function") missing.push("menu");
     if (typeof window.renderTraces !== "function") missing.push("traces");
+    if (typeof window.renderErrors !== "function") missing.push("errors");
     if (typeof window.renderMemory !== "function") missing.push("memory");
+    if (!root.setup || typeof root.setup.refreshSetup !== "function") missing.push("setup");
     if (typeof window.refreshGraphPanel !== "function") missing.push("graph");
 
     if (missing.length) {
@@ -23,8 +25,10 @@
     if (root.preview && root.preview.setupPreview) root.preview.setupPreview();
     if (root.menu && root.menu.setupMenu) root.menu.setupMenu();
     root.dock.setupDock();
+    if (typeof window.renderErrors === "function") window.renderErrors();
     root.refresh.refreshUI();
     if (root.refresh && root.refresh.refreshSummary) root.refresh.refreshSummary();
+    if (root.refresh && root.refresh.refreshDiagnostics) root.refresh.refreshDiagnostics();
   }
 
   if (document.readyState === "loading") {

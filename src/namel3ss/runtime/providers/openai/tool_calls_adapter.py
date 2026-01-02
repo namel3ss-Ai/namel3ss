@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -50,16 +51,18 @@ class OpenAIChatCompletionsAdapter(ProviderAdapter):
     base_url: str
     model: str
 
+    def __post_init__(self) -> None:
+        self.base_url = _normalize_base_url(self.base_url)
+
     @classmethod
     def from_provider(cls, provider, *, model: str) -> "OpenAIChatCompletionsAdapter":
         key = getattr(provider, "api_key", None)
-        base_url = getattr(provider, "base_url", "https://api.openai.com").rstrip("/")
+        base_url = _normalize_base_url(getattr(provider, "base_url", "https://api.openai.com"))
         return cls(api_key=key, base_url=base_url, model=model)
 
     def run_model(self, messages: List[dict], tools: List[ToolDeclaration], policy: ToolCallPolicy) -> ModelResponse:
-        api_key = None
         try:
-            api_key = require_env("openai", "NAMEL3SS_OPENAI_API_KEY", self.api_key)
+            api_key = _resolve_api_key(self.api_key)
         except Namel3ssError as err:
             return AssistantError(error_type=err.__class__.__name__, error_message=str(err))
 
@@ -109,6 +112,28 @@ def _parse_response(result: dict) -> ModelResponse:
     if isinstance(content, str):
         return AssistantText(text=content)
     return AssistantError(error_type="ProviderError", error_message="No assistant content")
+
+
+def _resolve_api_key(api_key: str | None) -> str:
+    if api_key is not None and str(api_key).strip() != "":
+        return api_key
+    preferred = os.getenv("NAMEL3SS_OPENAI_API_KEY")
+    if preferred is not None and str(preferred).strip() != "":
+        return require_env("openai", "NAMEL3SS_OPENAI_API_KEY", preferred)
+    fallback = os.getenv("OPENAI_API_KEY")
+    if fallback is not None and str(fallback).strip() != "":
+        return require_env("openai", "OPENAI_API_KEY", fallback)
+    raise Namel3ssError(
+        "Missing OpenAI API key. Set NAMEL3SS_OPENAI_API_KEY (preferred) or OPENAI_API_KEY."
+    )
+
+
+def _normalize_base_url(raw: str) -> str:
+    url = (raw or "").strip()
+    url = url.rstrip("/")
+    if url.endswith("/v1"):
+        url = url[:-3].rstrip("/")
+    return url or "https://api.openai.com"
 
 
 __all__ = ["OpenAIChatCompletionsAdapter"]

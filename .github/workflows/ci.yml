@@ -36,6 +36,9 @@ jobs:
       - name: Run tests
         run: python -m pytest -q
 
+      - name: DX verify gate
+        run: n3 verify --dx --json
+
       - name: Patterns suite
         run: |
           for pattern in patterns/*; do

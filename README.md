@@ -1,6 +1,8 @@
 # namel3ss
 Build AI-native applications in plain English — with explanations you can trust.
 
+## Try it in 60 seconds
+
 ## The 10-minute demo (ClearOrders)
 ```bash
 pip install namel3ss

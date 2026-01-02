@@ -3,10 +3,10 @@
   const state = root.state;
   const dom = root.dom;
   const traces = root.traces || (root.traces = {});
+  const secrets = root.secrets || {};
 
   let filterText = "";
   let filterTimer = null;
-
   function formatTraceValue(value) {
     if (value === null || value === undefined || value === "") return "";
     if (typeof value === "string") return value;
@@ -39,6 +39,89 @@
     return values.includes(needle);
   }
 
+  function redactTraceText(text) {
+    return String(text || "")
+      .replace(/Bearer\\s+[A-Za-z0-9._-]+/gi, "Bearer [redacted]")
+      .replace(/sk-[A-Za-z0-9_-]+/g, "[redacted]");
+  }
+
+  function sanitizeDiagnostic(value) {
+    if (value === null || value === undefined) return value;
+    if (typeof value === "string") return redactTraceText(value);
+    if (Array.isArray(value)) return value.map((item) => sanitizeDiagnostic(item));
+    if (typeof value === "object") {
+      const result = {};
+      Object.keys(value).forEach((key) => {
+        result[key] = sanitizeDiagnostic(value[key]);
+      });
+      return result;
+    }
+    return value;
+  }
+
+  function expandPlaceholders(provider, text) {
+    if (typeof secrets.expandPlaceholders === "function") {
+      return secrets.expandPlaceholders(provider, text);
+    }
+    return text;
+  }
+
+  function copyText(text) {
+    const value = typeof text === "string" ? text : JSON.stringify(text, null, 2);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(value);
+      return;
+    }
+    const textarea = document.createElement("textarea");
+    textarea.value = value;
+    textarea.setAttribute("readonly", "true");
+    textarea.style.position = "absolute";
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    textarea.remove();
+  }
+
+  function providerErrors(trace) {
+    const events = trace && Array.isArray(trace.canonical_events) ? trace.canonical_events : [];
+    return events.filter((event) => event && event.type === "ai_provider_error");
+  }
+
+  function latestProviderError(trace) {
+    const errors = providerErrors(trace);
+    if (!errors.length) return null;
+    return errors[errors.length - 1];
+  }
+
+  function buildFixSteps(diagnostic) {
+    const parts = [];
+    const provider = diagnostic && diagnostic.provider ? String(diagnostic.provider).toLowerCase() : "";
+    const hint = diagnostic && diagnostic.hint ? String(diagnostic.hint) : "";
+    if (hint) parts.push(expandPlaceholders(provider, hint));
+    parts.push(expandPlaceholders(provider, "Set <CANONICAL_KEY> (preferred) or <ALIAS_KEY>."));
+    return parts.filter(Boolean).join("\\n").trim();
+  }
+
+  function buildDiagnosticActions(diagnostic) {
+    const row = document.createElement("div");
+    row.className = "json-actions";
+    const safeDiagnostic = sanitizeDiagnostic(diagnostic || {});
+    const copyDiagnostic = document.createElement("button");
+    copyDiagnostic.type = "button";
+    copyDiagnostic.className = "btn ghost";
+    copyDiagnostic.textContent = "Copy diagnostics JSON";
+    copyDiagnostic.onclick = () => copyText(JSON.stringify(safeDiagnostic, null, 2));
+    const copyFix = document.createElement("button");
+    copyFix.type = "button";
+    copyFix.className = "btn ghost";
+    copyFix.textContent = "Copy fix steps";
+    copyFix.onclick = () => copyText(buildFixSteps(safeDiagnostic));
+    row.appendChild(copyDiagnostic);
+    row.appendChild(copyFix);
+    return row;
+  }
+
   function appendDetail(container, label, value) {
     const block = document.createElement("div");
     block.className = "trace-detail";
@@ -59,9 +142,27 @@
     container.appendChild(block);
   }
 
+  function appendProviderDiagnostics(container, trace) {
+    const error = latestProviderError(trace);
+    if (!error || !error.diagnostic) return;
+    const diagnostic = sanitizeDiagnostic(error.diagnostic || {});
+    appendDetail(container, "Provider", diagnostic.provider);
+    appendDetail(container, "Category", diagnostic.category);
+    appendDetail(container, "Hint", diagnostic.hint);
+    appendDetail(container, "Status", diagnostic.status);
+    appendDetail(container, "Code", diagnostic.code);
+    appendDetail(container, "Type", diagnostic.type);
+    appendDetail(container, "URL", diagnostic.url);
+    appendDetail(container, "Message", diagnostic.message);
+    container.appendChild(buildDiagnosticActions(diagnostic));
+  }
+
   function renderTraces(nextTraces) {
     const list = Array.isArray(nextTraces) ? nextTraces : state.getCachedTraces();
     const cached = state.setCachedTraces(list || []);
+    if (root.errors && typeof root.errors.renderErrors === "function") {
+      root.errors.renderErrors(cached);
+    }
     const container = document.getElementById("traces");
     if (!container) return;
     container.innerHTML = "";
@@ -115,6 +216,7 @@
         appendDetail(details, "Error", trace.error);
         appendDetail(details, "Tool calls", trace.tool_calls);
         appendDetail(details, "Tool results", trace.tool_results);
+        appendProviderDiagnostics(details, trace);
 
         row.appendChild(header);
         row.appendChild(details);

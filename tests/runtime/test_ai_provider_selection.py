@@ -41,7 +41,7 @@ def test_mock_provider_used_by_default(monkeypatch):
     executor = _build_executor(PROGRAM_SOURCE, ai_provider=stub)
     result = executor.run()
     assert stub.calls == 1
-    assert result.last_value["text"] == "mocked"
+    assert result.last_value == "mocked"
 
 
 def test_ollama_provider_selected(monkeypatch):
@@ -55,4 +55,11 @@ def test_ollama_provider_selected(monkeypatch):
     executor = _build_executor(source)
     result = executor.run()
     assert stub.calls == 1
-    assert result.last_value["text"] == "ollama-output"
+    assert result.last_value == "ollama-output"
+
+
+def test_ai_output_normalizes_dict_payload():
+    stub = StubProvider(output={"output": "hello"})
+    executor = _build_executor(PROGRAM_SOURCE, ai_provider=stub)
+    result = executor.run()
+    assert result.last_value == "hello"

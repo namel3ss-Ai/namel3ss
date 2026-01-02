@@ -80,6 +80,12 @@
       setRunStatus("error", dom.buildErrorLines("No action selected."));
       return { ok: false, error: "No action selected." };
     }
+    if (root.setup && typeof root.setup.confirmProceed === "function") {
+      const allowed = await root.setup.confirmProceed();
+      if (!allowed) {
+        return { ok: false, error: "Missing secrets." };
+      }
+    }
     state.setLastAction({ id: actionId, payload: payload || {} });
     setRunButtonBusy(true);
     setRunStatus("running", [RUNNING_LABEL]);

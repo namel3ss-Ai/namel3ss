@@ -74,11 +74,11 @@ def test_new_demo_defaults_to_mock(tmp_path, monkeypatch):
     assert code == 0
     source = (project_dir / "app.ai").read_text(encoding="utf-8")
     assert 'provider is "mock"' in source
-    assert 'model is "gpt-4o-mini"' in source
+    assert 'model is "mock-model"' in source
     assert "DEMO_PROVIDER" not in source
     assert "DEMO_MODEL" not in source
     assert "DEMO_SYSTEM_PROMPT" not in source
-    assert not (project_dir / ".env.example").exists()
+    assert (project_dir / ".env.example").exists()
 
 
 def test_new_demo_openai_env_controls_provider_and_model(tmp_path, monkeypatch):
@@ -94,7 +94,7 @@ def test_new_demo_openai_env_controls_provider_and_model(tmp_path, monkeypatch):
     env_example = (project_dir / ".env.example").read_text(encoding="utf-8")
     assert "OPENAI_API_KEY=" in env_example
     assert "NAMEL3SS_OPENAI_API_KEY=" in env_example
-    assert "N3_DEMO_MODEL=gpt-4o-mini" in env_example
+    assert "N3_DEMO_MODEL=gpt-4o-mini" not in env_example
 
 
 def test_new_ai_assistant_defaults_name(tmp_path, monkeypatch):

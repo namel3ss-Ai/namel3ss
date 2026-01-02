@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -70,7 +71,7 @@ class AnthropicMessagesAdapter(ProviderAdapter):
 
     def run_model(self, messages: List[dict], tools: List[ToolDeclaration], policy: ToolCallPolicy) -> ModelResponse:
         try:
-            api_key = require_env("anthropic", "NAMEL3SS_ANTHROPIC_API_KEY", self.api_key)
+            api_key = _resolve_api_key(self.api_key)
         except Namel3ssError as err:
             return AssistantError(error_type=err.__class__.__name__, error_message=str(err))
 
@@ -125,6 +126,20 @@ def _parse_response(result: dict) -> ModelResponse:
         if texts:
             return AssistantText(text="".join(texts))
     return AssistantError(error_type="ProviderError", error_message="No assistant content")
+
+
+def _resolve_api_key(api_key: str | None) -> str:
+    if api_key is not None and str(api_key).strip() != "":
+        return api_key
+    preferred = os.getenv("NAMEL3SS_ANTHROPIC_API_KEY")
+    if preferred is not None and str(preferred).strip() != "":
+        return require_env("anthropic", "NAMEL3SS_ANTHROPIC_API_KEY", preferred)
+    fallback = os.getenv("ANTHROPIC_API_KEY")
+    if fallback is not None and str(fallback).strip() != "":
+        return require_env("anthropic", "ANTHROPIC_API_KEY", fallback)
+    raise Namel3ssError(
+        "Missing Anthropic API key. Set NAMEL3SS_ANTHROPIC_API_KEY (preferred) or ANTHROPIC_API_KEY."
+    )
 
 
 __all__ = ["AnthropicMessagesAdapter"]

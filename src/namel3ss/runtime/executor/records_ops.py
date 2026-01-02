@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Callable
 
 from namel3ss.errors.base import Namel3ssError
@@ -8,10 +9,13 @@ from namel3ss.ir import nodes as ir
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
 from namel3ss.runtime.executor.predicate_sql import compile_sql_predicate
+from namel3ss.runtime.ai.providers._shared.parse import normalize_ai_text
 from namel3ss.runtime.records.service import build_record_scope, save_record_or_raise, validate_record_values
 from namel3ss.runtime.records.state_paths import get_state_record, record_state_path
 from namel3ss.runtime.storage.predicate import PredicatePlan
+from namel3ss.runtime.values.types import type_name_for_value
 from namel3ss.schema.records import RecordSchema
+from namel3ss.secrets import collect_secret_values
 
 
 def handle_save(ctx: ExecutionContext, stmt: ir.Save) -> None:
@@ -23,6 +27,8 @@ def handle_save(ctx: ExecutionContext, stmt: ir.Save) -> None:
             line=stmt.line,
             column=stmt.column,
         )
+    schema = get_schema(ctx, stmt.record_name, stmt)
+    _coerce_text_fields(ctx, schema, data_obj, line=stmt.line, column=stmt.column)
     validated = dict(data_obj)
     saved = save_record_or_raise(
         stmt.record_name,
@@ -46,6 +52,8 @@ def handle_create(ctx: ExecutionContext, stmt: ir.Create) -> None:
             line=stmt.line,
             column=stmt.column,
         )
+    schema = get_schema(ctx, stmt.record_name, stmt)
+    _coerce_text_fields(ctx, schema, values, line=stmt.line, column=stmt.column)
     saved = save_record_or_raise(
         stmt.record_name,
         dict(values),
@@ -107,6 +115,7 @@ def handle_update(ctx: ExecutionContext, stmt: ir.Update) -> None:
     updated = 0
     for record in results:
         updated_record = _apply_updates(ctx, record, stmt.updates)
+        _coerce_text_fields(ctx, schema, updated_record, line=stmt.line, column=stmt.column)
         validate_record_values(
             stmt.record_name,
             updated_record,
@@ -196,6 +205,64 @@ def _record_change(ctx: ExecutionContext, record_name: str, saved: dict) -> None
     if record_id is None:
         return
     ctx.record_changes.append({"record": record_name, "id": record_id})
+
+
+def _coerce_text_fields(
+    ctx: ExecutionContext,
+    schema: RecordSchema,
+    values: dict,
+    *,
+    line: int | None,
+    column: int | None,
+) -> None:
+    secret_values: list[str] | None = None
+    for field in schema.fields:
+        if field.type_name not in {"text", "string"}:
+            continue
+        if field.name not in values:
+            continue
+        value = values.get(field.name)
+        if value is None or isinstance(value, str):
+            continue
+        if _strict_text_fields_enabled():
+            raise Namel3ssError(
+                build_guidance_message(
+                    what=f"Expected text for {schema.name}.{field.name}.",
+                    why=f"Got {type_name_for_value(value)} instead.",
+                    fix="Convert the value to text before saving.",
+                    example=f'set state.record.{field.name} is "example"',
+                ),
+                line=line,
+                column=column,
+            )
+        if secret_values is None:
+            secret_values = collect_secret_values(ctx.config)
+        values[field.name] = normalize_ai_text(
+            value,
+            provider_name=ctx.last_ai_provider,
+            secret_values=secret_values,
+        )
+        event = {
+            "type": "type_mismatch_coerced",
+            "record": schema.name,
+            "field": field.name,
+            "expected": "text",
+            "actual": type_name_for_value(value),
+        }
+        if ctx.last_ai_provider:
+            event["provider"] = ctx.last_ai_provider
+        if line is not None:
+            event["line"] = line
+        if column is not None:
+            event["column"] = column
+        ctx.traces.append(event)
+
+
+def _strict_text_fields_enabled() -> bool:
+    value = os.getenv("NAMEL3SS_STRICT_TEXT_FIELDS")
+    if value is None:
+        return False
+    return value.strip().lower() not in {"", "0", "false", "no"}
 
 
 def build_predicate_plan(

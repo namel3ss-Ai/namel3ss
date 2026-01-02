@@ -7,7 +7,9 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
 from namel3ss.studio.api import (
     get_actions_payload,
+    get_diagnostics_payload,
     get_lint_payload,
+    get_secrets_payload,
     get_summary_payload,
     get_tools_payload,
     get_ui_payload,
@@ -39,6 +41,12 @@ def handle_api_get(handler: Any) -> None:
         return
     if handler.path == "/api/tools":
         _respond_with_source(handler, source, get_tools_payload, kind="tools", include_app_path=True)
+        return
+    if handler.path == "/api/secrets":
+        _respond_with_source(handler, source, get_secrets_payload, kind="secrets", include_app_path=True)
+        return
+    if handler.path == "/api/diagnostics":
+        _respond_with_source(handler, source, get_diagnostics_payload, kind="diagnostics", include_app_path=True)
         return
     if handler.path == "/api/graph":
         _respond_simple(handler, source, get_graph_payload, kind="graph")

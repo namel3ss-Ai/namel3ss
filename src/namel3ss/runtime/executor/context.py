@@ -50,3 +50,4 @@ class ExecutionContext:
     call_stack: list[CallFrame] = field(default_factory=list)
     parallel_mode: bool = False
     parallel_task: str | None = None
+    last_ai_provider: str | None = None

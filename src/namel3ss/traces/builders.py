@@ -3,6 +3,7 @@ from __future__ import annotations
 from namel3ss.traces.builders.calls import (
     build_ai_call_completed,
     build_ai_call_failed,
+    build_ai_provider_error,
     build_ai_call_started,
     build_tool_call_completed,
     build_tool_call_failed,
@@ -55,6 +56,7 @@ from namel3ss.traces.builders.memory_views import (
 __all__ = [
     "build_ai_call_completed",
     "build_ai_call_failed",
+    "build_ai_provider_error",
     "build_ai_call_started",
     "build_memory_recall",
     "build_memory_write",

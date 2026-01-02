@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from namel3ss.cli.promotion_state import load_state
+from namel3ss.cli.targets import parse_target
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.render import format_error
@@ -10,11 +12,13 @@ from namel3ss.ir.nodes import lower_program
 from namel3ss.lint.engine import lint_source
 from namel3ss.parser.core import parse
 from namel3ss.module_loader import load_project
+from namel3ss.secrets import discover_required_secrets
 from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.runtime.ui.actions import handle_action
 from namel3ss.runtime.preferences.factory import preference_store_for_app, app_pref_key
 from namel3ss.studio.session import SessionState
+from namel3ss.studio.diagnostics import collect_ai_context_diagnostics
 from namel3ss.runtime.tools.bindings import bindings_path
 from namel3ss.tools.health.analyze import analyze_tool_health
 from namel3ss.ui.manifest import build_manifest
@@ -38,6 +42,13 @@ def _load_project_program(source: str, path: str):
 def get_summary_payload(source: str, path: str) -> dict:
     try:
         program_ir = _load_project_program(source, path)
+        ai_providers = sorted(
+            {
+                (ai.provider or "").lower()
+                for ai in program_ir.ais.values()
+                if getattr(ai, "provider", None)
+            }
+        )
         counts = {
             "records": len(program_ir.records),
             "flows": len(program_ir.flows),
@@ -46,7 +57,7 @@ def get_summary_payload(source: str, path: str) -> dict:
             "agents": len(program_ir.agents),
             "tools": len(program_ir.tools),
         }
-        payload = {"ok": True, "file": path, "counts": counts}
+        payload = {"ok": True, "file": path, "counts": counts, "ai_providers": ai_providers}
         module_summary = getattr(program_ir, "module_summary", None)
         if module_summary:
             payload["module_summary"] = module_summary
@@ -123,6 +134,35 @@ def get_tools_payload(source: str, app_path: str) -> dict:
         payload = _tool_inventory_payload(report, app_root)
         payload["ok"] = True
         return payload
+    except Namel3ssError as err:
+        return {"ok": False, "error": format_error(err, source)}
+
+
+def get_secrets_payload(source: str, app_path: str) -> dict:
+    try:
+        app_file = Path(app_path)
+        project = load_project(app_file, source_overrides={app_file: source})
+        config = load_config(app_path=project.app_path, root=project.app_path.parent)
+        target = _resolve_target(project.app_path.parent)
+        refs = discover_required_secrets(project.program, config, target=target, app_path=project.app_path)
+        return {
+            "ok": True,
+            "schema_version": 1,
+            "target": target,
+            "secrets": [
+                {"name": ref.name, "available": ref.available, "source": ref.source, "target": ref.target}
+                for ref in refs
+            ],
+        }
+    except Namel3ssError as err:
+        return {"ok": False, "error": format_error(err, source)}
+
+
+def get_diagnostics_payload(source: str, app_path: str) -> dict:
+    try:
+        program_ir = _load_project_program(source, app_path)
+        diagnostics = collect_ai_context_diagnostics(program_ir)
+        return {"ok": True, "schema_version": 1, "diagnostics": diagnostics}
     except Namel3ssError as err:
         return {"ok": False, "error": format_error(err, source)}
 
@@ -240,6 +280,12 @@ def _status_for_pack(report, name: str, provider) -> str:
     return "ok"
 
 
+def _resolve_target(project_root: Path) -> str:
+    state = load_state(project_root)
+    active = state.get("active") or {}
+    return parse_target(active.get("target")).name
+
+
 def _status_for_declared(report, name: str) -> str:
     if name in report.collisions:
         return "collision"
@@ -277,4 +323,3 @@ def _actions_from_manifest(manifest: dict) -> list[dict]:
             item["record"] = entry.get("record")
         data.append(item)
     return data
-

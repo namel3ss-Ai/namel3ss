@@ -72,6 +72,9 @@
         return;
       }
       applyManifest(payload);
+      if (root.setup && root.setup.refreshSetup) {
+        root.setup.refreshSetup();
+      }
     } catch (err) {
       const detail = err && err.message ? err.message : "Unable to load UI";
       if (root.preview && root.preview.renderError) {
@@ -84,21 +87,46 @@
 
   async function refreshSummary() {
     const label = document.getElementById("appName");
-    if (!label) return;
-    if (label.textContent && label.textContent !== "App") return;
     try {
       const payload = await net.fetchJson("/api/summary");
-      const file = payload && payload.file ? String(payload.file) : "";
-      const parts = file.split(/[/\\\\]/).filter(Boolean);
-      let name = parts.length > 1 ? parts[parts.length - 2] : parts[parts.length - 1];
-      if (!name) name = "App";
-      label.textContent = name;
+      if (state && typeof state.setCachedSummary === "function") {
+        state.setCachedSummary(payload);
+      }
+      if (label && (!label.textContent || label.textContent === "App")) {
+        const file = payload && payload.file ? String(payload.file) : "";
+        const parts = file.split(/[/\\\\]/).filter(Boolean);
+        let name = parts.length > 1 ? parts[parts.length - 2] : parts[parts.length - 1];
+        if (!name) name = "App";
+        label.textContent = name;
+      }
+      if (root.setup && typeof root.setup.updateAiBadge === "function") {
+        root.setup.updateAiBadge(payload);
+      }
     } catch (err) {
-      label.textContent = "App";
+      if (label && (!label.textContent || label.textContent === "App")) {
+        label.textContent = "App";
+      }
+    }
+  }
+
+  async function refreshDiagnostics() {
+    try {
+      const payload = await net.fetchJson("/api/diagnostics");
+      if (state && typeof state.setCachedDiagnostics === "function") {
+        state.setCachedDiagnostics(payload);
+      }
+      if (root.errors && typeof root.errors.renderErrors === "function") {
+        root.errors.renderErrors();
+      }
+    } catch (_err) {
+      if (state && typeof state.setCachedDiagnostics === "function") {
+        state.setCachedDiagnostics(null);
+      }
     }
   }
 
   refresh.applyManifest = applyManifest;
   refresh.refreshUI = refreshUI;
   refresh.refreshSummary = refreshSummary;
+  refresh.refreshDiagnostics = refreshDiagnostics;
 })();

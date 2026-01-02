@@ -121,6 +121,7 @@ def run_agent_call(ctx: ExecutionContext, agent_name: str, input_expr, line: int
         memory_context,
         tool_events,
         canonical_events=canonical_events,
+        agent_name=agent.name,
     )
     record_pack = memory_api.record_with_events(
         ctx.memory_manager,

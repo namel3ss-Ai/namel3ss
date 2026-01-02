@@ -121,8 +121,10 @@ def collapse_blank_lines(lines: List[str]) -> List[str]:
 _FIELD_LINE_RE = re.compile(r'^(\s*)field\s+"([^"]+)"\s+is\s+(.+)$')
 _RECORD_HEADER_RE = re.compile(r'^\s*record\s+"[^"]+"\s*:$')
 _TOOL_HEADER_RE = re.compile(r'^\s*tool\s+"[^"]+"\s*:$')
+_FUNCTION_HEADER_RE = re.compile(r'^\s*define\s+function\s+"[^"]+"\s*:$', re.IGNORECASE)
 _FIELDS_HEADER_RE = re.compile(r'^\s*fields\s*:$')
 _TOOL_SECTION_RE = re.compile(r'^\s*(input|output)\s*:$')
+_FUNCTION_SECTION_RE = re.compile(r'^\s*(input|output)\s*:$')
 _VALID_FIELD_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _ALLOWED_KEYWORD_FIELD_NAMES = {"title", "text", "form", "table", "button", "page"}
 
@@ -145,6 +147,45 @@ def normalize_record_fields(lines: List[str]) -> List[str]:
             idx += 1
             block_lines, idx = _collect_block(lines, idx, tool_indent)
             normalized.extend(_normalize_tool_block(block_lines, tool_indent))
+            continue
+        normalized.append(line)
+        idx += 1
+    return normalized
+
+
+def normalize_function_fields(lines: List[str]) -> List[str]:
+    normalized: List[str] = []
+    idx = 0
+    while idx < len(lines):
+        line = lines[idx]
+        if _FUNCTION_HEADER_RE.match(line):
+            func_indent = _line_indent(line)
+            normalized.append(line)
+            idx += 1
+            block_lines, idx = _collect_block(lines, idx, func_indent)
+            normalized.extend(_normalize_function_block(block_lines, func_indent))
+            continue
+        normalized.append(line)
+        idx += 1
+    return normalized
+
+
+def _normalize_function_block(lines: List[str], func_indent: int) -> List[str]:
+    normalized: List[str] = []
+    idx = 0
+    body_indent = func_indent + 2
+    while idx < len(lines):
+        line = lines[idx]
+        if line.strip() == "":
+            normalized.append(line)
+            idx += 1
+            continue
+        indent = _line_indent(line)
+        if indent == body_indent and _FUNCTION_SECTION_RE.match(line):
+            normalized.append(line)
+            idx += 1
+            block_lines, idx = _collect_block(lines, idx, indent)
+            normalized.extend(_normalize_tool_fields(block_lines))
             continue
         normalized.append(line)
         idx += 1
