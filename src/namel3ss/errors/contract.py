@@ -56,7 +56,7 @@ _FALLBACK_MESSAGES = {
 
 _OBJECT_ID_RE = re.compile(r"0x[0-9a-fA-F]+")
 
-_POLICY_REASONS = {"policy_denied", "unknown_tool", "missing_binding"}
+_POLICY_REASONS = {"policy_denied", "unknown_tool", "missing_binding", "pack_unavailable_or_unverified"}
 
 _SENSITIVE_KEY_MARKERS = (
     "password",

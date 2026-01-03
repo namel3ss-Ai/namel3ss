@@ -46,6 +46,7 @@ def resolve_tool_binding(
                 _collision_message(tool_name),
                 line=line,
                 column=column,
+                details={"tool_reason": "pack_collision"},
             )
         selected = _select_pack_tool(active_candidates, config, tool_name, line, column)
         return ResolvedToolBinding(
@@ -67,6 +68,7 @@ def resolve_tool_binding(
             _pack_unavailable_message(tool_name, pack_candidates),
             line=line,
             column=column,
+            details={"tool_reason": "pack_unavailable_or_unverified"},
         )
     slug = slugify_tool_name(tool_name)
     kind_label = tool_kind or "python"
@@ -82,6 +84,7 @@ def resolve_tool_binding(
         ),
         line=line,
         column=column,
+        details={"tool_reason": "missing_binding"},
     )
 
 
@@ -127,12 +130,14 @@ def _select_pack_tool(candidates: list, config: AppConfig, tool_name: str, line:
             _pack_pin_missing_message(tool_name, pinned),
             line=line,
             column=column,
+            details={"tool_reason": "pack_pin_missing"},
         )
     if len(candidates) > 1:
         raise Namel3ssError(
             _pack_collision_message(tool_name, candidates),
             line=line,
             column=column,
+            details={"tool_reason": "pack_collision"},
         )
     return candidates[0]
 

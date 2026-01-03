@@ -13,6 +13,9 @@ from namel3ss.runtime.tools.resolution import resolve_tool_binding
 from tests.conftest import lower_ir_program
 
 
+SPEC_FAILURES = Path(__file__).resolve().parents[2] / "spec" / "failures"
+
+
 def test_unbound_tool_error_mentions_tool_name(tmp_path: Path) -> None:
     config = AppConfig()
     with pytest.raises(Namel3ssError) as exc:
@@ -74,6 +77,156 @@ flow "demo":
     message = str(exc.value)
     assert "ModuleNotFoundError" in message
     assert "No module named" in message
+
+
+def test_pack_collision_trace_classification(tmp_path: Path) -> None:
+    pack_root = tmp_path / ".namel3ss" / "packs"
+    _write_pack(pack_root, pack_id="collision.a", tool_name="pack echo", entry="tools.echo:run", verified=True)
+    _write_pack(pack_root, pack_id="collision.b", tool_name="pack echo", entry="tools.echo:run", verified=True)
+    config = AppConfig()
+    config.tool_packs.enabled_packs = ["collision.a", "collision.b"]
+
+    source = _tool_source("pack echo")
+    program = lower_ir_program(source)
+    executor = Executor(
+        program.flows[0],
+        schemas={},
+        tools=program.tools,
+        input_data={"payload": {"ok": True}},
+        project_root=str(tmp_path),
+        config=config,
+    )
+    with pytest.raises(Namel3ssError) as exc:
+        executor.run()
+    _assert_guidance(str(exc.value), _read_expected("packs/collision/app.json"))
+    trace = _tool_trace(executor, "pack echo")
+    assert trace["decision"] == "error"
+    assert trace["reason"] == "pack_collision"
+    assert trace["result"] == "error"
+
+
+def test_unverified_pack_trace_blocked(tmp_path: Path) -> None:
+    pack_root = tmp_path / ".namel3ss" / "packs"
+    _write_pack(pack_root, pack_id="enabled.pack", tool_name="pack echo", entry="tools.echo:run", verified=False)
+    config = AppConfig()
+    config.tool_packs.enabled_packs = ["enabled.pack"]
+
+    source = _tool_source("pack echo")
+    program = lower_ir_program(source)
+    executor = Executor(
+        program.flows[0],
+        schemas={},
+        tools=program.tools,
+        input_data={"payload": {"ok": True}},
+        project_root=str(tmp_path),
+        config=config,
+    )
+    with pytest.raises(Namel3ssError) as exc:
+        executor.run()
+    _assert_guidance(str(exc.value), _read_expected("packs/enabled_unverified_pack/app.json"))
+    trace = _tool_trace(executor, "pack echo")
+    assert trace["decision"] == "blocked"
+    assert trace["reason"] == "pack_unavailable_or_unverified"
+    assert trace["result"] == "blocked"
+
+
+def test_unknown_runner_trace_classification(tmp_path: Path) -> None:
+    tools_dir = tmp_path / ".namel3ss"
+    tools_dir.mkdir(parents=True, exist_ok=True)
+    (tools_dir / "tools.yaml").write_text(
+        'tools:\n'
+        '  "runner echo":\n'
+        '    kind: "python"\n'
+        '    entry: "tools.echo:run"\n'
+        '    runner: "bogus"\n',
+        encoding="utf-8",
+    )
+    source = _tool_source("runner echo")
+    program = lower_ir_program(source)
+    executor = Executor(
+        program.flows[0],
+        schemas={},
+        tools=program.tools,
+        input_data={"payload": {"runner": "bogus"}},
+        project_root=str(tmp_path),
+    )
+    with pytest.raises(Namel3ssError) as exc:
+        executor.run()
+    _assert_guidance(str(exc.value), _read_expected("runners/unknown_runner/app.json"))
+    trace = _tool_trace(executor, "runner echo")
+    assert trace["decision"] == "error"
+    assert trace["reason"] == "unknown_runner"
+    assert trace["result"] == "error"
+
+
+def test_missing_binding_trace_classification(tmp_path: Path) -> None:
+    source = _tool_source("unbound")
+    program = lower_ir_program(source)
+    executor = Executor(
+        program.flows[0],
+        schemas={},
+        tools=program.tools,
+        input_data={"payload": {"ok": True}},
+        project_root=str(tmp_path),
+    )
+    with pytest.raises(Namel3ssError) as exc:
+        executor.run()
+    _assert_guidance(str(exc.value), _read_expected("tools/missing_binding/app.json"))
+    trace = _tool_trace(executor, "unbound")
+    assert trace["decision"] == "error"
+    assert trace["reason"] == "missing_binding"
+    assert trace["result"] == "error"
+
+
+def _tool_source(tool_name: str) -> str:
+    return f'''tool "{tool_name}":
+  implemented using python
+
+  input:
+    payload is json
+
+  output:
+    result is json
+
+spec is "1.0"
+
+flow "demo":
+  let output is {tool_name}:
+    payload is input.payload
+  return output
+'''
+
+
+def _tool_trace(executor: Executor, tool_name: str) -> dict:
+    for event in executor.ctx.traces:
+        if not isinstance(event, dict):
+            continue
+        if event.get("type") != "tool_call":
+            continue
+        if event.get("tool_name") == tool_name or event.get("tool") == tool_name:
+            return event
+    raise AssertionError(f"Missing tool_call trace for {tool_name}")
+
+
+def _read_expected(relative: str) -> dict:
+    path = SPEC_FAILURES / relative
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _assert_guidance(message: str, expected: dict) -> None:
+    what = expected.get("what")
+    if what:
+        assert (
+            f"error: {what}" in message
+            or f"- {what}" in message
+            or f"What happened: {what}" in message
+        )
+    why = expected.get("why")
+    if why:
+        assert f"- {why}" in message or f"Why: {why}" in message
+    fix = expected.get("fix")
+    if fix:
+        assert f"- {fix}" in message or f"Fix: {fix}" in message
 
 
 def _write_pack(root: Path, *, pack_id: str, tool_name: str, entry: str, verified: bool) -> Path:

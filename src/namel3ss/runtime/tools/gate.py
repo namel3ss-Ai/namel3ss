@@ -12,14 +12,14 @@ def gate_tool_call(
 ) -> ToolDecision:
     if not policy.known_tool:
         return ToolDecision(
-            status="blocked",
+            status="error",
             capability=None,
             reason="unknown_tool",
             message=f'Unknown tool "{tool_name}".',
         )
     if not policy.binding_ok:
         return ToolDecision(
-            status="blocked",
+            status="error",
             capability=None,
             reason="missing_binding",
             message=f'Tool "{tool_name}" is not bound to a runner.',

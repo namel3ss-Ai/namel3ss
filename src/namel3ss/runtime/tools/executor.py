@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 
 from namel3ss.errors.base import Namel3ssError
@@ -16,7 +17,16 @@ from namel3ss.runtime.tools.python_runtime import execute_python_tool_call
 from namel3ss.runtime.tools.node_runtime import execute_node_tool_call
 from namel3ss.runtime.tools.registry import execute_tool as execute_builtin_tool, is_builtin_tool
 from namel3ss.runtime.tools.resolution import resolve_tool_binding
+from namel3ss.runtime.tools.runners.registry import get_runner
 from namel3ss.runtime.values.normalize import ensure_object
+
+
+@dataclass(frozen=True)
+class _BindingCheck:
+    ok: bool
+    error: Namel3ssError | None
+    reason: str | None
+    status: str | None
 
 
 def execute_tool_call(
@@ -32,24 +42,59 @@ def execute_tool_call(
     builtin_fallback = ctx.tool_call_source == "ai" and is_builtin_tool(tool_name)
     tool_kind = tool_decl.kind if tool_decl else ("builtin" if builtin_fallback else None)
     required_caps = normalize_capabilities(getattr(tool_decl, "capabilities", None) if tool_decl else ())
-    binding_ok, binding_error = _check_binding(ctx, tool_name, tool_kind, line=line, column=column)
-    policy = load_tool_policy(
-        tool_name=tool_name,
-        tool_known=tool_decl is not None or builtin_fallback,
-        binding_ok=binding_ok,
-        config=getattr(ctx, "config", None),
-    )
-    decision = gate_tool_call(tool_name=tool_name, required_capabilities=required_caps, policy=policy)
-    if decision.status == "blocked":
+    binding_check = _check_binding(ctx, tool_name, tool_kind, line=line, column=column)
+    if not binding_check.ok:
+        decision_reason = binding_check.reason or "missing_binding"
+        decision_status = binding_check.status or "error"
+        message = binding_check.error.message if binding_check.error else _binding_message(tool_name, decision_reason)
+        decision = ToolDecision(
+            status=decision_status,
+            capability=None,
+            reason=decision_reason,
+            message=message,
+        )
         outcome = ToolCallOutcome(
             tool_name=tool_name,
             decision=decision,
-            result_kind="blocked",
+            result_kind="blocked" if decision_status == "blocked" else "error",
             result_summary=decision.message,
         )
-        _record_policy_block(ctx, tool_name, decision)
-        _record_tool_trace(ctx, tool_name, tool_kind, decision, result="blocked")
-        err = _blocked_error(ctx, tool_name, decision, binding_error, line=line, column=column)
+        if decision_status == "blocked":
+            _record_policy_block(ctx, tool_name, decision)
+        _record_tool_trace(
+            ctx,
+            tool_name,
+            tool_kind,
+            decision,
+            result="blocked" if decision_status == "blocked" else "error",
+        )
+        err = _blocked_error(ctx, tool_name, decision, binding_check.error, line=line, column=column)
+        mark_boundary(err, "tools")
+        raise err
+    policy = load_tool_policy(
+        tool_name=tool_name,
+        tool_known=tool_decl is not None or builtin_fallback,
+        binding_ok=True,
+        config=getattr(ctx, "config", None),
+    )
+    decision = gate_tool_call(tool_name=tool_name, required_capabilities=required_caps, policy=policy)
+    if decision.status != "allowed":
+        outcome = ToolCallOutcome(
+            tool_name=tool_name,
+            decision=decision,
+            result_kind="blocked" if decision.status == "blocked" else "error",
+            result_summary=decision.message,
+        )
+        if decision.status == "blocked":
+            _record_policy_block(ctx, tool_name, decision)
+        _record_tool_trace(
+            ctx,
+            tool_name,
+            tool_kind,
+            decision,
+            result="blocked" if decision.status == "blocked" else "error",
+        )
+        err = _blocked_error(ctx, tool_name, decision, None, line=line, column=column)
         mark_boundary(err, "tools")
         raise err
     if tool_kind is None:
@@ -135,18 +180,48 @@ def _check_binding(
     *,
     line: int | None,
     column: int | None,
-) -> tuple[bool, Namel3ssError | None]:
+) -> _BindingCheck:
     if tool_kind is None:
-        return False, None
+        return _BindingCheck(ok=False, error=None, reason="unknown_tool", status="error")
     if tool_kind not in {"python", "node"}:
-        return True, None
+        return _BindingCheck(ok=True, error=None, reason=None, status=None)
     if not ctx.project_root:
-        return True, None
+        return _BindingCheck(ok=True, error=None, reason=None, status=None)
     try:
-        resolve_tool_binding(Path(ctx.project_root), tool_name, ctx.config, tool_kind=tool_kind, line=line, column=column)
+        resolved = resolve_tool_binding(
+            Path(ctx.project_root),
+            tool_name,
+            ctx.config,
+            tool_kind=tool_kind,
+            line=line,
+            column=column,
+        )
     except Namel3ssError as err:
-        return False, err
-    return True, None
+        reason = _binding_reason(err)
+        status = "blocked" if reason == "pack_unavailable_or_unverified" else "error"
+        return _BindingCheck(ok=False, error=err, reason=reason, status=status)
+    runner_name = resolved.binding.runner or ("node" if tool_kind == "node" else "local")
+    try:
+        get_runner(runner_name)
+    except Namel3ssError as err:
+        return _BindingCheck(ok=False, error=err, reason="unknown_runner", status="error")
+    return _BindingCheck(ok=True, error=None, reason=None, status=None)
+
+
+def _binding_reason(err: Namel3ssError) -> str:
+    details = err.details if isinstance(err.details, dict) else {}
+    reason = details.get("tool_reason")
+    if isinstance(reason, str) and reason:
+        return reason
+    return "binding_error"
+
+
+def _binding_message(tool_name: str, reason: str) -> str:
+    if reason == "unknown_tool":
+        return f'Unknown tool "{tool_name}".'
+    if reason == "missing_binding":
+        return f'Tool "{tool_name}" is not bound to a runner.'
+    return f'Tool "{tool_name}" failed.'
 
 
 def _blocked_error(
@@ -158,7 +233,14 @@ def _blocked_error(
     line: int | None,
     column: int | None,
 ) -> Namel3ssError:
-    if decision.reason == "missing_binding" and binding_error is not None:
+    if binding_error is not None and decision.reason in {
+        "binding_error",
+        "missing_binding",
+        "pack_collision",
+        "pack_pin_missing",
+        "pack_unavailable_or_unverified",
+        "unknown_runner",
+    }:
         return binding_error
     if decision.reason == "unknown_tool" and ctx.tool_call_source != "ai":
         return Namel3ssError(
