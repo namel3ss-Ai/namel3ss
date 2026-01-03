@@ -42,6 +42,8 @@ logs/
 !spec/**/.namel3ss/
 spec/**/.namel3ss/**
 !spec/**/.namel3ss/tools.yaml
+!spec/**/.namel3ss/build/
+!spec/**/.namel3ss/build/**
 !spec/**/.namel3ss/packs/
 !spec/**/.namel3ss/packs/**
 
