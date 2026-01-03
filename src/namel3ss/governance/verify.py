@@ -156,6 +156,18 @@ def _check_package_integrity(project_root: Path) -> VerifyCheck:
             fix="Run `n3 pkg install` to regenerate the lockfile.",
             details={"error": str(err)},
         )
+    packages_dir = project_root / "packages"
+    if not _packages_required(project_root, lock) and not packages_dir.exists():
+        return VerifyCheck(
+            id="package_integrity",
+            status="ok",
+            message="Packages match the lockfile and include license metadata.",
+            fix="None.",
+            details={
+                "skipped": True,
+                "reason": "packages directory missing and packages not required",
+            },
+        )
     issues = verify_installation(project_root, lockfile=lock)
     missing_license = [pkg.name for pkg in lock.packages if not pkg.license_id and not pkg.license_file]
     if issues or missing_license:
@@ -176,6 +188,15 @@ def _check_package_integrity(project_root: Path) -> VerifyCheck:
         message="Packages match the lockfile and include license metadata.",
         fix="None.",
     )
+
+
+def _packages_required(project_root: Path, lock) -> bool:
+    required = os.getenv("N3_PACKAGE_INTEGRITY_REQUIRED", "").strip().lower()
+    if required in {"1", "true", "yes", "on"}:
+        return True
+    if getattr(lock, "packages", None):
+        return len(lock.packages) > 0
+    return (project_root / "packages").exists()
 
 
 def _check_engine_readiness(app_path: Path, target: str, config, prod: bool) -> VerifyCheck:

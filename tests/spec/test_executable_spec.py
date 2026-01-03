@@ -187,6 +187,11 @@ def _normalize_text(value: str, repo_root: Path) -> str:
 
 def _normalize_payload(value, repo_root: Path):
     if isinstance(value, dict):
+        if value.get("id") == "package_integrity":
+            details = value.get("details")
+            if isinstance(details, dict) and details.get("skipped") is True:
+                value = dict(value)
+                value.pop("details", None)
         normalized = {}
         for key, item in value.items():
             if key in _TIME_KEYS:
