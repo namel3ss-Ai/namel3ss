@@ -19,7 +19,7 @@ from namel3ss.schema.records import RecordSchema
 from namel3ss.runtime.theme.resolution import resolve_initial_theme
 from namel3ss.observe import actor_summary, record_event, summarize_value
 from namel3ss.secrets import collect_secret_values
-from namel3ss.spec_check.api import enforce_spec_for_program
+from namel3ss.compatibility import validate_spec_version
 import time
 
 
@@ -64,8 +64,7 @@ def execute_program_flow(
     config: AppConfig | None = None,
     identity: dict | None = None,
 ) -> ExecutionResult:
-    declared_spec = getattr(program, "spec_version", None)
-    enforce_spec_for_program(program, str(declared_spec or ""))
+    validate_spec_version(program)
     flow = next((f for f in program.flows if f.name == flow_name), None)
     if flow is None:
         raise Namel3ssError(_unknown_flow_message(flow_name, program.flows))

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -10,6 +9,7 @@ from namel3ss.runtime.ai.http.client import post_json
 from namel3ss.runtime.ai.providers._shared.errors import require_env
 from namel3ss.runtime.tool_calls.model import ToolCallPolicy, ToolDeclaration
 from namel3ss.runtime.tool_calls.provider_iface import AssistantError, AssistantText, AssistantToolCall, ModelResponse, ProviderAdapter
+from namel3ss.security import read_env
 
 
 def _build_tool_payload(tools: List[ToolDeclaration]) -> list:
@@ -117,10 +117,10 @@ def _parse_response(result: dict) -> ModelResponse:
 def _resolve_api_key(api_key: str | None) -> str:
     if api_key is not None and str(api_key).strip() != "":
         return api_key
-    preferred = os.getenv("NAMEL3SS_OPENAI_API_KEY")
+    preferred = read_env("NAMEL3SS_OPENAI_API_KEY")
     if preferred is not None and str(preferred).strip() != "":
         return require_env("openai", "NAMEL3SS_OPENAI_API_KEY", preferred)
-    fallback = os.getenv("OPENAI_API_KEY")
+    fallback = read_env("OPENAI_API_KEY")
     if fallback is not None and str(fallback).strip() != "":
         return require_env("openai", "OPENAI_API_KEY", fallback)
     raise Namel3ssError(

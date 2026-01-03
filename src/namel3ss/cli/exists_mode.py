@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.contract.api import contract as build_contract
 from namel3ss.contract.builder import build_contract_pack
 from namel3ss.errors.base import Namel3ssError
@@ -81,11 +82,10 @@ def _run_exists(app_path: str | None, *, json_mode: bool) -> int:
 
 
 def _resolve_app_path(app_path: str | None) -> Path | None:
-    if app_path:
-        path = Path(app_path)
-        return path if path.exists() else None
-    default = Path.cwd() / "app.ai"
-    return default if default.exists() else None
+    try:
+        return resolve_app_path(app_path)
+    except Namel3ssError:
+        return None
 
 
 __all__ = ["run_exists_command"]

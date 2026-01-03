@@ -110,6 +110,7 @@ def _install_patches() -> None:
         return
     _ORIGINALS["open"] = builtins.open
     _ORIGINALS["path_open"] = Path.open
+    _ORIGINALS["os_open"] = os.open
     _ORIGINALS["urlopen"] = urllib_request.urlopen
     _ORIGINALS["socket_connect"] = socket.socket.connect
     _ORIGINALS["create_connection"] = socket.create_connection
@@ -123,6 +124,7 @@ def _install_patches() -> None:
 
     builtins.open = _patched_open  # type: ignore[assignment]
     Path.open = _patched_path_open  # type: ignore[assignment]
+    os.open = _patched_os_open  # type: ignore[assignment]
     urllib_request.urlopen = _patched_urlopen  # type: ignore[assignment]
     socket.socket.connect = _patched_socket_connect  # type: ignore[assignment]
     socket.create_connection = _patched_create_connection  # type: ignore[assignment]
@@ -153,6 +155,13 @@ def _patched_path_open(self, *args, **kwargs):
     if _CONTEXT:
         check_filesystem(_CONTEXT, _record_check, path=self, mode=mode)
     return _ORIGINALS["path_open"](self, *args, **kwargs)
+
+
+def _patched_os_open(path, flags, *args, **kwargs):
+    if _CONTEXT:
+        mode = _mode_from_flags(flags)
+        check_filesystem(_CONTEXT, _record_check, path=path, mode=mode)
+    return _ORIGINALS["os_open"](path, flags, *args, **kwargs)
 
 
 def _patched_urlopen(req, *args, **kwargs):
@@ -261,6 +270,24 @@ def _extract_argv(popenargs, kwargs) -> list[str]:
     return [str(cmd)]
 
 
+def _mode_from_flags(flags: int) -> str:
+    if _is_write_flags(flags):
+        return "w"
+    return "r"
+
+
+def _is_write_flags(flags: int) -> bool:
+    write_flags = (
+        os.O_WRONLY
+        | os.O_RDWR
+        | os.O_APPEND
+        | os.O_CREAT
+        | os.O_TRUNC
+        | getattr(os, "O_EXCL", 0)
+    )
+    return bool(flags & write_flags)
+
+
 class EnvProxy(MutableMapping):
     def __init__(self, raw):
         self._raw = raw
@@ -281,9 +308,13 @@ class EnvProxy(MutableMapping):
         del self._raw[key]
 
     def __iter__(self):
+        if _CONTEXT:
+            _check_env_read("*")
         return iter(self._raw)
 
     def __len__(self) -> int:
+        if _CONTEXT:
+            _check_env_read("*")
         return len(self._raw)
 
     def get(self, key, default=None):

@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from namel3ss.cli.app_loader import load_program
+from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.spec_check.api import check_spec_for_program, load_spec_pack
@@ -83,11 +84,10 @@ def _run_when(app_path: str | None, *, json_mode: bool) -> int:
 
 
 def _resolve_app_path(app_path: str | None) -> Path | None:
-    if app_path:
-        path = Path(app_path)
-        return path if path.exists() else None
-    default = Path.cwd() / "app.ai"
-    return default if default.exists() else None
+    try:
+        return resolve_app_path(app_path)
+    except Namel3ssError:
+        return None
 
 
 __all__ = ["run_when_command"]

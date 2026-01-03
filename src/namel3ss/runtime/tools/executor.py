@@ -5,6 +5,8 @@ from pathlib import Path
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.boundary import mark_boundary
+from namel3ss.runtime.capabilities.gates import record_capability_check
+from namel3ss.runtime.capabilities.model import CapabilityCheck, CapabilityContext, EffectiveGuarantees
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.executor.parallel.isolation import ensure_tool_call_allowed
 from namel3ss.runtime.tools.gate import gate_tool_call
@@ -45,6 +47,7 @@ def execute_tool_call(
             result_kind="blocked",
             result_summary=decision.message,
         )
+        _record_policy_block(ctx, tool_name, decision)
         _record_tool_trace(ctx, tool_name, tool_kind, decision, result="blocked")
         err = _blocked_error(ctx, tool_name, decision, binding_error, line=line, column=column)
         mark_boundary(err, "tools")
@@ -209,6 +212,28 @@ def _record_tool_trace(
     }
     event.update(updates)
     _trace_target(ctx).append(event)
+
+
+def _record_policy_block(ctx: ExecutionContext, tool_name: str, decision: ToolDecision) -> None:
+    if decision.reason != "policy_denied" or not decision.capability:
+        return
+    context = CapabilityContext(
+        tool_name=tool_name,
+        resolved_source="policy",
+        runner="policy",
+        protocol_version=1,
+        guarantees=EffectiveGuarantees(),
+    )
+    record_capability_check(
+        context,
+        CapabilityCheck(
+            capability=decision.capability,
+            allowed=False,
+            guarantee_source="policy",
+            reason="policy_denied",
+        ),
+        _trace_target(ctx),
+    )
 
 
 def _update_tool_trace(ctx: ExecutionContext, tool_name: str, updates: dict) -> bool:

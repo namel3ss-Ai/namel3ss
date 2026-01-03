@@ -1,0 +1,50 @@
+[
+  {
+    "canonical_events": [],
+    "lines": [
+      "alpha",
+      "beta"
+    ],
+    "memory_events": [],
+    "title": "Parallel started",
+    "trace_version": "2024-10-01",
+    "type": "parallel_started"
+  },
+  {
+    "canonical_events": [],
+    "lines": [
+      "Task alpha finished.",
+      "Local updates are alpha."
+    ],
+    "memory_events": [],
+    "status": "ok",
+    "task_name": "alpha",
+    "title": "Parallel task finished",
+    "trace_version": "2024-10-01",
+    "type": "parallel_task_finished"
+  },
+  {
+    "canonical_events": [],
+    "lines": [
+      "Task beta finished.",
+      "Local updates are beta."
+    ],
+    "memory_events": [],
+    "status": "ok",
+    "task_name": "beta",
+    "title": "Parallel task finished",
+    "trace_version": "2024-10-01",
+    "type": "parallel_task_finished"
+  },
+  {
+    "canonical_events": [],
+    "lines": [
+      "Task alpha updated locals alpha.",
+      "Task beta updated locals beta."
+    ],
+    "memory_events": [],
+    "title": "Parallel merged",
+    "trace_version": "2024-10-01",
+    "type": "parallel_merged"
+  }
+]

@@ -1,0 +1,126 @@
+{
+  "agents": {},
+  "ais": {},
+  "column": null,
+  "flows": [
+    {
+      "audited": false,
+      "body": [
+        {
+          "column": 3,
+          "line": 4,
+          "tasks": [
+            {
+              "body": [
+                {
+                  "column": 7,
+                  "constant": false,
+                  "expression": {
+                    "column": 22,
+                    "left": {
+                      "column": 20,
+                      "line": 6,
+                      "type": "Literal",
+                      "value": "1"
+                    },
+                    "line": 6,
+                    "op": "+",
+                    "right": {
+                      "column": 24,
+                      "line": 6,
+                      "type": "Literal",
+                      "value": "2"
+                    },
+                    "type": "BinaryOp"
+                  },
+                  "line": 6,
+                  "name": "alpha",
+                  "type": "Let"
+                },
+                {
+                  "column": 7,
+                  "expression": {
+                    "column": 14,
+                    "line": 7,
+                    "name": "alpha",
+                    "type": "VarReference"
+                  },
+                  "line": 7,
+                  "type": "Return"
+                }
+              ],
+              "column": 5,
+              "line": 5,
+              "name": "alpha",
+              "type": "ParallelTask"
+            },
+            {
+              "body": [
+                {
+                  "column": 7,
+                  "constant": false,
+                  "expression": {
+                    "column": 21,
+                    "left": {
+                      "column": 19,
+                      "line": 9,
+                      "type": "Literal",
+                      "value": "2"
+                    },
+                    "line": 9,
+                    "op": "*",
+                    "right": {
+                      "column": 23,
+                      "line": 9,
+                      "type": "Literal",
+                      "value": "3"
+                    },
+                    "type": "BinaryOp"
+                  },
+                  "line": 9,
+                  "name": "beta",
+                  "type": "Let"
+                },
+                {
+                  "column": 7,
+                  "expression": {
+                    "column": 14,
+                    "line": 10,
+                    "name": "beta",
+                    "type": "VarReference"
+                  },
+                  "line": 10,
+                  "type": "Return"
+                }
+              ],
+              "column": 5,
+              "line": 8,
+              "name": "beta",
+              "type": "ParallelTask"
+            }
+          ],
+          "type": "ParallelBlock"
+        }
+      ],
+      "column": 1,
+      "line": 3,
+      "name": "demo",
+      "requires": null,
+      "type": "Flow"
+    }
+  ],
+  "identity": null,
+  "line": null,
+  "pages": [],
+  "records": [],
+  "spec_version": "1.0",
+  "theme": "system",
+  "theme_preference": {
+    "allow_override": false,
+    "persist": "none"
+  },
+  "theme_runtime_supported": false,
+  "theme_tokens": {},
+  "tools": {},
+  "type": "Program"
+}

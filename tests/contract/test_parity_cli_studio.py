@@ -1,0 +1,98 @@
+from __future__ import annotations
+
+from pathlib import Path
+import shutil
+
+from namel3ss.cli.app_loader import load_program
+from namel3ss.cli.runner import run_flow
+from namel3ss.cli.ui_mode import run_action
+from namel3ss.studio.api import execute_action
+from namel3ss.studio.session import SessionState
+
+
+APP_SOURCE = '''
+spec is "1.0"
+
+ai "assistant":
+  provider is "mock"
+  model is "mock"
+
+record "User":
+  name string must be present
+
+flow "demo":
+  ask ai "assistant" with input: "hello" as reply
+  return reply
+
+page "home":
+  button "Run":
+    calls flow "demo"
+  form is "User"
+'''.lstrip()
+
+
+def _assert_parity(cli_payload: dict, studio_payload: dict) -> None:
+    assert cli_payload["ok"] == studio_payload["ok"]
+    assert "result" in cli_payload
+    assert "result" in studio_payload
+    cli_contract = cli_payload["contract"]
+    studio_contract = studio_payload["contract"]
+    assert cli_contract["status"] == studio_contract["status"]
+    assert cli_contract["errors"] == studio_contract["errors"]
+    assert cli_contract["trace_hash"] == studio_contract["trace_hash"]
+    assert cli_contract["trace_schema_version"] == studio_contract["trace_schema_version"]
+    assert cli_contract["state"] == studio_contract["state"]
+    assert cli_contract["result"] == studio_contract["result"]
+    cli_types = [trace.get("type") for trace in cli_contract.get("traces", [])]
+    studio_types = [trace.get("type") for trace in studio_contract.get("traces", [])]
+    assert cli_types == studio_types
+
+
+def test_cli_studio_parity_call_flow(tmp_path: Path) -> None:
+    app_file = tmp_path / "app.ai"
+    app_file.write_text(APP_SOURCE, encoding="utf-8")
+    program, sources = load_program(app_file.as_posix())
+
+    _reset_memory(tmp_path)
+    cli_payload = run_flow(program, "demo", sources=sources)
+
+    _reset_memory(tmp_path)
+    session = SessionState()
+    studio_payload = execute_action(
+        APP_SOURCE,
+        session,
+        "page.home.button.run",
+        {},
+        app_path=app_file.as_posix(),
+    )
+
+    _assert_parity(cli_payload, studio_payload)
+
+
+def test_cli_studio_parity_submit_form_error(tmp_path: Path) -> None:
+    app_file = tmp_path / "app.ai"
+    app_file.write_text(APP_SOURCE, encoding="utf-8")
+    program, _ = load_program(app_file.as_posix())
+
+    cli_payload = run_action(program, "page.home.form.user", {})
+
+    studio_payload = execute_action(
+        APP_SOURCE,
+        SessionState(),
+        "page.home.form.user",
+        {},
+        app_path=app_file.as_posix(),
+    )
+
+    _assert_parity(cli_payload, studio_payload)
+    assert cli_payload["ok"] is False
+    assert studio_payload["ok"] is False
+    assert cli_payload["result"] is None
+    assert studio_payload["result"] is None
+    assert cli_payload.get("errors") == studio_payload.get("errors")
+
+
+def _reset_memory(root: Path) -> None:
+    memory_dir = root / ".namel3ss" / "memory"
+    if memory_dir.exists():
+        shutil.rmtree(memory_dir)

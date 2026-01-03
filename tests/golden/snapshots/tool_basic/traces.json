@@ -1,0 +1,41 @@
+[
+  {
+    "canonical_events": [],
+    "capability": "none",
+    "decision": "allowed",
+    "deps_source": "none",
+    "entry": "tools.format_tool:run",
+    "input_summary": {
+      "count": 3,
+      "keys": [
+        "active",
+        "count",
+        "name"
+      ],
+      "type": "object"
+    },
+    "kind": "python",
+    "memory_events": [],
+    "output_summary": {
+      "count": 1,
+      "keys": [
+        "message"
+      ],
+      "type": "object"
+    },
+    "protocol_version": 1,
+    "python_env": "system",
+    "python_path": "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+    "reason": "policy_allowed",
+    "resolved_source": "binding",
+    "result": "ok",
+    "runner": "local",
+    "sandbox": true,
+    "status": "ok",
+    "timeout_ms": 5000,
+    "title": "Tool call: format tool",
+    "tool": "format tool",
+    "tool_name": "format tool",
+    "type": "tool_call"
+  }
+]

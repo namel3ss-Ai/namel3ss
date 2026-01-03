@@ -1,0 +1,139 @@
+{
+  "contract": {
+    "errors": [
+      {
+        "category": "runtime",
+        "code": "E-ENGINE-ENGINE_ERROR-DEMO-IF-2",
+        "details": {
+          "boundary": "engine",
+          "error_id": "E-ENGINE-ENGINE_ERROR-DEMO-IF-2",
+          "example": "if total is greater than 10: return true",
+          "kind": "engine_error",
+          "where": {
+            "column": 3,
+            "flow_name": "demo",
+            "line": 5,
+            "statement_index": 2,
+            "statement_kind": "if"
+          }
+        },
+        "hint": "The condition evaluated to number, but if/else requires a boolean.",
+        "location": {
+          "column": 3,
+          "line": 5
+        },
+        "message": "If condition did not evaluate to true/false.",
+        "remediation": "Use a comparison so the condition is boolean.",
+        "trace_ref": "E-ENGINE-ENGINE_ERROR-DEMO-IF-2"
+      }
+    ],
+    "flow_name": "demo",
+    "memory": {
+      "count": 0,
+      "events": []
+    },
+    "outcome": {
+      "outcome": {
+        "execution_steps_count": 4,
+        "flow_name": "demo",
+        "memory": {
+          "persist_attempted": false,
+          "persist_failed": false,
+          "persist_succeeded": false,
+          "skipped_reason": null
+        },
+        "record_changes_count": 0,
+        "state": {
+          "loaded_from_store": false,
+          "save_attempted": false,
+          "save_failed": false,
+          "save_succeeded": false
+        },
+        "status": "error",
+        "store": {
+          "began": true,
+          "commit_failed": false,
+          "committed": false,
+          "rollback_failed": false,
+          "rolled_back": true
+        },
+        "traces_count": 1,
+        "what_did_not_happen": [
+          "memory was not persisted",
+          "state was not saved",
+          "store commit was not attempted"
+        ]
+      },
+      "summary": {
+        "flow_name": "demo",
+        "memory": {
+          "persist_attempted": false,
+          "persist_failed": false,
+          "persist_succeeded": false,
+          "skipped_reason": null
+        },
+        "status": "error",
+        "store": {
+          "began": true,
+          "commit_failed": false,
+          "committed": false,
+          "rollback_failed": false,
+          "rolled_back": true
+        }
+      }
+    },
+    "result": null,
+    "schema_version": "production.v0",
+    "state": {},
+    "status": "error",
+    "trace_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "trace_schema_version": "2024-10-01",
+    "traces": []
+  },
+  "details": {
+    "error_id": "E-ENGINE-ENGINE_ERROR-DEMO-IF-2"
+  },
+  "error": "[line 5, col 3] error: If condition did not evaluate to true/false.\n\nWhat happened\n- If condition did not evaluate to true/false.\n\nWhy\n- The condition evaluated to number, but if/else requires a boolean.\n\nHow to fix\n- Use a comparison so the condition is boolean.\n\nWhere\n- flow: demo\n- statement: if\n- statement index: 2\n- line: 5\n- column: 3\n\nError id\n- E-ENGINE-ENGINE_ERROR-DEMO-IF-2\n  if total:\n  ^",
+  "error_entry": {
+    "category": "runtime",
+    "code": "E-ENGINE-ENGINE_ERROR-DEMO-IF-2",
+    "details": {
+      "error_id": "E-ENGINE-ENGINE_ERROR-DEMO-IF-2"
+    },
+    "location": {
+      "column": 3,
+      "line": 5
+    },
+    "message": "error: If condition did not evaluate to true/false. What happened - If condition did not evaluate to true/false. Why - The condition evaluated to number, but if/else requires a boolean. How to fix - Use a comparison so the condition is b...",
+    "trace_ref": "E-ENGINE-ENGINE_ERROR-DEMO-IF-2"
+  },
+  "error_message": "[line 5, col 3] error: If condition did not evaluate to true/false.\n\nWhat happened\n- If condition did not evaluate to true/false.\n\nWhy\n- The condition evaluated to number, but if/else requires a boolean.\n\nHow to fix\n- Use a comparison so the condition is boolean.\n\nWhere\n- flow: demo\n- statement: if\n- statement index: 2\n- line: 5\n- column: 3\n\nError id\n- E-ENGINE-ENGINE_ERROR-DEMO-IF-2",
+  "error_step_id": "step:0003",
+  "error_type": "Namel3ssError",
+  "errors": [
+    {
+      "category": "runtime",
+      "code": "E-ENGINE-ENGINE_ERROR-DEMO-IF-2",
+      "details": {
+        "error_id": "E-ENGINE-ENGINE_ERROR-DEMO-IF-2"
+      },
+      "location": {
+        "column": 3,
+        "line": 5
+      },
+      "message": "error: If condition did not evaluate to true/false. What happened - If condition did not evaluate to true/false. Why - The condition evaluated to number, but if/else requires a boolean. How to fix - Use a comparison so the condition is b...",
+      "trace_ref": "E-ENGINE-ENGINE_ERROR-DEMO-IF-2"
+    }
+  ],
+  "flow_name": "demo",
+  "kind": "runtime",
+  "location": {
+    "column": 3,
+    "line": 5
+  },
+  "message": "error: If condition did not evaluate to true/false.\n\nWhat happened\n- If condition did not evaluate to true/false.\n\nWhy\n- The condition evaluated to number, but if/else requires a boolean.\n\nHow to fix\n- Use a comparison so the condition is boolean.\n\nWhere\n- flow: demo\n- statement: if\n- statement index: 2\n- line: 5\n- column: 3\n\nError id\n- E-ENGINE-ENGINE_ERROR-DEMO-IF-2",
+  "ok": false,
+  "result": null,
+  "state": {},
+  "traces": []
+}

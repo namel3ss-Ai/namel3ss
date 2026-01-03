@@ -1,0 +1,110 @@
+{
+  "agents": {
+    "critic": {
+      "ai_name": "assistant",
+      "column": 1,
+      "line": 12,
+      "name": "critic",
+      "system_prompt": "Critic.",
+      "type": "AgentDecl"
+    },
+    "planner": {
+      "ai_name": "assistant",
+      "column": 1,
+      "line": 8,
+      "name": "planner",
+      "system_prompt": "Plan.",
+      "type": "AgentDecl"
+    }
+  },
+  "ais": {
+    "assistant": {
+      "column": 1,
+      "exposed_tools": [],
+      "line": 3,
+      "memory": {
+        "column": 1,
+        "line": 3,
+        "profile": false,
+        "semantic": false,
+        "short_term": 0,
+        "type": "AIMemory"
+      },
+      "model": "gpt-4.1",
+      "name": "assistant",
+      "provider": "mock",
+      "system_prompt": "You are a helper.",
+      "type": "AIDecl"
+    }
+  },
+  "column": null,
+  "flows": [
+    {
+      "audited": false,
+      "body": [
+        {
+          "column": 3,
+          "entries": [
+            {
+              "agent_name": "planner",
+              "column": 11,
+              "input_expr": {
+                "column": 33,
+                "line": 18,
+                "type": "Literal",
+                "value": "Task"
+              },
+              "line": 18,
+              "type": "ParallelAgentEntry"
+            },
+            {
+              "agent_name": "critic",
+              "column": 11,
+              "input_expr": {
+                "column": 32,
+                "line": 19,
+                "type": "Literal",
+                "value": "Task"
+              },
+              "line": 19,
+              "type": "ParallelAgentEntry"
+            }
+          ],
+          "line": 17,
+          "target": "feedback",
+          "type": "RunAgentsParallelStmt"
+        },
+        {
+          "column": 3,
+          "expression": {
+            "column": 10,
+            "line": 21,
+            "name": "feedback",
+            "type": "VarReference"
+          },
+          "line": 21,
+          "type": "Return"
+        }
+      ],
+      "column": 1,
+      "line": 16,
+      "name": "demo",
+      "requires": null,
+      "type": "Flow"
+    }
+  ],
+  "identity": null,
+  "line": null,
+  "pages": [],
+  "records": [],
+  "spec_version": "1.0",
+  "theme": "system",
+  "theme_preference": {
+    "allow_override": false,
+    "persist": "none"
+  },
+  "theme_runtime_supported": false,
+  "theme_tokens": {},
+  "tools": {},
+  "type": "Program"
+}

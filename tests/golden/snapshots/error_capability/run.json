@@ -1,0 +1,225 @@
+{
+  "contract": {
+    "errors": [
+      {
+        "category": "capability",
+        "code": "E-TOOLS-TOOL_BLOCKED-DEMO-LET-1",
+        "details": {
+          "boundary": "tools",
+          "error_id": "E-TOOLS-TOOL_BLOCKED-DEMO-LET-1",
+          "example": "[capability_overrides]\\n\"service tool\" = { no_network = true }",
+          "kind": "tool_blocked",
+          "where": {
+            "column": 17,
+            "flow_name": "demo",
+            "line": 14,
+            "statement_index": 1,
+            "statement_kind": "let"
+          }
+        },
+        "hint": "Effective guarantees forbid network access (POST http://service.local/tools).",
+        "location": {
+          "column": 17,
+          "line": 14
+        },
+        "message": "Tool \"service tool\" cannot use the network.",
+        "remediation": "Remove the restriction or choose a tool that does not need the capability.",
+        "trace_ref": "E-TOOLS-TOOL_BLOCKED-DEMO-LET-1"
+      }
+    ],
+    "flow_name": "demo",
+    "memory": {
+      "count": 0,
+      "events": []
+    },
+    "outcome": {
+      "outcome": {
+        "execution_steps_count": 4,
+        "flow_name": "demo",
+        "memory": {
+          "persist_attempted": false,
+          "persist_failed": false,
+          "persist_succeeded": false,
+          "skipped_reason": null
+        },
+        "record_changes_count": 0,
+        "state": {
+          "loaded_from_store": false,
+          "save_attempted": false,
+          "save_failed": false,
+          "save_succeeded": false
+        },
+        "status": "error",
+        "store": {
+          "began": true,
+          "commit_failed": false,
+          "committed": false,
+          "rollback_failed": false,
+          "rolled_back": true
+        },
+        "traces_count": 3,
+        "what_did_not_happen": [
+          "memory was not persisted",
+          "state was not saved",
+          "store commit was not attempted"
+        ]
+      },
+      "summary": {
+        "flow_name": "demo",
+        "memory": {
+          "persist_attempted": false,
+          "persist_failed": false,
+          "persist_succeeded": false,
+          "skipped_reason": null
+        },
+        "status": "error",
+        "store": {
+          "began": true,
+          "commit_failed": false,
+          "committed": false,
+          "rollback_failed": false,
+          "rolled_back": true
+        }
+      }
+    },
+    "result": null,
+    "schema_version": "production.v0",
+    "state": {},
+    "status": "error",
+    "trace_hash": "a670a0b4c9439b91fd03095a5a605204bb45c9e7068987ecb5e8e063a8def18f",
+    "trace_schema_version": "2024-10-01",
+    "traces": [
+      {
+        "allowed": false,
+        "canonical_events": [],
+        "capability": "network",
+        "guarantee_source": "tool",
+        "memory_events": [],
+        "protocol_version": 1,
+        "reason": "guarantee_blocked",
+        "resolved_source": "binding",
+        "runner": "service",
+        "title": "Capability Check",
+        "tool_name": "service tool",
+        "type": "capability_check"
+      },
+      {
+        "canonical_events": [],
+        "capability": "none",
+        "decision": "allowed",
+        "entry": "tools.service_tool:run",
+        "error_message": "What happened: Tool \"service tool\" cannot use the network.\nWhy: Effective guarantees forbid network access (POST http://service.local/tools).\nFix: Remove the restriction or choose a tool that does not need the capability.\nExample: [capability_overrides]\\n\"service tool\" = { no_network = true }",
+        "error_type": "CapabilityViolation",
+        "input_summary": {
+          "count": 1,
+          "keys": [
+            "value"
+          ],
+          "type": "object"
+        },
+        "kind": "python",
+        "memory_events": [],
+        "reason": "policy_allowed",
+        "resolved_source": "binding",
+        "result": "error",
+        "runner": "service",
+        "service_url": "http://service.local/tools",
+        "status": "error",
+        "timeout_ms": 10000,
+        "title": "Tool call: service tool",
+        "tool": "service tool",
+        "tool_name": "service tool",
+        "type": "tool_call"
+      }
+    ]
+  },
+  "details": {
+    "error_id": "E-TOOLS-TOOL_BLOCKED-DEMO-LET-1"
+  },
+  "error": "[line 14, col 17] error: Tool \"service tool\" cannot use the network.\n\nWhat happened\n- Tool \"service tool\" cannot use the network.\n\nWhy\n- Effective guarantees forbid network access (POST http://service.local/tools).\n\nHow to fix\n- Remove the restriction or choose a tool that does not need the capability.\n\nWhere\n- flow: demo\n- statement: let\n- statement index: 1\n- line: 14\n- column: 17\n\nError id\n- E-TOOLS-TOOL_BLOCKED-DEMO-LET-1\n  let result is service tool:\n                ^",
+  "error_entry": {
+    "category": "runtime",
+    "code": "E-TOOLS-TOOL_BLOCKED-DEMO-LET-1",
+    "details": {
+      "error_id": "E-TOOLS-TOOL_BLOCKED-DEMO-LET-1"
+    },
+    "location": {
+      "column": 17,
+      "line": 14
+    },
+    "message": "error: Tool \"service tool\" cannot use the network. What happened - Tool \"service tool\" cannot use the network. Why - Effective guarantees forbid network access (POST http://service.local/tools). How to fix - Remove the restriction or cho...",
+    "trace_ref": "E-TOOLS-TOOL_BLOCKED-DEMO-LET-1"
+  },
+  "error_message": "[line 14, col 17] error: Tool \"service tool\" cannot use the network.\n\nWhat happened\n- Tool \"service tool\" cannot use the network.\n\nWhy\n- Effective guarantees forbid network access (POST http://service.local/tools).\n\nHow to fix\n- Remove the restriction or choose a tool that does not need the capability.\n\nWhere\n- flow: demo\n- statement: let\n- statement index: 1\n- line: 14\n- column: 17\n\nError id\n- E-TOOLS-TOOL_BLOCKED-DEMO-LET-1",
+  "error_step_id": "step:0003",
+  "error_type": "Namel3ssError",
+  "errors": [
+    {
+      "category": "runtime",
+      "code": "E-TOOLS-TOOL_BLOCKED-DEMO-LET-1",
+      "details": {
+        "error_id": "E-TOOLS-TOOL_BLOCKED-DEMO-LET-1"
+      },
+      "location": {
+        "column": 17,
+        "line": 14
+      },
+      "message": "error: Tool \"service tool\" cannot use the network. What happened - Tool \"service tool\" cannot use the network. Why - Effective guarantees forbid network access (POST http://service.local/tools). How to fix - Remove the restriction or cho...",
+      "trace_ref": "E-TOOLS-TOOL_BLOCKED-DEMO-LET-1"
+    }
+  ],
+  "flow_name": "demo",
+  "kind": "runtime",
+  "location": {
+    "column": 17,
+    "line": 14
+  },
+  "message": "error: Tool \"service tool\" cannot use the network.\n\nWhat happened\n- Tool \"service tool\" cannot use the network.\n\nWhy\n- Effective guarantees forbid network access (POST http://service.local/tools).\n\nHow to fix\n- Remove the restriction or choose a tool that does not need the capability.\n\nWhere\n- flow: demo\n- statement: let\n- statement index: 1\n- line: 14\n- column: 17\n\nError id\n- E-TOOLS-TOOL_BLOCKED-DEMO-LET-1",
+  "ok": false,
+  "result": null,
+  "state": {},
+  "traces": [
+    {
+      "allowed": false,
+      "canonical_events": [],
+      "capability": "network",
+      "guarantee_source": "tool",
+      "memory_events": [],
+      "protocol_version": 1,
+      "reason": "guarantee_blocked",
+      "resolved_source": "binding",
+      "runner": "service",
+      "title": "Capability Check",
+      "tool_name": "service tool",
+      "type": "capability_check"
+    },
+    {
+      "canonical_events": [],
+      "capability": "none",
+      "decision": "allowed",
+      "entry": "tools.service_tool:run",
+      "error_message": "What happened: Tool \"service tool\" cannot use the network.\nWhy: Effective guarantees forbid network access (POST http://service.local/tools).\nFix: Remove the restriction or choose a tool that does not need the capability.\nExample: [capability_overrides]\\n\"service tool\" = { no_network = true }",
+      "error_type": "CapabilityViolation",
+      "input_summary": {
+        "count": 1,
+        "keys": [
+          "value"
+        ],
+        "type": "object"
+      },
+      "kind": "python",
+      "memory_events": [],
+      "reason": "policy_allowed",
+      "resolved_source": "binding",
+      "result": "error",
+      "runner": "service",
+      "service_url": "http://service.local/tools",
+      "status": "error",
+      "timeout_ms": 10000,
+      "title": "Tool call: service tool",
+      "tool": "service tool",
+      "tool_name": "service tool",
+      "type": "tool_call"
+    }
+  ]
+}

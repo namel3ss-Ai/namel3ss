@@ -1,0 +1,15 @@
+spec is "1.0"
+
+tool "missing":
+  implemented using python
+
+  input:
+    value is text
+
+  output:
+    value is text
+
+flow "demo":
+  let result is missing:
+    value is "hi"
+  return result

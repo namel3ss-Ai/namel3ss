@@ -1,0 +1,16 @@
+[
+  {
+    "canonical_events": [],
+    "capability": "none",
+    "decision": "blocked",
+    "kind": "python",
+    "memory_events": [],
+    "reason": "missing_binding",
+    "result": "blocked",
+    "status": "blocked",
+    "title": "Tool call: missing",
+    "tool": "missing",
+    "tool_name": "missing",
+    "type": "tool_call"
+  }
+]

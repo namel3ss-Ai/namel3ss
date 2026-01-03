@@ -7,13 +7,14 @@ from namel3ss.cli.targets import parse_target
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
-from namel3ss.errors.render import format_error
-from namel3ss.errors.payload import build_error_from_exception
+from namel3ss.errors.payload import build_error_from_exception, build_error_payload
 from namel3ss.ir.nodes import lower_program
 from namel3ss.lint.engine import lint_source
 from namel3ss.parser.core import parse
 from namel3ss.module_loader import load_project
-from namel3ss.secrets import discover_required_secrets
+from namel3ss.secrets import collect_secret_values, discover_required_secrets
+from namel3ss.production_contract import build_run_payload
+from namel3ss.runtime.run_pipeline import finalize_run_payload
 from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.runtime.ui.actions import handle_action
@@ -81,7 +82,9 @@ def get_summary_payload(source: str, path: str) -> dict:
         }
         return payload
     except Namel3ssError as err:
-        return {"ok": False, "error": format_error(err, source)}
+        return build_error_from_exception(err, kind="parse", source=source)
+    except Exception as err:  # pragma: no cover - defensive guard rail
+        return build_error_payload(str(err), kind="internal")
 
 
 def get_ui_payload(source: str, session: SessionState | None = None, app_path: str | None = None) -> dict:
@@ -91,6 +94,7 @@ def get_ui_payload(source: str, session: SessionState | None = None, app_path: s
         program_ir = _load_project_program(source, app_file.as_posix())
         config = load_config(app_path=app_file)
         identity = resolve_identity(config, getattr(program_ir, "identity", None))
+        store = session.ensure_store(config)
         preference_store = preference_store_for_app(app_path, getattr(program_ir, "theme_preference", {}).get("persist"))
         persisted, _ = preference_store.load_theme(app_pref_key(app_path))
         runtime_theme = session.runtime_theme or persisted or getattr(program_ir, "theme", "system")
@@ -98,14 +102,16 @@ def get_ui_payload(source: str, session: SessionState | None = None, app_path: s
         manifest = build_manifest(
             program_ir,
             state=session.state,
-            store=session.store,
+            store=store,
             runtime_theme=runtime_theme,
             persisted_theme=persisted,
             identity=identity,
         )
         return manifest
     except Namel3ssError as err:
-        return {"ok": False, "error": format_error(err, source)}
+        return build_error_from_exception(err, kind="parse", source=source)
+    except Exception as err:  # pragma: no cover - defensive guard rail
+        return build_error_payload(str(err), kind="internal")
 
 
 def get_actions_payload(source: str, app_path: str | None = None) -> dict:
@@ -118,7 +124,9 @@ def get_actions_payload(source: str, app_path: str | None = None) -> dict:
         data = _actions_from_manifest(manifest)
         return {"ok": True, "count": len(data), "actions": data}
     except Namel3ssError as err:
-        return {"ok": False, "error": format_error(err, source)}
+        return build_error_from_exception(err, kind="parse", source=source)
+    except Exception as err:  # pragma: no cover - defensive guard rail
+        return build_error_payload(str(err), kind="internal")
 
 
 def get_lint_payload(source: str) -> dict:
@@ -140,7 +148,9 @@ def get_tools_payload(source: str, app_path: str) -> dict:
         payload["ok"] = True
         return payload
     except Namel3ssError as err:
-        return {"ok": False, "error": format_error(err, source)}
+        return build_error_from_exception(err, kind="tools", source=source)
+    except Exception as err:  # pragma: no cover - defensive guard rail
+        return build_error_payload(str(err), kind="internal")
 
 
 def get_secrets_payload(source: str, app_path: str) -> dict:
@@ -160,7 +170,9 @@ def get_secrets_payload(source: str, app_path: str) -> dict:
             ],
         }
     except Namel3ssError as err:
-        return {"ok": False, "error": format_error(err, source)}
+        return build_error_from_exception(err, kind="parse", source=source)
+    except Exception as err:  # pragma: no cover - defensive guard rail
+        return build_error_payload(str(err), kind="internal")
 
 
 def get_diagnostics_payload(source: str, app_path: str) -> dict:
@@ -169,7 +181,9 @@ def get_diagnostics_payload(source: str, app_path: str) -> dict:
         diagnostics = collect_ai_context_diagnostics(program_ir)
         return {"ok": True, "schema_version": 1, "diagnostics": diagnostics}
     except Namel3ssError as err:
-        return {"ok": False, "error": format_error(err, source)}
+        return build_error_from_exception(err, kind="diagnostics", source=source)
+    except Exception as err:  # pragma: no cover - defensive guard rail
+        return build_error_payload(str(err), kind="internal")
 
 
 def get_version_payload() -> dict:
@@ -177,23 +191,28 @@ def get_version_payload() -> dict:
 
 
 def execute_action(source: str, session: SessionState | None, action_id: str, payload: dict, app_path: str | None = None) -> dict:
+    app_file: Path | None = None
+    config = None
     try:
         session = session or SessionState()
         app_file = _require_app_path(app_path)
         program_ir = _load_project_program(source, app_file.as_posix())
         config = load_config(app_path=app_file)
+        store = session.ensure_store(config)
         response = handle_action(
             program_ir,
             action_id=action_id,
             payload=payload,
             state=session.state,
-            store=session.store,
+            store=store,
             runtime_theme=session.runtime_theme or getattr(program_ir, "theme", "system"),
             preference_store=preference_store_for_app(app_path, getattr(program_ir, "theme_preference", {}).get("persist")),
             preference_key=app_pref_key(app_path),
             allow_theme_override=getattr(program_ir, "theme_preference", {}).get("allow_override"),
             config=config,
             memory_manager=session.memory_manager,
+            source=source,
+            raise_on_error=False,
         )
         if response and isinstance(response, dict):
             ui_theme = (response.get("ui") or {}).get("theme") if response.get("ui") else None
@@ -203,7 +222,40 @@ def execute_action(source: str, session: SessionState | None, action_id: str, pa
             return normalize_action_response(response)
         return response
     except Namel3ssError as err:
-        return build_error_from_exception(err, kind="engine", source=source)
+        error_payload = build_error_from_exception(err, kind="engine", source=source)
+        contract_payload = build_run_payload(
+            ok=False,
+            flow_name=None,
+            state={},
+            result=None,
+            traces=[],
+            project_root=app_file.parent if app_file else None,
+            error=err,
+            error_payload=error_payload,
+        )
+        if config is not None:
+            secret_values = collect_secret_values(config)
+        else:
+            secret_values = collect_secret_values()
+        redacted = finalize_run_payload(contract_payload, secret_values)
+        normalized = normalize_action_response(redacted)
+        return normalized
+    except Exception as err:  # pragma: no cover - defensive guard rail
+        error_payload = build_error_payload(str(err), kind="internal")
+        contract_payload = build_run_payload(
+            ok=False,
+            flow_name=None,
+            state={},
+            result=None,
+            traces=[],
+            project_root=app_file.parent if app_file else None,
+            error=err,
+            error_payload=error_payload,
+        )
+        secret_values = collect_secret_values(config) if config is not None else collect_secret_values()
+        redacted = finalize_run_payload(contract_payload, secret_values)
+        normalized = normalize_action_response(redacted)
+        return normalized
 
 
 def _tool_inventory_payload(report, app_root: Path) -> dict:

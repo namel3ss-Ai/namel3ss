@@ -109,6 +109,10 @@ def _respond_with_source(
         payload = build_error_from_exception(err, kind=kind, source=source)
         handler._respond_json(payload, status=400)
         return
+    except Exception as err:  # pragma: no cover - defensive guard rail
+        payload = build_error_payload(str(err), kind="internal")
+        handler._respond_json(payload, status=500)
+        return
 
 
 def _respond_simple(handler: Any, source: str, fn, *, kind: str, allow_error: bool = False) -> None:
@@ -120,6 +124,10 @@ def _respond_simple(handler: Any, source: str, fn, *, kind: str, allow_error: bo
     except Namel3ssError as err:
         payload = build_error_from_exception(err, kind=kind, source=source)
         handler._respond_json(payload, status=400)
+        return
+    except Exception as err:  # pragma: no cover - defensive guard rail
+        payload = build_error_payload(str(err), kind="internal")
+        handler._respond_json(payload, status=500)
         return
 
 

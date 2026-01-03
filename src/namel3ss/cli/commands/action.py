@@ -11,7 +11,7 @@ from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.runtime.ui.actions import handle_action
 from namel3ss.cli.io.json_io import dumps_pretty, parse_json
 from namel3ss.cli.io.read_source import read_source
-from namel3ss.cli.runner import collect_ai_outputs, unwrap_ai_outputs
+from namel3ss.runtime.run_pipeline import collect_ai_outputs, unwrap_ai_outputs
 
 
 def run(args) -> int:
@@ -25,6 +25,10 @@ def run(args) -> int:
         ai_outputs = collect_ai_outputs(response.get("traces") or [])
         response["state"] = unwrap_ai_outputs(response.get("state"), ai_outputs)
         response["result"] = unwrap_ai_outputs(response.get("result"), ai_outputs)
+        contract = response.get("contract")
+        if isinstance(contract, dict):
+            contract["state"] = response.get("state") if isinstance(response.get("state"), dict) else {}
+            contract["result"] = response.get("result")
         print(dumps_pretty(response))
         return 0
     except Namel3ssError as err:

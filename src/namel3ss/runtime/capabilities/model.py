@@ -11,7 +11,7 @@ GUARANTEE_FIELDS = (
     "no_env_read",
     "no_env_write",
 )
-GUARANTEE_SOURCES = {"tool", "pack", "user", "policy"}
+GUARANTEE_SOURCES = {"engine", "tool", "pack", "user", "policy"}
 CAPABILITY_TO_GUARANTEE = {
     "filesystem_read": "no_filesystem_read",
     "filesystem_write": "no_filesystem_write",

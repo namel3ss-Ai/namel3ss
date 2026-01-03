@@ -1,0 +1,30 @@
+[
+  {
+    "allowed": true,
+    "canonical_events": [],
+    "capability": "env_read",
+    "guarantee_source": "engine",
+    "memory_events": [],
+    "protocol_version": 1,
+    "reason": "guarantee_allowed",
+    "resolved_source": "engine",
+    "runner": "engine",
+    "title": "Capability Check",
+    "tool_name": "engine",
+    "type": "capability_check"
+  },
+  {
+    "allowed": true,
+    "canonical_events": [],
+    "capability": "secrets",
+    "guarantee_source": "engine",
+    "memory_events": [],
+    "protocol_version": 1,
+    "reason": "guarantee_allowed",
+    "resolved_source": "engine",
+    "runner": "engine",
+    "title": "Capability Check",
+    "tool_name": "engine",
+    "type": "capability_check"
+  }
+]

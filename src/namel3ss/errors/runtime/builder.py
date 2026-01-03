@@ -99,7 +99,7 @@ def build_error_pack(
     error_id = build_error_id(boundary, kind, where, template_key)
     raw_message = _raw_message(err)
     secret_values = _secret_values(err)
-    redacted_message = redact_text(raw_message, secret_values)
+    redacted_message = _strip_traceback(redact_text(raw_message, secret_values))
 
     template = _TEMPLATES.get(template_key, _TEMPLATES["runtime.engine.error"])
     parsed = _parse_guidance_message(redacted_message)
@@ -205,6 +205,12 @@ def _parse_guidance_message(message: str) -> dict[str, str] | None:
             existing = parsed.get("example", "")
             parsed["example"] = f"{existing}\n{raw_line}" if existing else raw_line
     return parsed or None
+
+
+def _strip_traceback(text: str) -> str:
+    if "Traceback" not in text:
+        return text
+    return text.split("Traceback", 1)[0].strip()
 
 
 __all__ = ["build_error_pack"]

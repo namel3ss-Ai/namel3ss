@@ -5,61 +5,47 @@ import json
 
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
-from namel3ss.runtime.executor import execute_program_flow
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.preferences.factory import preference_store_for_app, app_pref_key
-from namel3ss.secrets import collect_secret_values, redact_payload
+from namel3ss.runtime.run_pipeline import build_flow_payload, finalize_run_payload
+from namel3ss.secrets import collect_secret_values
 from namel3ss.utils.json_tools import dumps as json_dumps
 
 
-def run_flow(program_ir, flow_name: str | None = None) -> dict:
+def run_flow(
+    program_ir,
+    flow_name: str | None = None,
+    *,
+    sources: dict | None = None,
+    source: str | None = None,
+) -> dict:
     selected = _select_flow(program_ir, flow_name)
-    pref_store = preference_store_for_app(None, getattr(program_ir, "theme_preference", {}).get("persist"))
+    app_path = getattr(program_ir, "app_path", None)
+    source_text = source or _resolve_source(sources, app_path)
+    pref_store = preference_store_for_app(app_path, getattr(program_ir, "theme_preference", {}).get("persist"))
     config = load_config(
-        app_path=getattr(program_ir, "app_path", None),
+        app_path=app_path,
         root=getattr(program_ir, "project_root", None),
     )
     secret_values = collect_secret_values(config)
-    try:
-        result = execute_program_flow(
-            program_ir,
-            selected,
-            state={},
-            input={},
-            store=None,
-            runtime_theme=getattr(program_ir, "theme", None),
-            preference_store=pref_store,
-            preference_key=app_pref_key(None),
-            config=config,
-        )
-    except Exception as err:
-        payload = {
-            "ok": False,
-            "flow_name": selected,
-            "state": {},
-            "result": None,
-            "traces": [],
-            "error_type": err.__class__.__name__,
-            "error_message": str(err),
-        }
-        error_step_id = _error_step_id(program_ir)
-        if error_step_id:
-            payload["error_step_id"] = error_step_id
-        redacted = redact_payload(payload, secret_values)  # type: ignore[return-value]
-        _write_last_run(program_ir, redacted)
-        raise
-    traces = [_trace_to_dict(t) for t in result.traces]
-    ai_outputs = collect_ai_outputs(traces)
-    payload = {
-        "ok": True,
-        "flow_name": selected,
-        "state": unwrap_ai_outputs(result.state, ai_outputs),
-        "result": unwrap_ai_outputs(result.last_value, ai_outputs),
-        "traces": traces,
-    }
-    redacted = redact_payload(payload, secret_values)  # type: ignore[return-value]
-    _write_last_run(program_ir, redacted)
-    return redacted
+    outcome = build_flow_payload(
+        program_ir,
+        selected,
+        state={},
+        input={},
+        store=None,
+        runtime_theme=getattr(program_ir, "theme", None),
+        preference_store=pref_store,
+        preference_key=app_pref_key(app_path),
+        config=config,
+        source=source_text,
+        project_root=getattr(program_ir, "project_root", None),
+    )
+    payload = finalize_run_payload(outcome.payload, secret_values)
+    _write_last_run(program_ir, payload)
+    if outcome.error:
+        raise outcome.error
+    return payload
 
 
 def _select_flow(program_ir, flow_name: str | None) -> str:
@@ -92,35 +78,14 @@ def _unknown_flow_message(flow_name: str, flows: list[str]) -> str:
     )
 
 
-def _trace_to_dict(trace) -> dict:
-    if hasattr(trace, "__dict__"):
-        return trace.__dict__
-    if isinstance(trace, dict):
-        return trace
-    return {"trace": trace}
-
-
-def collect_ai_outputs(traces: list[dict]) -> set[str]:
-    outputs: set[str] = set()
-    for trace in traces:
-        if not isinstance(trace, dict):
-            continue
-        output = trace.get("output")
-        if isinstance(output, str):
-            outputs.add(output)
-    return outputs
-
-
-def unwrap_ai_outputs(value: object, outputs: set[str]) -> object:
-    if isinstance(value, dict):
-        if set(value.keys()) == {"text"}:
-            text = value.get("text")
-            if isinstance(text, str) and text in outputs:
-                return text
-        return {key: unwrap_ai_outputs(val, outputs) for key, val in value.items()}
-    if isinstance(value, list):
-        return [unwrap_ai_outputs(item, outputs) for item in value]
-    return value
+def _resolve_source(sources: dict | None, app_path: object) -> str | None:
+    if not sources:
+        return None
+    if app_path is not None:
+        for key, value in sources.items():
+            if key == app_path or str(key) == str(app_path):
+                return value
+    return next(iter(sources.values()), None)
 
 
 def _write_last_run(program_ir, payload: dict) -> None:

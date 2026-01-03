@@ -55,7 +55,7 @@ def test_openai_failure_emits_diagnostic_trace(monkeypatch):
     )
     assert "[mock-model]" in result.last_value
     error_events = []
-    for trace in result.traces:
+    for trace in _ai_traces(result.traces):
         for event in trace.canonical_events:
             if event.get("type") == TraceEventType.AI_PROVIDER_ERROR:
                 error_events.append(event)
@@ -83,7 +83,7 @@ def test_openai_network_error_in_trace(monkeypatch):
     )
     assert "[mock-model]" in result.last_value
     error_events = []
-    for trace in result.traces:
+    for trace in _ai_traces(result.traces):
         for event in trace.canonical_events:
             if event.get("type") == TraceEventType.AI_PROVIDER_ERROR:
                 error_events.append(event)
@@ -95,3 +95,7 @@ def test_openai_network_error_in_trace(monkeypatch):
     assert "CERTIFICATE_VERIFY_FAILED" in str(network_error.get("message", ""))
     assert "sk-" not in str(diagnostic.get("message", ""))
     assert "Bearer" not in str(diagnostic.get("message", ""))
+
+
+def _ai_traces(traces):
+    return [trace for trace in traces if hasattr(trace, "canonical_events")]

@@ -1,0 +1,196 @@
+{
+  "contract": {
+    "errors": [
+      {
+        "category": "provider",
+        "code": "E-AI-AI_PROVIDER_ERROR-DEMO-ASK_AI-1",
+        "details": {
+          "boundary": "ai",
+          "error_id": "E-AI-AI_PROVIDER_ERROR-DEMO-ASK_AI-1",
+          "kind": "ai_provider_error",
+          "where": {
+            "column": 3,
+            "flow_name": "demo",
+            "line": 9,
+            "statement_index": 1,
+            "statement_kind": "ask_ai"
+          }
+        },
+        "hint": "Error message: OpenAI request failed (provider=openai, url=https://api.openai.com/v1/responses, message=Missing OpenAI API key. Set NAMEL3SS_OPENAI_API_KEY (preferred) or OPENAI_API_KEY.)",
+        "location": {
+          "column": 3,
+          "line": 9
+        },
+        "message": "AI provider error.",
+        "remediation": "Check the AI provider configuration.",
+        "trace_ref": "E-AI-AI_PROVIDER_ERROR-DEMO-ASK_AI-1"
+      }
+    ],
+    "flow_name": "demo",
+    "memory": {
+      "count": 0,
+      "events": []
+    },
+    "outcome": {
+      "outcome": {
+        "execution_steps_count": 4,
+        "flow_name": "demo",
+        "memory": {
+          "persist_attempted": false,
+          "persist_failed": false,
+          "persist_succeeded": false,
+          "skipped_reason": null
+        },
+        "record_changes_count": 0,
+        "state": {
+          "loaded_from_store": false,
+          "save_attempted": false,
+          "save_failed": false,
+          "save_succeeded": false
+        },
+        "status": "error",
+        "store": {
+          "began": true,
+          "commit_failed": false,
+          "committed": false,
+          "rollback_failed": false,
+          "rolled_back": true
+        },
+        "traces_count": 4,
+        "what_did_not_happen": [
+          "memory was not persisted",
+          "state was not saved",
+          "store commit was not attempted"
+        ]
+      },
+      "summary": {
+        "flow_name": "demo",
+        "memory": {
+          "persist_attempted": false,
+          "persist_failed": false,
+          "persist_succeeded": false,
+          "skipped_reason": null
+        },
+        "status": "error",
+        "store": {
+          "began": true,
+          "commit_failed": false,
+          "committed": false,
+          "rollback_failed": false,
+          "rolled_back": true
+        }
+      }
+    },
+    "result": null,
+    "schema_version": "production.v0",
+    "state": {},
+    "status": "error",
+    "trace_hash": "15b4a5348341c2fb069902552ade56aadf9c80d97a6aaa92485bf8c3a47f0cf1",
+    "trace_schema_version": "2024-10-01",
+    "traces": [
+      {
+        "allowed": true,
+        "canonical_events": [],
+        "capability": "env_read",
+        "guarantee_source": "engine",
+        "memory_events": [],
+        "protocol_version": 1,
+        "reason": "guarantee_allowed",
+        "resolved_source": "engine",
+        "runner": "engine",
+        "title": "Capability Check",
+        "tool_name": "engine",
+        "type": "capability_check"
+      },
+      {
+        "allowed": true,
+        "canonical_events": [],
+        "capability": "secrets",
+        "guarantee_source": "engine",
+        "memory_events": [],
+        "protocol_version": 1,
+        "reason": "guarantee_allowed",
+        "resolved_source": "engine",
+        "runner": "engine",
+        "title": "Capability Check",
+        "tool_name": "engine",
+        "type": "capability_check"
+      }
+    ]
+  },
+  "details": {
+    "error_id": "E-AI-AI_PROVIDER_ERROR-DEMO-ASK_AI-1"
+  },
+  "error": "[line 9, col 3] error: AI provider error.\n\nWhat happened\n- AI provider error.\n\nWhy\n- Error message: OpenAI request failed (provider=openai, url=https://api.openai.com/v1/responses, message=Missing OpenAI API key. Set NAMEL3SS_OPENAI_API_KEY (preferred) or OPENAI_API_KEY.)\n- The AI provider returned an error.\n\nHow to fix\n- Check the AI provider configuration.\n\nWhere\n- flow: demo\n- statement: ask_ai\n- statement index: 1\n- line: 9\n- column: 3\n\nError id\n- E-AI-AI_PROVIDER_ERROR-DEMO-ASK_AI-1\n  ask ai \"assistant\" with input: \"Hello\" as reply\n  ^",
+  "error_entry": {
+    "category": "runtime",
+    "code": "E-AI-AI_PROVIDER_ERROR-DEMO-ASK_AI-1",
+    "details": {
+      "error_id": "E-AI-AI_PROVIDER_ERROR-DEMO-ASK_AI-1"
+    },
+    "location": {
+      "column": 3,
+      "line": 9
+    },
+    "message": "error: AI provider error. What happened - AI provider error. Why - Error message: OpenAI request failed (provider=openai, url=https://api.openai.com/v1/responses, message=Missing OpenAI API key. Set NAMEL3SS_OPENAI_API_KEY (preferred) or...",
+    "trace_ref": "E-AI-AI_PROVIDER_ERROR-DEMO-ASK_AI-1"
+  },
+  "error_message": "[line 9, col 3] error: AI provider error.\n\nWhat happened\n- AI provider error.\n\nWhy\n- Error message: OpenAI request failed (provider=openai, url=https://api.openai.com/v1/responses, message=Missing OpenAI API key. Set NAMEL3SS_OPENAI_API_KEY (preferred) or OPENAI_API_KEY.)\n- The AI provider returned an error.\n\nHow to fix\n- Check the AI provider configuration.\n\nWhere\n- flow: demo\n- statement: ask_ai\n- statement index: 1\n- line: 9\n- column: 3\n\nError id\n- E-AI-AI_PROVIDER_ERROR-DEMO-ASK_AI-1",
+  "error_step_id": "step:0003",
+  "error_type": "Namel3ssError",
+  "errors": [
+    {
+      "category": "runtime",
+      "code": "E-AI-AI_PROVIDER_ERROR-DEMO-ASK_AI-1",
+      "details": {
+        "error_id": "E-AI-AI_PROVIDER_ERROR-DEMO-ASK_AI-1"
+      },
+      "location": {
+        "column": 3,
+        "line": 9
+      },
+      "message": "error: AI provider error. What happened - AI provider error. Why - Error message: OpenAI request failed (provider=openai, url=https://api.openai.com/v1/responses, message=Missing OpenAI API key. Set NAMEL3SS_OPENAI_API_KEY (preferred) or...",
+      "trace_ref": "E-AI-AI_PROVIDER_ERROR-DEMO-ASK_AI-1"
+    }
+  ],
+  "flow_name": "demo",
+  "kind": "runtime",
+  "location": {
+    "column": 3,
+    "line": 9
+  },
+  "message": "error: AI provider error.\n\nWhat happened\n- AI provider error.\n\nWhy\n- Error message: OpenAI request failed (provider=openai, url=https://api.openai.com/v1/responses, message=Missing OpenAI API key. Set NAMEL3SS_OPENAI_API_KEY (preferred) or OPENAI_API_KEY.)\n- The AI provider returned an error.\n\nHow to fix\n- Check the AI provider configuration.\n\nWhere\n- flow: demo\n- statement: ask_ai\n- statement index: 1\n- line: 9\n- column: 3\n\nError id\n- E-AI-AI_PROVIDER_ERROR-DEMO-ASK_AI-1",
+  "ok": false,
+  "result": null,
+  "state": {},
+  "traces": [
+    {
+      "allowed": true,
+      "canonical_events": [],
+      "capability": "env_read",
+      "guarantee_source": "engine",
+      "memory_events": [],
+      "protocol_version": 1,
+      "reason": "guarantee_allowed",
+      "resolved_source": "engine",
+      "runner": "engine",
+      "title": "Capability Check",
+      "tool_name": "engine",
+      "type": "capability_check"
+    },
+    {
+      "allowed": true,
+      "canonical_events": [],
+      "capability": "secrets",
+      "guarantee_source": "engine",
+      "memory_events": [],
+      "protocol_version": 1,
+      "reason": "guarantee_allowed",
+      "resolved_source": "engine",
+      "runner": "engine",
+      "title": "Capability Check",
+      "tool_name": "engine",
+      "type": "capability_check"
+    }
+  ]
+}

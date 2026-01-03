@@ -1,0 +1,21 @@
+spec is "1.0"
+
+ai "assistant":
+  provider is "mock"
+  model is "gpt-4.1"
+  system_prompt is "You are a helper."
+
+agent "planner":
+  ai is "assistant"
+  system_prompt is "Plan."
+
+agent "critic":
+  ai is "assistant"
+  system_prompt is "Critic."
+
+flow "demo":
+  run agents in parallel:
+    agent "planner" with input: "Task"
+    agent "critic" with input: "Task"
+  as feedback
+  return feedback

@@ -1,0 +1,16 @@
+spec is "1.0"
+
+tool "service tool":
+  implemented using python
+  purity is "pure"
+
+  input:
+    value is text
+
+  output:
+    message is text
+
+flow "demo":
+  let result is service tool:
+    value is "ping"
+  return result

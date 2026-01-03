@@ -1,0 +1,10 @@
+spec is "1.0"
+
+flow "demo":
+  parallel:
+    run "alpha":
+      let alpha is 1 + 2
+      return alpha
+    run "beta":
+      let beta is 2 * 3
+      return beta

@@ -66,19 +66,26 @@ def _run_plain(payload):
     except ValueError:
         return _error_payload(ValueError("Invalid entry"), protocol_version, [])
     try:
+        context = payload.get("capability_context")
+        sandbox_active = False
         module = importlib.import_module(module_path)
         func = getattr(module, function_name)
         if not callable(func):
             raise TypeError("Entry target is not callable")
-        if _safeio is not None:
-            context = payload.get("capability_context")
-            if isinstance(context, dict):
-                _safeio.configure(context)
+        if _sandbox is not None and isinstance(context, dict):
+            _sandbox.configure(context)
+            sandbox_active = True
+        elif _safeio is not None and isinstance(context, dict):
+            _safeio.configure(context)
         stdout_buf = io.StringIO()
         stderr_buf = io.StringIO()
         with contextlib.redirect_stdout(stdout_buf), contextlib.redirect_stderr(stderr_buf):
             result = func(args)
-        checks = _safeio.drain_checks() if _safeio is not None else []
+        checks = []
+        if sandbox_active:
+            checks = _sandbox.drain_checks()
+        elif _safeio is not None:
+            checks = _safeio.drain_checks()
         return {
             "ok": True,
             "result": result,
@@ -86,7 +93,11 @@ def _run_plain(payload):
             "capability_checks": checks,
         }
     except Exception as err:
-        checks = _safeio.drain_checks() if _safeio is not None else []
+        checks = []
+        if sandbox_active:
+            checks = _sandbox.drain_checks()
+        elif _safeio is not None:
+            checks = _safeio.drain_checks()
         return _error_payload(err, protocol_version, checks)
 
 

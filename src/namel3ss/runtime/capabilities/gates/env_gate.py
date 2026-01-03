@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from namel3ss.runtime.capabilities.gates.base import (
     CapabilityViolation,
+    REASON_GUARANTEE_ALLOWED,
     REASON_GUARANTEE_BLOCKED,
     build_block_message,
 )
@@ -9,9 +10,17 @@ from namel3ss.runtime.capabilities.model import CapabilityCheck, CapabilityConte
 
 
 def check_env_read(ctx: CapabilityContext, record, *, key: str) -> None:
-    if not ctx.guarantees.no_env_read:
-        return
     source = ctx.guarantees.source_for_capability("env_read") or "pack"
+    if not ctx.guarantees.no_env_read:
+        record(
+            CapabilityCheck(
+                capability="env_read",
+                allowed=True,
+                guarantee_source=source,
+                reason=REASON_GUARANTEE_ALLOWED,
+            )
+        )
+        return
     check = CapabilityCheck(
         capability="env_read",
         allowed=False,
@@ -29,9 +38,17 @@ def check_env_read(ctx: CapabilityContext, record, *, key: str) -> None:
 
 
 def check_env_write(ctx: CapabilityContext, record, *, key: str) -> None:
-    if not ctx.guarantees.no_env_write:
-        return
     source = ctx.guarantees.source_for_capability("env_write") or "pack"
+    if not ctx.guarantees.no_env_write:
+        record(
+            CapabilityCheck(
+                capability="env_write",
+                allowed=True,
+                guarantee_source=source,
+                reason=REASON_GUARANTEE_ALLOWED,
+            )
+        )
+        return
     check = CapabilityCheck(
         capability="env_write",
         allowed=False,

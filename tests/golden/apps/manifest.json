@@ -1,0 +1,181 @@
+[
+  {
+    "flow": "demo",
+    "id": "ui_widgets",
+    "tags": [
+      "ui_title",
+      "ui_text",
+      "ui_form",
+      "ui_table",
+      "ui_button",
+      "ui_section",
+      "ui_card",
+      "ui_layout"
+    ]
+  },
+  {
+    "flow": "admin_only",
+    "id": "requires_flow",
+    "identity": {
+      "role": "admin"
+    },
+    "tags": [
+      "flow_requires"
+    ]
+  },
+  {
+    "flow": "demo",
+    "id": "page_requires",
+    "identity": {
+      "role": "admin"
+    },
+    "tags": [
+      "page_requires"
+    ]
+  },
+  {
+    "flow": "demo",
+    "id": "expressions_core",
+    "tags": [
+      "expressions"
+    ]
+  },
+  {
+    "flow": "demo",
+    "id": "control_flow",
+    "tags": [
+      "control_flow"
+    ]
+  },
+  {
+    "flow": "demo",
+    "id": "parallel_block",
+    "tags": [
+      "parallel"
+    ]
+  },
+  {
+    "flow": "demo",
+    "id": "tool_basic",
+    "tags": [
+      "tool"
+    ],
+    "tool_bindings": {
+      "format tool": {
+        "entry": "tools.format_tool:run",
+        "kind": "python",
+        "runner": "local",
+        "sandbox": true
+      }
+    }
+  },
+  {
+    "flow": "demo",
+    "id": "ai_ask",
+    "tags": [
+      "ai_ask"
+    ]
+  },
+  {
+    "flow": "demo",
+    "id": "agent_run",
+    "tags": [
+      "agent_run"
+    ]
+  },
+  {
+    "flow": "demo",
+    "id": "agent_parallel",
+    "tags": [
+      "agent_parallel"
+    ]
+  },
+  {
+    "flow": "demo",
+    "id": "crud_save",
+    "tags": [
+      "crud_save"
+    ]
+  },
+  {
+    "flow": "demo",
+    "id": "crud_create",
+    "tags": [
+      "crud_create"
+    ]
+  },
+  {
+    "flow": "demo",
+    "id": "crud_find",
+    "tags": [
+      "crud_find"
+    ]
+  },
+  {
+    "flow": "demo",
+    "id": "crud_update",
+    "tags": [
+      "crud_update"
+    ]
+  },
+  {
+    "flow": "demo",
+    "id": "crud_delete",
+    "tags": [
+      "crud_delete"
+    ]
+  },
+  {
+    "expect_ok": false,
+    "flow": "demo",
+    "id": "error_runtime",
+    "tags": [
+      "error_runtime"
+    ]
+  },
+  {
+    "expect_ok": false,
+    "flow": "demo",
+    "id": "error_tool",
+    "tags": [
+      "error_tool"
+    ]
+  },
+  {
+    "env_unset": [
+      "NAMEL3SS_OPENAI_API_KEY",
+      "OPENAI_API_KEY"
+    ],
+    "expect_ok": false,
+    "flow": "demo",
+    "id": "error_provider",
+    "tags": [
+      "error_provider"
+    ]
+  },
+  {
+    "expect_ok": false,
+    "flow": "demo",
+    "id": "error_capability",
+    "tags": [
+      "error_capability"
+    ],
+    "tool_bindings": {
+      "service tool": {
+        "entry": "tools.service_tool:run",
+        "kind": "python",
+        "runner": "service",
+        "url": "http://service.local/tools"
+      }
+    }
+  },
+  {
+    "expect_ok": false,
+    "flow": "demo",
+    "id": "error_parse",
+    "parse_error": true,
+    "tags": [
+      "error_parse"
+    ]
+  }
+]

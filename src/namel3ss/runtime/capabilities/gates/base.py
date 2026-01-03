@@ -6,6 +6,7 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.capabilities.model import CapabilityCheck
 
 
+REASON_GUARANTEE_ALLOWED = "guarantee_allowed"
 REASON_GUARANTEE_BLOCKED = "guarantee_blocked"
 REASON_SECRETS_BLOCKED = "secrets_blocked"
 REASON_SECRETS_ALLOWED = "secrets_allowed"
@@ -33,6 +34,7 @@ def build_block_message(*, tool_name: str, action: str, why: str, example: str) 
 __all__ = [
     "CapabilityViolation",
     "REASON_COVERAGE_MISSING",
+    "REASON_GUARANTEE_ALLOWED",
     "REASON_GUARANTEE_BLOCKED",
     "REASON_SECRETS_BLOCKED",
     "REASON_SECRETS_ALLOWED",

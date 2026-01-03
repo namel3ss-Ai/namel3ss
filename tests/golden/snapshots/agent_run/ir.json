@@ -1,0 +1,83 @@
+{
+  "agents": {
+    "planner": {
+      "ai_name": "assistant",
+      "column": 1,
+      "line": 8,
+      "name": "planner",
+      "system_prompt": "Plan.",
+      "type": "AgentDecl"
+    }
+  },
+  "ais": {
+    "assistant": {
+      "column": 1,
+      "exposed_tools": [],
+      "line": 3,
+      "memory": {
+        "column": 1,
+        "line": 3,
+        "profile": false,
+        "semantic": false,
+        "short_term": 0,
+        "type": "AIMemory"
+      },
+      "model": "gpt-4.1",
+      "name": "assistant",
+      "provider": "mock",
+      "system_prompt": "You are a helper.",
+      "type": "AIDecl"
+    }
+  },
+  "column": null,
+  "flows": [
+    {
+      "audited": false,
+      "body": [
+        {
+          "agent_name": "planner",
+          "column": 13,
+          "input_expr": {
+            "column": 35,
+            "line": 13,
+            "type": "Literal",
+            "value": "Task"
+          },
+          "line": 13,
+          "target": "plan",
+          "type": "RunAgentStmt"
+        },
+        {
+          "column": 3,
+          "expression": {
+            "column": 10,
+            "line": 14,
+            "name": "plan",
+            "type": "VarReference"
+          },
+          "line": 14,
+          "type": "Return"
+        }
+      ],
+      "column": 1,
+      "line": 12,
+      "name": "demo",
+      "requires": null,
+      "type": "Flow"
+    }
+  ],
+  "identity": null,
+  "line": null,
+  "pages": [],
+  "records": [],
+  "spec_version": "1.0",
+  "theme": "system",
+  "theme_preference": {
+    "allow_override": false,
+    "persist": "none"
+  },
+  "theme_runtime_supported": false,
+  "theme_tokens": {},
+  "tools": {},
+  "type": "Program"
+}

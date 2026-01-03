@@ -1,0 +1,161 @@
+{
+  "agents": {},
+  "ais": {},
+  "column": null,
+  "flows": [
+    {
+      "audited": false,
+      "body": [
+        {
+          "column": 5,
+          "expression": {
+            "column": 14,
+            "line": 10,
+            "type": "Literal",
+            "value": "First"
+          },
+          "line": 10,
+          "target": {
+            "column": 5,
+            "line": 10,
+            "path": [
+              "note",
+              "title"
+            ],
+            "type": "StatePath"
+          },
+          "type": "Set"
+        },
+        {
+          "column": 5,
+          "expression": {
+            "column": 13,
+            "line": 11,
+            "type": "Literal",
+            "value": "Body"
+          },
+          "line": 11,
+          "target": {
+            "column": 5,
+            "line": 11,
+            "path": [
+              "note",
+              "body"
+            ],
+            "type": "StatePath"
+          },
+          "type": "Set"
+        },
+        {
+          "column": 3,
+          "line": 12,
+          "record_name": "Note",
+          "target": "note",
+          "type": "Create",
+          "values": {
+            "column": 22,
+            "line": 12,
+            "path": [
+              "note"
+            ],
+            "type": "StatePath"
+          }
+        },
+        {
+          "column": 3,
+          "line": 13,
+          "predicate": {
+            "column": 26,
+            "kind": "eq",
+            "left": {
+              "column": 23,
+              "line": 13,
+              "name": "id",
+              "type": "VarReference"
+            },
+            "line": 13,
+            "right": {
+              "attrs": [
+                "id"
+              ],
+              "base": "note",
+              "column": 29,
+              "line": 13,
+              "type": "AttrAccess"
+            },
+            "type": "Comparison"
+          },
+          "record_name": "Note",
+          "type": "Update",
+          "updates": [
+            {
+              "column": 5,
+              "expression": {
+                "column": 16,
+                "line": 14,
+                "type": "Literal",
+                "value": "Updated"
+              },
+              "line": 14,
+              "name": "title",
+              "type": "UpdateField"
+            }
+          ]
+        }
+      ],
+      "column": 1,
+      "line": 8,
+      "name": "demo",
+      "requires": null,
+      "type": "Flow"
+    }
+  ],
+  "identity": null,
+  "line": null,
+  "pages": [],
+  "records": [
+    {
+      "fields": [
+        {
+          "constraint": null,
+          "name": "id",
+          "type": "FieldSchema",
+          "type_name": "number"
+        },
+        {
+          "constraint": {
+            "expression": null,
+            "expression_high": null,
+            "kind": "present",
+            "pattern": null,
+            "type": "FieldConstraint"
+          },
+          "name": "title",
+          "type": "FieldSchema",
+          "type_name": "text"
+        },
+        {
+          "constraint": null,
+          "name": "body",
+          "type": "FieldSchema",
+          "type_name": "text"
+        }
+      ],
+      "name": "Note",
+      "system_fields": [],
+      "tenant_key": null,
+      "ttl_hours": null,
+      "type": "RecordSchema"
+    }
+  ],
+  "spec_version": "1.0",
+  "theme": "system",
+  "theme_preference": {
+    "allow_override": false,
+    "persist": "none"
+  },
+  "theme_runtime_supported": false,
+  "theme_tokens": {},
+  "tools": {},
+  "type": "Program"
+}

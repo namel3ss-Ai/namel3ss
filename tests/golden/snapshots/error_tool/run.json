@@ -1,0 +1,169 @@
+{
+  "contract": {
+    "errors": [
+      {
+        "category": "policy",
+        "code": "E-TOOLS-TOOL_FAILED-DEMO-LET-1",
+        "details": {
+          "boundary": "tools",
+          "error_id": "E-TOOLS-TOOL_FAILED-DEMO-LET-1",
+          "example": "tools: \"missing\": kind: \"python\" entry: \"tools.my_tool:run\"",
+          "kind": "tool_failed",
+          "where": {
+            "column": 17,
+            "flow_name": "demo",
+            "line": 13,
+            "statement_index": 1,
+            "statement_kind": "let"
+          }
+        },
+        "hint": "Tool declarations no longer include module paths; bindings live in .namel3ss/tools.yaml.",
+        "location": {
+          "column": 17,
+          "line": 13
+        },
+        "message": "Tool \"missing\" is not bound to a python entry.",
+        "remediation": "Run `n3 tools status` then `n3 tools bind \"missing\" --entry \"tools.missing:run\"`.",
+        "trace_ref": "E-TOOLS-TOOL_FAILED-DEMO-LET-1"
+      }
+    ],
+    "flow_name": "demo",
+    "memory": {
+      "count": 0,
+      "events": []
+    },
+    "outcome": {
+      "outcome": {
+        "execution_steps_count": 4,
+        "flow_name": "demo",
+        "memory": {
+          "persist_attempted": false,
+          "persist_failed": false,
+          "persist_succeeded": false,
+          "skipped_reason": null
+        },
+        "record_changes_count": 0,
+        "state": {
+          "loaded_from_store": false,
+          "save_attempted": false,
+          "save_failed": false,
+          "save_succeeded": false
+        },
+        "status": "error",
+        "store": {
+          "began": true,
+          "commit_failed": false,
+          "committed": false,
+          "rollback_failed": false,
+          "rolled_back": true
+        },
+        "traces_count": 2,
+        "what_did_not_happen": [
+          "memory was not persisted",
+          "state was not saved",
+          "store commit was not attempted"
+        ]
+      },
+      "summary": {
+        "flow_name": "demo",
+        "memory": {
+          "persist_attempted": false,
+          "persist_failed": false,
+          "persist_succeeded": false,
+          "skipped_reason": null
+        },
+        "status": "error",
+        "store": {
+          "began": true,
+          "commit_failed": false,
+          "committed": false,
+          "rollback_failed": false,
+          "rolled_back": true
+        }
+      }
+    },
+    "result": null,
+    "schema_version": "production.v0",
+    "state": {},
+    "status": "error",
+    "trace_hash": "0cfc3a8a2e4c6a950589ea309df93e111ca442ada543d7706c66e88bbb23d2c2",
+    "trace_schema_version": "2024-10-01",
+    "traces": [
+      {
+        "canonical_events": [],
+        "capability": "none",
+        "decision": "blocked",
+        "kind": "python",
+        "memory_events": [],
+        "reason": "missing_binding",
+        "result": "blocked",
+        "status": "blocked",
+        "title": "Tool call: missing",
+        "tool": "missing",
+        "tool_name": "missing",
+        "type": "tool_call"
+      }
+    ]
+  },
+  "details": {
+    "error_id": "E-TOOLS-TOOL_FAILED-DEMO-LET-1"
+  },
+  "error": "[line 13, col 17] error: Tool \"missing\" is not bound to a python entry.\n\nWhat happened\n- Tool \"missing\" is not bound to a python entry.\n\nWhy\n- Tool declarations no longer include module paths; bindings live in .namel3ss/tools.yaml.\n\nHow to fix\n- Run `n3 tools status` then `n3 tools bind \"missing\" --entry \"tools.missing:run\"`.\n\nWhere\n- flow: demo\n- statement: let\n- statement index: 1\n- line: 13\n- column: 17\n\nError id\n- E-TOOLS-TOOL_FAILED-DEMO-LET-1\n  let result is missing:\n                ^",
+  "error_entry": {
+    "category": "runtime",
+    "code": "E-TOOLS-TOOL_FAILED-DEMO-LET-1",
+    "details": {
+      "error_id": "E-TOOLS-TOOL_FAILED-DEMO-LET-1"
+    },
+    "location": {
+      "column": 17,
+      "line": 13
+    },
+    "message": "error: Tool \"missing\" is not bound to a python entry. What happened - Tool \"missing\" is not bound to a python entry. Why - Tool declarations no longer include module paths; bindings live in .namel3ss/tools.yaml. How to fix - Run `n3 tool...",
+    "trace_ref": "E-TOOLS-TOOL_FAILED-DEMO-LET-1"
+  },
+  "error_message": "[line 13, col 17] error: Tool \"missing\" is not bound to a python entry.\n\nWhat happened\n- Tool \"missing\" is not bound to a python entry.\n\nWhy\n- Tool declarations no longer include module paths; bindings live in .namel3ss/tools.yaml.\n\nHow to fix\n- Run `n3 tools status` then `n3 tools bind \"missing\" --entry \"tools.missing:run\"`.\n\nWhere\n- flow: demo\n- statement: let\n- statement index: 1\n- line: 13\n- column: 17\n\nError id\n- E-TOOLS-TOOL_FAILED-DEMO-LET-1",
+  "error_step_id": "step:0003",
+  "error_type": "Namel3ssError",
+  "errors": [
+    {
+      "category": "runtime",
+      "code": "E-TOOLS-TOOL_FAILED-DEMO-LET-1",
+      "details": {
+        "error_id": "E-TOOLS-TOOL_FAILED-DEMO-LET-1"
+      },
+      "location": {
+        "column": 17,
+        "line": 13
+      },
+      "message": "error: Tool \"missing\" is not bound to a python entry. What happened - Tool \"missing\" is not bound to a python entry. Why - Tool declarations no longer include module paths; bindings live in .namel3ss/tools.yaml. How to fix - Run `n3 tool...",
+      "trace_ref": "E-TOOLS-TOOL_FAILED-DEMO-LET-1"
+    }
+  ],
+  "flow_name": "demo",
+  "kind": "runtime",
+  "location": {
+    "column": 17,
+    "line": 13
+  },
+  "message": "error: Tool \"missing\" is not bound to a python entry.\n\nWhat happened\n- Tool \"missing\" is not bound to a python entry.\n\nWhy\n- Tool declarations no longer include module paths; bindings live in .namel3ss/tools.yaml.\n\nHow to fix\n- Run `n3 tools status` then `n3 tools bind \"missing\" --entry \"tools.missing:run\"`.\n\nWhere\n- flow: demo\n- statement: let\n- statement index: 1\n- line: 13\n- column: 17\n\nError id\n- E-TOOLS-TOOL_FAILED-DEMO-LET-1",
+  "ok": false,
+  "result": null,
+  "state": {},
+  "traces": [
+    {
+      "canonical_events": [],
+      "capability": "none",
+      "decision": "blocked",
+      "kind": "python",
+      "memory_events": [],
+      "reason": "missing_binding",
+      "result": "blocked",
+      "status": "blocked",
+      "title": "Tool call: missing",
+      "tool": "missing",
+      "tool_name": "missing",
+      "type": "tool_call"
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "agents": {},
+  "ais": {},
+  "column": null,
+  "flows": [
+    {
+      "audited": false,
+      "body": [
+        {
+          "column": 3,
+          "constant": false,
+          "expression": {
+            "arguments": [
+              {
+                "column": 5,
+                "line": 18,
+                "name": "name",
+                "type": "ToolCallArg",
+                "value": {
+                  "column": 13,
+                  "line": 18,
+                  "type": "Literal",
+                  "value": "alpha"
+                }
+              },
+              {
+                "column": 5,
+                "line": 19,
+                "name": "count",
+                "type": "ToolCallArg",
+                "value": {
+                  "column": 14,
+                  "line": 19,
+                  "type": "Literal",
+                  "value": "2"
+                }
+              },
+              {
+                "column": 5,
+                "line": 20,
+                "name": "active",
+                "type": "ToolCallArg",
+                "value": {
+                  "column": 15,
+                  "line": 20,
+                  "type": "Literal",
+                  "value": true
+                }
+              }
+            ],
+            "column": 17,
+            "line": 17,
+            "tool_name": "format tool",
+            "type": "ToolCallExpr"
+          },
+          "line": 17,
+          "name": "result",
+          "type": "Let"
+        },
+        {
+          "column": 3,
+          "expression": {
+            "column": 10,
+            "line": 21,
+            "name": "result",
+            "type": "VarReference"
+          },
+          "line": 21,
+          "type": "Return"
+        }
+      ],
+      "column": 1,
+      "line": 16,
+      "name": "demo",
+      "requires": null,
+      "type": "Flow"
+    }
+  ],
+  "identity": null,
+  "line": null,
+  "pages": [],
+  "records": [],
+  "spec_version": "1.0",
+  "theme": "system",
+  "theme_preference": {
+    "allow_override": false,
+    "persist": "none"
+  },
+  "theme_runtime_supported": false,
+  "theme_tokens": {},
+  "tools": {
+    "format tool": {
+      "capabilities": [],
+      "column": 1,
+      "input_fields": [
+        {
+          "column": 5,
+          "line": 9,
+          "name": "name",
+          "required": true,
+          "type": "ToolField",
+          "type_name": "text"
+        },
+        {
+          "column": 5,
+          "line": 10,
+          "name": "count",
+          "required": true,
+          "type": "ToolField",
+          "type_name": "number"
+        },
+        {
+          "column": 5,
+          "line": 11,
+          "name": "active",
+          "required": true,
+          "type": "ToolField",
+          "type_name": "boolean"
+        }
+      ],
+      "kind": "python",
+      "line": 3,
+      "name": "format tool",
+      "output_fields": [
+        {
+          "column": 5,
+          "line": 14,
+          "name": "message",
+          "required": true,
+          "type": "ToolField",
+          "type_name": "text"
+        }
+      ],
+      "purity": "pure",
+      "timeout_seconds": 5,
+      "type": "ToolDecl"
+    }
+  },
+  "type": "Program"
+}

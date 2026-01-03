@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-
 from namel3ss.config.model import OpenAIConfig
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.ai.http.client import post_json
@@ -9,6 +7,7 @@ from namel3ss.runtime.ai.provider import AIProvider, AIResponse
 from namel3ss.runtime.ai.providers._shared.diagnostics import categorize_ai_error
 from namel3ss.runtime.ai.providers._shared.errors import build_provider_diagnostic, require_env
 from namel3ss.runtime.ai.providers._shared.parse import ensure_text_output, normalize_ai_text
+from namel3ss.security import read_env
 from namel3ss.secrets import collect_secret_values, redact_payload
 
 
@@ -51,10 +50,10 @@ class OpenAIProvider(AIProvider):
 def _resolve_api_key(api_key: str | None) -> str:
     if api_key is not None and str(api_key).strip() != "":
         return api_key
-    preferred = os.getenv("NAMEL3SS_OPENAI_API_KEY")
+    preferred = read_env("NAMEL3SS_OPENAI_API_KEY")
     if preferred is not None and str(preferred).strip() != "":
         return require_env("openai", "NAMEL3SS_OPENAI_API_KEY", preferred)
-    fallback = os.getenv("OPENAI_API_KEY")
+    fallback = read_env("OPENAI_API_KEY")
     if fallback is not None and str(fallback).strip() != "":
         return require_env("openai", "OPENAI_API_KEY", fallback)
     raise Namel3ssError(

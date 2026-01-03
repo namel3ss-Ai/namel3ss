@@ -31,6 +31,7 @@ from namel3ss.outcome.builder import build_outcome_pack
 from namel3ss.outcome.model import MemoryOutcome, StateOutcome, StoreOutcome
 from namel3ss.runtime.boundary import attach_project_root, attach_secret_values, boundary_from_error, mark_boundary
 from namel3ss.tools_with.api import build_tools_pack
+from namel3ss.security import activate_security_wall, build_security_wall, redact_sensitive_payload, resolve_secret_values
 
 
 class Executor:
@@ -107,6 +108,11 @@ class Executor:
         self.provider_cache = self.ctx.provider_cache
 
     def run(self) -> ExecutionResult:
+        wall = build_security_wall(self.ctx.config, self.ctx.traces)
+        with activate_security_wall(wall):
+            return self._run_internal()
+
+    def _run_internal(self) -> ExecutionResult:
         record_step(
             self.ctx,
             kind="flow_start",
@@ -287,8 +293,10 @@ def _persist_execution_artifacts(ctx: ExecutionContext, *, ok: bool, error: Exce
         return
     try:
         pack = _build_execution_pack(ctx, ok=ok, error=error)
-        plain_text = build_plain_text(pack)
-        write_last_execution(Path(ctx.project_root), pack, plain_text)
+        secret_values = resolve_secret_values(config=ctx.config)
+        redacted = redact_sensitive_payload(pack, secret_values)
+        plain_text = build_plain_text(redacted if isinstance(redacted, dict) else pack)
+        write_last_execution(Path(ctx.project_root), redacted, plain_text)
     except Exception:
         return
 

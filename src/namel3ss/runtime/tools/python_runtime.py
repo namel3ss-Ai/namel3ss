@@ -313,16 +313,19 @@ def _resolve_project_root(
 
 def _trace_error_details(err: Exception, secret_values: list[str]) -> tuple[str, str]:
     if isinstance(err, ToolExecutionError):
-        return err.error_type, redact_text(err.error_message, secret_values)
+        return err.error_type, redact_text(_strip_traceback(err.error_message), secret_values)
     error_type = err.__class__.__name__
-    error_message = str(err)
+    error_message = _strip_traceback(str(err))
     cause = getattr(err, "__cause__", None)
     if cause is not None:
         error_type = cause.__class__.__name__
-        error_message = str(cause)
+        error_message = _strip_traceback(str(cause))
     return error_type, redact_text(error_message, secret_values)
-
-
+def _strip_traceback(message: str | None) -> str:
+    text = str(message or "")
+    if "Traceback" not in text:
+        return text
+    return text.split("Traceback", 1)[0].strip()
 def _resolve_timeout_seconds(ctx: ExecutionContext, tool: ir.ToolDecl, *, line: int | None, column: int | None) -> int:
     if tool.timeout_seconds is not None:
         return tool.timeout_seconds

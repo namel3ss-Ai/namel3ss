@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.lint.engine import lint_project
 from namel3ss.lint.types import Finding
 from namel3ss.module_loader import load_project
@@ -18,7 +19,14 @@ def run_lint(
 ) -> int:
     path = Path(path_str)
     if path.suffix != ".ai":
-        raise Namel3ssError("Input file must have .ai extension")
+        raise Namel3ssError(
+            build_guidance_message(
+                what="Input file must have .ai extension.",
+                why="namel3ss apps are stored as .ai files.",
+                fix="Pass a .ai file path to n3 lint.",
+                example="n3 app.ai lint",
+            )
+        )
     try:
         project = load_project(path, allow_legacy_type_aliases=allow_legacy_type_aliases)
         findings = lint_project(project, strict=strict)

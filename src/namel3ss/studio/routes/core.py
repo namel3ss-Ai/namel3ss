@@ -27,6 +27,10 @@ def handle_action(handler: Any, source: str, body: dict) -> None:
         payload = build_error_from_exception(err, kind="engine", source=source)
         handler._respond_json(payload, status=400)
         return
+    except Exception as err:  # pragma: no cover - defensive guard rail
+        payload = build_error_payload(str(err), kind="internal")
+        handler._respond_json(payload, status=500)
+        return
 
 
 __all__ = ["handle_action"]

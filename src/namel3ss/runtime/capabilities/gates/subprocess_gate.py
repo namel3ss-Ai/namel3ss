@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from namel3ss.runtime.capabilities.gates.base import (
     CapabilityViolation,
+    REASON_GUARANTEE_ALLOWED,
     REASON_GUARANTEE_BLOCKED,
     build_block_message,
 )
@@ -9,9 +10,17 @@ from namel3ss.runtime.capabilities.model import CapabilityCheck, CapabilityConte
 
 
 def check_subprocess(ctx: CapabilityContext, record, *, argv: list[str]) -> None:
-    if not ctx.guarantees.no_subprocess:
-        return
     source = ctx.guarantees.source_for_capability("subprocess") or "pack"
+    if not ctx.guarantees.no_subprocess:
+        record(
+            CapabilityCheck(
+                capability="subprocess",
+                allowed=True,
+                guarantee_source=source,
+                reason=REASON_GUARANTEE_ALLOWED,
+            )
+        )
+        return
     check = CapabilityCheck(
         capability="subprocess",
         allowed=False,

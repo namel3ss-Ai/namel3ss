@@ -16,12 +16,11 @@ from namel3ss.runtime.tools.python_env import (
 )
 
 
-def build_python_tool_checks() -> list[DoctorCheck]:
+def build_python_tool_checks(app_path: Path | None) -> list[DoctorCheck]:
     checks: list[DoctorCheck] = []
-    app_path = Path.cwd() / "app.ai"
-    if not app_path.exists():
+    if not app_path or not app_path.exists():
         checks.append(
-            DoctorCheck(
+            _tool_check(
                 id="python_app_root",
                 status="warning",
                 message="Python tools: app.ai not found in the current directory.",
@@ -30,7 +29,7 @@ def build_python_tool_checks() -> list[DoctorCheck]:
         )
         return checks
     checks.append(
-        DoctorCheck(
+        _tool_check(
             id="python_app_root",
             status="ok",
             message=f"Python tools app root: {app_path.parent.as_posix()}",
@@ -69,7 +68,7 @@ def _load_python_project(app_path: Path, checks: list[DoctorCheck]):
 def _collect_python_tools(project, checks: list[DoctorCheck]) -> list | None:
     if project is None:
         checks.append(
-            DoctorCheck(
+            _tool_check(
                 id="python_tools",
                 status="warning",
                 message="Python tool checks skipped due to parse errors.",
@@ -80,7 +79,7 @@ def _collect_python_tools(project, checks: list[DoctorCheck]) -> list | None:
     python_tools = [tool for tool in project.program.tools.values() if tool.kind == "python"]
     if not python_tools:
         checks.append(
-            DoctorCheck(
+            _tool_check(
                 id="python_tools",
                 status="ok",
                 message="No python tools declared.",
@@ -89,7 +88,7 @@ def _collect_python_tools(project, checks: list[DoctorCheck]) -> list | None:
         )
     else:
         checks.append(
-            DoctorCheck(
+            _tool_check(
                 id="python_tools",
                 status="ok",
                 message=f"Python tools declared: {len(python_tools)}.",
@@ -107,7 +106,7 @@ def _check_python_tool_health(
 ) -> None:
     if python_tools is None or report is None:
         checks.append(
-            DoctorCheck(
+            _tool_check(
                 id="python_tool_entries",
                 status="warning",
                 message="Python tool binding checks skipped due to parse errors.",
@@ -117,7 +116,7 @@ def _check_python_tool_health(
         return
     if not python_tools:
         checks.append(
-            DoctorCheck(
+            _tool_check(
                 id="python_tool_entries",
                 status="ok",
                 message="No python tool bindings to validate.",
@@ -127,7 +126,7 @@ def _check_python_tool_health(
         return
     if not report.bindings_valid:
         checks.append(
-            DoctorCheck(
+            _tool_check(
                 id="python_tool_entries",
                 status="error",
                 message=report.bindings_error or "Bindings file is invalid.",
@@ -229,7 +228,7 @@ def _check_python_tool_health(
         )
     else:
         checks.append(
-            DoctorCheck(
+            _tool_check(
                 id="python_tool_entries",
                 status="ok",
                 message="Python tool bindings look valid.",
@@ -255,7 +254,7 @@ def _check_pack_health(report, checks: list[DoctorCheck]) -> None:
     pack_count = len(report.packs)
     if pack_count == 0:
         checks.append(
-            DoctorCheck(
+            _tool_check(
                 id="packs_status",
                 status="ok",
                 message="No packs installed.",
@@ -264,7 +263,7 @@ def _check_pack_health(report, checks: list[DoctorCheck]) -> None:
         )
         return
     checks.append(
-        DoctorCheck(
+        _tool_check(
             id="packs_status",
             status="ok",
             message=f"Packs installed: {pack_count}.",
@@ -275,7 +274,7 @@ def _check_pack_health(report, checks: list[DoctorCheck]) -> None:
     for idx, issue in enumerate(pack_issues, start=1):
         status = "error" if issue.severity == "error" else "warning"
         checks.append(
-            DoctorCheck(
+            _tool_check(
                 id=f"packs_issue_{idx}",
                 status=status,
                 message=issue.message,
@@ -314,7 +313,7 @@ def _check_python_deps(app_root: Path, python_tools: list | None, checks: list[D
             )
         else:
             checks.append(
-                DoctorCheck(
+                _tool_check(
                     id="python_deps",
                     status="ok",
                     message="Dependency file not found (no python tools declared).",
@@ -326,7 +325,7 @@ def _check_python_deps(app_root: Path, python_tools: list | None, checks: list[D
     status = "warning" if dep_info.warning else "ok"
     message = f"Dependencies detected: {dep_info.kind} ({detail})."
     fix = "Run `n3 deps install` if dependencies are missing."
-    checks.append(DoctorCheck(id="python_deps", status=status, message=message, fix=fix))
+    checks.append(_tool_check(id="python_deps", status=status, message=message, fix=fix))
 
 
 def _check_python_venv(app_root: Path, python_tools: list | None, checks: list[DoctorCheck]) -> None:
@@ -347,7 +346,7 @@ def _check_python_venv(app_root: Path, python_tools: list | None, checks: list[D
     venv_path = app_venv_path(app_root)
     if env_info.env_kind == "venv":
         checks.append(
-            DoctorCheck(
+            _tool_check(
                 id="python_venv",
                 status="ok",
                 message=f"Venv active: {venv_path.as_posix()} ({env_info.python_path}).",
@@ -357,7 +356,7 @@ def _check_python_venv(app_root: Path, python_tools: list | None, checks: list[D
         return
     if python_tools:
         checks.append(
-            DoctorCheck(
+            _tool_check(
                 id="python_venv",
                 status="warning",
                 message=f"Venv missing; using system python ({env_info.python_path}).",
@@ -366,7 +365,7 @@ def _check_python_venv(app_root: Path, python_tools: list | None, checks: list[D
         )
         return
     checks.append(
-        DoctorCheck(
+        _tool_check(
             id="python_venv",
             status="ok",
             message=f"No venv detected; using system python ({env_info.python_path}).",
@@ -380,7 +379,7 @@ def _check_python_lockfile(app_root: Path, python_tools: list | None, checks: li
     lock_path = lockfile_path(app_root)
     if dep_info.kind == "none":
         checks.append(
-            DoctorCheck(
+            _tool_check(
                 id="python_lockfile",
                 status="ok",
                 message="Lockfile check skipped (no dependency file).",
@@ -390,7 +389,7 @@ def _check_python_lockfile(app_root: Path, python_tools: list | None, checks: li
         return
     if lock_path.exists():
         checks.append(
-            DoctorCheck(
+            _tool_check(
                 id="python_lockfile",
                 status="ok",
                 message=f"Lockfile present: {lock_path.as_posix()}",
@@ -410,8 +409,18 @@ def _check_python_lockfile(app_root: Path, python_tools: list | None, checks: li
     )
 
 
-def _guidance_check(*, id: str, status: str, what: str, why: str, fix: str, example: str) -> DoctorCheck:
+def _tool_check(*, id: str, status: str, message: str, fix: str) -> DoctorCheck:
     return DoctorCheck(
+        id=id,
+        status=status,
+        message=message,
+        fix=fix,
+        category="tools",
+    )
+
+
+def _guidance_check(*, id: str, status: str, what: str, why: str, fix: str, example: str) -> DoctorCheck:
+    return _tool_check(
         id=id,
         status=status,
         message=build_guidance_message(what=what, why=why, fix=fix, example=example),

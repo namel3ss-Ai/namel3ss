@@ -1,0 +1,91 @@
+{
+  "agents": {},
+  "ais": {},
+  "column": null,
+  "flows": [
+    {
+      "audited": false,
+      "body": [
+        {
+          "column": 3,
+          "expression": {
+            "column": 10,
+            "line": 4,
+            "type": "Literal",
+            "value": "ok"
+          },
+          "line": 4,
+          "type": "Return"
+        }
+      ],
+      "column": 1,
+      "line": 3,
+      "name": "demo",
+      "requires": null,
+      "type": "Flow"
+    }
+  ],
+  "identity": null,
+  "line": null,
+  "pages": [
+    {
+      "column": 1,
+      "items": [
+        {
+          "column": 3,
+          "line": 7,
+          "type": "TitleItem",
+          "value": "Restricted"
+        },
+        {
+          "column": 3,
+          "line": 8,
+          "type": "TextItem",
+          "value": "Admins only"
+        },
+        {
+          "column": 3,
+          "flow_name": "demo",
+          "label": "Run",
+          "line": 9,
+          "type": "ButtonItem"
+        }
+      ],
+      "line": 6,
+      "name": "home",
+      "requires": {
+        "column": 37,
+        "kind": "eq",
+        "left": {
+          "attrs": [
+            "role"
+          ],
+          "base": "identity",
+          "column": 23,
+          "line": 6,
+          "type": "AttrAccess"
+        },
+        "line": 6,
+        "right": {
+          "column": 40,
+          "line": 6,
+          "type": "Literal",
+          "value": "admin"
+        },
+        "type": "Comparison"
+      },
+      "type": "Page"
+    }
+  ],
+  "records": [],
+  "spec_version": "1.0",
+  "theme": "system",
+  "theme_preference": {
+    "allow_override": false,
+    "persist": "none"
+  },
+  "theme_runtime_supported": false,
+  "theme_tokens": {},
+  "tools": {},
+  "type": "Program"
+}

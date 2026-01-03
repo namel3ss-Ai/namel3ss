@@ -5,6 +5,7 @@ from pathlib import Path
 
 from namel3ss.cli.app_loader import load_program
 from namel3ss.cli.app_path import resolve_app_path
+from namel3ss.cli.devex import parse_project_overrides
 from namel3ss.cli.builds import app_path_from_metadata, load_build_metadata, read_latest_build_id
 from namel3ss.cli.demo_support import CLEARORDERS_NAME, is_clearorders_demo
 from namel3ss.cli.first_run import is_first_run
@@ -27,8 +28,11 @@ def run_run_command(args: list[str]) -> int:
     project_root: Path | None = None
     first_run = is_first_run(None, args)
     try:
-        params = _parse_args(args)
-        app_path = resolve_app_path(params.app_arg)
+        overrides, remaining = parse_project_overrides(args)
+        params = _parse_args(remaining)
+        if params.app_arg and overrides.app_path:
+            raise Namel3ssError("App path was provided twice. Use either an explicit app path or --app.")
+        app_path = resolve_app_path(params.app_arg or overrides.app_path, project_root=overrides.project_root)
         project_root = app_path.parent
         first_run = is_first_run(project_root, args)
         demo_default = None
@@ -41,7 +45,7 @@ def run_run_command(args: list[str]) -> int:
         run_path, build_id = _resolve_run_path(target.name, project_root, app_path, params.build_id)
         if target.name == "local":
             program_ir, sources = load_program(run_path.as_posix())
-            output = run_flow(program_ir, None)
+            output = run_flow(program_ir, None, sources=sources)
             if params.json_mode:
                 print(dumps_pretty(output))
             else:

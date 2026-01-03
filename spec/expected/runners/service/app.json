@@ -8,6 +8,17 @@
   },
   "traces": [
     {
+      "type": "capability_check",
+      "tool_name": "runner echo",
+      "runner": "service",
+      "resolved_source": "binding",
+      "capability": "network",
+      "allowed": true,
+      "guarantee_source": "pack",
+      "reason": "guarantee_allowed",
+      "protocol_version": 1
+    },
+    {
       "type": "tool_call",
       "tool": "runner echo",
       "tool_name": "runner echo",

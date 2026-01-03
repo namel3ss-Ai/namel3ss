@@ -55,7 +55,7 @@ def test_mistral_pipeline_offline(monkeypatch):
         ai_profiles=program.ais,
     )
     assert result.last_value == "[done]"
-    trace = result.traces[0]
+    trace = next(item for item in result.traces if hasattr(item, "canonical_events"))
     types = [event["type"] for event in trace.canonical_events]
     assert "tool_call_requested" in types
     assert "tool_call_completed" in types

@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.resources import studio_web_root
 from namel3ss.runtime.storage.factory import create_store
 from namel3ss.studio.api_routes import handle_api_get, handle_api_post
 from namel3ss.studio.session import SessionState
@@ -47,7 +48,7 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
         self.send_error(404)
 
     def handle_static(self) -> None:
-        web_root = Path(__file__).parent / "web"
+        web_root = studio_web_root()
         parsed = urlparse(self.path)
         path_only = parsed.path
         if path_only in {"/", "/index.html"}:

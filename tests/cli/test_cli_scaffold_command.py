@@ -52,6 +52,16 @@ def test_new_starter_scaffolds(tmp_path, monkeypatch, capsys):
     assert "first_run" in readme
 
 
+def test_init_alias_scaffolds(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    code = main(["init", "starter", "boot_app"])
+    out = capsys.readouterr().out
+    project_dir = tmp_path / "boot_app"
+    assert code == 0
+    assert project_dir.exists()
+    assert "Created project" in out
+
+
 def test_new_demo_output_is_minimal(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     code = main(["new", "demo", "demo_app"])

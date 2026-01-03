@@ -1,0 +1,77 @@
+{
+  "contract": {
+    "errors": [
+      {
+        "category": "parse",
+        "code": "parse_error",
+        "details": {
+          "file": "app.ai"
+        },
+        "hint": "Only supported operators are +, -, *, / and comparison words like `is greater than`.",
+        "location": {
+          "column": 16,
+          "line": 4
+        },
+        "message": "Unsupported character '^' in namel3ss source.",
+        "remediation": "Remove the character or rewrite using supported arithmetic/comparison syntax."
+      }
+    ],
+    "flow_name": null,
+    "memory": {
+      "count": 0,
+      "events": []
+    },
+    "outcome": null,
+    "result": null,
+    "schema_version": "production.v0",
+    "state": {},
+    "status": "error",
+    "trace_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "trace_schema_version": "2024-10-01",
+    "traces": []
+  },
+  "details": {
+    "file": "app.ai"
+  },
+  "error": "[line 4, col 16] What happened: Unsupported character '^' in namel3ss source.\nWhy: Only supported operators are +, -, *, / and comparison words like `is greater than`.\nFix: Remove the character or rewrite using supported arithmetic/comparison syntax.\nExample: Use `total + 2.5` or `if price is greater than 10:`.\n  let value is ^\n               ^",
+  "error_entry": {
+    "category": "parse",
+    "code": "parse_error",
+    "details": {
+      "file": "app.ai"
+    },
+    "hint": "Only supported operators are +, -, *, / and comparison words like `is greater than`.",
+    "location": {
+      "column": 16,
+      "line": 4
+    },
+    "message": "Unsupported character '^' in namel3ss source.",
+    "remediation": "Remove the character or rewrite using supported arithmetic/comparison syntax."
+  },
+  "errors": [
+    {
+      "category": "parse",
+      "code": "parse_error",
+      "details": {
+        "file": "app.ai"
+      },
+      "hint": "Only supported operators are +, -, *, / and comparison words like `is greater than`.",
+      "location": {
+        "column": 16,
+        "line": 4
+      },
+      "message": "Unsupported character '^' in namel3ss source.",
+      "remediation": "Remove the character or rewrite using supported arithmetic/comparison syntax."
+    }
+  ],
+  "kind": "parse",
+  "location": {
+    "column": 16,
+    "line": 4
+  },
+  "message": "What happened: Unsupported character '^' in namel3ss source.\nWhy: Only supported operators are +, -, *, / and comparison words like `is greater than`.\nFix: Remove the character or rewrite using supported arithmetic/comparison syntax.\nExample: Use `total + 2.5` or `if price is greater than 10:`.",
+  "ok": false,
+  "result": null,
+  "state": {},
+  "traces": []
+}

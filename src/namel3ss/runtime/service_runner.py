@@ -102,6 +102,9 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         except Namel3ssError as err:
             payload = build_error_from_exception(err, kind="engine")
             self._respond_json(payload, status=400)
+        except Exception as err:  # pragma: no cover - defensive guard rail
+            payload = build_error_payload(str(err), kind="internal")
+            self._respond_json(payload, status=500)
 
     def _handle_action_post(self, body: dict) -> None:
         if not isinstance(body, dict):

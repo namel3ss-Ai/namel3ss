@@ -7,17 +7,20 @@ from namel3ss.config.model import AppConfig
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
-from namel3ss.runtime.executor import execute_program_flow
 from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.records.service import save_record_with_errors
 from namel3ss.runtime.records.state_paths import set_state_record
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.memory.api import MemoryManager
 from namel3ss.runtime.storage.factory import resolve_store
+from namel3ss.compatibility import validate_spec_version
 from namel3ss.ui.manifest import build_manifest
 from namel3ss.utils.json_tools import dumps as json_dumps
-from namel3ss.secrets import collect_secret_values, redact_payload
+from namel3ss.secrets import collect_secret_values
 from namel3ss.observe import actor_summary, record_event, summarize_value
+from namel3ss.errors.payload import build_error_payload
+from namel3ss.production_contract import build_run_payload
+from namel3ss.runtime.run_pipeline import build_flow_payload, finalize_run_payload
 import time
 from pathlib import Path
 
@@ -37,12 +40,16 @@ def handle_action(
     preference_key: str | None = None,
     allow_theme_override: bool | None = None,
     config: AppConfig | None = None,
-) -> dict:
+    source: str | None = None,
+    raise_on_error: bool = True,
+) -> tuple[dict, Exception | None]:
     """Execute a UI action against the program."""
     start_time = time.time()
     if payload is not None and not isinstance(payload, dict):
         raise Namel3ssError(_action_payload_message())
+    validate_spec_version(program_ir)
 
+    action_error: Exception | None = None
     resolved_config = config or load_config(
         app_path=getattr(program_ir, "app_path", None),
         root=getattr(program_ir, "project_root", None),
@@ -68,7 +75,7 @@ def handle_action(
     action_type = action.get("type")
     try:
         if action_type == "call_flow":
-            response = _handle_call_flow(
+            response, action_error = _handle_call_flow(
                 program_ir,
                 action,
                 payload or {},
@@ -83,7 +90,13 @@ def handle_action(
                 config=resolved_config,
                 identity=identity,
                 secret_values=secret_values,
+                source=source,
+                raise_on_error=raise_on_error,
             )
+            if action_error and raise_on_error:
+                raise action_error
+            if action_error:
+                _record_engine_error(project_root, action_id, actor, action_error, secret_values)
         elif action_type == "submit_form":
             response = _handle_submit_form(
                 program_ir,
@@ -99,24 +112,16 @@ def handle_action(
         else:
             raise Namel3ssError(f"Unsupported action type '{action_type}'")
     except Exception as err:
+        action_error = err
         if project_root:
-            record_event(
-                Path(str(project_root)),
-                {
-                    "type": "engine_error",
-                    "kind": err.__class__.__name__,
-                    "message": str(err),
-                    "action_id": action_id,
-                    "actor": actor,
-                    "time": time.time(),
-                },
-                secret_values=secret_values,
-            )
+            _record_engine_error(project_root, action_id, actor, err, secret_values)
         raise
     finally:
         if project_root:
             resp = locals().get("response")
-            if isinstance(resp, dict):
+            if action_error is not None:
+                status = "error"
+            elif isinstance(resp, dict):
                 status = "ok" if resp.get("ok", True) else "fail"
             else:
                 status = "error"
@@ -144,6 +149,34 @@ def _ensure_json_serializable(data: dict) -> None:
         raise Namel3ssError(f"Response is not JSON-serializable: {exc}")
 
 
+def _record_engine_error(
+    project_root: str | Path | None,
+    action_id: str,
+    actor: dict,
+    err: Exception,
+    secret_values: list[str] | None,
+) -> None:
+    if not project_root:
+        return
+    record_event(
+        Path(str(project_root)),
+        {
+            "type": "engine_error",
+            "kind": err.__class__.__name__,
+            "message": str(err),
+            "action_id": action_id,
+            "actor": actor,
+            "time": time.time(),
+        },
+        secret_values=secret_values,
+    )
+
+
+def _form_error_payload(errors: list[dict]) -> dict:
+    details = {"error_id": "form_validation", "form_errors": errors}
+    return build_error_payload("Form validation failed.", kind="runtime", details=details)
+
+
 def _handle_call_flow(
     program_ir: ir.Program,
     action: dict,
@@ -159,11 +192,13 @@ def _handle_call_flow(
     config: AppConfig | None = None,
     identity: dict | None = None,
     secret_values: list[str] | None = None,
+    source: str | None = None,
+    raise_on_error: bool = True,
 ) -> dict:
     flow_name = action.get("flow")
     if not isinstance(flow_name, str):
         raise Namel3ssError("Invalid flow reference in action")
-    result = execute_program_flow(
+    outcome = build_flow_payload(
         program_ir,
         flow_name,
         state=state,
@@ -175,29 +210,29 @@ def _handle_call_flow(
         preference_key=preference_key,
         config=config,
         identity=identity,
+        source=source,
+        project_root=getattr(program_ir, "project_root", None),
     )
-    traces = [_trace_to_dict(t) for t in result.traces]
-    next_runtime_theme = result.runtime_theme if result.runtime_theme is not None else runtime_theme
+    response = outcome.payload
+    if outcome.error:
+        if not raise_on_error:
+            response = finalize_run_payload(response, secret_values)
+        return response, outcome.error
+    next_runtime_theme = outcome.runtime_theme if outcome.runtime_theme is not None else runtime_theme
     if allow_theme_override and preference_store and preference_key and next_runtime_theme:
         preference_store.save_theme(preference_key, next_runtime_theme)
-    response = {
-        "ok": True,
-        "state": result.state,
-        "result": result.last_value,
-        "ui": build_manifest(
-            program_ir,
-            state=result.state,
-            store=store,
-            runtime_theme=next_runtime_theme,
-            persisted_theme=next_runtime_theme if allow_theme_override and preference_store else None,
-            identity=identity,
-        ),
-        "traces": traces,
-    }
+    state_payload = response.get("state")
+    response["ui"] = build_manifest(
+        program_ir,
+        state=state_payload if isinstance(state_payload, dict) else {},
+        store=store,
+        runtime_theme=next_runtime_theme,
+        persisted_theme=next_runtime_theme if allow_theme_override and preference_store else None,
+        identity=identity,
+    )
     _ensure_json_serializable(response)
-    if secret_values:
-        response = redact_payload(response, secret_values)  # type: ignore[assignment]
-    return response
+    response = finalize_run_payload(response, secret_values)
+    return response, None
 
 
 def _handle_submit_form(
@@ -223,49 +258,50 @@ def _handle_submit_form(
     if errors:
         trace["ok"] = False
         trace["errors"] = [err.get("field") for err in errors if err.get("field")]
-        response = {
-            "ok": False,
-            "state": state,
-            "errors": errors,
-            "ui": build_manifest(
-                program_ir,
-                state=state,
-                store=store,
-                runtime_theme=runtime_theme,
-                identity=identity,
-            ),
-            "traces": [trace],
-        }
-        _ensure_json_serializable(response)
-        if secret_values:
-            response = redact_payload(response, secret_values)  # type: ignore[assignment]
-        return response
-
-    record_id = saved.get("id") if isinstance(saved, dict) else None
-    record_id = record_id or (saved.get("_id") if isinstance(saved, dict) else None)
-    response = {
-        "ok": True,
-        "state": state,
-        "result": {"record": record, "id": record_id},
-        "ui": build_manifest(
+        error_payload = _form_error_payload(errors)
+        response = build_run_payload(
+            ok=False,
+            flow_name=None,
+            state=state,
+            result=None,
+            traces=[trace],
+            project_root=getattr(program_ir, "project_root", None),
+            error_payload=error_payload,
+        )
+        response["errors"] = errors
+        response["ui"] = build_manifest(
             program_ir,
             state=state,
             store=store,
             runtime_theme=runtime_theme,
             identity=identity,
-        ),
-        "traces": [trace],
-    }
+        )
+        response.pop("error", None)
+        response.pop("message", None)
+        _ensure_json_serializable(response)
+        response = finalize_run_payload(response, secret_values)
+        return response
+
+    record_id = saved.get("id") if isinstance(saved, dict) else None
+    record_id = record_id or (saved.get("_id") if isinstance(saved, dict) else None)
+    response = build_run_payload(
+        ok=True,
+        flow_name=None,
+        state=state,
+        result={"record": record, "id": record_id},
+        traces=[trace],
+        project_root=getattr(program_ir, "project_root", None),
+    )
+    response["ui"] = build_manifest(
+        program_ir,
+        state=state,
+        store=store,
+        runtime_theme=runtime_theme,
+        identity=identity,
+    )
     _ensure_json_serializable(response)
-    if secret_values:
-        response = redact_payload(response, secret_values)  # type: ignore[assignment]
+    response = finalize_run_payload(response, secret_values)
     return response
-
-
-def _trace_to_dict(trace) -> dict:
-    if hasattr(trace, "__dict__"):
-        return trace.__dict__
-    return dict(trace)
 
 
 def _submit_form_trace(record: str, values: dict) -> dict:

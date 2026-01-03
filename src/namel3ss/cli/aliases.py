@@ -24,6 +24,7 @@ ALIAS_MAP: Dict[str, str] = {
     "run": "run",
     "test": "test",
     "editor": "editor",
+    "init": "new",
     # Data/persistence
     "data": "data",
     "persist": "data",

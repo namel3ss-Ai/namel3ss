@@ -1,0 +1,24 @@
+spec is "1.0"
+
+record "Note":
+  field "title" is text must be present
+  field "body" is text
+
+flow "demo":
+  set state.status is "ready"
+  return state.status
+
+page "home":
+  title is "Golden UI"
+  text is "Widgets"
+  section "Layout":
+    row:
+      column:
+        card "Entry":
+          form is "Note"
+      column:
+        card "List":
+          table is "Note"
+  card "Actions":
+    button "Run":
+      calls flow "demo"

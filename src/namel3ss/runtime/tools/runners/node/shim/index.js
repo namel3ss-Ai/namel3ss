@@ -175,6 +175,8 @@ function captureOutput() {
   };
 }
 
+const { configureCapabilities, getCapabilityChecks } = require("./capabilities");
+
 async function runTool(payload) {
   const { moduleSpec, functionName } = parseEntry(payload.entry);
   const resolved = resolveModuleTarget(moduleSpec, payload.module_paths);
@@ -200,16 +202,31 @@ function errorMessage(err) {
   return String(err);
 }
 
+function errorPayload(err) {
+  const error = { type: errorType(err), message: errorMessage(err) };
+  if (err && err.check && err.check.reason) {
+    error.reason_code = String(err.check.reason);
+  }
+  return error;
+}
+
 async function runPayload(payload) {
   const restore = captureOutput();
+  configureCapabilities(payload);
   try {
     const result = await runTool(payload);
-    return { ok: true, result, protocol_version: payload.protocol_version || 1 };
+    return {
+      ok: true,
+      result,
+      protocol_version: payload.protocol_version || 1,
+      capability_checks: getCapabilityChecks(),
+    };
   } catch (err) {
     return {
       ok: false,
-      error: { type: errorType(err), message: errorMessage(err) },
+      error: errorPayload(err),
       protocol_version: payload.protocol_version || 1,
+      capability_checks: getCapabilityChecks(),
     };
   } finally {
     restore();

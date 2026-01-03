@@ -1,0 +1,21 @@
+spec is "1.0"
+
+tool "format tool":
+  implemented using python
+  purity is "pure"
+  timeout_seconds is 5
+
+  input:
+    name is text
+    count is number
+    active is boolean
+
+  output:
+    message is text
+
+flow "demo":
+  let result is format tool:
+    name is "alpha"
+    count is 2
+    active is true
+  return result

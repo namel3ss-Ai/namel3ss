@@ -1,0 +1,100 @@
+{
+  "agents": {},
+  "ais": {},
+  "column": null,
+  "flows": [
+    {
+      "audited": false,
+      "body": [
+        {
+          "column": 3,
+          "constant": false,
+          "expression": {
+            "arguments": [
+              {
+                "column": 5,
+                "line": 14,
+                "name": "value",
+                "type": "ToolCallArg",
+                "value": {
+                  "column": 14,
+                  "line": 14,
+                  "type": "Literal",
+                  "value": "hi"
+                }
+              }
+            ],
+            "column": 17,
+            "line": 13,
+            "tool_name": "missing",
+            "type": "ToolCallExpr"
+          },
+          "line": 13,
+          "name": "result",
+          "type": "Let"
+        },
+        {
+          "column": 3,
+          "expression": {
+            "column": 10,
+            "line": 15,
+            "name": "result",
+            "type": "VarReference"
+          },
+          "line": 15,
+          "type": "Return"
+        }
+      ],
+      "column": 1,
+      "line": 12,
+      "name": "demo",
+      "requires": null,
+      "type": "Flow"
+    }
+  ],
+  "identity": null,
+  "line": null,
+  "pages": [],
+  "records": [],
+  "spec_version": "1.0",
+  "theme": "system",
+  "theme_preference": {
+    "allow_override": false,
+    "persist": "none"
+  },
+  "theme_runtime_supported": false,
+  "theme_tokens": {},
+  "tools": {
+    "missing": {
+      "capabilities": [],
+      "column": 1,
+      "input_fields": [
+        {
+          "column": 5,
+          "line": 7,
+          "name": "value",
+          "required": true,
+          "type": "ToolField",
+          "type_name": "text"
+        }
+      ],
+      "kind": "python",
+      "line": 3,
+      "name": "missing",
+      "output_fields": [
+        {
+          "column": 5,
+          "line": 10,
+          "name": "value",
+          "required": true,
+          "type": "ToolField",
+          "type_name": "text"
+        }
+      ],
+      "purity": "impure",
+      "timeout_seconds": null,
+      "type": "ToolDecl"
+    }
+  },
+  "type": "Program"
+}

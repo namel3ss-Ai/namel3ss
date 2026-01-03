@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from namel3ss.runtime.capabilities.gates.base import (
     CapabilityViolation,
+    REASON_GUARANTEE_ALLOWED,
     REASON_GUARANTEE_BLOCKED,
     build_block_message,
 )
@@ -9,9 +10,17 @@ from namel3ss.runtime.capabilities.model import CapabilityCheck, CapabilityConte
 
 
 def check_network(ctx: CapabilityContext, record, *, url: str, method: str) -> None:
-    if not ctx.guarantees.no_network:
-        return
     source = ctx.guarantees.source_for_capability("network") or "pack"
+    if not ctx.guarantees.no_network:
+        record(
+            CapabilityCheck(
+                capability="network",
+                allowed=True,
+                guarantee_source=source,
+                reason=REASON_GUARANTEE_ALLOWED,
+            )
+        )
+        return
     check = CapabilityCheck(
         capability="network",
         allowed=False,

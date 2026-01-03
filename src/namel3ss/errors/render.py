@@ -4,12 +4,13 @@ from pathlib import Path
 from typing import Optional
 
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.secrets import collect_secret_values, redact_text
 
 
 def format_error(err: Namel3ssError, source: Optional[object] = None) -> str:
     base = str(err)
     if source is None or err.line is None:
-        return base
+        return redact_text(base, collect_secret_values())
 
     source_text = None
     file_path = None
@@ -33,19 +34,20 @@ def format_error(err: Namel3ssError, source: Optional[object] = None) -> str:
         source_text = source
 
     if not source_text:
-        return base
+        return redact_text(base, collect_secret_values())
 
     lines = source_text.splitlines()
     line_index = err.line - 1
     if line_index < 0 or line_index >= len(lines):
-        return base
+        return redact_text(base, collect_secret_values())
 
     line_text = lines[line_index]
     column = err.column if err.column is not None else 1
     caret_pos = max(1, min(column, len(line_text) + 1))
     caret_line = " " * (caret_pos - 1) + "^"
     prefix = f"File: {file_path}\n" if file_path else ""
-    return f"{prefix}{base}\n{line_text}\n{caret_line}"
+    formatted = f"{prefix}{base}\n{line_text}\n{caret_line}"
+    return redact_text(formatted, collect_secret_values())
 
 
 def format_first_run_error(err: Namel3ssError) -> str:
@@ -65,7 +67,7 @@ def format_first_run_error(err: Namel3ssError) -> str:
         "Suggested next step",
         f"- {next_step}",
     ]
-    return "\n".join(lines)
+    return redact_text("\n".join(lines), collect_secret_values())
 
 
 def _parse_guidance(text: str) -> dict[str, str]:

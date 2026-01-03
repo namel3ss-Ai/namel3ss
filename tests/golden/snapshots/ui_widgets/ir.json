@@ -1,0 +1,185 @@
+{
+  "agents": {},
+  "ais": {},
+  "column": null,
+  "flows": [
+    {
+      "audited": false,
+      "body": [
+        {
+          "column": 3,
+          "expression": {
+            "column": 23,
+            "line": 8,
+            "type": "Literal",
+            "value": "ready"
+          },
+          "line": 8,
+          "target": {
+            "column": 7,
+            "line": 8,
+            "path": [
+              "status"
+            ],
+            "type": "StatePath"
+          },
+          "type": "Set"
+        },
+        {
+          "column": 3,
+          "expression": {
+            "column": 10,
+            "line": 9,
+            "path": [
+              "status"
+            ],
+            "type": "StatePath"
+          },
+          "line": 9,
+          "type": "Return"
+        }
+      ],
+      "column": 1,
+      "line": 7,
+      "name": "demo",
+      "requires": null,
+      "type": "Flow"
+    }
+  ],
+  "identity": null,
+  "line": null,
+  "pages": [
+    {
+      "column": 1,
+      "items": [
+        {
+          "column": 3,
+          "line": 12,
+          "type": "TitleItem",
+          "value": "Golden UI"
+        },
+        {
+          "column": 3,
+          "line": 13,
+          "type": "TextItem",
+          "value": "Widgets"
+        },
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "children": [
+                        {
+                          "column": 11,
+                          "line": 18,
+                          "record_name": "Note",
+                          "type": "FormItem"
+                        }
+                      ],
+                      "column": 9,
+                      "label": "Entry",
+                      "line": 17,
+                      "type": "CardItem"
+                    }
+                  ],
+                  "column": 7,
+                  "line": 16,
+                  "type": "ColumnItem"
+                },
+                {
+                  "children": [
+                    {
+                      "children": [
+                        {
+                          "column": 11,
+                          "line": 21,
+                          "record_name": "Note",
+                          "type": "TableItem"
+                        }
+                      ],
+                      "column": 9,
+                      "label": "List",
+                      "line": 20,
+                      "type": "CardItem"
+                    }
+                  ],
+                  "column": 7,
+                  "line": 19,
+                  "type": "ColumnItem"
+                }
+              ],
+              "column": 5,
+              "line": 15,
+              "type": "RowItem"
+            }
+          ],
+          "column": 3,
+          "label": "Layout",
+          "line": 14,
+          "type": "SectionItem"
+        },
+        {
+          "children": [
+            {
+              "column": 5,
+              "flow_name": "demo",
+              "label": "Run",
+              "line": 23,
+              "type": "ButtonItem"
+            }
+          ],
+          "column": 3,
+          "label": "Actions",
+          "line": 22,
+          "type": "CardItem"
+        }
+      ],
+      "line": 11,
+      "name": "home",
+      "requires": null,
+      "type": "Page"
+    }
+  ],
+  "records": [
+    {
+      "fields": [
+        {
+          "constraint": {
+            "expression": null,
+            "expression_high": null,
+            "kind": "present",
+            "pattern": null,
+            "type": "FieldConstraint"
+          },
+          "name": "title",
+          "type": "FieldSchema",
+          "type_name": "text"
+        },
+        {
+          "constraint": null,
+          "name": "body",
+          "type": "FieldSchema",
+          "type_name": "text"
+        }
+      ],
+      "name": "Note",
+      "system_fields": [],
+      "tenant_key": null,
+      "ttl_hours": null,
+      "type": "RecordSchema"
+    }
+  ],
+  "spec_version": "1.0",
+  "theme": "system",
+  "theme_preference": {
+    "allow_override": false,
+    "persist": "none"
+  },
+  "theme_runtime_supported": false,
+  "theme_tokens": {},
+  "tools": {},
+  "type": "Program"
+}

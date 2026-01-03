@@ -1,0 +1,22 @@
+spec is "1.0"
+
+flow "demo":
+  set state.profile.name is "Ada"
+  let numbers is list:
+    1
+    2
+  let appended is list append numbers with 3
+  let size is list length of appended
+  let first is list get appended at 0
+  let data is map:
+    "b" is 1
+    "a" is 2
+  let updated is map set data key "c" value 3
+  let value_b is map get updated key "b"
+  if size is greater than 2:
+    set state.profile.valid is true
+  return map:
+    "name" is state.profile.name
+    "size" is size
+    "first" is first
+    "value_b" is value_b

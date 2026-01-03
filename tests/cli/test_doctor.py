@@ -32,3 +32,38 @@ def test_doctor_json_contains_keys(monkeypatch, tmp_path, capsys):
     assert checks["provider_envs"]["status"] == "warning"
     # ensure secret value not present in output
     assert "secret-value" not in out
+
+
+def test_doctor_json_is_deterministic(monkeypatch, tmp_path, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "app.ai").write_text('spec is "1.0"\n\nflow "demo":\n  return "ok"\n', encoding="utf-8")
+    rc = cli_main(["doctor", "--json"])
+    assert rc == 0
+    out_first = capsys.readouterr().out
+    rc = cli_main(["doctor", "--json"])
+    assert rc == 0
+    out_second = capsys.readouterr().out
+    assert out_first == out_second
+
+
+def test_doctor_warns_on_missing_provider_keys(monkeypatch, tmp_path, capsys):
+    app_source = (
+        'ai "assistant":\n'
+        '  provider is "openai"\n'
+        '  model is "gpt-4o-mini"\n'
+        '\n'
+        'spec is "1.0"\n'
+        '\n'
+        'flow "demo":\n'
+        '  return "ok"\n'
+    )
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "app.ai").write_text(app_source, encoding="utf-8")
+    monkeypatch.delenv("NAMEL3SS_OPENAI_API_KEY", raising=False)
+    rc = cli_main(["doctor", "--json"])
+    assert rc == 0
+    data = json.loads(capsys.readouterr().out)
+    checks = {c["id"]: c for c in data["checks"]}
+    provider_check = checks["provider_envs"]
+    assert provider_check["status"] == "warning"
+    assert "NAMEL3SS_OPENAI_API_KEY" in provider_check["message"]

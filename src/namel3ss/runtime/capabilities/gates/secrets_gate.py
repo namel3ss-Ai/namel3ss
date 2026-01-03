@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from namel3ss.runtime.capabilities.gates.base import (
     CapabilityViolation,
+    REASON_GUARANTEE_ALLOWED,
     REASON_SECRETS_ALLOWED,
     REASON_SECRETS_BLOCKED,
     build_block_message,
@@ -12,6 +13,13 @@ from namel3ss.runtime.capabilities.model import CapabilityCheck, CapabilityConte
 def check_secret_allowed(ctx: CapabilityContext, record, *, secret_name: str) -> None:
     allowed = ctx.guarantees.secrets_allowed
     if allowed is None:
+        check = CapabilityCheck(
+            capability="secrets",
+            allowed=True,
+            guarantee_source=_source(ctx),
+            reason=REASON_GUARANTEE_ALLOWED,
+        )
+        record(check)
         return
     if secret_name in allowed:
         check = CapabilityCheck(

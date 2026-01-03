@@ -1,0 +1,10 @@
+spec is "1.0"
+
+flow "demo":
+  return "ok"
+
+page "home": requires identity.role is "admin"
+  title is "Restricted"
+  text is "Admins only"
+  button "Run":
+    calls flow "demo"

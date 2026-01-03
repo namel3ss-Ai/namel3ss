@@ -10,6 +10,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.format import format_source
 from namel3ss.lint.engine import lint_source
 from namel3ss.pkg.scaffold import scaffold_package
+from namel3ss.resources import templates_root
 
 
 @dataclass(frozen=True)
@@ -125,7 +126,7 @@ def render_templates_list() -> str:
 
 
 def _templates_root() -> Path:
-    return Path(__file__).resolve().parent.parent / "templates"
+    return templates_root()
 
 
 def _resolve_template(name: str) -> TemplateSpec:

@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import os
-
 from namel3ss.config.model import GeminiConfig
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.ai.http.client import post_json
 from namel3ss.runtime.ai.provider import AIProvider, AIResponse
 from namel3ss.runtime.ai.providers._shared.errors import require_env
 from namel3ss.runtime.ai.providers._shared.parse import ensure_text_output
+from namel3ss.security import read_env
 
 
 class GeminiProvider(AIProvider):
@@ -55,11 +54,11 @@ def _extract_text(result: dict) -> str | None:
 def _resolve_api_key(api_key: str | None) -> str:
     if api_key is not None and str(api_key).strip() != "":
         return api_key
-    preferred = os.getenv("NAMEL3SS_GEMINI_API_KEY")
+    preferred = read_env("NAMEL3SS_GEMINI_API_KEY")
     if preferred is not None and str(preferred).strip() != "":
         return require_env("gemini", "NAMEL3SS_GEMINI_API_KEY", preferred)
     for alias in ("GEMINI_API_KEY", "GOOGLE_API_KEY"):
-        fallback = os.getenv(alias)
+        fallback = read_env(alias)
         if fallback is not None and str(fallback).strip() != "":
             return require_env("gemini", alias, fallback)
     raise Namel3ssError(

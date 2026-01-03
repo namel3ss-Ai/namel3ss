@@ -1,0 +1,74 @@
+{
+  "agents": {},
+  "ais": {
+    "assistant": {
+      "column": 1,
+      "exposed_tools": [],
+      "line": 3,
+      "memory": {
+        "column": 1,
+        "line": 3,
+        "profile": false,
+        "semantic": false,
+        "short_term": 0,
+        "type": "AIMemory"
+      },
+      "model": "gpt-4.1",
+      "name": "assistant",
+      "provider": "openai",
+      "system_prompt": "You are a helper.",
+      "type": "AIDecl"
+    }
+  },
+  "column": null,
+  "flows": [
+    {
+      "audited": false,
+      "body": [
+        {
+          "ai_name": "assistant",
+          "column": 3,
+          "input_expr": {
+            "column": 34,
+            "line": 9,
+            "type": "Literal",
+            "value": "Hello"
+          },
+          "line": 9,
+          "target": "reply",
+          "type": "AskAIStmt"
+        },
+        {
+          "column": 3,
+          "expression": {
+            "column": 10,
+            "line": 10,
+            "name": "reply",
+            "type": "VarReference"
+          },
+          "line": 10,
+          "type": "Return"
+        }
+      ],
+      "column": 1,
+      "line": 8,
+      "name": "demo",
+      "requires": null,
+      "type": "Flow"
+    }
+  ],
+  "identity": null,
+  "line": null,
+  "pages": [],
+  "records": [],
+  "spec_version": "1.0",
+  "theme": "system",
+  "theme_preference": {
+    "allow_override": false,
+    "persist": "none"
+  },
+  "theme_runtime_supported": false,
+  "theme_tokens": {},
+  "tools": {},
+  "type": "Program"
+}

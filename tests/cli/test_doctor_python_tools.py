@@ -185,3 +185,14 @@ def test_doctor_warns_on_unverified_pack(tmp_path: Path, monkeypatch, capsys) ->
     data = json.loads(capsys.readouterr().out)
     messages = [check["message"] for check in data["checks"]]
     assert any("unverified" in message.lower() for message in messages)
+
+
+def test_doctor_reports_invalid_pack_manifest(tmp_path: Path, monkeypatch, capsys) -> None:
+    (tmp_path / "app.ai").write_text('spec is "1.0"\n\nflow "demo":\n  return "ok"\n', encoding="utf-8")
+    fixture_root = Path(__file__).resolve().parents[1] / "fixtures" / "packs" / "pack_invalid_manifest"
+    pack_dest = tmp_path / ".namel3ss" / "packs" / "sample.invalid"
+    shutil.copytree(fixture_root, pack_dest)
+    monkeypatch.chdir(tmp_path)
+    assert cli_main(["doctor", "--json"]) == 0
+    data = json.loads(capsys.readouterr().out)
+    assert any(check["id"].startswith("packs_issue_") and check["status"] == "error" for check in data["checks"])

@@ -1,28 +1,34 @@
 from __future__ import annotations
 
-from pathlib import Path
 from time import perf_counter
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.cli.devex import parse_project_overrides
+from namel3ss.cli.app_path import resolve_app_path
+from namel3ss.config.dotenv import apply_dotenv, load_dotenv_for_path
 from namel3ss.module_loader import load_project
 from namel3ss.test_runner.parser import parse_test_file
 from namel3ss.test_runner.runner import discover_test_files, run_tests
 from namel3ss.utils.json_tools import dumps_pretty
 
 
-def run_test_command(*, json_mode: bool) -> int:
-    root = Path.cwd()
-    app_path = root / "app.ai"
-    if not app_path.exists():
+def run_test_command(args: list[str]) -> int:
+    overrides, remaining = parse_project_overrides(args)
+    json_mode = "--json" in remaining
+    tail = [arg for arg in remaining if arg != "--json"]
+    if tail:
         raise Namel3ssError(
             build_guidance_message(
-                what="No app.ai found in this directory.",
-                why="`n3 test` runs from a project folder containing app.ai.",
-                fix="Run `n3 test` from your project root.",
-                example="cd my_app",
+                what=f"Unknown arguments: {' '.join(tail)}.",
+                why="test only accepts --json and optional --app/--project overrides.",
+                fix="Remove the extra arguments and try again.",
+                example="n3 test --json",
             )
         )
+    app_path = resolve_app_path(overrides.app_path, project_root=overrides.project_root)
+    root = app_path.parent
+    apply_dotenv(load_dotenv_for_path(str(app_path)))
     test_paths = discover_test_files(root)
     if not test_paths:
         payload = {"status": "ok", "tests": []}

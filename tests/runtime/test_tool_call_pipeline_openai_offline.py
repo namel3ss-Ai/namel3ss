@@ -60,7 +60,7 @@ def test_openai_pipeline_offline_tool_call(monkeypatch):
         ai_profiles=program.ais,
     )
     assert result.last_value == "[done]"
-    trace = result.traces[0]
+    trace = next(item for item in result.traces if hasattr(item, "canonical_events"))
     event_types = [event["type"] for event in trace.canonical_events]
     assert "tool_call_requested" in event_types
     assert "tool_call_completed" in event_types

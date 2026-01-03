@@ -1,0 +1,80 @@
+{
+  "agents": {},
+  "ais": {},
+  "column": null,
+  "flows": [
+    {
+      "audited": false,
+      "body": [
+        {
+          "column": 3,
+          "constant": false,
+          "expression": {
+            "column": 16,
+            "line": 4,
+            "type": "Literal",
+            "value": "1"
+          },
+          "line": 4,
+          "name": "total",
+          "type": "Let"
+        },
+        {
+          "column": 3,
+          "condition": {
+            "column": 6,
+            "line": 5,
+            "name": "total",
+            "type": "VarReference"
+          },
+          "else_body": [],
+          "line": 5,
+          "then_body": [
+            {
+              "column": 5,
+              "expression": {
+                "column": 12,
+                "line": 6,
+                "type": "Literal",
+                "value": "ok"
+              },
+              "line": 6,
+              "type": "Return"
+            }
+          ],
+          "type": "If"
+        },
+        {
+          "column": 3,
+          "expression": {
+            "column": 10,
+            "line": 7,
+            "type": "Literal",
+            "value": "bad"
+          },
+          "line": 7,
+          "type": "Return"
+        }
+      ],
+      "column": 1,
+      "line": 3,
+      "name": "demo",
+      "requires": null,
+      "type": "Flow"
+    }
+  ],
+  "identity": null,
+  "line": null,
+  "pages": [],
+  "records": [],
+  "spec_version": "1.0",
+  "theme": "system",
+  "theme_preference": {
+    "allow_override": false,
+    "persist": "none"
+  },
+  "theme_runtime_supported": false,
+  "theme_tokens": {},
+  "tools": {},
+  "type": "Program"
+}

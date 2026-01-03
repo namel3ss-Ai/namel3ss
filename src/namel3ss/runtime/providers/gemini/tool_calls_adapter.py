@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import dataclass
 from typing import List
 
@@ -10,6 +9,7 @@ from namel3ss.runtime.ai.http.client import post_json
 from namel3ss.runtime.ai.providers._shared.errors import require_env
 from namel3ss.runtime.tool_calls.model import ToolCallPolicy, ToolDeclaration
 from namel3ss.runtime.tool_calls.provider_iface import AssistantError, AssistantText, AssistantToolCall, ModelResponse, ProviderAdapter
+from namel3ss.security import read_env
 
 
 def _build_tools(tools: List[ToolDeclaration]) -> list:
@@ -136,11 +136,11 @@ def _parse_response(result: dict) -> ModelResponse:
 def _resolve_api_key(api_key: str | None) -> str:
     if api_key is not None and str(api_key).strip() != "":
         return api_key
-    preferred = os.getenv("NAMEL3SS_GEMINI_API_KEY")
+    preferred = read_env("NAMEL3SS_GEMINI_API_KEY")
     if preferred is not None and str(preferred).strip() != "":
         return require_env("gemini", "NAMEL3SS_GEMINI_API_KEY", preferred)
     for alias in ("GEMINI_API_KEY", "GOOGLE_API_KEY"):
-        fallback = os.getenv(alias)
+        fallback = read_env(alias)
         if fallback is not None and str(fallback).strip() != "":
             return require_env("gemini", alias, fallback)
     raise Namel3ssError(

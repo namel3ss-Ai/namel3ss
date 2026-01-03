@@ -1,0 +1,7 @@
+spec is "1.0"
+
+flow "demo":
+  let total is 1
+  if total:
+    return "ok"
+  return "bad"

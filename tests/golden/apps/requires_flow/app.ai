@@ -1,0 +1,9 @@
+spec is "1.0"
+
+flow "admin_only": requires identity.role is "admin"
+  return "ok"
+
+page "home":
+  title is "Requires"
+  button "Run":
+    calls flow "admin_only"

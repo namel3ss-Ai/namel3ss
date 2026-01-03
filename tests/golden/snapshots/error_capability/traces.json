@@ -1,0 +1,44 @@
+[
+  {
+    "allowed": false,
+    "canonical_events": [],
+    "capability": "network",
+    "guarantee_source": "tool",
+    "memory_events": [],
+    "protocol_version": 1,
+    "reason": "guarantee_blocked",
+    "resolved_source": "binding",
+    "runner": "service",
+    "title": "Capability Check",
+    "tool_name": "service tool",
+    "type": "capability_check"
+  },
+  {
+    "canonical_events": [],
+    "capability": "none",
+    "decision": "allowed",
+    "entry": "tools.service_tool:run",
+    "error_message": "What happened: Tool \"service tool\" cannot use the network.\nWhy: Effective guarantees forbid network access (POST http://service.local/tools).\nFix: Remove the restriction or choose a tool that does not need the capability.\nExample: [capability_overrides]\\n\"service tool\" = { no_network = true }",
+    "error_type": "CapabilityViolation",
+    "input_summary": {
+      "count": 1,
+      "keys": [
+        "value"
+      ],
+      "type": "object"
+    },
+    "kind": "python",
+    "memory_events": [],
+    "reason": "policy_allowed",
+    "resolved_source": "binding",
+    "result": "error",
+    "runner": "service",
+    "service_url": "http://service.local/tools",
+    "status": "error",
+    "timeout_ms": 10000,
+    "title": "Tool call: service tool",
+    "tool": "service tool",
+    "tool_name": "service tool",
+    "type": "tool_call"
+  }
+]

@@ -1,0 +1,152 @@
+{
+  "contract": {
+    "errors": [],
+    "flow_name": "demo",
+    "memory": {
+      "count": 0,
+      "events": []
+    },
+    "outcome": {
+      "outcome": {
+        "execution_steps_count": 5,
+        "flow_name": "demo",
+        "memory": {
+          "persist_attempted": true,
+          "persist_failed": false,
+          "persist_succeeded": true,
+          "skipped_reason": null
+        },
+        "record_changes_count": 0,
+        "state": {
+          "loaded_from_store": false,
+          "save_attempted": true,
+          "save_failed": false,
+          "save_succeeded": true
+        },
+        "status": "ok",
+        "store": {
+          "began": true,
+          "commit_failed": false,
+          "committed": true,
+          "rollback_failed": false,
+          "rolled_back": false
+        },
+        "traces_count": 1,
+        "what_did_not_happen": []
+      },
+      "summary": {
+        "flow_name": "demo",
+        "memory": {
+          "persist_attempted": true,
+          "persist_failed": false,
+          "persist_succeeded": true,
+          "skipped_reason": null
+        },
+        "status": "ok",
+        "store": {
+          "began": true,
+          "commit_failed": false,
+          "committed": true,
+          "rollback_failed": false,
+          "rolled_back": false
+        }
+      }
+    },
+    "result": {
+      "message": "alpha:2:True"
+    },
+    "schema_version": "production.v0",
+    "state": {},
+    "status": "ok",
+    "trace_hash": "c0d531ba9e85923f50c313ab5b2a12dae5ae858be211657aeec3a9e0b1499f2f",
+    "trace_schema_version": "2024-10-01",
+    "traces": [
+      {
+        "canonical_events": [],
+        "capability": "none",
+        "decision": "allowed",
+        "deps_source": "none",
+        "entry": "tools.format_tool:run",
+        "input_summary": {
+          "count": 3,
+          "keys": [
+            "active",
+            "count",
+            "name"
+          ],
+          "type": "object"
+        },
+        "kind": "python",
+        "memory_events": [],
+        "output_summary": {
+          "count": 1,
+          "keys": [
+            "message"
+          ],
+          "type": "object"
+        },
+        "protocol_version": 1,
+        "python_env": "system",
+        "python_path": "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "reason": "policy_allowed",
+        "resolved_source": "binding",
+        "result": "ok",
+        "runner": "local",
+        "sandbox": true,
+        "status": "ok",
+        "timeout_ms": 5000,
+        "title": "Tool call: format tool",
+        "tool": "format tool",
+        "tool_name": "format tool",
+        "type": "tool_call"
+      }
+    ]
+  },
+  "flow_name": "demo",
+  "ok": true,
+  "result": {
+    "message": "alpha:2:True"
+  },
+  "state": {},
+  "traces": [
+    {
+      "canonical_events": [],
+      "capability": "none",
+      "decision": "allowed",
+      "deps_source": "none",
+      "entry": "tools.format_tool:run",
+      "input_summary": {
+        "count": 3,
+        "keys": [
+          "active",
+          "count",
+          "name"
+        ],
+        "type": "object"
+      },
+      "kind": "python",
+      "memory_events": [],
+      "output_summary": {
+        "count": 1,
+        "keys": [
+          "message"
+        ],
+        "type": "object"
+      },
+      "protocol_version": 1,
+      "python_env": "system",
+      "python_path": "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+      "reason": "policy_allowed",
+      "resolved_source": "binding",
+      "result": "ok",
+      "runner": "local",
+      "sandbox": true,
+      "status": "ok",
+      "timeout_ms": 5000,
+      "title": "Tool call: format tool",
+      "tool": "format tool",
+      "tool_name": "format tool",
+      "type": "tool_call"
+    }
+  ]
+}

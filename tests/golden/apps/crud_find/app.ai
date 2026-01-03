@@ -1,0 +1,15 @@
+spec is "1.0"
+
+record "Note":
+  field "id" is number
+  field "title" is text must be present
+  field "body" is text
+
+flow "demo":
+  set state.note with:
+    title is "First"
+    body is "Body"
+  create "Note" with state.note as note
+  find "Note" where id is note.id
+  let count is list length of note_results
+  return count

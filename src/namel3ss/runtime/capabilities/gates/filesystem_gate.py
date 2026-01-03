@@ -4,6 +4,7 @@ from pathlib import Path
 
 from namel3ss.runtime.capabilities.gates.base import (
     CapabilityViolation,
+    REASON_GUARANTEE_ALLOWED,
     REASON_GUARANTEE_BLOCKED,
     build_block_message,
 )
@@ -16,9 +17,17 @@ def check_filesystem(ctx: CapabilityContext, record, *, path: Path | str, mode: 
     if _is_write_mode(mode):
         operation = "filesystem_write"
         deny = ctx.guarantees.no_filesystem_write
-    if not deny:
-        return
     source = ctx.guarantees.source_for_capability(operation) or "pack"
+    if not deny:
+        record(
+            CapabilityCheck(
+                capability=operation,
+                allowed=True,
+                guarantee_source=source,
+                reason=REASON_GUARANTEE_ALLOWED,
+            )
+        )
+        return
     check = CapabilityCheck(
         capability=operation,
         allowed=False,
