@@ -20,6 +20,7 @@ from namel3ss.runtime.ui.actions import handle_action
 from namel3ss.runtime.preferences.factory import preference_store_for_app, app_pref_key
 from namel3ss.studio.session import SessionState
 from namel3ss.studio.diagnostics import collect_ai_context_diagnostics
+from namel3ss.studio.trace_adapter import normalize_action_response
 from namel3ss.runtime.tools.bindings import bindings_path
 from namel3ss.tools.health.analyze import analyze_tool_health
 from namel3ss.ui.manifest import build_manifest
@@ -198,6 +199,8 @@ def execute_action(source: str, session: SessionState | None, action_id: str, pa
             ui_theme = (response.get("ui") or {}).get("theme") if response.get("ui") else None
             if ui_theme and ui_theme.get("current"):
                 session.runtime_theme = ui_theme.get("current")
+        if response and isinstance(response, dict):
+            return normalize_action_response(response)
         return response
     except Namel3ssError as err:
         return build_error_from_exception(err, kind="engine", source=source)
