@@ -1,12 +1,12 @@
-# Learning Namel3ss 0.1.0 — The Definitive Guide
+# Learning Namel3ss 0.1.0a7 — The Definitive Guide
 
 ## Preface
 
-Welcome to Learning Namel3ss   0.1.0, your comprehensive guide to Namel3ss, the world’s first English‑first, AI‑native, full‑stack programming language. Namel3ss lets you build real applications by describing your intent in clear, structured English. Instead of juggling multiple languages, frameworks, prompts and orchestration libraries, you define your entire app in a single .ai file. Namel3ss then compiles it into a validated intermediate representation (IR) and runs it in a deterministic engine where AI boundaries are explicit and inspectable.
+Welcome to Learning Namel3ss   0.1.0a7, your comprehensive guide to Namel3ss, the world’s first English‑first, AI‑native, full‑stack programming language. Namel3ss lets you build real applications by describing your intent in clear, structured English. Instead of juggling multiple languages, frameworks, prompts and orchestration libraries, you define your entire app in a single .ai file. Namel3ss then compiles it into a validated intermediate representation (IR) and runs it in a deterministic engine where AI boundaries are explicit and inspectable.
 
 As you’ll see, Namel3ss is a fundamentally new way to build software. Throughout this guide you will learn the language grammar, explore its full‑stack capabilities, write flows, define records, create pages, integrate AI, orchestrate multiple agents, and work with the CLI and Studio tools. This book also defines every term used in the language and its engine.
 
-This book covers Namel3ss version 0.1.0. Future versions may introduce new features, but the core concepts you learn here will remain valuable.
+This book covers Namel3ss version 0.1.0a7. Future versions may introduce new features, but the core concepts you learn here will remain valuable.
 
 ## Part I: Introduction to Namel3ss
 
@@ -878,7 +878,7 @@ These endpoints make Studio interactive and enable integration with other fronte
 
 ## Afterword
 
-Namel3ss   0.1.0 is a revolutionary step towards building AI‑native applications in plain English. By integrating full‑stack development, AI orchestration, deterministic engine semantics and robust tooling, Namel3ss eliminates friction and reduces cognitive load for developers. In this book you learned the grammar, features, tooling and best practices of Namel3ss. You should now feel comfortable creating records, flows, pages, AI profiles and agents, exploring the UI and Studio, running and testing applications, and scaffolding new projects with templates.
+Namel3ss   0.1.0a7 is a revolutionary step towards building AI‑native applications in plain English. By integrating full‑stack development, AI orchestration, deterministic engine semantics and robust tooling, Namel3ss eliminates friction and reduces cognitive load for developers. In this book you learned the grammar, features, tooling and best practices of Namel3ss. You should now feel comfortable creating records, flows, pages, AI profiles and agents, exploring the UI and Studio, running and testing applications, and scaffolding new projects with templates.
 
 We are just at the beginning of this journey. Future versions of Namel3ss will introduce persistent storage backends, user authentication, additional providers and more advanced agent capabilities — but the foundation of structured English for deterministic full‑stack AI development remains. Join the community, build amazing apps, and help shape the future of software development.
 

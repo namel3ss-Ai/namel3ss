@@ -19,7 +19,7 @@ namel3ss is an English-first, AI-native, full-stack programming language, built 
 
 ---
 
-## ✅ Completed (v0.1.0-alpha)
+## ✅ Completed (v0.1.0a7)
 
 ### Phase 0 — Foundation & Discipline ✅
 - Repo structure (`src/`, `tests/`, `docs/`)
@@ -99,7 +99,7 @@ namel3ss is an English-first, AI-native, full-stack programming language, built 
 - `.gitignore` includes `.env` by default
 
 ### Phase 11 — Release & Packaging ✅
-- `0.1.0-alpha` versioning
+- `0.1.0a7` versioning
 - `VERSION` + `CHANGELOG.md`
 - Package ships templates + Studio web assets
 - Release smoke test (scaffold + parse/lower)
@@ -143,7 +143,7 @@ Goal: make pack authoring and publishing explicit, explainable, and local-first.
 
 ---
 
-## 🔜 Next (post v0.1.0-alpha)
+## 🔜 Next (post v0.1.0a7)
 
 The next phases are intentionally based on real user demand. We do not ship “big features” without real usage pressure.
 

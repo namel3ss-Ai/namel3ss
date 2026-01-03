@@ -1,9 +1,11 @@
+from importlib import metadata
 from pathlib import Path
 import re
 
 from namel3ss.cli.main import main
 from namel3ss.ir.nodes import lower_program
 from namel3ss.parser.core import parse
+from namel3ss.version import get_version
 
 
 def _pyproject_version(pyproject_text: str) -> str:
@@ -19,7 +21,12 @@ def test_release_version_and_template(monkeypatch, tmp_path):
     version_text = version_path.read_text(encoding="utf-8").strip()
     pyproject_text = pyproject_path.read_text(encoding="utf-8")
     assert version_text
+    assert version_text == "0.1.0a7"
     assert _pyproject_version(pyproject_text) == version_text
+    def _raise(_name: str) -> str:
+        raise metadata.PackageNotFoundError
+    monkeypatch.setattr("namel3ss.version.metadata.version", _raise)
+    assert get_version() == version_text
 
     monkeypatch.chdir(tmp_path)
     code = main(["new", "crud", "test_app"])

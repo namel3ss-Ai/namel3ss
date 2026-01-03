@@ -62,7 +62,7 @@ flow "reply":
 ```
 
 ## Status
-namel3ss is in v0.1.0 alpha. It is suitable for learning and experimentation, not production.
+namel3ss is in v0.1.0a7 alpha. It is suitable for learning and experimentation, not production.
 Expect breaking changes between alpha revisions.
 
 ## Start here (learning path)

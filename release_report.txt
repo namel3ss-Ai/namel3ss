@@ -1,5 +1,5 @@
 Release check: FAIL
-Version: 0.1.0a6
+Version: 0.1.0a7
 Gates: 6 passed, 1 failed, 0 missing
 Gate results:
 - Parity Gate: pass (parity_gate.pass) pytest ok

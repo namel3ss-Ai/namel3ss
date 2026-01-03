@@ -2,6 +2,10 @@
 
 No breaking changes without an explicit changelog entry.
 
+## v0.1.0a7
+### Changed
+- Release metadata version bump to 0.1.0a7 (no runtime changes).
+
 ## v0.1.0a6
 ### Added
 - Package manifest `namel3ss.toml` and lockfile `namel3ss.lock.json`.

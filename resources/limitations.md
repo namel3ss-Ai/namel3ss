@@ -1,4 +1,4 @@
-# namel3ss - Limitations (v0.1.0a6)
+# namel3ss - Limitations (v0.1.0a7)
 
 This document lists current limitations and boundaries based on runtime, CLI, Studio behavior, and enforced tests. It is not a roadmap.
 
