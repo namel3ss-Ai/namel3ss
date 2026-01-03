@@ -26,7 +26,7 @@ def read_snapshot(
     project_root: str | None,
     app_path: str | None,
 ) -> dict | None:
-    snapshot_path, checksum_path = snapshot_paths(project_root=project_root, app_path=app_path)
+    snapshot_path, checksum_path = snapshot_paths(project_root=project_root, app_path=app_path, for_write=True)
     if snapshot_path is None or checksum_path is None:
         return None
     if not snapshot_path.exists():

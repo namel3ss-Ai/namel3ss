@@ -68,3 +68,28 @@ def test_sqlite_falls_back_when_root_unwritable(tmp_path: Path) -> None:
         assert store.db_path == resolve_writable_path(db_path)
     finally:
         store.conn.close()
+
+
+def test_persist_root_override_for_memory(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    persist_root = tmp_path / "persist"
+    monkeypatch.setenv("N3_PERSIST_ROOT", str(persist_root))
+    manager = MemoryManager()
+    snapshot_path = write_snapshot(manager, project_root=str(tmp_path / "project"), app_path=None)
+    assert snapshot_path is not None
+    assert snapshot_path.parent == persist_root / ".namel3ss" / "memory"
+    assert snapshot_path.exists()
+
+
+def test_persist_root_override_for_sqlite(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    persist_root = tmp_path / "persist"
+    monkeypatch.setenv("N3_PERSIST_ROOT", str(persist_root))
+    config = AppConfig()
+    config.persistence.target = "sqlite"
+    config.persistence.db_path = ".namel3ss/data.db"
+
+    store = create_store(config=config)
+    try:
+        assert isinstance(store, SQLiteStore)
+        assert store.db_path == persist_root / ".namel3ss" / "data.db"
+    finally:
+        store.conn.close()
