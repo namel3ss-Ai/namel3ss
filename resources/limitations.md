@@ -1,229 +1,49 @@
-# namel3ss — Limitations (by Design)
+# namel3ss - Limitations (v0.1.0a6)
 
-“Focus is about saying no.”
-— Steve Jobs
+This document lists current limitations and boundaries based on runtime, CLI, Studio behavior, and enforced tests. It is not a roadmap.
 
-namel3ss is opinionated.
-That means some things are not possible — on purpose.
+## Hard Limitations (Current)
 
-This document explains what namel3ss does not do in v0.1.0-alpha, and why that restraint is essential to what we are building.
+- Execution is single-process and local; there is no distributed runtime, clustering, or multi-host scheduler.
+- Studio runs as a local HTTP server bound to 127.0.0.1 with per-process session state; there is no multi-user or shared-session mode.
+- Spec versions are enforced: programs must declare a spec and only `1.0` is supported; unsupported specs fail before execution.
+- Spec migration support is limited to declared paths (currently `0.9` -> `1.0`); other migrations are rejected.
+- Persistence is opt-in: default is in-memory; sqlite and postgres are supported via `N3_PERSIST`/`N3_PERSIST_TARGET`; the `edge` target is not implemented.
+- AI provider features are limited: streaming and JSON mode are not supported; each provider response yields at most one tool call; `ollama` has no tool calling.
 
-## The Rule of 3
+## Intentional Constraints
 
-The “3” in namel3ss is not decoration.
+- UI components are limited to the built-in set: title, text, form, table, button, section, card, and layout (row/column).
+- Theme control is limited to light/dark/system plus optional theme tokens; arbitrary CSS or layout styling is not supported.
+- Canonical types are required; legacy aliases are accepted but linted as errors by default and rewritten by the formatter.
+- Built-in tool packs are intentionally small (`text`, `math`, `datetime`, `file`, `http`); non-trivial behavior must be implemented as tools.
+- App-defined tools require explicit bindings in `.namel3ss/tools.yaml`.
 
-It is a promise.
+## Security & Safety Boundaries
 
-If you cannot understand the basics of namel3ss in 3 minutes,
-we consider that a design failure — and we will redesign it.
+- Sensitive operations (filesystem, network, env, subprocess, secrets) are gated by capabilities; access is denied unless explicitly allowed.
+- Secret values are never persisted; only secret access metadata is logged to `.namel3ss/secret_audit.jsonl` when auditing is enabled.
+- Local artifacts are written per run when a project root is available: `.namel3ss/execution/last.json`, `.namel3ss/tools/last.json`, and `.namel3ss/memory/memory_snapshot.json`.
 
-This rule guides every decision:
+## Non-Goals
 
-the grammar
+- No built-in authentication, roles, or user-management system.
+- Not a general-purpose programming language or web framework.
+- No native mobile or desktop packaging/installer output.
 
-the tooling
+## Known Edge Cases
 
-the Studio
+- Determinism guarantees apply to canonicalization and hashing; external providers or tools that depend on time/network can produce different outcomes across runs.
+- Studio page navigation is a simple page selector; there is no URL routing or deep-linking.
 
-and yes, the limitations
+## What Is Explicitly Not Supported
 
-## What namel3ss Is (and Is Not)
+- Streaming responses or provider JSON mode.
+- Multiple tool calls in a single provider response.
+- Edge persistence target.
+- Public registry hosting or automatic background updates.
+- Remote Studio hosting or multi-tenant Studio sessions.
 
-namel3ss is:
+## Future Work (Not Promised)
 
-- an English-first programming language
-- AI-native, not AI-bolted-on
-- deterministic by default
-- designed for clarity, not cleverness
-
-namel3ss is not:
-
-- a general-purpose replacement for Python
-- a web framework
-- a cloud platform
-- a “do everything” system
-
-Those choices are intentional.
-
-## Current Limitations (v0.1.0-alpha)
-
-### 1. No Production Guarantees (Yet)
-
-namel3ss v0.1.0 is an alpha.
-
-That means:
-
-- APIs may evolve
-- some breaking changes may occur
-- performance tuning is not complete
-
-This is the phase where we optimize thinking, not scaling.
-
-### 2. Local-Only Persistence (Opt-in)
-
-Persistence v1 is opt-in and local:
-
-- enable with `N3_PERSIST=1` (uses SQLite at `.namel3ss/data.db`)
-- no clustering or remote storage
-- traces, secrets, and provider data are not persisted
-
-Default remains in-memory and deterministic. This keeps behavior predictable unless persistence is explicitly requested.
-
-### 7. Navigation and Theming
-
-namel3ss does not support complex routing or arbitrary CSS theming. Pages are single-level today; styling stays minimal and semantic.
-
-### 8. No Native Packaging
-
-There is no native mobile/desktop packaging; namel3ss focuses on file-first, local workflows.
-
-### 9. Type aliases are deprecated
-
-Canonical types are `text`, `number`, `boolean` (and `json` if present). Legacy aliases (`string`/`int`/`bool`) are accepted for compatibility but are lint errors by default. Run `n3 app.ai format` to rewrite to canonical types automatically.
-
-### 3. No Authentication or User Management (Yet)
-
-There is no built-in:
-
-- login system
-- roles
-- permissions
-- sessions across processes
-
-Why?
-
-Because auth is a product decision, not a language primitive.
-We will add it once real applications demand it.
-
-### 4. Limited Standard Library
-
-The standard library is intentionally small.
-
-There is no:
-
-- large math module
-- extensive date/time API
-- filesystem DSL
-- networking DSL
-
-If you need heavy computation today, namel3ss can call out to tools written in Python.
-
-The language stays focused on application intent, not utility sprawl.
-
-### 5. Tool Calling Scope
-
-Tool calling works locally and for the supported cloud providers, but:
-
-- only single tool call per turn is wired
-- JSON mode/streaming are not yet supported
-
-For real providers (OpenAI, Anthropic, Gemini, Mistral):
-
-- tools are declared
-- schemas are passed
-- but providers return text output only (for now)
-
-This avoids provider-specific chaos while we harden a universal tool-calling model.
-
-### 6. No UI Styling Language
-
-There is no styling DSL.
-
-You cannot:
-
-- define colors
-- write CSS
-- tweak layout details
-
-UI in namel3ss is semantic, not decorative.
-
-The goal is to build working applications fast — not pixel-perfect interfaces.
-
-### 7. No Distributed or Cloud Execution
-
-namel3ss runs:
-
-- locally
-- in a single process
-- deterministically
-
-There is no:
-
-- distributed engine
-- clustering
-- load balancing
-- orchestration layer
-
-This keeps debugging human and predictable.
-Tool runners can execute remotely (service/container), but the core runtime remains local and single-process.
-
-### 8. No Public Registry (Yet)
-
-There is no public marketplace or global registry in v0.1.0-alpha.
-
-What exists today:
-- local registry index (`.namel3ss/registry`)
-- optional team registries (HTTP, opt-in)
-- pack verification with v1 signatures
-- explicit install/verify/enable (no auto-updates)
-
-What does not exist yet:
-- a hosted public registry
-- auto-updates or background upgrades
-- popularity-based ranking (no stars, no trending)
-
-Python is optional for most users. For advanced logic, use Python tools with explicit dependencies (`pyproject.toml` or `requirements.txt`) and a per-app `.venv` via `n3 deps install`. For common tasks, built-in tool packs are available without extra dependencies. Pack tools require no bindings; app-defined tools still require `.namel3ss/tools.yaml` bindings.
-
-## Why These Limitations Exist
-
-Every limitation serves a purpose:
-
-- Clarity over completeness
-- Predictability over flexibility
-- Understanding over abstraction
-- Design over accumulation
-
-Most platforms fail because they add features faster than they add meaning.
-
-We are doing the opposite.
-
-## What You Can Expect
-
-Despite these limits, namel3ss already lets you:
-
-- define data models
-- generate working UIs automatically
-- run backend logic
-- call real AI models (local and cloud)
-- orchestrate multi-agent workflows
-- inspect state and AI traces visually
-- edit your app safely in Studio
-- scaffold new apps in seconds
-
-All in one file.
-In English.
-With guardrails.
-
-## The Road Ahead
-
-Some of today’s limitations will disappear:
-
-- persistence
-- authentication
-- richer providers
-- deployment options
-
-Others may never change:
-
-- no styling DSL
-- no GraphQL
-- no hidden magic
-
-That’s how focus works.
-
-## One Last Thing
-
-If namel3ss ever becomes hard to understand,
-we won’t document it — we’ll fix it.
-
-That’s the promise behind the 3.
+- Frequently requested but not implemented: public registry hosting, streaming/JSON-mode providers, distributed execution, richer UI theming.
