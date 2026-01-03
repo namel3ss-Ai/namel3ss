@@ -1,0 +1,8 @@
+id: "unverified.pack"
+name: "Unverified Pack"
+version: "1.0.0"
+description: "Unverified fixture"
+author: "Namel3ss"
+license: "MIT"
+tools:
+  - "pack echo"

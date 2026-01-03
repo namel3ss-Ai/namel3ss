@@ -1,0 +1,5 @@
+tools:
+  "service tool":
+    kind: "python"
+    entry: "tools.service:run"
+    runner: "service"

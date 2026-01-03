@@ -39,6 +39,11 @@ logs/
 !.env.example
 !.env.sample
 .namel3ss/
+!spec/**/.namel3ss/
+spec/**/.namel3ss/**
+!spec/**/.namel3ss/tools.yaml
+!spec/**/.namel3ss/packs/
+!spec/**/.namel3ss/packs/**
 
 # Temp / lock files
 *.tmp

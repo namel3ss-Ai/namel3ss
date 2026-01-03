@@ -1,0 +1,6 @@
+tools:
+  "runner echo":
+    kind: "python"
+    entry: "tools.echo:run"
+    runner: "service"
+    url: "http://service.local/tools"

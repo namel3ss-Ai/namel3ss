@@ -1,0 +1,5 @@
+tools:
+  "echo payload":
+    kind: "python"
+    entry: "tools.echo:run"
+    runner: "local"

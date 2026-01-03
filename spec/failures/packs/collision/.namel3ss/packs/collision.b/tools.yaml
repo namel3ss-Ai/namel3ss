@@ -1,0 +1,4 @@
+tools:
+  "pack echo":
+    kind: "python"
+    entry: "tools.echo:run"

@@ -1,0 +1,5 @@
+tools:
+  "runner echo":
+    kind: "python"
+    entry: "tools.echo:run"
+    runner: "bogus"

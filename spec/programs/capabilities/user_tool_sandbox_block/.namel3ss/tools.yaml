@@ -1,0 +1,6 @@
+tools:
+  "user writes file":
+    kind: "python"
+    entry: "tools.user_file:run"
+    runner: "local"
+    sandbox: true

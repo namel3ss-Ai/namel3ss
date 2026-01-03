@@ -1,0 +1,7 @@
+tools:
+  "runner echo":
+    kind: "python"
+    entry: "tools.echo:run"
+    runner: "container"
+    image: "ghcr.io/namel3ss/tools:latest"
+    command: ["python", "-m", "namel3ss_tools.runner"]
