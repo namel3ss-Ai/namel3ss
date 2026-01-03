@@ -9,6 +9,7 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.runtime.storage.postgres_store import PostgresStore
 from namel3ss.runtime.storage.sqlite_store import SQLiteStore
+from namel3ss.runtime.persistence_paths import resolve_writable_path
 from namel3ss.secrets import record_secret_access
 
 
@@ -22,7 +23,8 @@ def create_store(db_path: Path | None = None, config: AppConfig | None = None):
         return MemoryStore()
     if target == "sqlite":
         path = db_path or Path(cfg.persistence.db_path or DEFAULT_DB_PATH)
-        return SQLiteStore(path)
+        resolved = resolve_writable_path(path)
+        return SQLiteStore(resolved)
     if target == "postgres":
         url = cfg.persistence.database_url or ""
         if not url:

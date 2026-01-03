@@ -34,7 +34,7 @@ def write_snapshot(
     app_path: str | None,
     secret_values: list[str] | None = None,
 ) -> Path | None:
-    snapshot_path, checksum_path = snapshot_paths(project_root=project_root, app_path=app_path)
+    snapshot_path, checksum_path = snapshot_paths(project_root=project_root, app_path=app_path, for_write=True)
     if snapshot_path is None or checksum_path is None:
         return None
     payload = build_snapshot_payload(
@@ -45,7 +45,7 @@ def write_snapshot(
     )
     verify_snapshot_payload(payload)
     data = serialize_snapshot(payload)
-    target_dir = memory_dir(project_root=project_root, app_path=app_path)
+    target_dir = memory_dir(project_root=project_root, app_path=app_path, for_write=True)
     if target_dir is None:
         return None
     target_dir.mkdir(parents=True, exist_ok=True)

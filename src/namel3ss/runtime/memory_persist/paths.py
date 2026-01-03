@@ -2,45 +2,69 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from namel3ss.runtime.persistence_paths import (
+    resolve_persistence_root,
+    resolve_project_root as _resolve_project_root,
+)
+
 
 MEMORY_DIR_NAME = ".namel3ss/memory"
 SNAPSHOT_FILENAME = "memory_snapshot.json"
 CHECKSUM_FILENAME = "memory_snapshot.sha256"
 
 
-def resolve_project_root(*, project_root: str | None, app_path: str | None) -> Path | None:
-    if project_root:
-        return Path(project_root).resolve()
-    if app_path:
-        return Path(app_path).resolve().parent
-    return None
+def resolve_project_root(*, project_root: str | Path | None, app_path: str | Path | None) -> Path | None:
+    return _resolve_project_root(project_root, app_path)
 
 
-def memory_dir(*, project_root: str | None, app_path: str | None) -> Path | None:
-    root = resolve_project_root(project_root=project_root, app_path=app_path)
+def memory_dir(
+    *,
+    project_root: str | Path | None,
+    app_path: str | Path | None,
+    for_write: bool = False,
+) -> Path | None:
+    if for_write:
+        root = resolve_persistence_root(project_root, app_path)
+    else:
+        root = resolve_project_root(project_root=project_root, app_path=app_path)
     if root is None:
         return None
     return root / ".namel3ss" / "memory"
 
 
-def snapshot_path(*, project_root: str | None, app_path: str | None) -> Path | None:
-    root = memory_dir(project_root=project_root, app_path=app_path)
+def snapshot_path(
+    *,
+    project_root: str | Path | None,
+    app_path: str | Path | None,
+    for_write: bool = False,
+) -> Path | None:
+    root = memory_dir(project_root=project_root, app_path=app_path, for_write=for_write)
     if root is None:
         return None
     return root / SNAPSHOT_FILENAME
 
 
-def checksum_path(*, project_root: str | None, app_path: str | None) -> Path | None:
-    root = memory_dir(project_root=project_root, app_path=app_path)
+def checksum_path(
+    *,
+    project_root: str | Path | None,
+    app_path: str | Path | None,
+    for_write: bool = False,
+) -> Path | None:
+    root = memory_dir(project_root=project_root, app_path=app_path, for_write=for_write)
     if root is None:
         return None
     return root / CHECKSUM_FILENAME
 
 
-def snapshot_paths(*, project_root: str | None, app_path: str | None) -> tuple[Path | None, Path | None]:
+def snapshot_paths(
+    *,
+    project_root: str | Path | None,
+    app_path: str | Path | None,
+    for_write: bool = False,
+) -> tuple[Path | None, Path | None]:
     return (
-        snapshot_path(project_root=project_root, app_path=app_path),
-        checksum_path(project_root=project_root, app_path=app_path),
+        snapshot_path(project_root=project_root, app_path=app_path, for_write=for_write),
+        checksum_path(project_root=project_root, app_path=app_path, for_write=for_write),
     )
 
 
