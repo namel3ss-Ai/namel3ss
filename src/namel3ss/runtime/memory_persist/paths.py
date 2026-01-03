@@ -22,9 +22,12 @@ def memory_dir(
     project_root: str | Path | None,
     app_path: str | Path | None,
     for_write: bool = False,
+    allow_create: bool | None = None,
 ) -> Path | None:
     if for_write:
-        root = resolve_persistence_root(project_root, app_path)
+        if allow_create is None:
+            allow_create = True
+        root = resolve_persistence_root(project_root, app_path, allow_create=allow_create)
     else:
         root = resolve_project_root(project_root=project_root, app_path=app_path)
     if root is None:
@@ -37,8 +40,14 @@ def snapshot_path(
     project_root: str | Path | None,
     app_path: str | Path | None,
     for_write: bool = False,
+    allow_create: bool | None = None,
 ) -> Path | None:
-    root = memory_dir(project_root=project_root, app_path=app_path, for_write=for_write)
+    root = memory_dir(
+        project_root=project_root,
+        app_path=app_path,
+        for_write=for_write,
+        allow_create=allow_create,
+    )
     if root is None:
         return None
     return root / SNAPSHOT_FILENAME
@@ -49,8 +58,14 @@ def checksum_path(
     project_root: str | Path | None,
     app_path: str | Path | None,
     for_write: bool = False,
+    allow_create: bool | None = None,
 ) -> Path | None:
-    root = memory_dir(project_root=project_root, app_path=app_path, for_write=for_write)
+    root = memory_dir(
+        project_root=project_root,
+        app_path=app_path,
+        for_write=for_write,
+        allow_create=allow_create,
+    )
     if root is None:
         return None
     return root / CHECKSUM_FILENAME
@@ -61,10 +76,21 @@ def snapshot_paths(
     project_root: str | Path | None,
     app_path: str | Path | None,
     for_write: bool = False,
+    allow_create: bool | None = None,
 ) -> tuple[Path | None, Path | None]:
     return (
-        snapshot_path(project_root=project_root, app_path=app_path, for_write=for_write),
-        checksum_path(project_root=project_root, app_path=app_path, for_write=for_write),
+        snapshot_path(
+            project_root=project_root,
+            app_path=app_path,
+            for_write=for_write,
+            allow_create=allow_create,
+        ),
+        checksum_path(
+            project_root=project_root,
+            app_path=app_path,
+            for_write=for_write,
+            allow_create=allow_create,
+        ),
     )
 
 

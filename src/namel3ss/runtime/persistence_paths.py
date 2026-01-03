@@ -25,21 +25,28 @@ def resolve_project_root(project_root: str | Path | None, app_path: str | Path |
     return None
 
 
-def resolve_persistence_root(project_root: str | Path | None, app_path: str | Path | None) -> Path | None:
+def resolve_persistence_root(
+    project_root: str | Path | None,
+    app_path: str | Path | None,
+    *,
+    allow_create: bool = True,
+) -> Path | None:
     env_root = _resolve_env_root()
     if env_root is not None:
-        if _is_writable_dir(env_root):
+        if _is_writable_dir(env_root, create=allow_create):
             return env_root
         fallback = _fallback_root(_seed_for(env_root))
-        fallback.mkdir(parents=True, exist_ok=True)
+        if allow_create:
+            fallback.mkdir(parents=True, exist_ok=True)
         return fallback
     candidate = resolve_project_root(project_root, app_path)
     if candidate is None:
         return None
-    if _is_writable_dir(candidate):
+    if _is_writable_dir(candidate, create=allow_create):
         return candidate
     fallback = _fallback_root(_seed_for(candidate))
-    fallback.mkdir(parents=True, exist_ok=True)
+    if allow_create:
+        fallback.mkdir(parents=True, exist_ok=True)
     return fallback
 
 
@@ -48,18 +55,22 @@ def resolve_writable_path(path: Path | str) -> Path:
     env_root = _resolve_env_root()
     if env_root is not None and not target.is_absolute():
         target = env_root / target
-    if _is_writable_dir(target.parent):
+    if _is_writable_dir(target.parent, create=True):
         return target
     fallback = _fallback_root(_seed_for(target))
     fallback.mkdir(parents=True, exist_ok=True)
     return fallback / target.name
 
 
-def _is_writable_dir(path: Path) -> bool:
-    try:
-        path.mkdir(parents=True, exist_ok=True)
-    except Exception:
-        return False
+def _is_writable_dir(path: Path, *, create: bool) -> bool:
+    if create:
+        try:
+            path.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            return False
+    else:
+        if not path.exists():
+            return False
     if not path.is_dir():
         return False
     try:

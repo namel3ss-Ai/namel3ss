@@ -26,10 +26,8 @@ def read_snapshot(
     project_root: str | None,
     app_path: str | None,
 ) -> dict | None:
-    snapshot_path, checksum_path = snapshot_paths(project_root=project_root, app_path=app_path, for_write=True)
+    snapshot_path, checksum_path = _locate_snapshot(project_root=project_root, app_path=app_path)
     if snapshot_path is None or checksum_path is None:
-        return None
-    if not snapshot_path.exists():
         return None
     verify_checksum(snapshot_path, checksum_path)
     try:
@@ -38,6 +36,28 @@ def read_snapshot(
         raise Namel3ssError(f"Snapshot could not be parsed: {err.msg}.") from err
     verify_snapshot_payload(payload)
     return _decode_snapshot_payload(payload)
+
+
+def _locate_snapshot(*, project_root: str | None, app_path: str | None) -> tuple[Path | None, Path | None]:
+    candidates = [
+        snapshot_paths(
+            project_root=project_root,
+            app_path=app_path,
+            for_write=True,
+            allow_create=False,
+        ),
+        snapshot_paths(
+            project_root=project_root,
+            app_path=app_path,
+            for_write=False,
+        ),
+    ]
+    for snapshot_path, checksum_path in candidates:
+        if snapshot_path is None or checksum_path is None:
+            continue
+        if snapshot_path.exists():
+            return snapshot_path, checksum_path
+    return None, None
 
 
 def _decode_snapshot_payload(payload: dict) -> dict:

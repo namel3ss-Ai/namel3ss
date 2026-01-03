@@ -264,6 +264,21 @@ def _seed_manager(manager: MemoryManager):
     return store_key, phase.phase_id, proposal, packet
 
 
+def test_read_snapshot_falls_back_to_legacy_when_override_missing(tmp_path, monkeypatch):
+    monkeypatch.delenv("N3_PERSIST_ROOT", raising=False)
+    manager = MemoryManager()
+    write_snapshot(manager, project_root=str(tmp_path), app_path=None)
+
+    override_root = tmp_path / "override"
+    monkeypatch.setenv("N3_PERSIST_ROOT", str(override_root))
+
+    snapshot = read_snapshot(project_root=str(tmp_path), app_path=None)
+    assert snapshot is not None
+    assert snapshot.get("project_id")
+    assert "items" in snapshot
+    assert not override_root.exists()
+
+
 def _counter_for(counters: list[dict], store_key: str, kind: str) -> int:
     for entry in counters:
         if entry.get("store_key") == store_key and entry.get("kind") == kind:
