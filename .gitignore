@@ -12,6 +12,8 @@ env/
 build/
 dist/
 *.egg-info/
+!src/namel3ss/runtime/build/
+!src/namel3ss/runtime/build/**
 
 # Test / coverage artifacts
 .pytest_cache/
