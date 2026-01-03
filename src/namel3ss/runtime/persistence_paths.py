@@ -74,7 +74,9 @@ def _is_writable_dir(path: Path, *, create: bool) -> bool:
     if not path.is_dir():
         return False
     try:
-        return os.access(path, os.W_OK | os.X_OK)
+        if create:
+            return os.access(path, os.W_OK | os.X_OK)
+        return os.access(path, os.R_OK | os.X_OK)
     except Exception:
         return False
 
