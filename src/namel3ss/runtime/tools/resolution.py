@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 from pathlib import Path
 
 from namel3ss.errors.base import Namel3ssError
@@ -71,7 +72,7 @@ def resolve_tool_binding(
             column=column,
             details={"tool_reason": "pack_unavailable_or_unverified"},
         )
-    if not bindings_path(app_root).exists():
+    if not bindings_path(app_root).exists() and os.getenv("N3_EXECUTABLE_SPEC") != "1":
         if tool_kind in {None, "python"}:
             defaults = default_tool_bindings()
             default_binding = defaults.get(tool_name)

@@ -288,6 +288,10 @@ def test_python_tool_failure_surfaces_error(monkeypatch, tmp_path):
     tools_dir = tmp_path / "tools"
     tools_dir.mkdir()
     (tools_dir / "__init__.py").write_text("", encoding="utf-8")
+    (tools_dir / "sample_tool.py").write_text(
+        "def greet(payload):\n    return {\"ok\": True}\n",
+        encoding="utf-8",
+    )
 
     source = '''tool "greeter":
   implemented using python
@@ -340,6 +344,10 @@ def test_python_tool_invalid_venv_python_path(tmp_path):
     tools_dir = tmp_path / "tools"
     tools_dir.mkdir()
     (tools_dir / "__init__.py").write_text("", encoding="utf-8")
+    (tools_dir / "sample_tool.py").write_text(
+        "def greet(payload):\n    return {\"ok\": True}\n",
+        encoding="utf-8",
+    )
     venv_path = tmp_path / ".venv"
     venv_path.mkdir()
 

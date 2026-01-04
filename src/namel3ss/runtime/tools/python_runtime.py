@@ -119,8 +119,13 @@ def _execute_python_tool(
         pack_version = resolved.pack_version
         entry = binding.entry
         module_path = entry.split(":", 1)[0].strip()
+        runner_name = binding.runner or "local"
         allow_external = resolved_source in {"installed_pack"} or module_path.startswith("tests.fixtures.")
-        if resolved_source == "binding" and (module_path == "tools" or module_path.startswith("tools.")):
+        if (
+            runner_name == "local"
+            and resolved_source == "binding"
+            and (module_path == "tools" or module_path.startswith("tools."))
+        ):
             validate_python_tool_entry_exists(entry, tool.name, app_root=app_root, line=line, column=column)
         else:
             validate_python_tool_entry(entry, tool.name, line=line, column=column, allow_external=allow_external)
@@ -140,7 +145,6 @@ def _execute_python_tool(
         trace_event["resolved_source"] = resolved_source
         if resolved_source == "binding":
             trace_event["entry"] = entry
-        runner_name = binding.runner or "local"
         if runner_name == "node":
             raise Namel3ssError(
                 build_guidance_message(

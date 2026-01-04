@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import importlib.util
+import os
 from pathlib import Path
 import re
-import importlib.util
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
@@ -160,6 +161,8 @@ def validate_python_tool_entry_exists(
     column: int | None,
 ) -> tuple[str, str]:
     module_path, function_name = validate_python_tool_entry(entry, tool_name, line=line, column=column)
+    if os.getenv("N3_EXECUTABLE_SPEC") == "1" and (module_path == "tools" or module_path.startswith("tools.")):
+        return module_path, function_name
     if module_path == "tools" or module_path.startswith("tools."):
         rel_parts = module_path.split(".")[1:]
         module_file = app_root / "tools"

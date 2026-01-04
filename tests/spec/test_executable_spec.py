@@ -301,6 +301,7 @@ def test_executable_spec_programs(monkeypatch: pytest.MonkeyPatch, spec_path: Pa
         _clear_secret_env(env_ctx)
         for key, value in expanded_env.items():
             env_ctx.setenv(key, value)
+        env_ctx.setenv("N3_EXECUTABLE_SPEC", "1")
         server = None
         thread = None
         try:
@@ -346,6 +347,7 @@ def test_executable_spec_failures(monkeypatch: pytest.MonkeyPatch, spec_path: Pa
         _clear_secret_env(env_ctx)
         for key, value in expanded_env.items():
             env_ctx.setenv(key, value)
+        env_ctx.setenv("N3_EXECUTABLE_SPEC", "1")
         try:
             server = None
             thread = None
