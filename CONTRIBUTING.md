@@ -79,7 +79,6 @@ Quick reminders:
 - File size: ≤500 LOC; split near 400 with folder-first naming.
 - Single responsibility per file.
 - Propose grammar/UI changes as small PRs with examples and tests.
-- Use issue templates for bugs/ideas; include a minimal `.ai` snippet and `n3 <app.ai> check` output.
 
 ---
 
@@ -98,8 +97,6 @@ Quick reminders:
 - Big architectural refactors.  
 - Adding providers beyond Tier-1.  
 - Feature bloat (styling DSL, GraphQL, distributed engine).
-
-Open an issue first if unsure.
 
 ---
 
@@ -127,8 +124,72 @@ namel3ss is not trying to be everything. It must stay understandable, determinis
 
 ---
 
-## Where to Ask Questions
-- GitHub Issues for bugs and feature requests.  
-- GitHub Discussions (if enabled) for design and questions.
+## Before opening an issue
+
+Thank you for contributing to namel3ss.
+
+This repository uses **GitHub Issue Forms** to keep issues focused and actionable.
+When opening an issue, please select the appropriate form provided by GitHub:
+
+- **Bug report** — concrete defects with a minimal reproduction  
+  https://github.com/namel3ss-Ai/namel3ss/issues/new?template=bug.yml
+
+- **Documentation improvement** — small, scoped doc fixes or clarifications  
+  https://github.com/namel3ss-Ai/namel3ss/issues/new?template=docs.yml
+
+- **Tests / Regression coverage** — test-only additions to lock existing behavior  
+  https://github.com/namel3ss-Ai/namel3ss/issues/new?template=tests.yml
+
+- **Developer experience (DX)** — small polish to messages, help output, or UX  
+  https://github.com/namel3ss-Ai/namel3ss/issues/new?template=dx.yml
+
+Issues opened outside these forms may be closed or redirected.
+
+For language design proposals, new syntax ideas, architectural discussions, or
+open-ended questions, please use **Discussions** instead.
+
+### What issues are for
+Issues are used to track **concrete, actionable work**, such as:
+- Bugs with a clear reproduction
+- Small, scoped improvements
+- Missing tests
+- Documentation clarifications
+- Developer experience polish
+
+Each issue should be solvable without redesigning the language.
+
+### What issues are NOT for
+Please do NOT open issues for:
+- Language design proposals
+- New syntax ideas
+- Architectural changes
+- Feature brainstorming
+- Open-ended discussions
+
+### Scope expectations
+A good issue should:
+- Be focused on one thing
+- Be solvable in a few hours
+- Touch a small number of files
+- Have a clear definition of “done”
+
+If an issue requires design debate, it is probably not an issue.
+
+### Title requirements
+Issue titles must:
+- Start with a verb (Fix / Add / Improve / Align / Clarify)
+- Describe a concrete action
+- Avoid questions or speculative language
+
+### Roadmap relationship
+The roadmap describes the **future shape of the language**.
+Issues describe **work that may or may not contribute to that future**.
+
+Opening an issue does not imply roadmap inclusion.
+
+### Maintainer discretion
+Maintainers may close issues that are out of scope, ask to move topics to
+Discussions, or narrow issues for clarity. This is intentional and helps keep
+the project focused.
 
 Thank you for helping build namel3ss.

@@ -1,0 +1,59 @@
+name: Documentation improvement
+description: Propose a small, concrete docs fix or clarification.
+title: "Docs: <short description>"
+labels: ["docs", "safe-change"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Documentation improvement
+        Keep doc issues concrete and scoped. No language design proposals here.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-flight checklist
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true
+        - label: This is a documentation-only change (no behavior changes).
+          required: true
+
+  - type: input
+    id: doc_location
+    attributes:
+      label: Document location
+      description: Link or path to the doc needing change.
+      placeholder: "docs/concurrency.md"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is unclear or incorrect?
+      placeholder: "The section about X is hard to understand because..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed change
+      description: Describe the change you want (small and specific).
+      placeholder: |
+        Add a short example that shows...
+        Replace sentence X with...
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - Updated wording is concise and factual
+        - Adds one minimal example
+        - No duplication of large docs
+    validations:
+      required: true

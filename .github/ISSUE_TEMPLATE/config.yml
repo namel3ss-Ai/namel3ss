@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Discussions (design proposals, questions, ideas)
+    url: https://github.com/namel3ss-Ai/namel3ss/discussions
+    about: Use Discussions for language design proposals, brainstorming, and open-ended questions.
+  - name: Security report
+    url: https://github.com/namel3ss-Ai/namel3ss/security/policy
+    about: Please report security issues privately via the Security Policy.

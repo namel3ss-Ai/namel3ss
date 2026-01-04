@@ -1,0 +1,133 @@
+name: Bug report
+description: Report a concrete defect with a minimal reproduction.
+title: "Fix: <short description>"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Bug report
+        Issues are for concrete, actionable work.
+        For design proposals or questions, please use Discussions.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-flight checklist
+      description: Confirm the following before submitting.
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true
+        - label: This is a concrete defect (not a design proposal).
+          required: true
+        - label: I can provide a minimal reproduction.
+          required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `n3 --version` (or the version in `VERSION`).
+      placeholder: "v0.1.0a7"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      description: Where does the bug occur?
+      options:
+        - CLI
+        - Studio
+        - Runtime
+        - Parser / Formatter / Linter
+        - Templates / Examples
+        - Docs
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One or two sentences describing what is wrong.
+      placeholder: "When running `n3 run`, the app crashes when..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction steps
+      description: Exact steps to reproduce. Include the smallest `.ai` snippet if applicable.
+      placeholder: |
+        1. n3 new starter repro_app
+        2. cd repro_app
+        3. Replace app.ai with:
+           ...
+        4. n3 run
+        5. Observe error: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: "I expected..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      placeholder: "Instead, I got..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / error output
+      description: Paste the relevant output. Avoid secrets.
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Provide system details.
+      placeholder: |
+        OS:
+        Python:
+        Install method (pip/source):
+        Terminal:
+    validations:
+      required: false
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Suspected scope (optional)
+      description: If you have a guess, list files/modules involved. Otherwise leave blank.
+      placeholder: "src/namel3ss/runtime/..., tests/..."
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Project constraints
+      description: namel3ss has strict constraints. Confirm you understand them.
+      options:
+        - label: Changes must be minimal and deterministic.
+          required: true
+        - label: Keep files under 500 LOC and single responsibility (split when needed).
+          required: true
+        - label: Add/adjust tests to prevent regression when appropriate.
+          required: true

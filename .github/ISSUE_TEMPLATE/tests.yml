@@ -1,0 +1,66 @@
+name: Tests / Regression coverage
+description: Add or improve tests to lock behavior and prevent regressions.
+title: "Tests: <short description>"
+labels: ["tests", "safe-change"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Tests / Regression coverage
+        This template is for test-only improvements, especially for locking existing behavior.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-flight checklist
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true
+        - label: This issue can be solved without changing production behavior.
+          required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Parser / AST / IR
+        - Runtime
+        - UI / Studio
+        - Tooling (CLI / Formatter / Linter)
+        - Tool packs / Capabilities
+        - Templates / Examples
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What behavior should be locked?
+      description: Describe the existing behavior you want tests to guarantee.
+      placeholder: "When X happens, Y should occur, and Z should be rejected..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: test_plan
+    attributes:
+      label: Test plan
+      placeholder: |
+        - Add test in tests/<area>/...
+        - Use minimal fixture
+        - Assert deterministic output / trace keys
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - Tests fail if behavior regresses
+        - No production code changes required (or minimal-only if unavoidable)
+        - All tests pass in CI
+    validations:
+      required: true

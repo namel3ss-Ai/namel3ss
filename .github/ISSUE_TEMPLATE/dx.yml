@@ -1,0 +1,47 @@
+name: Developer experience (small polish)
+description: Small, concrete improvements to clarity, messages, help output, or UX.
+title: "DX: <short description>"
+labels: ["dx", "safe-change"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Developer experience (small polish)
+        Keep this small and executable. No redesigns.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-flight checklist
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true
+        - label: This is a small improvement (1–3 hours), not a redesign.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      placeholder: "The current message/help/UX is confusing because..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed improvement
+      placeholder: "Change wording to..., add one hint..., improve one empty state..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - Improvement is clearer and more actionable
+        - No behavior changes
+        - Tests updated only if necessary
+    validations:
+      required: true
