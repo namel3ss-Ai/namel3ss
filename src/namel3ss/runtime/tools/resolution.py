@@ -72,21 +72,32 @@ def resolve_tool_binding(
             details={"tool_reason": "pack_unavailable_or_unverified"},
         )
     if not bindings_path(app_root).exists():
-        defaults = default_tool_bindings()
-        default_binding = defaults.get(tool_name)
-        if default_binding:
-            return ResolvedToolBinding(
-                binding=default_binding,
-                source="binding",
-                pack_paths=default_tool_paths(),
-            )
         if tool_kind in {None, "python"}:
+            defaults = default_tool_bindings()
+            default_binding = defaults.get(tool_name)
+            if default_binding:
+                return ResolvedToolBinding(
+                    binding=default_binding,
+                    source="binding",
+                    pack_paths=default_tool_paths(),
+                )
             slug = slugify_tool_name(tool_name)
             tools_dir = app_root / "tools"
             py_file = tools_dir / f"{slug}.py"
             pkg_init = tools_dir / slug / "__init__.py"
             if py_file.exists() or pkg_init.exists():
                 local_binding = ToolBinding(kind="python", entry=f"tools.{slug}:run")
+                return ResolvedToolBinding(
+                    binding=local_binding,
+                    source="binding",
+                    pack_paths=[app_root],
+                )
+        if tool_kind == "node":
+            slug = slugify_tool_name(tool_name)
+            tools_dir = app_root / "tools"
+            extensions = [".js", ".cjs", ".mjs", ".ts"]
+            if any((tools_dir / f"{slug}{ext}").exists() for ext in extensions):
+                local_binding = ToolBinding(kind="node", entry=f"tools.{slug}:run", runner="node")
                 return ResolvedToolBinding(
                     binding=local_binding,
                     source="binding",

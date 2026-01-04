@@ -23,7 +23,7 @@ from namel3ss.runtime.capabilities.secrets import secret_names_in_payload
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.packs.policy import load_pack_policy
 from namel3ss.runtime.tools.resolution import resolve_tool_binding
-from namel3ss.runtime.tools.entry_validation import validate_python_tool_entry
+from namel3ss.runtime.tools.entry_validation import validate_python_tool_entry, validate_python_tool_entry_exists
 from namel3ss.runtime.tools.schema_validate import validate_tool_fields
 from namel3ss.runtime.tools.runners.base import ToolRunnerRequest
 from namel3ss.runtime.tools.runners.registry import get_runner
@@ -120,7 +120,10 @@ def _execute_python_tool(
         entry = binding.entry
         module_path = entry.split(":", 1)[0].strip()
         allow_external = resolved_source in {"installed_pack"} or module_path.startswith("tests.fixtures.")
-        validate_python_tool_entry(entry, tool.name, line=line, column=column, allow_external=allow_external)
+        if resolved_source == "binding" and (module_path == "tools" or module_path.startswith("tools.")):
+            validate_python_tool_entry_exists(entry, tool.name, app_root=app_root, line=line, column=column)
+        else:
+            validate_python_tool_entry(entry, tool.name, line=line, column=column, allow_external=allow_external)
         if binding.kind != "python":
             raise Namel3ssError(
                 build_guidance_message(
