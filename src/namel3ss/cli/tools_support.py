@@ -107,6 +107,8 @@ def plan_stub(app_root: Path, tool_decl, tool_name: str, slug: str) -> StubPlan:
 
 
 def build_bindings_plan(app_root: Path, program, bindings: dict[str, ToolBinding]) -> BindingsPlan:
+    if not bindings_path(app_root).exists():
+        bindings = {}
     pack_tools = _active_pack_tools(app_root)
     python_tools = {
         name: tool

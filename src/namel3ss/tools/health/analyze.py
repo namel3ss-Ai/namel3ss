@@ -7,7 +7,7 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.module_loader.types import ProjectLoadResult
 from namel3ss.config.loader import load_config
 from namel3ss.runtime.packs.registry import load_pack_registry
-from namel3ss.runtime.tools.bindings import load_tool_bindings
+from namel3ss.runtime.tools.bindings import bindings_path, load_tool_bindings
 from namel3ss.runtime.tools.bindings_yaml import ToolBinding
 from namel3ss.runtime.tools.entry_validation import validate_node_tool_entry, validate_python_tool_entry
 from namel3ss.runtime.tools.runners.container_detect import detect_container_runtime
@@ -162,6 +162,8 @@ def _find_duplicate_decls(project: ProjectLoadResult) -> tuple[list[str], list[T
 
 def _load_bindings(app_root: Path) -> tuple[dict[str, ToolBinding], bool, str | None, list[ToolIssue]]:
     issues: list[ToolIssue] = []
+    if not bindings_path(app_root).exists():
+        return {}, True, None, issues
     try:
         bindings = load_tool_bindings(app_root)
         return bindings, True, None, issues

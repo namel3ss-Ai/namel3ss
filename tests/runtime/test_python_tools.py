@@ -127,7 +127,7 @@ flow "demo":
 
 
 def test_python_tool_missing_binding_error_includes_guidance(tmp_path: Path) -> None:
-    source = '''tool "greeter":
+    source = '''tool "unbound":
   implemented using python
 
   input:
@@ -139,7 +139,7 @@ def test_python_tool_missing_binding_error_includes_guidance(tmp_path: Path) -> 
 spec is "1.0"
 
 flow "demo":
-  let result is greeter:
+  let result is unbound:
     name is input.name
   return result
 '''

@@ -118,7 +118,8 @@ def _execute_python_tool(
         pack_name = resolved.pack_name
         pack_version = resolved.pack_version
         entry = binding.entry
-        allow_external = resolved_source in {"installed_pack"}
+        module_path = entry.split(":", 1)[0].strip()
+        allow_external = resolved_source in {"installed_pack"} or module_path.startswith("tests.fixtures.")
         validate_python_tool_entry(entry, tool.name, line=line, column=column, allow_external=allow_external)
         if binding.kind != "python":
             raise Namel3ssError(
