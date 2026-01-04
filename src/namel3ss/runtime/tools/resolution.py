@@ -77,7 +77,7 @@ def resolve_tool_binding(
         if default_binding:
             return ResolvedToolBinding(
                 binding=default_binding,
-                source="default_binding",
+                source="binding",
                 pack_paths=default_tool_paths(),
             )
         if tool_kind in {None, "python"}:
@@ -89,7 +89,7 @@ def resolve_tool_binding(
                 local_binding = ToolBinding(kind="python", entry=f"tools.{slug}:run")
                 return ResolvedToolBinding(
                     binding=local_binding,
-                    source="local",
+                    source="binding",
                     pack_paths=[app_root],
                 )
     slug = slugify_tool_name(tool_name)

@@ -23,7 +23,7 @@ def test_default_bindings_not_used_when_file_exists(tmp_path: Path) -> None:
 
 def test_resolve_tool_binding_falls_back_to_default(tmp_path: Path) -> None:
     resolved = resolve_tool_binding(tmp_path, "fetch_rate", AppConfig(), tool_kind="python", line=None, column=None)
-    assert resolved.source == "default_binding"
+    assert resolved.source == "binding"
     assert resolved.binding.entry == "tools.fx_api:run"
 
 
@@ -56,4 +56,4 @@ flow "demo":
     result = executor.run()
     assert result.last_value == {"message": "Hello Ada", "ok": True}
     tool_event = next(event for event in result.traces if event.get("type") == "tool_call")
-    assert tool_event["resolved_source"] == "default_binding"
+    assert tool_event["resolved_source"] == "binding"

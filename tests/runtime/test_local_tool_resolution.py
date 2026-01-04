@@ -18,7 +18,7 @@ def test_local_tool_resolution_and_execution(tmp_path: Path) -> None:
     )
 
     resolved = resolve_tool_binding(tmp_path, "dummy tool", AppConfig(), tool_kind="python", line=None, column=None)
-    assert resolved.source == "local"
+    assert resolved.source == "binding"
     assert resolved.binding.entry == "tools.dummy_tool:run"
     assert resolved.pack_paths is not None
     assert tmp_path in resolved.pack_paths
@@ -50,4 +50,4 @@ flow "demo":
     result = executor.run()
     assert result.last_value == {"ok": True}
     tool_event = next(event for event in result.traces if event.get("type") == "tool_call")
-    assert tool_event["resolved_source"] == "local"
+    assert tool_event["resolved_source"] == "binding"

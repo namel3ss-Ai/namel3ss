@@ -171,7 +171,7 @@ def validate_python_tool_entry_exists(
             return module_path, function_name
         raise Namel3ssError(
             build_guidance_message(
-                what=f'Tool "{tool_name}" entry module was not found.',
+                what=f'Tool "{tool_name}" entry module was not found (missing_tool).',
                 why=f"Expected a module at {module_file.with_suffix('.py')} or {module_file / '__init__.py'}.",
                 fix="Create the module file or update the binding entry.",
                 example=_tool_example(tool_name, entry),
@@ -183,7 +183,7 @@ def validate_python_tool_entry_exists(
     if spec is None:
         raise Namel3ssError(
             build_guidance_message(
-                what=f'Tool "{tool_name}" entry module was not found.',
+                what=f'Tool "{tool_name}" entry module was not found (missing_tool).',
                 why=f"Python could not resolve '{module_path}'.",
                 fix="Install the package or update the binding entry.",
                 example=_tool_example(tool_name, entry),
