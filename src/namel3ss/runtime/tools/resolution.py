@@ -80,6 +80,18 @@ def resolve_tool_binding(
                 source="default_binding",
                 pack_paths=default_tool_paths(),
             )
+        if tool_kind in {None, "python"}:
+            slug = slugify_tool_name(tool_name)
+            tools_dir = app_root / "tools"
+            py_file = tools_dir / f"{slug}.py"
+            pkg_init = tools_dir / slug / "__init__.py"
+            if py_file.exists() or pkg_init.exists():
+                local_binding = ToolBinding(kind="python", entry=f"tools.{slug}:run")
+                return ResolvedToolBinding(
+                    binding=local_binding,
+                    source="local",
+                    pack_paths=[app_root],
+                )
     slug = slugify_tool_name(tool_name)
     kind_label = tool_kind or "python"
     raise Namel3ssError(

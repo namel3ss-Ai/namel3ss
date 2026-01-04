@@ -21,6 +21,7 @@ class TemplateSpec:
     directory: str
     description: str
     aliases: tuple[str, ...] = ()
+    is_demo: bool = False
 
     def matches(self, candidate: str) -> bool:
         normalized = candidate.lower().replace("_", "-")
@@ -37,6 +38,7 @@ TEMPLATES: tuple[TemplateSpec, ...] = (
         directory="clear_orders",
         description="ClearOrders demo for explainable answers over structured data.",
         aliases=("clear-orders", "clear_orders"),
+        is_demo=True,
     ),
     TemplateSpec(name="starter", directory="starter", description="Small app with one page and one flow."),
     TemplateSpec(name="crud", directory="crud", description="CRUD dashboard with form and table."),
@@ -91,14 +93,14 @@ def run_new(args: list[str]) -> int:
     if target_dir.exists():
         raise Namel3ssError(f"Directory already exists: {target_dir}")
 
-    demo_settings = _resolve_demo_settings() if template.name == "demo" else None
+    demo_settings = _resolve_demo_settings() if template.is_demo else None
     try:
         shutil.copytree(template_dir, target_dir)
         _prepare_readme(target_dir, project_name)
         formatted_source = _prepare_app_file(target_dir, project_name, template, demo_settings)
         if demo_settings and demo_settings.provider == "openai":
             _write_demo_env_example(target_dir)
-        if template.name == "demo":
+        if template.is_demo:
             _ensure_demo_marker(target_dir)
     except Exception:
         shutil.rmtree(target_dir, ignore_errors=True)
