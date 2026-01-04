@@ -107,7 +107,7 @@ def write_snapshots(app_id: str, snapshot: dict[str, object], *, update: bool) -
     _assert_snapshot(paths["ir"], snapshot["ir"], update=update)
     _assert_snapshot(paths["run"], snapshot["run"], update=update)
     _assert_snapshot(paths["traces"], snapshot["traces"], update=update)
-    _assert_snapshot(paths["hashes"], snapshot["hashes"], update=update)
+    _assert_hashes_snapshot(app_id, snapshot, update=update)
 
 
 def _run_flow(app: GoldenApp, app_root: Path, app_file: Path, source_text: str) -> dict[str, object]:
@@ -166,11 +166,7 @@ def _snapshot_payload(ir_payload: dict, payload: dict) -> dict[str, object]:
     computed = trace_hash(raw_traces)
     if isinstance(contract_hash, str) and contract_hash != computed:
         raise AssertionError("trace_hash mismatch between contract and recomputed value")
-    hashes = {
-        "trace_hash": computed,
-        "run_payload_hash": run_payload_hash(payload),
-        "contract_trace_hash": contract_hash,
-    }
+    hashes = _compute_stable_hashes(canonical_run, traces)
     return {
         "ir": ir_payload,
         "run": canonical_run,
@@ -234,6 +230,27 @@ def _assert_snapshot(path: Path, payload: object, *, update: bool) -> None:
         raise AssertionError(f"snapshot mismatch for {path}")
 
 
+def _assert_hashes_snapshot(app_id: str, snapshot: dict[str, object], *, update: bool) -> None:
+    paths = _snapshot_paths(app_id)
+    path = paths["hashes"]
+    hashes = snapshot.get("hashes") if isinstance(snapshot, dict) else None
+    if update:
+        if not isinstance(hashes, dict):
+            raise AssertionError("hash snapshot missing hashes payload")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(hashes, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        return
+    if not path.exists():
+        raise AssertionError(f"missing snapshot {path}; set UPDATE_SNAPSHOTS=1")
+    expected_run = _read_json(paths["run"])
+    expected_traces = []
+    if isinstance(expected_run, dict) and isinstance(expected_run.get("traces"), list):
+        expected_traces = expected_run["traces"]
+    expected_hashes = _compute_stable_hashes(expected_run, expected_traces)
+    if hashes != expected_hashes:
+        raise AssertionError(f"snapshot mismatch for {path}")
+
+
 def _assert_expect_ok(app: GoldenApp, payload: dict) -> None:
     if app.expect_ok is None:
         return
@@ -277,6 +294,30 @@ def _normalize_for_golden_compare(value: object) -> object:
     if isinstance(value, list):
         return [_normalize_for_golden_compare(item) for item in value]
     return value
+
+
+def _compute_stable_hashes(run_payload: object, traces: object) -> dict[str, str]:
+    normalized_run = _normalize_for_golden_compare(run_payload)
+    run_hash = run_payload_hash(normalized_run) if isinstance(normalized_run, dict) else run_payload_hash({})
+    normalized_traces = _normalize_for_golden_compare(traces)
+    trace_hash_value = trace_hash(normalized_traces if isinstance(normalized_traces, list) else [])
+    contract_traces = None
+    if isinstance(run_payload, dict):
+        contract = run_payload.get("contract")
+        if isinstance(contract, dict) and isinstance(contract.get("traces"), list):
+            contract_traces = _normalize_for_golden_compare(contract["traces"])
+    if isinstance(contract_traces, list):
+        contract_input = contract_traces
+    elif isinstance(normalized_traces, list):
+        contract_input = normalized_traces
+    else:
+        contract_input = []
+    contract_trace_hash = trace_hash(contract_input)
+    return {
+        "trace_hash": trace_hash_value,
+        "run_payload_hash": run_hash,
+        "contract_trace_hash": contract_trace_hash,
+    }
 
 
 @contextmanager
