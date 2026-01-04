@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import re
 import shutil
@@ -11,6 +12,7 @@ from namel3ss.format import format_source
 from namel3ss.lint.engine import lint_source
 from namel3ss.pkg.scaffold import scaffold_package
 from namel3ss.resources import templates_root
+from namel3ss.cli.demo_support import CLEARORDERS_NAME, DEMO_MARKER
 
 
 @dataclass(frozen=True)
@@ -96,6 +98,8 @@ def run_new(args: list[str]) -> int:
         formatted_source = _prepare_app_file(target_dir, project_name, template, demo_settings)
         if demo_settings and demo_settings.provider == "openai":
             _write_demo_env_example(target_dir)
+        if template.name == "demo":
+            _ensure_demo_marker(target_dir)
     except Exception:
         shutil.rmtree(target_dir, ignore_errors=True)
         raise
@@ -223,6 +227,15 @@ def _write_demo_env_example(target_dir: Path) -> None:
         "",
     ]
     env_path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def _ensure_demo_marker(target_dir: Path) -> None:
+    marker_path = target_dir / DEMO_MARKER
+    if marker_path.exists():
+        return
+    marker_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {"name": CLEARORDERS_NAME}
+    marker_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def _print_success_message(template: TemplateSpec, project_name: str, target_dir: Path) -> None:

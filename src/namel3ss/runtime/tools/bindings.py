@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 from namel3ss.runtime.tools.bindings_yaml import ToolBinding, parse_bindings_yaml, render_bindings_yaml
-from namel3ss.runtime.tools.default_bindings import default_tool_bindings
 
 BINDINGS_DIR = ".namel3ss"
 BINDINGS_FILE = "tools.yaml"
@@ -16,7 +15,7 @@ def bindings_path(app_root: Path) -> Path:
 def load_tool_bindings(app_root: Path) -> dict[str, ToolBinding]:
     path = bindings_path(app_root)
     if not path.exists():
-        return default_tool_bindings()
+        return {}
     try:
         text = path.read_text(encoding="utf-8")
     except Exception as err:

@@ -9,7 +9,7 @@ from namel3ss.config.model import AppConfig
 from namel3ss.runtime.packs.registry import load_pack_registry
 from namel3ss.runtime.tools.bindings import bindings_path, load_tool_bindings
 from namel3ss.runtime.tools.bindings_yaml import ToolBinding
-from namel3ss.runtime.tools.default_bindings import default_tool_paths
+from namel3ss.runtime.tools.default_bindings import default_tool_bindings, default_tool_paths
 from namel3ss.utils.slugify import slugify_tool_name
 
 
@@ -61,10 +61,7 @@ def resolve_tool_binding(
     if bindings is not None:
         binding = bindings.get(tool_name)
         if binding:
-            pack_paths = None
-            if not bindings_path(app_root).exists():
-                pack_paths = default_tool_paths()
-            return ResolvedToolBinding(binding=binding, source="binding", pack_paths=pack_paths)
+            return ResolvedToolBinding(binding=binding, source="binding")
     if binding_error is not None:
         raise binding_error
     if pack_candidates:
@@ -74,6 +71,15 @@ def resolve_tool_binding(
             column=column,
             details={"tool_reason": "pack_unavailable_or_unverified"},
         )
+    if not bindings_path(app_root).exists():
+        defaults = default_tool_bindings()
+        default_binding = defaults.get(tool_name)
+        if default_binding:
+            return ResolvedToolBinding(
+                binding=default_binding,
+                source="default_binding",
+                pack_paths=default_tool_paths(),
+            )
     slug = slugify_tool_name(tool_name)
     kind_label = tool_kind or "python"
     raise Namel3ssError(
