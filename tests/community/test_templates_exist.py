@@ -2,9 +2,11 @@ from pathlib import Path
 
 
 REQUIRED = [
-    ".github/ISSUE_TEMPLATE/bug_report.md",
-    ".github/ISSUE_TEMPLATE/feature_request.md",
-    ".github/ISSUE_TEMPLATE/design_feedback.md",
+    ".github/ISSUE_TEMPLATE/config.yml",
+    ".github/ISSUE_TEMPLATE/bug.yml",
+    ".github/ISSUE_TEMPLATE/docs.yml",
+    ".github/ISSUE_TEMPLATE/tests.yml",
+    ".github/ISSUE_TEMPLATE/dx.yml",
     ".github/DISCUSSION_TEMPLATE/show-and-tell.md",
     ".github/DISCUSSION_TEMPLATE/design-discussion.md",
     ".github/DISCUSSION_TEMPLATE/help-qa.md",
