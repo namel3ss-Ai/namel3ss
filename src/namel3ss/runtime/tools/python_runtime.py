@@ -24,6 +24,7 @@ from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.packs.policy import load_pack_policy
 from namel3ss.runtime.tools.resolution import resolve_tool_binding
 from namel3ss.runtime.tools.entry_validation import validate_python_tool_entry, validate_python_tool_entry_exists
+from namel3ss.runtime.tools.python_runtime_helpers import _binding_example, _tool_example, _tool_pack_example
 from namel3ss.runtime.tools.schema_validate import validate_tool_fields
 from namel3ss.runtime.tools.runners.base import ToolRunnerRequest
 from namel3ss.runtime.tools.runners.registry import get_runner
@@ -478,29 +479,4 @@ def _pack_root_from_paths(paths: list[Path] | None) -> Path | None:
     return paths[0]
 
 
-def _tool_example(tool_name: str) -> str:
-    return (
-        f'tool "{tool_name}":\n'
-        "  implemented using python\n\n"
-        "  input:\n"
-        "    web address is text\n\n"
-        "  output:\n"
-        "    data is json"
-    )
-def _tool_pack_example(tool_name: str) -> str:
-    return (
-        f'tool "{tool_name}":\n'
-        "  implemented using python\n\n"
-        "  input:\n"
-        "    text is text\n\n"
-        "  output:\n"
-        "    text is text"
-    )
-def _binding_example(tool_name: str) -> str:
-    return (
-        "tools:\n"
-        f'  "{tool_name}":\n'
-        '    kind: "python"\n'
-        '    entry: "tools.my_tool:run"'
-    )
 __all__ = ["execute_python_tool_call"]
