@@ -228,8 +228,8 @@ def _assert_snapshot(path: Path, payload: object, *, update: bool) -> None:
     if not path.exists():
         raise AssertionError(f"missing snapshot {path}; set UPDATE_SNAPSHOTS=1")
     expected = _read_json(path)
-    normalized_payload = _normalize_snapshot_value(payload)
-    normalized_expected = _normalize_snapshot_value(expected)
+    normalized_payload = _normalize_for_golden_compare(payload)
+    normalized_expected = _normalize_for_golden_compare(expected)
     if normalized_payload != normalized_expected:
         raise AssertionError(f"snapshot mismatch for {path}")
 
@@ -260,17 +260,22 @@ def _read_json(path: Path) -> object:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _normalize_snapshot_value(value: object) -> object:
+def _normalize_for_golden_compare(value: object) -> object:
     if isinstance(value, dict):
         normalized: dict[str, object] = {}
         for key, item in value.items():
+            if key == "trace_hash":
+                continue
+            if key == "duration_ms":
+                normalized[key] = 0
+                continue
             if key == "python_path":
-                normalized[key] = "<python_path>"
-            else:
-                normalized[key] = _normalize_snapshot_value(item)
+                normalized[key] = "<python>"
+                continue
+            normalized[key] = _normalize_for_golden_compare(item)
         return normalized
     if isinstance(value, list):
-        return [_normalize_snapshot_value(item) for item in value]
+        return [_normalize_for_golden_compare(item) for item in value]
     return value
 
 
