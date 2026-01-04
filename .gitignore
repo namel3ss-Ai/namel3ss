@@ -58,6 +58,9 @@ spec/**/.namel3ss/**
 !examples/tool_usage/.namel3ss/tools.yaml
 !tests/fixtures/.namel3ss/
 !tests/fixtures/.namel3ss/tools.yaml
+!patterns/**/.namel3ss/
+!patterns/**/.namel3ss/build/
+!patterns/**/.namel3ss/build/**
 
 # Temp / lock files
 *.tmp

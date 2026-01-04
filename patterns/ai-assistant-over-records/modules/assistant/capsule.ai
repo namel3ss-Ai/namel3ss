@@ -2,5 +2,6 @@ spec is "1.0"
 
 capsule "assistant":
   exports:
+    record "Message"
     flow "log_message"
     flow "summarize"

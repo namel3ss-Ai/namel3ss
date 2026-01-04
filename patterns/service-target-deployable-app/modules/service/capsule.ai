@@ -2,4 +2,5 @@ spec is "1.0"
 
 capsule "service":
   exports:
+    record "Job"
     flow "queue_job"

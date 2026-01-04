@@ -1,0 +1,53 @@
+{
+  "execution_steps": [
+    {
+      "because": null,
+      "column": 1,
+      "data": {},
+      "id": "step:0001",
+      "kind": "flow_start",
+      "line": 7,
+      "what": "flow \"tenant.create_account\" started"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0002",
+      "kind": "statement_set",
+      "line": 8,
+      "what": "set state.account.name"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0003",
+      "kind": "statement_create",
+      "line": 9,
+      "what": "created tenant.Account"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0004",
+      "kind": "statement_return",
+      "line": 10,
+      "what": "returned a value"
+    },
+    {
+      "because": "completed successfully",
+      "column": 1,
+      "data": {},
+      "id": "step:0005",
+      "kind": "flow_end",
+      "line": 7,
+      "what": "flow \"tenant.create_account\" ended"
+    }
+  ],
+  "flow_name": "tenant.create_account",
+  "ok": true,
+  "summary": "Flow \"tenant.create_account\" ran with 5 steps.",
+  "traces": []
+}

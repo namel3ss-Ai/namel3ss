@@ -1,7 +1,5 @@
-spec is "1.0"
-
-use "agents" as agents
+use "agents" as agent_mod
 
 test "plan step":
-  run flow "agents.plan_step" with input: {} as result
+  run flow "agent_mod.plan_step" with input: {} as result
   expect value is "plan ready"

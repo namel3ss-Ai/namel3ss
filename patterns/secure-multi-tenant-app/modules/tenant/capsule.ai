@@ -2,4 +2,5 @@ spec is "1.0"
 
 capsule "tenant":
   exports:
+    record "Account"
     flow "create_account"

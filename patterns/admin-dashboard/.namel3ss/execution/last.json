@@ -1,0 +1,107 @@
+{
+  "execution_steps": [
+    {
+      "because": null,
+      "column": 1,
+      "data": {},
+      "id": "step:0001",
+      "kind": "flow_start",
+      "line": 8,
+      "what": "flow \"admin.seed_customers\" started"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0002",
+      "kind": "statement_set",
+      "line": 9,
+      "what": "set state.customer.name"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0003",
+      "kind": "statement_set",
+      "line": 10,
+      "what": "set state.customer.email"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0004",
+      "kind": "statement_set",
+      "line": 11,
+      "what": "set state.customer.plan"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0005",
+      "kind": "statement_create",
+      "line": 12,
+      "what": "created admin.Customer"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0006",
+      "kind": "statement_set",
+      "line": 13,
+      "what": "set state.customer.name"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0007",
+      "kind": "statement_set",
+      "line": 14,
+      "what": "set state.customer.email"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0008",
+      "kind": "statement_set",
+      "line": 15,
+      "what": "set state.customer.plan"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0009",
+      "kind": "statement_create",
+      "line": 16,
+      "what": "created admin.Customer"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0010",
+      "kind": "statement_return",
+      "line": 17,
+      "what": "returned a value"
+    },
+    {
+      "because": "completed successfully",
+      "column": 1,
+      "data": {},
+      "id": "step:0011",
+      "kind": "flow_end",
+      "line": 8,
+      "what": "flow \"admin.seed_customers\" ended"
+    }
+  ],
+  "flow_name": "admin.seed_customers",
+  "ok": true,
+  "summary": "Flow \"admin.seed_customers\" ran with 11 steps.",
+  "traces": []
+}

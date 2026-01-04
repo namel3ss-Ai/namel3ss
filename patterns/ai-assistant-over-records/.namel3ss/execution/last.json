@@ -1,0 +1,62 @@
+{
+  "execution_steps": [
+    {
+      "because": null,
+      "column": 1,
+      "data": {},
+      "id": "step:0001",
+      "kind": "flow_start",
+      "line": 7,
+      "what": "flow \"assistant.log_message\" started"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0002",
+      "kind": "statement_set",
+      "line": 8,
+      "what": "set state.message.role"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0003",
+      "kind": "statement_set",
+      "line": 9,
+      "what": "set state.message.text"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0004",
+      "kind": "statement_create",
+      "line": 10,
+      "what": "created assistant.Message"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0005",
+      "kind": "statement_return",
+      "line": 11,
+      "what": "returned a value"
+    },
+    {
+      "because": "completed successfully",
+      "column": 1,
+      "data": {},
+      "id": "step:0006",
+      "kind": "flow_end",
+      "line": 7,
+      "what": "flow \"assistant.log_message\" ended"
+    }
+  ],
+  "flow_name": "assistant.log_message",
+  "ok": true,
+  "summary": "Flow \"assistant.log_message\" ran with 6 steps.",
+  "traces": []
+}

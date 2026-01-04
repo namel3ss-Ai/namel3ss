@@ -1,0 +1,7 @@
+summary: Flow "assistant.log_message" ran with 6 steps.
+flow.name: assistant.log_message
+ok: True
+steps.total: 6
+steps.skipped: 0
+steps.errors: 0
+traces.count: 0
