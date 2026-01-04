@@ -1,0 +1,16 @@
+{
+  "allowed": [],
+  "blocked": [],
+  "errors": [
+    {
+      "capability": "none",
+      "decision": "allowed",
+      "reason": "policy_allowed",
+      "result": "error",
+      "tool": "missing"
+    }
+  ],
+  "none_used": false,
+  "notes": [],
+  "tools_called": 1
+}

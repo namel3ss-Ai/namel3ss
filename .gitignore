@@ -48,6 +48,16 @@ spec/**/.namel3ss/**
 !spec/**/.namel3ss/build/**
 !spec/**/.namel3ss/packs/
 !spec/**/.namel3ss/packs/**
+!examples/flow_branching/.namel3ss/
+!examples/flow_branching/.namel3ss/tools.yaml
+!examples/getting_started/.namel3ss/
+!examples/getting_started/.namel3ss/tools.yaml
+!examples/tool_permissions/.namel3ss/
+!examples/tool_permissions/.namel3ss/tools.yaml
+!examples/tool_usage/.namel3ss/
+!examples/tool_usage/.namel3ss/tools.yaml
+!tests/fixtures/.namel3ss/
+!tests/fixtures/.namel3ss/tools.yaml
 
 # Temp / lock files
 *.tmp

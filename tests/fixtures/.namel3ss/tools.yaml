@@ -1,0 +1,10 @@
+tools:
+  "bad_output":
+    kind: "python"
+    entry: "tools.sample_tool:bad_output"
+  "greeter":
+    kind: "python"
+    entry: "tools.sample_tool:greet"
+  "missing":
+    kind: "python"
+    entry: "tools.missing_tool:run"

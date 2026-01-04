@@ -1,0 +1,20 @@
+error: Tool "missing" entry module was not found (missing_tool).
+
+What happened
+- Tool "missing" entry module was not found (missing_tool).
+
+Why
+- Expected a module at /Users/disanssebowabasalidde/Documents/GitHub/namel3ss/tests/fixtures/tools/missing_tool.py or /Users/disanssebowabasalidde/Documents/GitHub/namel3ss/tests/fixtures/tools/missi...
+
+How to fix
+- Create the module file or update the binding entry.
+
+Where
+- flow: demo
+- statement: let
+- statement index: 1
+- line: 13
+- column: 17
+
+Error id
+- E-TOOLS-TOOL_FAILED-DEMO-LET-1

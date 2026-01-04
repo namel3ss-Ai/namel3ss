@@ -1,0 +1,20 @@
+spec check
+
+Declared
+- spec: 1.0
+
+Engine supports
+- 1.0
+
+Required capabilities
+- ai_v1
+- pages_v1
+- records_v1
+- tools_v1
+
+Unsupported capabilities
+- none recorded
+
+Result
+- status: compatible
+- Spec version "1.0" is compatible.

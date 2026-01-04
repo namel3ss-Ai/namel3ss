@@ -1,0 +1,54 @@
+{
+  "error": {
+    "boundary": "tools",
+    "error_id": "E-TOOLS-TOOL_FAILED-DEMO-LET-1",
+    "example": "tools:\n  \"missing\":\n    kind: \"python\"\n    entry: \"tools.missing_tool:run\"",
+    "fix": [
+      "Create the module file or update the binding entry."
+    ],
+    "kind": "tool_failed",
+    "raw_message": "What happened: Tool \"missing\" entry module was not found (missing_tool).\nWhy: Expected a module at /Users/disanssebowabasalidde/Documents/GitHub/namel3ss/tests/fixtures/tools/missing_tool.py or /Us...",
+    "what": "Tool \"missing\" entry module was not found (missing_tool).",
+    "where": {
+      "column": 17,
+      "flow_name": "demo",
+      "line": 13,
+      "statement_index": 1,
+      "statement_kind": "let"
+    },
+    "why": [
+      "Expected a module at /Users/disanssebowabasalidde/Documents/GitHub/namel3ss/tests/fixtures/tools/missing_tool.py or /Users/disanssebowabasalidde/Documents/GitHub/namel3ss/tests/fixtures/tools/missi..."
+    ]
+  },
+  "summary": {
+    "boundary": "tools",
+    "flow_name": "demo",
+    "kind": "tool_failed",
+    "ok": false
+  },
+  "traces_tail": [
+    {
+      "capability": "none",
+      "decision": "allowed",
+      "duration_ms": "<time>",
+      "error_message": "[line 13, col 17] What happened: Tool \"missing\" entry module was not found (missing_tool).\nWhy: Expected a module at /Users/disanssebowabasalidde/Documents/GitHub/namel3ss/tests/fixtures/tools/missing_tool.py or /Users/disanssebowabasalidde/Documents/GitHub/namel3ss/tests/fixtures/tools/missing_tool/__init__.py.\nFix: Create the module file or update the binding entry.\nExample: tools:\n  \"missing\":\n    kind: \"python\"\n    entry: \"tools.missing_tool:run\"",
+      "error_type": "Namel3ssError",
+      "input_summary": {
+        "count": 1,
+        "keys": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "kind": "python",
+      "purity": "impure",
+      "reason": "policy_allowed",
+      "resolved_source": "binding",
+      "result": "error",
+      "status": "error",
+      "tool": "missing",
+      "tool_name": "missing",
+      "type": "tool_call"
+    }
+  ]
+}

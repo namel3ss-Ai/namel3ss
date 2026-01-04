@@ -1,0 +1,5 @@
+tools:
+  "greet someone":
+    kind: "python"
+    entry: "tools.greet:greet"
+    runner: "local"

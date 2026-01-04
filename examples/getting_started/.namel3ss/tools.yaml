@@ -1,0 +1,8 @@
+tools:
+  "format greeting":
+    kind: "python"
+    entry: "tools.format_greeting:run"
+  "node greeting":
+    kind: "node"
+    entry: "tools.node_greeting:run"
+    runner: "node"

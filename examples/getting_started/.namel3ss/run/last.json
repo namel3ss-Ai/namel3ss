@@ -1,0 +1,10 @@
+{
+  "error_message": "[line 37, col 17] error: Tool \"format greeting\" requires sandbox enforcement.\n\nWhat happened\n- Tool \"format greeting\" requires sandbox enforcement.\n\nWhy\n- Sandbox is disabled but guarantees require: filesystem_read, filesystem_write, network, subprocess, env_read, env_write, secrets.\n\nHow to fix\n- Enable sandbox in tools.yaml or relax the capability overrides.\n\nWhere\n- flow: python_demo\n- statement: let\n- statement index: 1\n- line: 37\n- column: 17\n\nError id\n- E-TOOLS-TOOL_BLOCKED-PYTHON_DEMO-LET-1",
+  "error_step_id": "step:0003",
+  "error_type": "Namel3ssError",
+  "flow_name": "python_demo",
+  "ok": false,
+  "result": null,
+  "state": {},
+  "traces": []
+}

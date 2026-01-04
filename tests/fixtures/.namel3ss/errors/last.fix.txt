@@ -1,0 +1,10 @@
+Fix this error
+
+How to fix
+- Create the module file or update the binding entry.
+
+Why
+- Expected a module at /Users/disanssebowabasalidde/Documents/GitHub/namel3ss/tests/fixtures/tools/missing_tool.py or /Users/disanssebowabasalidde/Documents/GitHub/namel3ss/tests/fixtures/tools/missi...
+
+Error id
+- E-TOOLS-TOOL_FAILED-DEMO-LET-1

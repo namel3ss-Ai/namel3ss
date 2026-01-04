@@ -1,0 +1,28 @@
+run outcome
+
+Status
+- error
+
+Store
+- began: yes
+- committed: no
+- commit_failed: no
+- rolled_back: yes
+- rollback_failed: no
+
+State
+- loaded_from_store: no
+- save_attempted: no
+- save_succeeded: no
+- save_failed: no
+
+Memory
+- persist_attempted: no
+- persist_succeeded: no
+- persist_failed: no
+- skipped_reason: none recorded
+
+What did not happen
+- memory was not persisted
+- state was not saved
+- store commit was not attempted

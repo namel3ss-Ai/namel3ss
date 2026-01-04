@@ -1,0 +1,133 @@
+{
+  "error": {
+    "boundary": "tools",
+    "error_id": "E-TOOLS-TOOL_BLOCKED-PYTHON_DEMO-LET-1",
+    "example": "sandbox: true",
+    "fix": [
+      "Enable sandbox in tools.yaml or relax the capability overrides."
+    ],
+    "kind": "tool_blocked",
+    "raw_message": "What happened: Tool \"format greeting\" requires sandbox enforcement.\nWhy: Sandbox is disabled but guarantees require: filesystem_read, filesystem_write, network, subprocess, env_read, env_write, sec...",
+    "what": "Tool \"format greeting\" requires sandbox enforcement.",
+    "where": {
+      "column": 17,
+      "flow_name": "python_demo",
+      "line": 37,
+      "statement_index": 1,
+      "statement_kind": "let"
+    },
+    "why": [
+      "Sandbox is disabled but guarantees require: filesystem_read, filesystem_write, network, subprocess, env_read, env_write, secrets."
+    ]
+  },
+  "summary": {
+    "boundary": "tools",
+    "flow_name": "python_demo",
+    "kind": "tool_blocked",
+    "ok": false
+  },
+  "traces_tail": [
+    {
+      "allowed": false,
+      "capability": "filesystem_read",
+      "guarantee_source": "tool",
+      "protocol_version": 1,
+      "reason": "coverage_missing",
+      "resolved_source": "binding",
+      "runner": "local",
+      "tool_name": "format greeting",
+      "type": "capability_check"
+    },
+    {
+      "allowed": false,
+      "capability": "filesystem_write",
+      "guarantee_source": "tool",
+      "protocol_version": 1,
+      "reason": "coverage_missing",
+      "resolved_source": "binding",
+      "runner": "local",
+      "tool_name": "format greeting",
+      "type": "capability_check"
+    },
+    {
+      "allowed": false,
+      "capability": "network",
+      "guarantee_source": "tool",
+      "protocol_version": 1,
+      "reason": "coverage_missing",
+      "resolved_source": "binding",
+      "runner": "local",
+      "tool_name": "format greeting",
+      "type": "capability_check"
+    },
+    {
+      "allowed": false,
+      "capability": "subprocess",
+      "guarantee_source": "tool",
+      "protocol_version": 1,
+      "reason": "coverage_missing",
+      "resolved_source": "binding",
+      "runner": "local",
+      "tool_name": "format greeting",
+      "type": "capability_check"
+    },
+    {
+      "allowed": false,
+      "capability": "env_read",
+      "guarantee_source": "tool",
+      "protocol_version": 1,
+      "reason": "coverage_missing",
+      "resolved_source": "binding",
+      "runner": "local",
+      "tool_name": "format greeting",
+      "type": "capability_check"
+    },
+    {
+      "allowed": false,
+      "capability": "env_write",
+      "guarantee_source": "tool",
+      "protocol_version": 1,
+      "reason": "coverage_missing",
+      "resolved_source": "binding",
+      "runner": "local",
+      "tool_name": "format greeting",
+      "type": "capability_check"
+    },
+    {
+      "allowed": false,
+      "capability": "secrets",
+      "guarantee_source": "tool",
+      "protocol_version": 1,
+      "reason": "coverage_missing",
+      "resolved_source": "binding",
+      "runner": "local",
+      "tool_name": "format greeting",
+      "type": "capability_check"
+    },
+    {
+      "capability": "none",
+      "decision": "allowed",
+      "duration_ms": "<time>",
+      "entry": "tools.format_greeting:run",
+      "error_message": "[line 37, col 17] What happened: Tool \"format greeting\" requires sandbox enforcement.\nWhy: Sandbox is disabled but guarantees require: filesystem_read, filesystem_write, network, subprocess, env_read, env_write, secrets.\nFix: Enable sandbox in tools.yaml or relax the capability overrides.\nExample: sandbox: true",
+      "error_type": "Namel3ssError",
+      "input_summary": {
+        "count": 1,
+        "keys": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "kind": "python",
+      "reason": "policy_allowed",
+      "resolved_source": "binding",
+      "result": "error",
+      "runner": "local",
+      "status": "error",
+      "timeout_ms": 10000,
+      "tool": "format greeting",
+      "tool_name": "format greeting",
+      "type": "tool_call"
+    }
+  ]
+}

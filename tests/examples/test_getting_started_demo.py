@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 from pathlib import Path
 
 import pytest
 
 from namel3ss.cli.main import main as cli_main
+from tests._ci_debug import debug_context
 
 
 DEMO_ROOT = Path("examples/getting_started")
@@ -26,7 +28,15 @@ def test_getting_started_demo_check(tmp_path: Path, capsys) -> None:
     demo = _copy_demo(tmp_path)
     app_path = demo / "app.ai"
     code = cli_main([str(app_path), "check"])
-    out = capsys.readouterr().out
+    captured = capsys.readouterr()
+    out = captured.out
+    if code != 0 and os.getenv("CI") == "true":
+        tools_dir = demo / "tools"
+        tools_files = sorted(p.name for p in tools_dir.iterdir()) if tools_dir.exists() else []
+        print(json.dumps(debug_context("getting_started_check", app_root=demo), sort_keys=True))
+        print(json.dumps({"tools_dir": str(tools_dir), "files": tools_files}, sort_keys=True))
+        print("stdout:\n" + captured.out)
+        print("stderr:\n" + captured.err)
     assert code == 0
     assert "Parse: OK" in out
     assert "Lint: OK" in out

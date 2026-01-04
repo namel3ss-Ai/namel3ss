@@ -1,0 +1,61 @@
+{
+  "error": {
+    "kind": "Namel3ssError",
+    "message": "[line 13, col 17] What happened: Tool \"missing\" entry module was not found (missing_tool).\nWhy: Expected a module at /Users/disanssebowabasalidde/Documents/GitHub/namel3ss/tests/fixtures/tools/missing_tool.py or /Users/disanssebowabasalidde/Documents/GitHub/namel3ss/tests/fixtures/tools/missing_tool/__init__.py.\nFix: Create the module file or update the binding entry.\nExample: tools:\n  \"missing\":\n    kind: \"python\"\n    entry: \"tools.missing_tool:run\""
+  },
+  "execution_steps": [
+    {
+      "because": null,
+      "column": 1,
+      "data": {},
+      "id": "step:0001",
+      "kind": "flow_start",
+      "line": 12,
+      "what": "flow \"demo\" started"
+    },
+    {
+      "because": null,
+      "column": 17,
+      "data": {
+        "tool_name": "missing"
+      },
+      "id": "step:0002",
+      "kind": "tool_call",
+      "line": 13,
+      "what": "called tool missing"
+    },
+    {
+      "because": "[line 13, col 17] What happened: Tool \"missing\" entry module was not found (missing_tool).\nWhy: Expected a module at /Users/disanssebowabasalidde/Documents/GitHub/namel3ss/tests/fixtures/tools/missing_tool.py or /Users/disanssebowabasalidde/Documents/GitHub/namel3ss/tests/fixtures/tools/missing_tool/__init__.py.\nFix: Create the module file or update the binding entry.\nExample: tools:\n  \"missing\":\n    kind: \"python\"\n    entry: \"tools.missing_tool:run\"",
+      "column": 17,
+      "data": {},
+      "id": "step:0003",
+      "kind": "error",
+      "line": 13,
+      "what": "error Namel3ssError"
+    },
+    {
+      "because": "ended with error",
+      "column": 1,
+      "data": {},
+      "id": "step:0004",
+      "kind": "flow_end",
+      "line": 12,
+      "what": "flow \"demo\" ended"
+    }
+  ],
+  "flow_name": "demo",
+  "ok": false,
+  "summary": "Flow \"demo\" failed with Namel3ssError.",
+  "traces": [
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    }
+  ]
+}

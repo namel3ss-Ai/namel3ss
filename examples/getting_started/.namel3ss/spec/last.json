@@ -1,0 +1,25 @@
+{
+  "decision": {
+    "declared_spec": "1.0",
+    "engine_supported": [
+      "1.0"
+    ],
+    "fix": [],
+    "required_capabilities": [
+      "ai_v1",
+      "pages_v1",
+      "records_v1",
+      "tools_v1"
+    ],
+    "status": "compatible",
+    "unsupported_capabilities": [],
+    "what": "Spec version \"1.0\" is compatible.",
+    "why": [
+      "All required capabilities are supported."
+    ]
+  },
+  "summary": {
+    "declared_spec": "1.0",
+    "status": "compatible"
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "error": {
+    "boundary": "engine",
+    "error_id": "E-ENGINE-ENGINE_ERROR-DEMO-LET-1",
+    "example": "tool \"missing\":\n  implemented using python\n\n  input:\n    web address is text\n\n  output:\n    data is json",
+    "fix": [
+      "Fix the tool implementation in tools/ and try again."
+    ],
+    "kind": "engine_error",
+    "raw_message": "What happened: Python tool \"missing\" failed with ModuleNotFoundError.\nWhy: No module named 'tools.missing_tool'\nFix: Fix the tool implementation in tools/ and try again.\nExample: tool \"missing\":...",
+    "what": "Python tool \"missing\" failed with ModuleNotFoundError.",
+    "where": {
+      "column": 17,
+      "flow_name": "demo",
+      "line": 13,
+      "statement_index": 1,
+      "statement_kind": "let"
+    },
+    "why": [
+      "No module named 'tools.missing_tool'"
+    ]
+  },
+  "summary": {
+    "boundary": "engine",
+    "flow_name": "demo",
+    "kind": "engine_error",
+    "ok": false
+  },
+  "traces_tail": [
+    {
+      "deps_source": "none",
+      "duration_ms": "<time>",
+      "entry": "tools.missing_tool:run",
+      "error_message": "No module named 'tools.missing_tool'",
+      "error_type": "ModuleNotFoundError",
+      "input_summary": {
+        "count": 1,
+        "keys": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "kind": "python",
+      "protocol_version": 1,
+      "purity": "impure",
+      "python_env": "system",
+      "python_path": "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+      "resolved_source": "binding",
+      "runner": "local",
+      "sandbox": false,
+      "status": "error",
+      "timeout_ms": 10000,
+      "tool": "missing",
+      "tool_name": "missing",
+      "type": "tool_call"
+    }
+  ]
+}

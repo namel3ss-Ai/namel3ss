@@ -1,4 +1,6 @@
 from pathlib import Path
+import json
+import os
 import sys
 
 import pytest
@@ -9,6 +11,7 @@ from namel3ss.runtime.tools.bindings import write_tool_bindings
 from namel3ss.runtime.tools.bindings_yaml import ToolBinding
 from namel3ss.runtime.tools.python_subprocess import ToolSubprocessResult
 from tests.conftest import lower_ir_program
+from tests._ci_debug import debug_context
 
 
 FIXTURES_ROOT = Path(__file__).resolve().parent.parent / "fixtures"
@@ -122,6 +125,17 @@ flow "demo":
     with pytest.raises(Namel3ssError) as exc:
         executor.run()
     message = str(exc.value)
+    if "missing_tool" not in message and os.getenv("CI") == "true":
+        tools_yaml = FIXTURES_ROOT / ".namel3ss" / "tools.yaml"
+        missing_block: list[str] = []
+        if tools_yaml.exists():
+            lines = tools_yaml.read_text(encoding="utf-8").splitlines()
+            idx = next((i for i, line in enumerate(lines) if '"missing"' in line), None)
+            if idx is not None:
+                missing_block = lines[idx : idx + 3]
+        print(json.dumps(debug_context("missing_module_error", app_root=FIXTURES_ROOT), sort_keys=True))
+        print(json.dumps({"tools_yaml": str(tools_yaml), "exists": tools_yaml.exists(), "missing_block": missing_block}, sort_keys=True))
+        print("error:\n" + message)
     assert "missing_tool" in message
     assert "module" in message.lower()
 
