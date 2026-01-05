@@ -14,13 +14,13 @@ Software has changed.
 AI is now part of how applications think, decide, and respond.  
 But most programming languages were designed long before that.
 
-So developers add AI with layers of glue -- prompts, memory, tools, retries, guardrails -- scattered across systems. It works.  
+So developers add AI with layers of glue like prompts, memory, tools, retries, and guardrails, all scattered across systems. It works.  
 Until it doesn't.  
 And when it fails, no one can clearly see **what happened, or why**.
 
 **namel3ss removes the glue.**
 
-AI, memory, UI, and logic are built into a single, deterministic model -- where every run can be understood, explained, and trusted.
+AI, memory, UI, and logic are built into a single, deterministic model so every run can be understood, explained, and trusted.
 
 ## What namel3ss is
 
@@ -51,7 +51,7 @@ namel3ss is built around a few non-negotiable ideas:
   You can always ask: *what happened, and why?*
 
 - **Governed memory**  
-  Memory is explicit, inspectable, and policy-driven -- not hidden context.
+  Memory is explicit, inspectable, and policy-driven, not hidden context.
 
 - **One file, one mental model**  
   UI, data, logic, tools, and AI live together, so intent stays clear.
@@ -189,7 +189,7 @@ Expect breaking changes between alpha revisions.
 - [Targets and promotion](docs/targets-and-promotion.md)
 
 ### Trust, memory & governance
-**Memory in one minute:** namel3ss memory is **explicit**, **governed**, and **inspectable**. It records what matters (preferences, decisions, facts, corrections) under clear policies, with deterministic recall and traceable writes -- so AI behavior can be reviewed instead of guessed. You can inspect what was recalled or written through Studio and CLI explanations.
+**Memory in one minute:** namel3ss memory is **explicit**, **governed**, and **inspectable**. It records what matters (preferences, decisions, facts, corrections) under clear policies, with deterministic recall and traceable writes, so AI behavior can be reviewed instead of guessed. You can inspect what was recalled or written through Studio and CLI explanations.
 - [Trust and governance](docs/trust-and-governance.md)
 - [Memory overview](docs/memory.md)
 - [Concurrency model](docs/concurrency.md)
@@ -218,7 +218,7 @@ It reflects a belief:
 the basics of a programming language should be understandable in minutes, not hours.
 
 For us, "3" is a reminder.  
-If the core ideas of namel3ss cannot be understood in about three minutes, the language - not the developer - has failed.
+If the core ideas of namel3ss cannot be understood in about three minutes, the language, not the developer, has failed.
 
 When that happens, we redesign it.
 
