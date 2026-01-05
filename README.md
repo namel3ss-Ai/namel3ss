@@ -61,7 +61,8 @@ They are guarantees.
 
 ## Try it in 60 seconds
 
-## The 10-minute demo (ClearOrders)
+This command scaffolds ClearOrders, the reference project used by namel3ss.
+
 ```bash
 pip install namel3ss
 n3 new demo
@@ -69,30 +70,31 @@ cd demo
 n3 run
 ```
 
-The first-run experience opens your browser to the ClearOrders app with orders, Ask AI, and Why? explanations ready to try.
+On first run, the browser opens a working application with:
 
-- Orders dataset
-- Ask AI + Answer
-- Why? explanation
+- an orders dataset
+- an AI query flow
+- deterministic execution and traceable decisions
 
-Open Studio:
+To inspect execution, state, and reasoning, open Studio:
 ```bash
 n3 app.ai studio
 ```
 
-## The reference experience: ClearOrders
+## About ClearOrders
 
-ClearOrders is not a toy demo.
+ClearOrders is the reference experience for namel3ss.
 
-It is the reference experience for namel3ss.
+It is intentionally not minimal.
 
-It shows:
-- AI answers over structured records
-- deterministic execution with an explicit AI boundary
-- built-in "Why?" explanations
-- governed memory you can inspect
+It exists to demonstrate:
 
-If you understand ClearOrders, you understand namel3ss.
+- AI operating over structured records
+- explicit AI boundaries and deterministic execution
+- explainable "Why?" outputs
+- governed, inspectable memory
+
+Understanding ClearOrders is sufficient to understand the core model of namel3ss.
 
 ## What makes it different
 - One `.ai` file defines data, UI, backend logic, and AI.
