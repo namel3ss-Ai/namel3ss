@@ -22,7 +22,7 @@ And when it fails, no one can clearly see **what happened, or why**.
 
 AI, memory, UI, and logic are built into a single, deterministic model so every run can be understood, explained, and trusted.
 
-## What namel3ss is
+## What is namel3ss?
 
 namel3ss is an **AI-native programming language**.
 
