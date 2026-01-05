@@ -106,7 +106,7 @@ _CAPABILITIES = (
             "tests/runtime/test_tool_e2e.py",
         ),
         examples=(
-            "examples/flagship_demo/app.ai",
+            "examples/tool_usage/app.ai",
         ),
     ),
     _cap(
@@ -155,7 +155,7 @@ _CAPABILITIES = (
             "tests/runtime/test_memory_packs.py",
         ),
         examples=(
-            "examples/flagship_demo/app.ai",
+            "tests/fixtures/memory_packs/app.ai",
         ),
     ),
     _cap(
@@ -180,7 +180,7 @@ _CAPABILITIES = (
             "tests/spec_freeze/test_trace_contracts.py",
         ),
         examples=(
-            "examples/flagship_demo/app.ai",
+            "examples/control_flow/app.ai",
         ),
     ),
     _cap(

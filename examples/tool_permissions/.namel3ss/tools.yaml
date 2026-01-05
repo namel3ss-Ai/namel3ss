@@ -1,4 +1,0 @@
-tools:
-  "ok tool":
-    kind: "python"
-    entry: "tools.ok_tool:run"

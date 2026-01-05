@@ -1,0 +1,13 @@
+spec is "1.0"
+
+ai "assistant":
+  provider is "mock"
+  model is "mock-model"
+  system_prompt is "You are a concise assistant."
+  memory:
+    short_term is 3
+    semantic is true
+
+flow "demo":
+  ask ai "assistant" with input: "Remember this: I prefer short updates." as reply
+  return reply

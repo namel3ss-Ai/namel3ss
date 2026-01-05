@@ -1,8 +1,0 @@
-spec is "1.0"
-
-use "auth-basic" as auth
-
-page "home":
-  title is "Auth basic demo"
-  button "Set demo user":
-    calls flow "auth.set_user"

@@ -1,8 +1,0 @@
-format_version = "memory_pack_v1"
-pack_id = "team"
-pack_name = "Team memory pack"
-pack_version = "1.0.0"
-rules = [
-  "Only approvers can approve team proposals",
-  "Team memory cannot store personal preferences"
-]

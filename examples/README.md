@@ -1,5 +1,7 @@
 # Examples
 
+Examples never commit `.namel3ss/`; it is generated at runtime.
+
 ## demo_product_dashboard.ai
 A product-style dashboard with sections, cards, and a table of orders. Buttons seed and clear demo data.
 
@@ -12,6 +14,17 @@ What to click:
 - In Studio, click "Seed data" then "Refresh" to see rows populate.
 - Inspect the table and cards; try moving elements in the builder.
 - View State and Traces after actions.
+
+## demo_crud_dashboard.ai
+A CRUD-style dashboard with record validation, seed/reset actions, and forms + tables.
+
+Run:
+- `n3 examples/demo_crud_dashboard.ai check`
+- `n3 examples/demo_crud_dashboard.ai ui`
+- `n3 examples/demo_crud_dashboard.ai studio`
+
+What to click:
+- Run "Seed demo data", submit the form, and inspect traces.
 
 ## demo_onboarding_flow.ai
 A multi-step onboarding form with validation and a review card that reflects saved state.
@@ -38,6 +51,18 @@ What to click:
 - Submit an order with price + quantity.
 - Click "Compute total" and inspect State for the computed total.
 
+## getting_started
+A first-use walkthrough covering flows, UI, and tooling demos.
+
+Run:
+- `cd examples/getting_started && n3 app.ai check`
+- `cd examples/getting_started && n3 app.ai flow "ai_demo"`
+- `cd examples/getting_started && n3 app.ai ui`
+If tools aren't bound yet: `cd examples/getting_started && n3 tools bind --auto`.
+
+What to look for:
+- Basic flows, AI call scaffolding, and UI output.
+
 ## control_flow
 A tiny flow that shows explainable execution (if/else, repeat, match).
 
@@ -56,6 +81,7 @@ A minimal tool call with explainable tool output.
 Run:
 - `cd examples/tool_usage && n3 run app.ai`
 - `cd examples/tool_usage && n3 with`
+If tools aren't bound yet: `cd examples/tool_usage && n3 tools bind --auto`.
 
 What to look for:
 - Tool intent and permission lines.
@@ -166,6 +192,27 @@ What to click:
 - View the Messages table to see conversation entries.
 - Inspect Traces after sending to observe the AI call.
 
+## demo_ai_assistant_over_records.ai
+An AI assistant over records with memory traces using the mock provider by default.
+
+Run:
+- `n3 examples/demo_ai_assistant_over_records.ai check`
+- `n3 examples/demo_ai_assistant_over_records.ai ui`
+- `n3 examples/demo_ai_assistant_over_records.ai studio`
+
+What to click:
+- Seed notes, ask the assistant, and run Memory tour to inspect traces.
+
+## demo_multi_agent_orchestration.ai
+A multi-agent workflow with planner/critic/researcher roles (requires a real AI provider key).
+
+Run:
+- `n3 examples/demo_multi_agent_orchestration.ai ui`
+- `n3 examples/demo_multi_agent_orchestration.ai studio`
+
+What to click:
+- Click "Run workflow" and inspect State and Traces.
+
 ## modular_inventory
 Capsules + module imports + tests in a multi-file project.
 
@@ -176,9 +223,19 @@ Run:
 - `cd examples/modular_inventory && n3 test`
 
 ## module_imports
-Local module + external package layout with `packages/` and lockfile.
+Local module + external package layout with `packages/`.
 
 Run:
 - `n3 examples/module_imports/app.ai ui`
 - `cd examples/module_imports && n3 pkg tree`
 - `cd examples/module_imports && n3 pkg why shared`
+
+## reuse_modules
+Module reuse with merge order, overrides, and a conflict demo.
+
+Run:
+- `cd examples/reuse_modules && n3 app.ai run`
+- `cd examples/reuse_modules && n3 app.ai studio`
+
+What to look for:
+- module_loaded, module_merged, and module_overrides traces.

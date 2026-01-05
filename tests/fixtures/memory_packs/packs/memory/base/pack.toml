@@ -1,0 +1,4 @@
+format_version = "memory_pack_v1"
+pack_id = "base"
+pack_name = "Base memory pack"
+pack_version = "1.0.0"

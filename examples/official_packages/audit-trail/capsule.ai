@@ -1,6 +1,0 @@
-spec is "1.0"
-
-capsule "audit-trail":
-  exports:
-    flow "record_event"
-    flow "last_action"

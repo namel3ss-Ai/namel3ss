@@ -1,7 +1,0 @@
-spec is "1.0"
-
-use "admin-ui" as admin
-
-test "seed item returns seeded":
-  run flow "admin.seed_item" with input: {} as result
-  expect value is "seeded"

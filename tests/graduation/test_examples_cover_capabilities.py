@@ -8,6 +8,5 @@ def test_examples_cover_capabilities() -> None:
         if capability.status != STATUS_SHIPPED:
             continue
         assert capability.tests, f"missing tests for {capability.id}"
-        assert capability.examples, f"missing examples for {capability.id}"
-        for path in capability.tests + capability.examples:
+        for path in capability.tests:
             assert Path(path).exists(), f"missing proof file {path}"

@@ -1,9 +1,0 @@
-spec is "1.0"
-
-use "admin-ui" as admin
-
-page "home":
-  title is "Admin UI demo"
-  button "Seed admin item":
-    calls flow "admin.seed_item"
-  table is "admin.AdminItem"

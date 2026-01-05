@@ -1,8 +1,0 @@
-define function "price with discount":
-  input:
-    base is number
-  output:
-    total is number
-  if base is at least 100:
-    return base * 0.9
-  return base

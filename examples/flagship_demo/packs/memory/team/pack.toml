@@ -1,5 +1,0 @@
-format_version = "memory_pack_v1"
-pack_id = "team"
-pack_name = "Team memory"
-pack_version = "1.0"
-rules = ["Team memory cannot store personal preferences"]

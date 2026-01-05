@@ -1,9 +1,0 @@
-spec is "1.0"
-
-use "audit-trail" as audit
-
-page "home":
-  title is "Audit trail demo"
-  button "Record audit":
-    calls flow "audit.record_event"
-  table is "audit.AuditEntry"

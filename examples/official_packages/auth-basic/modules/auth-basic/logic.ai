@@ -1,8 +1,0 @@
-spec is "1.0"
-
-flow "set_user":
-  set state.user_id is "demo"
-  return state.user_id
-
-flow "current_user":
-  return state.user_id

@@ -1,6 +1,0 @@
-spec is "1.0"
-
-capsule "auth-basic":
-  exports:
-    flow "set_user"
-    flow "current_user"
