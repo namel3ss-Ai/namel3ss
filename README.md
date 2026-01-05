@@ -1,5 +1,63 @@
 # namel3ss
-Build AI-native applications in plain English — with explanations you can trust.
+designed to be understood
+
+![status: alpha](https://img.shields.io/badge/status-alpha-blue)
+![license: MIT](https://img.shields.io/badge/license-MIT-green)
+![tests](https://github.com/namel3ss-Ai/namel3ss/actions/workflows/ci.yml/badge.svg)
+
+---
+
+## Why namel3ss exists
+
+Software has changed.
+
+AI is now part of how applications think, decide, and respond.  
+But most programming languages were designed long before that.
+
+So developers add AI with layers of glue -- prompts, memory, tools, retries, guardrails -- scattered across systems. It works.  
+Until it doesn't.  
+And when it fails, no one can clearly see **what happened, or why**.
+
+**namel3ss removes the glue.**
+
+AI, memory, UI, and logic are built into a single, deterministic model -- where every run can be understood, explained, and trusted.
+
+## What namel3ss is
+
+namel3ss is an **AI-native programming language**.
+
+It treats AI as a first-class concept, while keeping execution explicit, state visible, and behavior explainable.
+
+One `.ai` file can describe:
+- what the application shows
+- what it does
+- how AI is used
+- what memory is read or written
+- and why each decision happened
+
+Nothing is hidden.
+
+## Design guarantees
+
+namel3ss is built around a few non-negotiable ideas:
+
+- **Deterministic execution**  
+  Every run follows a clear, stable path.
+
+- **Explicit AI boundary**  
+  AI is never implicit. Every AI call is visible and traced.
+
+- **Explainability by default**  
+  You can always ask: *what happened, and why?*
+
+- **Governed memory**  
+  Memory is explicit, inspectable, and policy-driven -- not hidden context.
+
+- **One file, one mental model**  
+  UI, data, logic, tools, and AI live together, so intent stays clear.
+
+These are not features.  
+They are guarantees.
 
 ## Try it in 60 seconds
 
@@ -22,11 +80,19 @@ Open Studio:
 n3 app.ai studio
 ```
 
-## Why namel3ss
-One `.ai` file describes your data, UI, backend logic, and AI behavior.
-Runs are deterministic in a clear execution environment, with AI as an explicit boundary.
-Explainability is built in so you can trust what happened and why.
-The first-run experience is designed to feel finished, not experimental.
+## The reference experience: ClearOrders
+
+ClearOrders is not a toy demo.
+
+It is the reference experience for namel3ss.
+
+It shows:
+- AI answers over structured records
+- deterministic execution with an explicit AI boundary
+- built-in "Why?" explanations
+- governed memory you can inspect
+
+If you understand ClearOrders, you understand namel3ss.
 
 ## What makes it different
 - One `.ai` file defines data, UI, backend logic, and AI.
@@ -61,8 +127,21 @@ flow "reply":
   return reply
 ```
 
+This is the core idea:  
+intent first, execution second, explanation always.
+
+## Who namel3ss is for
+namel3ss is for:
+- builders exploring AI-native application development
+- developers who care about explainability and trust
+- language and tooling enthusiasts
+- learning, experimentation, and internal tools
+
+namel3ss is not trying to replace Python or JavaScript.  
+It is exploring what comes next.
+
 ## Status
-namel3ss is in v0.1.0a7 alpha. It is suitable for learning and experimentation, not production.
+namel3ss is in v0.1.0a7 alpha. It is suitable for learning and experimentation, not production.  
 Expect breaking changes between alpha revisions.
 
 ## Start here (learning path)
@@ -110,7 +189,7 @@ Expect breaking changes between alpha revisions.
 - [Targets and promotion](docs/targets-and-promotion.md)
 
 ### Trust, memory & governance
-**Memory in one minute:** namel3ss memory is **explicit**, **governed**, and **inspectable**. It records what matters (preferences, decisions, facts, corrections) under clear policies, with deterministic recall and traceable writes — so AI behavior can be reviewed instead of guessed. You can inspect what was recalled or written through Studio and CLI explanations.
+**Memory in one minute:** namel3ss memory is **explicit**, **governed**, and **inspectable**. It records what matters (preferences, decisions, facts, corrections) under clear policies, with deterministic recall and traceable writes -- so AI behavior can be reviewed instead of guessed. You can inspect what was recalled or written through Studio and CLI explanations.
 - [Trust and governance](docs/trust-and-governance.md)
 - [Memory overview](docs/memory.md)
 - [Concurrency model](docs/concurrency.md)
@@ -131,6 +210,17 @@ Expect breaking changes between alpha revisions.
 - [LinkedIn](https://www.linkedin.com/company/namel3ss/)
 - [Email](mailto:info@namel3ss.com)
 - [Source repository](https://github.com/namel3ss-Ai/namel3ss)
+
+## About the name
+The "3" in namel3ss is intentional.
+
+It reflects a belief:  
+the basics of a programming language should be understandable in minutes, not hours.
+
+For us, "3" is a reminder.  
+If the core ideas of namel3ss cannot be understood in about three minutes, the language - not the developer - has failed.
+
+When that happens, we redesign it.
 
 ## Contributing
 Read [CONTRIBUTING.md](CONTRIBUTING.md) and [ECOSYSTEM.md](ECOSYSTEM.md).
