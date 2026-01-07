@@ -8,6 +8,7 @@ class GateSpec:
     name: str
     tests: tuple[str, ...]
     required: bool = True
+    command: tuple[str, ...] | None = None
 
 
 @dataclass(frozen=True)

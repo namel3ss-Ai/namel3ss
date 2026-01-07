@@ -223,7 +223,7 @@ def _read_phrase_until(parser, *, stop_type: str, context: str) -> tuple[str, in
             break
         if tok.type in {"NEWLINE", "INDENT", "DEDENT", "COLON"}:
             raise Namel3ssError(f"Expected {context}", line=tok.line, column=tok.column)
-        if tok.type in {"COMMA", "LPAREN", "RPAREN", "LBRACKET", "RBRACKET", "PLUS", "MINUS", "STAR", "SLASH"}:
+        if tok.type in {"COMMA", "LPAREN", "RPAREN", "LBRACKET", "RBRACKET", "PLUS", "MINUS", "STAR", "POWER", "SLASH"}:
             raise Namel3ssError(f"Expected {context}", line=tok.line, column=tok.column)
         tokens.append(tok)
         parser._advance()

@@ -7,6 +7,7 @@ without module:function wiring in `.ai`.
 
 ## Built-in packs
 Built-in packs require no extra dependencies and are pre-bound.
+Note: list aggregations (`sum/min/max/mean/median`) are built-in expressions; the math pack remains available for tool-call workflows.
 
 ### text
 Available tools:

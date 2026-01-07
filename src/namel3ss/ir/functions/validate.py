@@ -143,6 +143,19 @@ def _validate_expression(expr: ir.Expression) -> None:
         if expr.index is not None:
             _validate_expression(expr.index)
         return
+    if isinstance(expr, ir.ListMapExpr):
+        _validate_expression(expr.target)
+        _validate_expression(expr.body)
+        return
+    if isinstance(expr, ir.ListFilterExpr):
+        _validate_expression(expr.target)
+        _validate_expression(expr.predicate)
+        return
+    if isinstance(expr, ir.ListReduceExpr):
+        _validate_expression(expr.target)
+        _validate_expression(expr.start)
+        _validate_expression(expr.body)
+        return
     if isinstance(expr, ir.MapOpExpr):
         _validate_expression(expr.target)
         if expr.key is not None:
@@ -249,6 +262,19 @@ def _collect_calls_from_expr(expr: ir.Expression) -> set[str]:
             calls.update(_collect_calls_from_expr(expr.value))
         if expr.index is not None:
             calls.update(_collect_calls_from_expr(expr.index))
+        return calls
+    if isinstance(expr, ir.ListMapExpr):
+        calls.update(_collect_calls_from_expr(expr.target))
+        calls.update(_collect_calls_from_expr(expr.body))
+        return calls
+    if isinstance(expr, ir.ListFilterExpr):
+        calls.update(_collect_calls_from_expr(expr.target))
+        calls.update(_collect_calls_from_expr(expr.predicate))
+        return calls
+    if isinstance(expr, ir.ListReduceExpr):
+        calls.update(_collect_calls_from_expr(expr.target))
+        calls.update(_collect_calls_from_expr(expr.start))
+        calls.update(_collect_calls_from_expr(expr.body))
         return calls
     if isinstance(expr, ir.MapOpExpr):
         calls.update(_collect_calls_from_expr(expr.target))

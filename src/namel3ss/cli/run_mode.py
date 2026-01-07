@@ -21,6 +21,7 @@ from namel3ss.utils.json_tools import dumps_pretty
 from namel3ss.cli.text_output import prepare_cli_text, prepare_first_run_text
 from namel3ss.secrets import set_audit_root, set_engine_target
 from namel3ss.traces.plain import format_plain
+from namel3ss.traces.schema import TraceEventType
 
 
 def run_run_command(args: list[str]) -> int:
@@ -50,6 +51,8 @@ def run_run_command(args: list[str]) -> int:
                 print(dumps_pretty(output))
             else:
                 print(format_plain(output))
+                if params.explain:
+                    _print_explain_traces(output)
             return 0
         if target.name == "service":
             port = params.port or DEFAULT_SERVICE_PORT
@@ -117,6 +120,7 @@ class _RunParams:
         dry: bool,
         json_mode: bool,
         no_open: bool,
+        explain: bool,
     ):
         self.app_arg = app_arg
         self.target_raw = target_raw
@@ -125,6 +129,7 @@ class _RunParams:
         self.dry = dry
         self.json_mode = json_mode
         self.no_open = no_open
+        self.explain = explain
 
 
 def _parse_args(args: list[str]) -> _RunParams:
@@ -135,6 +140,7 @@ def _parse_args(args: list[str]) -> _RunParams:
     dry = False
     json_mode = False
     no_open = False
+    explain = False
     i = 0
     while i < len(args):
         arg = args[i]
@@ -191,6 +197,10 @@ def _parse_args(args: list[str]) -> _RunParams:
             json_mode = True
             i += 1
             continue
+        if arg == "--explain":
+            explain = True
+            i += 1
+            continue
         if arg == "--no-open":
             no_open = True
             i += 1
@@ -206,7 +216,7 @@ def _parse_args(args: list[str]) -> _RunParams:
             raise Namel3ssError(
                 build_guidance_message(
                     what=f"Unknown flag '{arg}'.",
-                    why="Supported flags: --target, --port, --build, --dry, --json, --first-run, --no-open.",
+                    why="Supported flags: --target, --port, --build, --dry, --json, --explain, --first-run, --no-open.",
                     fix="Remove the unsupported flag.",
                     example="n3 run --target local",
                 )
@@ -223,7 +233,20 @@ def _parse_args(args: list[str]) -> _RunParams:
                 example="n3 run app.ai --target local",
             )
         )
-    return _RunParams(app_arg, target, port, build_id, dry, json_mode, no_open)
+    return _RunParams(app_arg, target, port, build_id, dry, json_mode, no_open, explain)
+
+
+def _print_explain_traces(output: dict) -> None:
+    traces = output.get("traces") if isinstance(output, dict) else None
+    if not isinstance(traces, list):
+        print("Explain traces: none")
+        return
+    explain = [trace for trace in traces if trace.get("type") == TraceEventType.EXPRESSION_EXPLAIN]
+    if not explain:
+        print("Explain traces: none")
+        return
+    print("Explain traces:")
+    print(dumps_pretty(explain))
 
 
 def _resolve_run_path(target: str, project_root: Path, app_path: Path, build_id: str | None) -> tuple[Path, str | None]:

@@ -1,8 +1,4 @@
 {
-  "error": {
-    "kind": "Namel3ssError",
-    "message": "[line 13, col 17] What happened: Tool \"missing\" entry module was not found (missing_tool).\nWhy: Expected a module at /Users/disanssebowabasalidde/Documents/GitHub/namel3ss/tests/fixtures/tools/missing_tool.py or /Users/disanssebowabasalidde/Documents/GitHub/namel3ss/tests/fixtures/tools/missing_tool/__init__.py.\nFix: Create the module file or update the binding entry.\nExample: tools:\n  \"missing\":\n    kind: \"python\"\n    entry: \"tools.missing_tool:run\""
-  },
   "execution_steps": [
     {
       "because": null,
@@ -10,43 +6,352 @@
       "data": {},
       "id": "step:0001",
       "kind": "flow_start",
-      "line": 12,
-      "what": "flow \"demo\" started"
+      "line": 3,
+      "what": "flow \"surface\" started"
     },
     {
       "because": null,
-      "column": 17,
-      "data": {
-        "tool_name": "missing"
-      },
+      "column": 3,
+      "data": {},
       "id": "step:0002",
-      "kind": "tool_call",
-      "line": 13,
-      "what": "called tool missing"
+      "kind": "statement_let",
+      "line": 4,
+      "what": "set local numbers"
     },
     {
-      "because": "[line 13, col 17] What happened: Tool \"missing\" entry module was not found (missing_tool).\nWhy: Expected a module at /Users/disanssebowabasalidde/Documents/GitHub/namel3ss/tests/fixtures/tools/missing_tool.py or /Users/disanssebowabasalidde/Documents/GitHub/namel3ss/tests/fixtures/tools/missing_tool/__init__.py.\nFix: Create the module file or update the binding entry.\nExample: tools:\n  \"missing\":\n    kind: \"python\"\n    entry: \"tools.missing_tool:run\"",
-      "column": 17,
+      "because": null,
+      "column": 3,
       "data": {},
       "id": "step:0003",
-      "kind": "error",
-      "line": 13,
-      "what": "error Namel3ssError"
+      "kind": "statement_let",
+      "line": 9,
+      "what": "set local appended"
     },
     {
-      "because": "ended with error",
-      "column": 1,
+      "because": null,
+      "column": 3,
       "data": {},
       "id": "step:0004",
+      "kind": "statement_let",
+      "line": 10,
+      "what": "set local size"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0005",
+      "kind": "statement_let",
+      "line": 11,
+      "what": "set local first"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0006",
+      "kind": "statement_let",
+      "line": 13,
+      "what": "set local doubled"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0007",
+      "kind": "statement_let",
+      "line": 15,
+      "what": "set local big"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0008",
+      "kind": "statement_set",
+      "line": 17,
+      "what": "set state.total"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0009",
+      "kind": "statement_let",
+      "line": 19,
+      "what": "set local avg"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0010",
+      "kind": "statement_let",
+      "line": 20,
+      "what": "set local sum_all"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0011",
+      "kind": "statement_let",
+      "line": 21,
+      "what": "set local min_val"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0012",
+      "kind": "statement_let",
+      "line": 22,
+      "what": "set local max_val"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0013",
+      "kind": "statement_let",
+      "line": 23,
+      "what": "set local median_val"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0014",
+      "kind": "statement_let",
+      "line": 24,
+      "what": "set local pow"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0015",
+      "kind": "statement_let",
+      "line": 25,
+      "what": "set local pow_paren"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0016",
+      "kind": "statement_let",
+      "line": 26,
+      "what": "set local pow_chain"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0017",
+      "kind": "statement_let",
+      "line": 27,
+      "what": "set local combo"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0018",
+      "kind": "statement_let",
+      "line": 28,
+      "what": "set local mod_val"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0019",
+      "kind": "statement_let",
+      "line": 29,
+      "what": "set local div_val"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0020",
+      "kind": "statement_let",
+      "line": 30,
+      "what": "set local gt_ok"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0021",
+      "kind": "statement_let",
+      "line": 31,
+      "what": "set local lt_ok"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0022",
+      "kind": "statement_let",
+      "line": 32,
+      "what": "set local gte_ok"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0023",
+      "kind": "statement_let",
+      "line": 33,
+      "what": "set local lte_ok"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0024",
+      "kind": "statement_let",
+      "line": 34,
+      "what": "set local between_ok"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0025",
+      "kind": "statement_let",
+      "line": 35,
+      "what": "set local strict_ok"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0026",
+      "kind": "statement_let",
+      "line": 36,
+      "what": "set local not_between"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0027",
+      "kind": "statement_return",
+      "line": 37,
+      "what": "returned a value"
+    },
+    {
+      "because": "completed successfully",
+      "column": 1,
+      "data": {},
+      "id": "step:0028",
       "kind": "flow_end",
-      "line": 12,
-      "what": "flow \"demo\" ended"
+      "line": 3,
+      "what": "flow \"surface\" ended"
     }
   ],
-  "flow_name": "demo",
-  "ok": false,
-  "summary": "Flow \"demo\" failed with Namel3ssError.",
+  "flow_name": "surface",
+  "ok": true,
+  "summary": "Flow \"surface\" ran with 28 steps.",
   "traces": [
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
     {
       "ai_name": null,
       "events": 0,

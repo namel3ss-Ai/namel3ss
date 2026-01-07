@@ -24,6 +24,12 @@ def parse_comparison(parser) -> ast.Expression:
         _expect_ident_value(parser, "of")
         values = _parse_literal_list(parser)
         return _one_of_expression(left, values, is_tok.line, is_tok.column)
+    if _looks_like_strictly_between(parser):
+        parser._advance()
+        parser._advance()
+        return _parse_between_expression(parser, left, is_tok, strict=True)
+    if _match_ident_value(parser, "between"):
+        return _parse_between_expression(parser, left, is_tok, strict=False)
     if parser._match("GREATER"):
         parser._expect("THAN", "Expected 'than' after 'is greater'")
         right = parse_additive(parser)
@@ -119,6 +125,68 @@ def _one_of_expression(
     if expr is None:
         raise Namel3ssError("One-of list must contain at least one value", line=line, column=column)
     return expr
+
+
+_BETWEEN_START_TOKENS = {
+    "NUMBER",
+    "STRING",
+    "BOOLEAN",
+    "NULL",
+    "IDENT",
+    "INPUT",
+    "STATE",
+    "LPAREN",
+    "CALL",
+    "ASK",
+    "PLUS",
+    "MINUS",
+}
+
+
+def _parse_between_expression(
+    parser,
+    left: ast.Expression,
+    is_tok,
+    *,
+    strict: bool,
+) -> ast.Expression:
+    _expect_between_bound(parser, kind="lower")
+    lower = parser._parse_additive()
+    and_tok = parser._expect("AND", "Expected 'and' after between lower bound")
+    _expect_between_bound(parser, kind="upper")
+    upper = parser._parse_additive()
+    if strict:
+        lower_cmp = ast.Comparison(kind="gt", left=left, right=lower, line=is_tok.line, column=is_tok.column)
+        upper_cmp = ast.Comparison(kind="lt", left=left, right=upper, line=is_tok.line, column=is_tok.column)
+    else:
+        lower_cmp = ast.Comparison(kind="gte", left=left, right=lower, line=is_tok.line, column=is_tok.column)
+        upper_cmp = ast.Comparison(kind="lte", left=left, right=upper, line=is_tok.line, column=is_tok.column)
+    return ast.BinaryOp(op="and", left=lower_cmp, right=upper_cmp, line=and_tok.line, column=and_tok.column)
+
+
+def _expect_between_bound(parser, *, kind: str) -> None:
+    tok = parser._current()
+    if tok.type in _BETWEEN_START_TOKENS:
+        return
+    bound = "lower" if kind == "lower" else "upper"
+    raise Namel3ssError(
+        build_guidance_message(
+            what=f"Between comparison is missing the {bound} bound.",
+            why="`is between` requires two bounds separated by `and`.",
+            fix=f"Add the {bound} bound to the between comparison.",
+            example="if value is between 1 and 10:",
+        ),
+        line=tok.line,
+        column=tok.column,
+    )
+
+
+def _looks_like_strictly_between(parser) -> bool:
+    tok = parser._current()
+    if tok.type != "IDENT" or tok.value != "strictly":
+        return False
+    next_tok = parser.tokens[parser.position + 1] if parser.position + 1 < len(parser.tokens) else None
+    return bool(next_tok and next_tok.type == "IDENT" and next_tok.value == "between")
 
 
 def _match_ident_value(parser, value: str) -> bool:

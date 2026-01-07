@@ -14,6 +14,11 @@
       } else if (root.traces && typeof root.traces.renderTraces === "function") {
         root.traces.renderTraces(result.traces);
       }
+      if (typeof window.renderExplain === "function") {
+        window.renderExplain(result.traces);
+      } else if (root.explain && typeof root.explain.renderExplain === "function") {
+        root.explain.renderExplain(result.traces);
+      }
       if (typeof window.renderMemory === "function") {
         window.renderMemory(result.traces);
       } else if (root.memory && typeof root.memory.renderMemory === "function") {

@@ -1,0 +1,60 @@
+spec is "1.0"
+
+flow "surface":
+  let numbers is list:
+    1
+    2
+    3
+    10
+  let appended is list append numbers with 12
+  let size is list length of appended
+  let first is list get appended at 0
+  calc:
+    doubled = map numbers with item as n:
+      n * 2
+    big = filter doubled with item as x:
+      x is greater than 5
+    state.total = reduce big with acc as s and item as v starting 0:
+      s + v
+    avg = mean(big)
+    sum_all = sum(numbers)
+    min_val = min(numbers)
+    max_val = max(numbers)
+    median_val = median(numbers)
+    pow = -2 ** 2
+    pow_paren = (-2) ** 2
+    pow_chain = 2 ** 3 ** 2
+    combo = 2 * 3 ** 2
+    mod_val = 10 % 4
+    div_val = 10 / 4
+    gt_ok = state.total is greater than 0
+    lt_ok = state.total is less than 100
+    gte_ok = state.total is at least 26
+    lte_ok = state.total is at most 26
+    between_ok = state.total is between 0 and 100 and avg is greater than 0
+    strict_ok = state.total is strictly between 0 and 30
+    not_between = not state.total is between 0 and 100
+  return map:
+    "size" is size
+    "first" is first
+    "doubled" is doubled
+    "big" is big
+    "total" is state.total
+    "avg" is avg
+    "sum_all" is sum_all
+    "min_val" is min_val
+    "max_val" is max_val
+    "median_val" is median_val
+    "pow" is pow
+    "pow_paren" is pow_paren
+    "pow_chain" is pow_chain
+    "combo" is combo
+    "mod_val" is mod_val
+    "div_val" is div_val
+    "gt_ok" is gt_ok
+    "lt_ok" is lt_ok
+    "gte_ok" is gte_ok
+    "lte_ok" is lte_ok
+    "between_ok" is between_ok
+    "strict_ok" is strict_ok
+    "not_between" is not_between

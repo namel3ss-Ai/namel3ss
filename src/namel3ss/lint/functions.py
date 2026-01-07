@@ -230,6 +230,19 @@ def _collect_calls_from_expr(expr: ast.Expression | None) -> set[str]:
             calls.update(_collect_calls_from_expr(entry.key))
             calls.update(_collect_calls_from_expr(entry.value))
         return calls
+    if isinstance(expr, ast.ListMapExpr):
+        calls.update(_collect_calls_from_expr(expr.target))
+        calls.update(_collect_calls_from_expr(expr.body))
+        return calls
+    if isinstance(expr, ast.ListFilterExpr):
+        calls.update(_collect_calls_from_expr(expr.target))
+        calls.update(_collect_calls_from_expr(expr.predicate))
+        return calls
+    if isinstance(expr, ast.ListReduceExpr):
+        calls.update(_collect_calls_from_expr(expr.target))
+        calls.update(_collect_calls_from_expr(expr.start))
+        calls.update(_collect_calls_from_expr(expr.body))
+        return calls
     if isinstance(expr, ast.ListOpExpr):
         calls.update(_collect_calls_from_expr(expr.target))
         calls.update(_collect_calls_from_expr(expr.value))

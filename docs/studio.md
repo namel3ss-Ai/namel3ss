@@ -32,6 +32,11 @@ Studio is the command center for namel3ss. It stays fast and minimal while surfa
 - One-click fixes show a preview diff; apply only after confirmation.
 - Rename with preview + apply using the same editor patch format as `n3 editor`.
 
+## Formulas + Explain (calc)
+- Formulas tab renders calc blocks with a Code/Formula toggle for math-friendly display.
+- Explain tab shows deterministic calc-line explanations (inputs, steps, outputs).
+- Copying from Formula View returns the original calc line text.
+
 ## Learning Overlay
 - Toggle **Learn** to highlight key panels with short explanations.
 - Tooltips link to one-page docs under `docs/models/`.

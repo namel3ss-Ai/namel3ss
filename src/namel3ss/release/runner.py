@@ -63,6 +63,12 @@ DEFAULT_GATES: tuple[GateSpec, ...] = (
         ),
         required=True,
     ),
+    GateSpec(
+        name="Expression Surface Gate",
+        tests=(),
+        required=True,
+        command=(sys.executable, "-m", "namel3ss.cli.main", "expr-check"),
+    ),
 )
 
 
@@ -130,6 +136,35 @@ def render_release_text(report: ReleaseReport) -> str:
 
 def _run_gate(gate: GateSpec, *, executor: GateExecutor | None, fast: bool) -> GateResult:
     tests = tuple(gate.tests)
+    if gate.command:
+        runner = executor or _run_command_gate
+        execution = runner(gate, tests, fast)
+        if execution.exit_code == 0:
+            return GateResult(
+                name=gate.name,
+                required=gate.required,
+                status="pass",
+                code=_gate_code(gate, "pass"),
+                summary="command ok",
+                details=_gate_details(tests, execution),
+            )
+        if execution.exit_code == 5:
+            return GateResult(
+                name=gate.name,
+                required=gate.required,
+                status="missing",
+                code=_gate_code(gate, "no_tests"),
+                summary="command missing",
+                details=_gate_details(tests, execution),
+            )
+        return GateResult(
+            name=gate.name,
+            required=gate.required,
+            status="fail",
+            code=_gate_code(gate, "failed"),
+            summary="command failed",
+            details=_gate_details(tests, execution),
+        )
     if not tests:
         return _missing_tests_result(gate, reason="no_tests_configured")
     root = Path.cwd()
@@ -168,6 +203,14 @@ def _run_gate(gate: GateSpec, *, executor: GateExecutor | None, fast: bool) -> G
 
 def _run_pytest_gate(gate: GateSpec, tests: tuple[str, ...], fast: bool) -> GateExecution:
     cmd = (sys.executable, "-m", "pytest", "-q", *tests)
+    start = time.time()
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    duration_ms = int((time.time() - start) * 1000)
+    return GateExecution(exit_code=proc.returncode, duration_ms=duration_ms, command=cmd)
+
+
+def _run_command_gate(gate: GateSpec, _tests: tuple[str, ...], _fast: bool) -> GateExecution:
+    cmd = tuple(gate.command or ())
     start = time.time()
     proc = subprocess.run(cmd, capture_output=True, text=True)
     duration_ms = int((time.time() - start) * 1000)

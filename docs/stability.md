@@ -5,7 +5,7 @@ namel3ss is in alpha and focused on predictable change.
 ## Stable now
 - CLI entrypoints for app, check, lint, format, ui, actions, studio
 - Core declarations for records, flows, pages, tools, ai profiles, agents, and modules
-- Compute core with define function, operators, bounded loops, list values, and map values
+- Compute core with define function, operators (including ** and between), list/map values, list aggregations, map/filter/reduce, and let/calc blocks
 - Deterministic traces and execution steps
 - Memory governance and memory packs
 - Tool capability enforcement and purity gating

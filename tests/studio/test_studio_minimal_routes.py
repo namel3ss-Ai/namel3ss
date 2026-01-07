@@ -60,6 +60,7 @@ def test_kept_get_endpoints_return_ok(tmp_path: Path) -> None:
         "/api/ui",
         "/api/actions",
         "/api/lint",
+        "/api/formulas",
         "/api/graph",
         "/api/exports",
         "/api/tools",

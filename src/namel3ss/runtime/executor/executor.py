@@ -18,6 +18,7 @@ from namel3ss.runtime.executor.signals import _ReturnSignal
 from namel3ss.runtime.executor.statements import execute_statement
 from namel3ss.runtime.execution.normalize import build_plain_text, write_last_execution
 from namel3ss.runtime.execution.recorder import record_step
+from namel3ss.runtime.execution.calc_index import build_calc_assignment_index
 from namel3ss.runtime.memory.api import MemoryManager
 from namel3ss.runtime.storage.factory import resolve_store
 from namel3ss.schema.identity import IdentitySchema
@@ -90,6 +91,7 @@ class Executor:
             execution_steps=[],
             execution_step_counter=0,
         )
+        self.ctx.calc_assignment_index = _load_calc_assignment_index(app_path)
         self.flow = self.ctx.flow
         self.schemas = self.ctx.schemas
         self.state = self.ctx.state
@@ -223,11 +225,18 @@ class Executor:
                     "kind": pack.error.kind,
                 }
             )
+            details = {"error_id": pack.error.error_id}
+            if (
+                isinstance(exc, Namel3ssError)
+                and isinstance(exc.details, dict)
+                and exc.details.get("error_id")
+            ):
+                details["cause"] = exc.details
             raise Namel3ssError(
                 message,
                 line=where.line,
                 column=where.column,
-                details={"error_id": pack.error.error_id},
+                details=details,
             ) from exc
         finally:
             _record_flow_end(self.ctx, ok=error is None)
@@ -475,3 +484,14 @@ def _build_secrets_map(ai_profiles: dict, config: AppConfig, app_path: str | Non
         ref.name: {"name": ref.name, "available": ref.available, "source": ref.source, "target": ref.target}
         for ref in refs
     }
+
+
+def _load_calc_assignment_index(app_path: str | Path | None) -> dict[int, dict[str, int]]:
+    if not app_path:
+        return {}
+    path = Path(app_path)
+    try:
+        source = path.read_text(encoding="utf-8")
+    except OSError:
+        return {}
+    return build_calc_assignment_index(source)

@@ -75,6 +75,20 @@
       <section class="canvas-mode" data-mode="errors" aria-labelledby="dock-errors">
         <div id="errors" class="canvas-panel"></div>
       </section>
+      <section class="canvas-mode" data-mode="formulas" aria-labelledby="dock-formulas">
+        <div class="canvas-panel">
+          <div class="control-row formulas-controls">
+            <div class="formula-toggle" role="group" aria-label="Formula view">
+              <button class="btn ghost active" data-formula-view="code" aria-pressed="true">Code View</button>
+              <button class="btn ghost" data-formula-view="formula" aria-pressed="false">Formula View</button>
+            </div>
+          </div>
+          <div id="formulas" class="panel-stack"></div>
+        </div>
+      </section>
+      <section class="canvas-mode" data-mode="explain" aria-labelledby="dock-explain">
+        <div id="explain" class="canvas-panel"></div>
+      </section>
       <section class="canvas-mode" data-mode="traces" aria-labelledby="dock-traces">
         <div class="canvas-panel">
           <div class="control-row">
@@ -105,6 +119,8 @@
       <button class="tab" data-tab="why" id="dock-why" data-testid="studio-dock-item-why">Why</button>
       <button class="tab" data-tab="data" id="dock-data" data-testid="studio-dock-item-data">Data</button>
       <button class="tab" data-tab="errors" id="dock-errors" data-testid="studio-dock-item-errors">Errors</button>
+      <button class="tab" data-tab="formulas" id="dock-formulas" data-testid="studio-dock-item-formulas">Formulas</button>
+      <button class="tab" data-tab="explain" id="dock-explain" data-testid="studio-dock-item-explain">Explain</button>
       <button class="tab" data-tab="traces" id="dock-traces" data-testid="studio-dock-item-traces">Traces</button>
       <button class="tab" data-tab="memory" id="dock-memory" data-testid="studio-dock-item-memory">Memory</button>
       <button class="tab" data-tab="setup" id="dock-setup" data-testid="studio-dock-item-setup">Setup</button>
@@ -140,6 +156,8 @@
   <script src="/studio/secret_keys.js"></script>
   <script src="/studio/traces.js"></script>
   <script src="/studio/errors.js"></script>
+  <script src="/studio/formulas.js"></script>
+  <script src="/studio/explain.js"></script>
   <script src="/studio/memory.js"></script>
   <script src="/studio/setup.js"></script>
   <script src="/studio/why.js"></script>

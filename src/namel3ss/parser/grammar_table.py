@@ -81,6 +81,7 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
 
 def statement_rules() -> tuple[StatementRule, ...]:
     from namel3ss.parser.stmt.ask_ai import parse_ask_stmt
+    from namel3ss.parser.stmt.calc import parse_calc
     from namel3ss.parser.stmt.create import parse_create
     from namel3ss.parser.stmt.find import parse_find
     from namel3ss.parser.stmt.foreach import parse_for_each
@@ -99,6 +100,7 @@ def statement_rules() -> tuple[StatementRule, ...]:
     from namel3ss.parser.stmt.trycatch import parse_try
 
     return (
+        StatementRule("calc", "IDENT", parse_calc, token_value="calc"),
         StatementRule("let", "LET", parse_let),
         StatementRule("set_theme", "SET", parse_set_theme, predicate=_is_set_theme),
         StatementRule("set", "SET", parse_set),

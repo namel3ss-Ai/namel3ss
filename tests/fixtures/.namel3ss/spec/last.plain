@@ -1,0 +1,17 @@
+spec check
+
+Declared
+- spec: 1.0
+
+Engine supports
+- 1.0
+
+Required capabilities
+- none recorded
+
+Unsupported capabilities
+- none recorded
+
+Result
+- status: compatible
+- Spec version "1.0" is compatible.

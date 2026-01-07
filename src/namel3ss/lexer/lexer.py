@@ -91,6 +91,11 @@ class Lexer:
                 column += 1
                 continue
             if ch == "*":
+                if i + 1 < len(text) and text[i + 1] == "*":
+                    tokens.append(Token("POWER", "**", line_no, column))
+                    i += 2
+                    column += 2
+                    continue
                 tokens.append(Token("STAR", "*", line_no, column))
                 i += 1
                 column += 1
@@ -102,6 +107,11 @@ class Lexer:
                 continue
             if ch == "%":
                 tokens.append(Token("PERCENT", "%", line_no, column))
+                i += 1
+                column += 1
+                continue
+            if ch == "=":
+                tokens.append(Token("EQUALS", "=", line_no, column))
                 i += 1
                 column += 1
                 continue

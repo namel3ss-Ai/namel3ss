@@ -15,6 +15,7 @@ from namel3ss.studio.api import (
     get_ui_payload,
 )
 from namel3ss.studio.graph_api import get_exports_payload, get_graph_payload
+from namel3ss.studio.formulas_api import get_formulas_payload
 from namel3ss.studio.routes.core import handle_action
 from namel3ss.studio.why_api import get_why_payload
 
@@ -53,6 +54,11 @@ def handle_api_get(handler: Any) -> None:
         return
     if handler.path == "/api/exports":
         _respond_simple(handler, source, get_exports_payload, kind="exports")
+        return
+    if handler.path == "/api/formulas":
+        payload = get_formulas_payload(source)
+        status = 200 if payload.get("ok", True) else 400
+        handler._respond_json(payload, status=status)
         return
     if handler.path == "/api/why":
         _respond_simple(handler, source, get_why_payload, kind="why")

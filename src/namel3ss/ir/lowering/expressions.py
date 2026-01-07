@@ -7,6 +7,9 @@ from namel3ss.ir.model.expressions import (
     BinaryOp,
     Comparison,
     ListExpr,
+    ListFilterExpr,
+    ListMapExpr,
+    ListReduceExpr,
     Literal,
     MapEntry,
     MapExpr,
@@ -97,6 +100,32 @@ def _lower_expression(expr: ast.Expression | None):
             target=_lower_expression(expr.target),
             value=_lower_expression(expr.value) if expr.value is not None else None,
             index=_lower_expression(expr.index) if expr.index is not None else None,
+            line=expr.line,
+            column=expr.column,
+        )
+    if isinstance(expr, ast.ListMapExpr):
+        return ListMapExpr(
+            target=_lower_expression(expr.target),
+            var_name=expr.var_name,
+            body=_lower_expression(expr.body),
+            line=expr.line,
+            column=expr.column,
+        )
+    if isinstance(expr, ast.ListFilterExpr):
+        return ListFilterExpr(
+            target=_lower_expression(expr.target),
+            var_name=expr.var_name,
+            predicate=_lower_expression(expr.predicate),
+            line=expr.line,
+            column=expr.column,
+        )
+    if isinstance(expr, ast.ListReduceExpr):
+        return ListReduceExpr(
+            target=_lower_expression(expr.target),
+            acc_name=expr.acc_name,
+            item_name=expr.item_name,
+            start=_lower_expression(expr.start),
+            body=_lower_expression(expr.body),
             line=expr.line,
             column=expr.column,
         )

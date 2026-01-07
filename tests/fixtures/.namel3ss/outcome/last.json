@@ -1,50 +1,46 @@
 {
   "outcome": {
-    "execution_steps_count": 4,
-    "flow_name": "demo",
+    "execution_steps_count": 28,
+    "flow_name": "surface",
     "memory": {
-      "persist_attempted": false,
+      "persist_attempted": true,
       "persist_failed": false,
-      "persist_succeeded": false,
+      "persist_succeeded": true,
       "skipped_reason": null
     },
     "record_changes_count": 0,
     "state": {
       "loaded_from_store": true,
-      "save_attempted": false,
+      "save_attempted": true,
       "save_failed": false,
-      "save_succeeded": false
+      "save_succeeded": true
     },
-    "status": "error",
+    "status": "ok",
     "store": {
       "began": true,
       "commit_failed": false,
-      "committed": false,
+      "committed": true,
       "rollback_failed": false,
-      "rolled_back": true
+      "rolled_back": false
     },
-    "traces_count": 2,
-    "what_did_not_happen": [
-      "memory was not persisted",
-      "state was not saved",
-      "store commit was not attempted"
-    ]
+    "traces_count": 21,
+    "what_did_not_happen": []
   },
   "summary": {
-    "flow_name": "demo",
+    "flow_name": "surface",
     "memory": {
-      "persist_attempted": false,
+      "persist_attempted": true,
       "persist_failed": false,
-      "persist_succeeded": false,
+      "persist_succeeded": true,
       "skipped_reason": null
     },
-    "status": "error",
+    "status": "ok",
     "store": {
       "began": true,
       "commit_failed": false,
-      "committed": false,
+      "committed": true,
       "rollback_failed": false,
-      "rolled_back": true
+      "rolled_back": false
     }
   }
 }

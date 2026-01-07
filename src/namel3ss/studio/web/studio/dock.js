@@ -18,8 +18,16 @@
       window.renderTraces();
       return;
     }
+    if (tabName === "explain" && typeof window.renderExplain === "function") {
+      window.renderExplain();
+      return;
+    }
     if (tabName === "errors" && typeof window.renderErrors === "function") {
       window.renderErrors();
+      return;
+    }
+    if (tabName === "formulas" && typeof window.renderFormulas === "function") {
+      window.renderFormulas();
       return;
     }
     if (tabName === "memory" && typeof window.renderMemory === "function") {

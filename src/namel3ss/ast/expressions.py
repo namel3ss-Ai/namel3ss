@@ -90,6 +90,29 @@ class ListOpExpr(Expression):
 
 
 @dataclass
+class ListMapExpr(Expression):
+    target: Expression
+    var_name: str
+    body: Expression
+
+
+@dataclass
+class ListFilterExpr(Expression):
+    target: Expression
+    var_name: str
+    predicate: Expression
+
+
+@dataclass
+class ListReduceExpr(Expression):
+    target: Expression
+    acc_name: str
+    item_name: str
+    start: Expression
+    body: Expression
+
+
+@dataclass
 class MapOpExpr(Expression):
     kind: str
     target: Expression

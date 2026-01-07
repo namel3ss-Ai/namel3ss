@@ -11,7 +11,10 @@
     if (typeof window.renderData !== "function") missing.push("data");
     if (!root.menu || typeof root.menu.setupMenu !== "function") missing.push("menu");
     if (typeof window.renderTraces !== "function") missing.push("traces");
+    if (typeof window.renderExplain !== "function") missing.push("explain");
     if (typeof window.renderErrors !== "function") missing.push("errors");
+    if (!root.formulas || typeof root.formulas.setupFormulas !== "function") missing.push("formulas");
+    if (typeof window.renderFormulas !== "function") missing.push("formulas_render");
     if (typeof window.renderMemory !== "function") missing.push("memory");
     if (!root.setup || typeof root.setup.refreshSetup !== "function") missing.push("setup");
     if (typeof window.refreshGraphPanel !== "function") missing.push("graph");
@@ -23,6 +26,7 @@
     root.run.setupRunButton();
     if (root.traces && root.traces.setupFilter) root.traces.setupFilter();
     if (root.preview && root.preview.setupPreview) root.preview.setupPreview();
+    if (root.formulas && root.formulas.setupFormulas) root.formulas.setupFormulas();
     if (root.menu && root.menu.setupMenu) root.menu.setupMenu();
     root.dock.setupDock();
     if (typeof window.renderErrors === "function") window.renderErrors();

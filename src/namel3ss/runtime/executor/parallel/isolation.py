@@ -154,6 +154,19 @@ def _scan_expression(ctx, expr: ir.Expression) -> None:
         if expr.index is not None:
             _scan_expression(ctx, expr.index)
         return
+    if isinstance(expr, ir.ListMapExpr):
+        _scan_expression(ctx, expr.target)
+        _scan_expression(ctx, expr.body)
+        return
+    if isinstance(expr, ir.ListFilterExpr):
+        _scan_expression(ctx, expr.target)
+        _scan_expression(ctx, expr.predicate)
+        return
+    if isinstance(expr, ir.ListReduceExpr):
+        _scan_expression(ctx, expr.target)
+        _scan_expression(ctx, expr.start)
+        _scan_expression(ctx, expr.body)
+        return
     if isinstance(expr, ir.MapOpExpr):
         _scan_expression(ctx, expr.target)
         if expr.key is not None:

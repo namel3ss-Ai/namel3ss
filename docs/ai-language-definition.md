@@ -12,7 +12,7 @@ Execution steps explain what happened and why.
 - Deterministic execution steps and traces
 - Modules and memory packs for reuse
 - Deterministic parallel blocks
-- Compute core with define function, operators, bounded loops, list values, and map values
+- Compute core with define function, operators (including ** and between), bounded loops, list/map values, list aggregations, and map/filter/reduce
 
 ## What is intentionally missing
 - Unbounded loops

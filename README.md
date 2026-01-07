@@ -103,6 +103,43 @@ Understanding ClearOrders is sufficient to understand the core model of namel3ss
 - File-first CLI and Studio for inspection and interaction.
 - First-run experience that opens the demo in a browser automatically.
 
+## Expressions
+Flows support concise, deterministic math and list transforms:
+- `let:` blocks for grouped declarations (multi-line or inline comma entries)
+- `between` / `strictly between` comparisons
+- `**` exponentiation (right-associative; `-2 ** 2` is `-(2 ** 2)`)
+- list aggregations `sum/min/max/mean/median` with strict numeric validation
+- list transforms `map/filter/reduce` with scoped binders
+- `calc:` formula blocks, including `state.<path> = ...` assignments
+
+Example:
+```ai
+spec is "1.0"
+flow "demo":
+  let numbers is list:
+    1
+    2
+    3
+    10
+
+  calc:
+    doubled = map numbers with item as n:
+      n * 2
+    big = filter doubled with item as x:
+      x is greater than 5
+    state.total = reduce big with acc as s and item as v starting 0:
+      s + v
+    state.avg = mean(big)
+    d = 2 ** 3 ** 2
+    ok = state.total is between 0 and 100
+
+  return map:
+    "total" is state.total
+    "avg" is state.avg
+    "d" is d
+    "ok" is ok
+```
+
 ## Quickstart (non-demo)
 ```bash
 n3 new starter my_app
@@ -199,6 +236,7 @@ Expect breaking changes between alpha revisions.
 
 ### Stability & limitations
 - [Stability](docs/stability.md)
+- [Expression surface v1](docs/expression-surface.md)
 - [Spec freeze v1](docs/spec-freeze-v1.md)
 - [Canonical version map](resources/spec_versions.json)
 - [Beta checklist](docs/beta-checklist.md)

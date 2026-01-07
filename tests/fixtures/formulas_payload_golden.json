@@ -1,0 +1,44 @@
+{
+  "blocks": [
+    {
+      "assignments": [
+        {
+          "body": [
+            "n * 2"
+          ],
+          "code": "    doubled = map numbers with item as n:\n      n * 2",
+          "id": "calc-7-0",
+          "lhs": "doubled",
+          "line_end": 9,
+          "line_start": 8,
+          "rhs": "map numbers with item as n:"
+        },
+        {
+          "body": [
+            "s + v"
+          ],
+          "code": "    state.total = reduce doubled with acc as s and item as v starting 0:\n      s + v",
+          "id": "calc-7-1",
+          "lhs": "state.total",
+          "line_end": 11,
+          "line_start": 10,
+          "rhs": "reduce doubled with acc as s and item as v starting 0:"
+        },
+        {
+          "body": [],
+          "code": "    avg = mean(doubled)",
+          "id": "calc-7-2",
+          "lhs": "avg",
+          "line_end": 12,
+          "line_start": 12,
+          "rhs": "mean(doubled)"
+        }
+      ],
+      "flow": "demo",
+      "id": "calc-7",
+      "line": 7
+    }
+  ],
+  "ok": true,
+  "schema_version": 1
+}

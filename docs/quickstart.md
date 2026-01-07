@@ -22,6 +22,7 @@ Run any `.ai` app with the file-first CLI.
 - Run default flow (when only one flow): `n3 app.ai`
 - Run specific flow (CRUD template): `n3 app.ai flow "seed_customers"`
 - Run an action (CRUD template): `n3 app.ai page.home.form.customer '{"values":{"name":"Ada","email":"ada@example.com","age":23}}'`
+- Run with expression explain traces: `n3 run app.ai --explain`
 - Run tests: `n3 test`
 - Why mode: `n3 why` or `n3 explain --why`
 - How mode: `n3 how`

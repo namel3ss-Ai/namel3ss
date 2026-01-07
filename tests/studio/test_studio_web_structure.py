@@ -5,6 +5,7 @@ def test_studio_html_structure():
     html = Path("src/namel3ss/studio/web/index.html").read_text(encoding="utf-8")
     assert "namel3ss Studio" in html
     assert "/studio/guidance.js" in html
+    assert "/studio/explain.js" in html
     guidance_idx = html.index("/studio/guidance.js")
     dom_idx = html.index("/studio/dom.js")
     action_result_idx = html.index("/studio/action_result.js")
@@ -12,7 +13,7 @@ def test_studio_html_structure():
     run_idx = html.index("/studio/run.js")
     assert guidance_idx < dom_idx < errors_idx
     assert action_result_idx < run_idx
-    for label in ["Preview", "Why", "Data", "Errors", "Traces", "Memory", "Setup", "Graph"]:
+    for label in ["Preview", "Why", "Data", "Errors", "Formulas", "Explain", "Traces", "Memory", "Setup", "Graph"]:
         assert label in html
     for label in [
         "Summary",
@@ -43,6 +44,8 @@ def test_studio_html_structure():
         "previewAnswer",
         "previewWhy",
         "errors",
+        "formulas",
+        "explain",
         "errorBanner",
         "traces",
         "tracesFilter",
@@ -53,6 +56,8 @@ def test_studio_html_structure():
         "data",
         "dock",
         "dock-errors",
+        "dock-formulas",
+        "dock-explain",
         "studioMenu",
         "toast",
         "secretsModal",

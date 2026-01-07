@@ -6,7 +6,12 @@ from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.parser.decl.tool import _old_tool_syntax_message
-from namel3ss.parser.expr.collections import looks_like_list_expression, looks_like_map_expression
+from namel3ss.parser.expr.collections import (
+    looks_like_list_expression,
+    looks_like_list_reduce_expr,
+    looks_like_list_transform_expr,
+    looks_like_map_expression,
+)
 
 
 def parse_tool_call_expr(parser) -> ast.ToolCallExpr:
@@ -47,6 +52,10 @@ def looks_like_tool_call(parser) -> bool:
     if parser._current().type in {"ASK", "CALL"}:
         return False
     tok = parser._current()
+    if tok.type == "IDENT" and looks_like_list_reduce_expr(parser):
+        return False
+    if tok.type == "IDENT" and looks_like_list_transform_expr(parser):
+        return False
     if tok.type == "IDENT" and tok.value == "list" and looks_like_list_expression(parser):
         return False
     if tok.type == "IDENT" and tok.value == "map" and looks_like_map_expression(parser):
@@ -135,7 +144,7 @@ def _read_phrase_until(parser, *, stop_type: str, context: str) -> tuple[str, in
             raise Namel3ssError(f"Expected {context}", line=tok.line, column=tok.column)
         if stop_type != "COLON" and tok.type == "COLON":
             raise Namel3ssError(f"Expected {context}", line=tok.line, column=tok.column)
-        if tok.type in {"COMMA", "LPAREN", "RPAREN", "LBRACKET", "RBRACKET", "PLUS", "MINUS", "STAR", "SLASH"}:
+        if tok.type in {"COMMA", "LPAREN", "RPAREN", "LBRACKET", "RBRACKET", "PLUS", "MINUS", "STAR", "POWER", "SLASH"}:
             raise Namel3ssError(f"Expected {context}", line=tok.line, column=tok.column)
         tokens.append(tok)
         parser._advance()

@@ -58,6 +58,7 @@ class TraceEventType:
     MEMORY_HANDOFF_APPLIED = "memory_handoff_applied"
     MEMORY_HANDOFF_REJECTED = "memory_handoff_rejected"
     MEMORY_AGENT_BRIEFING = "memory_agent_briefing"
+    EXPRESSION_EXPLAIN = "expression_explain"
 
 
 __all__ = ["TRACE_VERSION", "TraceEventType"]

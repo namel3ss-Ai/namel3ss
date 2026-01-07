@@ -51,3 +51,4 @@ class ExecutionContext:
     parallel_mode: bool = False
     parallel_task: str | None = None
     last_ai_provider: str | None = None
+    calc_assignment_index: dict[int, dict[str, int]] = field(default_factory=dict)

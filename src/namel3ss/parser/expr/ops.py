@@ -67,7 +67,16 @@ def parse_unary(parser) -> ast.Expression:
         op = "+" if tok.type == "PLUS" else "-"
         operand = parse_unary(parser)
         return ast.UnaryOp(op=op, operand=operand, line=tok.line, column=tok.column)
-    return parse_primary(parser)
+    return parse_exponent(parser)
+
+
+def parse_exponent(parser) -> ast.Expression:
+    expr = parse_primary(parser)
+    if parser._match("POWER"):
+        op_tok = parser.tokens[parser.position - 1]
+        right = parse_unary(parser)
+        expr = ast.BinaryOp(op="**", left=expr, right=right, line=op_tok.line, column=op_tok.column)
+    return expr
 
 
 def parse_primary(parser) -> ast.Expression:
@@ -89,6 +98,7 @@ __all__ = [
     "parse_additive",
     "parse_and",
     "parse_expression",
+    "parse_exponent",
     "parse_grouped_expression",
     "parse_multiplicative",
     "parse_not",

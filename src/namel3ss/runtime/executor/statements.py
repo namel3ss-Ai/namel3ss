@@ -9,6 +9,11 @@ from namel3ss.runtime.executor.assign import assign
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
 from namel3ss.runtime.executor.parallel.scheduler import execute_parallel_block
+from namel3ss.runtime.execution.explain import (
+    ExpressionExplainCollector,
+    build_expression_explain_trace,
+    format_expression_canonical,
+)
 from namel3ss.runtime.execution.normalize import format_assignable, format_expression, summarize_value
 from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.runtime.executor.records_ops import handle_create, handle_delete, handle_find, handle_save, handle_update
@@ -18,7 +23,9 @@ from namel3ss.utils.numbers import decimal_is_int, is_number, to_decimal
 
 def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
     if isinstance(stmt, ir.Let):
-        value = evaluate_expression(ctx, stmt.expression)
+        calc_info = _calc_assignment_info(ctx, stmt.line)
+        collector = ExpressionExplainCollector() if calc_info else None
+        value = evaluate_expression(ctx, stmt.expression, collector)
         ctx.locals[stmt.name] = value
         if stmt.constant:
             ctx.constants.add(stmt.name)
@@ -29,6 +36,18 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
             line=stmt.line,
             column=stmt.column,
         )
+        if collector:
+            _append_expression_explain(
+                ctx,
+                target=stmt.name,
+                expression=stmt.expression,
+                value=value,
+                collector=collector,
+                calc_info=calc_info,
+                assignment_kind="let",
+                line=stmt.line,
+                column=stmt.column,
+            )
         ctx.last_value = value
         return
     if isinstance(stmt, ir.Set):
@@ -36,7 +55,9 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
             raise Namel3ssError("Parallel tasks cannot change state", line=stmt.line, column=stmt.column)
         if getattr(ctx, "call_stack", []) and isinstance(stmt.target, ir.StatePath):
             raise Namel3ssError("Functions cannot change state", line=stmt.line, column=stmt.column)
-        value = evaluate_expression(ctx, stmt.expression)
+        calc_info = _calc_assignment_info(ctx, stmt.line)
+        collector = ExpressionExplainCollector() if calc_info else None
+        value = evaluate_expression(ctx, stmt.expression, collector)
         assign(ctx, stmt.target, value, stmt)
         record_step(
             ctx,
@@ -45,6 +66,18 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
             line=stmt.line,
             column=stmt.column,
         )
+        if collector:
+            _append_expression_explain(
+                ctx,
+                target=format_assignable(stmt.target),
+                expression=stmt.expression,
+                value=value,
+                collector=collector,
+                calc_info=calc_info,
+                assignment_kind="set",
+                line=stmt.line,
+                column=stmt.column,
+            )
         ctx.last_value = value
         return
     if isinstance(stmt, ir.If):
@@ -448,6 +481,56 @@ def _run_record_write(ctx: ExecutionContext, stmt: ir.Statement, handler, *, kin
         line=stmt.line,
         column=stmt.column,
     )
+
+
+def _calc_assignment_info(ctx: ExecutionContext, line: int | None) -> dict[str, int] | None:
+    if line is None:
+        return None
+    index = getattr(ctx, "calc_assignment_index", None)
+    if not isinstance(index, dict) or not index:
+        return None
+    info = index.get(line)
+    if not isinstance(info, dict):
+        return None
+    return info
+
+
+def _append_expression_explain(
+    ctx: ExecutionContext,
+    *,
+    target: str,
+    expression: ir.Expression,
+    value: object,
+    collector: ExpressionExplainCollector,
+    calc_info: dict[str, int] | None,
+    assignment_kind: str,
+    line: int | None,
+    column: int | None,
+) -> None:
+    if not calc_info:
+        return
+    line_start = line or 1
+    column_start = column or 1
+    line_end = calc_info.get("line_end", line_start)
+    column_end = calc_info.get("column_end", column_start)
+    span = {
+        "line_start": line_start,
+        "column_start": column_start,
+        "line_end": line_end,
+        "column_end": column_end,
+    }
+    trace = build_expression_explain_trace(
+        target=target,
+        expression=format_expression_canonical(expression),
+        result=value,
+        steps=collector.steps,
+        span=span,
+        assignment_kind=assignment_kind,
+        flow_name=getattr(ctx.flow, "name", None),
+        sample_limit=collector.sample_limit,
+        truncated=collector.truncated,
+    )
+    ctx.traces.append(trace)
 
 
 def _condition_type_message(value: object) -> str:
