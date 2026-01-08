@@ -1,0 +1,7 @@
+summary: Flow "confirm_demo" ran with 14 steps.
+flow.name: confirm_demo
+ok: True
+steps.total: 14
+steps.skipped: 1
+steps.errors: 0
+traces.count: 1

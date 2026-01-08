@@ -8,7 +8,7 @@ from namel3ss.runtime.memory_handoff.model import (
 )
 from namel3ss.runtime.memory_handoff.packet import build_packet_preview
 from namel3ss.runtime.memory_handoff.render import briefing_lines
-from namel3ss.runtime.memory_handoff.select import HandoffSelection, select_handoff_items
+from namel3ss.runtime.memory_handoff.select import HandoffGroup, HandoffSelection, select_handoff_items
 from namel3ss.runtime.memory_handoff.store import HandoffStore
 from namel3ss.runtime.memory_handoff.traces import (
     build_agent_briefing_event,
@@ -24,6 +24,7 @@ __all__ = [
     "HANDOFF_STATUSES",
     "HandoffPacket",
     "HandoffSelection",
+    "HandoffGroup",
     "HandoffStore",
     "apply_handoff_packet",
     "briefing_lines",

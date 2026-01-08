@@ -1,0 +1,73 @@
+spec is "1.0"
+
+identity "User":
+  field "email" is text must be present
+  field "role" is text must be present
+
+ai "router_ai":
+  provider is "mock"
+  model is "mock-model"
+  system_prompt is "You are a routing assistant. Respond with a short, neutral answer."
+
+agent "billing_agent":
+  ai is "router_ai"
+  system_prompt is "Handle billing questions."
+
+agent "sales_agent":
+  ai is "router_ai"
+  system_prompt is "Handle sales questions."
+
+agent "support_agent":
+  ai is "router_ai"
+  system_prompt is "Handle support questions."
+
+flow "route_request": requires identity.role is "operator"
+  let topic is input.topic
+  let message is input.message
+  if topic is "billing":
+    run agent "billing_agent" with input: message as reply
+    set state.last_route is "billing"
+    set state.last_reply is reply
+    return "routed: billing"
+  if topic is "sales":
+    run agent "sales_agent" with input: message as reply
+    set state.last_route is "sales"
+    set state.last_reply is reply
+    return "routed: sales"
+  run agent "support_agent" with input: message as reply
+  set state.last_route is "support"
+  set state.last_reply is reply
+  return "routed: support"
+
+flow "demo_billing": requires identity.role is "operator"
+  run agent "billing_agent" with input: "Need an invoice for order 1001." as reply
+  set state.last_route is "billing"
+  set state.last_reply is reply
+  return "routed: billing"
+
+flow "demo_sales": requires identity.role is "operator"
+  run agent "sales_agent" with input: "Price for 50 seats." as reply
+  set state.last_route is "sales"
+  set state.last_reply is reply
+  return "routed: sales"
+
+flow "demo_support": requires identity.role is "operator"
+  run agent "support_agent" with input: "App is showing an error." as reply
+  set state.last_route is "support"
+  set state.last_reply is reply
+  return "routed: support"
+
+page "home": requires identity.role is "operator"
+  title is "Router"
+  text is "Deterministic routing to specialized agents."
+  section "Demos":
+    row:
+      column:
+        button "Route billing":
+          calls flow "demo_billing"
+      column:
+        button "Route sales":
+          calls flow "demo_sales"
+      column:
+        button "Route support":
+          calls flow "demo_support"

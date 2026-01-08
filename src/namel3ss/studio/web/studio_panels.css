@@ -82,6 +82,178 @@
   flex-direction: column;
   gap: 10px;
 }
+.agent-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.agent-section {
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.agent-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+.agent-grid-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+.agent-grid-row input,
+.agent-grid-row select {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+  background: #fff;
+}
+.agent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.agent-tool-list {
+  border: 1px solid #ececec;
+  border-radius: 10px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.agent-tool-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.agent-tool-label,
+.agent-note,
+.agent-warning {
+  font-size: 12px;
+  color: #555;
+}
+.agent-warning {
+  color: #a11;
+}
+.agent-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  background: #fafafa;
+}
+.agent-row-label {
+  font-weight: 600;
+}
+.agent-row-meta {
+  font-size: 12px;
+  color: #555;
+}
+.agent-payload {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.agent-payload-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.agent-payload-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 6px;
+}
+.agent-payload-row input {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+  background: #fff;
+}
+.agent-last {
+  margin-top: 6px;
+}
+.agent-last-output {
+  font-size: 12px;
+  white-space: pre-wrap;
+  background: #f7f7f7;
+  border-radius: 8px;
+  padding: 8px;
+}
+.agent-last-meta {
+  font-size: 12px;
+  color: #555;
+  margin-top: 6px;
+}
+.agent-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.agent-timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.agent-timeline-row {
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 8px;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.agent-timeline-title {
+  font-weight: 600;
+  font-size: 12px;
+}
+.agent-timeline-detail {
+  font-size: 12px;
+  color: #555;
+}
+.agent-timeline-explain {
+  border-left: 2px solid #e2e2e2;
+  padding-left: 8px;
+  font-size: 12px;
+  color: #444;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.agent-timeline-explain-title {
+  font-weight: 600;
+}
+.agent-pack-diff {
+  border-top: 1px solid #eee;
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #555;
+}
+.agent-pack-diff-line {
+  font-size: 12px;
+  color: #555;
+}
 .formulas-controls {
   justify-content: flex-end;
 }
@@ -458,6 +630,17 @@
 .handoff-item .handoff-summary,
 .handoff-item .handoff-preview {
   margin-top: 8px;
+}
+.handoff-group-title {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+}
+.handoff-line.handoff-why {
+  margin-left: 12px;
+  font-size: 11px;
+  color: #666;
 }
 
 .rules-form {

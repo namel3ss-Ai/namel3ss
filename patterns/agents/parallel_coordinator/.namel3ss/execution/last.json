@@ -1,0 +1,274 @@
+{
+  "execution_steps": [
+    {
+      "because": null,
+      "column": 1,
+      "data": {},
+      "id": "step:0001",
+      "kind": "flow_start",
+      "line": 29,
+      "what": "flow \"run_parallel_demo\" started"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0002",
+      "kind": "statement_let",
+      "line": 30,
+      "what": "set local task"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0003",
+      "kind": "statement_let",
+      "line": 31,
+      "what": "set local run_id"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0004",
+      "kind": "statement_run_agents_parallel",
+      "line": 32,
+      "what": "ran 3 agents in parallel"
+    },
+    {
+      "because": null,
+      "column": 11,
+      "data": {},
+      "id": "step:0005",
+      "kind": "ai_call",
+      "line": 33,
+      "what": "asked ai parallel_ai"
+    },
+    {
+      "because": null,
+      "column": 11,
+      "data": {},
+      "id": "step:0006",
+      "kind": "ai_call",
+      "line": 34,
+      "what": "asked ai parallel_ai"
+    },
+    {
+      "because": null,
+      "column": 11,
+      "data": {},
+      "id": "step:0007",
+      "kind": "ai_call",
+      "line": 35,
+      "what": "asked ai parallel_ai"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0008",
+      "kind": "statement_let",
+      "line": 37,
+      "what": "set local first"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0009",
+      "kind": "statement_let",
+      "line": 38,
+      "what": "set local second"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0010",
+      "kind": "statement_let",
+      "line": 39,
+      "what": "set local third"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0011",
+      "kind": "statement_let",
+      "line": 40,
+      "what": "set local merged"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {
+        "count": 3
+      },
+      "id": "step:0012",
+      "kind": "decision_for_each",
+      "line": 50,
+      "what": "for each item in list of 3 items"
+    },
+    {
+      "because": null,
+      "column": 7,
+      "data": {},
+      "id": "step:0013",
+      "kind": "statement_set",
+      "line": 52,
+      "what": "set state.result.run_id"
+    },
+    {
+      "because": null,
+      "column": 7,
+      "data": {},
+      "id": "step:0014",
+      "kind": "statement_set",
+      "line": 53,
+      "what": "set state.result.agent"
+    },
+    {
+      "because": null,
+      "column": 7,
+      "data": {},
+      "id": "step:0015",
+      "kind": "statement_set",
+      "line": 54,
+      "what": "set state.result.output"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0016",
+      "kind": "statement_create",
+      "line": 55,
+      "what": "created ParallelResult"
+    },
+    {
+      "because": null,
+      "column": 7,
+      "data": {},
+      "id": "step:0017",
+      "kind": "statement_set",
+      "line": 52,
+      "what": "set state.result.run_id"
+    },
+    {
+      "because": null,
+      "column": 7,
+      "data": {},
+      "id": "step:0018",
+      "kind": "statement_set",
+      "line": 53,
+      "what": "set state.result.agent"
+    },
+    {
+      "because": null,
+      "column": 7,
+      "data": {},
+      "id": "step:0019",
+      "kind": "statement_set",
+      "line": 54,
+      "what": "set state.result.output"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0020",
+      "kind": "statement_create",
+      "line": 55,
+      "what": "created ParallelResult"
+    },
+    {
+      "because": null,
+      "column": 7,
+      "data": {},
+      "id": "step:0021",
+      "kind": "statement_set",
+      "line": 52,
+      "what": "set state.result.run_id"
+    },
+    {
+      "because": null,
+      "column": 7,
+      "data": {},
+      "id": "step:0022",
+      "kind": "statement_set",
+      "line": 53,
+      "what": "set state.result.agent"
+    },
+    {
+      "because": null,
+      "column": 7,
+      "data": {},
+      "id": "step:0023",
+      "kind": "statement_set",
+      "line": 54,
+      "what": "set state.result.output"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0024",
+      "kind": "statement_create",
+      "line": 55,
+      "what": "created ParallelResult"
+    },
+    {
+      "because": "list length was 3",
+      "column": 3,
+      "data": {},
+      "id": "step:0025",
+      "kind": "branch_taken",
+      "line": 50,
+      "what": "ran for each body 3 times"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0026",
+      "kind": "statement_return",
+      "line": 56,
+      "what": "returned a value"
+    },
+    {
+      "because": "completed successfully",
+      "column": 1,
+      "data": {},
+      "id": "step:0027",
+      "kind": "flow_end",
+      "line": 29,
+      "what": "flow \"run_parallel_demo\" ended"
+    }
+  ],
+  "flow_name": "run_parallel_demo",
+  "ok": true,
+  "summary": "Flow \"run_parallel_demo\" ran with 27 steps.",
+  "traces": [
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    }
+  ]
+}

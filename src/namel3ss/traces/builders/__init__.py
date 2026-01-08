@@ -66,6 +66,13 @@ from .parallel import (
     build_parallel_started,
     build_parallel_task_finished,
 )
+from .agent_merge import (
+    build_agent_merge_candidate,
+    build_agent_merge_rejected,
+    build_agent_merge_selected,
+    build_agent_merge_started,
+    build_agent_merge_summary,
+)
 
 __all__ = [
     "build_ai_call_completed",
@@ -101,6 +108,11 @@ __all__ = [
     "build_parallel_started",
     "build_parallel_task_finished",
     "build_parallel_merged",
+    "build_agent_merge_started",
+    "build_agent_merge_candidate",
+    "build_agent_merge_selected",
+    "build_agent_merge_rejected",
+    "build_agent_merge_summary",
     "build_memory_proposed",
     "build_memory_approved",
     "build_memory_rejected",

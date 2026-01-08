@@ -16,6 +16,7 @@
     if (!root.formulas || typeof root.formulas.setupFormulas !== "function") missing.push("formulas");
     if (typeof window.renderFormulas !== "function") missing.push("formulas_render");
     if (typeof window.renderMemory !== "function") missing.push("memory");
+    if (!root.agents || typeof root.agents.setupAgents !== "function") missing.push("agents");
     if (!root.setup || typeof root.setup.refreshSetup !== "function") missing.push("setup");
     if (typeof window.refreshGraphPanel !== "function") missing.push("graph");
 
@@ -28,6 +29,7 @@
     if (root.preview && root.preview.setupPreview) root.preview.setupPreview();
     if (root.formulas && root.formulas.setupFormulas) root.formulas.setupFormulas();
     if (root.menu && root.menu.setupMenu) root.menu.setupMenu();
+    if (root.agents && root.agents.setupAgents) root.agents.setupAgents();
     root.dock.setupDock();
     if (typeof window.renderErrors === "function") window.renderErrors();
     root.refresh.refreshUI();

@@ -1,0 +1,28 @@
+{
+  "records": [
+    "Citation",
+    "ResearchResult"
+  ],
+  "flows": [
+    "research_demo"
+  ],
+  "entry_flows": [
+    "research_demo"
+  ],
+  "public_flows": [
+    "research_demo"
+  ],
+  "pages": [
+    "home"
+  ],
+  "ai_profiles": [
+    "research_ai"
+  ],
+  "tools": [
+    "retrieve docs"
+  ],
+  "agents": [
+    "researcher"
+  ],
+  "theme": "system"
+}

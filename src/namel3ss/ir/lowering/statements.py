@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from namel3ss.ast import nodes as ast
 from namel3ss.ir.lowering.expressions import _lower_assignable, _lower_expression
-from namel3ss.ir.model.agents import ParallelAgentEntry, RunAgentStmt, RunAgentsParallelStmt
+from namel3ss.ir.model.agents import AgentMergePolicy, ParallelAgentEntry, RunAgentStmt, RunAgentsParallelStmt
 from namel3ss.ir.model.ai import AskAIStmt
 from namel3ss.ir.model.statements import (
     Create,
@@ -175,13 +175,29 @@ def _lower_statement(stmt: ast.Statement, agents) -> IRStatement:
             column=stmt.column,
         )
     if isinstance(stmt, ast.RunAgentsParallelStmt):
+        merge = _lower_agent_merge(stmt.merge) if stmt.merge else None
         return RunAgentsParallelStmt(
             entries=[
                 ParallelAgentEntry(agent_name=e.agent_name, input_expr=_lower_expression(e.input_expr), line=e.line, column=e.column)
                 for e in stmt.entries
             ],
             target=stmt.target,
+            merge=merge,
             line=stmt.line,
             column=stmt.column,
         )
     raise TypeError(f"Unhandled statement type: {type(stmt)}")
+
+
+def _lower_agent_merge(merge: ast.AgentMergePolicy) -> AgentMergePolicy:
+    return AgentMergePolicy(
+        policy=merge.policy,
+        require_keys=list(merge.require_keys) if merge.require_keys else None,
+        require_non_empty=merge.require_non_empty,
+        score_key=merge.score_key,
+        score_rule=merge.score_rule,
+        min_consensus=merge.min_consensus,
+        consensus_key=merge.consensus_key,
+        line=merge.line,
+        column=merge.column,
+    )

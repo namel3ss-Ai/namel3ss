@@ -48,6 +48,10 @@ class MemoryManager(
         self._pack_state = "pending"
         self._pack_error: Namel3ssError | None = None
         self._pack_setup: EffectiveMemoryPackSetup | None = None
+        self._pack_catalog = None
+        self._pack_config = None
+        self._pack_selection = None
+        self._pack_setups: dict[str, EffectiveMemoryPackSetup] = {}
         self._agreement_defaults: AgreementDefaults | None = None
         self._restore_state = "pending"
         self._restore_error: Namel3ssError | None = None

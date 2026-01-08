@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from namel3ss.agents.orchestration import MergeCandidate, build_merge_trace_events, merge_agent_candidates
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.ai.trace import AITrace
@@ -33,8 +34,9 @@ def execute_run_agent(ctx: ExecutionContext, stmt: ir.RunAgentStmt) -> None:
 def execute_run_agents_parallel(ctx: ExecutionContext, stmt: ir.RunAgentsParallelStmt) -> None:
     if len(stmt.entries) > 3:
         raise Namel3ssError("Parallel agent limit exceeded")
-    results: list[str] = []
+    results: list[object] = []
     child_traces: list[dict] = []
+    candidates: list[MergeCandidate] = []
     for entry in stmt.entries:
         try:
             output, trace = run_agent_call(ctx, entry.agent_name, entry.input_expr, entry.line, entry.column)
@@ -42,10 +44,28 @@ def execute_run_agents_parallel(ctx: ExecutionContext, stmt: ir.RunAgentsParalle
             _flush_pending_tool_traces(ctx)
             raise Namel3ssError(f"Agent '{entry.agent_name}' failed: {err}", line=entry.line, column=entry.column) from err
         results.append(output)
-        child_traces.append(_trace_to_dict(trace))
-    ctx.locals[stmt.target] = results
-    ctx.last_value = results
-    ctx.traces.append({"type": "parallel_agents", "target": stmt.target, "agents": child_traces})
+        trace_dict = _trace_to_dict(trace)
+        child_traces.append(trace_dict)
+        candidates.append(MergeCandidate(agent_name=entry.agent_name, output=output))
+    merge_policy = getattr(stmt, "merge", None)
+    if merge_policy is not None:
+        outcome = merge_agent_candidates(
+            candidates,
+            merge_policy,
+            line=merge_policy.line or stmt.line,
+            column=merge_policy.column or stmt.column,
+        )
+        ctx.locals[stmt.target] = outcome.output
+        ctx.last_value = outcome.output
+        ctx.traces.extend(build_merge_trace_events(outcome, merge_policy))
+    else:
+        ctx.locals[stmt.target] = results
+        ctx.last_value = results
+    wrapper = {"type": "parallel_agents", "target": stmt.target, "agents": child_traces}
+    if merge_policy is not None:
+        wrapper["merge_policy"] = merge_policy.policy
+        wrapper["merge_selected"] = [candidates[idx].agent_name for idx in outcome.selected]
+    ctx.traces.append(wrapper)
     _flush_pending_tool_traces(ctx)
 
 
@@ -103,7 +123,13 @@ def run_agent_call(ctx: ExecutionContext, agent_name: str, input_expr, line: int
             session=ctx.memory_manager.session_id(ctx.state),
             query=user_input,
             recalled=recalled,
-            policy=_memory_policy(profile_override, ctx.memory_manager),
+            policy=_memory_policy(
+                profile_override,
+                ctx.memory_manager,
+                agent_id=agent.name,
+                project_root=ctx.project_root,
+                app_path=getattr(ctx, "app_path", None),
+            ),
             deterministic_hash=deterministic_hash,
             spaces_consulted=recall_meta.get("spaces_consulted"),
             recall_counts=recall_meta.get("recall_counts"),
@@ -188,5 +214,17 @@ def _flatten_memory_context(context: dict) -> list[dict]:
     return ordered
 
 
-def _memory_policy(profile: ir.AIDecl, memory_manager: MemoryManager) -> dict:
-    return memory_manager.policy_snapshot(profile)
+def _memory_policy(
+    profile: ir.AIDecl,
+    memory_manager: MemoryManager,
+    *,
+    agent_id: str | None,
+    project_root: str | None,
+    app_path: str | None,
+) -> dict:
+    return memory_manager.policy_snapshot(
+        profile,
+        agent_id=agent_id,
+        project_root=project_root,
+        app_path=app_path,
+    )

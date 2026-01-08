@@ -1,0 +1,145 @@
+{
+  "execution_steps": [
+    {
+      "because": null,
+      "column": 1,
+      "data": {},
+      "id": "step:0001",
+      "kind": "flow_start",
+      "line": 47,
+      "what": "flow \"confirm_demo\" started"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {
+        "condition": "state.pending_confirmation != true",
+        "value": false
+      },
+      "id": "step:0002",
+      "kind": "decision_if",
+      "line": 48,
+      "what": "if state.pending_confirmation != true was false"
+    },
+    {
+      "because": "condition was false",
+      "column": 3,
+      "data": {},
+      "id": "step:0003",
+      "kind": "branch_taken",
+      "line": 48,
+      "what": "took else branch"
+    },
+    {
+      "because": "condition was false",
+      "column": 3,
+      "data": {},
+      "id": "step:0004",
+      "kind": "branch_skipped",
+      "line": 48,
+      "what": "skipped then branch"
+    },
+    {
+      "because": null,
+      "column": 17,
+      "data": {
+        "tool_name": "apply action"
+      },
+      "id": "step:0005",
+      "kind": "tool_call",
+      "line": 50,
+      "what": "called tool apply action"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0006",
+      "kind": "statement_let",
+      "line": 50,
+      "what": "set local result"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0007",
+      "kind": "statement_set",
+      "line": 54,
+      "what": "set state.pending_confirmation"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0008",
+      "kind": "statement_set",
+      "line": 56,
+      "what": "set state.action_log.action"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0009",
+      "kind": "statement_set",
+      "line": 57,
+      "what": "set state.action_log.target"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0010",
+      "kind": "statement_set",
+      "line": 58,
+      "what": "set state.action_log.status"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0011",
+      "kind": "statement_set",
+      "line": 59,
+      "what": "set state.action_log.confirmed"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0012",
+      "kind": "statement_create",
+      "line": 60,
+      "what": "created ActionLog"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0013",
+      "kind": "statement_return",
+      "line": 61,
+      "what": "returned a value"
+    },
+    {
+      "because": "completed successfully",
+      "column": 1,
+      "data": {},
+      "id": "step:0014",
+      "kind": "flow_end",
+      "line": 47,
+      "what": "flow \"confirm_demo\" ended"
+    }
+  ],
+  "flow_name": "confirm_demo",
+  "ok": true,
+  "summary": "Flow \"confirm_demo\" ran with 14 steps.",
+  "traces": [
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    }
+  ]
+}

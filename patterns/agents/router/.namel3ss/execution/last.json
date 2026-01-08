@@ -1,0 +1,77 @@
+{
+  "execution_steps": [
+    {
+      "because": null,
+      "column": 1,
+      "data": {},
+      "id": "step:0001",
+      "kind": "flow_start",
+      "line": 54,
+      "what": "flow \"demo_support\" started"
+    },
+    {
+      "because": null,
+      "column": 13,
+      "data": {},
+      "id": "step:0002",
+      "kind": "statement_run_agent",
+      "line": 55,
+      "what": "ran agent support_agent"
+    },
+    {
+      "because": null,
+      "column": 13,
+      "data": {},
+      "id": "step:0003",
+      "kind": "ai_call",
+      "line": 55,
+      "what": "asked ai router_ai"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0004",
+      "kind": "statement_set",
+      "line": 56,
+      "what": "set state.last_route"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0005",
+      "kind": "statement_set",
+      "line": 57,
+      "what": "set state.last_reply"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0006",
+      "kind": "statement_return",
+      "line": 58,
+      "what": "returned a value"
+    },
+    {
+      "because": "completed successfully",
+      "column": 1,
+      "data": {},
+      "id": "step:0007",
+      "kind": "flow_end",
+      "line": 54,
+      "what": "flow \"demo_support\" ended"
+    }
+  ],
+  "flow_name": "demo_support",
+  "ok": true,
+  "summary": "Flow \"demo_support\" ran with 7 steps.",
+  "traces": [
+    {
+      "ai_name": "router_ai",
+      "events": 24,
+      "tool_calls": 0
+    }
+  ]
+}

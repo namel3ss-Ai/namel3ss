@@ -1,0 +1,16 @@
+{
+  "allowed": [
+    {
+      "capability": "none",
+      "decision": "allowed",
+      "reason": "policy_allowed",
+      "result": "ok",
+      "tool": "apply action"
+    }
+  ],
+  "blocked": [],
+  "errors": [],
+  "none_used": false,
+  "notes": [],
+  "tools_called": 1
+}

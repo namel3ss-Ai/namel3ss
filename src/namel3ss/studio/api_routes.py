@@ -7,8 +7,13 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
 from namel3ss.studio.api import (
     get_actions_payload,
+    apply_agent_wizard_wrapper,
+    get_agents_payload_wrapper,
     get_diagnostics_payload,
     get_lint_payload,
+    run_agent_payload_wrapper,
+    run_handoff_payload_wrapper,
+    update_memory_packs_wrapper,
     get_secrets_payload,
     get_summary_payload,
     get_tools_payload,
@@ -69,6 +74,16 @@ def handle_api_get(handler: Any) -> None:
         payload = get_version_payload()
         handler._respond_json(payload, status=200)
         return
+    if handler.path == "/api/agents":
+        _respond_with_source(
+            handler,
+            source,
+            get_agents_payload_wrapper,
+            kind="agents",
+            include_session=True,
+            include_app_path=True,
+        )
+        return
     handler.send_error(404)
 
 
@@ -88,6 +103,18 @@ def handle_api_post(handler: Any) -> None:
         return
     if handler.path == "/api/action":
         handle_action(handler, source, body)
+        return
+    if handler.path == "/api/agent/run":
+        _respond_post(handler, source, body, run_agent_payload_wrapper, kind="agent", include_session=True, include_app_path=True)
+        return
+    if handler.path == "/api/agent/wizard":
+        _respond_post(handler, source, body, apply_agent_wizard_wrapper, kind="agent", include_app_path=True)
+        return
+    if handler.path == "/api/agent/handoff":
+        _respond_post(handler, source, body, run_handoff_payload_wrapper, kind="agent", include_session=True, include_app_path=True)
+        return
+    if handler.path == "/api/agent/memory_packs":
+        _respond_post(handler, source, body, update_memory_packs_wrapper, kind="agent", include_session=True, include_app_path=True)
         return
     handler.send_error(404)
 
@@ -124,6 +151,38 @@ def _respond_with_source(
 def _respond_simple(handler: Any, source: str, fn, *, kind: str, allow_error: bool = False) -> None:
     try:
         payload = fn(handler.server.app_path)  # type: ignore[attr-defined]
+        status = 200 if payload.get("ok", True) else 400
+        handler._respond_json(payload, status=status)
+        return
+    except Namel3ssError as err:
+        payload = build_error_from_exception(err, kind=kind, source=source)
+        handler._respond_json(payload, status=400)
+        return
+    except Exception as err:  # pragma: no cover - defensive guard rail
+        payload = build_error_payload(str(err), kind="internal")
+        handler._respond_json(payload, status=500)
+        return
+
+
+def _respond_post(
+    handler: Any,
+    source: str,
+    body: dict,
+    fn,
+    *,
+    kind: str,
+    include_session: bool = False,
+    include_app_path: bool = False,
+) -> None:
+    try:
+        if include_session and include_app_path:
+            payload = fn(source, handler._get_session(), body, handler.server.app_path)  # type: ignore[attr-defined]
+        elif include_session:
+            payload = fn(source, handler._get_session(), body)
+        elif include_app_path:
+            payload = fn(source, body, handler.server.app_path)  # type: ignore[attr-defined]
+        else:
+            payload = fn(source, body)
         status = 200 if payload.get("ok", True) else 400
         handler._respond_json(payload, status=status)
         return

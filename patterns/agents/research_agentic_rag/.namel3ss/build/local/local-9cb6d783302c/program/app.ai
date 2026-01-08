@@ -1,0 +1,69 @@
+spec is "1.0"
+
+identity "User":
+  field "email" is text must be present
+  field "role" is text must be present
+
+record "ResearchResult":
+  field "query" is text must be present
+  field "summary" is text must be present
+  field "verified" is boolean must be present
+
+record "Citation":
+  field "query" is text must be present
+  field "title" is text must be present
+  field "url" is text must be present
+  field "snippet" is text must be present
+
+tool "retrieve docs":
+  implemented using python
+  purity is "pure"
+  timeout_seconds is 5
+
+  input:
+    query is text
+
+  output:
+    documents is json
+
+ai "research_ai":
+  provider is "mock"
+  model is "mock-model"
+  system_prompt is "Summarize only from provided sources."
+
+agent "researcher":
+  ai is "research_ai"
+  system_prompt is "Return a short, grounded summary."
+
+flow "research_demo": requires identity.role is "researcher"
+  let query is "Deterministic tool-first research"
+  let retrieved is retrieve docs:
+    query is query
+  let docs is retrieved.documents
+  let count is list length of docs
+  if count is 0:
+    return "no_sources"
+  run agent "researcher" with input: query as summary
+  set state.result with:
+    query is query
+    summary is summary
+    verified is true
+  create "ResearchResult" with state.result as result
+  for each doc in docs:
+    set state.citation with:
+      query is query
+      title is doc.title
+      url is doc.url
+      snippet is doc.snippet
+    create "Citation" with state.citation as citation
+  return "researched"
+
+page "home": requires identity.role is "researcher"
+  title is "Research Agentic RAG"
+  text is "Tool-first retrieval with grounded summaries."
+  button "Run research":
+    calls flow "research_demo"
+  section "Results":
+    table is "ResearchResult"
+  section "Citations":
+    table is "Citation"

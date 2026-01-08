@@ -1,0 +1,31 @@
+{
+  "records": [
+    "PlanStep"
+  ],
+  "flows": [
+    "execute_plan",
+    "plan_and_execute_demo",
+    "plan_request"
+  ],
+  "entry_flows": [
+    "plan_request",
+    "execute_plan",
+    "plan_and_execute_demo"
+  ],
+  "public_flows": [
+    "execute_plan",
+    "plan_and_execute_demo",
+    "plan_request"
+  ],
+  "pages": [
+    "home"
+  ],
+  "ai_profiles": [
+    "planner_ai"
+  ],
+  "tools": [],
+  "agents": [
+    "planner"
+  ],
+  "theme": "system"
+}

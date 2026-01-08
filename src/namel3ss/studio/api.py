@@ -29,6 +29,13 @@ from namel3ss.version import get_version
 from namel3ss.graduation.matrix import build_capability_matrix
 from namel3ss.graduation.render import render_graduation_lines, render_matrix_lines, render_summary_lines
 from namel3ss.graduation.rules import evaluate_graduation
+from namel3ss.studio.agent_builder import (
+    apply_agent_wizard,
+    get_agents_payload,
+    run_agent_payload,
+    run_handoff_action,
+    update_memory_packs,
+)
 
 
 def _load_program(source: str):
@@ -188,6 +195,31 @@ def get_diagnostics_payload(source: str, app_path: str) -> dict:
 
 def get_version_payload() -> dict:
     return {"ok": True, "version": get_version()}
+
+
+def get_agents_payload_wrapper(source: str, session: SessionState | None, app_path: str | None = None) -> dict:
+    app_file = _require_app_path(app_path)
+    return get_agents_payload(source, session, app_file.as_posix())
+
+
+def run_agent_payload_wrapper(source: str, session: SessionState | None, payload: dict, app_path: str | None = None) -> dict:
+    app_file = _require_app_path(app_path)
+    return run_agent_payload(source, session, app_file.as_posix(), payload)
+
+
+def run_handoff_payload_wrapper(source: str, session: SessionState | None, payload: dict, app_path: str | None = None) -> dict:
+    app_file = _require_app_path(app_path)
+    return run_handoff_action(source, session, app_file.as_posix(), payload)
+
+
+def apply_agent_wizard_wrapper(source: str, payload: dict, app_path: str | None = None) -> dict:
+    app_file = _require_app_path(app_path)
+    return apply_agent_wizard(source, app_file.as_posix(), payload)
+
+
+def update_memory_packs_wrapper(source: str, session: SessionState | None, payload: dict, app_path: str | None = None) -> dict:
+    app_file = _require_app_path(app_path)
+    return update_memory_packs(source, session, app_file.as_posix(), payload)
 
 
 def execute_action(source: str, session: SessionState | None, action_id: str, payload: dict, app_path: str | None = None) -> dict:

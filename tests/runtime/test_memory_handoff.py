@@ -6,6 +6,7 @@ from namel3ss.runtime.memory.manager import MemoryManager
 from namel3ss.runtime.memory.spaces import SPACE_PROJECT
 from namel3ss.runtime.memory_lanes.model import LANE_AGENT, LANE_TEAM, agent_lane_key
 from namel3ss.runtime.memory_handoff import HandoffSelection, apply_handoff_packet, briefing_lines, select_handoff_items
+from namel3ss.runtime.memory_handoff.packet import build_packet_preview
 from namel3ss.runtime.memory_handoff.store import HandoffStore
 from namel3ss.runtime.memory_agreement.model import Proposal
 from namel3ss.runtime.memory_links import LINK_TYPE_CONFLICTS_WITH
@@ -206,8 +207,46 @@ def test_handoff_selection_is_deterministic_and_bracketless():
         "Active rules count is 2.",
         "Impact warnings count is 1.",
     ]
+    assert [group.key for group in selection.groups] == [
+        "decisions",
+        "proposals",
+        "conflicts",
+        "rules",
+        "impact",
+    ]
+    assert selection.reasons[decision_new.id] == "decisions"
+    assert selection.reasons[decision_old.id] == "decisions"
+    assert selection.reasons[proposal_item.id] == "proposals"
+    assert selection.reasons[conflict_item.id] == "conflicts"
+    assert selection.reasons["rule-2"] == "rules"
+    assert selection.reasons["rule-1"] == "rules"
+    assert selection.reasons[impact_item.id] == "impact"
     for line in selection.summary_lines:
         assert all(ch not in line for ch in "[]{}()")
+
+
+def test_handoff_preview_includes_reason_lines():
+    memory = MemoryManager()
+    state: dict = {}
+    space_ctx = memory.space_context(state)
+    store_key = space_ctx.store_key_for(SPACE_PROJECT, lane=LANE_TEAM)
+    item = memory._factory.create(
+        session=store_key,
+        kind=MemoryKind.SEMANTIC,
+        text="Decision",
+        source="user",
+        meta={"event_type": EVENT_DECISION, "lane": LANE_TEAM},
+    )
+    stored, _conflict, _deleted = memory.semantic.store_item(store_key, item, dedupe_enabled=False)
+    previews = build_packet_preview(
+        short_term=memory.short_term,
+        semantic=memory.semantic,
+        profile=memory.profile,
+        item_ids=[stored.id],
+        reasons={stored.id: "decisions"},
+    )
+    assert previews[0]["category"] == "decisions"
+    assert previews[0]["why"] == "Selected as a decision item."
 
 
 def test_handoff_apply_copies_items_and_preserves_previews():

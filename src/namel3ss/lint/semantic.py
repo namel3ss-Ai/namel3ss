@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import List, Set
 
 from namel3ss.ir import nodes as ir
+from namel3ss.agents.orchestration.lint import lint_agent_orchestration
 from namel3ss.lint.types import Finding
 
 
@@ -108,6 +109,7 @@ def lint_semantic(program_ir: ir.Program) -> List[Finding]:
                             )
                         )
     findings.extend(_lint_legacy_save(program_ir.flows))
+    findings.extend(lint_agent_orchestration(program_ir))
     return findings
 
 

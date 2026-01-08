@@ -1,0 +1,337 @@
+{
+  "execution_steps": [
+    {
+      "because": null,
+      "column": 1,
+      "data": {},
+      "id": "step:0001",
+      "kind": "flow_start",
+      "line": 38,
+      "what": "flow \"research_demo\" started"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0002",
+      "kind": "statement_let",
+      "line": 39,
+      "what": "set local query"
+    },
+    {
+      "because": null,
+      "column": 20,
+      "data": {
+        "tool_name": "retrieve docs"
+      },
+      "id": "step:0003",
+      "kind": "tool_call",
+      "line": 40,
+      "what": "called tool retrieve docs"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0004",
+      "kind": "statement_let",
+      "line": 40,
+      "what": "set local retrieved"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0005",
+      "kind": "statement_let",
+      "line": 42,
+      "what": "set local docs"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0006",
+      "kind": "statement_let",
+      "line": 43,
+      "what": "set local count"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {
+        "condition": "count == 0",
+        "value": false
+      },
+      "id": "step:0007",
+      "kind": "decision_if",
+      "line": 44,
+      "what": "if count == 0 was false"
+    },
+    {
+      "because": "condition was false",
+      "column": 3,
+      "data": {},
+      "id": "step:0008",
+      "kind": "branch_taken",
+      "line": 44,
+      "what": "took else branch"
+    },
+    {
+      "because": "condition was false",
+      "column": 3,
+      "data": {},
+      "id": "step:0009",
+      "kind": "branch_skipped",
+      "line": 44,
+      "what": "skipped then branch"
+    },
+    {
+      "because": null,
+      "column": 13,
+      "data": {},
+      "id": "step:0010",
+      "kind": "statement_run_agent",
+      "line": 46,
+      "what": "ran agent researcher"
+    },
+    {
+      "because": null,
+      "column": 13,
+      "data": {},
+      "id": "step:0011",
+      "kind": "ai_call",
+      "line": 46,
+      "what": "asked ai research_ai"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0012",
+      "kind": "statement_set",
+      "line": 48,
+      "what": "set state.result.query"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0013",
+      "kind": "statement_set",
+      "line": 49,
+      "what": "set state.result.summary"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0014",
+      "kind": "statement_set",
+      "line": 50,
+      "what": "set state.result.verified"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0015",
+      "kind": "statement_create",
+      "line": 51,
+      "what": "created ResearchResult"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {
+        "count": 3
+      },
+      "id": "step:0016",
+      "kind": "decision_for_each",
+      "line": 52,
+      "what": "for each doc in list of 3 items"
+    },
+    {
+      "because": null,
+      "column": 7,
+      "data": {},
+      "id": "step:0017",
+      "kind": "statement_set",
+      "line": 54,
+      "what": "set state.citation.query"
+    },
+    {
+      "because": null,
+      "column": 7,
+      "data": {},
+      "id": "step:0018",
+      "kind": "statement_set",
+      "line": 55,
+      "what": "set state.citation.title"
+    },
+    {
+      "because": null,
+      "column": 7,
+      "data": {},
+      "id": "step:0019",
+      "kind": "statement_set",
+      "line": 56,
+      "what": "set state.citation.url"
+    },
+    {
+      "because": null,
+      "column": 7,
+      "data": {},
+      "id": "step:0020",
+      "kind": "statement_set",
+      "line": 57,
+      "what": "set state.citation.snippet"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0021",
+      "kind": "statement_create",
+      "line": 58,
+      "what": "created Citation"
+    },
+    {
+      "because": null,
+      "column": 7,
+      "data": {},
+      "id": "step:0022",
+      "kind": "statement_set",
+      "line": 54,
+      "what": "set state.citation.query"
+    },
+    {
+      "because": null,
+      "column": 7,
+      "data": {},
+      "id": "step:0023",
+      "kind": "statement_set",
+      "line": 55,
+      "what": "set state.citation.title"
+    },
+    {
+      "because": null,
+      "column": 7,
+      "data": {},
+      "id": "step:0024",
+      "kind": "statement_set",
+      "line": 56,
+      "what": "set state.citation.url"
+    },
+    {
+      "because": null,
+      "column": 7,
+      "data": {},
+      "id": "step:0025",
+      "kind": "statement_set",
+      "line": 57,
+      "what": "set state.citation.snippet"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0026",
+      "kind": "statement_create",
+      "line": 58,
+      "what": "created Citation"
+    },
+    {
+      "because": null,
+      "column": 7,
+      "data": {},
+      "id": "step:0027",
+      "kind": "statement_set",
+      "line": 54,
+      "what": "set state.citation.query"
+    },
+    {
+      "because": null,
+      "column": 7,
+      "data": {},
+      "id": "step:0028",
+      "kind": "statement_set",
+      "line": 55,
+      "what": "set state.citation.title"
+    },
+    {
+      "because": null,
+      "column": 7,
+      "data": {},
+      "id": "step:0029",
+      "kind": "statement_set",
+      "line": 56,
+      "what": "set state.citation.url"
+    },
+    {
+      "because": null,
+      "column": 7,
+      "data": {},
+      "id": "step:0030",
+      "kind": "statement_set",
+      "line": 57,
+      "what": "set state.citation.snippet"
+    },
+    {
+      "because": null,
+      "column": 5,
+      "data": {},
+      "id": "step:0031",
+      "kind": "statement_create",
+      "line": 58,
+      "what": "created Citation"
+    },
+    {
+      "because": "list length was 3",
+      "column": 3,
+      "data": {},
+      "id": "step:0032",
+      "kind": "branch_taken",
+      "line": 52,
+      "what": "ran for each body 3 times"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0033",
+      "kind": "statement_return",
+      "line": 59,
+      "what": "returned a value"
+    },
+    {
+      "because": "completed successfully",
+      "column": 1,
+      "data": {},
+      "id": "step:0034",
+      "kind": "flow_end",
+      "line": 38,
+      "what": "flow \"research_demo\" ended"
+    }
+  ],
+  "flow_name": "research_demo",
+  "ok": true,
+  "summary": "Flow \"research_demo\" ran with 34 steps.",
+  "traces": [
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": "research_ai",
+      "events": 24,
+      "tool_calls": 0
+    },
+    {
+      "ai_name": null,
+      "events": 0,
+      "tool_calls": 0
+    }
+  ]
+}

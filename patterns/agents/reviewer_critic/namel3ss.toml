@@ -1,0 +1,6 @@
+[identity]
+email = "reviewer@example.com"
+role = "reviewer"
+
+[persistence]
+target = "sqlite"

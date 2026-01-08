@@ -58,6 +58,12 @@ class ToolPacksConfig:
 
 
 @dataclass
+class MemoryPacksConfig:
+    default_pack: str | None = None
+    agent_overrides: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
 class RegistrySourceConfig:
     id: str
     kind: str
@@ -82,6 +88,7 @@ class AppConfig:
     identity: IdentityConfig = field(default_factory=IdentityConfig)
     python_tools: PythonToolsConfig = field(default_factory=PythonToolsConfig)
     tool_packs: ToolPacksConfig = field(default_factory=ToolPacksConfig)
+    memory_packs: MemoryPacksConfig = field(default_factory=MemoryPacksConfig)
     registries: RegistriesConfig = field(default_factory=RegistriesConfig)
     capability_overrides: dict[str, dict[str, object]] = field(default_factory=dict)
 
@@ -97,6 +104,7 @@ __all__ = [
     "IdentityConfig",
     "PythonToolsConfig",
     "ToolPacksConfig",
+    "MemoryPacksConfig",
     "RegistrySourceConfig",
     "RegistriesConfig",
 ]

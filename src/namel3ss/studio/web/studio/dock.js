@@ -34,6 +34,10 @@
       window.renderMemory();
       return;
     }
+    if (tabName === "agents" && root.agents && typeof root.agents.refreshAgents === "function") {
+      root.agents.refreshAgents();
+      return;
+    }
     if (tabName === "why" && typeof window.refreshWhyPanel === "function") {
       window.refreshWhyPanel();
       return;

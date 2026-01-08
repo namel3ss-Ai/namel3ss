@@ -20,6 +20,8 @@ def _to_data(value: Any, *, field_name: str | None = None) -> Any:
             field_value = getattr(value, field.name)
             if field.name == "functions" and not field_value:
                 continue
+            if field.name == "merge" and field_value is None:
+                continue
             data[field.name] = _to_data(field_value, field_name=field.name)
         return data
     if isinstance(value, dict):

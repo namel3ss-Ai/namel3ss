@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from namel3ss.runtime.memory.contract import MemoryItem
 from namel3ss.runtime.memory.events import EVENT_DECISION
@@ -18,6 +18,14 @@ class HandoffSelection:
     conflict_count: int
     rules_count: int
     impact_count: int
+    groups: list["HandoffGroup"] = field(default_factory=list)
+    reasons: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class HandoffGroup:
+    key: str
+    item_ids: list[str]
 
 
 def select_handoff_items(
@@ -55,6 +63,8 @@ def select_handoff_items(
         rules_count=len(rules_ids),
         impact_count=len(impacts),
     )
+    groups = _build_groups(decisions, proposal_ids, conflicts, rules_ids, impacts)
+    reasons = _build_reasons(groups)
     return HandoffSelection(
         item_ids=selected,
         summary_lines=summary_lines,
@@ -63,6 +73,8 @@ def select_handoff_items(
         conflict_count=len(conflicts),
         rules_count=len(rules_ids),
         impact_count=len(impacts),
+        groups=groups,
+        reasons=reasons,
     )
 
 
@@ -148,4 +160,33 @@ def _select_impact_warnings(items: list[MemoryItem], *, limit: int) -> list[str]
     return selected
 
 
-__all__ = ["HandoffSelection", "select_handoff_items"]
+def _build_groups(
+    decisions: list[str],
+    proposals: list[str],
+    conflicts: list[str],
+    rules: list[str],
+    impacts: list[str],
+) -> list[HandoffGroup]:
+    groups: list[HandoffGroup] = []
+    if decisions:
+        groups.append(HandoffGroup(key="decisions", item_ids=list(decisions)))
+    if proposals:
+        groups.append(HandoffGroup(key="proposals", item_ids=list(proposals)))
+    if conflicts:
+        groups.append(HandoffGroup(key="conflicts", item_ids=list(conflicts)))
+    if rules:
+        groups.append(HandoffGroup(key="rules", item_ids=list(rules)))
+    if impacts:
+        groups.append(HandoffGroup(key="impact", item_ids=list(impacts)))
+    return groups
+
+
+def _build_reasons(groups: list[HandoffGroup]) -> dict[str, str]:
+    reasons: dict[str, str] = {}
+    for group in groups:
+        for item_id in group.item_ids:
+            reasons.setdefault(item_id, group.key)
+    return reasons
+
+
+__all__ = ["HandoffGroup", "HandoffSelection", "select_handoff_items"]

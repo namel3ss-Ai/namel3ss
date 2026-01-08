@@ -1,0 +1,41 @@
+spec is "1.0"
+
+identity "User":
+  field "email" is text must be present
+  field "role" is text must be present
+
+record "ReviewLog":
+  field "draft" is text must be present
+  field "review" is text must be present
+  field "decision" is text must be present
+
+ai "review_ai":
+  provider is "mock"
+  model is "mock-model"
+  system_prompt is "Produce short, deterministic responses."
+
+agent "author":
+  ai is "review_ai"
+  system_prompt is "Write a concise draft."
+
+agent "critic":
+  ai is "review_ai"
+  system_prompt is "Check constraints and respond with approve or revise."
+
+flow "draft_and_review_demo": requires identity.role is "reviewer"
+  run agent "author" with input: "Draft a two-sentence update." as draft
+  run agent "critic" with input: draft as review
+  let decision is "approved"
+  set state.review_log with:
+    draft is draft
+    review is review
+    decision is decision
+  create "ReviewLog" with state.review_log as log
+  return decision
+
+page "home": requires identity.role is "reviewer"
+  title is "Reviewer + Critic"
+  text is "Draft first, then review against constraints."
+  button "Run review":
+    calls flow "draft_and_review_demo"
+  table is "ReviewLog"

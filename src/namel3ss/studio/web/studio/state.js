@@ -8,6 +8,8 @@
   let cachedDiagnostics = null;
   let cachedLastRunError = null;
   let cachedFormulas = null;
+  let cachedAgents = null;
+  let cachedAgentRun = null;
   let seedActionId = null;
   let resetActionId = null;
   let lastAction = null;
@@ -61,6 +63,20 @@
     cachedFormulas = value || null;
     return cachedFormulas;
   }
+  function getCachedAgents() {
+    return cachedAgents;
+  }
+  function setCachedAgents(value) {
+    cachedAgents = value || null;
+    return cachedAgents;
+  }
+  function getCachedAgentRun() {
+    return cachedAgentRun;
+  }
+  function setCachedAgentRun(value) {
+    cachedAgentRun = value || null;
+    return cachedAgentRun;
+  }
   function getSeedActionId() {
     return seedActionId;
   }
@@ -113,6 +129,10 @@
   state.setCachedLastRunError = setCachedLastRunError;
   state.getCachedFormulas = getCachedFormulas;
   state.setCachedFormulas = setCachedFormulas;
+  state.getCachedAgents = getCachedAgents;
+  state.setCachedAgents = setCachedAgents;
+  state.getCachedAgentRun = getCachedAgentRun;
+  state.setCachedAgentRun = setCachedAgentRun;
   state.getSeedActionId = getSeedActionId;
   state.setSeedActionId = setSeedActionId;
   state.getResetActionId = getResetActionId;

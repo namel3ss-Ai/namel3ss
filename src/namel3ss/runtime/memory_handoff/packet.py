@@ -13,6 +13,7 @@ def build_packet_preview(
     semantic: SemanticMemory,
     profile: ProfileMemory,
     item_ids: list[str],
+    reasons: dict[str, str] | None = None,
 ) -> list[dict]:
     previews: list[dict] = []
     for memory_id in item_ids:
@@ -24,10 +25,13 @@ def build_packet_preview(
                     "kind": "unknown",
                     "event_type": "unknown",
                     "preview": "missing item",
+                    "category": "missing",
+                    "why": "Item was not found in memory.",
                 }
             )
             continue
         meta = item.meta or {}
+        reason = (reasons or {}).get(item.id) if reasons else None
         previews.append(
             {
                 "memory_id": item.id,
@@ -36,9 +40,24 @@ def build_packet_preview(
                 "lane": meta.get("lane") or "unknown",
                 "agent_id": meta.get("agent_id"),
                 "preview": preview_text(item.text),
+                "category": reason or "other",
+                "why": _reason_line(reason),
             }
         )
     return previews
+
+
+def _reason_line(reason: str | None) -> str:
+    mapping = {
+        "decisions": "Selected as a decision item.",
+        "proposals": "Selected as a pending proposal.",
+        "conflicts": "Selected due to a conflict link.",
+        "rules": "Selected as an active rule.",
+        "impact": "Selected due to an impact warning.",
+    }
+    if reason:
+        return mapping.get(reason, "Selected by handoff policy.")
+    return "Selected by handoff policy."
 
 
 __all__ = ["build_packet_preview"]

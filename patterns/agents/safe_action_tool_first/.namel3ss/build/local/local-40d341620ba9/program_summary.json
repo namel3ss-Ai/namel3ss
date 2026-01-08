@@ -1,0 +1,33 @@
+{
+  "records": [
+    "ActionLog"
+  ],
+  "flows": [
+    "cancel_demo",
+    "confirm_demo",
+    "propose_demo"
+  ],
+  "entry_flows": [
+    "propose_demo",
+    "confirm_demo",
+    "cancel_demo"
+  ],
+  "public_flows": [
+    "cancel_demo",
+    "confirm_demo",
+    "propose_demo"
+  ],
+  "pages": [
+    "home"
+  ],
+  "ai_profiles": [
+    "action_ai"
+  ],
+  "tools": [
+    "apply action"
+  ],
+  "agents": [
+    "action_planner"
+  ],
+  "theme": "system"
+}

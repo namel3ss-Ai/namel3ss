@@ -12,6 +12,36 @@
       "path": "ai-assistant-over-records"
     },
     {
+      "id": "parallel_coordinator",
+      "description": "Parallel agent runs merged with a stable policy.",
+      "path": "agents/parallel_coordinator"
+    },
+    {
+      "id": "planner_executor",
+      "description": "Planner proposes steps; executor runs deterministic records.",
+      "path": "agents/planner_executor"
+    },
+    {
+      "id": "research_agentic_rag",
+      "description": "Tool-first retrieval with grounded summaries and citations.",
+      "path": "agents/research_agentic_rag"
+    },
+    {
+      "id": "reviewer_critic",
+      "description": "Draft plus reviewer check with explicit approval.",
+      "path": "agents/reviewer_critic"
+    },
+    {
+      "id": "router",
+      "description": "Deterministic routing to specialized agents.",
+      "path": "agents/router"
+    },
+    {
+      "id": "safe_action_tool_first",
+      "description": "AI proposals gated by explicit, tool-first confirmations.",
+      "path": "agents/safe_action_tool_first"
+    },
+    {
       "id": "multi-agent-workflow",
       "description": "Planner/critic/research flows with clear separation.",
       "path": "multi-agent-workflow"

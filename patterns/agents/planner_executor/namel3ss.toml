@@ -1,0 +1,6 @@
+[identity]
+email = "planner@example.com"
+role = "planner"
+
+[persistence]
+target = "sqlite"

@@ -1,0 +1,5 @@
+tools:
+  "retrieve docs":
+    kind: "python"
+    entry: "tools.retrieve_docs:run"
+    sandbox: true

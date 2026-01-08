@@ -1,0 +1,7 @@
+test "route billing demo":
+  run flow "demo_billing" with input: {} as result
+  expect value is "routed: billing"
+
+test "route support demo":
+  run flow "demo_support" with input: {} as result
+  expect value is "routed: support"

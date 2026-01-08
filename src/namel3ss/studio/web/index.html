@@ -100,6 +100,9 @@
       <section class="canvas-mode" data-mode="memory" aria-labelledby="dock-memory">
         <div id="memory" class="canvas-panel"></div>
       </section>
+      <section class="canvas-mode" data-mode="agents" aria-labelledby="dock-agents">
+        <div id="agents" class="canvas-panel"></div>
+      </section>
       <section class="canvas-mode" data-mode="setup" aria-labelledby="dock-setup">
         <div id="setup" class="canvas-panel"></div>
       </section>
@@ -123,6 +126,7 @@
       <button class="tab" data-tab="explain" id="dock-explain" data-testid="studio-dock-item-explain">Explain</button>
       <button class="tab" data-tab="traces" id="dock-traces" data-testid="studio-dock-item-traces">Traces</button>
       <button class="tab" data-tab="memory" id="dock-memory" data-testid="studio-dock-item-memory">Memory</button>
+      <button class="tab" data-tab="agents" id="dock-agents" data-testid="studio-dock-item-agents">Agents</button>
       <button class="tab" data-tab="setup" id="dock-setup" data-testid="studio-dock-item-setup">Setup</button>
       <button class="tab" data-tab="graph" id="dock-graph" data-testid="studio-dock-item-graph">Graph</button>
     </div>
@@ -163,6 +167,11 @@
   <script src="/studio/formulas.js"></script>
   <script src="/studio/explain.js"></script>
   <script src="/studio/memory.js"></script>
+  <script src="/studio/agents/wizard.js"></script>
+  <script src="/studio/agents/run.js"></script>
+  <script src="/studio/agents/handoff.js"></script>
+  <script src="/studio/agents/memory_packs.js"></script>
+  <script src="/studio/agents/index.js"></script>
   <script src="/studio/setup.js"></script>
   <script src="/studio/why.js"></script>
   <script src="/studio/preview.js"></script>

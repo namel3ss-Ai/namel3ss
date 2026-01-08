@@ -1,0 +1,5 @@
+test "propose then confirm":
+  run flow "propose_demo" with input: {} as result
+  expect value is "proposal_ready"
+  run flow "confirm_demo" with input: {} as result
+  expect value contains "applied"

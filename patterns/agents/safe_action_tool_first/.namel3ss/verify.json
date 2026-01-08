@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "status": "ok",
+  "engine_target": "local",
+  "checks": [
+    {
+      "id": "secrets_redaction",
+      "status": "ok",
+      "message": "No secrets configured; redaction not required.",
+      "fix": "Add secrets via environment variables when needed."
+    },
+    {
+      "id": "access_control",
+      "status": "ok",
+      "message": "Mutating flows and forms require access rules.",
+      "fix": "None."
+    },
+    {
+      "id": "audit_policy",
+      "status": "ok",
+      "message": "Audit-required policy is disabled.",
+      "fix": "Set N3_AUDIT_REQUIRED=1 to enforce audited mutations."
+    },
+    {
+      "id": "package_integrity",
+      "status": "ok",
+      "message": "Packages match the lockfile and include license metadata.",
+      "fix": "None."
+    },
+    {
+      "id": "pack_capabilities",
+      "status": "ok",
+      "message": "No enabled installed packs.",
+      "fix": "None."
+    },
+    {
+      "id": "tool_guarantees",
+      "status": "ok",
+      "message": "Tool guarantees are enforceable.",
+      "fix": "None.",
+      "details": {
+        "blocked_tools": [],
+        "reports": [
+          {
+            "tool_name": "apply action",
+            "resolved_source": "binding",
+            "runner": "local",
+            "guarantees": {
+              "no_filesystem_write": true,
+              "no_filesystem_read": true,
+              "no_network": true,
+              "no_subprocess": true,
+              "no_env_read": true,
+              "no_env_write": true,
+              "secrets_allowed": []
+            },
+            "guarantee_sources": {
+              "no_filesystem_write": "tool",
+              "no_filesystem_read": "tool",
+              "no_network": "tool",
+              "no_subprocess": "tool",
+              "no_env_read": "tool",
+              "no_env_write": "tool",
+              "secrets_allowed": "tool"
+            },
+            "coverage": {
+              "status": "enforced",
+              "missing": []
+            },
+            "sandbox": {
+              "enabled": true
+            },
+            "unsafe_override": false,
+            "blocked": false
+          }
+        ],
+        "missing_sandbox": [],
+        "service_handshake_required": false,
+        "service_handshake_missing": [],
+        "container_enforcement_missing": [],
+        "unsafe_overrides": []
+      }
+    },
+    {
+      "id": "engine_readiness",
+      "status": "ok",
+      "message": "Engine target readiness checks passed.",
+      "fix": "None."
+    },
+    {
+      "id": "determinism",
+      "status": "ok",
+      "message": "Build snapshot matches the current lockfile.",
+      "fix": "None."
+    }
+  ]
+}

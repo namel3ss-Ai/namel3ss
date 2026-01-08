@@ -1,5 +1,6 @@
 import pytest
 
+from namel3ss.config.model import AppConfig, MemoryPacksConfig
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.memory_packs.format import MemoryOverrides, MemoryPack, PackTrustSettings
 from namel3ss.runtime.memory_packs.loader import load_memory_packs
@@ -10,6 +11,7 @@ from namel3ss.runtime.memory_packs.render import (
     pack_order_lines,
     pack_loaded_lines,
 )
+from namel3ss.runtime.memory_packs.select import resolve_pack_selection
 from namel3ss.runtime.memory_packs.sources import OverrideEntry
 from namel3ss.runtime.memory_packs.validate import validate_overrides_payload, validate_pack_payload
 
@@ -197,6 +199,29 @@ def test_pack_render_lines_are_bracketless():
     lines.extend(pack_loaded_lines(pack))
     lines.extend(override_summary_lines(overrides))
     assert _no_brackets(lines)
+
+
+def test_pack_selection_resolves_app_default_and_agent_override():
+    config = AppConfig(
+        memory_packs=MemoryPacksConfig(
+            default_pack="agent-minimal",
+            agent_overrides={"agent-a": "agent-collab", "agent-b": "none"},
+        )
+    )
+    app_selection = resolve_pack_selection(config, agent_id=None)
+    assert app_selection.pack_id == "agent-minimal"
+    assert app_selection.mode == "explicit"
+    assert app_selection.source == "app_default"
+
+    agent_selection = resolve_pack_selection(config, agent_id="agent-a")
+    assert agent_selection.pack_id == "agent-collab"
+    assert agent_selection.mode == "explicit"
+    assert agent_selection.source == "agent_override"
+
+    none_selection = resolve_pack_selection(config, agent_id="agent-b")
+    assert none_selection.pack_id is None
+    assert none_selection.mode == "none"
+    assert none_selection.source == "agent_override"
 
 
 def _no_brackets(lines: list[str]) -> bool:

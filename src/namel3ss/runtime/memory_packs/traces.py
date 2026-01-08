@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 from namel3ss.runtime.memory_packs.format import MemoryPack
-from namel3ss.runtime.memory_packs.render import override_summary_lines, pack_loaded_lines, pack_order_lines
-from namel3ss.runtime.memory_packs.sources import OverrideEntry
+from namel3ss.runtime.memory_packs.render import (
+    override_summary_lines,
+    pack_diff_lines,
+    pack_loaded_lines,
+    pack_order_lines,
+)
+from namel3ss.runtime.memory_packs.sources import OverrideEntry, SourceMap
 from namel3ss.traces.builders import (
     build_memory_pack_loaded,
     build_memory_pack_merged,
@@ -19,10 +24,13 @@ def build_pack_loaded_event(*, pack: MemoryPack) -> dict:
     )
 
 
-def build_pack_merged_event(*, packs: list[MemoryPack]) -> dict:
+def build_pack_merged_event(*, packs: list[MemoryPack], sources: SourceMap | None = None) -> dict:
+    lines = list(pack_order_lines(packs))
+    if sources is not None:
+        lines.extend(pack_diff_lines(sources))
     return build_memory_pack_merged(
         title="Memory packs merged",
-        lines=pack_order_lines(packs),
+        lines=lines,
     )
 
 

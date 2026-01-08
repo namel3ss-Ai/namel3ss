@@ -59,7 +59,13 @@ class MemoryManagerRuntimeMixin:
             app_path=app_path,
         )
         policy = self.policy_for(ai)
-        contract = self.policy_contract_for(policy)
+        setup = self._pack_setup_for(agent_id=agent_id, project_root=project_root, app_path=app_path)
+        contract = self.policy_contract_for(
+            policy,
+            agent_id=agent_id,
+            project_root=project_root,
+            app_path=app_path,
+        )
         phase_request = phase_request_from_state(state)
         context, events, meta = recall_context_with_events_engine(
             ai_profile=ai.name,
@@ -75,7 +81,7 @@ class MemoryManagerRuntimeMixin:
             phase_registry=self._phases,
             phase_ledger=self._ledger,
             phase_request=phase_request,
-            budget_configs=self._budgets,
+            budget_configs=setup.budgets if setup is not None else self._budgets,
             cache_store=self._cache,
             cache_version_for=self._cache_version_for,
             cache_bump=self._bump_cache_version,
@@ -134,7 +140,13 @@ class MemoryManagerRuntimeMixin:
             app_path=app_path,
         )
         policy = self.policy_for(ai)
-        contract = self.policy_contract_for(policy)
+        setup = self._pack_setup_for(agent_id=agent_id, project_root=project_root, app_path=app_path)
+        contract = self.policy_contract_for(
+            policy,
+            agent_id=agent_id,
+            project_root=project_root,
+            app_path=app_path,
+        )
         phase_request = phase_request_from_state(state)
         phase_diff_request = phase_diff_request_from_state(state)
         impact_request = impact_request_from_state(state)
@@ -160,8 +172,8 @@ class MemoryManagerRuntimeMixin:
             phase_registry=self._phases,
             phase_ledger=self._ledger,
             phase_request=phase_request,
-            budget_configs=self._budgets,
-            agreement_defaults=self._agreement_defaults_payload(),
+            budget_configs=setup.budgets if setup is not None else self._budgets,
+            agreement_defaults=self._agreement_defaults_payload(setup),
             agreement_request=agreement_request,
             agreements=self.agreements,
             phase_diff_request=phase_diff_request,

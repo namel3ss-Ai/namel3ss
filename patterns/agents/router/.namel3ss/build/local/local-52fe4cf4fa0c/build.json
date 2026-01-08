@@ -1,0 +1,53 @@
+{
+  "build_id": "local-52fe4cf4fa0c",
+  "target": "local",
+  "process_model": "dev",
+  "project_root": "/Users/disanssebowabasalidde/Documents/GitHub/namel3ss/patterns/agents/router",
+  "app_path": "/Users/disanssebowabasalidde/Documents/GitHub/namel3ss/patterns/agents/router/app.ai",
+  "app_relative_path": "app.ai",
+  "namel3ss_version": "0.1.0a6",
+  "persistence_target": "sqlite",
+  "recommended_persistence": "sqlite",
+  "lockfile_digest": "eace60f110c5557498329db02fb252da7f95598dd3246d174053dac13c3b35c4",
+  "lockfile_status": "present",
+  "program_summary": {
+    "records": [],
+    "flows": [
+      "demo_billing",
+      "demo_sales",
+      "demo_support",
+      "route_request"
+    ],
+    "entry_flows": [
+      "route_request",
+      "demo_billing",
+      "demo_sales",
+      "demo_support"
+    ],
+    "public_flows": [
+      "demo_billing",
+      "demo_sales",
+      "demo_support",
+      "route_request"
+    ],
+    "pages": [
+      "home"
+    ],
+    "ai_profiles": [
+      "router_ai"
+    ],
+    "tools": [],
+    "agents": [
+      "billing_agent",
+      "sales_agent",
+      "support_agent"
+    ],
+    "theme": "system"
+  },
+  "source_fingerprints": [
+    {
+      "path": "app.ai",
+      "sha256": "e5639272cece82492c1bd48c0fde00bb50fd04d1e93efac3b7a07705797861c0"
+    }
+  ]
+}

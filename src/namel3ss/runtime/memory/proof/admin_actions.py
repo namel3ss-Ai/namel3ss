@@ -255,6 +255,7 @@ def _apply_handoff(
             session=space_ctx.session_id,
             packet=packet,
             item_count=len(applied_items),
+            applied_items=applied_items,
         )
     )
     events.append(build_agent_briefing_event(ai_profile=ai_profile.name, session=space_ctx.session_id, packet=packet))

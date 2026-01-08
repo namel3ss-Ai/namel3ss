@@ -73,6 +73,7 @@ def _apply_toml_config(config: AppConfig, data: Dict[str, Any]) -> None:
     _apply_identity_toml(config, data.get("identity"))
     _apply_python_tools_toml(config, data.get("python_tools") or data.get("python"))
     _apply_tool_packs_toml(config, data.get("tool_packs") or data.get("packs"))
+    _apply_memory_packs_toml(config, data.get("memory_packs"))
     _apply_registries_toml(config, data.get("registries"))
     _apply_capability_overrides_toml(config, data.get("capability_overrides"))
 
@@ -160,6 +161,17 @@ def _apply_tool_packs_toml(config: AppConfig, table: Any) -> None:
     pinned = table.get("pinned_tools")
     if pinned is not None:
         config.tool_packs.pinned_tools = _ensure_str_map(pinned, "tool_packs.pinned_tools")
+
+
+def _apply_memory_packs_toml(config: AppConfig, table: Any) -> None:
+    if not isinstance(table, dict):
+        return
+    default_pack = table.get("default_pack") or table.get("default")
+    if default_pack is not None:
+        config.memory_packs.default_pack = str(default_pack)
+    overrides = table.get("agent_overrides") or table.get("agent_packs") or table.get("agents")
+    if overrides is not None:
+        config.memory_packs.agent_overrides = _ensure_str_map(overrides, "memory_packs.agent_overrides")
 
 
 def _apply_registries_toml(config: AppConfig, table: Any) -> None:

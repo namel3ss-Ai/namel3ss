@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from namel3ss.runtime.memory_packs.format import MemoryPack
-from namel3ss.runtime.memory_packs.sources import OverrideEntry
+from namel3ss.runtime.memory_packs.sources import OverrideEntry, SOURCE_DEFAULT, SourceMap
 
 
 _BRACKET_CHARS = str.maketrans({")": " ", "(": " ", "]": " ", "[": " ", "}": " ", "{": " "})
@@ -57,6 +57,19 @@ def override_summary_lines(overrides: list[OverrideEntry]) -> list[str]:
     return lines
 
 
+def pack_diff_lines(sources: SourceMap | None) -> list[str]:
+    if sources is None:
+        return ["No memory pack changes."]
+    changes: list[str] = []
+    for field, source in sorted(sources.field_sources.items()):
+        if source == SOURCE_DEFAULT:
+            continue
+        changes.append(f"Applied {_sanitize(field)} from {_sanitize(source)}.")
+    if not changes:
+        return ["No memory pack changes."]
+    return ["Memory pack changes."] + changes
+
+
 def _sanitize(value: object) -> str:
     text = "" if value is None else str(value)
     sanitized = text.translate(_BRACKET_CHARS)
@@ -66,6 +79,7 @@ def _sanitize(value: object) -> str:
 __all__ = [
     "active_pack_lines",
     "override_summary_lines",
+    "pack_diff_lines",
     "pack_loaded_lines",
     "pack_order_lines",
     "pack_provides",

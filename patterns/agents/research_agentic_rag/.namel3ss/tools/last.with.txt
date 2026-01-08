@@ -1,0 +1,10 @@
+tools used
+
+Allowed
+- retrieve docs (ok)
+
+Blocked
+- none recorded
+
+Errors
+- none recorded

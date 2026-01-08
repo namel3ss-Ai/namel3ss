@@ -49,7 +49,7 @@ from namel3ss.ir.functions.model import (
     FunctionSignature,
 )
 from namel3ss.ir.model.ai import AIDecl, AIMemory, AskAIStmt
-from namel3ss.ir.model.agents import AgentDecl, ParallelAgentEntry, RunAgentStmt, RunAgentsParallelStmt
+from namel3ss.ir.model.agents import AgentDecl, AgentMergePolicy, ParallelAgentEntry, RunAgentStmt, RunAgentsParallelStmt
 from namel3ss.ir.model.pages import (
     ButtonItem,
     CardAction,
@@ -146,6 +146,7 @@ __all__ = [
     "ParallelAgentEntry",
     "RunAgentStmt",
     "RunAgentsParallelStmt",
+    "AgentMergePolicy",
     "ButtonItem",
     "CardAction",
     "CardGroupItem",

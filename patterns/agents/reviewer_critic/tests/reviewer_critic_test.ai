@@ -1,0 +1,3 @@
+test "draft and review":
+  run flow "draft_and_review_demo" with input: {} as result
+  expect value is "approved"

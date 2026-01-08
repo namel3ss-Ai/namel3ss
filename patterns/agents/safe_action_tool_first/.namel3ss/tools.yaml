@@ -1,0 +1,5 @@
+tools:
+  "apply action":
+    kind: "python"
+    entry: "tools.apply_action:run"
+    sandbox: true

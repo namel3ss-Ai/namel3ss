@@ -21,6 +21,17 @@ class ParallelAgentEntry(Node):
 
 
 @dataclass
+class AgentMergePolicy(Node):
+    policy: str
+    require_keys: List[str] | None
+    require_non_empty: bool | None
+    score_key: str | None
+    score_rule: str | None
+    min_consensus: int | None
+    consensus_key: str | None
+
+
+@dataclass
 class RunAgentStmt(Statement):
     agent_name: str
     input_expr: Expression
@@ -31,3 +42,4 @@ class RunAgentStmt(Statement):
 class RunAgentsParallelStmt(Statement):
     entries: List[ParallelAgentEntry]
     target: str
+    merge: AgentMergePolicy | None = None

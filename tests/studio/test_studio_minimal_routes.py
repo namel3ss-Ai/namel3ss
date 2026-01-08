@@ -68,6 +68,7 @@ def test_kept_get_endpoints_return_ok(tmp_path: Path) -> None:
         "/api/diagnostics",
         "/api/version",
         "/api/why",
+        "/api/agents",
     ]:
         handler = DummyHandler(path=path, app_path=app_path)
         handle_api_get(handler)
@@ -80,6 +81,15 @@ def test_action_post_still_executes(tmp_path: Path) -> None:
     app_path = _write_app(tmp_path)
     body = b'{"id":"page.home.button.run","payload":{}}'
     handler = DummyHandler(path="/api/action", app_path=app_path, body=body)
+    handle_api_post(handler)
+    assert handler.status == 200
+    assert handler.payload["ok"] is True
+
+
+def test_agent_memory_pack_post_returns_ok(tmp_path: Path) -> None:
+    app_path = _write_app(tmp_path)
+    body = b'{"default_pack":"auto","agent_overrides":{}}'
+    handler = DummyHandler(path="/api/agent/memory_packs", app_path=app_path, body=body)
     handle_api_post(handler)
     assert handler.status == 200
     assert handler.payload["ok"] is True

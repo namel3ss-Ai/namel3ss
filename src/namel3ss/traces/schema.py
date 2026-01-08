@@ -58,6 +58,11 @@ class TraceEventType:
     MEMORY_HANDOFF_APPLIED = "memory_handoff_applied"
     MEMORY_HANDOFF_REJECTED = "memory_handoff_rejected"
     MEMORY_AGENT_BRIEFING = "memory_agent_briefing"
+    AGENT_MERGE_STARTED = "agent_merge_started"
+    AGENT_MERGE_CANDIDATE = "agent_merge_candidate"
+    AGENT_MERGE_SELECTED = "agent_merge_selected"
+    AGENT_MERGE_REJECTED = "agent_merge_rejected"
+    AGENT_MERGE_SUMMARY = "agent_merge_summary"
     EXPRESSION_EXPLAIN = "expression_explain"
 
 

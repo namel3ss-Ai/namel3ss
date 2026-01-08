@@ -1,0 +1,89 @@
+spec is "1.0"
+
+identity "User":
+  field "email" is text must be present
+  field "role" is text must be present
+
+record "ActionLog":
+  field "action" is text must be present
+  field "target" is text must be present
+  field "status" is text must be present
+  field "confirmed" is boolean must be present
+
+tool "apply action":
+  implemented using python
+  purity is "pure"
+  timeout_seconds is 5
+
+  input:
+    action is text
+    target is text
+    approved is boolean
+
+  output:
+    status is text
+    action is text
+    target is text
+    message is text
+
+ai "action_ai":
+  provider is "mock"
+  model is "mock-model"
+  system_prompt is "Propose safe, reversible actions."
+
+agent "action_planner":
+  ai is "action_ai"
+  system_prompt is "Propose a minimal action with a clear target."
+
+flow "propose_demo": requires identity.role is "operator"
+  let request is "Deactivate user-42"
+  run agent "action_planner" with input: request as proposal
+  set state.proposal is proposal
+  set state.proposed_action is "deactivate_user"
+  set state.proposed_target is "user-42"
+  set state.pending_confirmation is true
+  return "proposal_ready"
+
+flow "confirm_demo": requires identity.role is "operator"
+  if state.pending_confirmation is not true:
+    return "no_pending"
+  let result is apply action:
+    action is state.proposed_action
+    target is state.proposed_target
+    approved is true
+  set state.pending_confirmation is false
+  set state.action_log with:
+    action is result.action
+    target is result.target
+    status is result.status
+    confirmed is true
+  create "ActionLog" with state.action_log as log
+  return result.message
+
+flow "cancel_demo": requires identity.role is "operator"
+  if state.pending_confirmation is not true:
+    return "no_pending"
+  set state.pending_confirmation is false
+  set state.action_log with:
+    action is state.proposed_action
+    target is state.proposed_target
+    status is "cancelled"
+    confirmed is false
+  create "ActionLog" with state.action_log as log
+  return "cancelled"
+
+page "home": requires identity.role is "operator"
+  title is "Safe Action Tool-First"
+  text is "AI proposes; tools apply after explicit confirmation."
+  section "Actions":
+    row:
+      column:
+        button "Propose action":
+          calls flow "propose_demo"
+      column:
+        button "Confirm action":
+          calls flow "confirm_demo"
+      column:
+        button "Cancel":
+          calls flow "cancel_demo"
+  table is "ActionLog"

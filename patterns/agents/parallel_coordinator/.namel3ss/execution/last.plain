@@ -1,0 +1,7 @@
+summary: Flow "run_parallel_demo" ran with 27 steps.
+flow.name: run_parallel_demo
+ok: True
+steps.total: 27
+steps.skipped: 0
+steps.errors: 0
+traces.count: 4
