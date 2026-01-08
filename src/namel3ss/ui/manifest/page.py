@@ -9,7 +9,9 @@ from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.storage.metadata import PersistenceMetadata
 from namel3ss.runtime.theme.resolution import ThemeSource, resolve_effective_theme
 from namel3ss.schema import records as schema
-from namel3ss.ui.manifest_page import _build_children, _slugify, _wire_overlay_actions
+from namel3ss.ui.manifest.actions import _wire_overlay_actions
+from namel3ss.ui.manifest.canonical import _slugify
+from namel3ss.ui.manifest.elements import _build_children
 
 
 def build_manifest(
@@ -113,4 +115,4 @@ def _resolve_persistence(store: Storage | None) -> dict:
     return asdict(default_meta)
 
 
-__all__ = ["build_manifest"]
+__all__ = ["build_manifest", "_build_children", "_wire_overlay_actions", "_slugify"]
