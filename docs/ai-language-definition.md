@@ -21,7 +21,6 @@ Execution steps explain what happened and why.
 - Background tasks
 - Silent tool or memory access
 
-## What is next
-- Broader provider coverage
-- More UI layout primitives
-- More pack tooling polish
+## Roadmap note
+- This document is descriptive only; it makes no forward-looking commitments.
+- Frozen contracts live in `docs/spec-freeze.md`.

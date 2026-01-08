@@ -67,6 +67,7 @@ def validate_module_program(program: ast.Program, *, path: Path) -> None:
     _ensure_unique(program.records, "record", path)
     _ensure_unique(program.tools, "tool", path)
     _ensure_unique(program.pages, "page", path)
+    _ensure_unique(getattr(program, "ui_packs", []), "ui_pack", path)
 
 
 def _ensure_unique(items, kind: str, path: Path) -> None:

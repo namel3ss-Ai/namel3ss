@@ -13,6 +13,7 @@ from namel3ss.ir.lowering.identity import _lower_identity
 from namel3ss.ir.lowering.pages import _lower_page
 from namel3ss.ir.lowering.records import _lower_record
 from namel3ss.ir.lowering.tools import _lower_tools
+from namel3ss.ir.lowering.ui_packs import build_pack_index
 from namel3ss.ir.model.agents import RunAgentsParallelStmt
 from namel3ss.ir.model.program import Flow, Program
 from namel3ss.ir.model.statements import ThemeChange, If, Repeat, RepeatWhile, ForEach, Match, MatchCase, TryCatch, ParallelBlock
@@ -66,7 +67,8 @@ def lower_program(program: ast.Program) -> Program:
     flow_irs: List[Flow] = [lower_flow(flow, agent_map) for flow in program.flows]
     record_map: Dict[str, schema.RecordSchema] = {rec.name: rec for rec in record_schemas}
     flow_names = {flow.name for flow in flow_irs}
-    pages = [_lower_page(page, record_map, flow_names) for page in program.pages]
+    pack_index = build_pack_index(getattr(program, "ui_packs", []))
+    pages = [_lower_page(page, record_map, flow_names, pack_index) for page in program.pages]
     theme_runtime_supported = any(_flow_has_theme_change(flow) for flow in flow_irs)
     return Program(
         spec_version=str(program.spec_version),

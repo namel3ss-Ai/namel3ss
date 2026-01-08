@@ -49,5 +49,6 @@ Studio is the command center for namel3ss. It stays fast and minimal while surfa
 
 ## Notes
 - Studio uses engine terminology (not runtime).
+- Studio rendering and inspection are read-only; only explicit action runs execute flows.
 - All outputs are redacted and deterministic.
 - Guided fixes never change files until you click Apply.

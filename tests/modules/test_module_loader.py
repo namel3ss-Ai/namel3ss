@@ -6,6 +6,7 @@ import pytest
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.module_loader import load_project
+from namel3ss.ui.manifest import build_manifest
 
 
 def _write(path: Path, content: str) -> None:
@@ -127,3 +128,63 @@ def test_package_fallback_for_modules(tmp_path: Path) -> None:
     project = load_project(app)
     flow_names = {flow.name for flow in project.program.flows}
     assert "inventory.calc_total" in flow_names
+
+
+def test_module_exports_ui_pack(tmp_path: Path) -> None:
+    app = tmp_path / "app.ai"
+    _write(
+        app,
+        'spec is "1.0"\n\n'
+        'use "ui" as ui\n'
+        'page "home":\n'
+        '  use ui_pack "ui.widgets" fragment "summary"\n',
+    )
+    _write(
+        tmp_path / "modules" / "ui" / "capsule.ai",
+        'capsule "ui":\n'
+        "  exports:\n"
+        '    ui_pack "widgets"\n',
+    )
+    _write(
+        tmp_path / "modules" / "ui" / "ui.ai",
+        'flow "noop":\n'
+        '  return "ok"\n\n'
+        'ui_pack "widgets":\n'
+        '  version is "1.0"\n'
+        '  fragment "summary":\n'
+        '    text is "Hi"\n',
+    )
+    project = load_project(app)
+    manifest = build_manifest(project.program, state={})
+    origin = manifest["pages"][0]["elements"][0]["origin"]
+    assert origin["pack"] == "ui.widgets"
+    assert origin["version"] == "1.0"
+
+
+def test_unexported_ui_pack_is_blocked(tmp_path: Path) -> None:
+    app = tmp_path / "app.ai"
+    _write(
+        app,
+        'spec is "1.0"\n\n'
+        'use "ui" as ui\n'
+        'page "home":\n'
+        '  use ui_pack "ui.widgets" fragment "summary"\n',
+    )
+    _write(
+        tmp_path / "modules" / "ui" / "capsule.ai",
+        'capsule "ui":\n'
+        "  exports:\n"
+        '    flow "noop"\n',
+    )
+    _write(
+        tmp_path / "modules" / "ui" / "ui.ai",
+        'flow "noop":\n'
+        '  return "ok"\n\n'
+        'ui_pack "widgets":\n'
+        '  version is "1.0"\n'
+        '  fragment "summary":\n'
+        '    text is "Hi"\n',
+    )
+    with pytest.raises(Namel3ssError) as excinfo:
+        load_project(app)
+    assert "does not export ui pack" in str(excinfo.value).lower()

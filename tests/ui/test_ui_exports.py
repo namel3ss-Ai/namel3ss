@@ -30,6 +30,25 @@ page "Home":
 '''
 
 
+CHART_SOURCE = '''spec is "1.0"
+
+record "Metric":
+  name text
+  value number
+
+page "Home":
+  table is "Metric"
+  chart is "Metric":
+    type is bar
+    x is name
+    y is value
+'''
+
+
+def _load_record(program, name: str):
+    return next(record for record in program.records if record.name == name)
+
+
 def test_ui_exports_structure_and_order(tmp_path: Path) -> None:
     program = lower_ir_program(SOURCE)
     manifest = build_manifest(program, state={}, store=MemoryStore())
@@ -80,3 +99,67 @@ def test_ui_export_writer_is_deterministic(tmp_path: Path) -> None:
 
     payload = json.loads(text_first)
     assert payload["schema_version"] == "1"
+
+
+def test_ui_export_strips_chart_data() -> None:
+    program = lower_ir_program(CHART_SOURCE)
+    store = MemoryStore()
+    record = _load_record(program, "Metric")
+    store.save(record, {"name": "Alpha", "value": 5})
+    manifest = build_manifest(program, state={}, store=store)
+    ui_export = build_ui_export(manifest)
+    chart = next(
+        el
+        for page in ui_export["pages"]
+        for el in page.get("elements", [])
+        if el.get("type") == "chart"
+    )
+    assert "series" not in chart
+    assert "summary" not in chart
+
+
+CHAT_SOURCE = '''spec is "1.0"
+
+flow "send":
+  return "ok"
+
+page "Home":
+  chat:
+    messages from is state.messages
+    composer calls flow "send"
+    thinking when is state.thinking
+    citations from is state.citations
+    memory from is state.memory
+'''
+
+
+def _flatten(elements: list[dict]) -> list[dict]:
+    items: list[dict] = []
+    for element in elements:
+        items.append(element)
+        children = element.get("children")
+        if isinstance(children, list):
+            items.extend(_flatten(children))
+    return items
+
+
+def test_ui_export_strips_chat_runtime_data() -> None:
+    program = lower_ir_program(CHAT_SOURCE)
+    state = {
+        "messages": [{"role": "user", "content": "hi"}],
+        "thinking": True,
+        "citations": [{"title": "Doc", "url": "https://example.com"}],
+        "memory": [{"kind": "fact", "text": "x"}],
+    }
+    manifest = build_manifest(program, state=state, store=MemoryStore())
+    ui_export = build_ui_export(manifest)
+    elements = _flatten(ui_export["pages"][0]["elements"])
+    by_type = {el["type"]: el for el in elements if "type" in el}
+    assert "messages" in by_type
+    assert "messages" not in by_type["messages"]
+    assert "citations" in by_type
+    assert "citations" not in by_type["citations"]
+    assert "memory" in by_type
+    assert "items" not in by_type["memory"]
+    assert "thinking" in by_type
+    assert "active" not in by_type["thinking"]

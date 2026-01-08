@@ -1,5 +1,10 @@
 # namel3ss Core v1 Contract
 
+## Contract status (public)
+- Status: frozen
+- Applies to: language core surface
+- Freeze semantics: public contract; changes must be additive and explicitly documented
+
 This document defines the stable Core v1 surface: keywords, forbidden phrases, and the determinism boundary between AI and non-AI execution. The goal is repeatable programs by default, with AI usage declared explicitly.
 
 ## Stable Keywords (v1)

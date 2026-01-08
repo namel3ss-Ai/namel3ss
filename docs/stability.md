@@ -6,6 +6,7 @@ namel3ss is in alpha and focused on predictable change.
 - CLI entrypoints for app, check, lint, format, ui, actions, studio
 - Core declarations for records, flows, pages, tools, ai profiles, agents, and modules
 - Compute core with define function, operators (including ** and between), list/map values, list aggregations, map/filter/reduce, and let/calc blocks
+- UI DSL v0.1.x surface (Phases 1–9), with canonical manifests and bounded `n3 see` output
 - Deterministic traces and execution steps
 - Memory governance and memory packs
 - Tool capability enforcement and purity gating
@@ -19,7 +20,6 @@ namel3ss is in alpha and focused on predictable change.
 - Line limit checks keep files small
 
 ## May change
-- New UI layout primitives and styling options
 - Formatting details and lint rules
 - Templates and examples as we learn
 

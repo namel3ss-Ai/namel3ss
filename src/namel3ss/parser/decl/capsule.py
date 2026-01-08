@@ -66,11 +66,13 @@ def parse_capsule_decl(parser) -> ast.CapsuleDecl:
                     export_kind = ALLOWED_EXPORT_KINDS[export_tok.type]
                 elif export_tok.type == "IDENT" and export_tok.value == "function":
                     export_kind = "function"
+                elif export_tok.type == "IDENT" and export_tok.value == "ui_pack":
+                    export_kind = "ui_pack"
                 if export_kind is None:
                     raise Namel3ssError(
                         build_guidance_message(
                             what="Unsupported export entry in capsule.",
-                            why="Exports must be record, flow, page, ai, agent, tool, or function names.",
+                            why="Exports must be record, flow, page, ai, agent, tool, function, or ui_pack names.",
                             fix="List exported symbols with their type.",
                             example='exports:\n  record "Product"\n  flow "calc_total"',
                         ),

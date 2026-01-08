@@ -42,6 +42,71 @@ def lint_semantic(program_ir: ir.Program) -> List[Finding]:
                             column=item.column,
                         )
                     )
+                if item.row_actions:
+                    for action in item.row_actions:
+                        if action.kind == "call_flow" and action.flow_name not in flow_names:
+                            findings.append(
+                                Finding(
+                                    code="refs.unknown_flow",
+                                    message=f"Row action references unknown flow '{action.flow_name}'",
+                                line=action.line,
+                                column=action.column,
+                            )
+                        )
+            if isinstance(item, ir.ListItem):
+                if item.record_name not in record_names:
+                    findings.append(
+                        Finding(
+                            code="refs.unknown_record",
+                            message=f"List references unknown record '{item.record_name}'",
+                            line=item.line,
+                            column=item.column,
+                        )
+                    )
+                if item.actions:
+                    for action in item.actions:
+                        if action.kind == "call_flow" and action.flow_name not in flow_names:
+                            findings.append(
+                                Finding(
+                                    code="refs.unknown_flow",
+                                    message=f"List action references unknown flow '{action.flow_name}'",
+                                    line=action.line,
+                                    column=action.column,
+                                )
+                            )
+            if isinstance(item, ir.CardItem):
+                if item.actions:
+                    for action in item.actions:
+                        if action.kind == "call_flow" and action.flow_name not in flow_names:
+                            findings.append(
+                                Finding(
+                                    code="refs.unknown_flow",
+                                    message=f"Card action references unknown flow '{action.flow_name}'",
+                                    line=action.line,
+                                    column=action.column,
+                                )
+                            )
+            if isinstance(item, ir.ChartItem) and item.record_name:
+                if item.record_name not in record_names:
+                    findings.append(
+                        Finding(
+                            code="refs.unknown_record",
+                            message=f"Chart references unknown record '{item.record_name}'",
+                            line=item.line,
+                            column=item.column,
+                        )
+                    )
+            if isinstance(item, ir.ChatItem):
+                for child in item.children:
+                    if isinstance(child, ir.ChatComposerItem) and child.flow_name not in flow_names:
+                        findings.append(
+                            Finding(
+                                code="refs.unknown_flow",
+                                message=f"Composer references unknown flow '{child.flow_name}'",
+                                line=child.line,
+                                column=child.column,
+                            )
+                        )
     findings.extend(_lint_legacy_save(program_ir.flows))
     return findings
 

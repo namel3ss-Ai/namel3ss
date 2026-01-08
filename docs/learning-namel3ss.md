@@ -334,7 +334,7 @@ use module "modules/common.ai" as common
 **Common mistake**: Expecting modules to define flows or AI profiles (they cannot).
 
 #### References
-- [Language core contract](language-core-v1.md)
+- [Language core contract](language-core.md)
 - [UI DSL](ui-dsl.md)
 - [Expressions and conditionals](expressions-and-conditionals.md)
 - [Compute core](compute-core.md)
@@ -564,8 +564,7 @@ Build and promote with `n3 pack` and `n3 ship`.
 ## Part IX - Limits, Stability, and Trust
 
 ### Alpha status and stability
-namel3ss is in alpha. The core surface is stable, but some areas may change:
-- UI layout primitives and styling options may expand.
+namel3ss is in alpha. The core surface is stable and the UI DSL is frozen for v0.1.x. Remaining change areas are:
 - Formatting and lint rules may evolve.
 - Templates and examples may be refined.
 
@@ -586,7 +585,7 @@ Core contracts are frozen. The parser, IR, and trace schemas are locked by tests
 
 #### References
 - [Stability](stability.md)
-- [Spec freeze v1](spec-freeze-v1.md)
+- [Spec freeze](spec-freeze.md)
 - [Trust and governance](trust-and-governance.md)
 - [Capabilities](capabilities.md)
 - [AI language definition](ai-language-definition.md)

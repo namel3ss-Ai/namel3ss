@@ -13,14 +13,20 @@ n3 see
 
 ## What it includes
 - Page list and element summary.
-- Elements per page with labels and bindings (forms, tables).
-- Actions and whether they are available.
+- Elements per page with labels and bindings (forms, tables, lists, charts, chat, overlays, tabs).
+- Actions and whether they are available (flow calls and UI-only open/close/selection).
 - Requires guards when present.
+- Pack origin metadata when elements come from `ui_pack` expansion.
+
+## Bounds
+- Output is deterministic and bounded.
+- Long lists are truncated with an explicit marker (e.g., `... (+N more)`).
 
 ## What it does not include
 - CSS or layout details.
 - Guessed visibility rules.
 - Hidden elements without explicit rules.
+- Runtime-only data (record rows, chart series, chat payloads, or selection state).
 
 ## Artifacts
 After a run, the runtime saves:

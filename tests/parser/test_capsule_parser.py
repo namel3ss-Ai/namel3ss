@@ -11,6 +11,7 @@ def test_capsule_parses_exports():
         "  exports:\n"
         '    record "Product"\n'
         '    flow "calc_total"\n'
+        '    ui_pack "widgets"\n'
     )
     program = parse(source, allow_capsule=True)
     assert program.capsule is not None
@@ -18,6 +19,7 @@ def test_capsule_parses_exports():
     exported = {(exp.kind, exp.name) for exp in program.capsule.exports}
     assert ("record", "Product") in exported
     assert ("flow", "calc_total") in exported
+    assert ("ui_pack", "widgets") in exported
 
 
 def test_capsule_rejected_in_app():

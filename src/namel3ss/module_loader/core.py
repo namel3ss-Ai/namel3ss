@@ -168,6 +168,7 @@ def _merge_programs(
     combined_functions = list(getattr(app_ast, "functions", []))
     combined_flows = list(app_ast.flows)
     combined_pages = list(app_ast.pages)
+    combined_ui_packs = list(getattr(app_ast, "ui_packs", []))
     combined_ais = list(app_ast.ais)
     combined_tools = list(app_ast.tools)
     combined_agents = list(app_ast.agents)
@@ -202,6 +203,7 @@ def _merge_programs(
             combined_tools.extend(program.tools)
             combined_agents.extend(program.agents)
             combined_pages.extend(_exported_pages(program.pages, name, exports_map))
+            combined_ui_packs.extend(_exported_ui_packs(getattr(program, "ui_packs", []), name, exports_map))
 
     return ast.Program(
         spec_version=app_ast.spec_version,
@@ -214,6 +216,7 @@ def _merge_programs(
         functions=combined_functions,
         flows=combined_flows,
         pages=combined_pages,
+        ui_packs=combined_ui_packs,
         ais=combined_ais,
         tools=combined_tools,
         agents=combined_agents,
@@ -235,6 +238,18 @@ def _exported_pages(
         return []
     allowed = {qualify(module_name, name) for name in exported}
     return [page for page in pages if page.name in allowed]
+
+
+def _exported_ui_packs(
+    packs: List[ast.UIPackDecl],
+    module_name: str,
+    exports_map: Dict[str, ModuleExports],
+) -> List[ast.UIPackDecl]:
+    exported = exports_map.get(module_name, ModuleExports()).by_kind.get("ui_pack", set())
+    if not exported:
+        return []
+    allowed = {qualify(module_name, name) for name in exported}
+    return [pack for pack in packs if pack.name in allowed]
 
 
 def _public_flow_names(

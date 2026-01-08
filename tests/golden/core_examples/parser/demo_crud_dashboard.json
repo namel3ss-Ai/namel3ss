@@ -1,12 +1,491 @@
 {
-  "type": "Program",
-  "line": null,
-  "column": null,
-  "spec_version": "1.0",
+  "agents": [],
+  "ais": [],
   "app_theme": "system",
-  "app_theme_line": null,
   "app_theme_column": null,
-  "theme_tokens": {},
+  "app_theme_line": null,
+  "capsule": null,
+  "column": null,
+  "flows": [
+    {
+      "audited": false,
+      "body": [
+        {
+          "column": 5,
+          "expression": {
+            "column": 13,
+            "line": 12,
+            "type": "Literal",
+            "value": "Ada Lovelace"
+          },
+          "line": 12,
+          "target": {
+            "column": 5,
+            "line": 12,
+            "path": [
+              "customer",
+              "name"
+            ],
+            "type": "StatePath"
+          },
+          "type": "Set"
+        },
+        {
+          "column": 5,
+          "expression": {
+            "column": 14,
+            "line": 13,
+            "type": "Literal",
+            "value": "ada@example.com"
+          },
+          "line": 13,
+          "target": {
+            "column": 5,
+            "line": 13,
+            "path": [
+              "customer",
+              "email"
+            ],
+            "type": "StatePath"
+          },
+          "type": "Set"
+        },
+        {
+          "column": 5,
+          "expression": {
+            "column": 13,
+            "line": 14,
+            "type": "Literal",
+            "value": "Pro"
+          },
+          "line": 14,
+          "target": {
+            "column": 5,
+            "line": 14,
+            "path": [
+              "customer",
+              "plan"
+            ],
+            "type": "StatePath"
+          },
+          "type": "Set"
+        },
+        {
+          "column": 5,
+          "expression": {
+            "column": 12,
+            "line": 15,
+            "type": "Literal",
+            "value": "28"
+          },
+          "line": 15,
+          "target": {
+            "column": 5,
+            "line": 15,
+            "path": [
+              "customer",
+              "age"
+            ],
+            "type": "StatePath"
+          },
+          "type": "Set"
+        },
+        {
+          "column": 3,
+          "line": 16,
+          "record_name": "Customer",
+          "target": "customer",
+          "type": "Create",
+          "values": {
+            "column": 26,
+            "line": 16,
+            "path": [
+              "customer"
+            ],
+            "type": "StatePath"
+          }
+        },
+        {
+          "column": 5,
+          "expression": {
+            "column": 13,
+            "line": 18,
+            "type": "Literal",
+            "value": "Ben Lee"
+          },
+          "line": 18,
+          "target": {
+            "column": 5,
+            "line": 18,
+            "path": [
+              "customer",
+              "name"
+            ],
+            "type": "StatePath"
+          },
+          "type": "Set"
+        },
+        {
+          "column": 5,
+          "expression": {
+            "column": 14,
+            "line": 19,
+            "type": "Literal",
+            "value": "ben@example.com"
+          },
+          "line": 19,
+          "target": {
+            "column": 5,
+            "line": 19,
+            "path": [
+              "customer",
+              "email"
+            ],
+            "type": "StatePath"
+          },
+          "type": "Set"
+        },
+        {
+          "column": 5,
+          "expression": {
+            "column": 13,
+            "line": 20,
+            "type": "Literal",
+            "value": "Starter"
+          },
+          "line": 20,
+          "target": {
+            "column": 5,
+            "line": 20,
+            "path": [
+              "customer",
+              "plan"
+            ],
+            "type": "StatePath"
+          },
+          "type": "Set"
+        },
+        {
+          "column": 5,
+          "expression": {
+            "column": 12,
+            "line": 21,
+            "type": "Literal",
+            "value": "24"
+          },
+          "line": 21,
+          "target": {
+            "column": 5,
+            "line": 21,
+            "path": [
+              "customer",
+              "age"
+            ],
+            "type": "StatePath"
+          },
+          "type": "Set"
+        },
+        {
+          "column": 3,
+          "line": 22,
+          "record_name": "Customer",
+          "target": "customer",
+          "type": "Create",
+          "values": {
+            "column": 26,
+            "line": 22,
+            "path": [
+              "customer"
+            ],
+            "type": "StatePath"
+          }
+        },
+        {
+          "column": 3,
+          "expression": {
+            "column": 10,
+            "line": 23,
+            "type": "Literal",
+            "value": "Seeded demo customers"
+          },
+          "line": 23,
+          "type": "Return"
+        }
+      ],
+      "column": 1,
+      "line": 10,
+      "name": "seed_customers",
+      "requires": null,
+      "type": "Flow"
+    },
+    {
+      "audited": false,
+      "body": [
+        {
+          "column": 3,
+          "expression": {
+            "column": 25,
+            "line": 26,
+            "type": "Literal",
+            "value": null
+          },
+          "line": 26,
+          "target": {
+            "column": 7,
+            "line": 26,
+            "path": [
+              "customer"
+            ],
+            "type": "StatePath"
+          },
+          "type": "Set"
+        },
+        {
+          "column": 3,
+          "expression": {
+            "column": 10,
+            "line": 27,
+            "type": "Literal",
+            "value": "State cleared (records remain for review)."
+          },
+          "line": 27,
+          "type": "Return"
+        }
+      ],
+      "column": 1,
+      "line": 25,
+      "name": "reset_dashboard",
+      "requires": null,
+      "type": "Flow"
+    }
+  ],
+  "identity": null,
+  "line": null,
+  "pages": [
+    {
+      "column": 1,
+      "items": [
+        {
+          "column": 3,
+          "line": 30,
+          "type": "TitleItem",
+          "value": "Customer Dashboard"
+        },
+        {
+          "column": 3,
+          "line": 31,
+          "type": "TextItem",
+          "value": "Add customers and view them below."
+        },
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "column": 9,
+                      "flow_name": "seed_customers",
+                      "label": "Seed demo data",
+                      "line": 35,
+                      "type": "ButtonItem"
+                    }
+                  ],
+                  "column": 7,
+                  "line": 34,
+                  "type": "ColumnItem"
+                },
+                {
+                  "children": [
+                    {
+                      "column": 9,
+                      "flow_name": "reset_dashboard",
+                      "label": "Reset state",
+                      "line": 38,
+                      "type": "ButtonItem"
+                    }
+                  ],
+                  "column": 7,
+                  "line": 37,
+                  "type": "ColumnItem"
+                }
+              ],
+              "column": 5,
+              "line": 33,
+              "type": "RowItem"
+            }
+          ],
+          "column": 3,
+          "label": "Quick actions",
+          "line": 32,
+          "type": "SectionItem"
+        },
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "actions": null,
+                  "children": [
+                    {
+                      "column": 9,
+                      "fields": null,
+                      "groups": null,
+                      "line": 43,
+                      "record_name": "Customer",
+                      "type": "FormItem"
+                    }
+                  ],
+                  "column": 7,
+                  "label": "Add customer",
+                  "line": 42,
+                  "stat": null,
+                  "type": "CardItem"
+                }
+              ],
+              "column": 5,
+              "line": 41,
+              "type": "ColumnItem"
+            },
+            {
+              "children": [
+                {
+                  "actions": null,
+                  "children": [
+                    {
+                      "column": 9,
+                      "columns": null,
+                      "empty_text": null,
+                      "line": 46,
+                      "pagination": null,
+                      "record_name": "Customer",
+                      "row_actions": null,
+                      "selection": null,
+                      "sort": null,
+                      "type": "TableItem"
+                    }
+                  ],
+                  "column": 7,
+                  "label": "Customer list",
+                  "line": 45,
+                  "stat": null,
+                  "type": "CardItem"
+                }
+              ],
+              "column": 5,
+              "line": 44,
+              "type": "ColumnItem"
+            }
+          ],
+          "column": 3,
+          "line": 40,
+          "type": "RowItem"
+        }
+      ],
+      "line": 29,
+      "name": "home",
+      "requires": null,
+      "type": "PageDecl"
+    }
+  ],
+  "records": [
+    {
+      "column": 1,
+      "fields": [
+        {
+          "column": 5,
+          "constraint": {
+            "column": 23,
+            "expression": null,
+            "expression_high": null,
+            "kind": "present",
+            "line": 5,
+            "pattern": null,
+            "type": "FieldConstraint"
+          },
+          "line": 5,
+          "name": "name",
+          "raw_type_name": null,
+          "type": "FieldDecl",
+          "type_column": 13,
+          "type_line": 5,
+          "type_name": "text",
+          "type_was_alias": false
+        },
+        {
+          "column": 5,
+          "constraint": {
+            "column": 24,
+            "expression": null,
+            "expression_high": null,
+            "kind": "pattern",
+            "line": 6,
+            "pattern": ".+@.+",
+            "type": "FieldConstraint"
+          },
+          "line": 6,
+          "name": "email",
+          "raw_type_name": null,
+          "type": "FieldDecl",
+          "type_column": 14,
+          "type_line": 6,
+          "type_name": "text",
+          "type_was_alias": false
+        },
+        {
+          "column": 5,
+          "constraint": {
+            "column": 23,
+            "expression": null,
+            "expression_high": null,
+            "kind": "present",
+            "line": 7,
+            "pattern": null,
+            "type": "FieldConstraint"
+          },
+          "line": 7,
+          "name": "plan",
+          "raw_type_name": null,
+          "type": "FieldDecl",
+          "type_column": 13,
+          "type_line": 7,
+          "type_name": "text",
+          "type_was_alias": false
+        },
+        {
+          "column": 5,
+          "constraint": {
+            "column": 24,
+            "expression": {
+              "column": 40,
+              "line": 8,
+              "type": "Literal",
+              "value": "17"
+            },
+            "expression_high": null,
+            "kind": "gt",
+            "line": 8,
+            "pattern": null,
+            "type": "FieldConstraint"
+          },
+          "line": 8,
+          "name": "age",
+          "raw_type_name": null,
+          "type": "FieldDecl",
+          "type_column": 12,
+          "type_line": 8,
+          "type_name": "number",
+          "type_was_alias": false
+        }
+      ],
+      "line": 3,
+      "name": "Customer",
+      "tenant_key": null,
+      "ttl_hours": null,
+      "type": "RecordDecl"
+    }
+  ],
+  "spec_version": "1.0",
   "theme_preference": {
     "allow_override": [
       false,
@@ -19,475 +498,9 @@
       null
     ]
   },
-  "records": [
-    {
-      "type": "RecordDecl",
-      "line": 3,
-      "column": 1,
-      "name": "Customer",
-      "fields": [
-        {
-          "type": "FieldDecl",
-          "line": 5,
-          "column": 5,
-          "name": "name",
-          "type_name": "text",
-          "constraint": {
-            "type": "FieldConstraint",
-            "line": 5,
-            "column": 23,
-            "kind": "present",
-            "expression": null,
-            "expression_high": null,
-            "pattern": null
-          },
-          "type_was_alias": false,
-          "raw_type_name": null,
-          "type_line": 5,
-          "type_column": 13
-        },
-        {
-          "type": "FieldDecl",
-          "line": 6,
-          "column": 5,
-          "name": "email",
-          "type_name": "text",
-          "constraint": {
-            "type": "FieldConstraint",
-            "line": 6,
-            "column": 24,
-            "kind": "pattern",
-            "expression": null,
-            "expression_high": null,
-            "pattern": ".+@.+"
-          },
-          "type_was_alias": false,
-          "raw_type_name": null,
-          "type_line": 6,
-          "type_column": 14
-        },
-        {
-          "type": "FieldDecl",
-          "line": 7,
-          "column": 5,
-          "name": "plan",
-          "type_name": "text",
-          "constraint": {
-            "type": "FieldConstraint",
-            "line": 7,
-            "column": 23,
-            "kind": "present",
-            "expression": null,
-            "expression_high": null,
-            "pattern": null
-          },
-          "type_was_alias": false,
-          "raw_type_name": null,
-          "type_line": 7,
-          "type_column": 13
-        },
-        {
-          "type": "FieldDecl",
-          "line": 8,
-          "column": 5,
-          "name": "age",
-          "type_name": "number",
-          "constraint": {
-            "type": "FieldConstraint",
-            "line": 8,
-            "column": 24,
-            "kind": "gt",
-            "expression": {
-              "type": "Literal",
-              "line": 8,
-              "column": 40,
-              "value": "17"
-            },
-            "expression_high": null,
-            "pattern": null
-          },
-          "type_was_alias": false,
-          "raw_type_name": null,
-          "type_line": 8,
-          "type_column": 12
-        }
-      ],
-      "tenant_key": null,
-      "ttl_hours": null
-    }
-  ],
-  "flows": [
-    {
-      "type": "Flow",
-      "line": 10,
-      "column": 1,
-      "name": "seed_customers",
-      "body": [
-        {
-          "type": "Set",
-          "line": 12,
-          "column": 5,
-          "target": {
-            "type": "StatePath",
-            "line": 12,
-            "column": 5,
-            "path": [
-              "customer",
-              "name"
-            ]
-          },
-          "expression": {
-            "type": "Literal",
-            "line": 12,
-            "column": 13,
-            "value": "Ada Lovelace"
-          }
-        },
-        {
-          "type": "Set",
-          "line": 13,
-          "column": 5,
-          "target": {
-            "type": "StatePath",
-            "line": 13,
-            "column": 5,
-            "path": [
-              "customer",
-              "email"
-            ]
-          },
-          "expression": {
-            "type": "Literal",
-            "line": 13,
-            "column": 14,
-            "value": "ada@example.com"
-          }
-        },
-        {
-          "type": "Set",
-          "line": 14,
-          "column": 5,
-          "target": {
-            "type": "StatePath",
-            "line": 14,
-            "column": 5,
-            "path": [
-              "customer",
-              "plan"
-            ]
-          },
-          "expression": {
-            "type": "Literal",
-            "line": 14,
-            "column": 13,
-            "value": "Pro"
-          }
-        },
-        {
-          "type": "Set",
-          "line": 15,
-          "column": 5,
-          "target": {
-            "type": "StatePath",
-            "line": 15,
-            "column": 5,
-            "path": [
-              "customer",
-              "age"
-            ]
-          },
-          "expression": {
-            "type": "Literal",
-            "line": 15,
-            "column": 12,
-            "value": "28"
-          }
-        },
-        {
-          "type": "Create",
-          "line": 16,
-          "column": 3,
-          "record_name": "Customer",
-          "values": {
-            "type": "StatePath",
-            "line": 16,
-            "column": 26,
-            "path": [
-              "customer"
-            ]
-          },
-          "target": "customer"
-        },
-        {
-          "type": "Set",
-          "line": 18,
-          "column": 5,
-          "target": {
-            "type": "StatePath",
-            "line": 18,
-            "column": 5,
-            "path": [
-              "customer",
-              "name"
-            ]
-          },
-          "expression": {
-            "type": "Literal",
-            "line": 18,
-            "column": 13,
-            "value": "Ben Lee"
-          }
-        },
-        {
-          "type": "Set",
-          "line": 19,
-          "column": 5,
-          "target": {
-            "type": "StatePath",
-            "line": 19,
-            "column": 5,
-            "path": [
-              "customer",
-              "email"
-            ]
-          },
-          "expression": {
-            "type": "Literal",
-            "line": 19,
-            "column": 14,
-            "value": "ben@example.com"
-          }
-        },
-        {
-          "type": "Set",
-          "line": 20,
-          "column": 5,
-          "target": {
-            "type": "StatePath",
-            "line": 20,
-            "column": 5,
-            "path": [
-              "customer",
-              "plan"
-            ]
-          },
-          "expression": {
-            "type": "Literal",
-            "line": 20,
-            "column": 13,
-            "value": "Starter"
-          }
-        },
-        {
-          "type": "Set",
-          "line": 21,
-          "column": 5,
-          "target": {
-            "type": "StatePath",
-            "line": 21,
-            "column": 5,
-            "path": [
-              "customer",
-              "age"
-            ]
-          },
-          "expression": {
-            "type": "Literal",
-            "line": 21,
-            "column": 12,
-            "value": "24"
-          }
-        },
-        {
-          "type": "Create",
-          "line": 22,
-          "column": 3,
-          "record_name": "Customer",
-          "values": {
-            "type": "StatePath",
-            "line": 22,
-            "column": 26,
-            "path": [
-              "customer"
-            ]
-          },
-          "target": "customer"
-        },
-        {
-          "type": "Return",
-          "line": 23,
-          "column": 3,
-          "expression": {
-            "type": "Literal",
-            "line": 23,
-            "column": 10,
-            "value": "Seeded demo customers"
-          }
-        }
-      ],
-      "requires": null,
-      "audited": false
-    },
-    {
-      "type": "Flow",
-      "line": 25,
-      "column": 1,
-      "name": "reset_dashboard",
-      "body": [
-        {
-          "type": "Set",
-          "line": 26,
-          "column": 3,
-          "target": {
-            "type": "StatePath",
-            "line": 26,
-            "column": 7,
-            "path": [
-              "customer"
-            ]
-          },
-          "expression": {
-            "type": "Literal",
-            "line": 26,
-            "column": 25,
-            "value": null
-          }
-        },
-        {
-          "type": "Return",
-          "line": 27,
-          "column": 3,
-          "expression": {
-            "type": "Literal",
-            "line": 27,
-            "column": 10,
-            "value": "State cleared (records remain for review)."
-          }
-        }
-      ],
-      "requires": null,
-      "audited": false
-    }
-  ],
-  "pages": [
-    {
-      "type": "PageDecl",
-      "line": 29,
-      "column": 1,
-      "name": "home",
-      "items": [
-        {
-          "type": "TitleItem",
-          "line": 30,
-          "column": 3,
-          "value": "Customer Dashboard"
-        },
-        {
-          "type": "TextItem",
-          "line": 31,
-          "column": 3,
-          "value": "Add customers and view them below."
-        },
-        {
-          "type": "SectionItem",
-          "line": 32,
-          "column": 3,
-          "label": "Quick actions",
-          "children": [
-            {
-              "type": "RowItem",
-              "line": 33,
-              "column": 5,
-              "children": [
-                {
-                  "type": "ColumnItem",
-                  "line": 34,
-                  "column": 7,
-                  "children": [
-                    {
-                      "type": "ButtonItem",
-                      "line": 35,
-                      "column": 9,
-                      "label": "Seed demo data",
-                      "flow_name": "seed_customers"
-                    }
-                  ]
-                },
-                {
-                  "type": "ColumnItem",
-                  "line": 37,
-                  "column": 7,
-                  "children": [
-                    {
-                      "type": "ButtonItem",
-                      "line": 38,
-                      "column": 9,
-                      "label": "Reset state",
-                      "flow_name": "reset_dashboard"
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "RowItem",
-          "line": 40,
-          "column": 3,
-          "children": [
-            {
-              "type": "ColumnItem",
-              "line": 41,
-              "column": 5,
-              "children": [
-                {
-                  "type": "CardItem",
-                  "line": 42,
-                  "column": 7,
-                  "label": "Add customer",
-                  "children": [
-                    {
-                      "type": "FormItem",
-                      "line": 43,
-                      "column": 9,
-                      "record_name": "Customer"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "ColumnItem",
-              "line": 44,
-              "column": 5,
-              "children": [
-                {
-                  "type": "CardItem",
-                  "line": 45,
-                  "column": 7,
-                  "label": "Customer list",
-                  "children": [
-                    {
-                      "type": "TableItem",
-                      "line": 46,
-                      "column": 9,
-                      "record_name": "Customer"
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }
-      ],
-      "requires": null
-    }
-  ],
-  "ais": [],
+  "theme_tokens": {},
   "tools": [],
-  "agents": [],
-  "uses": [],
-  "capsule": null,
-  "identity": null
+  "type": "Program",
+  "ui_packs": [],
+  "uses": []
 }

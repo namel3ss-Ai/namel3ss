@@ -37,7 +37,7 @@ def build_schema_export(program, manifest: dict) -> dict:
 
 def _record_name_for_element(element: dict) -> str | None:
     element_type = element.get("type")
-    if element_type in {"form", "table"}:
+    if element_type in {"form", "table", "list", "chart"}:
         record = element.get("record")
         return record if isinstance(record, str) else None
     return None

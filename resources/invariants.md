@@ -1,5 +1,10 @@
 # Invariants v1
 
+## Contract status (public)
+- Status: frozen
+- Applies to: invariants catalog
+- Freeze semantics: public contract; changes must be additive and explicitly documented
+
 This catalog lists the invariants frozen for v1. Each entry includes the
 primary enforcement location and pass/fail fixtures.
 

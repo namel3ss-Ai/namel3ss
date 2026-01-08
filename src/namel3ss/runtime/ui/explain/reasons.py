@@ -16,6 +16,19 @@ def declared_in_page(page_name: str) -> str:
     return f'declared in page "{page_name}"'
 
 
+def declared_in_pack(origin: dict) -> str | None:
+    if not isinstance(origin, dict):
+        return None
+    pack = origin.get("pack")
+    fragment = origin.get("fragment")
+    version = origin.get("version")
+    if not pack or not fragment:
+        return None
+    if version:
+        return f'from ui_pack "{pack}" ({version}) fragment "{fragment}"'
+    return f'from ui_pack "{pack}" fragment "{fragment}"'
+
+
 def format_requires(expr: ir.Expression | None) -> str | None:
     if expr is None:
         return None
@@ -63,6 +76,7 @@ __all__ = [
     "ACTION_UNKNOWN",
     "action_reason_line",
     "action_status",
+    "declared_in_pack",
     "declared_in_page",
     "evaluate_requires",
     "format_requires",

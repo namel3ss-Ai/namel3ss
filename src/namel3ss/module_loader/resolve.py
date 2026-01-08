@@ -17,12 +17,14 @@ def collect_definitions(programs: Iterable[ast.Program]) -> Dict[str, set[str]]:
         "agent": set(),
         "tool": set(),
         "function": set(),
+        "ui_pack": set(),
     }
     for program in programs:
         defs["record"].update({rec.name for rec in program.records})
         defs["function"].update({func.name for func in getattr(program, "functions", [])})
         defs["flow"].update({flow.name for flow in program.flows})
         defs["page"].update({page.name for page in program.pages})
+        defs["ui_pack"].update({pack.name for pack in getattr(program, "ui_packs", [])})
         defs["ai"].update({ai.name for ai in program.ais})
         defs["agent"].update({agent.name for agent in program.agents})
         defs["tool"].update({tool.name for tool in program.tools})
@@ -71,6 +73,18 @@ def resolve_program(
                 exports_map=exports_map,
                 context_label=context_label,
             )
+    for pack in getattr(program, "ui_packs", []):
+        pack.name = qualify(module_name, pack.name)
+        for fragment in pack.fragments:
+            for item in fragment.items:
+                resolve_page_item(
+                    item,
+                    module_name=module_name,
+                    alias_map=alias_map,
+                    local_defs=local_defs,
+                    exports_map=exports_map,
+                    context_label=context_label,
+                )
     for ai in program.ais:
         ai.name = qualify(module_name, ai.name)
         ai.exposed_tools = [

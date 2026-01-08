@@ -1,4 +1,9 @@
-# Spec Freeze v1
+# Spec Freeze
+
+## Contract status (public)
+- Status: frozen
+- Applies to: Expression Surface, UI Surface
+- Freeze semantics: public contract; changes must be additive and explicitly documented
 
 Namel3ss v1 contracts are frozen. These are the rules the engine, CLI, and tooling
 must obey without breaking changes. When a breaking change is required, bump only
@@ -13,6 +18,7 @@ Canonical version map:
 - Tool protocol (local/service/container)
 - Pack manifest + trust model
 - Tool resolution precedence + collision rules
+- UI DSL surface (docs/ui-dsl.md)
 - UI manifest schema
 - Identity schema + persistence config semantics
 - Trace schema keys
@@ -33,5 +39,5 @@ must increment the specific key only, with a changelog note.
 
 ## Enforcement
 - Executable spec suite under `spec/` (pass + fail)
-- Invariant catalog under `resources/invariants_v1.*`
+- Invariant catalog under `resources/invariants.*`
 - CI checks for legacy syntax, trace schema keys, and stable errors

@@ -29,6 +29,23 @@ def _export_element(element: dict) -> dict:
     exported = dict(element)
     if exported.get("type") == "table":
         exported.pop("rows", None)
+    if exported.get("type") == "list":
+        exported.pop("rows", None)
+    if exported.get("type") == "chart":
+        exported.pop("series", None)
+        exported.pop("summary", None)
+    if exported.get("type") == "messages":
+        exported.pop("messages", None)
+    if exported.get("type") == "citations":
+        exported.pop("citations", None)
+    if exported.get("type") == "memory":
+        exported.pop("items", None)
+    if exported.get("type") == "thinking":
+        exported.pop("active", None)
+    if exported.get("type") == "tabs":
+        exported.pop("active", None)
+    if exported.get("type") in {"modal", "drawer"}:
+        exported.pop("open", None)
     children = exported.get("children")
     if isinstance(children, list):
         exported["children"] = [_export_element(child) for child in children]

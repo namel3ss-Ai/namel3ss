@@ -15,6 +15,7 @@ KIND_LABELS = {
     "agent": "agent",
     "tool": "tool",
     "function": "function",
+    "ui_pack": "ui pack",
 }
 
 

@@ -56,6 +56,9 @@ namel3ss is built around a few non-negotiable ideas:
 - **One file, one mental model**  
   UI, data, logic, tools, and AI live together, so intent stays clear.
 
+- **Frozen UI surface**  
+  The UI DSL is frozen for v0.1.x; changes are additive and documented.
+
 These are not features.  
 They are guarantees.
 
@@ -237,7 +240,7 @@ Expect breaking changes between alpha revisions.
 ### Stability & limitations
 - [Stability](docs/stability.md)
 - [Expression surface v1](docs/expression-surface.md)
-- [Spec freeze v1](docs/spec-freeze-v1.md)
+- [Spec freeze](docs/spec-freeze.md)
 - [Canonical version map](resources/spec_versions.json)
 - [Beta checklist](docs/beta-checklist.md)
 - [Known limitations](resources/limitations.md)

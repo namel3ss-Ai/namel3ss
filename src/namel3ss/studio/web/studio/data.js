@@ -43,6 +43,8 @@
 
     const columns = Array.isArray(table.columns) ? table.columns : [];
     const rows = Array.isArray(table.rows) ? table.rows : [];
+    const pageSize = table.pagination && Number.isInteger(table.pagination.page_size) ? table.pagination.page_size : null;
+    const displayRows = pageSize ? rows.slice(0, pageSize) : rows;
     if (!columns.length) {
       wrap.appendChild(dom.buildEmpty("No columns available."));
       section.appendChild(wrap);
@@ -52,21 +54,21 @@
     const header = document.createElement("tr");
     columns.forEach((column) => {
       const th = document.createElement("th");
-      th.textContent = column.name;
+      th.textContent = column.label || column.name;
       header.appendChild(th);
     });
     htmlTable.appendChild(header);
 
-    if (!rows.length) {
+    if (!displayRows.length) {
       const empty = document.createElement("div");
       empty.className = "data-empty";
-      empty.textContent = "No rows yet.";
+      empty.textContent = table.empty_text || "No rows yet.";
       wrap.appendChild(empty);
       section.appendChild(wrap);
       return section;
     }
 
-    rows.forEach((row) => {
+    displayRows.forEach((row) => {
       const tr = document.createElement("tr");
       columns.forEach((column) => {
         const td = document.createElement("td");

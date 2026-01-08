@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import asdict
-from typing import Dict, List
+from typing import Dict
 
-from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
-from namel3ss.runtime.storage.base import Storage
-from namel3ss.runtime.records.service import build_record_scope
 from namel3ss.runtime.identity.guards import build_guard_context, enforce_requires
+from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.storage.metadata import PersistenceMetadata
-from namel3ss.runtime.theme.resolution import resolve_effective_theme, ThemeSource
+from namel3ss.runtime.theme.resolution import ThemeSource, resolve_effective_theme
 from namel3ss.schema import records as schema
-from namel3ss.ui.fields import field_to_ui
+from namel3ss.ui.manifest_page import _build_children, _slugify, _wire_overlay_actions
 
 
 def build_manifest(
@@ -54,8 +52,16 @@ def build_manifest(
             [],
             store,
             identity,
+            state,
         )
+        _wire_overlay_actions(elements, action_entries)
         for action_id, action_entry in action_entries.items():
+            if action_id in actions:
+                raise Namel3ssError(
+                    f"UI action id '{action_id}' is duplicated on page '{page.name}'.",
+                    line=page.line,
+                    column=page.column,
+                )
             actions[action_id] = action_entry
         pages.append(
             {
@@ -65,6 +71,8 @@ def build_manifest(
             }
         )
     persistence = _resolve_persistence(store)
+    if actions:
+        actions = {action_id: actions[action_id] for action_id in sorted(actions)}
     return {
         "pages": pages,
         "actions": actions,
@@ -105,257 +113,4 @@ def _resolve_persistence(store: Storage | None) -> dict:
     return asdict(default_meta)
 
 
-def _build_children(
-    children: List[ir.PageItem],
-    record_map: Dict[str, schema.RecordSchema],
-    page_name: str,
-    page_slug: str,
-    path: List[int],
-    store: Storage | None,
-    identity: dict | None,
-) -> tuple[List[dict], Dict[str, dict]]:
-    elements: List[dict] = []
-    actions: Dict[str, dict] = {}
-    for idx, child in enumerate(children):
-        element, child_actions = _page_item_to_manifest(
-            child,
-            record_map,
-            page_name,
-            page_slug,
-            path + [idx],
-            store,
-            identity,
-        )
-        elements.append(element)
-        actions.update(child_actions)
-    return elements, actions
-
-
-def _page_item_to_manifest(
-    item: ir.PageItem,
-    record_map: Dict[str, schema.RecordSchema],
-    page_name: str,
-    page_slug: str,
-    path: List[int],
-    store: Storage | None,
-    identity: dict | None,
-) -> tuple[dict, Dict[str, dict]]:
-    index = path[-1] if path else 0
-    if isinstance(item, ir.TitleItem):
-        element_id = _element_id(page_slug, "title", path)
-        return (
-            {
-                "type": "title",
-                "value": item.value,
-                "element_id": element_id,
-                "page": page_name,
-                "page_slug": page_slug,
-                "index": index,
-                "line": item.line,
-                "column": item.column,
-            },
-            {},
-        )
-    if isinstance(item, ir.TextItem):
-        element_id = _element_id(page_slug, "text", path)
-        return (
-            {
-                "type": "text",
-                "value": item.value,
-                "element_id": element_id,
-                "page": page_name,
-                "page_slug": page_slug,
-                "index": index,
-                "line": item.line,
-                "column": item.column,
-            },
-            {},
-        )
-    if isinstance(item, ir.FormItem):
-        record = _require_record(item.record_name, record_map, item)
-        action_id = _form_action_id(page_name, item.record_name)
-        return (
-            {
-                "type": "form",
-                "element_id": _element_id(page_slug, "form_item", path),
-                "id": action_id,
-                "action_id": action_id,
-                "record": record.name,
-                "fields": [field_to_ui(f) for f in record.fields],
-                "page": page_name,
-                "page_slug": page_slug,
-                "index": index,
-                "line": item.line,
-                "column": item.column,
-            },
-            {action_id: {"id": action_id, "type": "submit_form", "record": record.name}},
-        )
-    if isinstance(item, ir.TableItem):
-        record = _require_record(item.record_name, record_map, item)
-        table_id = _table_id(page_name, item.record_name)
-        rows = []
-        if store is not None:
-            scope = build_record_scope(record, identity)
-            rows = store.list_records(record, scope=scope)[:20]
-        return (
-            {
-                "type": "table",
-                "id": table_id,
-                "record": record.name,
-                "columns": [{"name": f.name, "type": f.type_name} for f in record.fields],
-                "rows": rows,
-                "element_id": _element_id(page_slug, "table", path),
-                "page": page_name,
-                "page_slug": page_slug,
-                "index": index,
-                "line": item.line,
-                "column": item.column,
-            },
-            {},
-        )
-    if isinstance(item, ir.ButtonItem):
-        action_id = _button_action_id(page_name, item.label)
-        action_entry = {"id": action_id, "type": "call_flow", "flow": item.flow_name}
-        element_id = _element_id(page_slug, "button_item", path)
-        element = {
-            "type": "button",
-            "label": item.label,
-            "id": action_id,
-            "action_id": action_id,
-            "action": {"type": "call_flow", "flow": item.flow_name},
-            "element_id": element_id,
-            "page": page_name,
-            "page_slug": page_slug,
-            "index": index,
-            "line": item.line,
-            "column": item.column,
-        }
-        return element, {action_id: action_entry}
-    if isinstance(item, ir.SectionItem):
-        children, actions = _build_children(
-            item.children, record_map, page_name, page_slug, path, store, identity
-        )
-        element = {
-            "type": "section",
-            "label": item.label or "",
-            "children": children,
-            "element_id": _element_id(page_slug, "section", path),
-            "page": page_name,
-            "page_slug": page_slug,
-            "index": index,
-            "line": item.line,
-            "column": item.column,
-        }
-        return element, actions
-    if isinstance(item, ir.CardItem):
-        children, actions = _build_children(
-            item.children, record_map, page_name, page_slug, path, store, identity
-        )
-        element = {
-            "type": "card",
-            "label": item.label or "",
-            "children": children,
-            "element_id": _element_id(page_slug, "card", path),
-            "page": page_name,
-            "page_slug": page_slug,
-            "index": index,
-            "line": item.line,
-            "column": item.column,
-        }
-        return element, actions
-    if isinstance(item, ir.RowItem):
-        children, actions = _build_children(
-            item.children, record_map, page_name, page_slug, path, store, identity
-        )
-        element = {
-            "type": "row",
-            "children": children,
-            "element_id": _element_id(page_slug, "row", path),
-            "page": page_name,
-            "page_slug": page_slug,
-            "index": index,
-            "line": item.line,
-            "column": item.column,
-        }
-        return element, actions
-    if isinstance(item, ir.ColumnItem):
-        children, actions = _build_children(
-            item.children, record_map, page_name, page_slug, path, store, identity
-        )
-        element = {
-            "type": "column",
-            "children": children,
-            "element_id": _element_id(page_slug, "column", path),
-            "page": page_name,
-            "page_slug": page_slug,
-            "index": index,
-            "line": item.line,
-            "column": item.column,
-        }
-        return element, actions
-    if isinstance(item, ir.DividerItem):
-        element = {
-            "type": "divider",
-            "element_id": _element_id(page_slug, "divider", path),
-            "page": page_name,
-            "page_slug": page_slug,
-            "index": index,
-            "line": item.line,
-            "column": item.column,
-        }
-        return element, {}
-    if isinstance(item, ir.ImageItem):
-        element = {
-            "type": "image",
-            "src": item.src,
-            "alt": item.alt,
-            "element_id": _element_id(page_slug, "image", path),
-            "page": page_name,
-            "page_slug": page_slug,
-            "index": index,
-            "line": item.line,
-            "column": item.column,
-        }
-        return element, {}
-    raise Namel3ssError(
-        f"Unsupported page item '{type(item)}'",
-        line=getattr(item, "line", None),
-        column=getattr(item, "column", None),
-    )
-
-
-def _require_record(name: str, record_map: Dict[str, schema.RecordSchema], item: ir.PageItem) -> schema.RecordSchema:
-    if name not in record_map:
-        raise Namel3ssError(
-            f"Page references unknown record '{name}'. Add the record or update the reference.",
-            line=item.line,
-            column=item.column,
-        )
-    return record_map[name]
-
-
-def _button_action_id(page_name: str, label: str) -> str:
-    return f"page.{_slugify(page_name)}.button.{_slugify(label)}"
-
-
-def _form_action_id(page_name: str, record_name: str) -> str:
-    return f"page.{_slugify(page_name)}.form.{_slugify(record_name)}"
-
-
-def _table_id(page_name: str, record_name: str) -> str:
-    return f"page.{_slugify(page_name)}.table.{_slugify(record_name)}"
-
-
-def _element_id(page_slug: str, kind: str, path: List[int]) -> str:
-    suffix = ".".join(str(p) for p in path) if path else "0"
-    return f"page.{page_slug}.{kind}.{suffix}"
-
-
-def _slugify(text: str) -> str:
-    import re
-
-    lowered = text.lower()
-    normalized = re.sub(r"[\s_-]+", "_", lowered)
-    cleaned = re.sub(r"[^a-z0-9_]", "", normalized)
-    collapsed = re.sub(r"_+", "_", cleaned).strip("_")
-    return collapsed
+__all__ = ["build_manifest"]

@@ -1,5 +1,10 @@
 # Trace Schema v1
 
+## Contract status (public)
+- Status: frozen
+- Applies to: trace schema surface
+- Freeze semantics: public contract; changes must be additive and explicitly documented
+
 Trace schema v1 freezes required keys for tool call traces.
 The canonical version map lives at resources/spec_versions.json under trace_schema.
 

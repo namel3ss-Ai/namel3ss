@@ -71,9 +71,12 @@
                 {
                   "children": [
                     {
+                      "actions": null,
                       "children": [
                         {
                           "column": 11,
+                          "fields": null,
+                          "groups": null,
                           "line": 18,
                           "record_name": "Note",
                           "type": "FormItem"
@@ -82,6 +85,7 @@
                       "column": 9,
                       "label": "Entry",
                       "line": 17,
+                      "stat": null,
                       "type": "CardItem"
                     }
                   ],
@@ -92,17 +96,25 @@
                 {
                   "children": [
                     {
+                      "actions": null,
                       "children": [
                         {
                           "column": 11,
+                          "columns": null,
+                          "empty_text": null,
                           "line": 21,
+                          "pagination": null,
                           "record_name": "Note",
+                          "row_actions": null,
+                          "selection": null,
+                          "sort": null,
                           "type": "TableItem"
                         }
                       ],
                       "column": 9,
                       "label": "List",
                       "line": 20,
+                      "stat": null,
                       "type": "CardItem"
                     }
                   ],
@@ -122,6 +134,7 @@
           "type": "SectionItem"
         },
         {
+          "actions": null,
           "children": [
             {
               "column": 5,
@@ -134,6 +147,7 @@
           "column": 3,
           "label": "Actions",
           "line": 22,
+          "stat": null,
           "type": "CardItem"
         }
       ],

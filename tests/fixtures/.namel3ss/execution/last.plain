@@ -1,7 +1,15 @@
-summary: Flow "surface" ran with 28 steps.
-flow.name: surface
-ok: True
-steps.total: 28
+summary: Flow "demo" failed with Namel3ssError.
+flow.name: demo
+ok: False
+steps.total: 4
 steps.skipped: 0
-steps.errors: 0
-traces.count: 21
+steps.errors: 1
+traces.count: 2
+error.kind: Namel3ssError
+error.message: [line 13, col 17] What happened: Tool "missing" entry module was not found (missing_tool).
+Why: Expected a module at /Users/disanssebowabasalidde/Documents/GitHub/namel3ss/tests/fixtures/tools/missing_tool.py or /Users/disanssebowabasalidde/Documents/GitHub/namel3ss/tests/fixtures/tools/missing_tool/__init__.py.
+Fix: Create the module file or update the binding entry.
+Example: tools:
+  "missing":
+    kind: "python"
+    entry: "tools.missing_tool:run"

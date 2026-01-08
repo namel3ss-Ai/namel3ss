@@ -17,6 +17,7 @@ def parse_program(parser) -> ast.Program:
     records: List[ast.RecordDecl] = []
     flows: List[ast.Flow] = []
     pages: List[ast.PageDecl] = []
+    ui_packs: List[ast.UIPackDecl] = []
     functions: List[ast.FunctionDecl] = []
     ais: List[ast.AIDecl] = []
     tools: List[ast.ToolDecl] = []
@@ -156,6 +157,9 @@ def parse_program(parser) -> ast.Program:
         if rule.name == "page":
             pages.append(rule.parse(parser))
             continue
+        if rule.name == "ui_pack":
+            ui_packs.append(rule.parse(parser))
+            continue
         raise Namel3ssError("Unexpected top-level token", line=tok.line, column=tok.column)
     if parser.require_spec and not parser.allow_capsule:
         if not spec_version:
@@ -187,6 +191,7 @@ def parse_program(parser) -> ast.Program:
         functions=functions,
         flows=flows,
         pages=pages,
+        ui_packs=ui_packs,
         ais=ais,
         tools=tools,
         agents=agents,

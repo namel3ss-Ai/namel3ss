@@ -16,25 +16,29 @@ def resolve_statements(
     exports_map: Dict[str, ModuleExports],
     context_label: str,
 ) -> None:
+    def _resolve_expr(expr: ast.Expression) -> None:
+        resolve_expression(
+            expr,
+            module_name=module_name,
+            alias_map=alias_map,
+            local_defs=local_defs,
+            exports_map=exports_map,
+            context_label=context_label,
+        )
+
+    def _resolve_stmts(body: List[ast.Statement]) -> None:
+        resolve_statements(
+            body,
+            module_name=module_name,
+            alias_map=alias_map,
+            local_defs=local_defs,
+            exports_map=exports_map,
+            context_label=context_label,
+        )
+
     for stmt in stmts:
-        if isinstance(stmt, ast.Let):
-            resolve_expression(
-                stmt.expression,
-                module_name=module_name,
-                alias_map=alias_map,
-                local_defs=local_defs,
-                exports_map=exports_map,
-                context_label=context_label,
-            )
-        elif isinstance(stmt, ast.Set):
-            resolve_expression(
-                stmt.expression,
-                module_name=module_name,
-                alias_map=alias_map,
-                local_defs=local_defs,
-                exports_map=exports_map,
-                context_label=context_label,
-            )
+        if isinstance(stmt, (ast.Let, ast.Set)):
+            _resolve_expr(stmt.expression)
         if isinstance(stmt, ast.AskAIStmt):
             stmt.ai_name = resolve_name(
                 stmt.ai_name,
@@ -96,14 +100,7 @@ def resolve_statements(
                 line=stmt.line,
                 column=stmt.column,
             )
-            resolve_expression(
-                stmt.values,
-                module_name=module_name,
-                alias_map=alias_map,
-                local_defs=local_defs,
-                exports_map=exports_map,
-                context_label=context_label,
-            )
+            _resolve_expr(stmt.values)
         elif isinstance(stmt, ast.Find):
             stmt.record_name = resolve_name(
                 stmt.record_name,
@@ -116,162 +113,35 @@ def resolve_statements(
                 line=stmt.line,
                 column=stmt.column,
             )
-            resolve_expression(
-                stmt.predicate,
-                module_name=module_name,
-                alias_map=alias_map,
-                local_defs=local_defs,
-                exports_map=exports_map,
-                context_label=context_label,
-            )
-
+            _resolve_expr(stmt.predicate)
         if isinstance(stmt, ast.If):
-            resolve_expression(
-                stmt.condition,
-                module_name=module_name,
-                alias_map=alias_map,
-                local_defs=local_defs,
-                exports_map=exports_map,
-                context_label=context_label,
-            )
-            resolve_statements(
-                stmt.then_body,
-                module_name=module_name,
-                alias_map=alias_map,
-                local_defs=local_defs,
-                exports_map=exports_map,
-                context_label=context_label,
-            )
-            resolve_statements(
-                stmt.else_body,
-                module_name=module_name,
-                alias_map=alias_map,
-                local_defs=local_defs,
-                exports_map=exports_map,
-                context_label=context_label,
-            )
+            _resolve_expr(stmt.condition)
+            _resolve_stmts(stmt.then_body)
+            _resolve_stmts(stmt.else_body)
         elif isinstance(stmt, ast.Repeat):
-            resolve_expression(
-                stmt.count,
-                module_name=module_name,
-                alias_map=alias_map,
-                local_defs=local_defs,
-                exports_map=exports_map,
-                context_label=context_label,
-            )
-            resolve_statements(
-                stmt.body,
-                module_name=module_name,
-                alias_map=alias_map,
-                local_defs=local_defs,
-                exports_map=exports_map,
-                context_label=context_label,
-            )
+            _resolve_expr(stmt.count)
+            _resolve_stmts(stmt.body)
         elif isinstance(stmt, ast.RepeatWhile):
-            resolve_expression(
-                stmt.condition,
-                module_name=module_name,
-                alias_map=alias_map,
-                local_defs=local_defs,
-                exports_map=exports_map,
-                context_label=context_label,
-            )
-            resolve_statements(
-                stmt.body,
-                module_name=module_name,
-                alias_map=alias_map,
-                local_defs=local_defs,
-                exports_map=exports_map,
-                context_label=context_label,
-            )
+            _resolve_expr(stmt.condition)
+            _resolve_stmts(stmt.body)
         elif isinstance(stmt, ast.ForEach):
-            resolve_expression(
-                stmt.iterable,
-                module_name=module_name,
-                alias_map=alias_map,
-                local_defs=local_defs,
-                exports_map=exports_map,
-                context_label=context_label,
-            )
-            resolve_statements(
-                stmt.body,
-                module_name=module_name,
-                alias_map=alias_map,
-                local_defs=local_defs,
-                exports_map=exports_map,
-                context_label=context_label,
-            )
+            _resolve_expr(stmt.iterable)
+            _resolve_stmts(stmt.body)
         elif isinstance(stmt, ast.ParallelBlock):
             for task in stmt.tasks:
-                resolve_statements(
-                    task.body,
-                    module_name=module_name,
-                    alias_map=alias_map,
-                    local_defs=local_defs,
-                    exports_map=exports_map,
-                    context_label=context_label,
-                )
+                _resolve_stmts(task.body)
         elif isinstance(stmt, ast.Match):
-            resolve_expression(
-                stmt.expression,
-                module_name=module_name,
-                alias_map=alias_map,
-                local_defs=local_defs,
-                exports_map=exports_map,
-                context_label=context_label,
-            )
+            _resolve_expr(stmt.expression)
             for case in stmt.cases:
-                resolve_expression(
-                    case.pattern,
-                    module_name=module_name,
-                    alias_map=alias_map,
-                    local_defs=local_defs,
-                    exports_map=exports_map,
-                    context_label=context_label,
-                )
-                resolve_statements(
-                    case.body,
-                    module_name=module_name,
-                    alias_map=alias_map,
-                    local_defs=local_defs,
-                    exports_map=exports_map,
-                    context_label=context_label,
-                )
+                _resolve_expr(case.pattern)
+                _resolve_stmts(case.body)
             if stmt.otherwise:
-                resolve_statements(
-                    stmt.otherwise,
-                    module_name=module_name,
-                    alias_map=alias_map,
-                    local_defs=local_defs,
-                    exports_map=exports_map,
-                    context_label=context_label,
-                )
+                _resolve_stmts(stmt.otherwise)
         elif isinstance(stmt, ast.TryCatch):
-            resolve_statements(
-                stmt.try_body,
-                module_name=module_name,
-                alias_map=alias_map,
-                local_defs=local_defs,
-                exports_map=exports_map,
-                context_label=context_label,
-            )
-            resolve_statements(
-                stmt.catch_body,
-                module_name=module_name,
-                alias_map=alias_map,
-                local_defs=local_defs,
-                exports_map=exports_map,
-                context_label=context_label,
-            )
+            _resolve_stmts(stmt.try_body)
+            _resolve_stmts(stmt.catch_body)
         elif isinstance(stmt, ast.Return):
-            resolve_expression(
-                stmt.expression,
-                module_name=module_name,
-                alias_map=alias_map,
-                local_defs=local_defs,
-                exports_map=exports_map,
-                context_label=context_label,
-            )
+            _resolve_expr(stmt.expression)
 
 def resolve_page_item(
     item: ast.PageItem,
@@ -307,6 +177,73 @@ def resolve_page_item(
             line=item.line,
             column=item.column,
         )
+        if item.row_actions:
+            for action in item.row_actions:
+                if action.kind == "call_flow" and action.flow_name:
+                    action.flow_name = resolve_name(
+                        action.flow_name,
+                        kind="flow",
+                        module_name=module_name,
+                        alias_map=alias_map,
+                        local_defs=local_defs,
+                        exports_map=exports_map,
+                        context_label=context_label,
+                        line=action.line,
+                        column=action.column,
+                    )
+        return
+    if isinstance(item, ast.ListItem):
+        item.record_name = resolve_name(
+            item.record_name,
+            kind="record",
+            module_name=module_name,
+            alias_map=alias_map,
+            local_defs=local_defs,
+            exports_map=exports_map,
+            context_label=context_label,
+            line=item.line,
+            column=item.column,
+        )
+        if item.actions:
+            for action in item.actions:
+                if action.kind == "call_flow" and action.flow_name:
+                    action.flow_name = resolve_name(
+                        action.flow_name,
+                        kind="flow",
+                        module_name=module_name,
+                        alias_map=alias_map,
+                        local_defs=local_defs,
+                        exports_map=exports_map,
+                        context_label=context_label,
+                        line=action.line,
+                        column=action.column,
+                    )
+        return
+    if isinstance(item, ast.ChartItem) and item.record_name:
+        item.record_name = resolve_name(
+            item.record_name,
+            kind="record",
+            module_name=module_name,
+            alias_map=alias_map,
+            local_defs=local_defs,
+            exports_map=exports_map,
+            context_label=context_label,
+            line=item.line,
+            column=item.column,
+        )
+        return
+    if isinstance(item, ast.UseUIPackItem):
+        item.pack_name = resolve_name(
+            item.pack_name,
+            kind="ui_pack",
+            module_name=module_name,
+            alias_map=alias_map,
+            local_defs=local_defs,
+            exports_map=exports_map,
+            context_label=context_label,
+            line=item.line,
+            column=item.column,
+        )
         return
     if isinstance(item, ast.ButtonItem):
         item.flow_name = resolve_name(
@@ -321,7 +258,59 @@ def resolve_page_item(
             column=item.column,
         )
         return
-    if isinstance(item, (ast.SectionItem, ast.CardItem, ast.RowItem, ast.ColumnItem)):
+    if isinstance(item, ast.ChatItem):
+        for child in item.children:
+            if isinstance(child, ast.ChatComposerItem):
+                child.flow_name = resolve_name(
+                    child.flow_name,
+                    kind="flow",
+                    module_name=module_name,
+                    alias_map=alias_map,
+                    local_defs=local_defs,
+                    exports_map=exports_map,
+                    context_label=context_label,
+                    line=child.line,
+                    column=child.column,
+                )
+        return
+    if isinstance(item, ast.CardItem):
+        if item.actions:
+            for action in item.actions:
+                if action.kind == "call_flow" and action.flow_name:
+                    action.flow_name = resolve_name(
+                        action.flow_name,
+                        kind="flow",
+                        module_name=module_name,
+                        alias_map=alias_map,
+                        local_defs=local_defs,
+                        exports_map=exports_map,
+                        context_label=context_label,
+                        line=action.line,
+                        column=action.column,
+                    )
+        for child in item.children:
+            resolve_page_item(
+                child,
+                module_name=module_name,
+                alias_map=alias_map,
+                local_defs=local_defs,
+                exports_map=exports_map,
+                context_label=context_label,
+            )
+        return
+    if isinstance(item, ast.TabsItem):
+        for tab in item.tabs:
+            for child in tab.children:
+                resolve_page_item(
+                    child,
+                    module_name=module_name,
+                    alias_map=alias_map,
+                    local_defs=local_defs,
+                    exports_map=exports_map,
+                    context_label=context_label,
+                )
+        return
+    if isinstance(item, (ast.SectionItem, ast.CardGroupItem, ast.RowItem, ast.ColumnItem)):
         for child in item.children:
             resolve_page_item(
                 child,

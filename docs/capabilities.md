@@ -105,7 +105,7 @@ Denied checks always emit:
 }
 ```
 
-See `docs/trace-schema-v1.md` for the frozen schema.
+See `docs/trace-schema.md` for the frozen schema.
 
 ## Tool decisions
 Tool calls also emit ToolDecision summaries used by `n3 with`.
