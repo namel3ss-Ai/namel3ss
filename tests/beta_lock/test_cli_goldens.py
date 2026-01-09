@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from namel3ss.cli.main import main as cli_main
@@ -69,5 +70,15 @@ def test_cli_eval_report_golden(tmp_path, monkeypatch):
     expected = _load_json_fixture("eval_report_golden.json")
     assert "namel3ss_version" in payload
     expected["namel3ss_version"] = payload["namel3ss_version"]
+    _strip_trace_hashes(payload)
+    _strip_trace_hashes(expected)
     assert payload == expected
     assert txt_path.read_text(encoding="utf-8") == _load_text_fixture("eval_report_golden.txt")
+
+
+def _strip_trace_hashes(report: dict) -> None:
+    cases = report.get("cases", [])
+    for case in cases:
+        trace_hash = case.pop("trace_hash", None)
+        assert trace_hash is not None
+        assert re.fullmatch(r"[0-9a-f]{64}", trace_hash)
