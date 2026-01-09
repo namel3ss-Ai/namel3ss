@@ -57,6 +57,12 @@ spec/**/.namel3ss/**
 !examples/tool_permissions/.namel3ss/tools.yaml
 !examples/tool_usage/.namel3ss/
 !examples/tool_usage/.namel3ss/tools.yaml
+!src/namel3ss/templates/**/.namel3ss/
+src/namel3ss/templates/**/.namel3ss/**
+!src/namel3ss/templates/**/.namel3ss/tools.yaml
+!evals/**/.namel3ss/
+evals/**/.namel3ss/**
+!evals/**/.namel3ss/tools.yaml
 !tests/fixtures/.namel3ss/
 !tests/fixtures/.namel3ss/tools.yaml
 tests/fixtures/.namel3ss/observe.jsonl

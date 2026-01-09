@@ -1,0 +1,4 @@
+tools:
+  "format orders prompt":
+    kind: "python"
+    entry: "tools.format_orders_prompt:run"

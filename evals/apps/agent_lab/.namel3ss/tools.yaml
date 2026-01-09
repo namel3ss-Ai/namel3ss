@@ -1,0 +1,7 @@
+tools:
+  "agent_lab.hash text":
+    kind: "python"
+    entry: "tools.hash_text:run"
+  "agent_lab.unsafe request":
+    kind: "python"
+    entry: "tools.unsafe_request:run"
