@@ -1,6 +1,7 @@
 from pathlib import Path
 import json
 import os
+import shutil
 import sys
 
 import pytest
@@ -17,7 +18,17 @@ from tests._ci_debug import debug_context
 FIXTURES_ROOT = Path(__file__).resolve().parent.parent / "fixtures"
 
 
-def test_python_tool_call_success_traces_event():
+def _copy_tool_fixture(tmp_path: Path) -> Path:
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+    (project_root / ".namel3ss").mkdir()
+    shutil.copy(FIXTURES_ROOT / ".namel3ss" / "tools.yaml", project_root / ".namel3ss" / "tools.yaml")
+    shutil.copytree(FIXTURES_ROOT / "tools", project_root / "tools")
+    return project_root
+
+
+def test_python_tool_call_success_traces_event(tmp_path: Path):
+    project_root = _copy_tool_fixture(tmp_path)
     source = '''tool "greeter":
   implemented using python
 
@@ -42,7 +53,7 @@ flow "demo":
         schemas={},
         tools=program.tools,
         input_data={"name": "Ada"},
-        project_root=str(FIXTURES_ROOT),
+        project_root=str(project_root),
     )
     result = executor.run()
     assert result.last_value == {"message": "Hello Ada", "ok": True}
@@ -63,7 +74,8 @@ flow "demo":
     assert "output_summary" in tool_event
 
 
-def test_python_tool_schema_mismatch_error():
+def test_python_tool_schema_mismatch_error(tmp_path: Path):
+    project_root = _copy_tool_fixture(tmp_path)
     source = '''tool "bad_output":
   implemented using python
 
@@ -88,7 +100,7 @@ flow "demo":
         schemas={},
         tools=program.tools,
         input_data={"name": "Ada"},
-        project_root=str(FIXTURES_ROOT),
+        project_root=str(project_root),
     )
     with pytest.raises(Namel3ssError) as exc:
         executor.run()
@@ -96,7 +108,8 @@ flow "demo":
     assert "output" in message
 
 
-def test_python_tool_missing_module_error():
+def test_python_tool_missing_module_error(tmp_path: Path):
+    project_root = _copy_tool_fixture(tmp_path)
     source = '''tool "missing":
   implemented using python
 
@@ -120,20 +133,20 @@ flow "demo":
         schemas={},
         tools=program.tools,
         input_data={"name": "Ada"},
-        project_root=str(FIXTURES_ROOT),
+        project_root=str(project_root),
     )
     with pytest.raises(Namel3ssError) as exc:
         executor.run()
     message = str(exc.value)
     if "missing_tool" not in message and os.getenv("CI") == "true":
-        tools_yaml = FIXTURES_ROOT / ".namel3ss" / "tools.yaml"
+        tools_yaml = project_root / ".namel3ss" / "tools.yaml"
         missing_block: list[str] = []
         if tools_yaml.exists():
             lines = tools_yaml.read_text(encoding="utf-8").splitlines()
             idx = next((i for i, line in enumerate(lines) if '"missing"' in line), None)
             if idx is not None:
                 missing_block = lines[idx : idx + 3]
-        print(json.dumps(debug_context("missing_module_error", app_root=FIXTURES_ROOT), sort_keys=True))
+        print(json.dumps(debug_context("missing_module_error", app_root=project_root), sort_keys=True))
         print(json.dumps({"tools_yaml": str(tools_yaml), "exists": tools_yaml.exists(), "missing_block": missing_block}, sort_keys=True))
         print("error:\n" + message)
     assert "missing_tool" in message

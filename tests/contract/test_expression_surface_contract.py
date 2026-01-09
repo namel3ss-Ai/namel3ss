@@ -34,8 +34,10 @@ def test_expression_surface_format_idempotent() -> None:
     assert format_source(formatted) == formatted
 
 
-def test_expression_surface_runtime_results() -> None:
-    project = load_project(SURFACE_PATH)
+def test_expression_surface_runtime_results(tmp_path: Path) -> None:
+    app_path = tmp_path / "app.ai"
+    app_path.write_text(SURFACE_PATH.read_text(encoding="utf-8"), encoding="utf-8")
+    project = load_project(app_path)
     result = execute_program_flow(project.program, "surface")
     assert isinstance(result.last_value, dict)
     assert result.last_value == {
