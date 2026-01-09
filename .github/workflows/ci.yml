@@ -78,13 +78,42 @@ jobs:
 
       - name: Patterns suite
         run: |
-          runnable_patterns=$(find patterns -mindepth 1 -maxdepth 2 -type f -name "app.ai" -print0 | xargs -0 -n1 dirname | sort -u || true)
-          skipped_patterns=$(find patterns -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n1 -I {} sh -c 'test -f "{}/app.ai" || echo "{}"' | sort -u || true)
+          runnable=()
+          skipped=()
+          for d in patterns/*; do
+            if [ ! -d "$d" ]; then
+              continue
+            fi
+            if [ -f "$d/app.ai" ]; then
+              runnable+=("$d")
+              continue
+            fi
+            found_child=0
+            for c in "$d"/*; do
+              if [ -d "$c" ] && [ -f "$c/app.ai" ]; then
+                runnable+=("$c")
+                found_child=1
+              fi
+            done
+            if [ "$found_child" -eq 0 ]; then
+              skipped+=("$d")
+            fi
+          done
+          if [ "${#runnable[@]}" -gt 0 ]; then
+            IFS=$'\n' sorted_runnable=($(printf "%s\n" "${runnable[@]}" | sort -u))
+          else
+            sorted_runnable=()
+          fi
+          if [ "${#skipped[@]}" -gt 0 ]; then
+            IFS=$'\n' sorted_skipped=($(printf "%s\n" "${skipped[@]}" | sort -u))
+          else
+            sorted_skipped=()
+          fi
           echo "Runnable patterns:"
-          echo "${runnable_patterns}"
+          printf "%s\n" "${sorted_runnable[@]}"
           echo "Skipped containers:"
-          echo "${skipped_patterns}"
-          for pattern in ${runnable_patterns}; do
+          printf "%s\n" "${sorted_skipped[@]}"
+          for pattern in "${sorted_runnable[@]}"; do
             echo "Pattern ${pattern}"
             (cd "${pattern}" && n3 test)
             (cd "${pattern}" && n3 verify --prod)
