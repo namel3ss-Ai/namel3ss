@@ -1,0 +1,15 @@
+spec is "1.0"
+
+tool "echo tool":
+  implemented using python
+
+  input:
+    text is text
+
+  output:
+    message is text
+
+flow "demo":
+  let result is echo tool:
+    text is "hi"
+  return result

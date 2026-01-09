@@ -1,0 +1,151 @@
+{
+  "agent_parallel_summary": null,
+  "agent_run_summary": {
+    "agent_id": "planner",
+    "ai_profile": "assistant",
+    "failures": [],
+    "input_summary": "Plan the task",
+    "memory": {
+      "reasons": [
+        "policy:read"
+      ],
+      "recalled_count": 1,
+      "space_counts": [
+        {
+          "count": 1,
+          "space": "session"
+        }
+      ],
+      "spaces": [
+        "session"
+      ]
+    },
+    "output_hash": "3e0fec5fa70a5b45a9c37d6aea013e564a74997f218014de8329258ff5aef23a",
+    "output_preview": "Draft plan",
+    "tools": [
+      {
+        "arguments_summary": "{\"value\":1}",
+        "decision": "allowed",
+        "decision_reason": "tool call completed",
+        "result_summary": "{\"echo\":1}",
+        "status": "completed",
+        "tool": "echo"
+      }
+    ]
+  },
+  "handoff": [
+    {
+      "from_agent_id": "planner",
+      "lines": [
+        "Packet id is handoff-1."
+      ],
+      "packet_id": "handoff-1",
+      "title": "Memory handoff created",
+      "to_agent_id": "reviewer",
+      "type": "memory_handoff_created"
+    }
+  ],
+  "summaries": [
+    {
+      "agent_id": "planner",
+      "ai_profile": "assistant",
+      "failures": [],
+      "input_summary": "Plan the task",
+      "memory": {
+        "reasons": [
+          "policy:read"
+        ],
+        "recalled_count": 1,
+        "space_counts": [
+          {
+            "count": 1,
+            "space": "session"
+          }
+        ],
+        "spaces": [
+          "session"
+        ]
+      },
+      "output_hash": "3e0fec5fa70a5b45a9c37d6aea013e564a74997f218014de8329258ff5aef23a",
+      "output_preview": "Draft plan",
+      "tools": [
+        {
+          "arguments_summary": "{\"value\":1}",
+          "decision": "allowed",
+          "decision_reason": "tool call completed",
+          "result_summary": "{\"echo\":1}",
+          "status": "completed",
+          "tool": "echo"
+        }
+      ]
+    }
+  ],
+  "timeline": [
+    {
+      "details": {
+        "input_summary": "Plan the task"
+      },
+      "id": "planner:start",
+      "kind": "start",
+      "title": "planner started"
+    },
+    {
+      "details": {
+        "recalled_count": 1,
+        "spaces": [
+          "session"
+        ]
+      },
+      "explain": {
+        "lines": [
+          "policy:read"
+        ],
+        "title": "Memory policy"
+      },
+      "id": "planner:memory",
+      "kind": "memory",
+      "title": "planner recalled memory"
+    },
+    {
+      "details": {
+        "decision": "allowed",
+        "status": "completed"
+      },
+      "explain": {
+        "lines": [
+          "args: {\"value\":1}",
+          "result: {\"echo\":1}",
+          "reason: tool call completed"
+        ],
+        "title": "Tool decision"
+      },
+      "id": "planner:tool:1",
+      "kind": "tool",
+      "title": "planner tool echo"
+    },
+    {
+      "details": {
+        "output_hash": "3e0fec5fa70a5b45a9c37d6aea013e564a74997f218014de8329258ff5aef23a",
+        "output_preview": "Draft plan"
+      },
+      "id": "planner:output",
+      "kind": "output",
+      "title": "planner output"
+    },
+    {
+      "details": {
+        "from_agent_id": "planner",
+        "to_agent_id": "reviewer"
+      },
+      "explain": {
+        "lines": [
+          "Packet id is handoff-1."
+        ],
+        "title": "Memory handoff created"
+      },
+      "id": "handoff:handoff-1:memory_handoff_created",
+      "kind": "handoff",
+      "title": "Memory handoff created"
+    }
+  ]
+}

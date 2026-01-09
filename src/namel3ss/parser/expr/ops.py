@@ -4,6 +4,7 @@ from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.parser.grammar_table import select_expression_rule
 from namel3ss.parser.expr.comparisons import parse_comparison
+from namel3ss.parser.sugar.grammar import parse_postfix_access
 
 
 def parse_expression(parser) -> ast.Expression:
@@ -84,7 +85,8 @@ def parse_primary(parser) -> ast.Expression:
     if rule is None:
         tok = parser._current()
         raise Namel3ssError("Unexpected expression", line=tok.line, column=tok.column)
-    return rule.parse(parser)
+    expr = rule.parse(parser)
+    return parse_postfix_access(parser, expr)
 
 
 def parse_grouped_expression(parser) -> ast.Expression:

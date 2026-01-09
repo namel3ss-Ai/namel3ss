@@ -1,0 +1,9 @@
+[identity]
+email = "operator@example.com"
+role = "operator"
+
+[memory_packs]
+default_pack = "agent-minimal"
+
+[capability_overrides]
+"unsafe request" = { no_network = true }

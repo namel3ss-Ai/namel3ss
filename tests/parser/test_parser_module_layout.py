@@ -6,7 +6,7 @@ from pathlib import Path
 
 def test_parser_module_layout() -> None:
     base = Path(__file__).resolve().parents[2] / "src" / "namel3ss" / "parser"
-    required_dirs = ("core", "decl", "stmt", "expr")
+    required_dirs = ("core", "decl", "stmt", "expr", "sugar")
     required_files = (
         "grammar_table.py",
         "parse_program.py",
@@ -26,6 +26,10 @@ def test_parser_module_layout() -> None:
         "stmt/let.py",
         "expr/ops.py",
         "expr/refs.py",
+        "sugar/__init__.py",
+        "sugar/diagnostics.py",
+        "sugar/grammar.py",
+        "sugar/lower.py",
     )
     for name in required_dirs:
         assert (base / name).is_dir(), f"Missing parser folder {name}"
@@ -39,5 +43,6 @@ def test_parser_module_layout() -> None:
         "namel3ss.parser.decl.flow",
         "namel3ss.parser.stmt.common",
         "namel3ss.parser.expr.ops",
+        "namel3ss.parser.sugar",
     ):
         importlib.import_module(module)

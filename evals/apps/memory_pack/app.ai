@@ -1,0 +1,10 @@
+spec is "1.0"
+
+ai "assistant":
+  provider is "mock"
+  model is "mock-model"
+  system_prompt is "Memory check."
+
+flow "demo":
+  ask ai "assistant" with input: "Hello" as reply
+  return reply

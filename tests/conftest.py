@@ -66,3 +66,26 @@ def _secret_audit_path(tmp_path, monkeypatch):
 
 
 __all__ = ["parse_program", "lower_ir_program", "run_flow"]
+
+
+_BASELINE_DIRTY: set[str] | None = None
+
+
+def pytest_sessionstart(session):
+    global _BASELINE_DIRTY
+    from namel3ss.beta_lock.repo_clean import repo_dirty_entries
+
+    root = Path(__file__).resolve().parents[1]
+    _BASELINE_DIRTY = set(repo_dirty_entries(root))
+
+
+def pytest_sessionfinish(session, exitstatus):
+    from namel3ss.beta_lock.repo_clean import repo_dirty_entries
+
+    root = Path(__file__).resolve().parents[1]
+    baseline = _BASELINE_DIRTY or set()
+    current = set(repo_dirty_entries(root))
+    new_dirty = sorted(current - baseline)
+    if new_dirty:
+        joined = "\n".join(new_dirty)
+        raise AssertionError(f"Repository dirty after tests:\\n{joined}")

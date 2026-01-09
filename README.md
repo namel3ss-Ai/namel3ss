@@ -64,10 +64,27 @@ They are guarantees.
 
 ## Try it in 60 seconds
 
-This command scaffolds ClearOrders, the reference project used by namel3ss.
+This command scaffolds Agent Lab, a deterministic multi-agent starter.
 
 ```bash
 pip install namel3ss
+n3 new agent-lab demo
+cd demo
+n3 app.ai studio
+```
+
+Studio opens a runnable agent workspace with:
+
+- agent templates and wiring
+- deterministic traces and explainability
+- memory packs and handoff previews
+- merge policies for parallel agents
+
+## ClearOrders demo
+
+ClearOrders is the reference project used by namel3ss.
+
+```bash
 n3 new demo
 cd demo
 n3 run
@@ -78,11 +95,6 @@ On first run, the browser opens a working application with:
 - an orders dataset
 - an AI query flow
 - deterministic execution and traceable decisions
-
-To inspect execution, state, and reasoning, open Studio:
-```bash
-n3 app.ai studio
-```
 
 ## About ClearOrders
 
@@ -105,6 +117,20 @@ Understanding ClearOrders is sufficient to understand the core model of namel3ss
 - Built-in run summary and explanations for flows, tools, and UI.
 - File-first CLI and Studio for inspection and interaction.
 - First-run experience that opens the demo in a browser automatically.
+
+## Build agents you can explain
+- Agent Builder in Studio scaffolds agents from deterministic patterns.
+- Agent Timeline shows memory, tool usage, merges, and handoffs as trace-backed facts.
+- Memory Packs and handoff previews keep agent memory explicit and inspectable.
+- Merge policies make multi-agent outputs predictable and traceable.
+- Tool-call lifecycle events are canonical across providers.
+
+## Evaluate and ship
+- `n3 eval` runs deterministic evaluation suites and emits stable JSON/TXT reports.
+- Eval results are wired into release gates to prevent regressions.
+
+## Beta lock surfaces
+- Agent explain payloads, tool-call lifecycle events, merge lifecycle events, memory pack events, and CLI outputs are contract-stable and enforced by tests.
 
 ## Expressions
 Flows support concise, deterministic math and list transforms:

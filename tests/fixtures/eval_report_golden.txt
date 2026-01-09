@@ -1,0 +1,13 @@
+Eval: PASS
+Cases: 5 passed, 0 failed, 5 total
+Success rate: 1.00
+Tool accuracy: 1.00
+AI calls: 2
+Tool calls: 2
+Policy violations: 0
+Case results:
+- agent_lab_smoke: pass
+- agent_merge_ranked: pass
+- basic_math: pass
+- memory_pack_selection: pass
+- tool_call: pass

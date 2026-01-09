@@ -54,6 +54,12 @@ TEMPLATES: tuple[TemplateSpec, ...] = (
         description="Planner, critic, and researcher agents sharing one assistant.",
         aliases=("multi_agent",),
     ),
+    TemplateSpec(
+        name="agent-lab",
+        directory="agent_lab",
+        description="Agent Lab starter with explainable runs and safe tool defaults.",
+        aliases=("agent_lab",),
+    ),
 )
 
 

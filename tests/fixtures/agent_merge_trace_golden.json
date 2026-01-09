@@ -1,0 +1,62 @@
+[
+  {
+    "candidate_count": 2,
+    "lines": [
+      "Merge policy is ranked.",
+      "Candidate count is 2."
+    ],
+    "policy": "ranked",
+    "title": "Agent merge started",
+    "trace_version": "2024-10-01",
+    "type": "agent_merge_started"
+  },
+  {
+    "agent_name": "alpha",
+    "lines": [
+      "Score is 2."
+    ],
+    "policy": "ranked",
+    "score": "2",
+    "status": "valid",
+    "title": "Agent merge candidate",
+    "trace_version": "2024-10-01",
+    "type": "agent_merge_candidate"
+  },
+  {
+    "agent_name": "beta",
+    "lines": [
+      "Selected by merge policy."
+    ],
+    "policy": "ranked",
+    "score": "3",
+    "title": "Agent merge selected",
+    "trace_version": "2024-10-01",
+    "type": "agent_merge_selected"
+  },
+  {
+    "agent_name": "alpha",
+    "lines": [
+      "Not selected by merge policy."
+    ],
+    "policy": "ranked",
+    "score": "2",
+    "title": "Agent merge rejected",
+    "trace_version": "2024-10-01",
+    "type": "agent_merge_rejected"
+  },
+  {
+    "lines": [
+      "Merge policy is ranked."
+    ],
+    "policy": "ranked",
+    "rejected_agents": [
+      "alpha"
+    ],
+    "selected_agents": [
+      "beta"
+    ],
+    "title": "Agent merge summary",
+    "trace_version": "2024-10-01",
+    "type": "agent_merge_summary"
+  }
+]

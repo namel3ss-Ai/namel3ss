@@ -49,6 +49,7 @@ from namel3ss.cli.packs_mode import run_packs
 from namel3ss.cli.registry_mode import run_registry
 from namel3ss.cli.discover_mode import run_discover
 from namel3ss.cli.expr_check_mode import run_expr_check_command
+from namel3ss.cli.eval_mode import run_eval_command
 from namel3ss.cli.verify_mode import run_verify_command
 from namel3ss.cli.release_check_mode import run_release_check_command
 from namel3ss.cli.memory_mode import run_memory_command
@@ -90,6 +91,7 @@ RESERVED = {
     "verify",
     "release-check",
     "expr-check",
+    "eval",
     "secrets",
     "observe",
     "explain",
@@ -189,6 +191,8 @@ def main(argv: list[str] | None = None) -> int:
             return run_release_check_command(args[1:])
         if cmd == "expr-check":
             return run_expr_check_command(args[1:])
+        if cmd == "eval":
+            return run_eval_command(args[1:])
         if cmd == "secrets":
             return run_secrets_command(args[1:])
         if cmd == "observe":
@@ -446,6 +450,7 @@ def _print_usage() -> None:
   n3 verify --dx --json           # DX promise gate (repo)
   n3 release-check --json report.json # release Go/No-Go gate
   n3 expr-check --json report.json    # expression surface gate
+  n3 eval --json eval_report.json     # evaluation gate
   n3 secrets app.ai               # secret status and audit, subcommands status audit
   n3 observe app.ai --since T --json # engine observability stream
   n3 explain app.ai --json        # explain engine state

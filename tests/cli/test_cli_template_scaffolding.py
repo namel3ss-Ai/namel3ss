@@ -9,6 +9,7 @@ TEMPLATES = [
     ("crud", "crud_app"),
     ("ai-assistant", "ai_app"),
     ("multi-agent", "multi_app"),
+    ("agent-lab", "agent_lab"),
 ]
 
 

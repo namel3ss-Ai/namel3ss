@@ -5,9 +5,15 @@ from .calls import (
     build_ai_call_failed,
     build_ai_call_started,
     build_ai_provider_error,
+    build_tool_call_allowed,
+    build_tool_call_blocked,
     build_tool_call_completed,
     build_tool_call_failed,
+    build_tool_call_finished,
+    build_tool_call_proposed,
     build_tool_call_requested,
+    build_tool_call_started,
+    build_tool_loop_finished,
 )
 from .memory_agreements import (
     build_memory_agreement_summary,
@@ -130,4 +136,10 @@ __all__ = [
     "build_tool_call_completed",
     "build_tool_call_failed",
     "build_tool_call_requested",
+    "build_tool_call_proposed",
+    "build_tool_call_allowed",
+    "build_tool_call_blocked",
+    "build_tool_call_started",
+    "build_tool_call_finished",
+    "build_tool_loop_finished",
 ]

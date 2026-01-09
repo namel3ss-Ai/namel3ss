@@ -37,6 +37,13 @@ Studio is the command center for namel3ss. It stays fast and minimal while surfa
 - Explain tab shows deterministic calc-line explanations (inputs, steps, outputs).
 - Copying from Formula View returns the original calc line text.
 
+## Agents
+- Agent Builder scaffolds agents from deterministic patterns (no free-text config).
+- Agents panel lists declared agents and supports single or parallel runs.
+- Timeline shows trace-backed stages (memory, tools, output, merge, handoff).
+- Memory Packs and Handoff panels expose active pack selection and packet previews.
+- Explain actions show deterministic reasons for tool decisions, merge outcomes, and handoffs.
+
 ## Learning Overlay
 - Toggle **Learn** to highlight key panels with short explanations.
 - Tooltips link to one-page docs under `docs/models/`.

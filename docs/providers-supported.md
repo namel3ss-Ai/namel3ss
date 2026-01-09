@@ -8,3 +8,5 @@
 - `mock` — built-in mock provider for tests and offline development.
 
 Run `n3 doctor` to verify provider env vars are detected before running flows.
+
+Tool calling is supported for `mock`, `openai`, `anthropic`, `gemini`, and `mistral`; `ollama` is text-only.

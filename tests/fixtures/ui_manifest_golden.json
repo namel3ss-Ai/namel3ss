@@ -1,0 +1,79 @@
+{
+  "pages": [
+    {
+      "name": "home",
+      "slug": "home",
+      "elements": [
+        {
+          "type": "button",
+          "label": "Run",
+          "id": "page.home.button.run",
+          "action_id": "page.home.button.run",
+          "action": {
+            "type": "call_flow",
+            "flow": "demo"
+          },
+          "element_id": "page.home.button_item.0",
+          "page": "home",
+          "page_slug": "home",
+          "index": 0,
+          "line": 10,
+          "column": 3
+        },
+        {
+          "type": "form",
+          "element_id": "page.home.form_item.1",
+          "id": "page.home.form.user",
+          "action_id": "page.home.form.user",
+          "record": "User",
+          "fields": [
+            {
+              "name": "name",
+              "type": "text",
+              "constraints": []
+            }
+          ],
+          "page": "home",
+          "page_slug": "home",
+          "index": 1,
+          "line": 12,
+          "column": 3
+        }
+      ]
+    }
+  ],
+  "actions": {
+    "page.home.button.run": {
+      "id": "page.home.button.run",
+      "type": "call_flow",
+      "flow": "demo"
+    },
+    "page.home.form.user": {
+      "id": "page.home.form.user",
+      "type": "submit_form",
+      "record": "User"
+    }
+  },
+  "theme": {
+    "schema_version": "1",
+    "setting": "system",
+    "current": "system",
+    "persisted_current": null,
+    "effective": "light",
+    "source": "app",
+    "runtime_supported": false,
+    "tokens": {},
+    "preference": {
+      "allow_override": false,
+      "persist": "none"
+    }
+  },
+  "ui": {
+    "persistence": {
+      "enabled": false,
+      "kind": "memory",
+      "path": null,
+      "schema_version": null
+    }
+  }
+}

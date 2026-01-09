@@ -1,0 +1,32 @@
+[
+  {
+    "agent_id": null,
+    "category": "decisions",
+    "event_type": "decision",
+    "kind": "short_term",
+    "lane": "agent",
+    "memory_id": "session-1:short_term:1",
+    "preview": "Agent decision",
+    "why": "Selected as a decision item."
+  },
+  {
+    "agent_id": null,
+    "category": "rules",
+    "event_type": "rule",
+    "kind": "semantic",
+    "lane": "system",
+    "memory_id": "session-1:semantic:1",
+    "preview": "Policy rule",
+    "why": "Selected as an active rule."
+  },
+  {
+    "agent_id": null,
+    "category": "impact",
+    "event_type": "preference",
+    "kind": "profile",
+    "lane": "profile",
+    "memory_id": "session-1:profile:1",
+    "preview": "Prefers email",
+    "why": "Selected due to an impact warning."
+  }
+]

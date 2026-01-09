@@ -100,8 +100,38 @@ def statement_rules() -> tuple[StatementRule, ...]:
     from namel3ss.parser.stmt.update import parse_update
     from namel3ss.parser.stmt.delete import parse_delete
     from namel3ss.parser.stmt.trycatch import parse_try
+    from namel3ss.parser.sugar.grammar import (
+        parse_attempt_blocked_tool,
+        parse_compute_output_hash,
+        parse_increment_metric,
+        parse_plan_with,
+        parse_record_final_output,
+        parse_record_policy_violation,
+        parse_review_parallel,
+        parse_start_run,
+        parse_timeline_show,
+    )
 
     return (
+        StatementRule("start_run", "IDENT", parse_start_run, token_value="start"),
+        StatementRule("plan", "IDENT", parse_plan_with, token_value="plan"),
+        StatementRule("review_parallel", "IDENT", parse_review_parallel, token_value="review"),
+        StatementRule("timeline", "IDENT", parse_timeline_show, token_value="timeline"),
+        StatementRule("compute_output_hash", "IDENT", parse_compute_output_hash, token_value="compute"),
+        StatementRule("increment_metric", "IDENT", parse_increment_metric, token_value="increment"),
+        StatementRule("attempt_blocked_tool", "IDENT", parse_attempt_blocked_tool, token_value="attempt"),
+        StatementRule(
+            "record_final_output",
+            "RECORD",
+            parse_record_final_output,
+            predicate=_is_record_final_output,
+        ),
+        StatementRule(
+            "record_policy_violation",
+            "RECORD",
+            parse_record_policy_violation,
+            predicate=_is_record_policy_violation,
+        ),
         StatementRule("calc", "IDENT", parse_calc, token_value="calc"),
         StatementRule("let", "LET", parse_let),
         StatementRule("set_theme", "SET", parse_set_theme, predicate=_is_set_theme),
@@ -184,6 +214,25 @@ def _is_run_agent(parser) -> bool:
 def _is_run_agents_parallel(parser) -> bool:
     next_type = parser.tokens[parser.position + 1].type if parser.position + 1 < len(parser.tokens) else None
     return next_type == "AGENTS"
+
+
+def _is_record_final_output(parser) -> bool:
+    return _peek_ident_values(parser, ["final", "output"])
+
+
+def _is_record_policy_violation(parser) -> bool:
+    return _peek_ident_values(parser, ["policy", "violation"])
+
+
+def _peek_ident_values(parser, values: list[str]) -> bool:
+    for offset, value in enumerate(values, start=1):
+        pos = parser.position + offset
+        if pos >= len(parser.tokens):
+            return False
+        tok = parser.tokens[pos]
+        if tok.type != "IDENT" or tok.value != value:
+            return False
+    return True
 
 
 __all__ = [

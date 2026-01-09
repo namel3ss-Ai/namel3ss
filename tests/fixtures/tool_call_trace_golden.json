@@ -1,0 +1,108 @@
+[
+  {
+    "arguments_summary": "{\"value\": \"hi\"}",
+    "call_id": "call-1",
+    "model": "demo",
+    "provider": "mock",
+    "timestamp": "2024-01-01T00:00:00+00:00",
+    "tool_call_id": "tool-1",
+    "tool_name": "echo",
+    "trace_version": "2024-10-01",
+    "type": "tool_call_requested"
+  },
+  {
+    "call_id": "call-1",
+    "duration_ms": 12,
+    "model": "demo",
+    "provider": "mock",
+    "result_summary": "{\"echo\": \"hi\"}",
+    "timestamp": "2024-01-01T00:00:00+00:00",
+    "tool_call_id": "tool-1",
+    "tool_name": "echo",
+    "trace_version": "2024-10-01",
+    "type": "tool_call_completed"
+  },
+  {
+    "call_id": "call-1",
+    "duration_ms": 5,
+    "error_message": "boom",
+    "error_type": "Boom",
+    "model": "demo",
+    "provider": "mock",
+    "timestamp": "2024-01-01T00:00:00+00:00",
+    "tool_call_id": "tool-2",
+    "tool_name": "fail",
+    "trace_version": "2024-10-01",
+    "type": "tool_call_failed"
+  },
+  {
+    "arguments_summary": "{\"value\": \"hi\"}",
+    "call_id": "call-2",
+    "model": "demo",
+    "provider": "mock",
+    "timestamp": "2024-01-01T00:00:00+00:00",
+    "tool_call_id": "tool-3",
+    "tool_name": "echo",
+    "trace_version": "2024-10-01",
+    "type": "tool_call_proposed"
+  },
+  {
+    "call_id": "call-2",
+    "decision": "allowed",
+    "model": "demo",
+    "provider": "mock",
+    "reason": "policy_allowed",
+    "timestamp": "2024-01-01T00:00:00+00:00",
+    "tool_call_id": "tool-3",
+    "tool_name": "echo",
+    "trace_version": "2024-10-01",
+    "type": "tool_call_allowed"
+  },
+  {
+    "call_id": "call-2",
+    "model": "demo",
+    "provider": "mock",
+    "timestamp": "2024-01-01T00:00:00+00:00",
+    "tool_call_id": "tool-3",
+    "tool_name": "echo",
+    "trace_version": "2024-10-01",
+    "type": "tool_call_started"
+  },
+  {
+    "call_id": "call-2",
+    "duration_ms": 12,
+    "model": "demo",
+    "provider": "mock",
+    "result_summary": "{\"echo\": \"hi\"}",
+    "status": "ok",
+    "timestamp": "2024-01-01T00:00:00+00:00",
+    "tool_call_id": "tool-3",
+    "tool_name": "echo",
+    "trace_version": "2024-10-01",
+    "type": "tool_call_finished"
+  },
+  {
+    "call_id": "call-2",
+    "model": "demo",
+    "provider": "mock",
+    "stop_reason": "assistant_text",
+    "timestamp": "2024-01-01T00:00:00+00:00",
+    "tool_call_count": 1,
+    "trace_version": "2024-10-01",
+    "type": "tool_loop_finished"
+  },
+  {
+    "call_id": "call-3",
+    "capability": "secrets",
+    "decision": "blocked",
+    "message": "(redacted)",
+    "model": "demo",
+    "provider": "mock",
+    "reason": "policy_denied",
+    "timestamp": "2024-01-01T00:00:00+00:00",
+    "tool_call_id": "tool-4",
+    "tool_name": "secret",
+    "trace_version": "2024-10-01",
+    "type": "tool_call_blocked"
+  }
+]

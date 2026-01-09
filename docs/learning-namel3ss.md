@@ -25,7 +25,7 @@ Common top-level blocks:
 
 ### Browser and Studio
 - `n3 run` executes flows and renders UI for the browser or service target.
-- `n3 studio` opens the Studio UI to run actions, inspect state, and read traces.
+- `n3 app.ai studio` opens the Studio UI to run actions, inspect state, and read traces.
 
 Studio is a viewer and interactor. It shows the UI manifest, available actions, current state, and traces produced by runs.
 
@@ -45,7 +45,7 @@ Explainability is based on recorded facts, never on AI chain-of-thought.
 - No unbounded loops or hidden recursion.
 - No implicit type coercion.
 - No background tasks.
-- No tool calling for real providers yet (only the mock provider supports tool calls).
+- No streaming or JSON-mode responses; `ollama` is text-only.
 
 #### References
 - [AI language definition](ai-language-definition.md)
@@ -62,6 +62,12 @@ Explainability is based on recorded facts, never on AI chain-of-thought.
 n3 doctor
 n3 new crud my_app
 cd my_app
+```
+
+If you want the agent-first path, start with Agent Lab:
+```bash
+n3 new agent-lab demo
+cd demo
 ```
 
 ### 2) Run it
@@ -207,6 +213,33 @@ flow "compute":
 ```
 
 **Common mistake**: Using `=` or `==` instead of English comparisons like `is`, `is greater than`, `is at least`.
+
+### English-first flow sugar (optional)
+This sugar lowers to existing statements and does not change runtime semantics.
+
+Examples:
+```ai
+start a new run for goal using memory pack "agent-minimal"
+plan with "planner" using goal
+review in parallel with:
+  "critic"
+  "researcher"
+keep all feedback
+timeline shows:
+  Start: goal
+  Memory: "agent-minimal"
+```
+
+Collection access sugar:
+```ai
+let critic text is feedback[0].text
+```
+
+Policy intent sugar:
+```ai
+attempt unsafe request "https://example.com/"
+expect blocked by policy
+```
 
 ### Control flow
 
@@ -365,7 +398,7 @@ ai "assistant":
 
 **Notes**:
 - `mock` is the deterministic provider used for tests and offline work.
-- Real providers currently support text output only; tool calling and JSON mode are not wired yet.
+- Real providers support tool calling with canonical lifecycle traces; streaming and JSON mode are not wired. `ollama` is text-only.
 
 ### Ask AI in a flow
 **Minimal example**:
@@ -580,7 +613,7 @@ Core contracts are frozen. The parser, IR, and trace schemas are locked by tests
 - No CSS or styling DSL.
 - No unbounded loops or hidden recursion.
 - No implicit type coercion.
-- Tool calling for real providers is not wired yet.
+- Streaming and JSON mode are not wired; `ollama` remains text-only.
 - Edge target remains a stub.
 
 #### References

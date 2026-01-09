@@ -1,0 +1,103 @@
+{
+  "cases": [
+    {
+      "ai_calls": 1,
+      "app": "apps/agent_lab/app.ai",
+      "duration_ms": 0,
+      "flow": "agent_lab.lab_demo",
+      "id": "agent_lab_smoke",
+      "policy_violations": 0,
+      "result_hash": "4fb17a3977e6e3b060dcd4fc913e71a09d57d4523d7641171c7fc74f973ea9e6",
+      "status": "pass",
+      "tool_blocks": [],
+      "tool_calls": [
+        "agent_lab.hash text"
+      ],
+      "trace_hash": "519d91f54e14d5b7d28c49d46d1ce924b0e602935fb2a67d10c6acdece39c462"
+    },
+    {
+      "ai_calls": 0,
+      "app": "apps/agent_merge/app.ai",
+      "duration_ms": 0,
+      "flow": "demo",
+      "id": "agent_merge_ranked",
+      "policy_violations": 0,
+      "result_hash": "cc9eca0828e1ce024b8543d9722103cda2da626a7e0d3c950263e4dd41ba4db1",
+      "status": "pass",
+      "tool_blocks": [],
+      "tool_calls": [],
+      "trace_hash": "26b826c755d6a80e3270e8037e147dd58c2e5f4c6f331a390037a642364cb756"
+    },
+    {
+      "ai_calls": 0,
+      "app": "apps/basic/app.ai",
+      "duration_ms": 0,
+      "flow": "demo",
+      "id": "basic_math",
+      "policy_violations": 0,
+      "result_hash": "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d",
+      "status": "pass",
+      "tool_blocks": [],
+      "tool_calls": [],
+      "trace_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "ai_calls": 1,
+      "app": "apps/memory_pack/app.ai",
+      "duration_ms": 0,
+      "flow": "demo",
+      "id": "memory_pack_selection",
+      "policy_violations": 0,
+      "result_hash": "cacfbc8e0084b59d18af2f4cc457fac2428a85f4e90190cdafd3cbc3848cc8ac",
+      "status": "pass",
+      "tool_blocks": [],
+      "tool_calls": [],
+      "trace_hash": "e7066484a6f3455065bcfa8323a7926d4c1db25b71ff98c62ab5ec4103c9a9d6"
+    },
+    {
+      "ai_calls": 0,
+      "app": "apps/tool_call/app.ai",
+      "duration_ms": 0,
+      "flow": "demo",
+      "id": "tool_call",
+      "policy_violations": 0,
+      "result_hash": "1f7fd048cee1bcf495eb66c3267ae9ab126565e2c849e5cd025df308069791b4",
+      "status": "pass",
+      "tool_blocks": [],
+      "tool_calls": [
+        "echo tool"
+      ],
+      "trace_hash": "e5b36590b2e9e7ad23d799a752b476c5c5a89a90b7c19cc6cba9c59721a5ac09"
+    }
+  ],
+  "namel3ss_version": "0.1.0a6",
+  "schema_version": "evals.v1",
+  "status": "pass",
+  "summary": {
+    "ai_calls": 2,
+    "cases": 5,
+    "failed": 0,
+    "passed": 5,
+    "policy_violations": 0,
+    "status": "pass",
+    "success_rate": 1.0,
+    "tool_accuracy": 1.0,
+    "tool_calls": 2
+  },
+  "thresholds": [
+    {
+      "actual": 1.0,
+      "expected": 1.0,
+      "name": "success_rate",
+      "op": ">=",
+      "status": "pass"
+    },
+    {
+      "actual": 0,
+      "expected": 0,
+      "name": "max_policy_violations",
+      "op": "<=",
+      "status": "pass"
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "schema_version": "evals.v1",
+  "thresholds": {
+    "max_policy_violations": 0,
+    "success_rate": 1.0
+  },
+  "cases": [
+    {
+      "id": "basic_math",
+      "app": "apps/basic/app.ai",
+      "flow": "demo",
+      "expect": {
+        "result": 5
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "tool_call",
+      "app": "apps/tool_call/app.ai",
+      "flow": "demo",
+      "expect": {
+        "result": {
+          "message": "hi"
+        },
+        "tool_calls": [
+          "echo tool"
+        ]
+      },
+      "tool_bindings": {
+        "echo tool": {
+          "entry": "tools.echo_tool:run",
+          "kind": "python"
+        }
+      }
+    },
+    {
+      "id": "agent_merge_ranked",
+      "app": "apps/agent_merge/app.ai",
+      "flow": "demo",
+      "expect": {
+        "result": {
+          "text": "[mock-model] This is a longer plan prompt. :: Task | mem:st=0"
+        },
+        "trace_hash": "26b826c755d6a80e3270e8037e147dd58c2e5f4c6f331a390037a642364cb756"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "memory_pack_selection",
+      "app": "apps/memory_pack/app.ai",
+      "flow": "demo",
+      "memory_packs": {
+        "default_pack": "agent-minimal"
+      },
+      "expect": {
+        "result": "[mock-model] Memory check. :: Hello | mem:st=0",
+        "trace_hash": "e7066484a6f3455065bcfa8323a7926d4c1db25b71ff98c62ab5ec4103c9a9d6"
+      },
+      "tags": [
+        "fast"
+      ]
+    },
+    {
+      "id": "agent_lab_smoke",
+      "app": "apps/agent_lab/app.ai",
+      "flow": "agent_lab.lab_demo",
+      "input": {
+        "goal": "Draft a 3-step onboarding checklist.",
+        "mode": "single"
+      },
+      "expect": {
+        "result": "[mock-model] Provide a short plan with 3 steps. :: Draft a 3-step onboarding checklist."
+      },
+      "tags": [
+        "fast"
+      ]
+    }
+  ]
+}

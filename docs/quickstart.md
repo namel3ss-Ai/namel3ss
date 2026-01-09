@@ -8,10 +8,24 @@ Run any `.ai` app with the file-first CLI.
 
 ## Create a project
 
-- Scaffold: `n3 new <template> [project_name]` (templates: `crud`, `ai-assistant`, `multi-agent`)
+- Scaffold: `n3 new <template> [project_name]` (templates: `crud`, `ai-assistant`, `multi-agent`, `agent-lab`)
 - Example: `n3 new crud my_app` then `cd my_app`
+- Recommended first win: `n3 new agent-lab demo` then `cd demo`
 - The app file lives at `app.ai`; commands below assume you are in the project directory.
 - Multi file apps use module files like `modules/inventory.ai`.
+
+## Agent Lab first win
+
+```bash
+n3 new agent-lab demo
+cd demo
+n3 app.ai studio
+```
+
+In Studio:
+- Open **Agents** to run single or parallel modes.
+- Open **Timeline** to see trace-backed summaries.
+- Use **Memory Packs** and **Handoff** panels to inspect memory behavior.
 
 ## Core commands
 
@@ -51,6 +65,11 @@ Formatter and linter:
 - Format check (CI): `n3 app.ai format check`
 - Lint: `n3 app.ai lint`
 - Lint check (CI): `n3 app.ai lint check`
+
+Evaluation:
+- Run evals: `n3 eval`
+- Deterministic reports: `n3 eval --json /tmp/eval.json --txt /tmp/eval.txt`
+- Fast subset: `n3 eval --fast`
 
 Try this:
 - Run `n3 run app.ai`, then `n3 how`, `n3 with`, `n3 what`, and `n3 see`.

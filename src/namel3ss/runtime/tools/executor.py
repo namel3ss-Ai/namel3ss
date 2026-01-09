@@ -37,6 +37,43 @@ def execute_tool_call(
     line: int | None = None,
     column: int | None = None,
 ) -> ToolCallOutcome:
+    outcome, err = _execute_tool_call_internal(
+        ctx,
+        tool_name,
+        args,
+        line=line,
+        column=column,
+    )
+    if err is not None:
+        raise err
+    return outcome
+
+
+def execute_tool_call_with_outcome(
+    ctx: ExecutionContext,
+    tool_name: str,
+    args: dict,
+    *,
+    line: int | None = None,
+    column: int | None = None,
+) -> tuple[ToolCallOutcome, Exception | None]:
+    return _execute_tool_call_internal(
+        ctx,
+        tool_name,
+        args,
+        line=line,
+        column=column,
+    )
+
+
+def _execute_tool_call_internal(
+    ctx: ExecutionContext,
+    tool_name: str,
+    args: dict,
+    *,
+    line: int | None,
+    column: int | None,
+) -> tuple[ToolCallOutcome, Exception | None]:
     ensure_tool_call_allowed(ctx, tool_name, line=line, column=column)
     tool_decl = ctx.tools.get(tool_name)
     builtin_fallback = ctx.tool_call_source == "ai" and is_builtin_tool(tool_name)
@@ -70,7 +107,7 @@ def execute_tool_call(
         )
         err = _blocked_error(ctx, tool_name, decision, binding_check.error, line=line, column=column)
         mark_boundary(err, "tools")
-        raise err
+        return outcome, err
     policy = load_tool_policy(
         tool_name=tool_name,
         tool_known=tool_decl is not None or builtin_fallback,
@@ -96,12 +133,18 @@ def execute_tool_call(
         )
         err = _blocked_error(ctx, tool_name, decision, None, line=line, column=column)
         mark_boundary(err, "tools")
-        raise err
+        return outcome, err
     if tool_kind is None:
         err = Namel3ssError(f'Unknown tool "{tool_name}".', line=line, column=column)
         _record_tool_trace(ctx, tool_name, tool_kind, decision, result="error")
         mark_boundary(err, "tools")
-        raise err
+        outcome = ToolCallOutcome(
+            tool_name=tool_name,
+            decision=decision,
+            result_kind="error",
+            result_summary=str(err),
+        )
+        return outcome, err
 
     try:
         if tool_kind == "python":
@@ -114,21 +157,34 @@ def execute_tool_call(
             err = _unsupported_kind_error(tool_name, tool_kind or "unknown", line=line, column=column)
             _record_tool_trace(ctx, tool_name, tool_kind, decision, result="error")
             mark_boundary(err, "tools")
-            raise err
+            outcome = ToolCallOutcome(
+                tool_name=tool_name,
+                decision=decision,
+                result_kind="error",
+                result_summary=str(err),
+            )
+            return outcome, err
     except Exception as err:
         _record_tool_trace(ctx, tool_name, tool_kind, decision, result="error")
         mark_boundary(err, "tools")
-        raise
+        outcome = ToolCallOutcome(
+            tool_name=tool_name,
+            decision=decision,
+            result_kind="error",
+            result_summary=str(err),
+        )
+        return outcome, err
 
     result_object = ensure_object(result)
     _record_tool_trace(ctx, tool_name, tool_kind, decision, result="ok")
-    return ToolCallOutcome(
+    outcome = ToolCallOutcome(
         tool_name=tool_name,
         decision=decision,
         result_kind="ok",
         result_summary="ok",
         result_value=result_object,
     )
+    return outcome, None
 
 
 def _run_python_tool(
@@ -346,4 +402,4 @@ def _tool_example(tool_name: str) -> str:
     )
 
 
-__all__ = ["execute_tool_call"]
+__all__ = ["execute_tool_call", "execute_tool_call_with_outcome"]

@@ -1,0 +1,87 @@
+spec is "1.0"
+
+tool "hash text":
+  implemented using python
+
+  input:
+    value is text
+
+  output:
+    hash is text
+
+tool "unsafe request":
+  implemented using python
+
+  input:
+    url is text
+
+  output:
+    status is text
+
+ai "lab_ai":
+  provider is "mock"
+  model is "mock-model"
+  system_prompt is "You are a deterministic agent for Agent Lab."
+  tools:
+    expose "hash text"
+    expose "unsafe request"
+  memory:
+    short_term is 0
+    semantic is false
+    profile is false
+
+agent "router":
+  ai is "lab_ai"
+  system_prompt is "Route the goal to the best agent. Reply with a short routing note."
+
+agent "planner":
+  ai is "lab_ai"
+  system_prompt is "Provide a short plan with 3 steps."
+
+agent "critic":
+  ai is "lab_ai"
+  system_prompt is "List 2 risks or gaps."
+
+agent "researcher":
+  ai is "lab_ai"
+  system_prompt is "Add 2 supporting details."
+
+record "AgentTask":
+  field "goal" is text must be present
+  field "mode" is text must be present
+
+record "TimelineEvent":
+  field "run_id" is text must be present
+  field "seq" is number must be present
+  field "stage" is text must be present
+  field "detail" is text
+
+record "AgentOutput":
+  field "run_id" is text must be present
+  field "seq" is number must be present
+  field "agent" is text must be present
+  field "mode" is text must be present
+  field "output" is text must be present
+
+record "RunResult":
+  field "run_id" is text must be present
+  field "mode" is text must be present
+  field "output" is text must be present
+  field "output_hash" is text must be present
+  field "merge_policy" is text must be present
+  field "status" is text must be present
+
+record "ExplainNote":
+  field "run_id" is text must be present
+  field "detail" is text must be present
+
+record "SafetyStatus":
+  field "run_id" is text must be present
+  field "blocked_reason" is text must be present
+  field "confirmation_status" is text must be present
+
+record "DebugMetric":
+  field "run_id" is text must be present
+  field "seq" is number must be present
+  field "label" is text must be present
+  field "value" is number must be present

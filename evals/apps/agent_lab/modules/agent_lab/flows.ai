@@ -1,0 +1,500 @@
+spec is "1.0"
+flow "load_demo_task":
+  set state.task_seed with:
+    goal is "Draft a 3-step onboarding checklist."
+    mode is "single"
+  create "AgentTask" with state.task_seed as task
+  return "demo_loaded"
+flow "run_lab_ui":
+  find "AgentTask" where true
+  let count is list length of agenttask_results
+  if count is 0:
+    set state.run_id is "current"
+    delete "TimelineEvent" where run_id is state.run_id
+    delete "AgentOutput" where run_id is state.run_id
+    delete "RunResult" where run_id is state.run_id
+    delete "ExplainNote" where run_id is state.run_id
+    delete "SafetyStatus" where run_id is state.run_id
+    delete "DebugMetric" where run_id is state.run_id
+    set state.debug_metric with:
+      run_id is state.run_id
+      seq is 1
+      label is "AI calls"
+      value is 0
+    create "DebugMetric" with state.debug_metric as metric
+    set state.debug_metric with:
+      run_id is state.run_id
+      seq is 2
+      label is "Tool calls"
+      value is 0
+    create "DebugMetric" with state.debug_metric as metric
+    set state.debug_metric with:
+      run_id is state.run_id
+      seq is 3
+      label is "Policy violations"
+      value is 0
+    create "DebugMetric" with state.debug_metric as metric
+    return "no_task"
+  let last_index is count - 1
+  let task is list get agenttask_results at last_index
+  let goal is task.goal
+  let mode is task.mode
+  set state.run_id is "current"
+  set state.ai_calls is 0
+  set state.tool_calls is 0
+  set state.policy_violations is 0
+  set state.blocked_reason is "not run"
+
+  delete "TimelineEvent" where run_id is state.run_id
+  delete "AgentOutput" where run_id is state.run_id
+  delete "RunResult" where run_id is state.run_id
+  delete "ExplainNote" where run_id is state.run_id
+  delete "SafetyStatus" where run_id is state.run_id
+  delete "DebugMetric" where run_id is state.run_id
+
+  set state.timeline_event with:
+    run_id is state.run_id
+    seq is 1
+    stage is "Start"
+    detail is goal
+  create "TimelineEvent" with state.timeline_event as event
+
+  set state.timeline_event with:
+    run_id is state.run_id
+    seq is 2
+    stage is "Memory"
+    detail is "pack: agent-minimal"
+  create "TimelineEvent" with state.timeline_event as event
+
+  set state.timeline_event with:
+    run_id is state.run_id
+    seq is 3
+    stage is "Decide"
+    detail is mode
+  create "TimelineEvent" with state.timeline_event as event
+
+  let merge_policy is "none"
+  let final_output is ""
+  let planner_seq is 1
+
+  if mode is "parallel":
+    run agent "planner" with input: goal as plan
+    let plan_text is map get plan key "text"
+    run agents in parallel:
+      agent "critic" with input: plan
+      agent "researcher" with input: plan
+    merge:
+      policy is "all"
+    as feedback
+    set merge_policy is "all"
+    set state.ai_calls is 3
+    let critic_entry is list get feedback at 0
+    let critic_text is map get critic_entry key "text"
+    let researcher_entry is list get feedback at 1
+    let researcher_text is map get researcher_entry key "text"
+
+    set state.agent_output with:
+      run_id is state.run_id
+      seq is 1
+      agent is "planner"
+      mode is mode
+      output is plan_text
+    create "AgentOutput" with state.agent_output as output_entry
+
+    set state.agent_output with:
+      run_id is state.run_id
+      seq is 2
+      agent is "critic"
+      mode is mode
+      output is critic_text
+    create "AgentOutput" with state.agent_output as output_entry
+
+    set state.agent_output with:
+      run_id is state.run_id
+      seq is 3
+      agent is "researcher"
+      mode is mode
+      output is researcher_text
+    create "AgentOutput" with state.agent_output as output_entry
+
+    set final_output is plan_text
+  else:
+    if mode is "router":
+      run agent "router" with input: goal as route
+      let route_text is map get route key "text"
+      set state.ai_calls is 2
+      set planner_seq is 2
+      set state.agent_output with:
+        run_id is state.run_id
+        seq is 1
+        agent is "router"
+        mode is mode
+        output is route_text
+      create "AgentOutput" with state.agent_output as output_entry
+    else:
+      set state.ai_calls is 1
+
+    run agent "planner" with input: goal as plan
+    let plan_text is map get plan key "text"
+    set state.agent_output with:
+      run_id is state.run_id
+      seq is planner_seq
+      agent is "planner"
+      mode is mode
+      output is plan_text
+    create "AgentOutput" with state.agent_output as output_entry
+    set final_output is plan_text
+
+  let hash_result is hash text:
+    value is final_output
+  set state.tool_calls is 1
+
+  set state.timeline_event with:
+    run_id is state.run_id
+    seq is 4
+    stage is "Tools"
+    detail is "hash text"
+  create "TimelineEvent" with state.timeline_event as event
+
+  set state.timeline_event with:
+    run_id is state.run_id
+    seq is 5
+    stage is "Output"
+    detail is "result ready"
+  create "TimelineEvent" with state.timeline_event as event
+
+  set state.timeline_event with:
+    run_id is state.run_id
+    seq is 6
+    stage is "Merge"
+    detail is merge_policy
+  create "TimelineEvent" with state.timeline_event as event
+
+  set state.timeline_event with:
+    run_id is state.run_id
+    seq is 7
+    stage is "Handoff"
+    detail is "none"
+  create "TimelineEvent" with state.timeline_event as event
+
+  set state.timeline_event with:
+    run_id is state.run_id
+    seq is 8
+    stage is "Safety"
+    detail is "not checked yet"
+  create "TimelineEvent" with state.timeline_event as event
+
+  set state.result_record with:
+    run_id is state.run_id
+    mode is mode
+    output is final_output
+    output_hash is hash_result.hash
+    merge_policy is merge_policy
+    status is "ok"
+  create "RunResult" with state.result_record as result
+
+  set state.explain_note with:
+    run_id is state.run_id
+    detail is "Select a timeline row."
+  create "ExplainNote" with state.explain_note as note
+
+  set state.safety_status with:
+    run_id is state.run_id
+    blocked_reason is "not run"
+    confirmation_status is "not confirmed"
+  create "SafetyStatus" with state.safety_status as status
+
+  set state.debug_metric with:
+    run_id is state.run_id
+    seq is 1
+    label is "AI calls"
+    value is state.ai_calls
+  create "DebugMetric" with state.debug_metric as metric
+
+  set state.debug_metric with:
+    run_id is state.run_id
+    seq is 2
+    label is "Tool calls"
+    value is state.tool_calls
+  create "DebugMetric" with state.debug_metric as metric
+
+  set state.debug_metric with:
+    run_id is state.run_id
+    seq is 3
+    label is "Policy violations"
+    value is state.policy_violations
+  create "DebugMetric" with state.debug_metric as metric
+
+  return final_output
+
+flow "lab_demo":
+  let goal is input.goal
+  let mode is input.mode
+
+  set state.run_id is "current"
+  set state.ai_calls is 0
+  set state.tool_calls is 0
+  set state.policy_violations is 0
+  set state.blocked_reason is "not run"
+
+  delete "TimelineEvent" where run_id is state.run_id
+  delete "AgentOutput" where run_id is state.run_id
+  delete "RunResult" where run_id is state.run_id
+  delete "ExplainNote" where run_id is state.run_id
+  delete "SafetyStatus" where run_id is state.run_id
+  delete "DebugMetric" where run_id is state.run_id
+
+  set state.timeline_event with:
+    run_id is state.run_id
+    seq is 1
+    stage is "Start"
+    detail is goal
+  create "TimelineEvent" with state.timeline_event as event
+
+  set state.timeline_event with:
+    run_id is state.run_id
+    seq is 2
+    stage is "Memory"
+    detail is "pack: agent-minimal"
+  create "TimelineEvent" with state.timeline_event as event
+
+  set state.timeline_event with:
+    run_id is state.run_id
+    seq is 3
+    stage is "Decide"
+    detail is mode
+  create "TimelineEvent" with state.timeline_event as event
+
+  let merge_policy is "none"
+  let final_output is ""
+  let planner_seq is 1
+
+  if mode is "parallel":
+    run agent "planner" with input: goal as plan
+    let plan_text is map get plan key "text"
+    run agents in parallel:
+      agent "critic" with input: plan
+      agent "researcher" with input: plan
+    merge:
+      policy is "all"
+    as feedback
+    set merge_policy is "all"
+    set state.ai_calls is 3
+    let critic_entry is list get feedback at 0
+    let critic_text is map get critic_entry key "text"
+    let researcher_entry is list get feedback at 1
+    let researcher_text is map get researcher_entry key "text"
+
+    set state.agent_output with:
+      run_id is state.run_id
+      seq is 1
+      agent is "planner"
+      mode is mode
+      output is plan_text
+    create "AgentOutput" with state.agent_output as output_entry
+
+    set state.agent_output with:
+      run_id is state.run_id
+      seq is 2
+      agent is "critic"
+      mode is mode
+      output is critic_text
+    create "AgentOutput" with state.agent_output as output_entry
+
+    set state.agent_output with:
+      run_id is state.run_id
+      seq is 3
+      agent is "researcher"
+      mode is mode
+      output is researcher_text
+    create "AgentOutput" with state.agent_output as output_entry
+
+    set final_output is plan_text
+  else:
+    if mode is "router":
+      run agent "router" with input: goal as route
+      let route_text is map get route key "text"
+      set state.ai_calls is 2
+      set planner_seq is 2
+      set state.agent_output with:
+        run_id is state.run_id
+        seq is 1
+        agent is "router"
+        mode is mode
+        output is route_text
+      create "AgentOutput" with state.agent_output as output_entry
+    else:
+      set state.ai_calls is 1
+
+    run agent "planner" with input: goal as plan
+    let plan_text is map get plan key "text"
+    set state.agent_output with:
+      run_id is state.run_id
+      seq is planner_seq
+      agent is "planner"
+      mode is mode
+      output is plan_text
+    create "AgentOutput" with state.agent_output as output_entry
+    set final_output is plan_text
+
+  let hash_result is hash text:
+    value is final_output
+  set state.tool_calls is 1
+
+  set state.timeline_event with:
+    run_id is state.run_id
+    seq is 4
+    stage is "Tools"
+    detail is "hash text"
+  create "TimelineEvent" with state.timeline_event as event
+
+  set state.timeline_event with:
+    run_id is state.run_id
+    seq is 5
+    stage is "Output"
+    detail is "result ready"
+  create "TimelineEvent" with state.timeline_event as event
+
+  set state.timeline_event with:
+    run_id is state.run_id
+    seq is 6
+    stage is "Merge"
+    detail is merge_policy
+  create "TimelineEvent" with state.timeline_event as event
+
+  set state.timeline_event with:
+    run_id is state.run_id
+    seq is 7
+    stage is "Handoff"
+    detail is "none"
+  create "TimelineEvent" with state.timeline_event as event
+
+  set state.timeline_event with:
+    run_id is state.run_id
+    seq is 8
+    stage is "Safety"
+    detail is "not checked yet"
+  create "TimelineEvent" with state.timeline_event as event
+
+  set state.result_record with:
+    run_id is state.run_id
+    mode is mode
+    output is final_output
+    output_hash is hash_result.hash
+    merge_policy is merge_policy
+    status is "ok"
+  create "RunResult" with state.result_record as result
+
+  set state.explain_note with:
+    run_id is state.run_id
+    detail is "Select a timeline row."
+  create "ExplainNote" with state.explain_note as note
+
+  set state.safety_status with:
+    run_id is state.run_id
+    blocked_reason is "not run"
+    confirmation_status is "not confirmed"
+  create "SafetyStatus" with state.safety_status as status
+
+  set state.debug_metric with:
+    run_id is state.run_id
+    seq is 1
+    label is "AI calls"
+    value is state.ai_calls
+  create "DebugMetric" with state.debug_metric as metric
+
+  set state.debug_metric with:
+    run_id is state.run_id
+    seq is 2
+    label is "Tool calls"
+    value is state.tool_calls
+  create "DebugMetric" with state.debug_metric as metric
+
+  set state.debug_metric with:
+    run_id is state.run_id
+    seq is 3
+    label is "Policy violations"
+    value is state.policy_violations
+  create "DebugMetric" with state.debug_metric as metric
+
+  return final_output
+
+flow "explain_event":
+  let event_row is input.row
+  set state.explain_detail is event_row.detail
+  if state.explain_detail is null:
+    set state.explain_detail is "No details available."
+  set state.run_id is "current"
+  delete "ExplainNote" where run_id is state.run_id
+  set state.explain_note with:
+    run_id is state.run_id
+    detail is state.explain_detail
+  create "ExplainNote" with state.explain_note as note
+  return "ok"
+
+flow "blocked_tool_demo":
+  if state.run_id is null:
+    set state.run_id is "current"
+  if state.ai_calls is null:
+    set state.ai_calls is 0
+  if state.tool_calls is null:
+    set state.tool_calls is 0
+  if state.policy_violations is null:
+    set state.policy_violations is 0
+  try:
+    let blocked is unsafe request:
+      url is "https://example.com/"
+    set state.blocked_reason is "unexpected success"
+  with catch err:
+    set state.blocked_reason is "blocked by policy (see Traces)"
+    set state.policy_violations is state.policy_violations + 1
+  set state.tool_calls is state.tool_calls + 1
+  delete "SafetyStatus" where run_id is state.run_id
+  set state.safety_status with:
+    run_id is state.run_id
+    blocked_reason is state.blocked_reason
+    confirmation_status is "not confirmed"
+  create "SafetyStatus" with state.safety_status as status
+  delete "TimelineEvent" where run_id is state.run_id and stage is "Safety"
+  set state.timeline_event with:
+    run_id is state.run_id
+    seq is 8
+    stage is "Safety"
+    detail is state.blocked_reason
+  create "TimelineEvent" with state.timeline_event as event
+  delete "DebugMetric" where run_id is state.run_id
+  set state.debug_metric with:
+    run_id is state.run_id
+    seq is 1
+    label is "AI calls"
+    value is state.ai_calls
+  create "DebugMetric" with state.debug_metric as metric
+  set state.debug_metric with:
+    run_id is state.run_id
+    seq is 2
+    label is "Tool calls"
+    value is state.tool_calls
+  create "DebugMetric" with state.debug_metric as metric
+  set state.debug_metric with:
+    run_id is state.run_id
+    seq is 3
+    label is "Policy violations"
+    value is state.policy_violations
+  create "DebugMetric" with state.debug_metric as metric
+  return state.blocked_reason
+
+flow "open_traces":
+  return "Open Studio > Traces for the full run."
+
+flow "confirm_action": requires identity.role is "operator"
+  if state.run_id is null:
+    set state.run_id is "current"
+  if state.blocked_reason is null:
+    set state.blocked_reason is "not run"
+  delete "SafetyStatus" where run_id is state.run_id
+  set state.safety_status with:
+    run_id is state.run_id
+    blocked_reason is state.blocked_reason
+    confirmation_status is "confirmed"
+  create "SafetyStatus" with state.safety_status as status
+  return "confirmed"

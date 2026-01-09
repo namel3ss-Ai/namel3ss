@@ -1,0 +1,2 @@
+page.home.button.run  call_flow   flow=demo
+page.home.form.user  submit_form   record=User

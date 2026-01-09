@@ -15,7 +15,7 @@ from namel3ss.runtime.executor.parallel.isolation import ensure_ai_call_allowed
 from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.runtime.providers.capabilities import get_provider_capabilities
 from namel3ss.runtime.tools.field_schema import build_json_schema
-from namel3ss.runtime.tools.executor import execute_tool_call
+from namel3ss.runtime.tools.executor import execute_tool_call_with_outcome
 from namel3ss.runtime.boundary import mark_boundary
 from namel3ss.runtime.values.normalize import unwrap_text
 import namel3ss.runtime.memory.api as memory_api
@@ -288,9 +288,8 @@ def run_ai_with_tools(
                 )
             )
         policy = ToolCallPolicy(allow_tools=True, max_calls=3, strict_json=True, retry_on_parse_error=False, max_total_turns=6)
-        def _tool_executor(tool_name: str, args: dict[str, object]) -> dict[str, object]:
-            outcome = execute_tool_call(ctx, tool_name, dict(args))
-            return outcome.result_value if isinstance(outcome.result_value, dict) else {"result": outcome.result_value}
+        def _tool_executor(tool_name: str, args: dict[str, object]):
+            return execute_tool_call_with_outcome(ctx, tool_name, dict(args))
 
         previous_source = ctx.tool_call_source
         ctx.tool_call_source = "ai"

@@ -22,6 +22,7 @@ from namel3ss.parser.expr.ops import (
 )
 from namel3ss.parser.expr.statepath import parse_state_path
 from namel3ss.parser.parse_program import parse_program
+from namel3ss.parser.sugar.lower import lower_program as lower_sugar_program
 from namel3ss.parser.stmt.common import (
     parse_block,
     parse_statement,
@@ -74,6 +75,7 @@ class Parser(TokenStream):
             require_spec=require_spec,
         )
         program = parser._parse_program()
+        program = lower_sugar_program(program)
         parser._expect("EOF")
         return program
 

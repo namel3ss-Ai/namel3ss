@@ -69,6 +69,46 @@ DEFAULT_GATES: tuple[GateSpec, ...] = (
         required=True,
         command=(sys.executable, "-m", "namel3ss.cli.main", "expr-check"),
     ),
+    GateSpec(
+        name="Eval Gate",
+        tests=(),
+        required=True,
+        command=(
+            sys.executable,
+            "-m",
+            "namel3ss.cli.main",
+            "eval",
+            "--json",
+            ".namel3ss/eval_report.json",
+            "--txt",
+            ".namel3ss/eval_report.txt",
+        ),
+    ),
+    GateSpec(
+        name="Beta Lock Gate",
+        tests=(
+            "tests/beta_lock/test_beta_surfaces.py",
+            "tests/beta_lock/test_agent_explain_goldens.py",
+            "tests/beta_lock/test_trace_goldens.py",
+            "tests/beta_lock/test_cli_goldens.py",
+            "tests/beta_lock/test_handoff_preview_golden.py",
+            "tests/perf_baselines/test_perf_baseline.py",
+            "tests/cli/test_cli_agent_lab_template.py",
+        ),
+        required=True,
+    ),
+    GateSpec(
+        name="Line Limit Gate",
+        tests=(),
+        required=True,
+        command=(sys.executable, "tools/line_limit_check.py"),
+    ),
+    GateSpec(
+        name="Repo Clean Gate",
+        tests=(),
+        required=True,
+        command=(sys.executable, "-m", "namel3ss.beta_lock.repo_clean"),
+    ),
 )
 
 

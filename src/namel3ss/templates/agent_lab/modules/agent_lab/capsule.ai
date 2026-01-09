@@ -1,0 +1,18 @@
+spec is "1.0"
+
+capsule "agent_lab":
+  exports:
+    record "AgentTask"
+    record "TimelineEvent"
+    record "AgentOutput"
+    record "RunResult"
+    record "ExplainNote"
+    record "SafetyStatus"
+    record "DebugMetric"
+    flow "load_demo_task"
+    flow "run_lab_ui"
+    flow "lab_demo"
+    flow "explain_event"
+    flow "blocked_tool_demo"
+    flow "open_traces"
+    flow "confirm_action"

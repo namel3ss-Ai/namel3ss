@@ -2,8 +2,14 @@ from namel3ss.traces.builders import (
     build_ai_call_completed,
     build_ai_call_failed,
     build_ai_call_started,
+    build_tool_call_allowed,
+    build_tool_call_blocked,
     build_tool_call_failed,
+    build_tool_call_finished,
+    build_tool_call_proposed,
     build_tool_call_requested,
+    build_tool_call_started,
+    build_tool_loop_finished,
 )
 from namel3ss.traces.redact import SUMMARY_MAX_LENGTH
 from namel3ss.traces.schema import TRACE_VERSION, TraceEventType
@@ -71,3 +77,68 @@ def test_redaction_and_truncation():
         duration_ms=5,
     )
     assert len(failed["error_message"]) <= SUMMARY_MAX_LENGTH + len("... (truncated)")
+
+
+def test_tool_call_lifecycle_events():
+    proposed = build_tool_call_proposed(
+        call_id="call-1",
+        tool_call_id="tool-1",
+        provider="mock",
+        model="demo",
+        tool_name="echo",
+        arguments={"value": "hi"},
+    )
+    allowed = build_tool_call_allowed(
+        call_id="call-1",
+        tool_call_id="tool-1",
+        provider="mock",
+        model="demo",
+        tool_name="echo",
+        reason="policy_allowed",
+        capability=None,
+    )
+    started = build_tool_call_started(
+        call_id="call-1",
+        tool_call_id="tool-1",
+        provider="mock",
+        model="demo",
+        tool_name="echo",
+    )
+    finished = build_tool_call_finished(
+        call_id="call-1",
+        tool_call_id="tool-1",
+        provider="mock",
+        model="demo",
+        tool_name="echo",
+        status="ok",
+        result={"echo": "hi"},
+        error_message=None,
+        duration_ms=12,
+    )
+    loop = build_tool_loop_finished(
+        call_id="call-1",
+        provider="mock",
+        model="demo",
+        tool_call_count=1,
+        stop_reason="assistant_text",
+    )
+    assert proposed["type"] == TraceEventType.TOOL_CALL_PROPOSED
+    assert allowed["type"] == TraceEventType.TOOL_CALL_ALLOWED
+    assert started["type"] == TraceEventType.TOOL_CALL_STARTED
+    assert finished["type"] == TraceEventType.TOOL_CALL_FINISHED
+    assert loop["type"] == TraceEventType.TOOL_LOOP_FINISHED
+
+
+def test_tool_call_blocked_event():
+    blocked = build_tool_call_blocked(
+        call_id="call-2",
+        tool_call_id="tool-9",
+        provider="mock",
+        model="demo",
+        tool_name="secret",
+        reason="policy_denied",
+        message="Policy denied \"secrets\" for tool \"secret\".",
+        capability="secrets",
+    )
+    assert blocked["type"] == TraceEventType.TOOL_CALL_BLOCKED
+    assert blocked["decision"] == "blocked"

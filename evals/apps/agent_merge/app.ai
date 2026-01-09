@@ -1,0 +1,23 @@
+spec is "1.0"
+
+ai "assistant":
+  provider is "mock"
+  model is "mock-model"
+
+agent "short":
+  ai is "assistant"
+  system_prompt is "Short plan."
+
+agent "long":
+  ai is "assistant"
+  system_prompt is "This is a longer plan prompt."
+
+flow "demo":
+  run agents in parallel:
+    agent "short" with input: "Task"
+    agent "long" with input: "Task"
+  merge:
+    policy is "ranked"
+    score_rule is "text_length"
+  as result
+  return result

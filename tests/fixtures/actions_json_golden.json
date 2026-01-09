@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "count": 2,
+  "actions": [
+    {
+      "id": "page.home.button.run",
+      "type": "call_flow",
+      "flow": "demo"
+    },
+    {
+      "id": "page.home.form.user",
+      "type": "submit_form",
+      "record": "User"
+    }
+  ]
+}

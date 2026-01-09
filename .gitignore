@@ -19,6 +19,7 @@ dist/
 .pytest_cache/
 .coverage
 htmlcov/
+tests/**/output/
 
 # Type checker / linter caches
 .mypy_cache/
@@ -62,6 +63,7 @@ tests/fixtures/.namel3ss/observe.jsonl
 !patterns/**/.namel3ss/
 !patterns/**/.namel3ss/build/
 !patterns/**/.namel3ss/build/**
+patterns/**/.namel3ss/observe.jsonl
 
 # Temp / lock files
 *.tmp

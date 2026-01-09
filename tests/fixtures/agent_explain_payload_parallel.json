@@ -1,0 +1,134 @@
+{
+  "agent_parallel_summary": {
+    "agents": [
+      {
+        "agent_id": "alpha",
+        "ai_profile": "assistant",
+        "failures": [],
+        "input_summary": "task",
+        "memory": {
+          "reasons": [],
+          "recalled_count": 0,
+          "space_counts": [],
+          "spaces": []
+        },
+        "output_hash": "de5f2cbf4c10a0d146f2a671aac363e8640fefc469ad42ac25364f19e4bc194f",
+        "output_preview": "first",
+        "tools": []
+      },
+      {
+        "agent_id": "beta",
+        "ai_profile": "assistant",
+        "failures": [],
+        "input_summary": "task",
+        "memory": {
+          "reasons": [],
+          "recalled_count": 0,
+          "space_counts": [],
+          "spaces": []
+        },
+        "output_hash": "38e452b56a63d9b5f397354cbd207b0e548ef8e4f49729a6f6dd8d6a9a57ab23",
+        "output_preview": "second",
+        "tools": []
+      }
+    ],
+    "merge_explanation": [
+      "Merge policy is ranked.",
+      "beta: Selected by merge policy.",
+      "alpha: Not selected by merge policy."
+    ],
+    "merge_policy": "ranked",
+    "merge_rejected": [
+      "alpha"
+    ],
+    "merge_selected": [
+      "beta"
+    ]
+  },
+  "agent_run_summary": null,
+  "handoff": [],
+  "summaries": [
+    {
+      "agent_id": "alpha",
+      "ai_profile": "assistant",
+      "failures": [],
+      "input_summary": "task",
+      "memory": {
+        "reasons": [],
+        "recalled_count": 0,
+        "space_counts": [],
+        "spaces": []
+      },
+      "output_hash": "de5f2cbf4c10a0d146f2a671aac363e8640fefc469ad42ac25364f19e4bc194f",
+      "output_preview": "first",
+      "tools": []
+    },
+    {
+      "agent_id": "beta",
+      "ai_profile": "assistant",
+      "failures": [],
+      "input_summary": "task",
+      "memory": {
+        "reasons": [],
+        "recalled_count": 0,
+        "space_counts": [],
+        "spaces": []
+      },
+      "output_hash": "38e452b56a63d9b5f397354cbd207b0e548ef8e4f49729a6f6dd8d6a9a57ab23",
+      "output_preview": "second",
+      "tools": []
+    }
+  ],
+  "timeline": [
+    {
+      "details": {
+        "input_summary": "task"
+      },
+      "id": "alpha:start",
+      "kind": "start",
+      "title": "alpha started"
+    },
+    {
+      "details": {
+        "output_hash": "de5f2cbf4c10a0d146f2a671aac363e8640fefc469ad42ac25364f19e4bc194f",
+        "output_preview": "first"
+      },
+      "id": "alpha:output",
+      "kind": "output",
+      "title": "alpha output"
+    },
+    {
+      "details": {
+        "input_summary": "task"
+      },
+      "id": "beta:start",
+      "kind": "start",
+      "title": "beta started"
+    },
+    {
+      "details": {
+        "output_hash": "38e452b56a63d9b5f397354cbd207b0e548ef8e4f49729a6f6dd8d6a9a57ab23",
+        "output_preview": "second"
+      },
+      "id": "beta:output",
+      "kind": "output",
+      "title": "beta output"
+    },
+    {
+      "details": {
+        "merge_policy": "ranked"
+      },
+      "explain": {
+        "lines": [
+          "Merge policy is ranked.",
+          "beta: Selected by merge policy.",
+          "alpha: Not selected by merge policy."
+        ],
+        "title": "Merge decision"
+      },
+      "id": "parallel:merge",
+      "kind": "merge",
+      "title": "Parallel results merged"
+    }
+  ]
+}

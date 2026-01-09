@@ -37,24 +37,24 @@ jobs:
         run: python -m pytest -q
 
       - name: Expression surface gate
-        run: n3 expr-check --json expr_report.json
+        run: n3 expr-check --json .namel3ss/expr_report.json
 
       - name: Release check
-        run: n3 release-check --json release_report.json --txt release_report.txt --fast
+        run: n3 release-check --json .namel3ss/release_report.json --txt .namel3ss/release_report.txt --fast
 
       - name: Upload expr-check report
         uses: actions/upload-artifact@v4
         with:
           name: expr-report
-          path: expr_report.json
+          path: .namel3ss/expr_report.json
 
       - name: Upload release report
         uses: actions/upload-artifact@v4
         with:
           name: release-report
           path: |
-            release_report.json
-            release_report.txt
+            .namel3ss/release_report.json
+            .namel3ss/release_report.txt
 
       - name: DX verify gate
         run: n3 verify --dx --json

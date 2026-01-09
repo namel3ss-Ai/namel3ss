@@ -1,0 +1,19 @@
+{
+  "schema_version": "perf_baselines.v1",
+  "baselines": [
+    {
+      "id": "agent_run",
+      "traces": "tests/golden/snapshots/agent_run/traces.json",
+      "max_trace_events": 30,
+      "max_ai_calls": 1,
+      "max_tool_calls": 0
+    },
+    {
+      "id": "agent_parallel",
+      "traces": "tests/golden/snapshots/agent_parallel/traces.json",
+      "max_trace_events": 60,
+      "max_ai_calls": 2,
+      "max_tool_calls": 0
+    }
+  ]
+}

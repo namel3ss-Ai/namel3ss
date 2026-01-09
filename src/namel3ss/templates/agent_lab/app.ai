@@ -1,0 +1,113 @@
+spec is "1.0"
+
+identity "Operator":
+  field "email" is text must be present
+  field "role" is text must be present
+
+use "agent_lab" as lab
+
+page "home":
+  title is "Agent Lab"
+  text is "Run agents with deterministic traces and clear safety boundaries."
+
+  card "Task":
+    text is "Submit a goal, choose a mode, then run."
+    form is "lab.AgentTask":
+      fields:
+        field goal:
+          help is "Goal to solve."
+        field mode:
+          help is "single | parallel | router"
+    button "Load demo task":
+      calls flow "lab.load_demo_task"
+    button "Run Agent Lab":
+      calls flow "lab.run_lab_ui"
+
+  card "Agents":
+    text is "Router: routes the goal."
+    text is "Planner: builds the plan."
+    text is "Critic: flags gaps."
+    text is "Researcher: adds support."
+    text is "Memory pack: agent-minimal"
+    text is "Allowed tools: hash text, unsafe request"
+
+  row:
+    column:
+      card "Results":
+        text is "Final output:"
+        table is "lab.RunResult":
+          columns:
+            include "output"
+            label "output" is "Output"
+            include "output_hash"
+            label "output_hash" is "Output hash"
+            include "merge_policy"
+            label "merge_policy" is "Merge policy"
+          empty_text is "No results yet."
+        text is "Agent outputs:"
+        table is "lab.AgentOutput":
+          columns:
+            include "agent"
+            include "output"
+          sort:
+            by is "seq"
+            order is asc
+          empty_text is "No agent outputs yet."
+    column:
+      card "Timeline":
+        table is "lab.TimelineEvent":
+          columns:
+            include "seq"
+            include "stage"
+            include "detail"
+          sort:
+            by is "seq"
+            order is asc
+          row_actions:
+            row_action "Explain":
+              calls flow "lab.explain_event"
+          empty_text is "No timeline events yet."
+        text is "Explain:"
+        table is "lab.ExplainNote":
+          columns:
+            include "detail"
+          empty_text is "Select a timeline row."
+
+  card "Safety":
+    table is "lab.SafetyStatus":
+      columns:
+        include "blocked_reason"
+        label "blocked_reason" is "Blocked tool"
+        include "confirmation_status"
+        label "confirmation_status" is "Confirmation status"
+      empty_text is "No safety status yet."
+    button "Try blocked tool":
+      calls flow "lab.blocked_tool_demo"
+    text is "Confirm irreversible actions:"
+    actions:
+      action "Open confirmation":
+        opens modal "Confirm action"
+
+  section "Debug Summary":
+    card "Debug Summary":
+      table is "lab.DebugMetric":
+        columns:
+          include "label"
+          include "value"
+        sort:
+          by is "seq"
+          order is asc
+        empty_text is "No metrics yet."
+      button "Open full traces":
+        calls flow "lab.open_traces"
+
+  modal "Confirm action":
+    card "Confirm irreversible action":
+      text is "This is an irreversible action."
+      text is "Only the operator can confirm."
+      button "Confirm":
+        calls flow "lab.confirm_action"
+      table is "lab.SafetyStatus":
+        columns:
+          include "confirmation_status"
+        empty_text is "No confirmation yet."
