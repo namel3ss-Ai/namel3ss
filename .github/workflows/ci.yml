@@ -78,12 +78,16 @@ jobs:
 
       - name: Patterns suite
         run: |
-          for pattern in patterns/*; do
-            if [ -d "$pattern" ]; then
-              echo "Pattern $pattern"
-              (cd "$pattern" && n3 test)
-              (cd "$pattern" && n3 verify --prod)
-            fi
+          runnable_patterns=$(find patterns -mindepth 1 -maxdepth 2 -type f -name "app.ai" -print0 | xargs -0 -n1 dirname | sort -u || true)
+          skipped_patterns=$(find patterns -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n1 -I {} sh -c 'test -f "{}/app.ai" || echo "{}"' | sort -u || true)
+          echo "Runnable patterns:"
+          echo "${runnable_patterns}"
+          echo "Skipped containers:"
+          echo "${skipped_patterns}"
+          for pattern in ${runnable_patterns}; do
+            echo "Pattern ${pattern}"
+            (cd "${pattern}" && n3 test)
+            (cd "${pattern}" && n3 verify --prod)
           done
 
       - name: Enforce line limit
