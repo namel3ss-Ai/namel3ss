@@ -1,0 +1,18 @@
+spec is "1.0"
+
+capsule "agent_wow":
+  exports:
+    record "ProjectBrief"
+    record "PlannerOutput"
+    record "ResearcherOutput"
+    record "CriticOutput"
+    record "RefinedPlan"
+    record "RunSummary"
+    flow "generate_plan"
+    flow "run_parallel_feedback"
+    flow "refine_plan"
+    flow "remember_preference"
+    flow "create_handoff"
+    flow "apply_handoff"
+    flow "follow_up"
+    flow "reset_state"

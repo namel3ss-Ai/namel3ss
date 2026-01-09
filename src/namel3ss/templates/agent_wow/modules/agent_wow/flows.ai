@@ -1,0 +1,220 @@
+spec is "1.0"
+
+flow "generate_plan":
+  find "ProjectBrief" where true
+  let count is list length of projectbrief_results
+  if count is 0:
+    delete "RunSummary" where true
+    set state.run_summary with:
+      seq is 1
+      label is "Generate plan"
+      detail is "Add a project description, then try again."
+    create "RunSummary" with state.run_summary as summary
+    return "missing_project_brief"
+  let last_index is count - 1
+  let brief is list get projectbrief_results at last_index
+  let goal is brief.description
+
+  delete "PlannerOutput" where true
+  delete "ResearcherOutput" where true
+  delete "CriticOutput" where true
+  delete "RefinedPlan" where true
+  delete "RunSummary" where true
+
+  run agent "planner" with input: goal as plan
+  let plan_text is map get plan key "text"
+  set state.planner_output with:
+    text is plan_text
+  create "PlannerOutput" with state.planner_output as output
+
+  set state.run_summary with:
+    seq is 1
+    label is "Generate plan"
+    detail is "Planner produced a draft plan from the project brief."
+  create "RunSummary" with state.run_summary as summary
+  return plan_text
+
+flow "run_parallel_feedback":
+  find "ProjectBrief" where true
+  let count is list length of projectbrief_results
+  if count is 0:
+    delete "RunSummary" where true
+    set state.run_summary with:
+      seq is 1
+      label is "Parallel feedback"
+      detail is "Add a project description, then run parallel feedback."
+    create "RunSummary" with state.run_summary as summary
+    return "missing_project_brief"
+  let last_index is count - 1
+  let brief is list get projectbrief_results at last_index
+  let goal is brief.description
+
+  delete "PlannerOutput" where true
+  delete "ResearcherOutput" where true
+  delete "CriticOutput" where true
+  delete "RefinedPlan" where true
+  delete "RunSummary" where true
+
+  run agent "planner" with input: "Remember this for our project: We decided to hand off key risks to the critic." as seed
+  run agent "planner" with input: goal as plan
+  run agents in parallel:
+    agent "critic" with input: plan
+    agent "researcher" with input: plan
+  merge:
+    policy is "all"
+  as feedback
+
+  let plan_text is map get plan key "text"
+  let critic_entry is list get feedback at 0
+  let critic_text is map get critic_entry key "text"
+  let researcher_entry is list get feedback at 1
+  let researcher_text is map get researcher_entry key "text"
+
+  set state.planner_output with:
+    text is plan_text
+  create "PlannerOutput" with state.planner_output as output
+  set state.critic_output with:
+    text is critic_text
+  create "CriticOutput" with state.critic_output as output
+  set state.researcher_output with:
+    text is researcher_text
+  create "ResearcherOutput" with state.researcher_output as output
+
+  let echo_result is echo:
+    value is map:
+      "step" is "parallel_feedback"
+      "agents" is list:
+        "planner"
+        "critic"
+        "researcher"
+
+  set state.run_summary with:
+    seq is 1
+    label is "Parallel feedback"
+    detail is "Planner ran, critic and researcher ran in parallel, and echo captured the run."
+  create "RunSummary" with state.run_summary as summary
+  return plan_text
+
+flow "refine_plan":
+  find "PlannerOutput" where true
+  let plan_count is list length of planneroutput_results
+  if plan_count is greater than 0:
+    let plan_index is plan_count - 1
+    let plan_entry is list get planneroutput_results at plan_index
+    set state.refine_input is plan_entry.text
+  else:
+    find "ProjectBrief" where true
+    let brief_count is list length of projectbrief_results
+    if brief_count is greater than 0:
+      let brief_index is brief_count - 1
+      let brief_entry is list get projectbrief_results at brief_index
+      set state.refine_input is brief_entry.description
+    else:
+      delete "RunSummary" where true
+      set state.run_summary with:
+        seq is 1
+        label is "Refine plan"
+        detail is "Add a project description or generate a plan first."
+      create "RunSummary" with state.run_summary as summary
+      return "missing_inputs"
+
+  ask ai "wow_ai" with input: state.refine_input as refined
+  let refined_text is refined
+
+  delete "RefinedPlan" where true
+  set state.refined_plan with:
+    text is refined_text
+  create "RefinedPlan" with state.refined_plan as output
+
+  ask ai "wow_ai" with input: "Remember this for our project: We decided to keep owners explicit and outcomes measurable." as team_decision
+
+  delete "RunSummary" where true
+  set state.run_summary with:
+    seq is 1
+    label is "Refine plan"
+    detail is "Refined the plan and recorded a team decision memory."
+  create "RunSummary" with state.run_summary as summary
+  return refined_text
+
+flow "remember_preference":
+  ask ai "wow_ai" with input: "Remember this about me: I prefer premium, concise language." as preference_note
+  delete "RunSummary" where true
+  set state.run_summary with:
+    seq is 1
+    label is "Remember preference"
+    detail is "Stored a preference memory for future runs."
+  create "RunSummary" with state.run_summary as summary
+  return "preference_saved"
+
+flow "create_handoff":
+  let result is handoff create:
+    from_agent_id is "planner"
+    to_agent_id is "critic"
+  delete "RunSummary" where true
+  set state.run_summary with:
+    seq is 1
+    label is "Create handoff"
+    detail is "Created a handoff from planner to critic."
+  create "RunSummary" with state.run_summary as summary
+  return result.summary
+
+flow "apply_handoff":
+  try:
+    let result is handoff apply:
+      packet_id is "first_pending"
+    delete "RunSummary" where true
+    set state.run_summary with:
+      seq is 1
+      label is "Apply handoff"
+      detail is "Applied the latest pending handoff."
+    create "RunSummary" with state.run_summary as summary
+    return result.written_count
+  with catch err:
+    delete "RunSummary" where true
+    set state.run_summary with:
+      seq is 1
+      label is "Apply handoff"
+      detail is "No pending handoff found. Create one first."
+    create "RunSummary" with state.run_summary as summary
+    return "no_pending_handoff"
+
+flow "follow_up":
+  find "PlannerOutput" where true
+  let plan_count is list length of planneroutput_results
+  if plan_count is greater than 0:
+    let plan_index is plan_count - 1
+    let plan_entry is list get planneroutput_results at plan_index
+    set state.follow_up_input is plan_entry.text
+  else:
+    find "ProjectBrief" where true
+    let brief_count is list length of projectbrief_results
+    if brief_count is greater than 0:
+      let brief_index is brief_count - 1
+      let brief_entry is list get projectbrief_results at brief_index
+      set state.follow_up_input is brief_entry.description
+    else:
+      set state.follow_up_input is "Use the handed-off decision to flag one risk."
+
+  run agent "critic" with input: state.follow_up_input as critique
+  let critique_text is map get critique key "text"
+  delete "CriticOutput" where true
+  set state.critic_output with:
+    text is critique_text
+  create "CriticOutput" with state.critic_output as output
+
+  delete "RunSummary" where true
+  set state.run_summary with:
+    seq is 1
+    label is "Agent follow-up"
+    detail is "Critic responded using the latest context."
+  create "RunSummary" with state.run_summary as summary
+  return critique_text
+
+flow "reset_state":
+  delete "ProjectBrief" where true
+  delete "PlannerOutput" where true
+  delete "ResearcherOutput" where true
+  delete "CriticOutput" where true
+  delete "RefinedPlan" where true
+  delete "RunSummary" where true
+  return "reset"

@@ -21,7 +21,7 @@ class Lexer:
 
         for line_no, raw_line in enumerate(lines, start=1):
             stripped = raw_line.rstrip("\n")
-            if stripped.strip() == "":
+            if stripped.strip() == "" or stripped.lstrip().startswith("#"):
                 continue
 
             indent = self._leading_spaces(stripped)

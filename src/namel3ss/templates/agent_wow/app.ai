@@ -1,0 +1,84 @@
+# How to try in 60 seconds
+# 1) Run: n3 new agent-wow demo && cd demo && n3 app.ai
+# 2) In Studio: enter a project description and click Generate plan, Run parallel feedback,
+#    Refine plan, Remember preference, Create handoff, Apply handoff, Agent follow-up.
+
+spec is "1.0"
+
+identity "Operator":
+  field "email" is text must be present
+  field "role" is text must be present
+
+use "agent_wow" as wow
+
+page "home":
+  title is "Agent Wow"
+  text is "A premium, traceable multi-agent experience with governed memory."
+
+  card "Project brief":
+    text is "Describe the project to plan, review, and refine."
+    form is "wow.ProjectBrief":
+      fields:
+        field description:
+          help is "One clear sentence or short paragraph."
+    button "Generate plan":
+      calls flow "wow.generate_plan"
+    button "Run parallel feedback":
+      calls flow "wow.run_parallel_feedback"
+    button "Refine plan":
+      calls flow "wow.refine_plan"
+
+  card "Memory & handoff":
+    text is "Capture preferences, create a handoff, and run a follow-up."
+    button "Remember preference":
+      calls flow "wow.remember_preference"
+    button "Create handoff":
+      calls flow "wow.create_handoff"
+    button "Apply handoff":
+      calls flow "wow.apply_handoff"
+    button "Agent follow-up":
+      calls flow "wow.follow_up"
+    button "Reset":
+      calls flow "wow.reset_state"
+
+  row:
+    column:
+      card "Planner output":
+        table is "wow.PlannerOutput":
+          columns:
+            include "text"
+            label "text" is "Plan"
+          empty_text is "No plan yet."
+    column:
+      card "Researcher output":
+        table is "wow.ResearcherOutput":
+          columns:
+            include "text"
+            label "text" is "Support"
+          empty_text is "No researcher output yet."
+
+  row:
+    column:
+      card "Critic output":
+        table is "wow.CriticOutput":
+          columns:
+            include "text"
+            label "text" is "Risks"
+          empty_text is "No critic output yet."
+    column:
+      card "Refined plan":
+        table is "wow.RefinedPlan":
+          columns:
+            include "text"
+            label "text" is "Refined plan"
+          empty_text is "No refined plan yet."
+
+  card "Last run summary":
+    table is "wow.RunSummary":
+      columns:
+        include "label"
+        include "detail"
+      sort:
+        by is "seq"
+        order is desc
+      empty_text is "No runs yet."

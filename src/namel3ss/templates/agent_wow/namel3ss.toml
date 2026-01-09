@@ -1,0 +1,6 @@
+[identity]
+email = "operator@example.com"
+role = "approver"
+
+[memory_packs]
+default_pack = "agent-collab"

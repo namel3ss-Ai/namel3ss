@@ -1,0 +1,74 @@
+spec is "1.0"
+
+tool "echo":
+  implemented using builtin
+
+  input:
+    value is json
+
+  output:
+    echo is json
+
+tool "handoff create":
+  implemented using python
+
+  input:
+    from_agent_id is text
+    to_agent_id is text
+
+  output:
+    summary is text
+    packet_id is optional text
+
+tool "handoff apply":
+  implemented using python
+
+  input:
+    packet_id is text
+
+  output:
+    summary is text
+    written_count is optional number
+
+ai "wow_ai":
+  provider is "mock"
+  model is "mock-model"
+  system_prompt is "You are the base agent for Agent Wow. Keep outputs deterministic and concise."
+  tools:
+    expose "echo"
+  memory:
+    short_term is 3
+    semantic is true
+    profile is true
+
+agent "planner":
+  ai is "wow_ai"
+  system_prompt is "Planner: produce a 3-step plan with clear action verbs."
+
+agent "researcher":
+  ai is "wow_ai"
+  system_prompt is "Researcher: add two supporting details."
+
+agent "critic":
+  ai is "wow_ai"
+  system_prompt is "Critic: list two risks or gaps."
+
+record "ProjectBrief":
+  field "description" is text must be present
+
+record "PlannerOutput":
+  field "text" is text must be present
+
+record "ResearcherOutput":
+  field "text" is text must be present
+
+record "CriticOutput":
+  field "text" is text must be present
+
+record "RefinedPlan":
+  field "text" is text must be present
+
+record "RunSummary":
+  field "seq" is number must be present
+  field "label" is text must be present
+  field "detail" is text must be present

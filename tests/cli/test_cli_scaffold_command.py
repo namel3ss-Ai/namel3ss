@@ -147,5 +147,5 @@ def test_new_lists_templates(capsys):
     assert code == 0
     out = captured.out
     assert "Available templates" in out
-    for name in ["demo", "starter", "crud", "ai-assistant", "multi-agent"]:
+    for name in ["demo", "starter", "crud", "ai-assistant", "multi-agent", "agent-wow"]:
         assert name in out

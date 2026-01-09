@@ -60,6 +60,12 @@ TEMPLATES: tuple[TemplateSpec, ...] = (
         description="Agent Lab starter with explainable runs and safe tool defaults.",
         aliases=("agent_lab",),
     ),
+    TemplateSpec(
+        name="agent-wow",
+        directory="agent_wow",
+        description="Premium multi-agent demo with governed memory handoffs.",
+        aliases=("agent_wow",),
+    ),
 )
 
 
