@@ -22,7 +22,7 @@ jobs:
           pip install -e .[dev]
 
       - name: Compile check
-        run: python -m compileall src -q -x '.*src/namel3ss/runtime/build.*'
+        run: python -m compileall src -q -x '.*namel3ss/runtime/build.*'
 
       - name: Executable spec suite
         run: python -m pytest -q tests/spec

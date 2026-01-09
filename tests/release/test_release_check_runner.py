@@ -10,11 +10,23 @@ from namel3ss.release.runner import (
 
 
 def _executor_ok(_gate, tests, _fast):
-    return GateExecution(exit_code=0, duration_ms=5, command=("pytest", "-q", *tests))
+    return GateExecution(
+        exit_code=0,
+        duration_ms=5,
+        command=("pytest", "-q", *tests),
+        stdout="",
+        stderr="",
+    )
 
 
 def _executor_fail(_gate, tests, _fast):
-    return GateExecution(exit_code=1, duration_ms=7, command=("pytest", "-q", *tests))
+    return GateExecution(
+        exit_code=1,
+        duration_ms=7,
+        command=("pytest", "-q", *tests),
+        stdout="",
+        stderr="",
+    )
 
 
 def test_release_report_deterministic(monkeypatch, tmp_path):

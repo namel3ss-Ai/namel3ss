@@ -17,7 +17,7 @@ def test_compileall_does_not_dirty_repo() -> None:
         "src",
         "-q",
         "-x",
-        r".*src/namel3ss/runtime/build.*",
+        r".*namel3ss/runtime/build.*",
     )
     result = subprocess.run(cmd, cwd=root, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr or result.stdout

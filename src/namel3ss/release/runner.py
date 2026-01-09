@@ -117,6 +117,8 @@ class GateExecution:
     exit_code: int
     duration_ms: int
     command: tuple[str, ...]
+    stdout: str
+    stderr: str
 
 
 GateExecutor = Callable[[GateSpec, tuple[str, ...], bool], GateExecution]
@@ -246,7 +248,13 @@ def _run_pytest_gate(gate: GateSpec, tests: tuple[str, ...], fast: bool) -> Gate
     start = time.time()
     proc = subprocess.run(cmd, capture_output=True, text=True)
     duration_ms = int((time.time() - start) * 1000)
-    return GateExecution(exit_code=proc.returncode, duration_ms=duration_ms, command=cmd)
+    return GateExecution(
+        exit_code=proc.returncode,
+        duration_ms=duration_ms,
+        command=cmd,
+        stdout=proc.stdout or "",
+        stderr=proc.stderr or "",
+    )
 
 
 def _run_command_gate(gate: GateSpec, _tests: tuple[str, ...], _fast: bool) -> GateExecution:
@@ -254,15 +262,33 @@ def _run_command_gate(gate: GateSpec, _tests: tuple[str, ...], _fast: bool) -> G
     start = time.time()
     proc = subprocess.run(cmd, capture_output=True, text=True)
     duration_ms = int((time.time() - start) * 1000)
-    return GateExecution(exit_code=proc.returncode, duration_ms=duration_ms, command=cmd)
+    return GateExecution(
+        exit_code=proc.returncode,
+        duration_ms=duration_ms,
+        command=cmd,
+        stdout=proc.stdout or "",
+        stderr=proc.stderr or "",
+    )
 
 
 def _gate_details(tests: tuple[str, ...], execution: GateExecution) -> dict:
+    stdout_tail = _tail(execution.stdout) if execution.exit_code != 0 else ""
+    stderr_tail = _tail(execution.stderr) if execution.exit_code != 0 else ""
     return {
         "tests": list(tests),
         "exit_code": execution.exit_code,
         "command": list(execution.command),
+        "stdout_tail": stdout_tail,
+        "stderr_tail": stderr_tail,
     }
+
+
+def _tail(text: str, limit: int = 8000) -> str:
+    if not text:
+        return ""
+    if len(text) <= limit:
+        return text
+    return text[-limit:]
 
 
 def _missing_tests_result(gate: GateSpec, *, reason: str, missing: list[str] | None = None) -> GateResult:
