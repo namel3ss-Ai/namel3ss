@@ -37,6 +37,7 @@ def enforce_requires(
             _requires_failed_message(subject),
             line=line,
             column=column,
+            details={"category": "policy"},
         )
 
 

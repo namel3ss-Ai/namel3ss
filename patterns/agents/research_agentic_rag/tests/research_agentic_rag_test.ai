@@ -1,3 +1,3 @@
 test "research demo":
-  run flow "research_demo" with input: {} as result
+  run flow "research_demo" with input: {"query": "Deterministic tool-first research"} as result
   expect value is "researched"

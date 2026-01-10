@@ -15,6 +15,13 @@ record "Citation":
   field "url" is text must be present
   field "snippet" is text must be present
 
+record "ResearchQuery":
+  field "query" is text must be present
+
+record "RunStatus":
+  field "status" is text must be present
+  field "last_query" is text
+
 tool "retrieve docs":
   implemented using python
   purity is "pure"
@@ -36,12 +43,54 @@ agent "researcher":
   system_prompt is "Return a short, grounded summary."
 
 flow "research_demo": requires identity.role is "researcher"
-  let query is "Deterministic tool-first research"
+  set state.status is "running"
+  let query is ""
+  let has_query is false
+  try:
+    let query is input.query
+    let has_query is true
+  with catch err:
+    let has_query is false
+  if has_query is false:
+    try:
+      let query is input.values.query
+      let has_query is true
+    with catch err:
+      let has_query is false
+  if has_query is false:
+    find "ResearchQuery" where true
+    let query_count is list length of researchquery_results
+    if query_count is 0:
+      set state.status is "idle"
+      set state.status_record with:
+        status is state.status
+        last_query is null
+      delete "RunStatus" where true
+      create "RunStatus" with state.status_record as status_entry
+      return "invalid_query"
+    let last_index is query_count - 1
+    let saved_query is list get researchquery_results at last_index
+    let query is saved_query.query
+  if query is null or query is "":
+    set state.status is "idle"
+    set state.status_record with:
+      status is state.status
+      last_query is null
+    delete "RunStatus" where true
+    create "RunStatus" with state.status_record as status_entry
+    return "invalid_query"
+  set state.last_query is query
   let retrieved is retrieve docs:
     query is query
   let docs is retrieved.documents
   let count is list length of docs
   if count is 0:
+    set state.status is "no_sources"
+    set state.status_record with:
+      status is state.status
+      last_query is query
+    delete "RunStatus" where true
+    create "RunStatus" with state.status_record as status_entry
     return "no_sources"
   run agent "researcher" with input: query as summary
   set state.result with:
@@ -56,13 +105,57 @@ flow "research_demo": requires identity.role is "researcher"
       url is doc.url
       snippet is doc.snippet
     create "Citation" with state.citation as citation
+  set state.status is "done"
+  set state.status_record with:
+    status is state.status
+    last_query is query
+  delete "RunStatus" where true
+  create "RunStatus" with state.status_record as status_entry
   return "researched"
+
+flow "clear_results": requires identity.role is "researcher"
+  let last_query is null
+  try:
+    let last_query is state.last_query
+  with catch err:
+    let last_query is null
+  if last_query is null or last_query is "":
+    delete "ResearchResult" where true
+    delete "Citation" where true
+  else:
+    delete "ResearchResult" where query is last_query
+    delete "Citation" where query is last_query
+  set state.status is "idle"
+  set state.status_record with:
+    status is state.status
+    last_query is last_query
+  delete "RunStatus" where true
+  create "RunStatus" with state.status_record as status_entry
+  return "cleared"
 
 page "home": requires identity.role is "researcher"
   title is "Research Agentic RAG"
   text is "Tool-first retrieval with grounded summaries."
-  button "Run research":
-    calls flow "research_demo"
+  row:
+    column:
+      card "Query":
+        form is "ResearchQuery":
+          fields:
+            field query:
+              help is "Enter a focused research question."
+        button "Run research":
+          calls flow "research_demo"
+        button "Clear results":
+          calls flow "clear_results"
+    column:
+      card "Status":
+        table is "RunStatus":
+          columns:
+            include "status"
+            label "status" is "Status"
+            include "last_query"
+            label "last_query" is "Last query"
+          empty_text is "No runs yet."
   section "Results":
     table is "ResearchResult"
   section "Citations":
