@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from namel3ss.ast import nodes as ast
+from namel3ss.errors.base import Namel3ssError
+from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.parser.sugar import grammar as sugar
 
 
@@ -27,6 +29,17 @@ def _lower_expression(expr: ast.Expression | None):
                     column=op.column,
                 )
         return current
+    if isinstance(expr, sugar.LatestRecordExpr):
+        raise Namel3ssError(
+            build_guidance_message(
+                what="Latest record selector must be bound to a local name.",
+                why="`latest` expands into record queries and cannot be nested inside other expressions.",
+                fix='Bind it first: `let record is latest "MyRecord"` or `require latest "MyRecord" as record otherwise "..."`.',
+                example='require latest "Order" as latest_order otherwise "Add an order first."',
+            ),
+            line=expr.line,
+            column=expr.column,
+        )
     if isinstance(expr, ast.Literal):
         return expr
     if isinstance(expr, ast.VarReference):

@@ -70,6 +70,13 @@ class AttemptBlockedToolStmt(ast.Statement):
 
 
 @dataclass
+class RequireLatestStmt(ast.Statement):
+    record_name: str
+    target: str
+    message: str
+
+
+@dataclass
 class AccessIndex(ast.Node):
     index: ast.Expression
 
@@ -86,6 +93,11 @@ AccessOp = AccessIndex | AccessAttr
 class AccessExpr(ast.Expression):
     base: ast.Expression
     ops: List[AccessOp]
+
+
+@dataclass
+class LatestRecordExpr(ast.Expression):
+    record_name: str
 
 
 def parse_start_run(parser) -> StartRunStmt:
@@ -280,6 +292,29 @@ def parse_attempt_blocked_tool(parser) -> AttemptBlockedToolStmt:
     )
 
 
+def parse_require_latest(parser) -> RequireLatestStmt:
+    require_tok = parser._advance()
+    parser._expect("LATEST", "Expected 'latest' after 'require'")
+    record_tok = parser._expect("STRING", "Expected record name after 'require latest'")
+    parser._expect("AS", "Expected 'as' after record name")
+    target_tok = parser._expect("IDENT", "Expected name after 'as'")
+    parser._expect("OTHERWISE", "Expected 'otherwise' after required record binding")
+    message_tok = parser._expect("STRING", "Expected message after 'otherwise'")
+    return RequireLatestStmt(
+        record_name=record_tok.value,
+        target=target_tok.value,
+        message=message_tok.value,
+        line=require_tok.line,
+        column=require_tok.column,
+    )
+
+
+def parse_latest_expr(parser) -> LatestRecordExpr:
+    latest_tok = parser._advance()
+    record_tok = parser._expect("STRING", "Expected record name after 'latest'")
+    return LatestRecordExpr(record_name=record_tok.value, line=latest_tok.line, column=latest_tok.column)
+
+
 def parse_postfix_access(parser, base: ast.Expression) -> ast.Expression:
     if parser._current().type != "LBRACKET":
         return base
@@ -355,20 +390,24 @@ __all__ = [
     "AttemptBlockedToolStmt",
     "ComputeOutputHashStmt",
     "IncrementMetricStmt",
+    "LatestRecordExpr",
     "PlanWithAgentStmt",
     "RecordFinalOutputStmt",
     "RecordPolicyViolationStmt",
     "ReviewParallelStmt",
+    "RequireLatestStmt",
     "StartRunStmt",
     "TimelineEntry",
     "TimelineShowStmt",
     "parse_attempt_blocked_tool",
     "parse_compute_output_hash",
     "parse_increment_metric",
+    "parse_latest_expr",
     "parse_plan_with",
     "parse_record_final_output",
     "parse_record_policy_violation",
     "parse_review_parallel",
+    "parse_require_latest",
     "parse_start_run",
     "parse_timeline_show",
     "parse_postfix_access",

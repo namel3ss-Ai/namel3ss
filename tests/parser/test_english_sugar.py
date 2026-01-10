@@ -36,6 +36,20 @@ flow "demo":
     assert _strip_positions(expr) == _strip_positions(expected)
 
 
+def test_index_access_chain_lowers() -> None:
+    sugar = '''
+flow "demo":
+  let detail is feedback[1].text
+'''
+    core = '''
+flow "demo":
+  let detail is map get list get feedback at 1 key "text"
+'''
+    expr = parse_program(sugar).flows[0].body[0].expression
+    expected = parse_program(core).flows[0].body[0].expression
+    assert _strip_positions(expr) == _strip_positions(expected)
+
+
 def test_agent_execution_sugar_lowers_to_parallel_run() -> None:
     sugar = '''
 flow "demo":

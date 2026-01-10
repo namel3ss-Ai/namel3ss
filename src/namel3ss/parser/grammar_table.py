@@ -104,6 +104,7 @@ def statement_rules() -> tuple[StatementRule, ...]:
         parse_attempt_blocked_tool,
         parse_compute_output_hash,
         parse_increment_metric,
+        parse_require_latest,
         parse_plan_with,
         parse_record_final_output,
         parse_record_policy_violation,
@@ -120,6 +121,7 @@ def statement_rules() -> tuple[StatementRule, ...]:
         StatementRule("compute_output_hash", "IDENT", parse_compute_output_hash, token_value="compute"),
         StatementRule("increment_metric", "IDENT", parse_increment_metric, token_value="increment"),
         StatementRule("attempt_blocked_tool", "IDENT", parse_attempt_blocked_tool, token_value="attempt"),
+        StatementRule("require_latest", "REQUIRE", parse_require_latest),
         StatementRule(
             "record_final_output",
             "RECORD",
@@ -165,12 +167,14 @@ def expression_rules() -> tuple[ExpressionRule, ...]:
     from namel3ss.parser.expr.ops import parse_grouped_expression
     from namel3ss.parser.expr.refs import parse_reference_expr
     from namel3ss.parser.expr.statepath import parse_state_path
+    from namel3ss.parser.sugar.grammar import parse_latest_expr
 
     return (
         ExpressionRule("number", "NUMBER", parse_number_literal),
         ExpressionRule("string", "STRING", parse_string_literal),
         ExpressionRule("boolean", "BOOLEAN", parse_boolean_literal),
         ExpressionRule("null", "NULL", parse_null_literal),
+        ExpressionRule("latest", "LATEST", parse_latest_expr),
         ExpressionRule("identifier", "IDENT", parse_reference_expr),
         ExpressionRule("input", "INPUT", parse_reference_expr),
         ExpressionRule("state", "STATE", parse_state_path),

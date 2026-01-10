@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import re
+from decimal import Decimal
+
 from namel3ss.ast import nodes as ast
 from namel3ss.parser.sugar import grammar as sugar
+
 from namel3ss.parser.sugar.lowering.expressions import _lower_expression
 from namel3ss.parser.sugar.lowering.sugar_statements import (
     _lower_attempt_blocked,
@@ -42,8 +46,12 @@ def _lower_statement(stmt: ast.Statement) -> list[ast.Statement]:
         return _lower_policy_violation(stmt)
     if isinstance(stmt, sugar.AttemptBlockedToolStmt):
         return _lower_attempt_blocked(stmt)
+    if isinstance(stmt, sugar.RequireLatestStmt):
+        return _lower_require_latest(stmt)
 
     if isinstance(stmt, ast.Let):
+        if isinstance(stmt.expression, sugar.LatestRecordExpr):
+            return _lower_latest_let(stmt, stmt.expression)
         return [ast.Let(name=stmt.name, expression=_lower_expression(stmt.expression), constant=stmt.constant, line=stmt.line, column=stmt.column)]
     if isinstance(stmt, ast.Set):
         return [ast.Set(target=stmt.target, expression=_lower_expression(stmt.expression), line=stmt.line, column=stmt.column)]
@@ -221,3 +229,182 @@ def _lower_statement(stmt: ast.Statement) -> list[ast.Statement]:
     if isinstance(stmt, ast.ThemeChange):
         return [stmt]
     return [stmt]
+
+
+def _lower_latest_let(stmt: ast.Let, expr: sugar.LatestRecordExpr) -> list[ast.Statement]:
+    line = stmt.line
+    column = stmt.column
+    slug = _record_results_slug(expr.record_name)
+    results_name = f"{slug}_results"
+    count_name = f"__latest_{slug}_count"
+    index_name = f"__latest_{slug}_index"
+    find_stmt = ast.Find(
+        record_name=expr.record_name,
+        predicate=ast.Literal(value=True, line=line, column=column),
+        line=line,
+        column=column,
+    )
+    count_stmt = ast.Let(
+        name=count_name,
+        expression=ast.ListOpExpr(
+            kind="length",
+            target=ast.VarReference(name=results_name, line=line, column=column),
+            line=line,
+            column=column,
+        ),
+        constant=False,
+        line=line,
+        column=column,
+    )
+    condition = ast.Comparison(
+        kind="gt",
+        left=ast.VarReference(name=count_name, line=line, column=column),
+        right=ast.Literal(value=Decimal(0), line=line, column=column),
+        line=line,
+        column=column,
+    )
+    then_body = [
+        ast.Let(
+            name=index_name,
+            expression=ast.BinaryOp(
+                op="-",
+                left=ast.VarReference(name=count_name, line=line, column=column),
+                right=ast.Literal(value=Decimal(1), line=line, column=column),
+                line=line,
+                column=column,
+            ),
+            constant=False,
+            line=line,
+            column=column,
+        ),
+        ast.Let(
+            name=stmt.name,
+            expression=ast.ListOpExpr(
+                kind="get",
+                target=ast.VarReference(name=results_name, line=line, column=column),
+                index=ast.VarReference(name=index_name, line=line, column=column),
+                line=line,
+                column=column,
+            ),
+            constant=stmt.constant,
+            line=line,
+            column=column,
+        ),
+    ]
+    else_body = [
+        ast.Let(
+            name=stmt.name,
+            expression=ast.Literal(value=None, line=line, column=column),
+            constant=stmt.constant,
+            line=line,
+            column=column,
+        )
+    ]
+    return [
+        find_stmt,
+        count_stmt,
+        ast.If(
+            condition=condition,
+            then_body=then_body,
+            else_body=else_body,
+            line=line,
+            column=column,
+        ),
+    ]
+
+
+def _lower_require_latest(stmt: sugar.RequireLatestStmt) -> list[ast.Statement]:
+    line = stmt.line
+    column = stmt.column
+    results_slug = _record_results_slug(stmt.record_name)
+    results_name = f"{results_slug}_results"
+    count_name = f"__latest_{results_slug}_count"
+    index_name = f"__latest_{results_slug}_index"
+    missing_value = f"missing_{_record_missing_slug(stmt.record_name)}"
+    find_stmt = ast.Find(
+        record_name=stmt.record_name,
+        predicate=ast.Literal(value=True, line=line, column=column),
+        line=line,
+        column=column,
+    )
+    count_stmt = ast.Let(
+        name=count_name,
+        expression=ast.ListOpExpr(
+            kind="length",
+            target=ast.VarReference(name=results_name, line=line, column=column),
+            line=line,
+            column=column,
+        ),
+        constant=False,
+        line=line,
+        column=column,
+    )
+    # The message stays user-controlled text; missing records return a stable sentinel.
+    missing_guard = ast.If(
+        condition=ast.Comparison(
+            kind="eq",
+            left=ast.VarReference(name=count_name, line=line, column=column),
+            right=ast.Literal(value=Decimal(0), line=line, column=column),
+            line=line,
+            column=column,
+        ),
+        then_body=[
+            ast.Set(
+                target=ast.StatePath(path=["status", "message"], line=line, column=column),
+                expression=ast.Literal(value=stmt.message, line=line, column=column),
+                line=line,
+                column=column,
+            ),
+            ast.Return(
+                expression=ast.Literal(value=missing_value, line=line, column=column),
+                line=line,
+                column=column,
+            )
+        ],
+        else_body=[],
+        line=line,
+        column=column,
+    )
+    index_stmt = ast.Let(
+        name=index_name,
+        expression=ast.BinaryOp(
+            op="-",
+            left=ast.VarReference(name=count_name, line=line, column=column),
+            right=ast.Literal(value=Decimal(1), line=line, column=column),
+            line=line,
+            column=column,
+        ),
+        constant=False,
+        line=line,
+        column=column,
+    )
+    target_stmt = ast.Let(
+        name=stmt.target,
+        expression=ast.ListOpExpr(
+            kind="get",
+            target=ast.VarReference(name=results_name, line=line, column=column),
+            index=ast.VarReference(name=index_name, line=line, column=column),
+            line=line,
+            column=column,
+        ),
+        constant=False,
+        line=line,
+        column=column,
+    )
+    return [find_stmt, count_stmt, missing_guard, index_stmt, target_stmt]
+
+
+_CAMEL_BOUNDARY = re.compile(r"([a-z0-9])([A-Z])")
+
+
+def _record_results_slug(record_name: str) -> str:
+    parts = [part.lower() for part in record_name.split(".") if part]
+    return "_".join(parts) if parts else "record"
+
+
+def _record_missing_slug(record_name: str) -> str:
+    parts = [part for part in record_name.split(".") if part]
+    if not parts:
+        return "record"
+    normalized = [_CAMEL_BOUNDARY.sub(r"\1_\2", part).lower() for part in parts]
+    return "_".join(normalized)

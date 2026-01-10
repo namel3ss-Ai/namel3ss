@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Dict
 
 from namel3ss.ast import nodes as ast
-from namel3ss.module_loader.resolve_names import resolve_name
+from namel3ss.module_loader.resolve_names import qualify, resolve_name
 from namel3ss.module_loader.types import ModuleExports
 
 
@@ -200,6 +200,12 @@ def resolve_expression(
             context_label=context_label,
         )
         return
+    if isinstance(expr, ast.VarReference):
+        expr.name = _resolve_results_reference(expr.name, module_name, local_defs)
+        return
+    if isinstance(expr, ast.AttrAccess):
+        expr.base = _resolve_results_reference(expr.base, module_name, local_defs)
+        return
     if isinstance(expr, ast.ListReduceExpr):
         resolve_expression(
             expr.target,
@@ -254,6 +260,23 @@ def resolve_expression(
                 context_label=context_label,
             )
         return
+
+
+def _resolve_results_reference(name: str, module_name: str | None, local_defs: Dict[str, set[str]]) -> str:
+    if not name.endswith("_results"):
+        return name
+    for record_name in local_defs.get("record", set()):
+        if name != _results_name(record_name):
+            continue
+        qualified = qualify(module_name, record_name) if module_name else record_name
+        return _results_name(qualified)
+    return name
+
+
+def _results_name(record_name: str) -> str:
+    parts = [part.lower() for part in record_name.split(".") if part]
+    base = "_".join(parts) if parts else "record"
+    return f"{base}_results"
 
 
 __all__ = ["resolve_expression"]

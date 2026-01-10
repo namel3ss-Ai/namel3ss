@@ -48,6 +48,7 @@ from namel3ss.cli.kit_mode import run_kit_command
 from namel3ss.cli.packs_mode import run_packs
 from namel3ss.cli.registry_mode import run_registry
 from namel3ss.cli.discover_mode import run_discover
+from namel3ss.cli.readability_mode import run_readability_command
 from namel3ss.cli.expr_check_mode import run_expr_check_command
 from namel3ss.cli.eval_mode import run_eval_command
 from namel3ss.cli.verify_mode import run_verify_command
@@ -108,6 +109,7 @@ RESERVED = {
     "run",
     "registry",
     "discover",
+    "readability",
     "pattern",
     "migrate",
     "version",
@@ -235,6 +237,8 @@ def main(argv: list[str] | None = None) -> int:
             json_mode = "--json" in args[1:]
             tail = [item for item in args[1:] if item != "--json"]
             return run_discover(tail, json_mode=json_mode)
+        if cmd == "readability":
+            return run_readability_command(args[1:])
         if cmd == "pattern":
             return run_pattern(args[1:])
         if cmd == "new":
@@ -450,6 +454,7 @@ def _print_usage() -> None:
   n3 verify --dx --json           # DX promise gate (repo)
   n3 release-check --json report.json # release Go/No-Go gate
   n3 expr-check --json report.json    # expression surface gate
+  n3 readability path --json report.json --txt report.txt # grammar readability report
   n3 eval --json eval_report.json     # evaluation gate
   n3 secrets app.ai               # secret status and audit, subcommands status audit
   n3 observe app.ai --since T --json # engine observability stream
