@@ -12,6 +12,23 @@ from namel3ss.parser.sugar.diagnostics import (
     expected_phrase_error,
     expected_value_error,
 )
+from namel3ss.parser.sugar.phase2 import (
+    ClearStmt,
+    NoticeStmt,
+    SaveField,
+    SaveRecordStmt,
+    parse_clear,
+    parse_notice,
+    parse_save_with,
+)
+from namel3ss.parser.sugar.phase3 import (
+    ParallelVerbAgentEntry,
+    ParallelVerbAgentsStmt,
+    VerbAgentCallStmt,
+    parse_in_parallel,
+    parse_verb_agent_call,
+)
+from namel3ss.parser.sugar.phase4 import AttemptOtherwiseStmt, parse_attempt_otherwise
 
 
 @dataclass

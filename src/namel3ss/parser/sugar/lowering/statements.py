@@ -18,6 +18,11 @@ from namel3ss.parser.sugar.lowering.sugar_statements import (
     _lower_start_run,
     _lower_timeline,
 )
+from namel3ss.parser.sugar.lowering.phase3 import (
+    _lower_parallel_verb_agents,
+    _lower_verb_agent_call,
+)
+from namel3ss.parser.sugar.lowering.phase4 import _lower_attempt_otherwise
 
 
 def _lower_statements(statements: list[ast.Statement]) -> list[ast.Statement]:
@@ -46,8 +51,20 @@ def _lower_statement(stmt: ast.Statement) -> list[ast.Statement]:
         return _lower_policy_violation(stmt)
     if isinstance(stmt, sugar.AttemptBlockedToolStmt):
         return _lower_attempt_blocked(stmt)
+    if isinstance(stmt, sugar.AttemptOtherwiseStmt):
+        return _lower_attempt_otherwise(stmt, _lower_statements)
     if isinstance(stmt, sugar.RequireLatestStmt):
         return _lower_require_latest(stmt)
+    if isinstance(stmt, sugar.ClearStmt):
+        return _lower_clear(stmt)
+    if isinstance(stmt, sugar.SaveRecordStmt):
+        return _lower_save_record(stmt)
+    if isinstance(stmt, sugar.NoticeStmt):
+        return _lower_notice(stmt)
+    if isinstance(stmt, sugar.VerbAgentCallStmt):
+        return _lower_verb_agent_call(stmt)
+    if isinstance(stmt, sugar.ParallelVerbAgentsStmt):
+        return _lower_parallel_verb_agents(stmt)
 
     if isinstance(stmt, ast.Let):
         if isinstance(stmt.expression, sugar.LatestRecordExpr):
@@ -395,6 +412,61 @@ def _lower_require_latest(stmt: sugar.RequireLatestStmt) -> list[ast.Statement]:
 
 
 _CAMEL_BOUNDARY = re.compile(r"([a-z0-9])([A-Z])")
+
+
+def _lower_clear(stmt: sugar.ClearStmt) -> list[ast.Statement]:
+    line = stmt.line
+    column = stmt.column
+    return [
+        ast.Delete(
+            record_name=record_name,
+            predicate=ast.Literal(value=True, line=line, column=column),
+            line=line,
+            column=column,
+        )
+        for record_name in stmt.record_names
+    ]
+
+
+def _lower_save_record(stmt: sugar.SaveRecordStmt) -> list[ast.Statement]:
+    line = stmt.line
+    column = stmt.column
+    record_slug = _record_missing_slug(stmt.record_name)
+    temp_name = f"__save_{record_slug}_payload"
+    binding_name = record_slug
+    statements: list[ast.Statement] = []
+    for field in stmt.fields:
+        statements.append(
+            ast.Set(
+                target=ast.StatePath(path=[temp_name] + field.path, line=field.line, column=field.column),
+                expression=_lower_expression(field.expression),
+                line=field.line,
+                column=field.column,
+            )
+        )
+    statements.append(
+        ast.Create(
+            record_name=stmt.record_name,
+            values=ast.StatePath(path=[temp_name], line=line, column=column),
+            target=binding_name,
+            line=line,
+            column=column,
+        )
+    )
+    return statements
+
+
+def _lower_notice(stmt: sugar.NoticeStmt) -> list[ast.Statement]:
+    line = stmt.line
+    column = stmt.column
+    return [
+        ast.Set(
+            target=ast.StatePath(path=["notice"], line=line, column=column),
+            expression=ast.Literal(value=stmt.message, line=line, column=column),
+            line=line,
+            column=column,
+        )
+    ]
 
 
 def _record_results_slug(record_name: str) -> str:

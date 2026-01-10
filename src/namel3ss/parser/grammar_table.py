@@ -101,16 +101,22 @@ def statement_rules() -> tuple[StatementRule, ...]:
     from namel3ss.parser.stmt.delete import parse_delete
     from namel3ss.parser.stmt.trycatch import parse_try
     from namel3ss.parser.sugar.grammar import (
+        parse_attempt_otherwise,
         parse_attempt_blocked_tool,
+        parse_clear,
         parse_compute_output_hash,
         parse_increment_metric,
+        parse_notice,
+        parse_in_parallel,
         parse_require_latest,
         parse_plan_with,
         parse_record_final_output,
         parse_record_policy_violation,
         parse_review_parallel,
+        parse_save_with,
         parse_start_run,
         parse_timeline_show,
+        parse_verb_agent_call,
     )
 
     return (
@@ -120,7 +126,19 @@ def statement_rules() -> tuple[StatementRule, ...]:
         StatementRule("timeline", "IDENT", parse_timeline_show, token_value="timeline"),
         StatementRule("compute_output_hash", "IDENT", parse_compute_output_hash, token_value="compute"),
         StatementRule("increment_metric", "IDENT", parse_increment_metric, token_value="increment"),
+        StatementRule(
+            "attempt_otherwise",
+            "IDENT",
+            parse_attempt_otherwise,
+            token_value="attempt",
+            predicate=_is_attempt_otherwise,
+        ),
         StatementRule("attempt_blocked_tool", "IDENT", parse_attempt_blocked_tool, token_value="attempt"),
+        StatementRule("verb_agent_call", "AGENT", parse_verb_agent_call),
+        StatementRule("verb_agent_call_shorthand", "IDENT", parse_verb_agent_call, predicate=_is_verb_agent_call),
+        StatementRule("in_parallel", "IN", parse_in_parallel),
+        StatementRule("clear", "IDENT", parse_clear, token_value="clear"),
+        StatementRule("notice", "IDENT", parse_notice, token_value="notice"),
         StatementRule("require_latest", "REQUIRE", parse_require_latest),
         StatementRule(
             "record_final_output",
@@ -148,6 +166,7 @@ def statement_rules() -> tuple[StatementRule, ...]:
         StatementRule("for_each", "FOR", parse_for_each),
         StatementRule("match", "MATCH", parse_match),
         StatementRule("try", "TRY", parse_try),
+        StatementRule("save_with", "SAVE", parse_save_with, predicate=_is_save_with),
         StatementRule("save", "SAVE", parse_save),
         StatementRule("create", "CREATE", parse_create),
         StatementRule("find", "FIND", parse_find),
@@ -218,6 +237,64 @@ def _is_run_agent(parser) -> bool:
 def _is_run_agents_parallel(parser) -> bool:
     next_type = parser.tokens[parser.position + 1].type if parser.position + 1 < len(parser.tokens) else None
     return next_type == "AGENTS"
+
+
+def _is_attempt_otherwise(parser) -> bool:
+    next_type = parser.tokens[parser.position + 1].type if parser.position + 1 < len(parser.tokens) else None
+    return next_type == "COLON"
+
+
+def _is_verb_agent_call(parser) -> bool:
+    from namel3ss.parser.sugar.phase3 import is_allowed_verb
+
+    pos = parser.position
+    tokens = parser.tokens
+    if pos >= len(tokens) or tokens[pos].type != "IDENT":
+        return False
+    pos += 1
+    while pos < len(tokens) and tokens[pos].type == "DOT":
+        pos += 1
+        if pos >= len(tokens) or tokens[pos].type != "IDENT":
+            return False
+        pos += 1
+    if pos >= len(tokens):
+        return False
+    verb_tok = tokens[pos]
+    if verb_tok.type != "IDENT" or not is_allowed_verb(verb_tok.value):
+        return False
+    pos += 1
+    depth = 0
+    while pos < len(tokens):
+        tok = tokens[pos]
+        if tok.type in {"NEWLINE", "DEDENT"} and depth == 0:
+            return False
+        if tok.type in {"LPAREN", "LBRACKET"}:
+            depth += 1
+        elif tok.type in {"RPAREN", "RBRACKET"} and depth > 0:
+            depth -= 1
+        if depth == 0 and tok.type == "AS":
+            return True
+        pos += 1
+    return False
+
+
+def _is_save_with(parser) -> bool:
+    pos = parser.position + 1
+    if pos >= len(parser.tokens):
+        return False
+    tok = parser.tokens[pos]
+    if tok.type == "STRING":
+        pos += 1
+    elif tok.type == "IDENT":
+        pos += 1
+        while pos < len(parser.tokens) and parser.tokens[pos].type == "DOT":
+            pos += 1
+            if pos >= len(parser.tokens) or parser.tokens[pos].type != "IDENT":
+                return False
+            pos += 1
+    else:
+        return False
+    return pos < len(parser.tokens) and parser.tokens[pos].type == "WITH"
 
 
 def _is_record_final_output(parser) -> bool:

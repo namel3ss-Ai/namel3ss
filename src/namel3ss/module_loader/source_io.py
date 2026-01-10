@@ -30,6 +30,7 @@ def _parse_source(
     allow_legacy_type_aliases: bool,
     allow_capsule: bool = False,
     require_spec: bool = True,
+    lower_sugar: bool = True,
     parse_cache: ParseCache | None = None,
 ) -> ast.Program:
     digest = _source_digest(source)
@@ -43,6 +44,7 @@ def _parse_source(
             allow_legacy_type_aliases=allow_legacy_type_aliases,
             allow_capsule=allow_capsule,
             require_spec=require_spec,
+            lower_sugar=lower_sugar,
         )
         if parse_cache is not None:
             parse_cache[path] = (digest, copy.deepcopy(parsed))

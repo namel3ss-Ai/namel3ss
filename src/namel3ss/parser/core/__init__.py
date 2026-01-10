@@ -65,6 +65,7 @@ class Parser(TokenStream):
         *,
         allow_capsule: bool = False,
         require_spec: bool = True,
+        lower_sugar: bool = True,
     ) -> ast.Program:
         lexer = Lexer(source)
         tokens = lexer.tokenize()
@@ -75,7 +76,8 @@ class Parser(TokenStream):
             require_spec=require_spec,
         )
         program = parser._parse_program()
-        program = lower_sugar_program(program)
+        if lower_sugar:
+            program = lower_sugar_program(program)
         parser._expect("EOF")
         return program
 
@@ -202,12 +204,14 @@ def parse(
     *,
     allow_capsule: bool = False,
     require_spec: bool = True,
+    lower_sugar: bool = True,
 ) -> ast.Program:
     return Parser.parse(
         source,
         allow_legacy_type_aliases=allow_legacy_type_aliases,
         allow_capsule=allow_capsule,
         require_spec=require_spec,
+        lower_sugar=lower_sugar,
     )
 
 

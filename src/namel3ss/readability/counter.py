@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from namel3ss.ast import nodes as ast
+from namel3ss.parser.sugar.phase2 import ClearStmt, NoticeStmt, SaveRecordStmt
+from namel3ss.parser.sugar.phase3 import ParallelVerbAgentsStmt, VerbAgentCallStmt
+from namel3ss.parser.sugar.phase4 import AttemptOtherwiseStmt
 
 
 class FlowCounter:
@@ -39,6 +42,12 @@ class FlowCounter:
                 self.index_patterns += 1
             self._walk_expression(stmt.expression)
             return
+        if isinstance(stmt, SaveRecordStmt):
+            self.save += 1
+            self.record_refs.add(stmt.record_name)
+            for field in stmt.fields:
+                self._walk_expression(field.expression)
+            return
         if isinstance(stmt, ast.Set):
             if isinstance(stmt.target, ast.StatePath):
                 self.set_state += 1
@@ -70,6 +79,29 @@ class FlowCounter:
         if isinstance(stmt, ast.Save):
             self.save += 1
             self.record_refs.add(stmt.record_name)
+            return
+        if isinstance(stmt, ClearStmt):
+            self.delete += 1
+            for record_name in stmt.record_names:
+                self.record_refs.add(record_name)
+            return
+        if isinstance(stmt, NoticeStmt):
+            return
+        if isinstance(stmt, VerbAgentCallStmt):
+            self.run_agent += 1
+            self._walk_expression(stmt.input_expr)
+            return
+        if isinstance(stmt, ParallelVerbAgentsStmt):
+            self.run_parallel += 1
+            for entry in stmt.entries:
+                self._walk_expression(entry.input_expr)
+            return
+        if isinstance(stmt, AttemptOtherwiseStmt):
+            self.try_catch += 1
+            for item in stmt.try_body:
+                self.walk_statement(item, depth=depth + 1)
+            for item in stmt.catch_body:
+                self.walk_statement(item, depth=depth + 1)
             return
         if isinstance(stmt, ast.TryCatch):
             self.try_catch += 1

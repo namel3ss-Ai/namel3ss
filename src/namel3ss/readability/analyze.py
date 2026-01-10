@@ -207,6 +207,7 @@ def _analyze_file(path: Path) -> FileReport:
         allow_legacy_type_aliases=True,
         allow_capsule=path.name == "capsule.ai",
         require_spec=False,
+        lower_sugar=False,
     )
     ui_bindings = _collect_ui_button_calls(program.pages)
     ui_record_bindings = _count_ui_record_bindings(program.pages)
