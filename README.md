@@ -1,5 +1,5 @@
 # namel3ss
-designed to be understood
+Designed to be understood
 
 ![status: alpha](https://img.shields.io/badge/status-alpha-blue)
 ![license: MIT](https://img.shields.io/badge/license-MIT-green)
@@ -209,7 +209,7 @@ namel3ss is not trying to replace Python or JavaScript.
 It is exploring what comes next.
 
 ## Status
-namel3ss is in v0.1.0a7 alpha. It is suitable for learning and experimentation, not production.  
+namel3ss is in alpha (v0.1.0a7). It is suitable for learning and experimentation, not production.  
 Expect breaking changes between alpha revisions.
 
 ## Start here (learning path)
@@ -253,7 +253,10 @@ Expect breaking changes between alpha revisions.
 - [Registry](docs/registry.md)
 - [Editor](docs/editor.md)
 
-### Deployment & promotion
+### Deployment & production
+- [Quick deployment guide](docs/quick-deployment-guide.md) - Docker and systemd deployment
+- [Production deployment guide](docs/production-deployment.md) - Comprehensive production setup
+- [Production readiness roadmap](docs/production-readiness-roadmap.md) - Path to v1.0
 - [Targets and promotion](docs/targets-and-promotion.md)
 
 ### Trust, memory & governance
