@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from namel3ss.cli.main import main
+from namel3ss.runtime.tools.python_env import venv_python_path
 
 
 def _write_app(root: Path) -> None:
@@ -47,7 +48,7 @@ def test_deps_status_prefers_pyproject(tmp_path, capsys):
         os.chdir(prev)
 
 
-def test_deps_install_creates_venv_and_lockfile(tmp_path, capsys, monkeypatch):
+def test_deps_install_dry_run_plan(tmp_path, capsys, monkeypatch):
     _write_app(tmp_path)
     (tmp_path / "requirements.txt").write_text("requests==2.31.0\n", encoding="utf-8")
 
@@ -55,16 +56,6 @@ def test_deps_install_creates_venv_and_lockfile(tmp_path, capsys, monkeypatch):
 
     def fake_run(cmd, cwd, capture_output, text, env, check=False):
         calls.append(cmd)
-        if cmd[1:3] == ["-m", "venv"]:
-            venv_path = Path(cmd[3])
-            venv_path.mkdir(parents=True, exist_ok=True)
-            py_path = venv_path / "bin" / "python"
-            py_path.parent.mkdir(parents=True, exist_ok=True)
-            py_path.write_text("", encoding="utf-8")
-            (venv_path / "pyvenv.cfg").write_text("", encoding="utf-8")
-            return subprocess.CompletedProcess(cmd, 0, "", "")
-        if "freeze" in cmd:
-            return subprocess.CompletedProcess(cmd, 0, "requests==2.31.0\n", "")
         return subprocess.CompletedProcess(cmd, 0, "", "")
 
     monkeypatch.setattr("namel3ss.cli.deps_mode.subprocess.run", fake_run)
@@ -72,16 +63,32 @@ def test_deps_install_creates_venv_and_lockfile(tmp_path, capsys, monkeypatch):
     prev = os.getcwd()
     os.chdir(tmp_path)
     try:
-        assert main(["deps", "install", "--json"]) == 0
+        assert main(["deps", "install", "--dry-run", "--json"]) == 0
         payload = json.loads(capsys.readouterr().out)
         assert payload["status"] == "ok"
+        assert payload["mode"] == "dry-run"
+        assert payload["deps_source"] == "requirements"
+        assert payload["errors"] == []
+        assert payload["actions"]
+        assert all("would_install" in item for item in payload["actions"])
+        expected_keys = {
+            "status",
+            "mode",
+            "app_root",
+            "venv_path",
+            "python_path",
+            "deps_source",
+            "dependency_file",
+            "actions",
+            "errors",
+        }
+        assert set(payload.keys()) == expected_keys
         lockfile = tmp_path / "requirements.lock.txt"
-        assert lockfile.exists()
-        assert "requests==2.31.0" in lockfile.read_text(encoding="utf-8")
+        assert not lockfile.exists()
     finally:
         os.chdir(prev)
 
-    assert any(cmd[:3] == [payload["python_path"], "-m", "pip"] for cmd in calls)
+    assert calls == []
 
 
 def test_deps_lock_writes_lockfile(tmp_path, capsys, monkeypatch):
@@ -92,7 +99,7 @@ def test_deps_lock_writes_lockfile(tmp_path, capsys, monkeypatch):
         if cmd[1:3] == ["-m", "venv"]:
             venv_path = Path(cmd[3])
             venv_path.mkdir(parents=True, exist_ok=True)
-            py_path = venv_path / "bin" / "python"
+            py_path = venv_python_path(venv_path)
             py_path.parent.mkdir(parents=True, exist_ok=True)
             py_path.write_text("", encoding="utf-8")
             (venv_path / "pyvenv.cfg").write_text("", encoding="utf-8")
@@ -121,7 +128,7 @@ def test_deps_install_failure_is_friendly(tmp_path, capsys, monkeypatch):
         if cmd[1:3] == ["-m", "venv"]:
             venv_path = Path(cmd[3])
             venv_path.mkdir(parents=True, exist_ok=True)
-            py_path = venv_path / "bin" / "python"
+            py_path = venv_python_path(venv_path)
             py_path.parent.mkdir(parents=True, exist_ok=True)
             py_path.write_text("", encoding="utf-8")
             return subprocess.CompletedProcess(cmd, 0, "", "")
@@ -149,5 +156,25 @@ def test_deps_invalid_python_path(tmp_path, capsys):
         assert main(["deps", "install", "--python", str(tmp_path / "missing"), "--json"]) == 1
         err = capsys.readouterr().err
         assert "python interpreter not found" in err.lower()
+    finally:
+        os.chdir(prev)
+
+
+@pytest.mark.network
+@pytest.mark.slow
+def test_deps_install_real(tmp_path, capsys):
+    if not os.getenv("N3_TEST_DEPS_INSTALL"):
+        pytest.skip("N3_TEST_DEPS_INSTALL not set")
+    _write_app(tmp_path)
+    (tmp_path / "requirements.txt").write_text("requests==2.31.0\n", encoding="utf-8")
+
+    prev = os.getcwd()
+    os.chdir(tmp_path)
+    try:
+        assert main(["deps", "install", "--json"]) == 0
+        payload = json.loads(capsys.readouterr().out)
+        assert payload["status"] == "ok"
+        lockfile = tmp_path / "requirements.lock.txt"
+        assert lockfile.exists()
     finally:
         os.chdir(prev)

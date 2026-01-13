@@ -93,3 +93,8 @@ def pytest_sessionfinish(session, exitstatus):
     if new_dirty:
         joined = "\n".join(new_dirty)
         raise AssertionError(f"Repository dirty after tests:\\n{joined}")
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "network: requires network access")
+    config.addinivalue_line("markers", "slow: slow integration tests")

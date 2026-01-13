@@ -95,3 +95,94 @@ jobs:
 
       - name: Report largest source files
         run: python tools/top_files.py
+
+  cli-install-gate:
+    name: cli-install-gate
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare CI artifacts (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: mkdir -p .namel3ss/ci
+
+      - name: Prepare CI artifacts (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: New-Item -ItemType Directory -Force -Path .namel3ss/ci | Out-Null
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            pyproject.toml
+            poetry.lock
+            uv.lock
+            requirements*.txt
+
+      - name: Install package (editable)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: CLI install gate (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall src -q
+          python tools/line_limit_check.py
+          python -m pip install -e .
+          python -m namel3ss --help > .namel3ss/ci/namel3ss_help.txt
+          python -m pytest -q tests/test_cli_install.py > .namel3ss/ci/pytest_cli_install_gate.log 2>&1 || {
+            cat .namel3ss/ci/pytest_cli_install_gate.log
+            exit 1
+          }
+          rm -f .namel3ss/ci/pytest_cli_install_gate.log
+          python -m pytest -q > .namel3ss/ci/pytest_cli_install_gate.log 2>&1 || {
+            cat .namel3ss/ci/pytest_cli_install_gate.log
+            exit 1
+          }
+          rm -f .namel3ss/ci/pytest_cli_install_gate.log
+
+      - name: CLI install gate (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          python -m compileall src -q
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/line_limit_check.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m pip install -e .
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m namel3ss --help | Out-File -FilePath .namel3ss/ci/namel3ss_help.txt -Encoding utf8
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $pytestOutput = & python -m pytest -q tests/test_cli_install.py 2>&1
+          if ($LASTEXITCODE -ne 0) {
+            $pytestOutput | Out-File -FilePath .namel3ss/ci/pytest_cli_install_gate.log -Encoding utf8
+            $pytestOutput | Write-Output
+            exit $LASTEXITCODE
+          }
+          $pytestOutput = & python -m pytest -q 2>&1
+          if ($LASTEXITCODE -ne 0) {
+            $pytestOutput | Out-File -FilePath .namel3ss/ci/pytest_cli_install_gate.log -Encoding utf8
+            $pytestOutput | Write-Output
+            exit $LASTEXITCODE
+          }
+
+      - name: Upload CLI gate artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-install-gate-${{ matrix.os }}
+          path: .namel3ss/ci/

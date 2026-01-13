@@ -22,7 +22,7 @@ from namel3ss.runtime.tools.python_env import (
     resolve_python_env,
 )
 from namel3ss.secrets import collect_secret_values, redact_text
-from namel3ss.utils.json_tools import dumps_pretty
+from namel3ss.utils.json_tools import dumps, dumps_pretty
 
 
 def run_deps(args: list[str]) -> int:
@@ -99,12 +99,22 @@ def _run_status(app_root: Path, *, json_mode: bool) -> int:
 
 def _run_install(app_root: Path, tail: list[str], *, json_mode: bool) -> int:
     force = "--force" in tail
+    dry_run = "--dry-run" in tail or "--plan" in tail
     python_override = _read_flag_value(tail, "--python")
     dep_info = detect_dependency_info(app_root)
     if dep_info.kind == "none":
         raise Namel3ssError(_missing_deps_message())
     if dep_info.warning and not json_mode:
         print(f"Warning: {dep_info.warning}")
+    if dry_run:
+        payload = _build_install_plan(app_root, dep_info, python_override, force=force)
+        if dep_info.warning:
+            payload["warning"] = dep_info.warning
+        if json_mode:
+            print(dumps(payload, indent=2, sort_keys=True))
+            return 0
+        _print_install_plan(payload)
+        return 0
     if force:
         _remove_venv(app_root)
     if not app_venv_path(app_root).exists():
@@ -303,11 +313,14 @@ def _run_subprocess(
     if result.returncode != 0:
         secret_values = collect_secret_values()
         stderr = redact_text(result.stderr or result.stdout or "", secret_values)
+        fix = "Check the dependency file and rerun the command."
+        if action == "install":
+            fix = f"{fix} Use --dry-run to see the plan without installing."
         raise Namel3ssError(
             build_guidance_message(
                 what=f"Dependency {action} failed.",
                 why=stderr.strip() or "The subprocess returned a non-zero exit code.",
-                fix="Check the dependency file and rerun the command.",
+                fix=fix,
                 example="n3 deps install --force",
             )
         )
@@ -329,6 +342,105 @@ def _system_python() -> str:
     return os.environ.get("PYTHON", sys.executable)
 
 
+def _build_install_plan(app_root: Path, dep_info, python_override: str | None, *, force: bool) -> dict:
+    venv_path = app_venv_path(app_root)
+    venv_exists = venv_path.exists()
+    actions: list[dict] = []
+    if force and venv_exists:
+        actions.append(
+            {
+                "action": "remove-venv",
+                "path": str(venv_path),
+                "would_install": False,
+            }
+        )
+        venv_exists = False
+    if not venv_exists:
+        python_path = _planned_python_path(python_override)
+        actions.append(
+            {
+                "action": "create-venv",
+                "path": str(venv_path),
+                "python_path": str(python_path),
+                "would_install": False,
+            }
+        )
+    else:
+        env = resolve_python_env(app_root)
+        python_path = env.python_path
+    deps = _collect_dependencies(dep_info)
+    actions.append(
+        {
+            "action": "install-deps",
+            "deps_source": dep_info.kind,
+            "dependency_file": str(dep_info.path),
+            "requirements": deps,
+            "would_install": bool(deps),
+        }
+    )
+    actions.append(
+        {
+            "action": "write-lockfile",
+            "path": str(lockfile_path(app_root)),
+            "would_install": False,
+        }
+    )
+    return {
+        "status": "ok",
+        "mode": "dry-run",
+        "app_root": str(app_root),
+        "venv_path": str(venv_path),
+        "python_path": str(python_path),
+        "deps_source": dep_info.kind,
+        "dependency_file": str(dep_info.path),
+        "actions": actions,
+        "errors": [],
+    }
+
+
+def _planned_python_path(python_override: str | None) -> Path:
+    python_path = Path(python_override) if python_override else Path(_system_python())
+    if not python_path.exists():
+        raise Namel3ssError(
+            build_guidance_message(
+                what="Python interpreter not found.",
+                why=f"Path '{python_path}' does not exist.",
+                fix="Provide a valid interpreter path with --python.",
+                example="n3 deps install --python /usr/bin/python3",
+            )
+        )
+    return python_path
+
+
+def _collect_dependencies(dep_info) -> list[str]:
+    if dep_info.kind == "requirements" and dep_info.path:
+        return _read_requirements(dep_info.path)
+    if dep_info.kind == "pyproject" and dep_info.path:
+        return load_pyproject_dependencies(dep_info.path)
+    return []
+
+
+def _read_requirements(path: Path) -> list[str]:
+    entries: list[str] = []
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "#" in line:
+            line = line.split("#", 1)[0].strip()
+        if line:
+            entries.append(line)
+    return entries
+
+
+def _print_install_plan(payload: dict) -> None:
+    print("Dependency install plan:")
+    for action in payload.get("actions", []):
+        label = action.get("action", "unknown")
+        suffix = " (would install)" if action.get("would_install") else ""
+        print(f"- {label}{suffix}")
+
+
 def _read_flag_value(flags: Iterable[str], name: str) -> str | None:
     items = list(flags)
     for idx, item in enumerate(items):
@@ -346,7 +458,8 @@ def _remove_venv(app_root: Path) -> None:
 def _print_usage() -> None:
     usage = """Usage:
   n3 deps status --json            # show python env status
-  n3 deps install --force --python PATH --json
+  n3 deps install --force --python PATH --dry-run --json
+  n3 deps install --plan --json    # alias for --dry-run
   n3 deps sync --json              # install from lockfile if present
   n3 deps lock --json              # write requirements.lock.txt
   n3 deps clean --yes --json       # remove .venv and caches

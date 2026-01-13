@@ -5,23 +5,31 @@ from pathlib import Path
 
 from namel3ss.cli.main import main as cli_main
 from namel3ss.runtime.packs.verification import compute_pack_digest
+from namel3ss.utils.fs import remove_tree
 
 
 def test_packs_add_status_remove(tmp_path: Path, monkeypatch, capsys) -> None:
     _write_app(tmp_path)
     pack_src = _fixture_path("pack_good_unverified")
     monkeypatch.chdir(tmp_path)
-    assert cli_main(["packs", "add", str(pack_src), "--json"]) == 0
-    data = json.loads(capsys.readouterr().out)
-    assert data["pack_id"] == "sample.unverified"
-    assert cli_main(["packs", "status", "--json"]) == 0
-    status = json.loads(capsys.readouterr().out)
-    ids = [pack["pack_id"] for pack in status["packs"]]
-    assert "sample.unverified" in ids
-    assert cli_main(["packs", "remove", "sample.unverified", "--yes", "--json"]) == 0
-    removed = json.loads(capsys.readouterr().out)
-    assert removed["pack_id"] == "sample.unverified"
-    assert (tmp_path / ".namel3ss" / "packs" / "sample.unverified").exists() is False
+    pack_root = tmp_path / ".namel3ss" / "packs" / "sample.unverified"
+    try:
+        assert cli_main(["packs", "add", str(pack_src), "--json"]) == 0
+        data = json.loads(capsys.readouterr().out)
+        assert data["pack_id"] == "sample.unverified"
+        assert cli_main(["packs", "status", "--json"]) == 0
+        status = json.loads(capsys.readouterr().out)
+        ids = [pack["pack_id"] for pack in status["packs"]]
+        assert "sample.unverified" in ids
+        assert cli_main(["packs", "remove", "sample.unverified", "--yes", "--json"]) == 0
+        removed = json.loads(capsys.readouterr().out)
+        assert removed["pack_id"] == "sample.unverified"
+        removed_path = Path(removed["pack_path"]).resolve()
+        assert removed_path.is_relative_to(tmp_path.resolve())
+        assert pack_root.exists() is False
+    finally:
+        if pack_root.exists():
+            remove_tree(pack_root)
 
 
 def test_packs_enable_requires_verification(tmp_path: Path, monkeypatch, capsys) -> None:

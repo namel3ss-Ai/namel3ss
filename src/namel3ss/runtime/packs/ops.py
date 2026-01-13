@@ -13,6 +13,7 @@ from namel3ss.runtime.packs.source_meta import PackSourceInfo, write_pack_source
 from namel3ss.runtime.packs.verification import verify_pack as verify_pack_signature
 from namel3ss.runtime.packs.config import read_pack_config, write_pack_config
 from namel3ss.runtime.tools.bindings_yaml import parse_bindings_yaml
+from namel3ss.utils.fs import remove_tree
 
 
 def install_pack(app_root: Path, source_path: Path) -> str:
@@ -33,7 +34,7 @@ def remove_pack(app_root: Path, pack_id: str) -> Path:
     target = pack_path(app_root, pack_id)
     if not target.exists():
         raise Namel3ssError(_pack_missing_message(pack_id))
-    shutil.rmtree(target)
+    remove_tree(target)
     return target
 
 
