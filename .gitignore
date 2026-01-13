@@ -41,7 +41,10 @@ logs/
 .env.*
 !.env.example
 !.env.sample
+
+# namel3ss runtime artifacts (safe to delete)
 .namel3ss/
+# Artifacts must never appear in git diffs.
 !spec/**/.namel3ss/
 spec/**/.namel3ss/**
 !spec/**/.namel3ss/tools.yaml

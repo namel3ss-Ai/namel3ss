@@ -88,7 +88,7 @@ def test_ship_where_and_back(tmp_path, capsys, monkeypatch):
     assert active_after.get("proof_id") in {None, ""}
 
 
-def test_legacy_build_promote_status_aliases(tmp_path, capsys, monkeypatch):
+def test_status_reports_artifacts_after_promote(tmp_path, capsys, monkeypatch):
     _write_app(tmp_path)
     monkeypatch.chdir(tmp_path)
     main(["build", "--target", "service"])
@@ -104,4 +104,5 @@ def test_legacy_build_promote_status_aliases(tmp_path, capsys, monkeypatch):
     code = main(["status"])
     out = capsys.readouterr().out.lower()
     assert code == 0
-    assert "active target: service" in out
+    assert "artifacts present: yes" in out
+    assert ".namel3ss" in out

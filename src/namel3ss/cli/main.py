@@ -5,6 +5,7 @@ import sys
 
 from namel3ss.cli.actions_mode import list_actions
 from namel3ss.cli.aliases import canonical_command
+from namel3ss.cli.artifacts_mode import run_artifacts_clean, run_artifacts_status
 from namel3ss.cli.app_loader import load_program
 from namel3ss.cli.build_mode import run_build_command
 from namel3ss.cli.deps_mode import run_deps
@@ -88,6 +89,13 @@ def main(argv: list[str] | None = None) -> int:
         if cmd_raw in {"--help", "-h"}:
             print_usage()
             return 0
+        if cmd == "status":
+            tail = args[1:]
+            if tail:
+                return run_status_command(tail)
+            return run_artifacts_status(tail)
+        if cmd == "clean":
+            return run_artifacts_clean(args[1:])
         if cmd == "doctor":
             return run_doctor(args[1:])
         if cmd == "version":

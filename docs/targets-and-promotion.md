@@ -38,7 +38,7 @@ Use `n3 exists` to explain why a build exists and what changed.
 
 ```
 n3 ship --to service      # promote the latest service build (or pass --build)
-n3 where                  # show active target, build id, persistence target (alias: status)
+n3 where                  # show active target, build id, persistence target
 n3 ship --back            # revert the active build pointer (alias: --rollback)
 ```
 
@@ -61,4 +61,4 @@ n3 ship --back
 ## Command map
 - ship (alias: promote)
 - pack (alias: build)
-- where (alias: status)
+- where

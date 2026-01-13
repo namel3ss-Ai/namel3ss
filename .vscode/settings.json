@@ -4,7 +4,11 @@
   "python.testing.pytestArgs": ["-q"],
   "editor.formatOnSave": true,
   "python.analysis.extraPaths": ["src"],
+  "files.exclude": {
+    ".namel3ss": true
+  },
   "search.exclude": {
+    ".namel3ss": true,
     "**/__pycache__": true,
     "**/.pytest_cache": true,
     "**/.venv": true,

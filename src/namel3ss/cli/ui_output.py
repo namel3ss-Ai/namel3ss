@@ -9,10 +9,12 @@ def print_usage() -> None:
   n3 new template name            # scaffold project, omit args to list
   n3 init template name           # scaffold project (alias for new)
   n3 version                      # show installed version
+  n3 status                       # show .namel3ss runtime artifact status
+  n3 clean                        # delete .namel3ss artifacts (with confirmation)
   n3 run app.ai --target T --json # run app
   n3 pack app.ai --target T       # build artifacts, alias build
   n3 ship --to T --back           # promote build, alias promote, rollback alias back
-  n3 where app.ai                 # show active target and build, alias status
+  n3 where app.ai                 # show active target and build
   n3 proof app.ai --json          # write engine proof
   n3 memory text                  # recall memory
   n3 memory why                   # explain last recall
@@ -57,7 +59,7 @@ def print_usage() -> None:
   n3 app.ai --json                # run default flow
   n3 app.ai action_id payload --json # execute UI action, payload optional
   n3 help                         # this help
-  Aliases and legacy: build, promote, status, persist, format, pkg
+  Aliases and legacy: build, promote, persist, format, pkg
   Notes:
     app.ai is optional and defaults to app.ai in the current folder (or nearest parent)
     use --app or --project to override discovery

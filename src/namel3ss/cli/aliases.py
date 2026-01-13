@@ -10,7 +10,7 @@ ALIAS_MAP: Dict[str, str] = {
     "ship": "ship",
     "promote": "ship",
     "where": "where",
-    "status": "where",
+    "status": "status",
     # Core app commands
     "fmt": "fmt",
     "format": "fmt",
