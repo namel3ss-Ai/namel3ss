@@ -1,0 +1,155 @@
+# Current Grammar (Parser Snapshot)
+
+Derived from source files under `src/namel3ss/lexer` and `src/namel3ss/parser`.
+
+## Lexer Summary
+- Identifiers: `[A-Za-z_][A-Za-z0-9_]*`; if the text matches a reserved word, it is emitted as that keyword token (not `IDENT`).
+- Strings: double-quoted only (`"..."`), no escape handling; unterminated strings are a lexer error.
+- Numbers: digits with optional fractional part; minus is its own token (unary minus is handled by the parser).
+- Comments: whole-line comments only; a line whose first non-space character is `#` is skipped.
+- Indentation: significant; indentation changes emit `INDENT`/`DEDENT`, inconsistent spacing raises a lexer error.
+- Punctuation tokens: `:` `.` `+` `-` `*` `**` `/` `%` `=` `(` `)` `[` `]` `,`.
+
+## Reserved Words (KEYWORDS)
+```
+flow
+page
+app
+spec
+ai
+ask
+with
+input
+input_schema
+output_schema
+as
+provider
+tools
+expose
+tool
+call
+kind
+entry
+purity
+timeout_seconds
+memory
+short_term
+semantic
+profile
+agent
+agents
+parallel
+run
+model
+system_prompt
+title
+text
+theme
+theme_tokens
+theme_preference
+form
+table
+button
+section
+card
+row
+column
+divider
+image
+calls
+record
+save
+create
+find
+where
+let
+latest
+set
+require
+return
+repeat
+up
+to
+times
+for
+each
+in
+match
+when
+otherwise
+try
+catch
+if
+else
+is
+greater
+less
+equal
+than
+and
+or
+not
+state
+constant
+true
+false
+null
+string
+str
+int
+integer
+number
+boolean
+bool
+json
+must
+be
+present
+unique
+pattern
+have
+length
+at
+least
+most
+```
+
+## Parser Entry Points
+- `namel3ss.parser.core.parse` and `Parser.parse` (lexer + parser; lowers sugar by default).
+- `namel3ss.parser.parse_program.parse_program` (program-level entry used by `Parser`).
+
+## Grammar Surfaces
+
+Top-level declarations (`src/namel3ss/parser/grammar_table.py`):
+- `spec`, `define` (function), `use`, `capsule`, `identity`, `app`, `tool`, `agent`, `ai`, `record`, `flow`, `page`, `ui_pack`.
+
+Statements (`src/namel3ss/parser/grammar_table.py`):
+- `start`, `plan`, `review`, `timeline`, `compute`, `increment`, `attempt` (two forms), agent verb calls,
+  `in`, `clear`, `notice`, `require`, `record` (final output/policy violation), `calc`, `let`, `set`,
+  `if`, `return`, `ask`, `parallel`, `run agent(s)`, `repeat`, `for each`, `match`, `try`, `save`,
+  `create`, `find`, `update`, `delete`.
+
+UI page items (`src/namel3ss/parser/decl/page_items.py`):
+- `title`, `text`, `form`, `table`, `list`, `chart`, `use ui_pack`, `chat` (messages/composer/thinking/citations/memory),
+  `tabs`/`tab`/`default`, `modal`, `drawer`, `button`, `section`, `card_group`, `card`, `row`, `column`, `divider`, `image`.
+
+Expressions (`src/namel3ss/parser/grammar_table.py` and `src/namel3ss/parser/expr`):
+- literals (`number`, `string`, `boolean`, `null`), `latest`, `input`, `state.<path>`, identifier/attribute access,
+  grouped `(...)`, `call ...`, `ask ...`.
+
+Reference names (`src/namel3ss/parser/core/helpers.py`):
+- Record/field/flow/tool names are either strings or dot-qualified identifiers.
+- Dot-qualified reference names require `IDENT` segments, so reserved words must be quoted.
+- Dot-qualified attribute access and state paths use `read_attr_name`, which accepts keyword tokens as segments.
+
+## Parse Acceptance Snippets
+
+| Snippet | Expected parse result | Module responsible |
+| --- | --- | --- |
+| `flow "demo":<br>  match state.status:<br>    with:<br>      when "ok":<br>        return "ok"` | Parses successfully. | `src/namel3ss/parser/stmt/match.py` |
+| `flow "demo":<br>  match state.status:<br>    when "ok":<br>      return "ok"` | Fails with `Expected 'with' inside match`. | `src/namel3ss/parser/stmt/match.py` |
+| `flow "demo":<br>  update "Order" where id is 1 set:<br>    status is "done"<br>    "title" is "Ready"` | Parses successfully; field names accept bare identifiers and quoted strings. | `src/namel3ss/parser/stmt/update.py`, `src/namel3ss/parser/core/helpers.py` |
+| `page "home":<br>  title is "Welcome"` | Parses successfully; `title` is a reserved word used as a UI key. | `src/namel3ss/parser/decl/page_items.py` |
+| `flow "demo":<br>  return state.missing.value` | Parses successfully; state path existence is not validated here (runtime resolution raises on missing paths). | `src/namel3ss/parser/expr/statepath.py`, `src/namel3ss/runtime/executor/expr/core.py` |
+| `flow "demo":<br>  find "Order" where id is 1` | Parses successfully; record references accept quoted names. | `src/namel3ss/parser/stmt/find.py`, `src/namel3ss/parser/core/helpers.py` |
+| `page "home":<br>  button "Save":<br>    calls flow "demo"<br>  button "Save":<br>    calls flow "demo"` | Parses successfully; duplicate UI action ids are detected during manifest build. | `src/namel3ss/ui/manifest/elements.py`, `src/namel3ss/ui/manifest/page.py` |

@@ -72,6 +72,8 @@ def _handler(entries: list[dict[str, object]], bundles: dict[str, bytes]):
             return
 
         def do_POST(self) -> None:  # noqa: N802
+            length = int(self.headers.get("Content-Length", "0"))
+            _ = self.rfile.read(length) if length else b""
             if self.path != "/registry/search":
                 self.send_error(404)
                 return
