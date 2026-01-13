@@ -3,6 +3,9 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Dict
 
+from copy import deepcopy
+
+from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.identity.guards import build_guard_context, enforce_requires
 from namel3ss.runtime.storage.base import Storage
@@ -12,6 +15,8 @@ from namel3ss.schema import records as schema
 from namel3ss.ui.manifest.actions import _wire_overlay_actions
 from namel3ss.ui.manifest.canonical import _slugify
 from namel3ss.ui.manifest.elements import _build_children
+from namel3ss.ui.manifest.state_defaults import StateContext, StateDefaults
+from namel3ss.validation import ValidationMode
 
 
 def build_manifest(
@@ -22,12 +27,17 @@ def build_manifest(
     runtime_theme: str | None = None,
     persisted_theme: str | None = None,
     identity: dict | None = None,
+    mode: ValidationMode | str = ValidationMode.RUNTIME,
+    warnings: list | None = None,
+    state_defaults: dict | None = None,
 ) -> dict:
+    mode = ValidationMode.from_value(mode)
     ui_schema_version = "1"
     record_map: Dict[str, schema.RecordSchema] = {rec.name: rec for rec in program.records}
     pages = []
     actions: Dict[str, dict] = {}
-    state = state or {}
+    taken_actions: set[str] = set()
+    state_base = deepcopy(state or {})
     theme_setting = getattr(program, "theme", "system")
     theme_current = runtime_theme or theme_setting
     effective = resolve_effective_theme(theme_current, False, None)
@@ -37,13 +47,21 @@ def build_manifest(
     elif runtime_theme and runtime_theme != theme_setting:
         source = ThemeSource.SESSION.value
     identity = identity or {}
+    app_defaults = state_defaults or getattr(program, "state_defaults", None) or {}
+    manifest_state_defaults_pages: dict[str, dict] = {}
+    store_for_build = store if (mode == ValidationMode.RUNTIME or store is not None) else None
     for page in program.pages:
+        page_defaults_raw = getattr(page, "state_defaults", None)
+        defaults = StateDefaults(app_defaults, page_defaults_raw)
+        state_ctx = StateContext(deepcopy(state_base), defaults)
         enforce_requires(
-            build_guard_context(identity=identity, state=state),
+            build_guard_context(identity=identity, state=state_ctx.state),
             getattr(page, "requires", None),
             subject=f'page "{page.name}"',
             line=page.line,
             column=page.column,
+            mode=mode,
+            warnings=warnings,
         )
         page_slug = _slugify(page.name)
         elements, action_entries = _build_children(
@@ -52,15 +70,18 @@ def build_manifest(
             page.name,
             page_slug,
             [],
-            store,
+            store_for_build,
             identity,
-            state,
+            state_ctx,
+            mode,
+            warnings,
+            taken_actions,
         )
         _wire_overlay_actions(elements, action_entries)
         for action_id, action_entry in action_entries.items():
             if action_id in actions:
                 raise Namel3ssError(
-                    f"UI action id '{action_id}' is duplicated on page '{page.name}'.",
+                    f"Duplicate action id '{action_id}'. Use a unique id or omit to auto-generate.",
                     line=page.line,
                     column=page.column,
                 )
@@ -69,13 +90,16 @@ def build_manifest(
             {
                 "name": page.name,
                 "slug": page_slug,
-                "elements": elements,
+            "elements": elements,
             }
         )
+        defaults_snapshot = state_ctx.defaults_snapshot()
+        if defaults_snapshot:
+            manifest_state_defaults_pages[page_slug] = defaults_snapshot
     persistence = _resolve_persistence(store)
     if actions:
         actions = {action_id: actions[action_id] for action_id in sorted(actions)}
-    return {
+    manifest = {
         "pages": pages,
         "actions": actions,
         "theme": {
@@ -93,6 +117,9 @@ def build_manifest(
             "persistence": persistence,
         },
     }
+    if app_defaults or manifest_state_defaults_pages:
+        manifest["state_defaults"] = {"app": deepcopy(app_defaults) if app_defaults else {}, "pages": manifest_state_defaults_pages}
+    return manifest
 
 
 def _resolve_persistence(store: Storage | None) -> dict:

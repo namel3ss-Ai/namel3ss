@@ -7,6 +7,7 @@ from namel3ss.ui.export.actions import build_actions_export
 from namel3ss.ui.export.schema import build_schema_export
 from namel3ss.ui.export.ui import build_ui_export
 from namel3ss.ui.manifest import build_manifest
+from namel3ss.validation import ValidationMode
 
 
 def build_contract_manifest(
@@ -24,7 +25,11 @@ def build_contract_manifest(
         root=getattr(program_ir, "project_root", None),
     )
     resolved_store = resolve_store(store, config=resolved_config)
-    resolved_identity = identity or resolve_identity(resolved_config, getattr(program_ir, "identity", None))
+    resolved_identity = identity or resolve_identity(
+        resolved_config,
+        getattr(program_ir, "identity", None),
+        mode=ValidationMode.STATIC,
+    )
     return build_manifest(
         program_ir,
         state=state or {},
@@ -32,6 +37,7 @@ def build_contract_manifest(
         runtime_theme=runtime_theme,
         persisted_theme=persisted_theme,
         identity=resolved_identity,
+        mode=ValidationMode.STATIC,
     )
 
 

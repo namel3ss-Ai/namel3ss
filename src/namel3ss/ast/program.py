@@ -37,3 +37,4 @@ class Program(Node):
     uses: List[UseDecl]
     capsule: Optional[CapsuleDecl]
     identity: Optional[IdentityDecl] = None
+    state_defaults: dict | None = None

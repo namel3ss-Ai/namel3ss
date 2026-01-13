@@ -75,10 +75,31 @@ n3 <your_app.ai> lint
 
 If you change language/engine/parsing, update examples and integration tests accordingly.
 
+### Repository map
+- `src/namel3ss/` — runtime, parser, validators, UI manifest generation.
+- `tests/` — mirrors source structure; contract/grammar guards live here.
+- `docs/language/grammar_contract.md` — frozen grammar/semantics (do not change without RFC).
+- `docs/language/backward_compatibility.md` — policy for breaking/compatible changes.
+- `docs/language/rfc_process.md` — when/how to propose breaking or semantic changes.
+- `src/namel3ss/templates/` and `examples/` — onboarding surfaces; must pass STATIC validation.
+
 Quick reminders:
 - File size: ≤500 LOC; split near 400 with folder-first naming.
 - Single responsibility per file.
 - Propose grammar/UI changes as small PRs with examples and tests.
+
+---
+
+## Grammar and RFC boundaries
+- The grammar and semantics are frozen; see `docs/language/grammar_contract.md`.
+- Backward compatibility rules are in `docs/language/backward_compatibility.md`.
+- Grammar, syntax, semantic, or validation-mode changes require an RFC (`docs/language/rfc_process.md`) before code changes.
+- Most contributions should not touch the parser or grammar tables; prefer adding tests, diagnostics, or docs.
+
+To add validators/UI elements/tools:
+- Add source under the appropriate `src/namel3ss/<area>/` folder.
+- Add focused tests under `tests/<area>/`.
+- Keep Studio/CLI parity and STATIC validation behavior unchanged.
 
 ---
 
@@ -116,6 +137,7 @@ Quick reminders:
 - `python tools/line_limit_check.py` passes.  
 - Docs updated if behavior changed.  
 - No unintended breaking changes.
+- No grammar or semantic changes unless an approved RFC is linked.
 
 ---
 

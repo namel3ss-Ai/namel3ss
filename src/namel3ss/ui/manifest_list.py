@@ -12,8 +12,8 @@ def _list_id(page_slug: str, record_name: str) -> str:
     return f"page.{page_slug}.list.{_slugify(record_name)}"
 
 
-def _list_action_id(page_slug: str, record_name: str, label: str) -> str:
-    return f"page.{page_slug}.list.{_slugify(record_name)}.action.{_slugify(label)}"
+def _list_action_id(element_id: str, label: str) -> str:
+    return f"{element_id}.action.{_slugify(label)}"
 
 
 def _list_id_field(record: schema.RecordSchema) -> str:
@@ -32,8 +32,7 @@ def _list_item_mapping(mapping: ir.ListItemMapping) -> dict:
 
 
 def _build_list_actions(
-    page_slug: str,
-    record_name: str,
+    element_id: str,
     actions: list[ir.ListAction] | None,
 ) -> tuple[list[dict], Dict[str, dict]]:
     if not actions:
@@ -42,7 +41,7 @@ def _build_list_actions(
     entries: list[dict] = []
     action_map: Dict[str, dict] = {}
     for action in actions:
-        action_id = _list_action_id(page_slug, record_name, action.label)
+        action_id = _list_action_id(element_id, action.label)
         if action_id in seen:
             raise Namel3ssError(
                 f"List action '{action.label}' collides with another action id",

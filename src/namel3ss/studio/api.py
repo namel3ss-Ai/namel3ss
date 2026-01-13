@@ -36,6 +36,7 @@ from namel3ss.studio.agent_builder import (
     run_handoff_action,
     update_memory_packs,
 )
+from namel3ss.validation import ValidationMode, ValidationWarning
 
 
 def _load_program(source: str):
@@ -100,7 +101,13 @@ def get_ui_payload(source: str, session: SessionState | None = None, app_path: s
         app_file = _require_app_path(app_path)
         program_ir = _load_project_program(source, app_file.as_posix())
         config = load_config(app_path=app_file)
-        identity = resolve_identity(config, getattr(program_ir, "identity", None))
+        warnings: list[ValidationWarning] = []
+        identity = resolve_identity(
+            config,
+            getattr(program_ir, "identity", None),
+            mode=ValidationMode.STATIC,
+            warnings=warnings,
+        )
         store = session.ensure_store(config)
         preference_store = preference_store_for_app(app_path, getattr(program_ir, "theme_preference", {}).get("persist"))
         persisted, _ = preference_store.load_theme(app_pref_key(app_path))
@@ -113,7 +120,11 @@ def get_ui_payload(source: str, session: SessionState | None = None, app_path: s
             runtime_theme=runtime_theme,
             persisted_theme=persisted,
             identity=identity,
+            mode=ValidationMode.STATIC,
+            warnings=warnings,
         )
+        if warnings:
+            manifest["warnings"] = [warning.to_dict() for warning in warnings]
         return manifest
     except Namel3ssError as err:
         return build_error_from_exception(err, kind="parse", source=source)
@@ -126,10 +137,26 @@ def get_actions_payload(source: str, app_path: str | None = None) -> dict:
         app_file = _require_app_path(app_path)
         program_ir = _load_project_program(source, app_file.as_posix())
         config = load_config(app_path=app_file)
-        identity = resolve_identity(config, getattr(program_ir, "identity", None))
-        manifest = build_manifest(program_ir, state={}, store=MemoryStore(), identity=identity)
+        warnings: list[ValidationWarning] = []
+        identity = resolve_identity(
+            config,
+            getattr(program_ir, "identity", None),
+            mode=ValidationMode.STATIC,
+            warnings=warnings,
+        )
+        manifest = build_manifest(
+            program_ir,
+            state={},
+            store=MemoryStore(),
+            identity=identity,
+            mode=ValidationMode.STATIC,
+            warnings=warnings,
+        )
         data = _actions_from_manifest(manifest)
-        return {"ok": True, "count": len(data), "actions": data}
+        payload = {"ok": True, "count": len(data), "actions": data}
+        if warnings:
+            payload["warnings"] = [warning.to_dict() for warning in warnings]
+        return payload
     except Namel3ssError as err:
         return build_error_from_exception(err, kind="parse", source=source)
     except Exception as err:  # pragma: no cover - defensive guard rail

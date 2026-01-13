@@ -87,6 +87,7 @@ def lower_program(program: ast.Program) -> Program:
         tools=tool_map,
         agents=agent_map,
         identity=identity_schema,
+        state_defaults=getattr(program, "state_defaults", None),
         line=program.line,
         column=program.column,
     )

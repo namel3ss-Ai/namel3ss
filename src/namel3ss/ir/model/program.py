@@ -39,3 +39,4 @@ class Program(Node):
     tools: Dict[str, ToolDecl]
     agents: Dict[str, AgentDecl]
     identity: "IdentitySchema | None" = None
+    state_defaults: dict | None = None

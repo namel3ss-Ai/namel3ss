@@ -36,6 +36,8 @@ def test_manifest_actions_sorted_by_id():
 
 def test_manifest_action_id_collision_errors():
     program = lower_ir_program(DUPLICATE_SOURCE)
-    with pytest.raises(Namel3ssError) as exc:
-        build_manifest(program, state={})
-    assert "duplicated" in str(exc.value).lower()
+    manifest = build_manifest(program, state={})
+    action_ids = list(manifest["actions"].keys())
+    assert len(action_ids) == len(set(action_ids))
+    assert "page.home.button.run" in action_ids
+    assert "page.home.button.run__page.home.button_item.1" in action_ids

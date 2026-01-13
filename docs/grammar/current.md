@@ -1,4 +1,5 @@
 # Current Grammar (Parser Snapshot)
+# This file is a historical snapshot of parser behavior. It is not the authoritative contract; see docs/language/grammar_contract.md.
 
 Derived from source files under `src/namel3ss/lexer` and `src/namel3ss/parser`.
 

@@ -44,6 +44,9 @@ namel3ss is built around a few non-negotiable ideas:
 - **Deterministic execution**  
   Every run follows a clear, stable path.
 
+- **Frozen grammar and semantics**  
+  The language grammar is stable and phase-aware (STATIC vs RUNTIME) with identical rules enforced by CLI and Studio.
+
 - **Explicit AI boundary**  
   AI is never implicit. Every AI call is visible and traced.
 
@@ -101,6 +104,19 @@ cd demo
 n3 run
 ```
 
+### What happens when you run `n3 check`
+- Runs STATIC validation only: grammar, structure, schema, and manifest build.
+- Does not require identity/env vars or runtime state; runtime-only rules become warnings.
+- Mirrors Studio load exactly.
+
+### What happens when you run `n3 run`
+- Executes flows with RUNTIME enforcement: identity/trust, permissions, capability checks, and data existence.
+- Uses the same grammar and manifest you validated with `n3 check`.
+
+First-run defaults:
+- Templates and demos include state defaults or component-provided defaults (chat, charts, cards).
+- No identity or secret configuration is required to load or view the UI.
+
 ## Troubleshooting
 
 If `n3` is not recognized:
@@ -145,6 +161,12 @@ It exists to demonstrate:
 - governed, inspectable memory
 
 Understanding ClearOrders is sufficient to understand the core model of namel3ss.
+
+Grammar and compatibility:
+- Grammar and semantics are frozen and phase-aware; see `docs/language/grammar_contract.md`.
+- Backward-compatibility policy is defined in `docs/language/backward_compatibility.md`.
+- Changes that affect grammar or semantics require an RFC (`docs/language/rfc_process.md`).
+- CI enforces grammar contract tests and STATIC build checks for templates/examples to prevent drift.
 
 ## What makes it different
 - One `.ai` file defines data, UI, backend logic, and AI.

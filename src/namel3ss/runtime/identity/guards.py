@@ -6,6 +6,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
+from namel3ss.validation import ValidationMode, add_warning
 
 
 @dataclass
@@ -22,8 +23,21 @@ def enforce_requires(
     subject: str,
     line: int | None,
     column: int | None,
+    mode: ValidationMode = ValidationMode.RUNTIME,
+    warnings: list | None = None,
 ) -> None:
     if expr is None:
+        return
+    if mode == ValidationMode.STATIC:
+        add_warning(
+            warnings,
+            code="requires.skipped",
+            message=f"{subject} requires check deferred to runtime.",
+            fix="Provide identity/state at runtime that satisfies the requires expression.",
+            line=line,
+            column=column,
+            enforced_at="runtime",
+        )
         return
     result = evaluate_expression(ctx, expr)
     if not isinstance(result, bool):

@@ -7,6 +7,8 @@ from namel3ss.ir import nodes as ir
 from namel3ss.runtime.execution.explain import format_expression_canonical
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
 from namel3ss.runtime.identity.guards import build_guard_context
+from namel3ss.ui.manifest.state_defaults import StateContext
+from namel3ss.validation import ValidationMode, add_warning
 from namel3ss.ui.manifest_overlay import _drawer_id, _modal_id
 
 
@@ -52,9 +54,30 @@ def _build_card_actions(element_id: str, page_slug: str, actions: list[ir.CardAc
     return entries, action_map
 
 
-def _build_card_stat(stat: ir.CardStat, identity: dict | None, state: dict) -> dict:
-    ctx = build_guard_context(identity=identity or {}, state=state or {})
-    value = evaluate_expression(ctx, stat.value)
+def _build_card_stat(
+    stat: ir.CardStat,
+    identity: dict | None,
+    state_ctx: StateContext,
+    mode: ValidationMode,
+    warnings: list | None,
+) -> dict:
+    ctx = build_guard_context(identity=identity or {}, state=state_ctx.state)
+    try:
+        value = evaluate_expression(ctx, stat.value)
+    except Namel3ssError as err:
+        if mode == ValidationMode.STATIC:
+            add_warning(
+                warnings,
+                code="state.eval.missing",
+                message=str(err),
+                fix="Declare a state default for the referenced path to make the stat safe in static validation.",
+                line=stat.line,
+                column=stat.column,
+                enforced_at="runtime",
+            )
+            value = None
+        else:
+            raise
     payload = {"value": value, "source": format_expression_canonical(stat.value)}
     if stat.label is not None:
         payload["label"] = stat.label

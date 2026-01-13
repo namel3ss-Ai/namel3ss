@@ -1,0 +1,49 @@
+name: "RFC: Breaking or semantic change request"
+description: Propose a change that affects grammar, semantics, or validation behavior (requires prior agreement).
+title: "RFC: <short summary>"
+labels: ["rfc", "design"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Read `docs/language/rfc_process.md` before filing. RFCs are required for grammar or semantic changes; most feature requests belong in Discussions.
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Problem statement
+      description: What behavior or limitation are you trying to address? Include concrete examples and current behavior.
+      placeholder: "When I run ..., the current behavior is ..., but we need ..."
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Describe the minimal change to fix the problem. Specify whether grammar, STATIC validation, or RUNTIME behavior is affected.
+      placeholder: "Change match syntax to ..., adjust STATIC warnings to ..."
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility impact
+      description: Identify breaking aspects, migration path, and affected tests/contracts.
+      placeholder: "Breaking for existing .ai files because ...; migration would be ..."
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Tests/contract updates
+      description: Which contract or grammar tests would need updates? (If none, explain why.)
+    validations:
+      required: true
+  - type: checkboxes
+    id: acknowledgements
+    attributes:
+      label: Acknowledgements
+      options:
+        - label: I confirm this request cannot be solved by documentation, warnings, or tooling alone.
+          required: true
+        - label: I have read `docs/language/rfc_process.md` and understand approval is required before implementation.
+          required: true

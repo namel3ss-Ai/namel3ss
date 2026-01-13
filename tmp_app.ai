@@ -1,0 +1,12 @@
+spec is "1.0"
+
+record "User":
+  name string
+
+flow "demo":
+  return "ok"
+
+page "home":
+  button "Run":
+    calls flow "demo"
+  form is "User"

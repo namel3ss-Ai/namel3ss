@@ -7,7 +7,7 @@ from namel3ss.ir import nodes as ir
 from namel3ss.runtime.records.service import build_record_scope
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.schema import records as schema
-from namel3ss.ui.manifest.actions import _button_action_id, _form_action_id
+from namel3ss.ui.manifest.actions import _allocate_action_id, _button_action_id, _form_action_id
 from namel3ss.ui.manifest.canonical import _element_id
 from namel3ss.ui.manifest.origin import _attach_origin
 from namel3ss.ui.manifest_card import _build_card_actions, _build_card_stat
@@ -21,6 +21,7 @@ from namel3ss.ui.manifest_list import (
     _list_item_mapping,
 )
 from namel3ss.ui.manifest_overlay import _drawer_id, _modal_id
+from namel3ss.ui.manifest.state_defaults import StateContext
 from namel3ss.ui.manifest_table import (
     _apply_table_pagination,
     _apply_table_sort,
@@ -29,6 +30,18 @@ from namel3ss.ui.manifest_table import (
     _table_id,
     _table_id_field,
 )
+from namel3ss.validation import ValidationMode
+
+
+def _base_element(element_id: str, page_name: str, page_slug: str, index: int, item: ir.PageItem) -> dict:
+    return {
+        "element_id": element_id,
+        "page": page_name,
+        "page_slug": page_slug,
+        "index": index,
+        "line": item.line,
+        "column": item.column,
+    }
 
 
 def _build_children(
@@ -39,7 +52,10 @@ def _build_children(
     path: List[int],
     store: Storage | None,
     identity: dict | None,
-    state: dict,
+    state_ctx: StateContext,
+    mode: ValidationMode,
+    warnings: list | None,
+    taken_actions: set[str],
 ) -> tuple[List[dict], Dict[str, dict]]:
     elements: List[dict] = []
     actions: Dict[str, dict] = {}
@@ -52,17 +68,21 @@ def _build_children(
             path + [idx],
             store,
             identity,
-            state,
+            state_ctx,
+            mode,
+            warnings,
+            taken_actions,
         )
         elements.append(element)
         for action_id, action_entry in child_actions.items():
             if action_id in actions:
                 raise Namel3ssError(
-                    f"UI action id '{action_id}' is duplicated on page '{page_name}'.",
+                    f"Duplicate action id '{action_id}'. Use a unique id or omit to auto-generate.",
                     line=child.line,
                     column=child.column,
                 )
             actions[action_id] = action_entry
+            taken_actions.add(action_id)
     return elements, actions
 
 
@@ -74,49 +94,37 @@ def _page_item_to_manifest(
     path: List[int],
     store: Storage | None,
     identity: dict | None,
-    state: dict,
+    state_ctx: StateContext,
+    mode: ValidationMode,
+    warnings: list | None,
+    taken_actions: set[str],
 ) -> tuple[dict, Dict[str, dict]]:
     index = path[-1] if path else 0
     if isinstance(item, ir.TitleItem):
         element_id = _element_id(page_slug, "title", path)
+        base = _base_element(element_id, page_name, page_slug, index, item)
         return (
             _attach_origin(
-                {
-                    "type": "title",
-                    "value": item.value,
-                    "element_id": element_id,
-                    "page": page_name,
-                    "page_slug": page_slug,
-                    "index": index,
-                    "line": item.line,
-                    "column": item.column,
-                },
+                {"type": "title", "value": item.value, **base},
                 item,
             ),
             {},
         )
     if isinstance(item, ir.TextItem):
         element_id = _element_id(page_slug, "text", path)
+        base = _base_element(element_id, page_name, page_slug, index, item)
         return (
             _attach_origin(
-                {
-                    "type": "text",
-                    "value": item.value,
-                    "element_id": element_id,
-                    "page": page_name,
-                    "page_slug": page_slug,
-                    "index": index,
-                    "line": item.line,
-                    "column": item.column,
-                },
+                {"type": "text", "value": item.value, **base},
                 item,
             ),
             {},
         )
     if isinstance(item, ir.FormItem):
         record = _require_record(item.record_name, record_map, item)
-        action_id = _form_action_id(page_name, item.record_name)
         element_id = _element_id(page_slug, "form_item", path)
+        base_action_id = _form_action_id(page_slug, item.record_name)
+        action_id = _allocate_action_id(base_action_id, element_id, taken_actions)
         element, actions = _build_form_element(
             item,
             record,
@@ -130,6 +138,7 @@ def _page_item_to_manifest(
     if isinstance(item, ir.TableItem):
         record = _require_record(item.record_name, record_map, item)
         table_id = _table_id(page_slug, item.record_name)
+        element_id = _element_id(page_slug, "table", path)
         rows: list[dict] = []
         if store is not None:
             scope = build_record_scope(record, identity)
@@ -139,19 +148,15 @@ def _page_item_to_manifest(
             rows = _apply_table_sort(rows, item.sort, record)
         if item.pagination:
             rows = _apply_table_pagination(rows, item.pagination)
-        row_actions, action_entries = _build_row_actions(page_slug, record.name, item.row_actions)
+        row_actions, action_entries = _build_row_actions(element_id, page_slug, item.row_actions)
+        base = _base_element(element_id, page_name, page_slug, index, item)
         element = {
             "type": "table",
             "id": table_id,
             "record": record.name,
             "columns": columns,
             "rows": rows,
-            "element_id": _element_id(page_slug, "table", path),
-            "page": page_name,
-            "page_slug": page_slug,
-            "index": index,
-            "line": item.line,
-            "column": item.column,
+            **base,
         }
         if item.empty_text:
             element["empty_text"] = item.empty_text
@@ -171,11 +176,13 @@ def _page_item_to_manifest(
     if isinstance(item, ir.ListItem):
         record = _require_record(item.record_name, record_map, item)
         list_id = _list_id(page_slug, item.record_name)
+        element_id = _element_id(page_slug, "list", path)
         rows: list[dict] = []
         if store is not None:
             scope = build_record_scope(record, identity)
             rows = store.list_records(record, scope=scope)[:20]
-        action_entries, action_map = _build_list_actions(page_slug, record.name, item.actions)
+        action_entries, action_map = _build_list_actions(element_id, item.actions)
+        base = _base_element(element_id, page_name, page_slug, index, item)
         element = {
             "type": "list",
             "id": list_id,
@@ -183,12 +190,7 @@ def _page_item_to_manifest(
             "variant": item.variant,
             "item": _list_item_mapping(item.item),
             "rows": rows,
-            "element_id": _element_id(page_slug, "list", path),
-            "page": page_name,
-            "page_slug": page_slug,
-            "index": index,
-            "line": item.line,
-            "column": item.column,
+            **base,
         }
         if item.empty_text:
             element["empty_text"] = item.empty_text
@@ -200,32 +202,39 @@ def _page_item_to_manifest(
             element["id_field"] = _list_id_field(record)
         return _attach_origin(element, item), action_map
     if isinstance(item, ir.ChartItem):
+        element_id = _element_id(page_slug, "chart", path)
+        base = _base_element(element_id, page_name, page_slug, index, item)
         element = _build_chart_element(
             item,
             record_map,
             page_name=page_name,
             page_slug=page_slug,
-            element_id=_element_id(page_slug, "chart", path),
+            element_id=element_id,
             index=index,
             identity=identity,
-            state=state,
+            state_ctx=state_ctx,
+            mode=mode,
+            warnings=warnings,
             store=store,
         )
-        return _attach_origin(element, item), {}
+        return _attach_origin({**element, **base}, item), {}
     if isinstance(item, ir.ChatItem):
         children, actions = _build_children(
-            item.children, record_map, page_name, page_slug, path, store, identity, state
+            item.children,
+            record_map,
+            page_name,
+            page_slug,
+            path,
+            store,
+            identity,
+            state_ctx,
+            mode,
+            warnings,
+            taken_actions,
         )
-        element = {
-            "type": "chat",
-            "children": children,
-            "element_id": _element_id(page_slug, "chat", path),
-            "page": page_name,
-            "page_slug": page_slug,
-            "index": index,
-            "line": item.line,
-            "column": item.column,
-        }
+        element_id = _element_id(page_slug, "chat", path)
+        base = _base_element(element_id, page_name, page_slug, index, item)
+        element = {"type": "chat", "children": children, **base}
         return _attach_origin(element, item), actions
     chat_kind = _chat_item_kind(item)
     if chat_kind:
@@ -236,8 +245,9 @@ def _page_item_to_manifest(
             page_name=page_name,
             page_slug=page_slug,
             index=index,
-            identity=identity,
-            state=state,
+            state_ctx=state_ctx,
+            mode=mode,
+            warnings=warnings,
         )
         if result is not None:
             element, actions = result
@@ -245,39 +255,51 @@ def _page_item_to_manifest(
     if isinstance(item, ir.ModalItem):
         element_id = _element_id(page_slug, "modal", path)
         children, actions = _build_children(
-            item.children, record_map, page_name, page_slug, path, store, identity, state
+            item.children,
+            record_map,
+            page_name,
+            page_slug,
+            path,
+            store,
+            identity,
+            state_ctx,
+            mode,
+            warnings,
+            taken_actions,
         )
+        base = _base_element(element_id, page_name, page_slug, index, item)
         element = {
             "type": "modal",
             "id": _modal_id(page_slug, item.label),
             "label": item.label,
             "open": False,
             "children": children,
-            "element_id": element_id,
-            "page": page_name,
-            "page_slug": page_slug,
-            "index": index,
-            "line": item.line,
-            "column": item.column,
+            **base,
         }
         return _attach_origin(element, item), actions
     if isinstance(item, ir.DrawerItem):
         element_id = _element_id(page_slug, "drawer", path)
         children, actions = _build_children(
-            item.children, record_map, page_name, page_slug, path, store, identity, state
+            item.children,
+            record_map,
+            page_name,
+            page_slug,
+            path,
+            store,
+            identity,
+            state_ctx,
+            mode,
+            warnings,
+            taken_actions,
         )
+        base = _base_element(element_id, page_name, page_slug, index, item)
         element = {
             "type": "drawer",
             "id": _drawer_id(page_slug, item.label),
             "label": item.label,
             "open": False,
             "children": children,
-            "element_id": element_id,
-            "page": page_name,
-            "page_slug": page_slug,
-            "index": index,
-            "line": item.line,
-            "column": item.column,
+            **base,
         }
         return _attach_origin(element, item), actions
     if isinstance(item, ir.TabsItem):
@@ -288,107 +310,110 @@ def _page_item_to_manifest(
         for idx, tab in enumerate(item.tabs):
             labels.append(tab.label)
             children, actions = _build_children(
-                tab.children, record_map, page_name, page_slug, path + [idx], store, identity, state
+                tab.children,
+                record_map,
+                page_name,
+                page_slug,
+                path + [idx],
+                store,
+                identity,
+                state_ctx,
+                mode,
+                warnings,
+                taken_actions,
             )
             action_map.update(actions)
+            tab_base = _base_element(_element_id(page_slug, "tab", path + [idx]), page_name, page_slug, idx, tab)
             tabs.append(
                 _attach_origin(
                     {
                         "type": "tab",
                         "label": tab.label,
                         "children": children,
-                        "element_id": _element_id(page_slug, "tab", path + [idx]),
-                        "page": page_name,
-                        "page_slug": page_slug,
-                        "index": idx,
-                        "line": tab.line,
-                        "column": tab.column,
+                        **tab_base,
                     },
                     tab,
                 )
             )
         default_label = item.default or (labels[0] if labels else "")
+        base = _base_element(element_id, page_name, page_slug, index, item)
         element = {
             "type": "tabs",
             "tabs": labels,
             "default": default_label,
             "active": default_label,
             "children": tabs,
-            "element_id": element_id,
-            "page": page_name,
-            "page_slug": page_slug,
-            "index": index,
-            "line": item.line,
-            "column": item.column,
+            **base,
         }
         return _attach_origin(element, item), action_map
     if isinstance(item, ir.ButtonItem):
-        action_id = _button_action_id(page_name, item.label)
-        action_entry = {"id": action_id, "type": "call_flow", "flow": item.flow_name}
         element_id = _element_id(page_slug, "button_item", path)
+        base_action_id = _button_action_id(page_slug, item.label)
+        action_id = _allocate_action_id(base_action_id, element_id, taken_actions)
+        action_entry = {"id": action_id, "type": "call_flow", "flow": item.flow_name}
+        base = _base_element(element_id, page_name, page_slug, index, item)
         element = {
             "type": "button",
             "label": item.label,
             "id": action_id,
             "action_id": action_id,
             "action": {"type": "call_flow", "flow": item.flow_name},
-            "element_id": element_id,
-            "page": page_name,
-            "page_slug": page_slug,
-            "index": index,
-            "line": item.line,
-            "column": item.column,
+            **base,
         }
         return _attach_origin(element, item), {action_id: action_entry}
     if isinstance(item, ir.SectionItem):
         children, actions = _build_children(
-            item.children, record_map, page_name, page_slug, path, store, identity, state
+            item.children,
+            record_map,
+            page_name,
+            page_slug,
+            path,
+            store,
+            identity,
+            state_ctx,
+            mode,
+            warnings,
+            taken_actions,
         )
-        element = {
-            "type": "section",
-            "label": item.label or "",
-            "children": children,
-            "element_id": _element_id(page_slug, "section", path),
-            "page": page_name,
-            "page_slug": page_slug,
-            "index": index,
-            "line": item.line,
-            "column": item.column,
-        }
+        base = _base_element(_element_id(page_slug, "section", path), page_name, page_slug, index, item)
+        element = {"type": "section", "label": item.label or "", "children": children, **base}
         return _attach_origin(element, item), actions
     if isinstance(item, ir.CardGroupItem):
         children, actions = _build_children(
-            item.children, record_map, page_name, page_slug, path, store, identity, state
+            item.children,
+            record_map,
+            page_name,
+            page_slug,
+            path,
+            store,
+            identity,
+            state_ctx,
+            mode,
+            warnings,
+            taken_actions,
         )
-        element = {
-            "type": "card_group",
-            "children": children,
-            "element_id": _element_id(page_slug, "card_group", path),
-            "page": page_name,
-            "page_slug": page_slug,
-            "index": index,
-            "line": item.line,
-            "column": item.column,
-        }
+        base = _base_element(_element_id(page_slug, "card_group", path), page_name, page_slug, index, item)
+        element = {"type": "card_group", "children": children, **base}
         return _attach_origin(element, item), actions
     if isinstance(item, ir.CardItem):
         element_id = _element_id(page_slug, "card", path)
         children, actions = _build_children(
-            item.children, record_map, page_name, page_slug, path, store, identity, state
+            item.children,
+            record_map,
+            page_name,
+            page_slug,
+            path,
+            store,
+            identity,
+            state_ctx,
+            mode,
+            warnings,
+            taken_actions,
         )
-        element = {
-            "type": "card",
-            "label": item.label or "",
-            "children": children,
-            "element_id": element_id,
-            "page": page_name,
-            "page_slug": page_slug,
-            "index": index,
-            "line": item.line,
-            "column": item.column,
-        }
+        base = _base_element(element_id, page_name, page_slug, index, item)
+        element = {"type": "card", "label": item.label or "", "children": children, **base}
         if item.stat is not None:
-            element["stat"] = _build_card_stat(item.stat, identity, state)
+            element["stat"] = _build_card_stat(item.stat, identity, state_ctx, mode, warnings)
         if item.actions:
             action_entries, action_map = _build_card_actions(element_id, page_slug, item.actions)
             element["actions"] = action_entries
@@ -396,57 +421,45 @@ def _page_item_to_manifest(
         return _attach_origin(element, item), actions
     if isinstance(item, ir.RowItem):
         children, actions = _build_children(
-            item.children, record_map, page_name, page_slug, path, store, identity, state
+            item.children,
+            record_map,
+            page_name,
+            page_slug,
+            path,
+            store,
+            identity,
+            state_ctx,
+            mode,
+            warnings,
+            taken_actions,
         )
-        element = {
-            "type": "row",
-            "children": children,
-            "element_id": _element_id(page_slug, "row", path),
-            "page": page_name,
-            "page_slug": page_slug,
-            "index": index,
-            "line": item.line,
-            "column": item.column,
-        }
+        base = _base_element(_element_id(page_slug, "row", path), page_name, page_slug, index, item)
+        element = {"type": "row", "children": children, **base}
         return _attach_origin(element, item), actions
     if isinstance(item, ir.ColumnItem):
         children, actions = _build_children(
-            item.children, record_map, page_name, page_slug, path, store, identity, state
+            item.children,
+            record_map,
+            page_name,
+            page_slug,
+            path,
+            store,
+            identity,
+            state_ctx,
+            mode,
+            warnings,
+            taken_actions,
         )
-        element = {
-            "type": "column",
-            "children": children,
-            "element_id": _element_id(page_slug, "column", path),
-            "page": page_name,
-            "page_slug": page_slug,
-            "index": index,
-            "line": item.line,
-            "column": item.column,
-        }
+        base = _base_element(_element_id(page_slug, "column", path), page_name, page_slug, index, item)
+        element = {"type": "column", "children": children, **base}
         return _attach_origin(element, item), actions
     if isinstance(item, ir.DividerItem):
-        element = {
-            "type": "divider",
-            "element_id": _element_id(page_slug, "divider", path),
-            "page": page_name,
-            "page_slug": page_slug,
-            "index": index,
-            "line": item.line,
-            "column": item.column,
-        }
+        base = _base_element(_element_id(page_slug, "divider", path), page_name, page_slug, index, item)
+        element = {"type": "divider", **base}
         return _attach_origin(element, item), {}
     if isinstance(item, ir.ImageItem):
-        element = {
-            "type": "image",
-            "src": item.src,
-            "alt": item.alt,
-            "element_id": _element_id(page_slug, "image", path),
-            "page": page_name,
-            "page_slug": page_slug,
-            "index": index,
-            "line": item.line,
-            "column": item.column,
-        }
+        base = _base_element(_element_id(page_slug, "image", path), page_name, page_slug, index, item)
+        element = {"type": "image", "src": item.src, "alt": item.alt, **base}
         return _attach_origin(element, item), {}
     raise Namel3ssError(
         f"Unsupported page item '{type(item)}'",

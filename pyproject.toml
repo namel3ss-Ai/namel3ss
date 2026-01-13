@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "namel3ss"
 version = "0.1.0a7"
-description = "Build AI-native applications in plain English. Data, UI, backend logic, and AI — all in one .ai file."
+description = "An AI-native programming language. Designed to be understood."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }

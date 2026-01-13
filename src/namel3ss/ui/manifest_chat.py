@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
-from namel3ss.runtime.executor.expr_eval import evaluate_expression
-from namel3ss.runtime.identity.guards import build_guard_context
+from namel3ss.ui.manifest.state_defaults import StateContext
+from namel3ss.validation import ValidationMode
 
 _ALLOWED_ROLES = {"user", "assistant", "system", "tool"}
 
@@ -15,11 +15,11 @@ def _build_chat_messages(
     page_name: str,
     page_slug: str,
     index: int,
-    identity: dict | None,
-    state: dict,
+    state_ctx: StateContext,
+    mode: ValidationMode,
 ) -> dict:
     source = _state_path_label(item.source)
-    value = _resolve_state_path(item.source, identity, state)
+    value = _resolve_state_path(item.source, state_ctx, default=[], register_default=True)
     messages = _require_list(value, "messages", item.line, item.column)
     _validate_messages(messages, item.line, item.column)
     return {
@@ -67,11 +67,10 @@ def _build_chat_thinking(
     page_name: str,
     page_slug: str,
     index: int,
-    identity: dict | None,
-    state: dict,
+    state_ctx: StateContext,
 ) -> dict:
     when = _state_path_label(item.when)
-    value = _resolve_state_path(item.when, identity, state)
+    value = _resolve_state_path(item.when, state_ctx, default=False, register_default=True)
     if not isinstance(value, bool):
         raise Namel3ssError("Thinking expects a boolean state value", line=item.line, column=item.column)
     return {
@@ -94,11 +93,10 @@ def _build_chat_citations(
     page_name: str,
     page_slug: str,
     index: int,
-    identity: dict | None,
-    state: dict,
+    state_ctx: StateContext,
 ) -> dict:
     source = _state_path_label(item.source)
-    value = _resolve_state_path(item.source, identity, state)
+    value = _resolve_state_path(item.source, state_ctx, default=[], register_default=True)
     citations = _require_list(value, "citations", item.line, item.column)
     _validate_citations(citations, item.line, item.column)
     return {
@@ -121,11 +119,10 @@ def _build_chat_memory(
     page_name: str,
     page_slug: str,
     index: int,
-    identity: dict | None,
-    state: dict,
+    state_ctx: StateContext,
 ) -> dict:
     source = _state_path_label(item.source)
-    value = _resolve_state_path(item.source, identity, state)
+    value = _resolve_state_path(item.source, state_ctx, default=[], register_default=True)
     items = _require_list(value, "memory", item.line, item.column)
     _validate_memory(items, item.line, item.column)
     element = {
@@ -165,8 +162,9 @@ def _chat_item_to_manifest(
     page_name: str,
     page_slug: str,
     index: int,
-    identity: dict | None,
-    state: dict,
+    state_ctx: StateContext,
+    mode: ValidationMode,
+    warnings: list | None = None,
 ) -> tuple[dict, dict] | None:
     if isinstance(item, ir.ChatMessagesItem):
         return (
@@ -176,8 +174,8 @@ def _chat_item_to_manifest(
                 page_name=page_name,
                 page_slug=page_slug,
                 index=index,
-                identity=identity,
-                state=state,
+                state_ctx=state_ctx,
+                mode=mode,
             ),
             {},
         )
@@ -197,8 +195,7 @@ def _chat_item_to_manifest(
                 page_name=page_name,
                 page_slug=page_slug,
                 index=index,
-                identity=identity,
-                state=state,
+                state_ctx=state_ctx,
             ),
             {},
         )
@@ -210,8 +207,7 @@ def _chat_item_to_manifest(
                 page_name=page_name,
                 page_slug=page_slug,
                 index=index,
-                identity=identity,
-                state=state,
+                state_ctx=state_ctx,
             ),
             {},
         )
@@ -223,17 +219,16 @@ def _chat_item_to_manifest(
                 page_name=page_name,
                 page_slug=page_slug,
                 index=index,
-                identity=identity,
-                state=state,
+                state_ctx=state_ctx,
             ),
             {},
         )
     return None
 
 
-def _resolve_state_path(path: ir.StatePath, identity: dict | None, state: dict) -> object:
-    ctx = build_guard_context(identity=identity or {}, state=state or {})
-    return evaluate_expression(ctx, path)
+def _resolve_state_path(path: ir.StatePath, state_ctx: StateContext, *, default: object, register_default: bool) -> object:
+    value, _ = state_ctx.value(path.path, default=default, register_default=register_default)
+    return value
 
 
 def _state_path_label(path: ir.StatePath) -> str:

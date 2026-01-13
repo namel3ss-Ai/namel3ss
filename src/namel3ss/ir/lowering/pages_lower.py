@@ -36,6 +36,7 @@ def _lower_page(
         requires=_lower_expression(page.requires) if page.requires else None,
         line=page.line,
         column=page.column,
+        state_defaults=getattr(page, "state_defaults", None),
     )
 
 

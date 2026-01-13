@@ -12,6 +12,7 @@ class Page(Node):
     name: str
     items: List["PageItem"]
     requires: Expression | None = None
+    state_defaults: dict | None = None
 
 
 @dataclass

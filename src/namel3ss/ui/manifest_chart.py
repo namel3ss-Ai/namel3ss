@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
-from namel3ss.runtime.executor.expr_eval import evaluate_expression
-from namel3ss.runtime.identity.guards import build_guard_context
 from namel3ss.runtime.records.service import build_record_scope
 from namel3ss.schema import records as schema
+from namel3ss.ui.manifest.state_defaults import StateContext
+from namel3ss.validation import ValidationMode, add_warning
 
 _ALLOWED_TYPES = {"bar", "line", "summary"}
 
@@ -19,7 +19,9 @@ def _build_chart_element(
     element_id: str,
     index: int,
     identity: dict | None,
-    state: dict,
+    state_ctx: StateContext,
+    mode: ValidationMode,
+    warnings: list | None,
     store,
 ) -> dict:
     chart_type = (item.chart_type or "summary").lower()
@@ -46,7 +48,7 @@ def _build_chart_element(
         source_label = record.name
     elif item.source:
         source_label = _state_path_label(item.source)
-        rows = _resolve_state_list(item.source, identity, state, item.line, item.column)
+        rows = _resolve_state_list(item.source, state_ctx, mode, warnings, item.line, item.column)
     x, y = _resolve_mapping(chart_type, item, record, rows)
     explain = item.explain or _auto_explain(chart_type, source_label or "data", x, y)
 
@@ -218,13 +220,25 @@ def _state_path_label(path: ir.StatePath) -> str:
 
 def _resolve_state_list(
     source: ir.StatePath,
-    identity: dict | None,
-    state: dict,
+    state_ctx: StateContext,
+    mode: ValidationMode,
+    warnings: list | None,
     line: int | None,
     column: int | None,
 ) -> list[dict]:
-    ctx = build_guard_context(identity=identity or {}, state=state or {})
-    value = evaluate_expression(ctx, source)
+    path = source.path
+    value, _ = state_ctx.value(path, default=[], register_default=False)
+    if mode == ValidationMode.STATIC and not state_ctx.declared(path) and state_ctx.defaults.warn_once(path):
+        add_warning(
+            warnings,
+            code="state.default.missing",
+            message=f"State path 'state.{'.'.join(path)}' is not declared; using empty list during static validation.",
+            fix=f"Declare a default for state.{'.'.join(path)} to silence this warning.",
+            path=path,
+            line=line,
+            column=column,
+            enforced_at="runtime",
+        )
     if not isinstance(value, list):
         raise Namel3ssError("Chart source must be a list", line=line, column=column)
     for idx, entry in enumerate(value):

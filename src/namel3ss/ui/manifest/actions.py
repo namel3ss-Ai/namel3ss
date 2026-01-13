@@ -5,12 +5,26 @@ from typing import Dict
 from namel3ss.ui.manifest.canonical import _slugify
 
 
-def _button_action_id(page_name: str, label: str) -> str:
-    return f"page.{_slugify(page_name)}.button.{_slugify(label)}"
+def _button_action_id(page_slug: str, label: str) -> str:
+    return f"page.{page_slug}.button.{_slugify(label)}"
 
 
-def _form_action_id(page_name: str, record_name: str) -> str:
-    return f"page.{_slugify(page_name)}.form.{_slugify(record_name)}"
+def _form_action_id(page_slug: str, record_name: str) -> str:
+    return f"page.{page_slug}.form.{_slugify(record_name)}"
+
+
+def _allocate_action_id(base_id: str, element_id: str, taken: set[str]) -> str:
+    if base_id not in taken:
+        return base_id
+    fallback = f"{base_id}__{element_id}"
+    if fallback not in taken:
+        return fallback
+    index = 1
+    while True:
+        candidate = f"{fallback}.{index}"
+        if candidate not in taken:
+            return candidate
+        index += 1
 
 
 def _wire_overlay_actions(elements: list[dict], actions: Dict[str, dict]) -> None:
@@ -51,4 +65,4 @@ def _walk_elements(elements: list[dict]) -> list[dict]:
     return collected
 
 
-__all__ = ["_button_action_id", "_form_action_id", "_wire_overlay_actions"]
+__all__ = ["_button_action_id", "_form_action_id", "_wire_overlay_actions", "_allocate_action_id"]

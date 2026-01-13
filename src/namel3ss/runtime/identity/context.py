@@ -10,11 +10,34 @@ from namel3ss.runtime.validators.constraints import collect_validation_errors
 from namel3ss.schema.identity import IdentitySchema
 from namel3ss.schema.records import FieldSchema, RecordSchema
 from namel3ss.utils.numbers import is_number, to_decimal
+from namel3ss.validation import ValidationMode, add_warning
 
 
-def resolve_identity(config: AppConfig | None, schema: IdentitySchema | None) -> dict:
+def resolve_identity(
+    config: AppConfig | None,
+    schema: IdentitySchema | None,
+    *,
+    mode: ValidationMode = ValidationMode.RUNTIME,
+    warnings: list | None = None,
+) -> dict:
     identity = dict(config.identity.defaults) if config else {}
     if schema is None:
+        return identity
+    if mode == ValidationMode.STATIC:
+        try:
+            _validate_identity(schema, identity)
+        except Namel3ssError as err:
+            add_warning(
+                warnings,
+                code="identity.missing",
+                message=str(err),
+                fix="Provide N3_IDENTITY_* values or declare defaults; runtime will enforce.",
+                path="identity",
+                line=schema.line,
+                column=schema.column,
+                enforced_at="runtime",
+            )
+            return identity
         return identity
     _validate_identity(schema, identity)
     return identity

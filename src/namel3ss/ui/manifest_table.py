@@ -13,8 +13,8 @@ def _table_id(page_slug: str, record_name: str) -> str:
     return f"page.{page_slug}.table.{_slugify(record_name)}"
 
 
-def _table_row_action_id(page_slug: str, record_name: str, label: str) -> str:
-    return f"page.{page_slug}.table.{_slugify(record_name)}.row_action.{_slugify(label)}"
+def _table_row_action_id(element_id: str, label: str) -> str:
+    return f"{element_id}.row_action.{_slugify(label)}"
 
 
 def _table_id_field(record: schema.RecordSchema) -> str:
@@ -110,8 +110,8 @@ def _apply_table_pagination(rows: list[dict], pagination: ir.TablePagination) ->
 
 
 def _build_row_actions(
+    element_id: str,
     page_slug: str,
-    record_name: str,
     actions: list[ir.TableRowAction] | None,
 ) -> tuple[list[dict], Dict[str, dict]]:
     if not actions:
@@ -120,7 +120,7 @@ def _build_row_actions(
     entries: list[dict] = []
     action_map: Dict[str, dict] = {}
     for action in actions:
-        action_id = _table_row_action_id(page_slug, record_name, action.label)
+        action_id = _table_row_action_id(element_id, action.label)
         if action_id in seen:
             raise Namel3ssError(
                 f"Row action '{action.label}' collides with another action id",
