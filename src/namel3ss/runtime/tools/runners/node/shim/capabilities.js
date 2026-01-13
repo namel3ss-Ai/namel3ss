@@ -136,6 +136,10 @@ function buildBlockMessage(toolName, action, why, example) {
   ].join("\n");
 }
 
+function displayPath(value) {
+  return String(value).replace(/\\/g, "/");
+}
+
 function normalizeSecretName(name) {
   if (!name) {
     return null;
@@ -177,7 +181,7 @@ function guardFilesystem(pathValue, mode) {
   const check = buildCheck(capability, false, REASON_GUARANTEE_BLOCKED);
   recordCheck(check);
   const toolName = capabilityContext.toolName;
-  const target = String(pathValue);
+  const target = displayPath(pathValue);
   const action = write ? "cannot write to the filesystem" : "cannot read from the filesystem";
   const why = `Effective guarantees forbid filesystem access (${target}).`;
   const example = `[capability_overrides]\n"${toolName}" = { no_filesystem_write = true }`;

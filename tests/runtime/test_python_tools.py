@@ -10,6 +10,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.executor import Executor
 from namel3ss.runtime.tools.bindings import write_tool_bindings
 from namel3ss.runtime.tools.bindings_yaml import ToolBinding
+from namel3ss.runtime.tools.python_env import venv_python_path
 from namel3ss.runtime.tools.python_subprocess import ToolSubprocessResult
 from tests.conftest import lower_ir_program
 from tests._ci_debug import debug_context
@@ -194,7 +195,7 @@ def test_python_tool_uses_venv_python(monkeypatch, tmp_path):
         "def greet(payload):\n    return {\"ok\": True}\n",
         encoding="utf-8",
     )
-    venv_python = tmp_path / ".venv" / "bin" / "python"
+    venv_python = venv_python_path(tmp_path / ".venv")
     venv_python.parent.mkdir(parents=True)
     venv_python.write_text("", encoding="utf-8")
 

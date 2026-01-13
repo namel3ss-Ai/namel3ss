@@ -9,6 +9,7 @@ from namel3ss.runtime.capabilities.gates.base import (
     build_block_message,
 )
 from namel3ss.runtime.capabilities.model import CapabilityCheck, CapabilityContext
+from namel3ss.utils.path_display import display_path
 
 
 def check_filesystem(ctx: CapabilityContext, record, *, path: Path | str, mode: str) -> None:
@@ -52,9 +53,9 @@ def _is_write_mode(mode: str) -> bool:
 
 def _path_label(path: Path | str) -> str:
     try:
-        return str(Path(path))
+        return display_path(path)
     except Exception:
-        return str(path)
+        return display_path(str(path))
 
 
 __all__ = ["check_filesystem"]
