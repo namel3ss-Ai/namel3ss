@@ -62,33 +62,68 @@ namel3ss is built around a few non-negotiable ideas:
 These are not features.  
 They are guarantees.
 
-## Try it in 60 seconds
+## Installation
 
-This command scaffolds Agent Lab, a deterministic multi-agent starter.
+The recommended way to install `n3` is with `pipx`, which keeps it isolated and globally available:
 
 ```bash
-pip install namel3ss
-n3 new agent-lab demo
-cd demo
-n3 app.ai studio
+pipx install namel3ss
 ```
 
-Studio opens a runnable agent workspace with:
-
-- agent templates and wiring
-- deterministic traces and explainability
-- memory packs and handoff previews
-- merge policies for parallel agents
-
-## ClearOrders demo
-
-ClearOrders is the reference project used by namel3ss.
+Or via pip:
 
 ```bash
+python -m pip install -U namel3ss
+```
+
+### Verify installation
+
+```bash
+n3 --version
+n3 --help
+```
+
+### Windows users
+If `n3` is not found, your Python `Scripts/` folder may not be in your PATH.
+You can always use the fallback command:
+
+```bash
+python -m namel3ss --help
+```
+
+## Try it in 60 seconds
+
+```bash
+python -m pip install -U namel3ss
+n3 --help
 n3 new demo
 cd demo
 n3 run
 ```
+
+## Troubleshooting
+
+If `n3` is not recognized:
+
+1. Check installation:
+   ```bash
+   python -m pip show namel3ss
+   ```
+
+2. Check location:
+   ```bash
+   where n3   # Windows
+   which n3   # macOS/Linux
+   ```
+
+3. Fallback command:
+   ```bash
+   python -m namel3ss --help
+   ```
+
+Common PATH locations:
+- Windows: `C:\Users\<User>\AppData\Local\Programs\Python\PythonXY\Scripts` or `%APPDATA%\Python\PythonXY\Scripts`
+- macOS/Linux: `~/.local/bin`
 
 On first run, the browser opens a working application with:
 
