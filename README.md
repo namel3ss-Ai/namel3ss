@@ -266,7 +266,7 @@ namel3ss is not trying to replace Python or JavaScript.
 It is exploring what comes next.
 
 ## Status
-namel3ss is in alpha (v0.1.0a7). It is suitable for learning and experimentation, not production.  
+namel3ss is in alpha (v0.1.0a8). It is suitable for learning and experimentation, not production.  
 Expect breaking changes between alpha revisions.
 
 ## Start here (learning path)
