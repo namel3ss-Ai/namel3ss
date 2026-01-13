@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "namel3ss"
-version = "0.1.0a7"
+version = "0.1.0a8"
 description = "An AI-native programming language. Designed to be understood."
 readme = "README.md"
 requires-python = ">=3.10"
