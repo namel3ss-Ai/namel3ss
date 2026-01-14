@@ -110,11 +110,11 @@ See `docs/trace-schema.md` for the frozen schema.
 ## Tool decisions
 Tool calls also emit ToolDecision summaries used by `n3 with`.
 Blocked tools report the capability reason from `capability_check` events.
-Artifacts are saved under `.namel3ss/tools/last.json` and `last.with.txt`.
+Use `n3 with` for the tool report, and `n3 status` / `n3 explain` for run-level context.
 
 ## Run outcomes
 Flow runs emit an outcome pack used by `n3 what`.
-Artifacts are saved under `.namel3ss/outcome/last.json` and `last.what.txt`.
+Use `n3 what` for the outcome, and `n3 clean` to remove runtime artifacts when needed.
 
 ## Graduation mapping
 Capability id runtime.tools

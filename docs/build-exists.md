@@ -23,10 +23,5 @@ n3 exists --diff
 - Guarantees that are not recorded.
 
 ## Artifacts
-The build explanation writes:
-- `.namel3ss/build/last.json`
-- `.namel3ss/build/last.plain`
-- `.namel3ss/build/last.exists.txt`
-
-History is stored at:
-- `.namel3ss/build/history/<build_id>.json`
+Build artifacts are managed by namel3ss. Use `n3 status` for the last run summary,
+`n3 explain` for failures, and `n3 clean` to remove runtime artifacts.

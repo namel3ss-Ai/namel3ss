@@ -22,9 +22,5 @@ n3 fix
 - Guessed root causes without evidence.
 
 ## Artifacts
-After a run, the runtime saves:
-- `.namel3ss/errors/last.json`
-- `.namel3ss/errors/last.plain`
-
-The `n3 fix` command writes:
-- `.namel3ss/errors/last.fix.txt`
+Artifacts are managed by namel3ss. Use `n3 explain` for a calm failure summary,
+`n3 status` for the last run overview, and `n3 clean` to remove runtime artifacts.

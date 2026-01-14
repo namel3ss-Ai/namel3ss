@@ -19,8 +19,5 @@
 - Network or filesystem claims unless declared in the IR.
 
 ## Artifacts
-Artifacts are written under:
-- `.namel3ss/contract/last.json`
-- `.namel3ss/contract/last.plain`
-- `.namel3ss/contract/last.exists.txt`
-- `.namel3ss/contract/history/<source_hash>.json`
+Artifacts are managed by namel3ss. Use `n3 status` for the last run summary,
+`n3 explain` for failures, and `n3 clean` to remove runtime artifacts.

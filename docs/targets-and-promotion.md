@@ -24,15 +24,10 @@ n3 pack --target service          # deterministic artifacts (alias: build)
 n3 pack app.ai --target local     # file-first
 ```
 
-Artifacts live in `.namel3ss/build/<target>/<build-id>/` and include:
-- program snapshot (`program/`),
-- config snapshot (secrets redacted),
-- lockfile snapshot,
-- program summary,
-- target bundle (service README with health endpoint info; edge stub README).
-
-Build manifests live in `.namel3ss/build/last.json` and history under `.namel3ss/build/history/`.
+Build artifacts are managed by namel3ss and include program/config snapshots,
+lockfile snapshot, program summary, and the target bundle.
 Use `n3 exists` to explain why a build exists and what changed.
+For run diagnostics use `n3 status` and `n3 explain`; use `n3 clean` to remove artifacts.
 
 ## Promote and rollback (ship)
 

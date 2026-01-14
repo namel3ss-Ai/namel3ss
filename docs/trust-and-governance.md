@@ -11,7 +11,8 @@ Create an immutable snapshot of what the engine will run.
 ```bash
 n3 proof --json
 ```
-Proofs are stored in `.namel3ss/proofs/<proof_id>.json`, and the active pointer lives at `.namel3ss/active_proof.json`.
+Proofs are stored as managed runtime artifacts. Use `n3 proof` to regenerate them and
+`n3 clean` to remove artifacts.
 
 ---
 

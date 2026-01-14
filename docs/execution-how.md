@@ -25,9 +25,5 @@ n3 how
 - Non-deterministic data like timing or randomness.
 
 ## Artifacts
-After a run, the runtime saves:
-- `.namel3ss/execution/last.json`
-- `.namel3ss/execution/last.plain`
-
-The `n3 how` command writes:
-- `.namel3ss/execution/last.how.txt`
+Artifacts are managed by namel3ss. Use `n3 status` for the last run summary,
+`n3 explain` for failures, and `n3 clean` to remove runtime artifacts.

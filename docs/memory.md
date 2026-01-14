@@ -104,9 +104,9 @@ Memory recall and explain are available through a single command:
 - `n3 memory show`
 - `n3 memory @assistant "hello"`
 
-The recall command stores a proof pack at `.namel3ss/memory/last.json`.
-It also writes `.namel3ss/memory/last.plain` for a stable, line-based summary.
-The why command writes `.namel3ss/memory/last.why.txt` and `.namel3ss/memory/last.graph.json`.
+The memory CLI writes deterministic artifacts managed by namel3ss.
+Use `n3 memory show` / `n3 memory why` to review them,
+`n3 status` / `n3 explain` for run diagnostics, and `n3 clean` to remove runtime artifacts.
 
 ## Memory proof harness
 Deterministic scenarios live under `tests/memory_proof/scenarios`.

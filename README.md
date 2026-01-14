@@ -117,6 +117,15 @@ First-run defaults:
 - Templates and demos include state defaults or component-provided defaults (chat, charts, cards).
 - No identity or secret configuration is required to load or view the UI.
 
+## Runtime artifacts
+`.namel3ss/` is managed by namel3ss and stores runtime diagnostics and caches.
+It is safe to delete and should not be inspected directly.
+Use the CLI for day-to-day artifact visibility:
+- `n3 status` — show last run outcome + artifact summary
+- `n3 explain` — explain why the last run failed
+- `n3 clean` — safely remove `.namel3ss/`
+These commands are the supported artifact surface.
+
 ## Troubleshooting
 
 If `n3` is not recognized:

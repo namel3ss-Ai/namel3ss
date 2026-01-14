@@ -13,11 +13,8 @@ n3 memory show
 n3 memory why --json
 ```
 
-Outputs are stored under `.namel3ss/memory`:
-- `last.json` (proof pack)
-- `last.plain` (stable plain summary)
-- `last.why.txt` (plain text explanation)
-- `last.graph.json` (explanation graph)
+Outputs are managed by namel3ss and reprinted via the CLI (`n3 memory show`, `n3 memory why`).
+For run-level diagnostics use `n3 status` / `n3 explain`; use `n3 clean` to remove runtime artifacts.
 
 ## Explanation graph
 The explain engine builds a small causal graph from facts already in the proof pack:

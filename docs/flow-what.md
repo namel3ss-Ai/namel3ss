@@ -22,9 +22,5 @@ n3 what
 - Inferred causes beyond recorded facts.
 
 ## Artifacts
-After a run, the runtime saves:
-- `.namel3ss/outcome/last.json`
-- `.namel3ss/outcome/last.plain`
-
-The `n3 what` command writes:
-- `.namel3ss/outcome/last.what.txt`
+Artifacts are managed by namel3ss. Use `n3 status` for the last run summary,
+`n3 explain` for failures, and `n3 clean` to remove runtime artifacts.

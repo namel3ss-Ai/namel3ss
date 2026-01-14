@@ -16,8 +16,5 @@
 - Inferred causes beyond the exception and runtime context.
 
 ## Artifacts
-Artifacts are written under:
-- `.namel3ss/errors/last.json`
-- `.namel3ss/errors/last.plain`
-- `.namel3ss/errors/last.fix.txt`
-- `.namel3ss/errors/history/<error_id>.json`
+Artifacts are managed by namel3ss. Use `n3 explain` for a calm failure summary,
+`n3 status` for the last run overview, and `n3 clean` to remove runtime artifacts.

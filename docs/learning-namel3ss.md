@@ -38,6 +38,8 @@ Every run emits deterministic artifacts that answer specific questions:
 - What went wrong, and how can I recover?
 
 Explainability is based on recorded facts, never on AI chain-of-thought.
+Use `n3 status` for the last run summary, `n3 explain` for failures, and
+`n3 clean` to remove runtime artifacts.
 
 ### What namel3ss deliberately does not do
 - No CSS or styling DSL (UI is semantic only).
@@ -481,7 +483,7 @@ Memory is deterministic, policy-driven, and inspectable. It records AI-relevant 
 - **Lanes**: my, team, agent, system.
 - **Governance**: proposals and approvals for team memory.
 - **Packs**: reusable policy and rule bundles.
-- **Persistence**: memory snapshots saved under `.namel3ss/memory`.
+- **Persistence**: memory snapshots are recorded by the runtime and managed by namel3ss.
 
 ### Memory CLI
 ```bash
@@ -490,7 +492,8 @@ n3 memory why
 n3 memory show
 ```
 
-These commands write a deterministic proof pack and explanation artifacts under `.namel3ss/memory`.
+These commands write deterministic memory artifacts managed by namel3ss.
+Use `n3 clean` to remove runtime artifacts.
 
 #### References
 - [Memory contract](memory.md)
@@ -556,6 +559,8 @@ n3 test
 
 When troubleshooting:
 ```bash
+n3 status
+n3 explain
 n3 doctor
 n3 fix
 ```

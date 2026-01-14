@@ -18,7 +18,5 @@
 - Inferred intent beyond trace facts.
 
 ## Artifacts
-Artifacts are written under:
-- `.namel3ss/tools/last.json`
-- `.namel3ss/tools/last.plain`
-- `.namel3ss/tools/last.with.txt`
+Artifacts are managed by namel3ss. Use `n3 status` for the last run summary,
+`n3 explain` for failures, and `n3 clean` to remove runtime artifacts.

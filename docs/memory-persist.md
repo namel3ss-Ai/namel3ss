@@ -1,9 +1,7 @@
 # Memory persistence
 
-Memory is saved to disk in the project folder.
-The data lives in .namel3ss/memory under the project root.
-The snapshot file is memory_snapshot.json.
-The checksum file is memory_snapshot.sha256.
+Memory is saved to disk in the project folder as internal runtime artifacts managed by namel3ss.
+Snapshot and checksum files are internal and should not be edited directly.
 
 ## When memory is written
 Memory is written after a flow run commits.
@@ -29,10 +27,6 @@ Secrets are redacted before writing.
 Only memory state is stored.
 
 ## Other memory files
-The memory CLI writes a proof pack for recall and explain:
-- `.namel3ss/memory/last.json`
-- `.namel3ss/memory/last.plain`
-- `.namel3ss/memory/last.why.txt`
-- `.namel3ss/memory/last.graph.json`
-
-These files are not used for persistence and can be deleted safely.
+The memory CLI writes deterministic artifacts for recall and explain.
+Use `n3 memory show` / `n3 memory why` to review them, and `n3 clean` to remove runtime artifacts.
+These files are not used for persistence.

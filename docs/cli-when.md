@@ -18,7 +18,5 @@
 - Inferred causes beyond declared spec and IR facts.
 
 ## Artifacts
-Artifacts are written under:
-- `.namel3ss/spec/last.json`
-- `.namel3ss/spec/last.plain`
-- `.namel3ss/spec/last.when.txt`
+Artifacts are managed by namel3ss. Use `n3 status` for the last run summary,
+`n3 explain` for failures, and `n3 clean` to remove runtime artifacts.

@@ -29,9 +29,5 @@ n3 see
 - Runtime-only data (record rows, chart series, chat payloads, or selection state).
 
 ## Artifacts
-After a run, the runtime saves:
-- `.namel3ss/ui/last.json`
-- `.namel3ss/ui/last.plain`
-
-The `n3 see` command writes:
-- `.namel3ss/ui/last.see.txt`
+Artifacts are managed by namel3ss. Use `n3 status` for the last run summary,
+`n3 explain` for failures, and `n3 clean` to remove runtime artifacts.
