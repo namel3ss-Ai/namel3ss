@@ -65,6 +65,19 @@ namel3ss is built around a few non-negotiable ideas:
 These are not features.  
 They are guarantees.
 
+## Runtime guarantees
+
+namel3ss provides the following guarantees, enforced by code, tests, and governance:
+
+- Deterministic execution with an explicit AI boundary
+- Read-only diagnostics (`n3 status`, `n3 explain`)
+- Safe cleanup of runtime artifacts (`n3 clean`)
+- Bounded, managed runtime artifacts (safe to delete)
+- Governed memory with explicit writes and recall
+- Contract-stable cli, grammar, and explain outputs
+
+These guarantees are enforced and frozen for the v0.1.x series.
+
 ## Installation
 
 The recommended way to install `n3` is with `pipx`, which keeps it isolated and globally available:
@@ -116,15 +129,6 @@ n3 run
 First-run defaults:
 - Templates and demos include state defaults or component-provided defaults (chat, charts, cards).
 - No identity or secret configuration is required to load or view the UI.
-
-## Runtime artifacts
-`.namel3ss/` is managed by namel3ss and stores runtime diagnostics and caches.
-It is safe to delete and should not be inspected directly.
-Use the CLI for day-to-day artifact visibility:
-- `n3 status` — show last run outcome + artifact summary
-- `n3 explain` — explain why the last run failed
-- `n3 clean` — safely remove `.namel3ss/`
-These commands are the supported artifact surface.
 
 ## Troubleshooting
 
