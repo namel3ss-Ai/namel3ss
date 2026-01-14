@@ -114,4 +114,9 @@ def is_keyword(value: str) -> bool:
     return value in KEYWORDS
 
 
-__all__ = ["KEYWORDS", "KEYWORD_LIST", "is_keyword"]
+def reserved_keywords() -> tuple[str, ...]:
+    """Return the canonical reserved keyword list in stable, sorted order."""
+    return tuple(sorted(KEYWORD_LIST))
+
+
+__all__ = ["KEYWORDS", "KEYWORD_LIST", "is_keyword", "reserved_keywords"]

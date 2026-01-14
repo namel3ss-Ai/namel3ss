@@ -540,7 +540,12 @@
       detailStack.appendChild(buildDetailRow("Why", parsed.why));
     }
 
-    const fixText = [parsed.fix, parsed.example].filter(Boolean).join("\n");
+    const code = (payload && payload.error_entry && payload.error_entry.code) || (payload && payload.details && payload.details.error_id) || "";
+    const keyword = (payload && payload.details && payload.details.keyword) || "";
+    const reservedHint = code === "parse.reserved_identifier"
+      ? `Rename '${keyword || "this name"}' (for example, 'ticket_${keyword || "name"}'). See also: run \`n3 reserved\`.`
+      : "";
+    const fixText = [parsed.fix, parsed.example, reservedHint].filter(Boolean).join("\n");
     const stepsTitle = document.createElement("div");
     stepsTitle.className = "panel-section-title";
     stepsTitle.textContent = "How to fix";

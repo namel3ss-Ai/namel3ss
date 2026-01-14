@@ -60,8 +60,10 @@
   }
 
   function setManifestError(detail) {
+    const payload = typeof detail === "object" && detail !== null ? detail : { ok: false, error: detail, kind: "manifest" };
+    if (!payload.kind) payload.kind = "manifest";
     if (state && typeof state.setCachedLastRunError === "function") {
-      state.setCachedLastRunError({ ok: false, error: detail, kind: "manifest" });
+      state.setCachedLastRunError(payload);
     }
     if (root.errors && typeof root.errors.renderErrors === "function") {
       root.errors.renderErrors();
@@ -85,7 +87,7 @@
     try {
       const payload = await net.fetchJson("/api/ui");
       if (payload && payload.ok === false) {
-        setManifestError(payload.error || "Unable to load UI");
+        setManifestError(payload);
         if (root.preview && root.preview.renderError) {
           root.preview.renderError(payload.error || "Unable to load UI");
         } else {

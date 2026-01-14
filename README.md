@@ -74,9 +74,10 @@ namel3ss provides the following guarantees, enforced by code, tests, and governa
 - Safe cleanup of runtime artifacts (`n3 clean`)
 - Bounded, managed runtime artifacts (safe to delete)
 - Governed memory with explicit writes and recall
-- Contract-stable cli, grammar, and explain outputs
+- Contract-stable CLI, grammar, and explain outputs
 
 These guarantees are enforced and frozen for the v0.1.x series.
+See `docs/trust-and-governance.md` for enforcement details.
 
 ## Installation
 
@@ -130,6 +131,11 @@ First-run defaults:
 - Templates and demos include state defaults or component-provided defaults (chat, charts, cards).
 - No identity or secret configuration is required to load or view the UI.
 
+Reserved identifiers:
+- Avoid using reserved words (e.g., title, text, type, page, form, table) as variable names.
+- Prefer prefixed names like `ticket_title` or `item_type`.
+- See `docs/language/reserved-words.md` or run `n3 reserved`.
+
 ## Troubleshooting
 
 If `n3` is not recognized:
@@ -170,7 +176,7 @@ It exists to demonstrate:
 
 - AI operating over structured records
 - explicit AI boundaries and deterministic execution
-- explainable "Why?" outputs
+- explainable "Explain" outputs
 - governed, inspectable memory
 
 Understanding ClearOrders is sufficient to understand the core model of namel3ss.
@@ -280,7 +286,7 @@ It is exploring what comes next.
 
 ## Status
 namel3ss is in alpha (v0.1.0a9). It is suitable for learning and experimentation, not production.  
-Expect breaking changes between alpha revisions.
+Expect breaking changes between alpha revisions, but grammar, execution phases, and explain surfaces are intentionally stabilized within each v0.1.x release.
 
 ## Start here (learning path)
 - [Quickstart](docs/quickstart.md)

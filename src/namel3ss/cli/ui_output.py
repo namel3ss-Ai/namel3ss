@@ -9,6 +9,7 @@ def print_usage() -> None:
   n3 new template name            # scaffold project, omit args to list
   n3 init template name           # scaffold project (alias for new)
   n3 version                      # show installed version
+  n3 reserved                     # list reserved words
   n3 status                       # show .namel3ss runtime artifact status
   n3 clean                        # delete .namel3ss artifacts (with confirmation)
   n3 run app.ai --target T --json # run app

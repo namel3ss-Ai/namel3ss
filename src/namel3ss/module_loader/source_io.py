@@ -50,13 +50,16 @@ def _parse_source(
             parse_cache[path] = (digest, copy.deepcopy(parsed))
         return parsed
     except Namel3ssError as err:
+        existing_details = err.details if isinstance(err.details, dict) else {}
+        merged_details = dict(existing_details)
+        merged_details.setdefault("file", path.as_posix())
         raise Namel3ssError(
             err.message,
             line=err.line,
             column=err.column,
             end_line=err.end_line,
             end_column=err.end_column,
-            details={"file": path.as_posix()},
+            details=merged_details,
         ) from err
 
 

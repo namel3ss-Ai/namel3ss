@@ -44,6 +44,17 @@ def test_error_payload_includes_caret():
     assert "^" in summary["error"]
 
 
+def test_reserved_identifier_payload_has_metadata(tmp_path):
+    source = 'spec is "1.0"\n\nflow "demo":\n  let title is "x"\n'
+    app_path = tmp_path / "app.ai"
+    payload = api.get_summary_payload(source, app_path.as_posix())
+    assert payload.get("ok") is False
+    entry = payload.get("error_entry") or {}
+    details = entry.get("details") or payload.get("details") or {}
+    assert entry.get("code") == "parse.reserved_identifier"
+    assert details.get("keyword") == "title"
+
+
 def test_ui_payload_does_not_mutate_session_state(tmp_path):
     source = 'spec is "1.0"\n\npage "home":\n  title is "Hi"\n'
     app_file = tmp_path / "app.ai"

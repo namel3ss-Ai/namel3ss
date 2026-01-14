@@ -56,6 +56,7 @@ Use `n3 status` for the last run summary, `n3 explain` for failures, and
 - [Studio](studio.md)
 - [Stability](stability.md)
 - [Providers](providers.md)
+- [Reserved words and safe naming](language/reserved-words.md)
 
 ## Part II - Your First App
 

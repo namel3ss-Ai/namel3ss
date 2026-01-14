@@ -33,6 +33,7 @@ from namel3ss.cli.promote_mode import run_promote_command
 from namel3ss.cli.proof_mode import run_proof_command
 from namel3ss.cli.readability_mode import run_readability_command
 from namel3ss.cli.registry_mode import run_registry
+from namel3ss.cli.reserved_mode import run_reserved_command
 from namel3ss.cli.release_check_mode import run_release_check_command
 from namel3ss.cli.run_mode import run_run_command
 from namel3ss.cli.runner import run_flow
@@ -89,6 +90,8 @@ def main(argv: list[str] | None = None) -> int:
         if cmd_raw in {"--help", "-h"}:
             print_usage()
             return 0
+        if cmd == "reserved":
+            return run_reserved_command(args[1:])
         if cmd == "status":
             tail = args[1:]
             if tail:

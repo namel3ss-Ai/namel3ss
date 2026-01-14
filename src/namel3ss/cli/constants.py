@@ -51,6 +51,7 @@ RESERVED = {
     "pattern",
     "migrate",
     "version",
+    "reserved",
 }
 
 ROOT_APP_COMMANDS = {"check", "ui", "actions", "studio", "fmt", "format", "lint", "graph", "exports", "data", "persist"}
