@@ -48,6 +48,7 @@ text
 theme
 theme_tokens
 theme_preference
+ui
 form
 table
 button

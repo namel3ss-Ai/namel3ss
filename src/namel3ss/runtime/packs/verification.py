@@ -3,9 +3,9 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path
 
+from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.packs.layout import pack_signature_path, pack_verification_path
@@ -20,6 +20,9 @@ class PackVerification:
     verified: bool
     key_id: str | None
     verified_at: str | None
+
+
+VERIFIED_AT_PLACEHOLDER = "not_recorded"
 
 
 def compute_pack_digest(manifest_text: str, tools_text: str | None) -> str:
@@ -54,7 +57,7 @@ def verify_pack(
         digest=digest,
         verified=True,
         key_id=key_id,
-        verified_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        verified_at=VERIFIED_AT_PLACEHOLDER,
     )
     _write_verification(pack_dir, verification)
     return verification
@@ -128,7 +131,7 @@ def _write_verification(pack_dir: Path, verification: PackVerification) -> None:
         "verified_at": verification.verified_at,
     }
     path = pack_verification_path(pack_dir)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(canonical_json_dumps(payload, pretty=True), encoding="utf-8")
 
 
 def _normalize_text(text: str) -> str:

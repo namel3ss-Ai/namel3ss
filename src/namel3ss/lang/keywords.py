@@ -40,6 +40,7 @@ KEYWORDS = {
     "theme": "THEME",
     "theme_tokens": "THEME_TOKENS",
     "theme_preference": "THEME_PREFERENCE",
+    "ui": "UI",
     "form": "FORM",
     "table": "TABLE",
     "button": "BUTTON",

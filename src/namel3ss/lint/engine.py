@@ -11,6 +11,7 @@ from namel3ss.lint.functions import lint_functions
 from namel3ss.runtime.tools.bindings import bindings_path
 from namel3ss.tools.health.analyze import analyze_tool_health
 from namel3ss.types import normalize_type_name
+from namel3ss.ui.settings import UI_ALLOWED_VALUES
 from namel3ss.parser.core import parse
 from namel3ss.ast import nodes as ast
 from namel3ss.module_loader.types import ProjectLoadResult
@@ -194,13 +195,13 @@ def _lint_reserved_identifiers(ast_program) -> list[Finding]:
 
 
 def _lint_theme(ast_program) -> list[Finding]:
-    allowed = {"light", "dark", "system"}
-    value = getattr(ast_program, "app_theme", "system")
+    allowed = set(UI_ALLOWED_VALUES.get("theme", ()))
+    value = getattr(ast_program, "app_theme", UI_ALLOWED_VALUES["theme"][0])
     if value not in allowed:
         return [
             Finding(
                 code="app.invalid_theme",
-                message="Theme must be one of: light, dark, system.",
+                message=f"Theme must be one of: {', '.join(sorted(allowed))}.",
                 line=getattr(ast_program, "app_theme_line", None),
                 column=getattr(ast_program, "app_theme_column", None),
                 severity="error",

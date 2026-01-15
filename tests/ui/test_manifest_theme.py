@@ -20,6 +20,6 @@ def test_manifest_reflects_runtime_theme():
     data = build_manifest(program, state={}, store=None, runtime_theme="dark")
     theme = data.get("theme", {})
     assert theme.get("current") == "dark"
-    assert theme.get("setting") == "system"
+    assert theme.get("setting") == "light"
     assert theme.get("runtime_supported") is True
     assert theme.get("preference", {}).get("persist") == "none"

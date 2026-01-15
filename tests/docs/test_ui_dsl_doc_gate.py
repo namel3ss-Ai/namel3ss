@@ -64,9 +64,24 @@ def test_ui_dsl_spec_exists_and_has_sections():
     text = path.read_text(encoding="utf-8")
     required_sections = [
         "What UI DSL is",
+        "Core blocks and naming rules",
         "Allowed UI elements",
-        "Theming",
+        "Core UI primitives",
+        "Story progression",
+        "Flow actions",
+        "Global UI settings",
         "Anti-examples",
     ]
     for section in required_sections:
         assert section in text, f"Missing section '{section}' in UI DSL spec"
+    assert "theme: `light`" in text
+    assert "accent color: `blue`" in text
+    assert "Themes: `light`, `dark`, `white`, `black`, `midnight`, `paper`, `terminal`, `enterprise`" in text
+    assert "Accent colors: `blue`, `indigo`, `purple`, `pink`, `red`, `orange`, `yellow`, `green`, `teal`, `cyan`, `neutral`" in text
+    assert "number:" in text
+    assert "view of" in text
+    assert "compose" in text
+    assert "purpose is" in text
+    assert "Story progression" in text
+    assert "Tone must be one of" in text
+    assert "Icon must be one of" in text

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Iterable
 
+from namel3ss.determinism import canonical_json_dumps
 from namel3ss.outcome.model import OutcomePack, RunOutcome
 
 
@@ -35,7 +35,7 @@ def write_outcome_artifacts(root: Path, pack: OutcomePack, plain_text: str, what
 
 
 def _stable_json(payload: object) -> str:
-    return json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    return canonical_json_dumps(payload, pretty=True)
 
 
 __all__ = ["normalize_bullets", "normalize_outcome", "write_outcome_artifacts"]

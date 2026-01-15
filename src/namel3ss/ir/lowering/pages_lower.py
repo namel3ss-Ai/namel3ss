@@ -25,8 +25,9 @@ def _lower_page(
         page_name=page.name,
     )
     overlays = _collect_overlays(expanded_items)
+    compose_names: set[str] = set()
     items = [
-        _lower_page_item(item, record_map, flow_names, page.name, overlays)
+        _lower_page_item(item, record_map, flow_names, page.name, overlays, compose_names)
         for item in expanded_items
     ]
     _validate_chart_pairing(items, page.name)
@@ -34,6 +35,7 @@ def _lower_page(
         name=page.name,
         items=items,
         requires=_lower_expression(page.requires) if page.requires else None,
+        purpose=getattr(page, "purpose", None),
         line=page.line,
         column=page.column,
         state_defaults=getattr(page, "state_defaults", None),

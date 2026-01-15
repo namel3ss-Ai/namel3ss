@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import json
 import os
 import re
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
+from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.format import format_source
 from namel3ss.lint.engine import lint_source
@@ -249,7 +249,7 @@ def _ensure_demo_marker(target_dir: Path) -> None:
         return
     marker_path.parent.mkdir(parents=True, exist_ok=True)
     payload = {"name": CLEARORDERS_NAME}
-    marker_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    marker_path.write_text(canonical_json_dumps(payload, pretty=True), encoding="utf-8")
 
 
 def _print_success_message(template: TemplateSpec, project_name: str, target_dir: Path) -> None:

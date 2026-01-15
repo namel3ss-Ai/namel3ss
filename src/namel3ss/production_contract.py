@@ -105,10 +105,13 @@ def validate_run_contract(payload: dict) -> list[str]:
         if not isinstance(trace, dict):
             issues.append(f"contract.traces[{idx}] must be a dict")
             continue
-        if not isinstance(trace.get("type"), str) or not trace.get("type"):
+        trace_type = trace.get("type")
+        if not isinstance(trace_type, str) or not trace_type:
             issues.append(f"contract.traces[{idx}].type missing")
         if not isinstance(trace.get("canonical_events"), list):
             issues.append(f"contract.traces[{idx}].canonical_events must be list")
+        elif trace_type == "ai_call" and len(trace.get("canonical_events") or []) == 0:
+            issues.append(f"contract.traces[{idx}].canonical_events must record ai_call boundaries")
         if not isinstance(trace.get("memory_events"), list):
             issues.append(f"contract.traces[{idx}].memory_events must be list")
     state = contract.get("state")

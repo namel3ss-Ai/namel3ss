@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Iterable
 
+from namel3ss.determinism import canonical_json_dumps
 from namel3ss.ir.model.program import Program
 
 
@@ -142,7 +142,7 @@ def _theme_used(program: Program) -> bool:
 
 
 def _stable_json(payload: object) -> str:
-    return json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    return canonical_json_dumps(payload, pretty=True)
 
 
 __all__ = [

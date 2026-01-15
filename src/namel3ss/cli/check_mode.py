@@ -6,9 +6,8 @@ from namel3ss.errors.render import format_error
 from namel3ss.lint.engine import lint_project
 from namel3ss.module_loader import load_project
 from namel3ss.cli.text_output import prepare_cli_text
-from namel3ss.runtime.identity.context import resolve_identity
-from namel3ss.ui.manifest import build_manifest
-from namel3ss.validation import ValidationMode, ValidationWarning
+from namel3ss.validation_entrypoint import build_static_manifest
+from namel3ss.validation import ValidationWarning
 
 
 def run_check(path: str, allow_legacy_type_aliases: bool = True) -> int:
@@ -51,18 +50,11 @@ def run_check(path: str, allow_legacy_type_aliases: bool = True) -> int:
     manifest = None
     try:
         config = load_config(app_path=project.app_path, root=project.app_path.parent)
-        identity = resolve_identity(
-            config,
-            getattr(program_ir, "identity", None),
-            mode=ValidationMode.STATIC,
-            warnings=warnings,
-        )
-        manifest = build_manifest(
+        manifest = build_static_manifest(
             program_ir,
+            config=config,
             state={},
             store=None,
-            identity=identity,
-            mode=ValidationMode.STATIC,
             warnings=warnings,
         )
         sections.append("Manifest: OK")

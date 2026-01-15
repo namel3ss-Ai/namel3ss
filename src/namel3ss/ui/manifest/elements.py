@@ -22,6 +22,7 @@ from namel3ss.ui.manifest_list import (
 )
 from namel3ss.ui.manifest_overlay import _drawer_id, _modal_id
 from namel3ss.ui.manifest.state_defaults import StateContext
+from namel3ss.ui.manifest.canonical import _slugify
 from namel3ss.ui.manifest_table import (
     _apply_table_pagination,
     _apply_table_sort,
@@ -30,7 +31,8 @@ from namel3ss.ui.manifest_table import (
     _table_id,
     _table_id_field,
 )
-from namel3ss.validation import ValidationMode
+from namel3ss.ir.lowering.page_list import _default_list_primary, _list_id_field as _list_id_field_ir
+from namel3ss.validation import ValidationMode, add_warning
 
 
 def _base_element(element_id: str, page_name: str, page_slug: str, index: int, item: ir.PageItem) -> dict:
@@ -42,6 +44,61 @@ def _base_element(element_id: str, page_name: str, page_slug: str, index: int, i
         "line": item.line,
         "column": item.column,
     }
+
+
+def _story_step_id(element_id: str, title: str, slug_counts: dict[str, int]) -> str:
+    slug = _slugify(title) or "step"
+    current = slug_counts.get(slug, 0)
+    slug_counts[slug] = current + 1
+    suffix = slug if current == 0 else f"{slug}.{current}"
+    return f"{element_id}.step.{suffix}"
+
+
+def _build_story_gate(
+    step_id: str,
+    requires: str | None,
+    state_ctx: StateContext,
+    warnings: list | None,
+    *,
+    line: int | None,
+    column: int | None,
+) -> dict | None:
+    if not requires:
+        return None
+    gate: dict = {"id": f"{step_id}.gate", "requires": requires}
+    ready: bool | None = None
+    if requires.startswith("state."):
+        parts = [segment for segment in requires.split(".")[1:] if segment]
+        if parts:
+            if state_ctx.has_value(parts):
+                try:
+                    value, _ = state_ctx.value(parts, default=None)
+                except KeyError:
+                    value = None
+                ready = bool(value)
+            else:
+                add_warning(
+                    warnings,
+                    code="state.missing",
+                    message=f"Story gate requires '{requires}' but no state value was found.",
+                    fix="Provide the state value or adjust the requires rule.",
+                    path=parts,
+                    line=line,
+                    column=column,
+                )
+            gate["path"] = parts
+        else:
+            add_warning(
+                warnings,
+                code="state.invalid",
+                message="Story gate requires state path is malformed.",
+                fix="Use state.<path> or remove the requires rule.",
+                line=line,
+                column=column,
+            )
+    gate["ready"] = ready
+    gate["reason"] = f"requires {requires}"
+    return gate
 
 
 def _build_children(
@@ -100,6 +157,136 @@ def _page_item_to_manifest(
     taken_actions: set[str],
 ) -> tuple[dict, Dict[str, dict]]:
     index = path[-1] if path else 0
+    if isinstance(item, ir.NumberItem):
+        element_id = _element_id(page_slug, "number", path)
+        base = _base_element(element_id, page_name, page_slug, index, item)
+        entries: list[dict] = []
+        for idx, entry in enumerate(item.entries):
+            entry_id = f"{element_id}.entry.{idx}"
+            if entry.kind == "count":
+                entries.append(
+                    {
+                        "id": entry_id,
+                        "kind": "count",
+                        "record": entry.record_name,
+                        "label": entry.label,
+                    }
+                )
+            else:
+                entries.append(
+                    {
+                        "id": entry_id,
+                        "kind": "phrase",
+                        "value": entry.value,
+                    }
+                )
+        element = {"type": "number", "entries": entries, **base}
+        return _attach_origin(element, item), {}
+    if isinstance(item, ir.ViewItem):
+        record = _require_record(item.record_name, record_map, item)
+        representation = _view_representation(record)
+        element_id = _element_id(page_slug, "view", path)
+        base = _base_element(element_id, page_name, page_slug, index, item)
+        if representation == "table":
+            rows: list[dict] = []
+            if store is not None:
+                scope = build_record_scope(record, identity)
+                rows = store.list_records(record, scope=scope)[:20]
+            columns = _resolve_table_columns(record, None)
+            ordering_field = record.fields[0].name if record.fields else None
+            if ordering_field:
+                sort_info = {"by": ordering_field, "order": "asc"}
+                try:
+                    rows = _apply_table_sort(rows, ir.TableSort(by=ordering_field, order="asc", line=item.line, column=item.column), record)
+                except Namel3ssError:
+                    pass
+            else:
+                sort_info = None
+            element = {
+                "type": "view",
+                "representation": "table",
+                "record": record.name,
+                "id": _table_id(page_slug, record.name),
+                "columns": columns,
+                "rows": rows,
+                **base,
+            }
+            if sort_info:
+                element["sort"] = sort_info
+            element["id_field"] = _table_id_field(record)
+            return _attach_origin(element, item), {}
+        rows = []
+        if store is not None:
+            scope = build_record_scope(record, identity)
+            rows = store.list_records(record, scope=scope)[:20]
+        primary = _default_list_primary(record)
+        element = {
+            "type": "view",
+            "representation": "list",
+            "record": record.name,
+            "id": _list_id(page_slug, record.name),
+            "variant": "two_line",
+            "item": {"primary": primary},
+            "rows": rows,
+            **base,
+        }
+        element["id_field"] = _list_id_field_ir(record)
+        return _attach_origin(element, item), {}
+    if isinstance(item, ir.ComposeItem):
+        element_id = _element_id(page_slug, "compose", path)
+        base = _base_element(element_id, page_name, page_slug, index, item)
+        children, actions = _build_children(
+            item.children,
+            record_map,
+            page_name,
+            page_slug,
+            path,
+            store,
+            identity,
+            state_ctx,
+            mode,
+            warnings,
+            taken_actions,
+        )
+        element = {"type": "compose", "name": item.name, "slug": _slugify(item.name), "children": children, **base}
+        return _attach_origin(element, item), actions
+    if isinstance(item, ir.StoryItem):
+        element_id = _element_id(page_slug, "story", path)
+        base = _base_element(element_id, page_name, page_slug, index, item)
+        slug_counts: dict[str, int] = {}
+        steps: list[dict] = []
+        step_lookup: dict[str, dict] = {}
+        for idx, step in enumerate(item.steps):
+            step_id = _story_step_id(element_id, step.title, slug_counts)
+            gate = _build_story_gate(step_id, step.requires, state_ctx, warnings, line=step.line, column=step.column)
+            payload: dict = {
+                "type": "story_step",
+                "title": step.title,
+                "id": step_id,
+                "index": idx,
+            }
+            if step.text:
+                payload["text"] = step.text
+            if step.icon:
+                payload["icon"] = step.icon
+            if step.image:
+                payload["image"] = step.image
+            if step.tone:
+                payload["tone"] = step.tone
+            if step.requires:
+                payload["requires"] = step.requires
+            if gate:
+                payload["gate"] = gate
+            steps.append(payload)
+            step_lookup[step.title] = payload
+        for idx, step in enumerate(item.steps):
+            target_title = step.next or (item.steps[idx + 1].title if idx + 1 < len(item.steps) else None)
+            if target_title:
+                target_payload = step_lookup.get(target_title)
+                if target_payload:
+                    steps[idx]["next"] = {"title": target_title, "target": target_payload.get("id")}
+        element = {"type": "story", "title": item.title, "id": element_id, "slug": _slugify(item.title), "steps": steps, "children": steps, **base}
+        return _attach_origin(element, item), {}
     if isinstance(item, ir.TitleItem):
         element_id = _element_id(page_slug, "title", path)
         base = _base_element(element_id, page_name, page_slug, index, item)
@@ -476,6 +663,15 @@ def _require_record(name: str, record_map: Dict[str, schema.RecordSchema], item:
             column=item.column,
         )
     return record_map[name]
+
+
+def _view_representation(record: schema.RecordSchema) -> str:
+    field_count = len(record.fields)
+    if field_count == 0:
+        return "list"
+    if field_count <= 3:
+        return "list"
+    return "table"
 
 
 __all__ = ["_build_children"]

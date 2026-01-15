@@ -6,12 +6,12 @@ from pathlib import Path
 from namel3ss.cli.app_loader import load_program
 from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.config.loader import load_config
+from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.memory.api import MemoryManager, explain_last, recall_with_events
 from namel3ss.runtime.storage.factory import resolve_store
-from namel3ss.utils.json_tools import dumps as json_dumps
 
 
 def run_memory_command(args: list[str]) -> int:
@@ -143,7 +143,7 @@ def _run_why(output_json: bool) -> None:
     result = explain_last(payload)
     _write_last_why(project_root, result)
     if output_json:
-        print(json_dumps(result, indent=2, sort_keys=True))
+        print(canonical_json_dumps(result, pretty=True))
         return
     print(result.get("text", "").rstrip())
 
@@ -194,7 +194,7 @@ def _write_last_run(project_root: Path, pack, plain_text: str) -> None:
     memory_dir.mkdir(parents=True, exist_ok=True)
     last_json = memory_dir / "last.json"
     last_plain = memory_dir / "last.plain"
-    last_json.write_text(json_dumps(pack.as_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    last_json.write_text(canonical_json_dumps(pack.as_dict(), pretty=True), encoding="utf-8")
     last_plain.write_text(plain_text.rstrip() + "\n", encoding="utf-8")
 
 
@@ -206,7 +206,7 @@ def _write_last_why(project_root: Path, result: dict) -> None:
     text = result.get("text", "")
     graph = result.get("graph", {})
     last_why.write_text(text.rstrip() + "\n", encoding="utf-8")
-    last_graph.write_text(json_dumps(graph, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    last_graph.write_text(canonical_json_dumps(graph, pretty=True), encoding="utf-8")
 
 
 def _build_plain_text(pack) -> str:

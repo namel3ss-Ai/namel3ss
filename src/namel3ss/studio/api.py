@@ -15,7 +15,6 @@ from namel3ss.module_loader import load_project
 from namel3ss.secrets import collect_secret_values, discover_required_secrets
 from namel3ss.production_contract import build_run_payload
 from namel3ss.runtime.run_pipeline import finalize_run_payload
-from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.runtime.ui.actions import handle_action
 from namel3ss.runtime.preferences.factory import preference_store_for_app, app_pref_key
@@ -24,7 +23,8 @@ from namel3ss.studio.diagnostics import collect_ai_context_diagnostics
 from namel3ss.studio.trace_adapter import normalize_action_response
 from namel3ss.runtime.tools.bindings import bindings_path
 from namel3ss.tools.health.analyze import analyze_tool_health
-from namel3ss.ui.manifest import build_manifest
+from namel3ss.validation_entrypoint import build_static_manifest
+from namel3ss.ui.settings import UI_ALLOWED_VALUES, UI_DEFAULTS
 from namel3ss.version import get_version
 from namel3ss.graduation.matrix import build_capability_matrix
 from namel3ss.graduation.render import render_graduation_lines, render_matrix_lines, render_summary_lines
@@ -36,7 +36,7 @@ from namel3ss.studio.agent_builder import (
     run_handoff_action,
     update_memory_packs,
 )
-from namel3ss.validation import ValidationMode, ValidationWarning
+from namel3ss.validation import ValidationWarning
 
 
 def _load_program(source: str):
@@ -102,26 +102,23 @@ def get_ui_payload(source: str, session: SessionState | None = None, app_path: s
         program_ir = _load_project_program(source, app_file.as_posix())
         config = load_config(app_path=app_file)
         warnings: list[ValidationWarning] = []
-        identity = resolve_identity(
-            config,
-            getattr(program_ir, "identity", None),
-            mode=ValidationMode.STATIC,
-            warnings=warnings,
-        )
         store = session.ensure_store(config)
         preference_store = preference_store_for_app(app_path, getattr(program_ir, "theme_preference", {}).get("persist"))
         persisted, _ = preference_store.load_theme(app_pref_key(app_path))
-        runtime_theme = session.runtime_theme or persisted or getattr(program_ir, "theme", "system")
+        allowed_themes = set(UI_ALLOWED_VALUES.get("theme", ()))
+        program_theme = getattr(program_ir, "theme", UI_DEFAULTS["theme"])
+        runtime_theme = session.runtime_theme or persisted or program_theme
+        if runtime_theme not in allowed_themes:
+            runtime_theme = program_theme if program_theme in allowed_themes else UI_DEFAULTS["theme"]
         session.runtime_theme = runtime_theme
-        manifest = build_manifest(
+        manifest = build_static_manifest(
             program_ir,
+            config=config,
             state=session.state,
             store=store,
+            warnings=warnings,
             runtime_theme=runtime_theme,
             persisted_theme=persisted,
-            identity=identity,
-            mode=ValidationMode.STATIC,
-            warnings=warnings,
         )
         if warnings:
             manifest["warnings"] = [warning.to_dict() for warning in warnings]
@@ -138,18 +135,11 @@ def get_actions_payload(source: str, app_path: str | None = None) -> dict:
         program_ir = _load_project_program(source, app_file.as_posix())
         config = load_config(app_path=app_file)
         warnings: list[ValidationWarning] = []
-        identity = resolve_identity(
-            config,
-            getattr(program_ir, "identity", None),
-            mode=ValidationMode.STATIC,
-            warnings=warnings,
-        )
-        manifest = build_manifest(
+        manifest = build_static_manifest(
             program_ir,
+            config=config,
             state={},
             store=MemoryStore(),
-            identity=identity,
-            mode=ValidationMode.STATIC,
             warnings=warnings,
         )
         data = _actions_from_manifest(manifest)
@@ -264,7 +254,7 @@ def execute_action(source: str, session: SessionState | None, action_id: str, pa
             payload=payload,
             state=session.state,
             store=store,
-            runtime_theme=session.runtime_theme or getattr(program_ir, "theme", "system"),
+            runtime_theme=session.runtime_theme or getattr(program_ir, "theme", UI_DEFAULTS["theme"]),
             preference_store=preference_store_for_app(app_path, getattr(program_ir, "theme_preference", {}).get("persist")),
             preference_key=app_pref_key(app_path),
             allow_theme_override=getattr(program_ir, "theme_preference", {}).get("allow_override"),

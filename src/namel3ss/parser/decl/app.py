@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.ui.settings import UI_DEFAULTS
 
 
 def parse_app(parser):
@@ -8,7 +9,7 @@ def parse_app(parser):
     parser._expect("COLON", "Expected ':' after app")
     parser._expect("NEWLINE", "Expected newline after app header")
     parser._expect("INDENT", "Expected indented app body")
-    theme = "system"
+    theme = UI_DEFAULTS["theme"]
     theme_line = tok.line
     theme_column = tok.column
     theme_tokens = {}

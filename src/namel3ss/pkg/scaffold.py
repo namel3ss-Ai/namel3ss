@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import hashlib
-import json
 from pathlib import Path
 
+from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 
@@ -46,7 +46,7 @@ def scaffold_package(name: str, root: Path) -> Path:
         "license_file": "LICENSE",
         "checksums": "checksums.json",
     }
-    (target / "namel3ss.package.json").write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
+    (target / "namel3ss.package.json").write_text(canonical_json_dumps(metadata, pretty=True), encoding="utf-8")
 
     _write_checksums(target)
     return target
@@ -122,7 +122,7 @@ def _write_checksums(root: Path) -> None:
         rel = path.relative_to(root).as_posix()
         files[rel] = f"sha256:{_sha256(path)}"
     payload = {"files": files}
-    (root / "checksums.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    (root / "checksums.json").write_text(canonical_json_dumps(payload, pretty=True), encoding="utf-8")
 
 
 def _sha256(path: Path) -> str:

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import json
 import platform
 from pathlib import Path
 import subprocess
@@ -9,6 +8,7 @@ import sys
 import time
 from typing import Callable, Iterable
 
+from namel3ss.determinism import canonical_json_dumps
 from namel3ss.release.model import GateResult, GateSpec, ReleaseReport
 from namel3ss.version import get_version
 
@@ -155,7 +155,7 @@ def release_exit_code(report: ReleaseReport) -> int:
 def write_release_report_json(report: ReleaseReport, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = report.as_dict()
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(canonical_json_dumps(payload, pretty=True), encoding="utf-8")
 
 
 def render_release_text(report: ReleaseReport) -> str:

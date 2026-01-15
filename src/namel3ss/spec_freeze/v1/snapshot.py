@@ -48,6 +48,8 @@ def _decl_forms() -> list[str]:
             forms.add("spec")
         if name == "app_theme":
             forms.add("app")
+        if name == "ui_settings":
+            forms.add("ui")
     return sorted(forms)
 
 

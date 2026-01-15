@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
+
+from namel3ss.determinism import canonical_json_dumps
 
 from .diff import DiffResult
 from .invariants import InvariantReport
@@ -98,7 +99,7 @@ def write_scenario_artifacts(
 
 
 def _write_json(path: Path, payload: object) -> None:
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(canonical_json_dumps(payload, pretty=True), encoding="utf-8")
 
 
 def _write_text(path: Path, payload: str) -> None:

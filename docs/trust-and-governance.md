@@ -78,6 +78,7 @@ n3 explain --json
 ---
 
 ## Notes
-- Proofs and verify output are deterministic (timestamps are labeled).
+- Proofs and verify output are deterministic; runtime artifacts are canonicalized without timestamps or call ids.
 - Secrets are never stored in proofs, logs, or trace exports.
+- `.namel3ss` is read via the CLI (`n3 status`, `n3 explain`, `n3 clean`) and remains safe to delete when needed.
 - Edge target remains a stub in this alpha; verify and explain will flag limitations clearly.

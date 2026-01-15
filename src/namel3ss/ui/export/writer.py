@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from namel3ss.utils.json_tools import dumps as json_dumps
+from namel3ss.determinism import canonical_json_dumps
 
 
 EXPORT_DIRNAME = "contract"
@@ -32,7 +32,7 @@ def write_ui_exports(
 
 
 def _stable_json(payload: object) -> str:
-    return json_dumps(payload, indent=2, sort_keys=True) + "\n"
+    return canonical_json_dumps(payload, pretty=True)
 
 
 __all__ = ["EXPORT_DIRNAME", "write_ui_exports"]

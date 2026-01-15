@@ -7,11 +7,12 @@ import pytest
 
 from namel3ss.cli.app_loader import load_program
 from namel3ss.cli.runner import run_flow
-from namel3ss.production_contract import canonical_trace_json, validate_run_contract
+from namel3ss.production_contract import PRODUCTION_CONTRACT_VERSION, canonical_trace_json, validate_run_contract
 from namel3ss.runtime.tools.bindings import write_tool_bindings
 from namel3ss.runtime.tools.bindings_yaml import ToolBinding
 from namel3ss.studio.api import execute_action
 from namel3ss.studio.session import SessionState
+from namel3ss.traces.schema import TRACE_VERSION
 
 
 APP_SOURCE = '''
@@ -167,6 +168,25 @@ def test_error_contract_structured(tmp_path: Path) -> None:
     assert errors[0]["code"]
     location = errors[0].get("location") or {}
     assert location.get("line") is not None
+
+
+def test_ai_trace_requires_boundary_events() -> None:
+    payload = {
+        "ok": True,
+        "contract": {
+            "schema_version": PRODUCTION_CONTRACT_VERSION,
+            "trace_schema_version": TRACE_VERSION,
+            "status": "ok",
+            "flow_name": "demo",
+            "errors": [],
+            "state": {},
+            "result": None,
+            "traces": [{"type": "ai_call", "canonical_events": [], "memory_events": []}],
+            "memory": {"events": [], "count": 0},
+        },
+    }
+    issues = validate_run_contract(payload)
+    assert any("ai_call boundaries" in issue for issue in issues)
 
 
 def _load_last_run(root: Path) -> dict:

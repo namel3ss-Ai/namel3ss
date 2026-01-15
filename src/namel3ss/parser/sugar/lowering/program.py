@@ -13,6 +13,9 @@ def lower_program(program: ast.Program) -> ast.Program:
         app_theme_column=program.app_theme_column,
         theme_tokens=program.theme_tokens,
         theme_preference=program.theme_preference,
+        ui_settings=program.ui_settings,
+        ui_line=getattr(program, "ui_line", None),
+        ui_column=getattr(program, "ui_column", None),
         records=[_lower_record(record) for record in program.records],
         functions=[_lower_function(func) for func in getattr(program, "functions", [])],
         flows=[_lower_flow(flow) for flow in program.flows],
@@ -55,6 +58,8 @@ def _lower_page(page: ast.PageDecl) -> ast.PageDecl:
         name=page.name,
         items=[_lower_page_item(item) for item in page.items],
         requires=_lower_expression(page.requires) if page.requires else None,
+        purpose=getattr(page, "purpose", None),
+        state_defaults=getattr(page, "state_defaults", None),
         line=page.line,
         column=page.column,
     )
@@ -95,6 +100,9 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
     if isinstance(item, ast.CardGroupItem):
         children = [_lower_page_item(child) for child in item.children]
         return ast.CardGroupItem(children=children, line=item.line, column=item.column)
+    if isinstance(item, ast.ComposeItem):
+        children = [_lower_page_item(child) for child in item.children]
+        return ast.ComposeItem(name=item.name, children=children, line=item.line, column=item.column)
     if isinstance(item, ast.RowItem):
         children = [_lower_page_item(child) for child in item.children]
         return ast.RowItem(children=children, line=item.line, column=item.column)
@@ -116,6 +124,11 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
         return ast.ModalItem(label=item.label, children=[_lower_page_item(child) for child in item.children], line=item.line, column=item.column)
     if isinstance(item, ast.DrawerItem):
         return ast.DrawerItem(label=item.label, children=[_lower_page_item(child) for child in item.children], line=item.line, column=item.column)
+    if isinstance(item, ast.NumberItem):
+        entries = [ast.NumberEntry(kind=e.kind, value=e.value, record_name=e.record_name, label=e.label, line=e.line, column=e.column) for e in item.entries]
+        return ast.NumberItem(entries=entries, line=item.line, column=item.column)
+    if isinstance(item, ast.ViewItem):
+        return ast.ViewItem(record_name=item.record_name, line=item.line, column=item.column)
     return item
 
 

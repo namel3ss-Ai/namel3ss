@@ -4,12 +4,13 @@ from pathlib import Path
 import json
 
 from namel3ss.config.loader import load_config
+from namel3ss.determinism import canonical_json_dumps, canonicalize_run_payload
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.runtime.artifact_contract import ArtifactContract
 from namel3ss.runtime.preferences.factory import preference_store_for_app, app_pref_key
 from namel3ss.runtime.run_pipeline import build_flow_payload, finalize_run_payload
 from namel3ss.secrets import collect_secret_values
-from namel3ss.utils.json_tools import dumps as json_dumps
 
 
 def run_flow(
@@ -93,10 +94,10 @@ def _write_last_run(program_ir, payload: dict) -> None:
     if not project_root:
         return
     root = Path(project_root)
-    run_dir = root / ".namel3ss" / "run"
-    run_dir.mkdir(parents=True, exist_ok=True)
-    last_json = run_dir / "last.json"
-    last_json.write_text(json_dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    contract = ArtifactContract(root / ".namel3ss")
+    last_json = contract.prepare_file("run/last.json")
+    canonical_payload = canonicalize_run_payload(payload)
+    last_json.write_text(canonical_json_dumps(canonical_payload, pretty=True), encoding="utf-8")
 
 
 def _write_last_error_pack(program_ir) -> None:

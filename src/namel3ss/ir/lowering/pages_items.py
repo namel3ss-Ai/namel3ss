@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from namel3ss.ast import nodes as ast
+import difflib
+
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir.lowering.expressions import _lower_expression
 from namel3ss.ir.lowering.page_actions import _validate_overlay_action
 from namel3ss.ir.lowering.page_chart import _lower_chart_item
@@ -21,6 +24,7 @@ from namel3ss.ir.model.pages import (
     CardItem,
     CardStat,
     ChartItem,
+    ComposeItem,
     ColumnItem,
     DividerItem,
     DrawerItem,
@@ -28,16 +32,22 @@ from namel3ss.ir.model.pages import (
     ImageItem,
     ListItem,
     ModalItem,
+    NumberEntry,
+    NumberItem,
     PageItem,
     RowItem,
     SectionItem,
+    StoryItem,
+    StoryStep,
     TabItem,
     TabsItem,
     TableItem,
     TextItem,
     TitleItem,
+    ViewItem,
 )
 from namel3ss.schema import records as schema
+from namel3ss.ui.settings import STORY_ICONS, STORY_TONES, closest_value
 
 
 def _attach_origin(target, source):
@@ -47,13 +57,110 @@ def _attach_origin(target, source):
     return target
 
 
+def _unknown_record_message(name: str, record_map: dict[str, schema.RecordSchema]) -> str:
+    suggestion = difflib.get_close_matches(name, record_map.keys(), n=1, cutoff=0.6)
+    hint = f' Did you mean "{suggestion[0]}"?' if suggestion else ""
+    return f"Page references unknown record '{name}'.{hint}"
+
+
 def _lower_page_item(
     item: ast.PageItem,
     record_map: dict[str, schema.RecordSchema],
     flow_names: set[str],
     page_name: str,
     overlays: dict[str, set[str]],
+    compose_names: set[str] | None = None,
 ) -> PageItem:
+    compose_names = compose_names if compose_names is not None else set()
+    if isinstance(item, ast.NumberItem):
+        entries: list[NumberEntry] = []
+        for idx, entry in enumerate(item.entries):
+            if entry.kind == "count":
+                if entry.record_name not in record_map:
+                    raise Namel3ssError(
+                        _unknown_record_message(entry.record_name, record_map),
+                        line=entry.line,
+                        column=entry.column,
+                    )
+                entries.append(
+                    NumberEntry(
+                        kind="count",
+                        record_name=entry.record_name,
+                        label=entry.label,
+                        line=entry.line,
+                        column=entry.column,
+                    )
+                )
+            else:
+                if not entry.value:
+                    raise Namel3ssError("Number phrase is empty", line=entry.line, column=entry.column)
+                entries.append(
+                    NumberEntry(kind="phrase", value=entry.value, line=entry.line, column=entry.column)
+                )
+        return _attach_origin(NumberItem(entries=entries, line=item.line, column=item.column), item)
+    if isinstance(item, ast.ViewItem):
+        if item.record_name not in record_map:
+            raise Namel3ssError(
+                _unknown_record_message(item.record_name, record_map),
+                line=item.line,
+                column=item.column,
+            )
+        return _attach_origin(ViewItem(record_name=item.record_name, line=item.line, column=item.column), item)
+    if isinstance(item, ast.ComposeItem):
+        if item.name in compose_names:
+            raise Namel3ssError(
+                f"Compose name '{item.name}' is duplicated",
+                line=item.line,
+                column=item.column,
+            )
+        compose_names.add(item.name)
+        children = [
+            _lower_page_item(child, record_map, flow_names, page_name, overlays, compose_names)
+            for child in item.children
+        ]
+        return _attach_origin(ComposeItem(name=item.name, children=children, line=item.line, column=item.column), item)
+    if isinstance(item, ast.StoryItem):
+        lowered_steps: list[StoryStep] = []
+        seen_titles: set[str] = set()
+        for step in item.steps:
+            title = step.title
+            if title in seen_titles:
+                raise Namel3ssError(
+                    f"Story '{item.title}' step '{title}' is declared more than once",
+                    line=step.line,
+                    column=step.column,
+                )
+            seen_titles.add(title)
+            tone = _validate_tone(step.tone, step.line, step.column)
+            icon = _validate_icon(step.icon, step.line, step.column)
+            text_value = _normalize_optional(step.text)
+            image_value = _normalize_optional(step.image)
+            requires = _normalize_optional(step.requires)
+            next_step = _normalize_optional(step.next)
+            if step.text is not None and text_value is None:
+                raise Namel3ssError("Story text cannot be empty", line=step.line, column=step.column)
+            if step.image is not None and image_value is None:
+                raise Namel3ssError("Story image cannot be empty", line=step.line, column=step.column)
+            if step.requires is not None and requires is None:
+                raise Namel3ssError("Story requires cannot be empty", line=step.line, column=step.column)
+            if step.next is not None and next_step is None:
+                raise Namel3ssError("Story next target cannot be empty", line=step.line, column=step.column)
+            lowered_steps.append(
+                StoryStep(
+                    title=title,
+                    text=text_value,
+                    icon=icon,
+                    image=image_value,
+                    tone=tone,
+                    requires=requires,
+                    next=next_step,
+                    line=step.line,
+                    column=step.column,
+                )
+            )
+        _validate_story_next_targets(item.title, lowered_steps)
+        _validate_story_cycles(item.title, lowered_steps)
+        return _attach_origin(StoryItem(title=item.title, steps=lowered_steps, line=item.line, column=item.column), item)
     if isinstance(item, ast.TitleItem):
         return _attach_origin(TitleItem(value=item.value, line=item.line, column=item.column), item)
     if isinstance(item, ast.TextItem):
@@ -143,7 +250,9 @@ def _lower_page_item(
                     column=tab.column,
                 )
             seen_labels.add(tab.label)
-            children = [_lower_page_item(child, record_map, flow_names, page_name, overlays) for child in tab.children]
+            children = [
+                _lower_page_item(child, record_map, flow_names, page_name, overlays, compose_names) for child in tab.children
+            ]
             lowered_tab = TabItem(label=tab.label, children=children, line=tab.line, column=tab.column)
             _attach_origin(lowered_tab, tab)
             lowered_tabs.append(lowered_tab)
@@ -177,7 +286,9 @@ def _lower_page_item(
             item,
         )
     if isinstance(item, ast.SectionItem):
-        children = [_lower_page_item(child, record_map, flow_names, page_name, overlays) for child in item.children]
+        children = [
+            _lower_page_item(child, record_map, flow_names, page_name, overlays, compose_names) for child in item.children
+        ]
         return _attach_origin(
             SectionItem(label=item.label, children=children, line=item.line, column=item.column),
             item,
@@ -187,10 +298,12 @@ def _lower_page_item(
         for child in item.children:
             if not isinstance(child, ast.CardItem):
                 raise Namel3ssError("Card groups may only contain cards", line=child.line, column=child.column)
-            lowered_children.append(_lower_page_item(child, record_map, flow_names, page_name, overlays))
+            lowered_children.append(_lower_page_item(child, record_map, flow_names, page_name, overlays, compose_names))
         return _attach_origin(CardGroupItem(children=lowered_children, line=item.line, column=item.column), item)
     if isinstance(item, ast.CardItem):
-        children = [_lower_page_item(child, record_map, flow_names, page_name, overlays) for child in item.children]
+        children = [
+            _lower_page_item(child, record_map, flow_names, page_name, overlays, compose_names) for child in item.children
+        ]
         stat = _lower_card_stat(item.stat)
         actions = _lower_card_actions(item.actions, flow_names, page_name, overlays)
         return _attach_origin(
@@ -202,10 +315,12 @@ def _lower_page_item(
         for child in item.children:
             if not isinstance(child, ast.ColumnItem):
                 raise Namel3ssError("Rows may only contain columns", line=child.line, column=child.column)
-            lowered_children.append(_lower_page_item(child, record_map, flow_names, page_name, overlays))
+            lowered_children.append(_lower_page_item(child, record_map, flow_names, page_name, overlays, compose_names))
         return _attach_origin(RowItem(children=lowered_children, line=item.line, column=item.column), item)
     if isinstance(item, ast.ColumnItem):
-        children = [_lower_page_item(child, record_map, flow_names, page_name, overlays) for child in item.children]
+        children = [
+            _lower_page_item(child, record_map, flow_names, page_name, overlays, compose_names) for child in item.children
+        ]
         return _attach_origin(ColumnItem(children=children, line=item.line, column=item.column), item)
     if isinstance(item, ast.DividerItem):
         return _attach_origin(DividerItem(line=item.line, column=item.column), item)
@@ -213,12 +328,124 @@ def _lower_page_item(
         alt = item.alt if item.alt is not None else ""
         return _attach_origin(ImageItem(src=item.src, alt=alt, line=item.line, column=item.column), item)
     if isinstance(item, ast.ModalItem):
-        children = [_lower_page_item(child, record_map, flow_names, page_name, overlays) for child in item.children]
+        children = [
+            _lower_page_item(child, record_map, flow_names, page_name, overlays, compose_names) for child in item.children
+        ]
         return _attach_origin(ModalItem(label=item.label, children=children, line=item.line, column=item.column), item)
     if isinstance(item, ast.DrawerItem):
-        children = [_lower_page_item(child, record_map, flow_names, page_name, overlays) for child in item.children]
+        children = [
+            _lower_page_item(child, record_map, flow_names, page_name, overlays, compose_names) for child in item.children
+        ]
         return _attach_origin(DrawerItem(label=item.label, children=children, line=item.line, column=item.column), item)
     raise TypeError(f"Unhandled page item type: {type(item)}")
+
+
+def _normalize_optional(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip()
+    return normalized or None
+
+
+def _validate_tone(value: str | None, line: int | None, column: int | None) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip()
+    if not normalized:
+        raise Namel3ssError("Story tone cannot be empty", line=line, column=column)
+    if normalized in STORY_TONES:
+        return normalized
+    suggestion = closest_value(normalized, STORY_TONES)
+    fix = f'Did you mean "{suggestion}"?' if suggestion else f"Use one of: {', '.join(STORY_TONES)}."
+    raise Namel3ssError(
+        build_guidance_message(
+            what=f"Unknown story tone '{normalized}'.",
+            why=f"Allowed tones: {', '.join(STORY_TONES)}.",
+            fix=fix,
+            example='story "Onboarding"\n  step "Start":\n    tone is "informative"',
+        ),
+        line=line,
+        column=column,
+    )
+
+
+def _validate_icon(value: str | None, line: int | None, column: int | None) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip()
+    if not normalized:
+        raise Namel3ssError("Story icon cannot be empty", line=line, column=column)
+    if normalized in STORY_ICONS:
+        return normalized
+    suggestion = closest_value(normalized, STORY_ICONS)
+    fix = f'Did you mean "{suggestion}"?' if suggestion else f"Use one of: {', '.join(STORY_ICONS)}."
+    raise Namel3ssError(
+        build_guidance_message(
+            what=f"Unknown story icon '{normalized}'.",
+            why=f"Allowed icons: {', '.join(STORY_ICONS)}.",
+            fix=fix,
+            example='story "Checklist"\n  step "Review":\n    icon is info',
+        ),
+        line=line,
+        column=column,
+    )
+
+
+def _validate_story_next_targets(story_title: str, steps: list[StoryStep]) -> None:
+    titles = [step.title for step in steps]
+    for step in steps:
+        if step.next and step.next not in titles:
+            suggestion = closest_value(step.next, titles)
+            fix = f'Did you mean "{suggestion}"?' if suggestion else "Use an existing step title."
+            raise Namel3ssError(
+                build_guidance_message(
+                    what=f"Story '{story_title}' step '{step.title}' references unknown next step '{step.next}'.",
+                    why="Next must point to another step in the same story.",
+                    fix=fix,
+                    example='story "Onboarding"\n  step "Start":\n    next is "Finish"',
+                ),
+                line=step.line,
+                column=step.column,
+            )
+
+
+def _validate_story_cycles(story_title: str, steps: list[StoryStep]) -> None:
+    if len(steps) < 2:
+        return
+    targets: dict[str, str] = {}
+    for idx, step in enumerate(steps):
+        target = step.next or (steps[idx + 1].title if idx + 1 < len(steps) else None)
+        if target:
+            targets[step.title] = target
+    visited: set[str] = set()
+    active: set[str] = set()
+    step_map = {step.title: step for step in steps}
+
+    def _dfs(title: str, path: list[str]) -> None:
+        visited.add(title)
+        active.add(title)
+        target = targets.get(title)
+        if target is None:
+            active.remove(title)
+            return
+        if target in active:
+            cycle_start = path.index(target) if target in path else 0
+            cycle_path = path[cycle_start:] + [target]
+            message = build_guidance_message(
+                what=f"Story '{story_title}' has a next cycle: " + " -> ".join(cycle_path) + ".",
+                why="Next defines progression order and cannot loop forever.",
+                fix="Remove or change a next link to break the cycle.",
+                example='story "Intro"\n  step "A":\n    next is "B"\n  step "B":\n    next is "Done"',
+            )
+            offending = step_map.get(title)
+            raise Namel3ssError(message, line=getattr(offending, "line", None), column=getattr(offending, "column", None))
+        if target not in visited:
+            _dfs(target, path + [target])
+        active.remove(title)
+
+    for step in steps:
+        if step.title not in visited:
+            _dfs(step.title, [step.title])
 
 
 def _lower_card_actions(

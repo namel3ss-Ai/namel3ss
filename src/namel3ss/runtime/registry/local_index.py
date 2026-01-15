@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.registry.entry import RegistryEntry
@@ -12,7 +13,7 @@ from namel3ss.runtime.registry.layout import registry_compact_path, registry_ind
 def append_registry_entry(app_root: Path, entry: RegistryEntry) -> Path:
     path = registry_index_path(app_root)
     path.parent.mkdir(parents=True, exist_ok=True)
-    payload = json.dumps(entry.to_dict(), sort_keys=True)
+    payload = canonical_json_dumps(entry.to_dict(), pretty=False)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(payload + "\n")
     return path
@@ -48,7 +49,7 @@ def build_compact_index_from_path(index_path: Path, compact_path: Path) -> Path:
     sorted_entries = sorted(deduped.values(), key=_sort_key)
     payload = {"entries": sorted_entries}
     compact_path.parent.mkdir(parents=True, exist_ok=True)
-    compact_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    compact_path.write_text(canonical_json_dumps(payload, pretty=True), encoding="utf-8")
     return compact_path
 
 

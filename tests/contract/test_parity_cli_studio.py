@@ -6,8 +6,11 @@ import shutil
 from namel3ss.cli.app_loader import load_program
 from namel3ss.cli.runner import run_flow
 from namel3ss.cli.ui_mode import run_action
-from namel3ss.studio.api import execute_action
+from namel3ss.config.loader import load_config
+from namel3ss.runtime.store.memory_store import MemoryStore
+from namel3ss.studio.api import execute_action, get_ui_payload
 from namel3ss.studio.session import SessionState
+from namel3ss.validation_entrypoint import build_static_manifest
 
 
 APP_SOURCE = '''
@@ -96,3 +99,18 @@ def _reset_memory(root: Path) -> None:
     memory_dir = root / ".namel3ss" / "memory"
     if memory_dir.exists():
         shutil.rmtree(memory_dir)
+
+
+def test_static_manifest_helper_matches_studio(tmp_path: Path) -> None:
+    app_file = tmp_path / "app.ai"
+    app_file.write_text(APP_SOURCE, encoding="utf-8")
+    program, _ = load_program(app_file.as_posix())
+    config = load_config(app_path=app_file)
+    warnings: list = []
+    helper_manifest = build_static_manifest(program, config=config, state={}, store=MemoryStore(), warnings=warnings)
+
+    studio_manifest = get_ui_payload(APP_SOURCE, SessionState(), app_path=app_file.as_posix())
+
+    assert helper_manifest.get("pages") == studio_manifest.get("pages")
+    studio_warnings = studio_manifest.get("warnings") or []
+    assert len(warnings) == len(studio_warnings)

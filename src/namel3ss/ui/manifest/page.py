@@ -16,6 +16,7 @@ from namel3ss.ui.manifest.actions import _wire_overlay_actions
 from namel3ss.ui.manifest.canonical import _slugify
 from namel3ss.ui.manifest.elements import _build_children
 from namel3ss.ui.manifest.state_defaults import StateContext, StateDefaults
+from namel3ss.ui.settings import UI_ALLOWED_VALUES, UI_DEFAULTS, normalize_ui_settings
 from namel3ss.validation import ValidationMode
 
 
@@ -38,13 +39,16 @@ def build_manifest(
     actions: Dict[str, dict] = {}
     taken_actions: set[str] = set()
     state_base = deepcopy(state or {})
-    theme_setting = getattr(program, "theme", "system")
-    theme_current = runtime_theme or theme_setting
+    ui_settings = normalize_ui_settings(getattr(program, "ui_settings", None))
+    theme_setting = ui_settings.get("theme", getattr(program, "theme", UI_DEFAULTS["theme"]))
+    allowed_themes = set(UI_ALLOWED_VALUES.get("theme", ()))
+    theme_current = runtime_theme if runtime_theme in allowed_themes else theme_setting
+    persisted_theme_normalized = persisted_theme if persisted_theme in allowed_themes else None
     effective = resolve_effective_theme(theme_current, False, None)
     source = ThemeSource.APP.value
-    if persisted_theme and persisted_theme == theme_current:
+    if persisted_theme_normalized and persisted_theme_normalized == theme_current:
         source = ThemeSource.PERSISTED.value
-    elif runtime_theme and runtime_theme != theme_setting:
+    elif runtime_theme and runtime_theme in allowed_themes and runtime_theme != theme_setting:
         source = ThemeSource.SESSION.value
     identity = identity or {}
     app_defaults = state_defaults or getattr(program, "state_defaults", None) or {}
@@ -90,9 +94,11 @@ def build_manifest(
             {
                 "name": page.name,
                 "slug": page_slug,
-            "elements": elements,
+                "elements": elements,
             }
         )
+        if getattr(page, "purpose", None):
+            pages[-1]["purpose"] = page.purpose
         defaults_snapshot = state_ctx.defaults_snapshot()
         if defaults_snapshot:
             manifest_state_defaults_pages[page_slug] = defaults_snapshot
@@ -106,7 +112,7 @@ def build_manifest(
             "schema_version": ui_schema_version,
             "setting": theme_setting,
             "current": theme_current,
-            "persisted_current": persisted_theme,
+            "persisted_current": persisted_theme_normalized,
             "effective": effective.value,
             "source": source,
             "runtime_supported": getattr(program, "theme_runtime_supported", False),
@@ -115,6 +121,7 @@ def build_manifest(
         },
         "ui": {
             "persistence": persistence,
+            "settings": ui_settings,
         },
     }
     if app_defaults or manifest_state_defaults_pages:

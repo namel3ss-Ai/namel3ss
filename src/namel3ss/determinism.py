@@ -69,6 +69,17 @@ def run_payload_hash(payload: dict) -> str:
     return hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
 
 
+def canonical_json_dumps(value: object, *, pretty: bool = True, drop_keys: set[str] | None = None) -> str:
+    canonical = _canonicalize_payload_value(value, path=(), drop_keys=drop_keys)
+    return _dump_json(canonical, pretty=pretty)
+
+
+def canonical_json_dump(path: Path, value: object, *, pretty: bool = True, drop_keys: set[str] | None = None) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = canonical_json_dumps(value, pretty=pretty, drop_keys=drop_keys)
+    path.write_text(payload, encoding="utf-8")
+
+
 def _canonicalize_traces(traces: Iterable[Any] | None) -> list[dict]:
     normalized = normalize_traces(traces)
     scrubbed = _scrub_trace_value(normalized)
@@ -161,11 +172,14 @@ def _scrub_trace_value(value: Any) -> Any:
     return value
 
 
-def _canonicalize_payload_value(value: Any, *, path: tuple) -> Any:
+def _canonicalize_payload_value(value: Any, *, path: tuple, drop_keys: set[str] | None = None) -> Any:
+    drop = drop_keys or set()
     if isinstance(value, dict):
         normalized: dict[str, object] = {}
         for key in sorted(value.keys(), key=lambda item: str(item)):
             key_str = str(key)
+            if key_str in drop:
+                continue
             if not path and key_str in _DROP_RUN_KEYS:
                 continue
             child = value[key]
@@ -175,14 +189,14 @@ def _canonicalize_payload_value(value: Any, *, path: tuple) -> Any:
                 scrubbed = _scrub_trace_value(child)
                 normalized[key_str] = _canonicalize_value(scrubbed)
             else:
-                normalized[key_str] = _canonicalize_payload_value(child, path=path + (key_str,))
+                normalized[key_str] = _canonicalize_payload_value(child, path=path + (key_str,), drop_keys=drop)
         return normalized
     if isinstance(value, list):
-        return [_canonicalize_payload_value(item, path=path + (idx,)) for idx, item in enumerate(value)]
+        return [_canonicalize_payload_value(item, path=path + (idx,), drop_keys=drop) for idx, item in enumerate(value)]
     if isinstance(value, tuple):
-        return [_canonicalize_payload_value(item, path=path + (idx,)) for idx, item in enumerate(value)]
+        return [_canonicalize_payload_value(item, path=path + (idx,), drop_keys=drop) for idx, item in enumerate(value)]
     if isinstance(value, set):
-        return [_canonicalize_payload_value(item, path=path + ("set",)) for item in sorted(value, key=str)]
+        return [_canonicalize_payload_value(item, path=path + ("set",), drop_keys=drop) for item in sorted(value, key=str)]
     return _canonicalize_scalar(value)
 
 
@@ -226,6 +240,8 @@ def _dump_json(value: object, *, pretty: bool) -> str:
 __all__ = [
     "TRACE_VOLATILE_KEYS",
     "apply_trace_hash",
+    "canonical_json_dump",
+    "canonical_json_dumps",
     "canonical_run_json",
     "canonical_trace_json",
     "canonicalize_run_payload",

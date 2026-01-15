@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
+from namel3ss.determinism import canonical_json_dumps
+
 
 ARTIFACT_MODES = {"auto", "debug", "off"}
 DEFAULT_KEEP_RUNS = 3
@@ -43,7 +45,7 @@ def _now() -> datetime:
 
 
 def _safe_iso(dt: datetime) -> str:
-    return dt.astimezone(timezone.utc).isoformat()
+    return "not_recorded"
 
 
 def _load_index(path: Path) -> dict:
@@ -68,7 +70,7 @@ def _load_index(path: Path) -> dict:
 def _write_index(path: Path, index: dict) -> None:
     payload = {"runs": sorted(index.get("runs", []), key=lambda item: item.get("run_id", 0))}
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(canonical_json_dumps(payload, pretty=True), encoding="utf-8")
 
 
 def _next_run_id(index: dict) -> int:

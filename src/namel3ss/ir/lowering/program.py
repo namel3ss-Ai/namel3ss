@@ -16,8 +16,10 @@ from namel3ss.ir.lowering.tools import _lower_tools
 from namel3ss.ir.lowering.ui_packs import build_pack_index
 from namel3ss.ir.model.agents import RunAgentsParallelStmt
 from namel3ss.ir.model.program import Flow, Program
+from namel3ss.ir.model.pages import Page
 from namel3ss.ir.model.statements import ThemeChange, If, Repeat, RepeatWhile, ForEach, Match, MatchCase, TryCatch, ParallelBlock
 from namel3ss.schema import records as schema
+from namel3ss.ui.settings import normalize_ui_settings
 
 
 def _statement_has_theme_change(stmt) -> bool:
@@ -69,16 +71,20 @@ def lower_program(program: ast.Program) -> Program:
     flow_names = {flow.name for flow in flow_irs}
     pack_index = build_pack_index(getattr(program, "ui_packs", []))
     pages = [_lower_page(page, record_map, flow_names, pack_index) for page in program.pages]
+    _ensure_unique_pages(pages)
     theme_runtime_supported = any(_flow_has_theme_change(flow) for flow in flow_irs)
+    ui_settings = normalize_ui_settings(getattr(program, "ui_settings", None))
+    theme_setting = ui_settings.get("theme", program.app_theme)
     return Program(
         spec_version=str(program.spec_version),
-        theme=program.app_theme,
+        theme=theme_setting,
         theme_tokens={name: val for name, (val, _, _) in program.theme_tokens.items()},
         theme_runtime_supported=theme_runtime_supported,
         theme_preference={
             "allow_override": program.theme_preference.get("allow_override", (False, None, None))[0],
             "persist": program.theme_preference.get("persist", ("none", None, None))[0],
         },
+        ui_settings=ui_settings,
         records=record_schemas,
         functions=function_map,
         flows=flow_irs,
@@ -91,3 +97,20 @@ def lower_program(program: ast.Program) -> Program:
         line=program.line,
         column=program.column,
     )
+
+
+def _ensure_unique_pages(pages: list[Page]) -> None:
+    seen: dict[str, object] = {}
+    for page in pages:
+        if page.name in seen:
+            raise Namel3ssError(
+                build_guidance_message(
+                    what=f"Page '{page.name}' is declared more than once.",
+                    why="Pages must have unique names.",
+                    fix="Rename the duplicate page or merge its contents.",
+                    example='page "home":',
+                ),
+                line=getattr(page, "line", None),
+                column=getattr(page, "column", None),
+            )
+        seen[page.name] = True

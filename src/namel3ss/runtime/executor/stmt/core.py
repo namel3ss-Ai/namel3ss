@@ -33,6 +33,7 @@ from namel3ss.runtime.executor.stmt.records import (
     execute_save,
     execute_update,
 )
+from namel3ss.ui.settings import UI_ALLOWED_VALUES
 
 
 def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
@@ -207,8 +208,13 @@ def _execute_theme_change(ctx: ExecutionContext, stmt: ir.ThemeChange) -> None:
         raise Namel3ssError("Parallel tasks cannot change theme", line=stmt.line, column=stmt.column)
     if getattr(ctx, "call_stack", []):
         raise Namel3ssError("Functions cannot change theme", line=stmt.line, column=stmt.column)
-    if stmt.value not in {"light", "dark", "system"}:
-        raise Namel3ssError("Theme must be one of: light, dark, system", line=stmt.line, column=stmt.column)
+    allowed = set(UI_ALLOWED_VALUES.get("theme", []))
+    if stmt.value not in allowed:
+        raise Namel3ssError(
+            f"Theme must be one of: {', '.join(sorted(allowed))}",
+            line=stmt.line,
+            column=stmt.column,
+        )
     ctx.runtime_theme = stmt.value
     ctx.traces.append({"type": "theme_change", "value": stmt.value})
     record_step(

@@ -6,14 +6,18 @@ from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.parser.grammar_table import select_top_level_rule
+from namel3ss.ui.settings import default_ui_settings_with_meta
 
 
 def parse_program(parser) -> ast.Program:
     spec_version: str | None = None
-    app_theme = "system"
+    app_theme = default_ui_settings_with_meta()["theme"][0]
     app_line = None
     app_column = None
     theme_tokens = {}
+    ui_settings = default_ui_settings_with_meta()
+    ui_line = None
+    ui_column = None
     records: List[ast.RecordDecl] = []
     flows: List[ast.Flow] = []
     pages: List[ast.PageDecl] = []
@@ -160,6 +164,20 @@ def parse_program(parser) -> ast.Program:
         if rule.name == "ui_pack":
             ui_packs.append(rule.parse(parser))
             continue
+        if rule.name == "ui":
+            if ui_line is not None:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="UI is already declared.",
+                        why="The ui block is global and must appear only once.",
+                        fix="Remove duplicate ui blocks and keep a single ui block in app.ai.",
+                        example='ui:\n  theme is "light"\n  accent color is "blue"',
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            ui_settings, ui_line, ui_column = rule.parse(parser)
+            continue
         raise Namel3ssError("Unexpected top-level token", line=tok.line, column=tok.column)
     if parser.require_spec and not parser.allow_capsule:
         if not spec_version:
@@ -180,6 +198,8 @@ def parse_program(parser) -> ast.Program:
                 example='capsule "inventory":',
             )
         )
+    if ui_line is None:
+        ui_settings["theme"] = (app_theme, app_line, app_column)
     return ast.Program(
         spec_version=spec_version,
         app_theme=app_theme,
@@ -187,6 +207,9 @@ def parse_program(parser) -> ast.Program:
         app_theme_column=app_column,
         theme_tokens=theme_tokens,
         theme_preference=theme_preference,
+        ui_settings=ui_settings,
+        ui_line=ui_line,
+        ui_column=ui_column,
         records=records,
         functions=functions,
         flows=flows,

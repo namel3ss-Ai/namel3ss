@@ -10,7 +10,9 @@ from namel3ss.parser.decl.page_chat import parse_chat_block
 from namel3ss.parser.decl.page_chart import parse_chart_block, parse_chart_header
 from namel3ss.parser.decl.page_form import parse_form_block
 from namel3ss.parser.decl.page_list import parse_list_block
+from namel3ss.parser.decl.page_story import parse_story_block
 from namel3ss.parser.decl.page_table import parse_table_block
+from namel3ss.lang.keywords import is_keyword
 
 
 def _parse_block(
@@ -36,6 +38,81 @@ def _parse_block(
 
 def parse_page_item(parser, *, allow_tabs: bool = False, allow_overlays: bool = False) -> ast.PageItem:
     tok = parser._current()
+    if tok.type == "IDENT" and tok.value == "purpose":
+        raise Namel3ssError("Purpose must be declared at the page root", line=tok.line, column=tok.column)
+    if tok.type == "IDENT" and tok.value == "compose":
+        parser._advance()
+        name_tok = parser._expect("IDENT", "Expected compose name")
+        if is_keyword(name_tok.value):
+            raise Namel3ssError(
+                f"Compose name '{name_tok.value}' is reserved",
+                line=name_tok.line,
+                column=name_tok.column,
+            )
+        parser._expect("COLON", "Expected ':' after compose name")
+        children = _parse_block(parser, columns_only=False, allow_tabs=False, allow_overlays=False)
+        return ast.ComposeItem(name=name_tok.value, children=children, line=tok.line, column=tok.column)
+    if tok.type == "IDENT" and tok.value == "story":
+        return parse_story_block(parser)
+    if tok.value == "number" and tok.type in {"IDENT", "TYPE_NUMBER"}:
+        parser._advance()
+        parser._expect("COLON", "Expected ':' after number")
+        entries: list[ast.NumberEntry] = []
+        parser._expect("NEWLINE", "Expected newline after number")
+        if not parser._match("INDENT"):
+            raise Namel3ssError("Number block has no entries", line=tok.line, column=tok.column)
+        while parser._current().type != "DEDENT":
+            if parser._match("NEWLINE"):
+                continue
+            entry_tok = parser._current()
+            if entry_tok.type == "IDENT" and entry_tok.value == "count":
+                parser._advance()
+                of_tok = parser._current()
+                if of_tok.type not in {"IDENT"} or of_tok.value != "of":
+                    raise Namel3ssError("Expected 'of' after count", line=of_tok.line, column=of_tok.column)
+                parser._advance()
+                record_name = parse_reference_name(parser, context="record")
+                as_tok = parser._current()
+                if as_tok.type not in {"IDENT", "AS"} or as_tok.value != "as":
+                    raise Namel3ssError("Expected 'as' after record name", line=as_tok.line, column=as_tok.column)
+                parser._advance()
+                label_tok = parser._expect("STRING", "Expected label string for count")
+                entries.append(
+                    ast.NumberEntry(
+                        kind="count",
+                        record_name=record_name,
+                        label=label_tok.value,
+                        line=entry_tok.line,
+                        column=entry_tok.column,
+                    )
+                )
+                parser._match("NEWLINE")
+                continue
+            if entry_tok.type == "STRING":
+                parser._advance()
+                phrase = entry_tok.value
+            else:
+                # Capture unquoted phrase tokens until newline/dedent
+                parts: list[str] = []
+                while parser._current().type not in {"NEWLINE", "DEDENT"}:
+                    parts.append(parser._current().value)
+                    parser._advance()
+                phrase = " ".join(parts).strip()
+                if not phrase:
+                    raise Namel3ssError("Number phrase is empty", line=entry_tok.line, column=entry_tok.column)
+            entries.append(ast.NumberEntry(kind="phrase", value=phrase, line=entry_tok.line, column=entry_tok.column))
+            parser._match("NEWLINE")
+        parser._expect("DEDENT", "Expected end of number block")
+        if not entries:
+            raise Namel3ssError("Number block has no entries", line=tok.line, column=tok.column)
+        return ast.NumberItem(entries=entries, line=tok.line, column=tok.column)
+    if tok.type == "IDENT" and tok.value == "view":
+        parser._advance()
+        of_tok = parser._expect("IDENT", "Expected 'of' after view")
+        if of_tok.value != "of":
+            raise Namel3ssError("Expected 'of' after view", line=of_tok.line, column=of_tok.column)
+        record_name = parse_reference_name(parser, context="record")
+        return ast.ViewItem(record_name=record_name, line=tok.line, column=tok.column)
     if tok.type == "TITLE":
         parser._advance()
         parser._expect("IS", "Expected 'is' after 'title'")
@@ -182,15 +259,30 @@ def parse_page_item(parser, *, allow_tabs: bool = False, allow_overlays: bool = 
         while parser._current().type != "DEDENT":
             if parser._match("NEWLINE"):
                 continue
-            parser._expect("CALLS", "Expected 'calls' in button action")
-            parser._expect("FLOW", "Expected 'flow' keyword in button action")
-            flow_name = parse_reference_name(parser, context="flow")
-            if parser._match("NEWLINE"):
+            tok_action = parser._current()
+            if tok_action.type == "CALLS":
+                parser._advance()
+                parser._expect("FLOW", "Expected 'flow' keyword in button action")
+                flow_name = parse_reference_name(parser, context="flow")
+                parser._match("NEWLINE")
                 continue
-            break
+            if tok_action.type == "IDENT" and tok_action.value == "runs":
+                parser._advance()
+                flow_name = parse_reference_name(parser, context="flow")
+                parser._match("NEWLINE")
+                continue
+            raise Namel3ssError(
+                "Buttons must declare an action using 'calls flow \"<name>\"' or 'runs \"<flow>\"'",
+                line=tok_action.line,
+                column=tok_action.column,
+            )
         parser._expect("DEDENT", "Expected end of button body")
         if flow_name is None:
-            raise Namel3ssError("Button body must include 'calls flow \"<name>\"'", line=tok.line, column=tok.column)
+            raise Namel3ssError(
+                "Button body must include 'calls flow \"<name>\"' or 'runs \"<flow>\"'",
+                line=tok.line,
+                column=tok.column,
+            )
         return ast.ButtonItem(label=label_tok.value, flow_name=flow_name, line=tok.line, column=tok.column)
     if tok.type == "SECTION":
         parser._advance()

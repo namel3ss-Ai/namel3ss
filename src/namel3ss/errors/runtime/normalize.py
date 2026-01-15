@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Iterable
 
+from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.runtime.model import ErrorPack, Namel3ssRuntimeError
 from namel3ss.secrets import redact_payload, redact_text
 
@@ -95,7 +95,7 @@ def _normalize_value(key: str, value: object) -> object:
 
 
 def _stable_json(payload: object) -> str:
-    return json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    return canonical_json_dumps(payload, pretty=True)
 
 
 __all__ = [

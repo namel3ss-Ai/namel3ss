@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import List
 
 from namel3ss.ast import nodes as ast
+from namel3ss.errors.base import Namel3ssError
 from namel3ss.parser.decl.page_common import _match_ident_value, _reject_list_transforms
 from namel3ss.parser.decl.page_items import parse_page_item
 
@@ -18,8 +19,19 @@ def parse_page(parser) -> ast.PageDecl:
     parser._expect("NEWLINE", "Expected newline after page header")
     parser._expect("INDENT", "Expected indented page body")
     items: List[ast.PageItem] = []
+    purpose: str | None = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
+            continue
+        tok = parser._current()
+        if tok.type == "IDENT" and tok.value == "purpose":
+            if purpose is not None:
+                raise Namel3ssError("Purpose is already declared for this page", line=tok.line, column=tok.column)
+            parser._advance()
+            parser._expect("IS", "Expected 'is' after purpose")
+            value_tok = parser._expect("STRING", "Expected purpose string")
+            purpose = value_tok.value
+            parser._match("NEWLINE")
             continue
         items.append(parse_page_item(parser, allow_tabs=True, allow_overlays=True))
     parser._expect("DEDENT", "Expected end of page body")
@@ -27,6 +39,7 @@ def parse_page(parser) -> ast.PageDecl:
         name=name_tok.value,
         items=items,
         requires=requires_expr,
+        purpose=purpose,
         line=page_tok.line,
         column=page_tok.column,
     )

@@ -4,6 +4,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from namel3ss.determinism import canonical_json_dumps
 from namel3ss.runtime.packs.layout import pack_source_meta_path
 
 
@@ -33,7 +34,7 @@ def read_pack_source(pack_dir: Path) -> PackSourceInfo | None:
 def write_pack_source(pack_dir: Path, info: PackSourceInfo) -> Path:
     payload = {"source_type": info.source_type, "path": info.path}
     path = pack_source_meta_path(pack_dir)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(canonical_json_dumps(payload, pretty=True), encoding="utf-8")
     return path
 
 

@@ -61,6 +61,7 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
     from namel3ss.parser.decl.record import parse_record
     from namel3ss.parser.decl.spec import parse_spec_decl
     from namel3ss.parser.decl.tool import parse_tool
+    from namel3ss.parser.decl.ui import parse_ui_decl
     from namel3ss.parser.decl.ui_pack import parse_ui_pack_decl
     from namel3ss.parser.decl.use import parse_use_decl
 
@@ -77,6 +78,7 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
         TopLevelRule("record", "RECORD", parse_record),
         TopLevelRule("flow", "FLOW", parse_flow),
         TopLevelRule("page", "PAGE", parse_page),
+        TopLevelRule("ui", "UI", parse_ui_decl),
         TopLevelRule("ui_pack", "IDENT", parse_ui_pack_decl, token_value="ui_pack"),
     )
 

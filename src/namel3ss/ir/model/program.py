@@ -31,6 +31,7 @@ class Program(Node):
     theme_tokens: Dict[str, str]
     theme_runtime_supported: bool
     theme_preference: Dict[str, object]
+    ui_settings: Dict[str, str]
     records: List[schema.RecordSchema]
     functions: Dict[str, FunctionDecl]
     flows: List[Flow]

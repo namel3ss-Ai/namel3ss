@@ -212,6 +212,9 @@ def _merge_programs(
         app_theme_column=app_ast.app_theme_column,
         theme_tokens=app_ast.theme_tokens,
         theme_preference=app_ast.theme_preference,
+        ui_settings=app_ast.ui_settings,
+        ui_line=getattr(app_ast, "ui_line", None),
+        ui_column=getattr(app_ast, "ui_column", None),
         records=combined_records,
         functions=combined_functions,
         flows=combined_flows,
@@ -330,6 +333,17 @@ def _load_module(
                 ),
                 line=program.app_theme_line,
                 column=program.app_theme_column,
+            )
+        if getattr(program, "ui_line", None) is not None:
+            raise Namel3ssError(
+                build_guidance_message(
+                    what="UI declarations are not allowed inside modules.",
+                    why="Global ui settings belong in app.ai only.",
+                    fix="Move the ui block to app.ai.",
+                    example='ui:\n  theme is "light"\n  accent color is "blue"',
+                ),
+                line=program.ui_line,
+                column=program.ui_column,
             )
         programs.append(program)
 

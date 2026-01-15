@@ -140,6 +140,18 @@ def _element_state(
         action = action_map[action_id]
         enabled = _enabled_from_status(action.status)
         reasons.append(action_reason_line(action_id, action.status, action.requires, None))
+    if kind == "story_step":
+        gate = element.get("gate") if isinstance(element, dict) else None
+        if gate:
+            ready = gate.get("ready")
+            if ready is not None:
+                enabled = bool(ready)
+            requires_text = gate.get("requires") or gate.get("reason")
+            status, reason_list = action_status(requires_text, ready)
+            reasons.append(action_reason_line(element_id, status, requires_text, ready))
+            for reason in reason_list:
+                if reason not in reasons:
+                    reasons.append(reason)
     if kind == "table":
         reasons.extend(_table_reasons(element))
     if kind == "list":
@@ -182,6 +194,8 @@ def _walk_elements(elements: list[dict]) -> list[dict]:
 def _element_label(kind: str, element: dict) -> str | None:
     if kind in {"title", "text"}:
         return element.get("value")
+    if kind in {"story", "story_step"}:
+        return element.get("title")
     if kind in {"button", "section", "card", "tab", "modal", "drawer"}:
         return element.get("label")
     if kind in {"messages", "citations", "memory"}:

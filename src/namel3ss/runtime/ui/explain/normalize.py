@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
+
+from namel3ss.determinism import canonical_json_dumps
 
 
 def stable_join(items: list[str], sep: str = ", ") -> str:
@@ -74,7 +75,7 @@ def write_last_ui(root: Path, pack: dict, plain_text: str, text: str) -> None:
 
 
 def _stable_json(payload: object) -> str:
-    return json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    return canonical_json_dumps(payload, pretty=True)
 
 
 def _element_total(pages: list[dict]) -> int:

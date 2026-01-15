@@ -13,6 +13,47 @@ class PageItem(Node):
 
 
 @dataclass
+class NumberEntry(Node):
+    kind: str  # phrase | count
+    value: str | None = None
+    record_name: str | None = None
+    label: str | None = None
+
+
+@dataclass
+class NumberItem(PageItem):
+    entries: list[NumberEntry]
+
+
+@dataclass
+class ViewItem(PageItem):
+    record_name: str
+
+
+@dataclass
+class ComposeItem(PageItem):
+    name: str
+    children: list["PageItem"]
+
+
+@dataclass
+class StoryStep(Node):
+    title: str
+    text: str | None = None
+    icon: str | None = None
+    image: str | None = None
+    tone: str | None = None
+    requires: str | None = None
+    next: str | None = None
+
+
+@dataclass
+class StoryItem(PageItem):
+    title: str
+    steps: list[StoryStep]
+
+
+@dataclass
 class TitleItem(PageItem):
     value: str
 
@@ -246,4 +287,5 @@ class PageDecl(Node):
     name: str
     items: List[PageItem]
     requires: Expression | None = None
+    purpose: str | None = None
     state_defaults: dict | None = None

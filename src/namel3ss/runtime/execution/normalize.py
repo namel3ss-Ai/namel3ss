@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 from pathlib import Path
 
+from namel3ss.determinism import canonical_json_dumps
 from namel3ss.ir import nodes as ir
 
 from .graph import ExplanationGraph
@@ -138,9 +139,7 @@ def write_last_execution(root: Path, pack: dict, plain_text: str) -> None:
 
 
 def _stable_json(payload: object) -> str:
-    import json
-
-    return json.dumps(payload, indent=2, sort_keys=True) + "\n"
+    return canonical_json_dumps(payload, pretty=True)
 
 
 def _count_skips(steps: list[dict]) -> int:

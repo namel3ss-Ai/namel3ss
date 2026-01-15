@@ -56,8 +56,8 @@
   },
   "theme": {
     "schema_version": "1",
-    "setting": "system",
-    "current": "system",
+    "setting": "light",
+    "current": "light",
     "persisted_current": null,
     "effective": "light",
     "source": "app",
@@ -74,6 +74,14 @@
       "kind": "memory",
       "path": null,
       "schema_version": null
+    },
+    "settings": {
+      "theme": "light",
+      "accent_color": "blue",
+      "density": "comfortable",
+      "motion": "subtle",
+      "shape": "rounded",
+      "surface": "flat"
     }
   }
 }
