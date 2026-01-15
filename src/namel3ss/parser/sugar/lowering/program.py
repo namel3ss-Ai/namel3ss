@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from namel3ss.ast import nodes as ast
 from namel3ss.parser.sugar.lowering.expressions import _lower_expression
+from namel3ss.parser.sugar.lowering.flow_steps import _lower_flow_steps
 from namel3ss.parser.sugar.lowering.statements import _lower_statements
 
 
@@ -38,6 +39,8 @@ def _lower_flow(flow: ast.Flow) -> ast.Flow:
         body=_lower_statements(flow.body),
         requires=_lower_expression(flow.requires) if flow.requires else None,
         audited=flow.audited,
+        steps=_lower_flow_steps(getattr(flow, "steps", None)),
+        declarative=bool(getattr(flow, "declarative", False)),
         line=flow.line,
         column=flow.column,
     )

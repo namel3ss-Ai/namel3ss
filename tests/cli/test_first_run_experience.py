@@ -94,7 +94,7 @@ def test_first_run_why_output_is_stable(tmp_path, monkeypatch, capsys):
 def test_first_run_demo_run_output(tmp_path, monkeypatch, capsys):
     _write_basic_app(tmp_path)
     (tmp_path / ".namel3ss").mkdir()
-    (tmp_path / ".namel3ss" / "demo.json").write_text('{"name":"ClearOrders"}', encoding="utf-8")
+    (tmp_path / ".namel3ss" / "demo.json").write_text('{"name":"demo"}', encoding="utf-8")
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(ServiceRunner, "start", lambda *args, **kwargs: None)
     port = _free_port()
@@ -102,7 +102,7 @@ def test_first_run_demo_run_output(tmp_path, monkeypatch, capsys):
     out = capsys.readouterr().out.strip().splitlines()
     assert code == 0
     assert out == [
-        "Running ClearOrders",
+        "Running demo",
         f"Open: http://127.0.0.1:{port}/",
         "Press Ctrl+C to stop",
     ]
@@ -111,7 +111,7 @@ def test_first_run_demo_run_output(tmp_path, monkeypatch, capsys):
 def test_run_demo_opens_url_disabled_in_ci(tmp_path, monkeypatch, capsys):
     _write_basic_app(tmp_path)
     (tmp_path / ".namel3ss").mkdir()
-    (tmp_path / ".namel3ss" / "demo.json").write_text('{"name":"ClearOrders"}', encoding="utf-8")
+    (tmp_path / ".namel3ss" / "demo.json").write_text('{"name":"demo"}', encoding="utf-8")
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("CI", "1")
     monkeypatch.setattr("namel3ss.cli.open_url._has_tty", lambda *args, **kwargs: True)

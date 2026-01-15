@@ -8,7 +8,7 @@ from typing import Any, Dict
 from urllib.parse import urlparse
 
 from namel3ss.cli.app_loader import load_program
-from namel3ss.cli.demo_support import is_clearorders_demo
+from namel3ss.cli.demo_support import is_demo_project
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
 from namel3ss.runtime.executor import execute_program_flow
@@ -174,7 +174,7 @@ class ServiceRunner:
         port: int = DEFAULT_SERVICE_PORT,
         *,
         auto_seed: bool = False,
-        seed_flow: str = "seed_orders",
+        seed_flow: str = "seed_demo",
     ):
         self.app_path = Path(app_path).resolve()
         self.target = target
@@ -257,7 +257,7 @@ def _should_auto_seed(program_ir, enabled: bool, flow_name: str) -> bool:
     project_root = _resolve_project_root(program_ir)
     if not project_root:
         return False
-    return is_clearorders_demo(project_root)
+    return is_demo_project(project_root)
 
 
 def _resolve_project_root(program_ir) -> Path | None:

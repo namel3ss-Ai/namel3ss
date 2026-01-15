@@ -27,6 +27,16 @@ from namel3ss.ast.expressions import (
     UnaryOp,
     VarReference,
 )
+from namel3ss.ast.flow_steps import (
+    FlowCreate,
+    FlowDelete,
+    FlowField,
+    FlowInput,
+    FlowInputField,
+    FlowRequire,
+    FlowStep,
+    FlowUpdate,
+)
 from namel3ss.ast.functions import (
     CallFunctionExpr,
     FunctionCallArg,
@@ -118,6 +128,14 @@ __all__ = [
     "Node",
     "Flow",
     "Program",
+    "FlowStep",
+    "FlowInput",
+    "FlowInputField",
+    "FlowRequire",
+    "FlowField",
+    "FlowCreate",
+    "FlowUpdate",
+    "FlowDelete",
     "Statement",
     "Let",
     "Set",

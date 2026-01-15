@@ -93,7 +93,7 @@ DEFAULT_GATES: tuple[GateSpec, ...] = (
             "tests/beta_lock/test_cli_goldens.py",
             "tests/beta_lock/test_handoff_preview_golden.py",
             "tests/perf_baselines/test_perf_baseline.py",
-            "tests/cli/test_cli_agent_lab_template.py",
+            "tests/cli/test_cli_demo_template.py",
         ),
         required=True,
     ),

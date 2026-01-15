@@ -1,20 +1,15 @@
 # {{PROJECT_NAME}}
 
-Small starter app with one page and one flow.
-
-Run:
-- n3 app.ai check
+60-second run
 - n3 app.ai ui
-- n3 app.ai actions
 - n3 app.ai
 
-Bind the tool:
-- n3 tools bind --auto
-- n3 app.ai flow "demo"
+what this shows
+- one record with a form and table
+- one deterministic flow that writes data
+- minimal ui you can extend
 
-Export UI contract:
-- n3 app.ai ui export
+notes
+- app source lives in app.ai
+- ui manifest output lives in manifest/ui.json
 
-## Secrets setup
-
-This app may require secrets depending on providers/targets. Studio → Setup shows what’s missing.

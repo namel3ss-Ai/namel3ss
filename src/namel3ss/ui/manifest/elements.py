@@ -22,6 +22,7 @@ from namel3ss.ui.manifest_list import (
 )
 from namel3ss.ui.manifest_overlay import _drawer_id, _modal_id
 from namel3ss.ui.manifest.state_defaults import StateContext
+from namel3ss.runtime.flow.gates import evaluate_requires
 from namel3ss.ui.manifest.canonical import _slugify
 from namel3ss.ui.manifest_table import (
     _apply_table_pagination,
@@ -66,28 +67,21 @@ def _build_story_gate(
     if not requires:
         return None
     gate: dict = {"id": f"{step_id}.gate", "requires": requires}
-    ready: bool | None = None
-    if requires.startswith("state."):
-        parts = [segment for segment in requires.split(".")[1:] if segment]
-        if parts:
-            if state_ctx.has_value(parts):
-                try:
-                    value, _ = state_ctx.value(parts, default=None)
-                except KeyError:
-                    value = None
-                ready = bool(value)
-            else:
-                add_warning(
-                    warnings,
-                    code="state.missing",
-                    message=f"Story gate requires '{requires}' but no state value was found.",
-                    fix="Provide the state value or adjust the requires rule.",
-                    path=parts,
-                    line=line,
-                    column=column,
-                )
-            gate["path"] = parts
-        else:
+    evaluation = evaluate_requires(requires, state_ctx.state)
+    if evaluation.path is not None:
+        if evaluation.path:
+            gate["path"] = evaluation.path
+        if evaluation.issue == "missing":
+            add_warning(
+                warnings,
+                code="state.missing",
+                message=f"Story gate requires '{requires}' but no state value was found.",
+                fix="Provide the state value or adjust the requires rule.",
+                path=evaluation.path,
+                line=line,
+                column=column,
+            )
+        elif evaluation.issue == "invalid":
             add_warning(
                 warnings,
                 code="state.invalid",
@@ -96,7 +90,7 @@ def _build_story_gate(
                 line=line,
                 column=column,
             )
-    gate["ready"] = ready
+    gate["ready"] = evaluation.ready
     gate["reason"] = f"requires {requires}"
     return gate
 

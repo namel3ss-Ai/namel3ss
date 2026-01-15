@@ -1,0 +1,63 @@
+{
+  "actions": {
+    "page.home.button.add": {
+      "flow": "create_note",
+      "id": "page.home.button.add",
+      "type": "call_flow"
+    }
+  },
+  "pages": [
+    {
+      "elements": [
+        {
+          "action": {
+            "flow": "create_note",
+            "type": "call_flow"
+          },
+          "action_id": "page.home.button.add",
+          "column": 3,
+          "element_id": "page.home.button_item.0",
+          "id": "page.home.button.add",
+          "index": 0,
+          "label": "Add",
+          "line": 13,
+          "page": "home",
+          "page_slug": "home",
+          "type": "button"
+        }
+      ],
+      "name": "home",
+      "slug": "home"
+    }
+  ],
+  "theme": {
+    "current": "light",
+    "effective": "light",
+    "persisted_current": null,
+    "preference": {
+      "allow_override": false,
+      "persist": "none"
+    },
+    "runtime_supported": false,
+    "schema_version": "1",
+    "setting": "light",
+    "source": "app",
+    "tokens": {}
+  },
+  "ui": {
+    "persistence": {
+      "enabled": false,
+      "kind": "memory",
+      "path": null,
+      "schema_version": null
+    },
+    "settings": {
+      "accent_color": "blue",
+      "density": "comfortable",
+      "motion": "subtle",
+      "shape": "rounded",
+      "surface": "flat",
+      "theme": "light"
+    }
+  }
+}

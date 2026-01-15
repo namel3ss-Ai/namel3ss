@@ -14,6 +14,7 @@ from namel3ss.ir.functions.model import FunctionDecl
 from namel3ss.schema import records as schema
 if TYPE_CHECKING:  # pragma: no cover - typing-only
     from namel3ss.schema.identity import IdentitySchema
+    from namel3ss.ir.model.flow_steps import FlowStep
 
 
 @dataclass
@@ -22,6 +23,8 @@ class Flow(Node):
     body: List[Statement]
     requires: Expression | None = None
     audited: bool = False
+    steps: List["FlowStep"] | None = None
+    declarative: bool = False
 
 
 @dataclass

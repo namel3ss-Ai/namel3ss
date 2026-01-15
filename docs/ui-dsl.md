@@ -119,24 +119,32 @@ UI packs:
 - Gates carry `requires`, optional `state` path, and readiness (`ready` is `true`/`false`/`null` when not evaluated).
 
 ## 7) Flow actions (Phase 4)
-- `flow "<name>":` declares a user-initiated action with deterministic steps; names must be unique and are identifiers (no reserved words).
-- Supported declarative steps (phase 4 scope):
-  - `input` (capture input intent)
-  - `create "<record>"`
-  - `update "<record>"`
-  - `delete "<record>"`
-  - `set <field> to <value>`
-  - `require "<condition>"`
-- Rules:
-  - Order of steps is meaningful and deterministic.
-  - Steps must reference existing records/fields; invalid references surface plain-English errors with suggestions.
-  - `require` is declarative gating; it is surfaced in explain and Studio, and must not introduce hidden logic.
+- Declarative grammar (no colon form in this surface):
+  - `flow "<name>"`
+    `<steps...>`
+- Names: unique and non-reserved identifiers.
+- Supported steps (closed set for phase 4b):
+  - `input` block: `input` then `<field> is <type>`; input fields are unique and types are validated.
+  - `require "<condition>"` (string gate; no expression language in this phase).
+  - `create "<record>"` with one or more `<field> is <value>` assignments.
+  - `update "<record>"` with `where "<selector>"` and a `set` block of assignments.
+  - `delete "<record>"` with `where "<selector>"`.
+- Binding rules:
+  - Values are string/number/boolean literals or `input.<field>` only.
+  - Selectors are simple equality checks like `<field> is <literal>`.
+  - Record and field references must exist; errors include plain-English fixes.
+- Determinism:
+  - Step ids derive from flow name + step kind + ordinal position.
+  - Step order is preserved; record writes and field order are deterministic.
+- Explainability:
+  - Flow start and step traces include what ran, why it ran (action id + flow), and what changed.
+  - Gates include status and reason when available.
+  - No timestamps or random ids in explain traces.
+- Not supported:
+  - Branching, loops, expressions/functions, or hidden side effects.
 - Triggering from UI:
   - `button "Label":` use either `calls flow "<name>"` (existing) or `runs "<name>"` (alias) to bind to a flow.
   - Unknown flow references error with fix hints; runtime surfaces disabled affordance if requirements are unmet.
-- Explainability:
-  - Flow execution produces stable step ids and ordered traces.
-  - Explain output includes what ran, why it ran, and what changed, without timestamps or random ids.
 
 ## 8) Global UI settings (Phase 1)
 - Grammar (keys may appear in any order; output is normalized deterministically):

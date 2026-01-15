@@ -1,5 +1,5 @@
 from pathlib import Path
-
+import json
 import pytest
 
 from namel3ss.config.loader import load_config
@@ -10,14 +10,9 @@ from namel3ss.validation import ValidationMode, ValidationWarning
 
 
 TEMPLATE_APPS = sorted(Path("src/namel3ss/templates").glob("*/app.ai"))
-EXAMPLE_APPS = sorted(
-    path
-    for path in Path("examples").glob("**/*.ai")
-    if "modules" not in path.parts and "packages" not in path.parts and "tests" not in path.parts
-)
 
 
-def _assert_static_builds(app_path: Path) -> None:
+def _assert_static_builds(app_path: Path) -> dict:
     project = load_project(app_path)
     program = project.program
     config = load_config(app_path=app_path)
@@ -37,13 +32,13 @@ def _assert_static_builds(app_path: Path) -> None:
     )
     assert isinstance(manifest, dict)
     assert "pages" in manifest
+    return manifest
 
 
 @pytest.mark.parametrize("app_path", TEMPLATE_APPS, ids=lambda p: f"template-{p.parent.name}")
 def test_templates_build_in_static_mode(app_path: Path) -> None:
-    _assert_static_builds(app_path)
-
-
-@pytest.mark.parametrize("app_path", EXAMPLE_APPS, ids=lambda p: f"example-{p.relative_to(Path('examples'))}")
-def test_examples_build_in_static_mode(app_path: Path) -> None:
-    _assert_static_builds(app_path)
+    manifest = _assert_static_builds(app_path)
+    stored_path = app_path.parent / "manifest" / "ui.json"
+    assert stored_path.exists()
+    stored = json.loads(stored_path.read_text(encoding="utf-8"))
+    assert stored == manifest

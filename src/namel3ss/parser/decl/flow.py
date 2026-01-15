@@ -4,12 +4,12 @@ from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.parser.stmt.common import parse_statements
+from namel3ss.parser.decl.flow_steps import parse_flow_steps
 
 
 def parse_flow(parser) -> ast.Flow:
     flow_tok = parser._expect("FLOW", "Expected 'flow' declaration")
     name_tok = parser._expect("STRING", "Expected flow name string")
-    parser._expect("COLON", "Expected ':' after flow name")
     requires_expr = None
     audited = False
     while True:
@@ -42,17 +42,36 @@ def parse_flow(parser) -> ast.Flow:
             audited = True
             continue
         break
+    if parser._match("COLON"):
+        parser._expect("NEWLINE", "Expected newline after flow header")
+        parser._expect("INDENT", "Expected indented block for flow body")
+        body = parse_statements(parser, until={"DEDENT"})
+        parser._expect("DEDENT", "Expected block end")
+        while parser._match("NEWLINE"):
+            pass
+        return ast.Flow(
+            name=name_tok.value,
+            body=body,
+            requires=requires_expr,
+            audited=audited,
+            declarative=False,
+            steps=None,
+            line=flow_tok.line,
+            column=flow_tok.column,
+        )
     parser._expect("NEWLINE", "Expected newline after flow header")
-    parser._expect("INDENT", "Expected indented block for flow body")
-    body = parse_statements(parser, until={"DEDENT"})
-    parser._expect("DEDENT", "Expected block end")
+    parser._expect("INDENT", "Expected indented block for flow steps")
+    steps = parse_flow_steps(parser)
+    parser._expect("DEDENT", "Expected end of flow steps")
     while parser._match("NEWLINE"):
         pass
     return ast.Flow(
         name=name_tok.value,
-        body=body,
+        body=[],
         requires=requires_expr,
         audited=audited,
+        declarative=True,
+        steps=steps,
         line=flow_tok.line,
         column=flow_tok.column,
     )

@@ -1,0 +1,47 @@
+[
+  {
+    "canonical_events": [],
+    "flow_id": "flow:create_note",
+    "flow_name": "create_note",
+    "memory_events": [],
+    "title": "Flow Start",
+    "type": "flow_start"
+  },
+  {
+    "canonical_events": [],
+    "fields": [
+      "name"
+    ],
+    "flow_id": "flow:create_note",
+    "flow_name": "create_note",
+    "memory_events": [],
+    "ordinal": 1,
+    "status": "ran",
+    "step_id": "flow:create_note.input.01",
+    "step_kind": "input",
+    "title": "Flow Step",
+    "type": "flow_step",
+    "what": "input",
+    "why": "action \"page.home.button.add\" ran flow \"create_note\""
+  },
+  {
+    "canonical_events": [],
+    "changes": {
+      "fields": [
+        "name"
+      ],
+      "record": "Note"
+    },
+    "flow_id": "flow:create_note",
+    "flow_name": "create_note",
+    "memory_events": [],
+    "ordinal": 2,
+    "status": "ran",
+    "step_id": "flow:create_note.create.02",
+    "step_kind": "create",
+    "title": "Flow Step",
+    "type": "flow_step",
+    "what": "create \"Note\"",
+    "why": "action \"page.home.button.add\" ran flow \"create_note\""
+  }
+]

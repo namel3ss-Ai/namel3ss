@@ -23,7 +23,10 @@ def test_button_calls_missing_flow():
     '''
     with pytest.raises(Namel3ssError) as exc:
         lower_ir_program(source)
-    assert "unknown flow" in str(exc.value).lower()
+    message = str(exc.value).lower()
+    assert "unknown flow" in message
+    assert "calls flow" in message
+    assert "runs" in message
 
 
 def test_illegal_statement_in_page_block_errors():

@@ -1,0 +1,168 @@
+{
+  "actions": {
+    "page.home.composer.2.0.composer": {
+      "flow": "ask_ai",
+      "id": "page.home.composer.2.0.composer",
+      "type": "call_flow"
+    }
+  },
+  "pages": [
+    {
+      "elements": [
+        {
+          "column": 3,
+          "element_id": "page.home.title.0",
+          "index": 0,
+          "line": 29,
+          "page": "home",
+          "page_slug": "home",
+          "type": "title",
+          "value": "{{PROJECT_NAME}}"
+        },
+        {
+          "column": 3,
+          "element_id": "page.home.text.1",
+          "index": 1,
+          "line": 30,
+          "page": "home",
+          "page_slug": "home",
+          "type": "text",
+          "value": "ask the assistant and see why it answered."
+        },
+        {
+          "children": [
+            {
+              "action": {
+                "flow": "ask_ai",
+                "type": "call_flow"
+              },
+              "action_id": "page.home.composer.2.0.composer",
+              "column": 5,
+              "element_id": "page.home.composer.2.0",
+              "flow": "ask_ai",
+              "id": "page.home.composer.2.0.composer",
+              "index": 0,
+              "line": 32,
+              "page": "home",
+              "page_slug": "home",
+              "type": "composer"
+            }
+          ],
+          "column": 3,
+          "element_id": "page.home.chat.2",
+          "index": 2,
+          "line": 31,
+          "page": "home",
+          "page_slug": "home",
+          "type": "chat"
+        },
+        {
+          "children": [
+            {
+              "column": 5,
+              "element_id": "page.home.text.3.0",
+              "index": 0,
+              "line": 34,
+              "page": "home",
+              "page_slug": "home",
+              "type": "text",
+              "value": "answers include a why field in the table below."
+            },
+            {
+              "children": [
+                {
+                  "column": 7,
+                  "columns": [
+                    {
+                      "name": "message",
+                      "type": "text"
+                    }
+                  ],
+                  "element_id": "page.home.table.3.1.0",
+                  "id": "page.home.table.prompt",
+                  "index": 0,
+                  "line": 36,
+                  "page": "home",
+                  "page_slug": "home",
+                  "record": "Prompt",
+                  "rows": [],
+                  "type": "table"
+                }
+              ],
+              "column": 5,
+              "element_id": "page.home.card.3.1",
+              "index": 1,
+              "label": "prompts",
+              "line": 35,
+              "page": "home",
+              "page_slug": "home",
+              "type": "card"
+            },
+            {
+              "children": [
+                {
+                  "column": 7,
+                  "columns": [
+                    {
+                      "name": "prompt",
+                      "type": "text"
+                    },
+                    {
+                      "name": "reply",
+                      "type": "text"
+                    },
+                    {
+                      "name": "why",
+                      "type": "text"
+                    }
+                  ],
+                  "element_id": "page.home.table.3.2.0",
+                  "id": "page.home.table.answer",
+                  "index": 0,
+                  "line": 38,
+                  "page": "home",
+                  "page_slug": "home",
+                  "record": "Answer",
+                  "rows": [],
+                  "type": "table"
+                }
+              ],
+              "column": 5,
+              "element_id": "page.home.card.3.2",
+              "index": 2,
+              "label": "answers",
+              "line": 37,
+              "page": "home",
+              "page_slug": "home",
+              "type": "card"
+            }
+          ],
+          "column": 3,
+          "element_id": "page.home.section.3",
+          "index": 3,
+          "label": "records",
+          "line": 33,
+          "page": "home",
+          "page_slug": "home",
+          "type": "section"
+        }
+      ],
+      "name": "home",
+      "slug": "home"
+    }
+  ],
+  "theme": {
+    "current": "light",
+    "effective": "light",
+    "persisted_current": null,
+    "preference": {
+      "allow_override": false,
+      "persist": "none"
+    },
+    "runtime_supported": false,
+    "schema_version": "1",
+    "setting": "light",
+    "source": "app",
+    "tokens": {}
+  }
+}

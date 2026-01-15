@@ -1,0 +1,14 @@
+spec is "1.0"
+
+record "Note":
+  name is text
+
+flow "create_note"
+  input
+    name is text
+  create "Note"
+    name is input.name
+
+page "home":
+  button "Add":
+    calls flow "create_note"

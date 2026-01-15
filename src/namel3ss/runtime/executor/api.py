@@ -63,6 +63,7 @@ def execute_program_flow(
     preference_key: str | None = None,
     config: AppConfig | None = None,
     identity: dict | None = None,
+    action_id: str | None = None,
 ) -> ExecutionResult:
     validate_spec_version(program)
     flow = next((f for f in program.flows if f.name == flow_name), None)
@@ -110,6 +111,7 @@ def execute_program_flow(
         identity=identity,
         project_root=resolved_root,
         app_path=getattr(program, "app_path", None),
+        flow_action_id=action_id,
     )
     module_traces = getattr(program, "module_traces", None)
     if module_traces:

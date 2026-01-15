@@ -4,6 +4,7 @@ from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
 from namel3ss.ir.lowering.expressions import _lower_expression
+from namel3ss.ir.lowering.flow_refs import unknown_flow_message
 
 _ALLOWED_MEMORY_LANES = {"my", "team", "system"}
 
@@ -24,7 +25,7 @@ def _lower_chat_child(child: ast.PageItem, flow_names: set[str], page_name: str)
     if isinstance(child, ast.ChatComposerItem):
         if child.flow_name not in flow_names:
             raise Namel3ssError(
-                f"Page '{page_name}' references unknown flow '{child.flow_name}'",
+                unknown_flow_message(child.flow_name, flow_names, page_name),
                 line=child.line,
                 column=child.column,
             )

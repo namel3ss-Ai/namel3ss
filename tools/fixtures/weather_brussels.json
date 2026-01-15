@@ -1,0 +1,20 @@
+{
+  "days": [
+    {
+      "date": "2024-05-01",
+      "condition": "Sunny",
+      "temperature": 27
+    },
+    {
+      "date": "2024-05-02",
+      "condition": "Partly cloudy",
+      "temperature": 24
+    },
+    {
+      "date": "2024-05-03",
+      "condition": "Light rain",
+      "temperature": 22
+    }
+  ],
+  "last_updated": "2024-01-01T00:00:00Z"
+}

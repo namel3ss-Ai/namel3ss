@@ -8,7 +8,6 @@ def test_readme_links_present():
         "docs/first-5-minutes.md",
         "docs/what-you-can-build-today.md",
         "docs/stability.md",
-        "examples/",
         "resources/limitations.md",
     ]
     for link in required_links:

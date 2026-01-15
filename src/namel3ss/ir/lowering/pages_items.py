@@ -7,6 +7,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir.lowering.expressions import _lower_expression
 from namel3ss.ir.lowering.page_actions import _validate_overlay_action
+from namel3ss.ir.lowering.flow_refs import unknown_flow_message
 from namel3ss.ir.lowering.page_chart import _lower_chart_item
 from namel3ss.ir.lowering.page_chat import _lower_chat_item
 from namel3ss.ir.lowering.page_form import _lower_form_fields, _lower_form_groups
@@ -61,6 +62,8 @@ def _unknown_record_message(name: str, record_map: dict[str, schema.RecordSchema
     suggestion = difflib.get_close_matches(name, record_map.keys(), n=1, cutoff=0.6)
     hint = f' Did you mean "{suggestion[0]}"?' if suggestion else ""
     return f"Page references unknown record '{name}'.{hint}"
+
+
 
 
 def _lower_page_item(
@@ -277,7 +280,7 @@ def _lower_page_item(
     if isinstance(item, ast.ButtonItem):
         if item.flow_name not in flow_names:
             raise Namel3ssError(
-                f"Page '{page_name}' references unknown flow '{item.flow_name}'",
+                unknown_flow_message(item.flow_name, flow_names, page_name),
                 line=item.line,
                 column=item.column,
             )
@@ -462,7 +465,7 @@ def _lower_card_actions(
         if action.kind == "call_flow":
             if action.flow_name not in flow_names:
                 raise Namel3ssError(
-                    f"Page '{page_name}' references unknown flow '{action.flow_name}'",
+                    unknown_flow_message(action.flow_name, flow_names, page_name),
                     line=action.line,
                     column=action.column,
                 )

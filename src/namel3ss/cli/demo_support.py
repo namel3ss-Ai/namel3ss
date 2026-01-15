@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 DEMO_MARKER = ".namel3ss/demo.json"
-CLEARORDERS_NAME = "ClearOrders"
+DEMO_NAME = "demo"
 
 
 def load_demo_marker(project_root: Path) -> dict | None:
@@ -17,12 +17,12 @@ def load_demo_marker(project_root: Path) -> dict | None:
         return None
 
 
-def is_clearorders_demo(project_root: Path) -> bool:
+def is_demo_project(project_root: Path) -> bool:
     marker = load_demo_marker(project_root)
     if not marker:
         return False
     name = str(marker.get("name", ""))
-    return name.lower() == CLEARORDERS_NAME.lower()
+    return name.lower() == DEMO_NAME.lower()
 
 
-__all__ = ["CLEARORDERS_NAME", "DEMO_MARKER", "is_clearorders_demo", "load_demo_marker"]
+__all__ = ["DEMO_MARKER", "DEMO_NAME", "is_demo_project", "load_demo_marker"]

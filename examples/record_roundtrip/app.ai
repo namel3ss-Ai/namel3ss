@@ -1,9 +1,0 @@
-spec is "1.0"
-
-record "Note":
-  field "text" is text must be present
-
-flow "demo":
-  set state.note.text is "hello"
-  create "Note" with state.note as note
-  return note.text

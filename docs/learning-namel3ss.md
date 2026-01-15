@@ -63,13 +63,13 @@ Use `n3 status` for the last run summary, `n3 explain` for failures, and
 ### 1) Scaffold a project
 ```bash
 n3 doctor
-n3 new crud my_app
+n3 new starter my_app
 cd my_app
 ```
 
-If you want the agent-first path, start with Agent Lab:
+If you want the demo path, start with the demo template:
 ```bash
-n3 new agent-lab demo
+n3 new demo demo
 cd demo
 ```
 
@@ -122,7 +122,7 @@ title is "Customer Dashboard"
 #### References
 - [Quickstart](quickstart.md)
 - [First 5 minutes](first-5-minutes.md)
-- [Demo: CRUD dashboard](examples/demo_crud_dashboard.md)
+- Templates: starter and demo (`n3 new starter`, `n3 new demo`)
 - [UI DSL](ui-dsl.md)
 - [Execution how](execution-how.md)
 - [Run outcome](flow-what.md)
@@ -379,8 +379,7 @@ use module "modules/common.ai" as common
 - [Identity and persistence](identity-and-persistence.md)
 - [Modules](modules.md)
 - [Modules and tests](modules-and-tests.md)
-- [Demo: CRUD dashboard](examples/demo_crud_dashboard.md)
-- [Demo: onboarding flow](examples/demo_onboarding_flow.md)
+- Templates: starter and demo (`n3 new starter`, `n3 new demo`)
 
 ## Part IV - AI and Tools
 
@@ -471,7 +470,7 @@ Built-in packs provide reusable tools (text, datetime, file). Declaring the tool
 - [Tool packs](tool-packs.md)
 - [Capabilities](capabilities.md)
 - [Tools explainability](tools-with.md)
-- [Demo: AI assistant over records](examples/demo_ai_assistant_over_records.md)
+- Templates: starter and demo (`n3 new starter`, `n3 new demo`)
 
 ## Part V - Memory (Conceptual First)
 

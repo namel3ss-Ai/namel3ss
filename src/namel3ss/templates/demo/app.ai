@@ -1,0 +1,38 @@
+spec is "1.0"
+
+ai "assistant":
+  provider is "mock"
+  model is "mock-model"
+  system_prompt is "DEMO_SYSTEM_PROMPT"
+
+record "Prompt":
+  field "message" is text must be present
+
+record "Answer":
+  field "prompt" is text must be present
+  field "reply" is text must be present
+  field "why" is text must be present
+
+flow "ask_ai":
+  ask ai "assistant" with input: input.message as reply
+  set state.prompt with:
+    message is input.message
+  create "Prompt" with state.prompt as prompt
+  set state.answer with:
+    prompt is input.message
+    reply is reply
+    why is "ai boundary: provider=DEMO_PROVIDER, model=DEMO_MODEL"
+  create "Answer" with state.answer as answer
+  return reply
+
+page "home":
+  title is "{{PROJECT_NAME}}"
+  text is "ask the assistant and see why it answered."
+  chat:
+    composer calls flow "ask_ai"
+  section "records":
+    text is "answers include a why field in the table below."
+    card "prompts":
+      table is "Prompt"
+    card "answers":
+      table is "Answer"

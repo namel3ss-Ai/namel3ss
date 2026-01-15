@@ -1,7 +1,0 @@
-tools:
-  "agent_wow.handoff create":
-    kind: "python"
-    entry: "tools.handoff_admin:create_handoff"
-  "agent_wow.handoff apply":
-    kind: "python"
-    entry: "tools.handoff_admin:apply_handoff"

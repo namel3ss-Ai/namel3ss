@@ -1,7 +1,0 @@
-{
-  "name": "shared",
-  "version": "0.1.0",
-  "source": "github:owner/shared@v0.1.0",
-  "license_file": "LICENSE",
-  "checksums": "checksums.json"
-}

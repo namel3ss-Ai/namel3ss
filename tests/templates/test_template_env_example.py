@@ -2,17 +2,12 @@ from pathlib import Path
 
 
 TEMPLATE_ROOT = Path("src/namel3ss/templates")
-TEMPLATES_WITH_AI = ["ai_assistant", "clear_orders", "multi_agent"]
+TEMPLATES_WITH_AI = ["demo"]
 EXPECTED_KEYS = [
+    "N3_DEMO_PROVIDER=",
+    "N3_DEMO_MODEL=",
     "NAMEL3SS_OPENAI_API_KEY=",
     "OPENAI_API_KEY=",
-    "NAMEL3SS_ANTHROPIC_API_KEY=",
-    "ANTHROPIC_API_KEY=",
-    "NAMEL3SS_GEMINI_API_KEY=",
-    "GEMINI_API_KEY=",
-    "GOOGLE_API_KEY=",
-    "NAMEL3SS_MISTRAL_API_KEY=",
-    "MISTRAL_API_KEY=",
 ]
 
 

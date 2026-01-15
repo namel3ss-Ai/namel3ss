@@ -160,26 +160,23 @@ Common PATH locations:
 - Windows: `C:\Users\<User>\AppData\Local\Programs\Python\PythonXY\Scripts` or `%APPDATA%\Python\PythonXY\Scripts`
 - macOS/Linux: `~/.local/bin`
 
-On first run, the browser opens a working application with:
+On first run, the browser opens the demo template with:
 
-- an orders dataset
-- an AI query flow
+- prompt + answer records
+- mock ai by default
+- why/explain fields stored alongside answers
+
+## About the demo template
+
+the demo template is the reference experience for namel3ss.
+
+it is intentionally minimal.
+
+it exists to demonstrate:
+
+- explicit ai boundaries over records
 - deterministic execution and traceable decisions
-
-## About ClearOrders
-
-ClearOrders is the reference experience for namel3ss.
-
-It is intentionally not minimal.
-
-It exists to demonstrate:
-
-- AI operating over structured records
-- explicit AI boundaries and deterministic execution
-- explainable "Explain" outputs
-- governed, inspectable memory
-
-Understanding ClearOrders is sufficient to understand the core model of namel3ss.
+- explainable "why" fields captured in data
 
 Grammar and compatibility:
 - Grammar and semantics are frozen and phase-aware; see `docs/language/grammar_contract.md`.
@@ -299,10 +296,7 @@ Expect breaking changes between alpha revisions, but grammar, execution phases, 
 - [Quickstart](docs/quickstart.md)
 - [First 5 minutes](docs/first-5-minutes.md)
 - [What you can build today](docs/what-you-can-build-today.md)
-- [Examples](examples/)
-- [Demo: CRUD dashboard](docs/examples/demo_crud_dashboard.md)
-- [Demo: onboarding flow](docs/examples/demo_onboarding_flow.md)
-- [Demo: AI assistant over records](docs/examples/demo_ai_assistant_over_records.md)
+- Templates: starter and demo (`n3 new starter`, `n3 new demo`)
 - [Documentation directory](docs/)
 
 ### UI

@@ -7,7 +7,7 @@ from namel3ss.cli.app_loader import load_program
 from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.cli.devex import parse_project_overrides
 from namel3ss.cli.builds import app_path_from_metadata, load_build_metadata, read_latest_build_id
-from namel3ss.cli.demo_support import CLEARORDERS_NAME, is_clearorders_demo
+from namel3ss.cli.demo_support import DEMO_NAME, is_demo_project
 from namel3ss.cli.first_run import is_first_run
 from namel3ss.cli.open_url import open_url, should_open_url
 from namel3ss.cli.promotion_state import load_state
@@ -22,6 +22,7 @@ from namel3ss.cli.text_output import prepare_cli_text, prepare_first_run_text
 from namel3ss.secrets import set_audit_root, set_engine_target
 from namel3ss.traces.plain import format_plain
 from namel3ss.traces.schema import TraceEventType
+from namel3ss.utils.json_tools import dumps_pretty
 
 
 def run_run_command(args: list[str]) -> int:
@@ -37,7 +38,7 @@ def run_run_command(args: list[str]) -> int:
         project_root = app_path.parent
         first_run = is_first_run(project_root, args)
         demo_default = None
-        is_demo = params.target_raw is None and is_clearorders_demo(project_root)
+        is_demo = params.target_raw is None and is_demo_project(project_root)
         if is_demo:
             demo_default = "service"
         target = parse_target(params.target_raw or demo_default)
@@ -72,7 +73,7 @@ def run_run_command(args: list[str]) -> int:
                 url = f"http://127.0.0.1:{port}/"
                 demo_provider = _detect_demo_provider(run_path)
                 if first_run:
-                    print(f"Running {CLEARORDERS_NAME}")
+                    print(f"Running {DEMO_NAME}")
                     print(f"Open: {url}")
                     if demo_provider == "openai":
                         print("AI provider: OpenAI")
@@ -80,7 +81,7 @@ def run_run_command(args: list[str]) -> int:
                     if should_open_url(params.no_open):
                         open_url(url)
                 else:
-                    print(f"Running {CLEARORDERS_NAME} at: {url}")
+                    print(f"Running {DEMO_NAME} at: {url}")
                     if demo_provider == "openai":
                         print("AI provider: OpenAI")
                     print("Press Ctrl+C to stop.")
@@ -242,7 +243,12 @@ def _print_explain_traces(output: dict) -> None:
     if not isinstance(traces, list):
         print("Explain traces: none")
         return
-    explain = [trace for trace in traces if trace.get("type") == TraceEventType.EXPRESSION_EXPLAIN]
+    explain_types = {
+        TraceEventType.EXPRESSION_EXPLAIN,
+        TraceEventType.FLOW_START,
+        TraceEventType.FLOW_STEP,
+    }
+    explain = [trace for trace in traces if trace.get("type") in explain_types]
     if not explain:
         print("Explain traces: none")
         return

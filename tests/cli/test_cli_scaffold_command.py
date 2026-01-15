@@ -22,20 +22,6 @@ def _assert_bracketless(text: str) -> None:
         assert ch not in text
 
 
-def test_new_crud_scaffolds(tmp_path, monkeypatch, capsys):
-    monkeypatch.chdir(tmp_path)
-    code = main(["new", "crud", "my_app"])
-    out = capsys.readouterr().out
-    project_dir = tmp_path / "my_app"
-    assert code == 0
-    assert project_dir.exists()
-    assert "Created project" in out
-    _validate_app_file(project_dir / "app.ai")
-    readme = (project_dir / "README.md").read_text(encoding="utf-8")
-    assert "{{PROJECT_NAME}}" not in readme
-    assert "my_app" in readme
-
-
 def test_new_starter_scaffolds(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     code = main(["new", "starter", "first_run"])
@@ -83,12 +69,15 @@ def test_new_demo_defaults_to_mock(tmp_path, monkeypatch):
     project_dir = tmp_path / "demo_app"
     assert code == 0
     source = (project_dir / "app.ai").read_text(encoding="utf-8")
+    readme = (project_dir / "README.md").read_text(encoding="utf-8")
     assert 'provider is "mock"' in source
     assert 'model is "mock-model"' in source
     assert "DEMO_PROVIDER" not in source
     assert "DEMO_MODEL" not in source
     assert "DEMO_SYSTEM_PROMPT" not in source
     assert (project_dir / ".env.example").exists()
+    assert "{{PROJECT_NAME}}" not in readme
+    assert "demo_app" in readme
 
 
 def test_new_demo_openai_env_controls_provider_and_model(tmp_path, monkeypatch):
@@ -107,17 +96,6 @@ def test_new_demo_openai_env_controls_provider_and_model(tmp_path, monkeypatch):
     assert "N3_DEMO_MODEL=gpt-4o-mini" not in env_example
 
 
-def test_new_ai_assistant_defaults_name(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    code = main(["new", "ai-assistant"])
-    project_dir = tmp_path / "ai_assistant"
-    assert code == 0
-    assert project_dir.exists()
-    _validate_app_file(project_dir / "app.ai")
-    readme = (project_dir / "README.md").read_text(encoding="utf-8")
-    assert "ai_assistant" in readme
-
-
 def test_new_unknown_template_errors(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     code = main(["new", "unknown"])
@@ -129,11 +107,11 @@ def test_new_unknown_template_errors(tmp_path, monkeypatch, capsys):
 
 def test_new_existing_directory_errors(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
-    project_dir = tmp_path / "crud"
+    project_dir = tmp_path / "starter"
     project_dir.mkdir()
     sentinel = project_dir / "keep.txt"
     sentinel.write_text("do not remove", encoding="utf-8")
-    code = main(["new", "crud", "crud"])
+    code = main(["new", "starter", "starter"])
     captured = capsys.readouterr()
     assert code == 1
     assert "already exists" in captured.err
@@ -147,5 +125,5 @@ def test_new_lists_templates(capsys):
     assert code == 0
     out = captured.out
     assert "Available templates" in out
-    for name in ["demo", "starter", "crud", "ai-assistant", "multi-agent", "agent-wow"]:
+    for name in ["demo", "starter"]:
         assert name in out

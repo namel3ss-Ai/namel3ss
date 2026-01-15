@@ -67,9 +67,7 @@ _CAPABILITIES = (
             "tests/spec_freeze/test_parser_golden.py",
             "tests/spec_freeze/test_ir_golden.py",
         ),
-        examples=(
-            "examples/demo_crud_dashboard.ai",
-        ),
+        examples=(),
     ),
     _cap(
         cap_id="compute.core",
@@ -81,9 +79,7 @@ _CAPABILITIES = (
             "tests/runtime/test_runtime_operator_precedence.py",
             "tests/runtime/test_repeat_while_limit.py",
         ),
-        examples=(
-            "examples/demo_order_totals.ai",
-        ),
+        examples=(),
     ),
     _cap(
         cap_id="compute.collections",
@@ -93,9 +89,7 @@ _CAPABILITIES = (
         tests=(
             "tests/runtime/test_list_map_operations.py",
         ),
-        examples=(
-            "examples/demo_order_totals.ai",
-        ),
+        examples=(),
     ),
     _cap(
         cap_id="runtime.tools",
@@ -105,9 +99,7 @@ _CAPABILITIES = (
         tests=(
             "tests/runtime/test_tool_e2e.py",
         ),
-        examples=(
-            "examples/tool_usage/app.ai",
-        ),
+        examples=(),
     ),
     _cap(
         cap_id="runtime.ai",
@@ -118,9 +110,7 @@ _CAPABILITIES = (
             "tests/runtime/test_ai_execution.py",
             "tests/runtime/test_agents_parallel.py",
         ),
-        examples=(
-            "examples/demo_multi_agent_orchestration.ai",
-        ),
+        examples=(),
     ),
     _cap(
         cap_id="runtime.memory",
@@ -130,9 +120,7 @@ _CAPABILITIES = (
         tests=(
             "tests/traces/test_memory_trace_golden.py",
         ),
-        examples=(
-            "examples/demo_ai_assistant_over_records.ai",
-        ),
+        examples=(),
     ),
     _cap(
         cap_id="runtime.modules",
@@ -142,9 +130,7 @@ _CAPABILITIES = (
         tests=(
             "tests/modules/test_module_resolver.py",
         ),
-        examples=(
-            "examples/reuse_modules/app.ai",
-        ),
+        examples=(),
     ),
     _cap(
         cap_id="runtime.memory_packs",
@@ -167,9 +153,7 @@ _CAPABILITIES = (
             "tests/runtime/test_parallel_execution.py",
             "tests/traces/test_parallel_trace_golden.py",
         ),
-        examples=(
-            "examples/demo_product_dashboard.ai",
-        ),
+        examples=(),
     ),
     _cap(
         cap_id="runtime.traces",
@@ -179,9 +163,7 @@ _CAPABILITIES = (
         tests=(
             "tests/spec_freeze/test_trace_contracts.py",
         ),
-        examples=(
-            "examples/control_flow/app.ai",
-        ),
+        examples=(),
     ),
     _cap(
         cap_id="runtime.provider_coverage",

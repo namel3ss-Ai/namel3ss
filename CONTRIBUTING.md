@@ -81,7 +81,7 @@ If you change language/engine/parsing, update examples and integration tests acc
 - `docs/language/grammar_contract.md` — frozen grammar/semantics (do not change without RFC).
 - `docs/language/backward_compatibility.md` — policy for breaking/compatible changes.
 - `docs/language/rfc_process.md` — when/how to propose breaking or semantic changes.
-- `src/namel3ss/templates/` and `examples/` — onboarding surfaces; must pass STATIC validation.
+- `src/namel3ss/templates/` — onboarding surfaces; must pass STATIC validation.
 
 Quick reminders:
 - File size: ≤500 LOC; split near 400 with folder-first naming.

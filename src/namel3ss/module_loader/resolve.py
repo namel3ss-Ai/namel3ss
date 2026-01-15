@@ -4,7 +4,7 @@ from typing import Dict, Iterable
 
 from namel3ss.ast import nodes as ast
 from namel3ss.module_loader.resolve_names import qualify, resolve_name
-from namel3ss.module_loader.resolve_walk import resolve_page_item, resolve_statements
+from namel3ss.module_loader.resolve_walk import resolve_flow_steps, resolve_page_item, resolve_statements
 from namel3ss.module_loader.types import ModuleExports
 
 
@@ -62,6 +62,15 @@ def resolve_program(
             exports_map=exports_map,
             context_label=context_label,
         )
+        if getattr(flow, "steps", None):
+            resolve_flow_steps(
+                flow.steps,
+                module_name=module_name,
+                alias_map=alias_map,
+                local_defs=local_defs,
+                exports_map=exports_map,
+                context_label=context_label,
+            )
     for page in program.pages:
         page.name = qualify(module_name, page.name)
         for item in page.items:

@@ -33,6 +33,23 @@ page "home":
   form is "User"
 '''.lstrip()
 
+DECLARATIVE_SOURCE = '''
+spec is "1.0"
+
+record "Note":
+  name is text
+
+flow "create_note"
+  input
+    name is text
+  create "Note"
+    name is input.name
+
+page "home":
+  button "Add":
+    calls flow "create_note"
+'''.lstrip()
+
 
 def _assert_parity(cli_payload: dict, studio_payload: dict) -> None:
     assert cli_payload["ok"] == studio_payload["ok"]
@@ -114,3 +131,55 @@ def test_static_manifest_helper_matches_studio(tmp_path: Path) -> None:
     assert helper_manifest.get("pages") == studio_manifest.get("pages")
     studio_warnings = studio_manifest.get("warnings") or []
     assert len(warnings) == len(studio_warnings)
+
+
+def test_cli_studio_parity_declarative_action(tmp_path: Path) -> None:
+    app_file = tmp_path / "app.ai"
+    app_file.write_text(DECLARATIVE_SOURCE, encoding="utf-8")
+    program, sources = load_program(app_file.as_posix())
+    payload = {"name": "Ada"}
+
+    cli_payload = run_action(program, "page.home.button.add", payload)
+
+    studio_payload = execute_action(
+        DECLARATIVE_SOURCE,
+        SessionState(),
+        "page.home.button.add",
+        payload,
+        app_path=app_file.as_posix(),
+    )
+
+    _assert_parity(cli_payload, studio_payload)
+    cli_flow = [trace for trace in cli_payload["contract"]["traces"] if trace.get("type") in {"flow_start", "flow_step"}]
+    studio_flow = [trace for trace in studio_payload["contract"]["traces"] if trace.get("type") in {"flow_start", "flow_step"}]
+    assert cli_flow == studio_flow
+
+
+def test_static_manifest_declarative_warning_parity(tmp_path: Path) -> None:
+    source = '''
+spec is "1.0"
+
+record "Note":
+  name is text
+
+flow "create_note"
+  require "manual review"
+  create "Note"
+    name is "Ada"
+
+page "home":
+  button "Add":
+    calls flow "create_note"
+'''.lstrip()
+    app_file = tmp_path / "app.ai"
+    app_file.write_text(source, encoding="utf-8")
+    program, _ = load_program(app_file.as_posix())
+    config = load_config(app_path=app_file)
+    warnings: list = []
+    build_static_manifest(program, config=config, state={}, store=MemoryStore(), warnings=warnings)
+
+    studio_manifest = get_ui_payload(source, SessionState(), app_path=app_file.as_posix())
+    studio_warnings = studio_manifest.get("warnings") or []
+
+    assert len(warnings) == len(studio_warnings)
+    assert warnings[0].code == studio_warnings[0].get("code")

@@ -70,6 +70,8 @@ class TraceEventType:
     AGENT_MERGE_REJECTED = "agent_merge_rejected"
     AGENT_MERGE_SUMMARY = "agent_merge_summary"
     EXPRESSION_EXPLAIN = "expression_explain"
+    FLOW_START = "flow_start"
+    FLOW_STEP = "flow_step"
 
 
 __all__ = ["TRACE_VERSION", "TraceEventType"]

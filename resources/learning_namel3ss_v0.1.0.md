@@ -102,15 +102,15 @@ The Studio opens a local web UI where you can view pages, see actions, execute t
 
 ### Creating new projects with templates
 
-To scaffold a new project quickly, use the n3 new command. For example, to create a CRUD dashboard:
+To scaffold a new project quickly, use the n3 new command. For example, to create a starter app:
 
 ```
-n3 new crud my_app
+n3 new starter my_app
 cd my_app
 n3 app.ai studio
 ```
 
-The project directory contains an app.ai file and a README.md with instructions. The crud template includes a record with validation and a page with forms and tables. Namel3ss also provides templates for an AI assistant over records and a multi‑agent workflow.
+The project directory contains an app.ai file and a README.md with instructions. The starter template includes a minimal record and page. The demo template shows a small AI flow with an explicit boundary.
 
 ### Running flows, UI and actions
 
@@ -140,7 +140,7 @@ Large codebases may have multiple .ai files, each under 500 LOC. The CI checks l
 
 ### Templates
 
-Namel3ss includes packaged templates under src/namel3ss/templates/ for crud, ai assistant and multi‑agent. When scaffolding via n3 new , these templates are copied into your project and placeholders like {{PROJECT_NAME}} are replaced. Each template contains a .gitignore that ignores .env , so you can place API keys locally without committing them.
+Packaged templates live under src/namel3ss/templates/ for starter and demo. When scaffolding via n3 new, these templates are copied into your project and placeholders like {{PROJECT_NAME}} are replaced. Each template contains a .gitignore that ignores .env, so you can place API keys locally without committing them.
 
 ### Config and Secrets
 
@@ -811,7 +811,7 @@ A quick reference to all the key terms in Namel3ss:
 - formatter — A tool that rewrites code into canonical form.
 - linter — A tool that analyses code for best practices and potential issues.
 - Studio — A web interface for viewing pages, executing actions, inspecting state and traces, and making safe edits.
-- template — A predefined project scaffold (crud, ai assistant, multi‑agent) used by n3 new .
+- template — A predefined project scaffold (starter, demo) used by n3 new.
 - test — Python or .ai tests that verify correctness. Tests mirror the src directory.
 - error — A structured error with message, code and context. Errors come from validation, engine or parsing.
 - guardrail — A engine limit (e.g. maximum number of agent calls) to prevent misuse.

@@ -7,7 +7,7 @@ from urllib import error, parse, request
 
 from namel3ss_safeio import safe_env_get, safe_open, safe_urlopen
 
-from examples.demos._shared import api_cache, api_resilience
+from tools.shared import api_cache, api_resilience
 
 
 PRIMARY_ENV = "FX_API_KEY"
@@ -23,7 +23,7 @@ RETRY_POLICY = api_resilience.RetryPolicy(max_attempts=3, base_delay=0.2, max_de
 CIRCUIT_FAILURE_THRESHOLD = 2
 CIRCUIT_OPEN_SECONDS = 60
 
-FIXTURE_PATH = Path("examples/demos/currency_converter/fixtures/fx_eur_usd.json")
+FIXTURE_PATH = Path(__file__).resolve().parent / "fixtures" / "fx_eur_usd.json"
 MOCK_UPDATED_AT = "2024-01-01T00:00:00Z"
 MOCK_RATES = {
     "EUR/USD": 1.08,

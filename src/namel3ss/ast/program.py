@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, TYPE_CHECKING
 
 from namel3ss.ast.base import Node
 from namel3ss.ast.modules import CapsuleDecl, UseDecl
 from namel3ss.ast.expressions import Expression
 from namel3ss.ast.identity import IdentityDecl
 from namel3ss.ast.ui_packs import UIPackDecl
+if TYPE_CHECKING:  # pragma: no cover - typing-only
+    from namel3ss.ast.flow_steps import FlowStep
 
 
 @dataclass
@@ -16,6 +18,8 @@ class Flow(Node):
     body: List["Statement"]
     requires: Optional[Expression] = None
     audited: bool = False
+    steps: List["FlowStep"] | None = None
+    declarative: bool = False
 
 
 @dataclass

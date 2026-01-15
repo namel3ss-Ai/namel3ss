@@ -21,6 +21,7 @@ from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.runtime.execution.calc_index import build_calc_assignment_index
 from namel3ss.runtime.memory.api import MemoryManager
 from namel3ss.runtime.storage.factory import resolve_store
+from namel3ss.runtime.flow.runner import run_declarative_flow
 from namel3ss.schema.identity import IdentitySchema
 from namel3ss.schema.records import RecordSchema
 from namel3ss.secrets import collect_secret_values, discover_required_secrets_for_profiles
@@ -55,6 +56,7 @@ class Executor:
         identity: dict | None = None,
         project_root: str | None = None,
         app_path: str | None = None,
+        flow_action_id: str | None = None,
     ) -> None:
         resolved_config = config or load_config()
         default_ai_provider = ai_provider or MockProvider()
@@ -90,6 +92,7 @@ class Executor:
             record_changes=[],
             execution_steps=[],
             execution_step_counter=0,
+            flow_action_id=flow_action_id,
         )
         self.ctx.calc_assignment_index = _load_calc_assignment_index(app_path)
         self.flow = self.ctx.flow
@@ -156,10 +159,13 @@ class Executor:
                 raise
             store_started = True
             try:
-                for idx, stmt in enumerate(self.ctx.flow.body, start=1):
-                    self.ctx.current_statement = stmt
-                    self.ctx.current_statement_index = idx
-                    execute_statement(self.ctx, stmt)
+                if getattr(self.ctx.flow, "declarative", False):
+                    run_declarative_flow(self.ctx)
+                else:
+                    for idx, stmt in enumerate(self.ctx.flow.body, start=1):
+                        self.ctx.current_statement = stmt
+                        self.ctx.current_statement_index = idx
+                        execute_statement(self.ctx, stmt)
             except _ReturnSignal as signal:
                 self.ctx.last_value = signal.value
             if audit_before is not None:

@@ -14,11 +14,12 @@ from namel3ss.runtime.records.service import build_record_scope, save_record_or_
 from namel3ss.runtime.records.state_paths import get_state_record, record_state_path
 from namel3ss.runtime.storage.predicate import PredicatePlan
 from namel3ss.runtime.values.types import type_name_for_value
+from namel3ss.determinism import canonical_json_dumps
 from namel3ss.schema.records import RecordSchema
 from namel3ss.secrets import collect_secret_values
 
 
-def handle_save(ctx: ExecutionContext, stmt: ir.Save) -> None:
+def handle_save(ctx: ExecutionContext, stmt: ir.Save, *, deterministic: bool = False) -> None:
     data_obj = get_state_record(ctx.state, stmt.record_name)
     if not isinstance(data_obj, dict):
         state_path = ".".join(record_state_path(stmt.record_name))
@@ -44,7 +45,7 @@ def handle_save(ctx: ExecutionContext, stmt: ir.Save) -> None:
     ctx.last_value = saved
 
 
-def handle_create(ctx: ExecutionContext, stmt: ir.Create) -> None:
+def handle_create(ctx: ExecutionContext, stmt: ir.Create, *, deterministic: bool = False) -> None:
     values = evaluate_expression(ctx, stmt.values)
     if not isinstance(values, dict):
         raise Namel3ssError(
@@ -84,7 +85,7 @@ def handle_find(ctx: ExecutionContext, stmt: ir.Find) -> None:
     ctx.last_value = results
 
 
-def handle_update(ctx: ExecutionContext, stmt: ir.Update) -> None:
+def handle_update(ctx: ExecutionContext, stmt: ir.Update, *, deterministic: bool = False) -> None:
     if stmt.record_name not in ctx.schemas:
         raise Namel3ssError(
             build_guidance_message(
@@ -112,6 +113,8 @@ def handle_update(ctx: ExecutionContext, stmt: ir.Update) -> None:
     predicate = build_predicate_plan(ctx, schema, stmt.predicate, subject="Update", line=stmt.line, column=stmt.column)
     scope = build_record_scope(schema, ctx.identity)
     results = ctx.store.find(schema, predicate, scope=scope)
+    if deterministic:
+        results = _sorted_records(schema, results)
     updated = 0
     for record in results:
         updated_record = _apply_updates(ctx, record, stmt.updates)
@@ -129,7 +132,7 @@ def handle_update(ctx: ExecutionContext, stmt: ir.Update) -> None:
     ctx.last_value = updated
 
 
-def handle_delete(ctx: ExecutionContext, stmt: ir.Delete) -> None:
+def handle_delete(ctx: ExecutionContext, stmt: ir.Delete, *, deterministic: bool = False) -> None:
     if stmt.record_name not in ctx.schemas:
         raise Namel3ssError(
             build_guidance_message(
@@ -145,6 +148,8 @@ def handle_delete(ctx: ExecutionContext, stmt: ir.Delete) -> None:
     predicate = build_predicate_plan(ctx, schema, stmt.predicate, subject="Delete", line=stmt.line, column=stmt.column)
     scope = build_record_scope(schema, ctx.identity)
     results = ctx.store.find(schema, predicate, scope=scope)
+    if deterministic:
+        results = _sorted_records(schema, results)
     deleted = 0
     id_col = "id" if "id" in schema.field_map else "_id"
     for record in results:
@@ -319,3 +324,17 @@ def _apply_updates(ctx: ExecutionContext, record: dict, updates: list[ir.UpdateF
         return updated
     finally:
         ctx.locals = backup_locals
+
+
+def _sorted_records(schema: RecordSchema, records: list[dict]) -> list[dict]:
+    id_field = "id" if "id" in schema.field_map else "_id"
+    return sorted(records, key=lambda rec: _record_sort_key(rec, id_field=id_field))
+
+
+def _record_sort_key(record: dict, *, id_field: str) -> str:
+    if isinstance(record, dict) and id_field in record:
+        return str(record.get(id_field))
+    try:
+        return canonical_json_dumps(record, pretty=False)
+    except Exception:
+        return str(record)

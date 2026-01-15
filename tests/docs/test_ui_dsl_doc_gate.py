@@ -85,3 +85,9 @@ def test_ui_dsl_spec_exists_and_has_sections():
     assert "Story progression" in text
     assert "Tone must be one of" in text
     assert "Icon must be one of" in text
+    assert "Declarative grammar (no colon form in this surface)" in text
+    assert "Supported steps (closed set for phase 4b)" in text
+    assert "Values are string/number/boolean literals or `input.<field>` only." in text
+    assert "Step ids derive from flow name + step kind + ordinal position." in text
+    assert "No timestamps or random ids in explain traces." in text
+    assert "Branching, loops, expressions/functions" in text

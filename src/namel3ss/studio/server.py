@@ -84,7 +84,7 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
 
 
 def _resolve_repo_static(path_only: str, fallback: Path) -> Path:
-    if path_only.startswith("/docs/") or path_only.startswith("/examples/"):
+    if path_only.startswith("/docs/"):
         repo_root = Path(__file__).resolve().parents[3]
         candidate = repo_root / path_only.lstrip("/")
         return candidate if candidate.exists() else fallback

@@ -8,6 +8,7 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir.lowering.agents import _lower_agents
 from namel3ss.ir.lowering.ai import _lower_ai_decls
 from namel3ss.ir.lowering.flow import lower_flow
+from namel3ss.flow_contract import validate_declarative_flows, validate_flow_names
 from namel3ss.ir.functions.lowering import lower_functions
 from namel3ss.ir.lowering.identity import _lower_identity
 from namel3ss.ir.lowering.pages import _lower_page
@@ -20,6 +21,7 @@ from namel3ss.ir.model.pages import Page
 from namel3ss.ir.model.statements import ThemeChange, If, Repeat, RepeatWhile, ForEach, Match, MatchCase, TryCatch, ParallelBlock
 from namel3ss.schema import records as schema
 from namel3ss.ui.settings import normalize_ui_settings
+from namel3ss.validation import ValidationMode
 
 
 def _statement_has_theme_change(stmt) -> bool:
@@ -68,7 +70,8 @@ def lower_program(program: ast.Program) -> Program:
     function_map = lower_functions(program.functions, agent_map)
     flow_irs: List[Flow] = [lower_flow(flow, agent_map) for flow in program.flows]
     record_map: Dict[str, schema.RecordSchema] = {rec.name: rec for rec in record_schemas}
-    flow_names = {flow.name for flow in flow_irs}
+    flow_names = validate_flow_names(flow_irs)
+    validate_declarative_flows(flow_irs, record_map, mode=ValidationMode.RUNTIME, warnings=None)
     pack_index = build_pack_index(getattr(program, "ui_packs", []))
     pages = [_lower_page(page, record_map, flow_names, pack_index) for page in program.pages]
     _ensure_unique_pages(pages)

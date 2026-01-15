@@ -73,11 +73,11 @@
       ]
     },
     {
-      "id": "template.agent_lab",
-      "version": "agent_lab.v1",
+      "id": "template.demo",
+      "version": "demo.v1",
       "artifacts": [
-        "src/namel3ss/templates/agent_lab/app.ai",
-        "src/namel3ss/templates/agent_lab/modules/agent_lab/capsule.ai"
+        "src/namel3ss/templates/demo/app.ai",
+        "src/namel3ss/templates/demo/manifest/ui.json"
       ]
     }
   ]

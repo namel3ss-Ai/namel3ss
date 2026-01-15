@@ -1,6 +1,0 @@
-spec is "1.0"
-
-capsule "inventory":
-  exports:
-    record "Item"
-    flow "seed_item"

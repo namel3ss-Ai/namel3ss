@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.ir.lowering.flow_refs import unknown_flow_message
 from namel3ss.ir.lowering.page_actions import _validate_overlay_action
 from namel3ss.ir.model.pages import TableColumnDirective, TablePagination, TableRowAction, TableSort
 from namel3ss.schema import records as schema
@@ -132,7 +133,7 @@ def _lower_table_row_actions(
         if action.kind == "call_flow":
             if action.flow_name not in flow_names:
                 raise Namel3ssError(
-                    f"Page '{page_name}' references unknown flow '{action.flow_name}'",
+                    unknown_flow_message(action.flow_name, flow_names, page_name),
                     line=action.line,
                     column=action.column,
                 )

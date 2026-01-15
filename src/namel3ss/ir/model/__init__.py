@@ -1,5 +1,15 @@
 from namel3ss.ir.model.base import Expression, Node, Statement
 from namel3ss.ir.model.program import Flow, Program
+from namel3ss.ir.model.flow_steps import (
+    FlowCreate,
+    FlowDelete,
+    FlowField,
+    FlowInput,
+    FlowInputField,
+    FlowRequire,
+    FlowStep,
+    FlowUpdate,
+)
 from namel3ss.ir.model.statements import (
     Create,
     Delete,

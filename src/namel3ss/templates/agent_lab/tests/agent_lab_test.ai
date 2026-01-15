@@ -1,3 +1,0 @@
-test "agent lab demo":
-  run flow "agent_lab.lab_demo" with input: {"goal": "Draft a 3-step onboarding checklist.", "mode": "single"} as result
-  expect value is "[mock-model] Provide a short plan with 3 steps. :: Draft a 3-step onboarding checklist."

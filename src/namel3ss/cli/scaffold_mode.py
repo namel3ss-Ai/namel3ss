@@ -12,7 +12,7 @@ from namel3ss.format import format_source
 from namel3ss.lint.engine import lint_source
 from namel3ss.pkg.scaffold import scaffold_package
 from namel3ss.resources import templates_root
-from namel3ss.cli.demo_support import CLEARORDERS_NAME, DEMO_MARKER
+from namel3ss.cli.demo_support import DEMO_MARKER, DEMO_NAME
 
 
 @dataclass(frozen=True)
@@ -34,37 +34,15 @@ class TemplateSpec:
 
 TEMPLATES: tuple[TemplateSpec, ...] = (
     TemplateSpec(
+        name="starter",
+        directory="starter",
+        description="minimal app with one record, one flow, and one page.",
+    ),
+    TemplateSpec(
         name="demo",
-        directory="clear_orders",
-        description="ClearOrders demo for explainable answers over structured data.",
-        aliases=("clear-orders", "clear_orders"),
+        directory="demo",
+        description="demo app with records and mock ai for explainable outputs.",
         is_demo=True,
-    ),
-    TemplateSpec(name="starter", directory="starter", description="Small app with one page and one flow."),
-    TemplateSpec(name="crud", directory="crud", description="CRUD dashboard with form and table."),
-    TemplateSpec(
-        name="ai-assistant",
-        directory="ai_assistant",
-        description="AI assistant over records with memory and tooling.",
-        aliases=("ai_assistant",),
-    ),
-    TemplateSpec(
-        name="multi-agent",
-        directory="multi_agent",
-        description="Planner, critic, and researcher agents sharing one assistant.",
-        aliases=("multi_agent",),
-    ),
-    TemplateSpec(
-        name="agent-lab",
-        directory="agent_lab",
-        description="Agent Lab starter with explainable runs and safe tool defaults.",
-        aliases=("agent_lab",),
-    ),
-    TemplateSpec(
-        name="agent-wow",
-        directory="agent_wow",
-        description="Premium multi-agent demo with governed memory handoffs.",
-        aliases=("agent_wow",),
     ),
 )
 
@@ -209,8 +187,8 @@ def _resolve_demo_settings() -> DemoSettings:
     else:
         model = "mock-model"
     system_prompt = (
-        "You are a concise analytics assistant. Answer in 1-3 bullet points. "
-        "If the dataset does not contain enough information, say what is missing."
+        "you are a concise assistant. answer in 1-3 short bullets. "
+        "if the prompt is missing details, say what is missing."
     )
     return DemoSettings(provider=provider, model=model, system_prompt=system_prompt)
 
@@ -220,10 +198,8 @@ def _apply_demo_tokens(contents: str, settings: DemoSettings) -> str:
     replaced = replaced.replace("DEMO_PROVIDER", settings.provider)
     replaced = replaced.replace("DEMO_MODEL", settings.model)
     replaced = replaced.replace("DEMO_SYSTEM_PROMPT", settings.system_prompt)
-    if "DEMO_PROVIDER" not in contents:
-        replaced = replaced.replace('provider is "mock"', f'provider is "{settings.provider}"', 1)
-    if "DEMO_MODEL" not in contents:
-        replaced = replaced.replace('model is "mock-model"', f'model is "{settings.model}"', 1)
+    replaced = replaced.replace('provider is "mock"', f'provider is "{settings.provider}"', 1)
+    replaced = replaced.replace('model is "mock-model"', f'model is "{settings.model}"', 1)
     return replaced
 
 
@@ -248,7 +224,7 @@ def _ensure_demo_marker(target_dir: Path) -> None:
     if marker_path.exists():
         return
     marker_path.parent.mkdir(parents=True, exist_ok=True)
-    payload = {"name": CLEARORDERS_NAME}
+    payload = {"name": DEMO_NAME}
     marker_path.write_text(canonical_json_dumps(payload, pretty=True), encoding="utf-8")
 
 

@@ -1,7 +1,0 @@
-spec is "1.0"
-
-record "Note":
-  message text
-
-flow "demo":
-  return "ok"

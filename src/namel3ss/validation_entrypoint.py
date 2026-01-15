@@ -15,7 +15,8 @@ def build_static_manifest(
     **manifest_kwargs,
 ) -> dict:
     """Canonical static manifest builder shared between CLI and Studio surfaces."""
-    warnings = warnings or []
+    if warnings is None:
+        warnings = []
     identity = resolve_identity(
         config,
         getattr(program_ir, "identity", None),

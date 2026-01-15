@@ -9,31 +9,24 @@ from namel3ss.readability.analyze import analyze_files, render_json, render_text
 
 def _resolve_reference_paths() -> list[Path]:
     references = [
-        Path("src/namel3ss/templates/agent_wow/app.ai"),
-        Path("src/namel3ss/templates/agent_wow/flows.ai"),
-        Path("examples/demo_ai_assistant_over_records.ai"),
-        Path("examples/demo_multi_agent_orchestration.ai"),
+        Path("src/namel3ss/templates/starter/app.ai"),
+        Path("src/namel3ss/templates/demo/app.ai"),
     ]
     resolved: list[Path] = []
     for path in references:
         if path.exists():
             resolved.append(path)
             continue
-        if path.as_posix().endswith("src/namel3ss/templates/agent_wow/flows.ai"):
-            fallback = Path("src/namel3ss/templates/agent_wow/modules/agent_wow/flows.ai")
-            if fallback.exists():
-                resolved.append(fallback)
-                continue
         resolved.append(path)
     return resolved
 
 
 def test_readability_json_is_deterministic_and_sorted() -> None:
-    target = Path("examples/demo_multi_agent_orchestration.ai")
-    report_one = analyze_files([target], analyzed_path="demo_multi_agent_orchestration")
+    target = Path("src/namel3ss/templates/demo/app.ai")
+    report_one = analyze_files([target], analyzed_path="demo_template")
     json_one = render_json(report_one)
     text_one = render_text(report_one)
-    report_two = analyze_files([target], analyzed_path="demo_multi_agent_orchestration")
+    report_two = analyze_files([target], analyzed_path="demo_template")
     json_two = render_json(report_two)
     text_two = render_text(report_two)
     assert json_one == json_two
@@ -87,8 +80,8 @@ def test_readability_report_includes_reference_targets() -> None:
 
 
 def test_readability_text_contains_headings() -> None:
-    target = Path("examples/demo_multi_agent_orchestration.ai")
-    report = analyze_files([target], analyzed_path="demo_multi_agent_orchestration")
+    target = Path("src/namel3ss/templates/demo/app.ai")
+    report = analyze_files([target], analyzed_path="demo_template")
     text = render_text(report)
     assert "Top offenders" in text
     assert "Roadmap mapping" in text

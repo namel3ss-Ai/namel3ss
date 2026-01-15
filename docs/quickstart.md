@@ -8,24 +8,23 @@ Run any `.ai` app with the file-first CLI.
 
 ## Create a project
 
-- Scaffold: `n3 new <template> [project_name]` (templates: `crud`, `ai-assistant`, `multi-agent`, `agent-lab`)
-- Example: `n3 new crud my_app` then `cd my_app`
-- Recommended first win: `n3 new agent-lab demo` then `cd demo`
+- Scaffold: `n3 new <template> [project_name]` (templates: `starter`, `demo`)
+- Example: `n3 new starter my_app` then `cd my_app`
+- Recommended first win: `n3 new demo demo` then `cd demo`
 - The app file lives at `app.ai`; commands below assume you are in the project directory.
 - Multi file apps use module files like `modules/inventory.ai`.
 
-## Agent Lab first win
+## Demo first win
 
 ```bash
-n3 new agent-lab demo
+n3 new demo demo
 cd demo
-n3 app.ai studio
+n3 run
 ```
 
-In Studio:
-- Open **Agents** to run single or parallel modes.
-- Open **Timeline** to see trace-backed summaries.
-- Use **Memory Packs** and **Handoff** panels to inspect memory behavior.
+In the browser:
+- Use the chat composer to ask a question.
+- Review the Answer table for the reply and why fields.
 
 ## Core commands
 
@@ -34,8 +33,8 @@ In Studio:
 - Actions list: `n3 app.ai actions`
 - Studio (local viewer/interactor): `n3 app.ai studio`
 - Run default flow (when only one flow): `n3 app.ai`
-- Run specific flow (CRUD template): `n3 app.ai flow "seed_customers"`
-- Run an action (CRUD template): `n3 app.ai page.home.form.customer '{"values":{"name":"Ada","email":"ada@example.com","age":23}}'`
+- Run specific flow (starter template): `n3 app.ai flow "seed_note"`
+- Run an action (starter template): `n3 app.ai page.home.form.note '{"values":{"summary":"hello","details":"first note"}}'`
 - Run with expression explain traces: `n3 run app.ai --explain`
 - Run tests: `n3 test`
 - Why mode: `n3 why` or `n3 explain --why`
@@ -98,13 +97,12 @@ Memory proof harness (dev):
 2) Click **Tool Wizard** -> fill fields -> Generate (writes `tools/*.py`, `app.ai`, `.namel3ss/tools.yaml`)
 3) Run the flow in Studio or via `n3 app.ai run`
 
-## Demos
+## Templates
 
-Bundled demos under `examples/` you can run immediately:
+Bundled templates you can scaffold immediately:
 
-- CRUD Dashboard: `n3 examples/demo_crud_dashboard.ai studio`
-- Onboarding flow: `n3 examples/demo_onboarding_flow.ai studio`
-- AI assistant over records: `n3 examples/demo_ai_assistant_over_records.ai studio`
+- Starter: `n3 new starter my_app`
+- Demo: `n3 new demo demo`
 
 ## Studio tips
 
@@ -126,7 +124,7 @@ Bundled demos under `examples/` you can run immediately:
 
 ## Next steps
 - Read [First 5 minutes](first-5-minutes.md) for a guided win.
-- Run the [CRUD dashboard example](examples/demo_crud_dashboard.ai) after your first project.
+- Run the demo template after your first project.
 - See [What you can build today](what-you-can-build-today.md) to understand supported use cases.
 - Learn expressions and conditionals in [Expressions & Conditionals](expressions-and-conditionals.md).
 - Learn Capsules + tests in [Modules and Tests](modules-and-tests.md).

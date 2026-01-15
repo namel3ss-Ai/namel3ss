@@ -7,6 +7,7 @@ from copy import deepcopy
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
+from namel3ss.flow_contract import validate_declarative_flows
 from namel3ss.runtime.identity.guards import build_guard_context, enforce_requires
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.storage.metadata import PersistenceMetadata
@@ -35,6 +36,12 @@ def build_manifest(
     mode = ValidationMode.from_value(mode)
     ui_schema_version = "1"
     record_map: Dict[str, schema.RecordSchema] = {rec.name: rec for rec in program.records}
+    validate_declarative_flows(
+        list(getattr(program, "flows", [])),
+        record_map,
+        mode=mode,
+        warnings=warnings,
+    )
     pages = []
     actions: Dict[str, dict] = {}
     taken_actions: set[str] = set()

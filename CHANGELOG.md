@@ -11,7 +11,7 @@ No breaking changes without an explicit changelog entry.
 - Package manifest `namel3ss.toml` and lockfile `namel3ss.lock.json`.
 - GitHub-backed package installs into `packages/` with checksum and license verification.
 - `n3 pkg` commands: add/install/plan/tree/why/verify/licenses (+ `--json`).
-- Packages docs and demo example (`docs/packages.md`, `examples/module_imports/`).
+- Packages docs and demo template (`docs/packages.md`, `src/namel3ss/templates/demo/`).
 - Python tool venv support with per-app `.venv`, dependency detection, and `n3 deps` commands.
 - Tool traces now include python env metadata and dependency source.
 - Studio Tool Wizard for generating python tool skeletons.
@@ -79,7 +79,7 @@ flow "hello":
 - Decimal literals and arithmetic (+ - * /) with deterministic evaluation.
 - If/else conditionals with `is not`, `is at least`, `is at most` comparisons.
 - Canonical record creation: `create "Record" with <values> as <var>`.
-- New examples and docs for expressions/conditionals (see `examples/demo_order_totals.ai`, `docs/expressions-and-conditionals.md`).
+- New docs for expressions/conditionals (see `docs/expressions-and-conditionals.md`).
 
 ### Changed
 - Numeric engine values use Decimal internally; JSON output preserves decimals without rounding.
@@ -114,7 +114,7 @@ flow "hello":
 - Multi-agent workflows (Phase 6): Agent declarations plus sequential/parallel agent execution.
 - CLI, formatter, linter (Phase 7): File-first CLI, formatting rules, linting for grammar/safety.
 - Studio (viewer → interactor → safe edits) (Phase 8): Manifest viewer, action runner, and guarded edits.
-- Templates & scaffolding (Phase 10): `n3 new` with CRUD, AI assistant, and multi-agent templates.
+- Templates & scaffolding (Phase 10): `n3 new` with starter and demo templates.
 
 ### Changed
 

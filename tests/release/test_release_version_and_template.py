@@ -29,7 +29,7 @@ def test_release_version_and_template(monkeypatch, tmp_path):
     assert get_version() == version_text
 
     monkeypatch.chdir(tmp_path)
-    code = main(["new", "crud", "test_app"])
+    code = main(["new", "starter", "test_app"])
     assert code == 0
 
     app_path = tmp_path / "test_app" / "app.ai"

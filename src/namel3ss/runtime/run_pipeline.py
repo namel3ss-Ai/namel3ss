@@ -38,6 +38,7 @@ def build_flow_payload(
     identity: dict | None = None,
     source: str | None = None,
     project_root: str | Path | None = None,
+    action_id: str | None = None,
 ) -> FlowRunOutcome:
     state_value = state if isinstance(state, dict) else {}
     input_value = input if isinstance(input, dict) else {}
@@ -55,6 +56,7 @@ def build_flow_payload(
             preference_key=preference_key,
             config=config,
             identity=identity,
+            action_id=action_id,
         )
     except Exception as err:
         error_payload = _build_error_payload(err, source)

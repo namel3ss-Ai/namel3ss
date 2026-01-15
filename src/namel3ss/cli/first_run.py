@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from namel3ss.cli.demo_support import is_clearorders_demo
+from namel3ss.cli.demo_support import is_demo_project
 
 _TRUTHY = {"1", "true", "yes"}
 
@@ -14,7 +14,7 @@ def is_first_run(project_root: Path | None, args: list[str]) -> bool:
     if _env_first_run():
         return True
     root = project_root or Path.cwd()
-    if root and is_clearorders_demo(root):
+    if root and is_demo_project(root):
         return True
     return False
 

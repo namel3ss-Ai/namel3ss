@@ -78,6 +78,7 @@ def handle_action(
             response, action_error = _handle_call_flow(
                 program_ir,
                 action,
+                action_id,
                 payload or {},
                 working_state,
                 store,
@@ -180,6 +181,7 @@ def _form_error_payload(errors: list[dict]) -> dict:
 def _handle_call_flow(
     program_ir: ir.Program,
     action: dict,
+    action_id: str,
     payload: dict,
     state: dict,
     store: Storage,
@@ -212,6 +214,7 @@ def _handle_call_flow(
         identity=identity,
         source=source,
         project_root=getattr(program_ir, "project_root", None),
+        action_id=action_id,
     )
     response = outcome.payload
     if outcome.error:

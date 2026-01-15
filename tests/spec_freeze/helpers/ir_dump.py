@@ -24,6 +24,10 @@ def _to_data(value: Any, *, field_name: str | None = None) -> Any:
                 continue
             if field.name == "state_defaults" and field_value is None:
                 continue
+            if field.name == "steps" and not field_value:
+                continue
+            if field.name == "declarative" and not field_value:
+                continue
             data[field.name] = _to_data(field_value, field_name=field.name)
         return data
     if isinstance(value, dict):

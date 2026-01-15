@@ -1,6 +1,0 @@
-spec is "1.0"
-
-define function "total":
-  input:
-    x is number
-  return 1

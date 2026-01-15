@@ -12,7 +12,7 @@ APP_SOURCE = '''spec is "1.0"
 record "Order":
   field "order_id" is text must be present
 
-flow "seed_orders":
+flow "seed_demo":
   find "Order" where true
   let existing is list length of order_results
   if existing is greater than 0:
@@ -47,7 +47,7 @@ def test_demo_autoseed_happens_once_when_empty(tmp_path, monkeypatch):
     app_path = _write_app(tmp_path)
     demo_dir = tmp_path / ".namel3ss"
     demo_dir.mkdir()
-    (demo_dir / "demo.json").write_text('{"name":"ClearOrders"}', encoding="utf-8")
+    (demo_dir / "demo.json").write_text('{"name":"demo"}', encoding="utf-8")
     db_path = tmp_path / "demo.db"
     monkeypatch.setenv("N3_PERSIST_TARGET", "sqlite")
     monkeypatch.setenv("N3_DB_PATH", str(db_path))

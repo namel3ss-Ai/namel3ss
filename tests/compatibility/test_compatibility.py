@@ -99,7 +99,7 @@ def test_upgrade_simulation_requires_migration_then_runs():
 def test_packaging_assets_present():
     templates = templates_root()
     assert (templates / "starter" / "app.ai").exists()
-    assert (templates / "clear_orders" / "app.ai").exists()
+    assert (templates / "demo" / "app.ai").exists()
 
     web_root = studio_web_root()
     for name in ("index.html", "app.js", "styles.css"):

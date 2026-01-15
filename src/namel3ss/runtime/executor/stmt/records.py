@@ -27,20 +27,20 @@ def execute_find(ctx, stmt: ir.Find) -> None:
     )
 
 
-def execute_update(ctx, stmt: ir.Update) -> None:
-    _run_record_write(ctx, stmt, handle_update, kind="statement_update", verb="updated")
+def execute_update(ctx, stmt: ir.Update, *, deterministic: bool = False) -> None:
+    _run_record_write(ctx, stmt, handle_update, kind="statement_update", verb="updated", deterministic=deterministic)
 
 
-def execute_delete(ctx, stmt: ir.Delete) -> None:
-    _run_record_write(ctx, stmt, handle_delete, kind="statement_delete", verb="deleted")
+def execute_delete(ctx, stmt: ir.Delete, *, deterministic: bool = False) -> None:
+    _run_record_write(ctx, stmt, handle_delete, kind="statement_delete", verb="deleted", deterministic=deterministic)
 
 
-def _run_record_write(ctx, stmt: ir.Statement, handler, *, kind: str, verb: str) -> None:
+def _run_record_write(ctx, stmt: ir.Statement, handler, *, kind: str, verb: str, deterministic: bool = False) -> None:
     if getattr(ctx, "parallel_mode", False):
         raise Namel3ssError("Parallel tasks cannot write records", line=stmt.line, column=stmt.column)
     if getattr(ctx, "call_stack", []):
         raise Namel3ssError("Functions cannot write records", line=stmt.line, column=stmt.column)
-    handler(ctx, stmt)
+    handler(ctx, stmt, deterministic=deterministic)
     record_step(
         ctx,
         kind=kind,

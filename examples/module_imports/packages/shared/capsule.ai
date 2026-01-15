@@ -1,5 +1,0 @@
-spec is "1.0"
-
-capsule "shared":
-  exports:
-    flow "shared_flow"
