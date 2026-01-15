@@ -110,9 +110,10 @@ UI packs:
 - Validation rules:
   - Step titles must be unique within a story; unknown `next` targets suggest fixes.
   - Cycles are rejected with a clear path.
-  - Tone must be one of: `informative`, `success`, `caution`, `critical`, `neutral`.
-  - Icon must be one of: `info`, `check`, `alert`, `flag`, `calendar`, `clock`, `play`, `user`, `spark`, `list`.
-  - `requires` is declarative gating; when it references `state.<path>`, readiness is derived from state when available and is explainable in manifests and Studio.
+- Tone must be one of: `informative`, `success`, `caution`, `critical`, `neutral`.
+- Icon must be one of: `info`, `check`, `alert`, `flag`, `calendar`, `clock`, `play`, `user`, `spark`, `list`.
+- Built-in icon assets are bundled under `resources/icons/` for engine use; no custom icon references are supported.
+- `requires` is declarative gating; when it references `state.<path>`, readiness is derived from state when available and is explainable in manifests and Studio.
 - Manifest contract:
   - Stable ids for stories and steps derived from page/story/step titles.
 - Step order is preserved; default `next` links follow written order unless overridden.

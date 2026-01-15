@@ -62,5 +62,12 @@ where = ["src"]
 ]
 "namel3ss.studio.web" = ["**/*"]
 
+[tool.setuptools.data-files]
+"resources/icons/actions" = ["resources/icons/actions/*"]
+"resources/icons/navigation" = ["resources/icons/navigation/*"]
+"resources/icons/status" = ["resources/icons/status/*"]
+"resources/icons/tools" = ["resources/icons/tools/*"]
+"resources/icons/data" = ["resources/icons/data/*"]
+
 [project.scripts]
 n3 = "namel3ss.cli.main:main"
