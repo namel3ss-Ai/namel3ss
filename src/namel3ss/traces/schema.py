@@ -4,6 +4,8 @@ TRACE_VERSION = "2024-10-01"
 
 
 class TraceEventType:
+    BOUNDARY_START = "boundary_start"
+    BOUNDARY_END = "boundary_end"
     AI_CALL_STARTED = "ai_call_started"
     AI_CALL_COMPLETED = "ai_call_completed"
     AI_CALL_FAILED = "ai_call_failed"
@@ -64,14 +66,19 @@ class TraceEventType:
     MEMORY_HANDOFF_APPLIED = "memory_handoff_applied"
     MEMORY_HANDOFF_REJECTED = "memory_handoff_rejected"
     MEMORY_AGENT_BRIEFING = "memory_agent_briefing"
+    AGENT_STEP_START = "agent_step_start"
+    AGENT_STEP_END = "agent_step_end"
     AGENT_MERGE_STARTED = "agent_merge_started"
     AGENT_MERGE_CANDIDATE = "agent_merge_candidate"
     AGENT_MERGE_SELECTED = "agent_merge_selected"
     AGENT_MERGE_REJECTED = "agent_merge_rejected"
     AGENT_MERGE_SUMMARY = "agent_merge_summary"
+    MERGE_APPLIED = "merge_applied"
     EXPRESSION_EXPLAIN = "expression_explain"
     FLOW_START = "flow_start"
     FLOW_STEP = "flow_step"
+    MUTATION_ALLOWED = "mutation_allowed"
+    MUTATION_BLOCKED = "mutation_blocked"
 
 
 __all__ = ["TRACE_VERSION", "TraceEventType"]

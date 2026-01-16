@@ -5,7 +5,7 @@ record "Note":
   field "title" is text must be present
   field "body" is text
 
-flow "demo":
+flow "demo": requires true
   set state.note with:
     title is "First"
     body is "Body"

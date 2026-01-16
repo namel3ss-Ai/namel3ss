@@ -8,6 +8,7 @@ from typing import Dict, Tuple
 
 from namel3ss.cli.app_loader import load_program
 from namel3ss.cli.app_path import resolve_app_path
+from namel3ss.cli.builds import read_latest_build_id
 from namel3ss.cli.targets import parse_target
 from namel3ss.cli.targets_store import (
     BUILD_META_FILENAME,
@@ -18,10 +19,43 @@ from namel3ss.cli.targets_store import (
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.determinism import canonical_json_dumps
+from namel3ss.media import MediaValidationMode
 from namel3ss.pkg.lockfile import LOCKFILE_FILENAME
-from namel3ss.utils.json_tools import dumps_pretty
+from namel3ss.resources import package_root, studio_web_root
+from namel3ss.schema.evolution import (
+    build_schema_snapshot,
+    build_snapshot_path,
+    enforce_schema_compatibility,
+    load_schema_snapshot,
+    workspace_snapshot_path,
+)
+from namel3ss.validation import ValidationWarning
+from namel3ss.validation_entrypoint import build_static_manifest
 from namel3ss.version import get_version
 from namel3ss.secrets import set_engine_target, set_audit_root
+from namel3ss.ui.export.actions import build_actions_export
+from namel3ss.ui.export.schema import build_schema_export
+from namel3ss.ui.export.ui import build_ui_export
+
+MANIFEST_FILENAME = "manifest.json"
+UI_DIRNAME = "ui"
+WEB_DIRNAME = "web"
+BUILD_REPORT_JSON = "build_report.json"
+BUILD_REPORT_TEXT = "build_report.txt"
+PROD_HTML_FILENAME = "prod.html"
+RUNTIME_WEB_ASSETS = ("runtime.css", "runtime.js")
+STUDIO_WEB_ASSETS = (
+    "studio_ui.css",
+    "theme_tokens.css",
+    "theme_tokens.js",
+    "theme_runtime.js",
+    "ui_renderer.js",
+    "ui_renderer_chart.js",
+    "ui_renderer_chat.js",
+    "ui_renderer_collections.js",
+    "ui_renderer_form.js",
+)
 
 
 def run_build_command(args: list[str]) -> int:
@@ -33,8 +67,24 @@ def run_build_command(args: list[str]) -> int:
     set_audit_root(project_root)
     config = load_config(app_path=app_path)
     program_ir, sources = load_program(app_path.as_posix())
+    schema_snapshot = build_schema_snapshot(getattr(program_ir, "records", []))
+    previous_snapshot = _load_previous_schema_snapshot(project_root, target.name)
+    enforce_schema_compatibility(
+        getattr(program_ir, "records", []),
+        previous_snapshot=previous_snapshot,
+        context="build",
+    )
+    warnings: list[ValidationWarning] = []
+    manifest = build_static_manifest(
+        program_ir,
+        config=config,
+        state={},
+        store=None,
+        warnings=warnings,
+        media_mode=MediaValidationMode.BUILD,
+    )
     lock_snapshot, lock_digest = _load_lock_snapshot(project_root)
-    safe_config = _safe_config_snapshot(config)
+    safe_config = _safe_config_snapshot(config, project_root=project_root)
     build_id = _compute_build_id(target.name, sources, lock_digest, safe_config)
     build_path = _prepare_build_dir(project_root, target.name, build_id)
     fingerprints = _write_program_bundle(build_path, project_root, sources)
@@ -42,18 +92,39 @@ def run_build_command(args: list[str]) -> int:
     write_json(build_path / "program_summary.json", program_summary)
     write_json(build_path / "config.json", safe_config)
     write_json(build_path / "lock_snapshot.json", lock_snapshot)
+    artifacts = {
+        "program": "program",
+        "config": "config.json",
+        "lock_snapshot": "lock_snapshot.json",
+        "program_summary": "program_summary.json",
+        "build_report_json": BUILD_REPORT_JSON,
+        "build_report_text": BUILD_REPORT_TEXT,
+    }
+    artifacts["manifest"] = _write_manifest(build_path, manifest)
+    artifacts["schema_snapshot"] = _write_schema_snapshot(build_path, schema_snapshot)
+    artifacts["ui"] = _write_ui_contract(build_path, program_ir, manifest)
+    artifacts["web"] = _write_web_bundle(build_path)
+    report_payload, report_text = _build_report(
+        build_id=build_id,
+        target=target.name,
+        program_summary=program_summary,
+        artifacts=artifacts,
+        warnings=warnings,
+    )
+    _write_build_report(build_path, report_payload, report_text)
+    app_relative_path = _relative_path(project_root, app_path)
     metadata = _build_metadata(
         build_id=build_id,
         target=target.name,
         process_model=target.process_model,
-        project_root=project_root,
-        app_path=app_path,
         safe_config=safe_config,
         program_summary=program_summary,
         lock_digest=lock_digest,
         lock_snapshot=lock_snapshot,
         fingerprints=fingerprints,
         recommended_persistence=target.persistence_default,
+        app_relative_path=app_relative_path,
+        artifacts=artifacts,
     )
     write_json(build_path / BUILD_META_FILENAME, metadata)
     write_json(
@@ -157,13 +228,51 @@ def _program_summary(program_ir) -> Dict[str, object]:
     }
 
 
+def _relative_path(project_root: Path, path: Path) -> str:
+    try:
+        return path.resolve().relative_to(project_root.resolve()).as_posix()
+    except Exception:
+        return path.name
+
+
+def _load_previous_schema_snapshot(project_root: Path, target: str) -> dict | None:
+    latest_id = read_latest_build_id(project_root, target)
+    if latest_id:
+        previous_path = build_snapshot_path(build_dir(project_root, target, latest_id))
+        snapshot = load_schema_snapshot(previous_path)
+        if snapshot:
+            return snapshot
+    workspace_path = workspace_snapshot_path(project_root)
+    return load_schema_snapshot(workspace_path)
+
+
+def _normalize_path(path_value: str | None, project_root: Path | None) -> str | None:
+    if path_value is None:
+        return None
+    if path_value == ":memory:":
+        return path_value
+    try:
+        path = Path(path_value)
+    except Exception:
+        return str(path_value)
+    if not path.is_absolute():
+        return path.as_posix()
+    if project_root:
+        try:
+            return path.resolve().relative_to(project_root.resolve()).as_posix()
+        except Exception:
+            return path.name
+    return path.name
+
+
 def _load_lock_snapshot(project_root: Path) -> Tuple[Dict[str, object], str]:
     path = project_root / LOCKFILE_FILENAME
+    rel_path = _relative_path(project_root, path)
     if not path.exists():
         return (
             {
                 "status": "missing",
-                "path": path.as_posix(),
+                "path": rel_path,
                 "hint": "Run `n3 pkg install` to generate namel3ss.lock.json.",
             },
             "missing",
@@ -176,7 +285,7 @@ def _load_lock_snapshot(project_root: Path) -> Tuple[Dict[str, object], str]:
         return (
             {
                 "status": "present",
-                "path": path.as_posix(),
+                "path": rel_path,
                 "lockfile": snapshot,
                 "digest": digest,
             },
@@ -186,7 +295,7 @@ def _load_lock_snapshot(project_root: Path) -> Tuple[Dict[str, object], str]:
         return (
             {
                 "status": "invalid",
-                "path": path.as_posix(),
+                "path": rel_path,
                 "error": err.msg,
                 "line": err.lineno,
                 "column": err.colno,
@@ -196,11 +305,11 @@ def _load_lock_snapshot(project_root: Path) -> Tuple[Dict[str, object], str]:
         )
 
 
-def _safe_config_snapshot(config) -> Dict[str, object]:
+def _safe_config_snapshot(config, *, project_root: Path | None = None) -> Dict[str, object]:
     return {
         "persistence": {
             "target": config.persistence.target,
-            "db_path": config.persistence.db_path,
+            "db_path": _normalize_path(config.persistence.db_path, project_root),
             "database_url": "set" if config.persistence.database_url else None,
             "edge_kv_url": "set" if config.persistence.edge_kv_url else None,
         },
@@ -228,7 +337,7 @@ def _compute_build_id(
         h.update(path.as_posix().encode("utf-8"))
         h.update(text.encode("utf-8"))
     h.update(lock_digest.encode("utf-8"))
-    h.update(dumps_pretty(safe_config).encode("utf-8"))
+    h.update(canonical_json_dumps(safe_config, pretty=False, drop_run_keys=False).encode("utf-8"))
     return f"{target}-{h.hexdigest()[:12]}"
 
 
@@ -237,26 +346,20 @@ def _build_metadata(
     build_id: str,
     target: str,
     process_model: str,
-    project_root: Path,
-    app_path: Path,
     safe_config: Dict[str, object],
     program_summary: Dict[str, object],
     lock_digest: str,
     lock_snapshot: Dict[str, object],
     fingerprints: list[dict],
     recommended_persistence: str,
+    app_relative_path: str,
+    artifacts: dict,
 ) -> Dict[str, object]:
-    try:
-        app_rel = app_path.resolve().relative_to(project_root.resolve())
-    except ValueError:
-        app_rel = Path(app_path.name)
     return {
         "build_id": build_id,
         "target": target,
         "process_model": process_model,
-        "project_root": project_root.as_posix(),
-        "app_path": app_path.as_posix(),
-        "app_relative_path": app_rel.as_posix(),
+        "app_relative_path": app_relative_path,
         "namel3ss_version": get_version(),
         "persistence_target": safe_config.get("persistence", {}).get("target"),
         "recommended_persistence": recommended_persistence,
@@ -264,7 +367,157 @@ def _build_metadata(
         "lockfile_status": lock_snapshot.get("status"),
         "program_summary": program_summary,
         "source_fingerprints": fingerprints,
+        "artifacts": artifacts,
     }
+
+
+def _write_manifest(build_path: Path, manifest: dict) -> str:
+    path = build_path / MANIFEST_FILENAME
+    payload = manifest if isinstance(manifest, dict) else {}
+    write_json(path, payload)
+    return MANIFEST_FILENAME
+
+
+def _write_schema_snapshot(build_path: Path, snapshot: dict) -> str:
+    path = build_snapshot_path(build_path)
+    write_json(path, snapshot)
+    return path.relative_to(build_path).as_posix()
+
+
+def _write_ui_contract(build_path: Path, program_ir, manifest: dict) -> dict:
+    ui_dir = build_path / UI_DIRNAME
+    ui_dir.mkdir(parents=True, exist_ok=True)
+    ui_export = build_ui_export(manifest)
+    actions_export = build_actions_export(manifest)
+    schema_export = build_schema_export(program_ir, manifest)
+    write_json(ui_dir / "ui.json", ui_export)
+    write_json(ui_dir / "actions.json", actions_export)
+    write_json(ui_dir / "schema.json", schema_export)
+    return {
+        "ui": f"{UI_DIRNAME}/ui.json",
+        "actions": f"{UI_DIRNAME}/actions.json",
+        "schema": f"{UI_DIRNAME}/schema.json",
+    }
+
+
+def _write_web_bundle(build_path: Path) -> str:
+    web_root = build_path / WEB_DIRNAME
+    web_root.mkdir(parents=True, exist_ok=True)
+    runtime_root = _runtime_web_root()
+    prod_src = runtime_root / PROD_HTML_FILENAME
+    _copy_asset(prod_src, web_root / "index.html")
+    for name in RUNTIME_WEB_ASSETS:
+        _copy_asset(runtime_root / name, web_root / name)
+    studio_root = studio_web_root()
+    for name in STUDIO_WEB_ASSETS:
+        _copy_asset(studio_root / name, web_root / name)
+    return WEB_DIRNAME
+
+
+def _copy_asset(src: Path, dest: Path) -> None:
+    if not src.exists():
+        raise Namel3ssError(
+            build_guidance_message(
+                what=f"Missing runtime asset: {src.name}.",
+                why="Build could not copy required runtime assets.",
+                fix="Reinstall namel3ss or re-run the build after restoring assets.",
+                example="n3 build --target service",
+            )
+        )
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(src.read_bytes())
+
+
+def _runtime_web_root() -> Path:
+    return package_root() / "runtime" / "web"
+
+
+def _build_report(
+    *,
+    build_id: str,
+    target: str,
+    program_summary: dict,
+    artifacts: dict,
+    warnings: list[ValidationWarning],
+) -> tuple[dict, str]:
+    warning_payloads = _normalize_warnings(warnings)
+    payload = {
+        "schema_version": 1,
+        "build_id": build_id,
+        "target": target,
+        "program_summary": program_summary,
+        "artifacts": artifacts,
+        "warning_count": len(warning_payloads),
+        "warnings": warning_payloads,
+    }
+    text = _render_build_report(payload)
+    return payload, text
+
+
+def _normalize_warnings(warnings: list[ValidationWarning]) -> list[dict]:
+    payloads = [warning.to_dict() for warning in warnings if isinstance(warning, ValidationWarning)]
+    return sorted(
+        payloads,
+        key=lambda item: (
+            str(item.get("code") or ""),
+            str(item.get("message") or ""),
+            str(item.get("path") or ""),
+            int(item.get("line") or 0),
+            int(item.get("column") or 0),
+        ),
+    )
+
+
+def _render_build_report(payload: dict) -> str:
+    lines = [
+        "Build report",
+        "",
+        "Build",
+        f"- id: {payload.get('build_id')}",
+        f"- target: {payload.get('target')}",
+        "",
+        "Artifacts",
+    ]
+    artifacts = payload.get("artifacts") if isinstance(payload.get("artifacts"), dict) else {}
+    manifest_path = artifacts.get("manifest")
+    if manifest_path:
+        lines.append(f"- manifest: {manifest_path}")
+    ui_paths = artifacts.get("ui") if isinstance(artifacts.get("ui"), dict) else {}
+    if ui_paths:
+        ui_entries = [ui_paths.get("ui"), ui_paths.get("actions"), ui_paths.get("schema")]
+        ui_entries = [entry for entry in ui_entries if entry]
+        lines.append(f"- ui contract: {', '.join(ui_entries)}")
+    for key in ("program", "config", "lock_snapshot", "program_summary", "web"):
+        value = artifacts.get(key)
+        if value:
+            lines.append(f"- {key.replace('_', ' ')}: {value}")
+    for key in ("build_report_json", "build_report_text"):
+        value = artifacts.get(key)
+        if value:
+            label = "report json" if key == "build_report_json" else "report text"
+            lines.append(f"- {label}: {value}")
+    lines.append("")
+    lines.append("Warnings")
+    warnings = payload.get("warnings") if isinstance(payload.get("warnings"), list) else []
+    if not warnings:
+        lines.append("- none")
+    else:
+        for warning in warnings:
+            if not isinstance(warning, dict):
+                continue
+            code = warning.get("code") or "warning"
+            message = warning.get("message") or ""
+            entry = f"- {code}: {message}".rstrip(": ")
+            fix = warning.get("fix")
+            if fix:
+                entry = f"{entry} (fix: {fix})"
+            lines.append(entry)
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _write_build_report(build_path: Path, payload: dict, text: str) -> None:
+    write_json(build_path / BUILD_REPORT_JSON, payload)
+    (build_path / BUILD_REPORT_TEXT).write_text(text, encoding="utf-8")
 
 
 def _write_service_bundle(build_path: Path, build_id: str) -> None:

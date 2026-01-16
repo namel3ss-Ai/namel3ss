@@ -1,5 +1,6 @@
 [
   {
+    "agent_id": null,
     "agent_name": null,
     "ai_name": "assistant",
     "ai_profile_name": "assistant",
@@ -6965,6 +6966,7 @@
     ],
     "model": "gpt-4.1",
     "output": "[gpt-4.1] You are a helper. :: Hello | mem:st=0",
+    "role": null,
     "system_prompt": "You are a helper.",
     "title": "AI assistant",
     "tool_calls": [],

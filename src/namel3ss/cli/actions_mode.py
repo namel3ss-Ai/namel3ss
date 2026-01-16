@@ -21,6 +21,7 @@ def list_actions(program_ir, json_mode: bool) -> tuple[dict | None, str | None]:
     )
     manifest = build_manifest(
         program_ir,
+        config=config,
         state={},
         store=None,
         identity=identity,

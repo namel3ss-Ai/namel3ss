@@ -52,9 +52,11 @@ class ExpressionRule:
 def top_level_rules() -> tuple[TopLevelRule, ...]:
     from namel3ss.parser.decl.ai import parse_ai_decl
     from namel3ss.parser.decl.agent import parse_agent_decl
+    from namel3ss.parser.decl.agent_team import parse_agent_team_decl
     from namel3ss.parser.decl.app import parse_app
     from namel3ss.parser.decl.capsule import parse_capsule_decl
     from namel3ss.parser.decl.flow import parse_flow
+    from namel3ss.parser.decl.foreign import parse_foreign_decl
     from namel3ss.parser.decl.function import parse_function_decl
     from namel3ss.parser.decl.identity import parse_identity
     from namel3ss.parser.decl.page import parse_page
@@ -72,7 +74,9 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
         TopLevelRule("capsule", "IDENT", parse_capsule_decl, token_value="capsule"),
         TopLevelRule("identity", "IDENT", parse_identity, token_value="identity"),
         TopLevelRule("app", "APP", parse_app),
+        TopLevelRule("foreign", "IDENT", parse_foreign_decl, token_value="foreign"),
         TopLevelRule("tool", "TOOL", parse_tool),
+        TopLevelRule("agent_team", "IDENT", parse_agent_team_decl, token_value="team"),
         TopLevelRule("agent", "AGENT", parse_agent_decl),
         TopLevelRule("ai", "AI", parse_ai_decl),
         TopLevelRule("record", "RECORD", parse_record),

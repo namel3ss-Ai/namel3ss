@@ -129,6 +129,7 @@ def _element_state(
     element_id = f"page:{page_name}:item:{counter}:{kind}"
     label = _element_label(kind, element)
     bound_to = _bound_to(kind, element)
+    fix_hint = _element_fix_hint(kind, element)
     reasons = [declared_in_page(page_name)]
     origin_reason = declared_in_pack(element.get("origin"))
     if origin_reason:
@@ -177,6 +178,7 @@ def _element_state(
         visible=True,
         enabled=enabled,
         bound_to=bound_to,
+        fix_hint=fix_hint,
         reasons=reasons,
     )
 
@@ -205,12 +207,22 @@ def _element_label(kind: str, element: dict) -> str | None:
     if kind == "thinking":
         return element.get("when")
     if kind == "image":
-        return element.get("alt") or element.get("src")
+        return element.get("alt") or element.get("media_name") or element.get("src")
     if kind == "chart":
         return element.get("explain") or element.get("record") or element.get("source")
     return None
 
 
+def _element_fix_hint(kind: str, element: dict) -> str | None:
+    if kind == "image":
+        if element.get("missing") and element.get("fix_hint"):
+            return element.get("fix_hint")
+        return None
+    if kind == "story_step":
+        image = element.get("image")
+        if isinstance(image, dict) and image.get("missing") and image.get("fix_hint"):
+            return image.get("fix_hint")
+    return None
 def _bound_to(kind: str, element: dict) -> str | None:
     if kind in {"form", "table", "list"}:
         record = element.get("record")
@@ -480,10 +492,6 @@ def _card_reasons(element: dict) -> list[str]:
         if joined:
             reasons.append(f"actions: {joined}")
     return reasons
-
-
 def _summary_text(page_count: int, element_count: int, action_count: int) -> str:
     return f"UI: {page_count} pages, {element_count} elements, {action_count} actions."
-
-
 __all__ = ["API_VERSION", "build_ui_explain_pack", "write_ui_explain_artifacts"]

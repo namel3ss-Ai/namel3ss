@@ -19,6 +19,7 @@ from namel3ss.module_loader import load_project
 from namel3ss.pkg.lockfile import LOCKFILE_FILENAME, read_lockfile
 from namel3ss.pkg.verify import verify_installation
 from namel3ss.proofs import build_engine_proof
+from namel3ss.runtime.mutation_policy import audit_required_enabled, flow_mutates, page_has_form
 from namel3ss.runtime.service_runner import ServiceRunner
 from namel3ss.secrets import collect_secret_values
 
@@ -98,9 +99,9 @@ def _check_secrets_redaction(
 
 
 def _check_access_control(program: ir.Program, prod: bool) -> VerifyCheck:
-    mutating_flows = [flow for flow in program.flows if _flow_mutates(flow)]
+    mutating_flows = [flow for flow in program.flows if flow_mutates(flow)]
     missing_flow_requires = sorted(flow.name for flow in mutating_flows if flow.requires is None)
-    pages_missing_requires = sorted(page.name for page in program.pages if _page_has_form(page) and page.requires is None)
+    pages_missing_requires = sorted(page.name for page in program.pages if page_has_form(page) and page.requires is None)
     if not missing_flow_requires and not pages_missing_requires:
         return VerifyCheck(
             id="access_control",
@@ -119,15 +120,14 @@ def _check_access_control(program: ir.Program, prod: bool) -> VerifyCheck:
 
 
 def _check_audit_policy(program: ir.Program, prod: bool) -> VerifyCheck:
-    required = os.getenv("N3_AUDIT_REQUIRED", "").strip().lower() in {"1", "true", "yes", "on"}
-    if not required:
+    if not audit_required_enabled():
         return VerifyCheck(
             id="audit_policy",
             status="ok",
             message="Audit-required policy is disabled.",
             fix="Set N3_AUDIT_REQUIRED=1 to enforce audited mutations.",
         )
-    mutating_flows = [flow for flow in program.flows if _flow_mutates(flow)]
+    mutating_flows = [flow for flow in program.flows if flow_mutates(flow)]
     missing = sorted(flow.name for flow in mutating_flows if not getattr(flow, "audited", False))
     if not missing:
         return VerifyCheck(
@@ -302,47 +302,6 @@ def _check_postgres_config(url: str | None) -> tuple[bool, str]:
     return True, "Postgres URL configured."
 
 
-def _flow_mutates(flow: ir.Flow) -> bool:
-    return _statements_mutate(flow.body)
-
-
-def _statements_mutate(stmts: Iterable[ir.Statement]) -> bool:
-    for stmt in stmts:
-        if isinstance(stmt, (ir.Save, ir.Create)):
-            return True
-        if isinstance(stmt, ir.If):
-            if _statements_mutate(stmt.then_body) or _statements_mutate(stmt.else_body):
-                return True
-        if isinstance(stmt, ir.Repeat):
-            if _statements_mutate(stmt.body):
-                return True
-        if isinstance(stmt, ir.ForEach):
-            if _statements_mutate(stmt.body):
-                return True
-        if isinstance(stmt, ir.TryCatch):
-            if _statements_mutate(stmt.try_body) or _statements_mutate(stmt.catch_body):
-                return True
-        if isinstance(stmt, ir.Match):
-            if any(_statements_mutate(case.body) for case in stmt.cases):
-                return True
-            if stmt.otherwise and _statements_mutate(stmt.otherwise):
-                return True
-    return False
-
-
-def _page_has_form(page: ir.Page) -> bool:
-    return _page_items_have_form(page.items)
-
-
-def _page_items_have_form(items: Iterable[ir.PageItem]) -> bool:
-    for item in items:
-        if isinstance(item, ir.FormItem):
-            return True
-        if hasattr(item, "children"):
-            children = getattr(item, "children") or []
-            if _page_items_have_form(children):
-                return True
-    return False
 
 
 def _find_leaks(text: str, secret_values: Iterable[str]) -> list[str]:

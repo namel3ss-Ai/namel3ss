@@ -4,12 +4,12 @@ import json
 from pathlib import Path
 from typing import Any, Dict
 
+from namel3ss.determinism import canonical_json_dump
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
-from namel3ss.utils.json_tools import dumps_pretty
 
 
-BUILD_BASE_DIR = ".namel3ss/build"
+BUILD_BASE_DIR = "build"
 PROMOTION_STATE_FILE = ".namel3ss/promotion.json"
 LATEST_FILENAME = "latest.json"
 BUILD_META_FILENAME = "build.json"
@@ -36,8 +36,7 @@ def promotion_state_path(project_root: Path) -> Path:
 
 
 def write_json(path: Path, payload: Dict[str, Any]) -> None:
-    ensure_dir(path.parent)
-    path.write_text(dumps_pretty(payload), encoding="utf-8")
+    canonical_json_dump(path, payload, pretty=True, drop_run_keys=False)
 
 
 def read_json(path: Path) -> Dict[str, Any]:

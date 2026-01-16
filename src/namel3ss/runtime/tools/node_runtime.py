@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 import uuid
+from dataclasses import replace
 from pathlib import Path
 
 from namel3ss.errors.base import Namel3ssError
@@ -14,6 +15,7 @@ from namel3ss.runtime.capabilities.overrides import unsafe_override_enabled
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.packs.policy import load_pack_policy
 from namel3ss.runtime.tools.entry_validation import validate_node_tool_entry
+from namel3ss.runtime.tools.foreign_workspace import foreign_workspace_dir
 from namel3ss.runtime.tools.resolution import resolve_tool_binding
 from namel3ss.runtime.tools.runners.base import ToolRunnerRequest
 from namel3ss.runtime.tools.runners.registry import get_runner
@@ -71,6 +73,9 @@ def _execute_node_tool(
     line: int | None,
     column: int | None,
 ) -> object:
+    declared_as = getattr(tool, "declared_as", "tool")
+    is_foreign = declared_as == "foreign"
+    type_mode = "foreign" if is_foreign else "tool"
     secret_values = collect_secret_values(ctx.config)
     trace_event = {
         "type": "tool_call",
@@ -97,6 +102,8 @@ def _execute_node_tool(
             phase="input",
             line=line,
             column=column,
+            type_mode=type_mode,
+            expect_object=True,
         )
         app_root = _resolve_project_root(ctx.project_root, tool.name, line=line, column=column)
         resolved = resolve_tool_binding(app_root, tool.name, ctx.config, tool_kind=tool.kind, line=line, column=column)
@@ -124,6 +131,8 @@ def _execute_node_tool(
                 line=line,
                 column=column,
             )
+        if is_foreign and binding.sandbox is not True:
+            binding = replace(binding, sandbox=True)
         timeout_ms = binding.timeout_ms if binding.timeout_ms is not None else timeout_seconds * 1000
         trace_event["timeout_ms"] = timeout_ms
         trace_event["resolved_source"] = resolved_source
@@ -162,11 +171,34 @@ def _execute_node_tool(
             overrides=overrides,
             policy=policy,
         )
+        if is_foreign:
+            guarantees.no_network = True
+            guarantees.sources["no_network"] = "engine"
+        workspace_dir = None
+        read_roots: list[str] | None = None
+        if is_foreign:
+            workspace_dir = foreign_workspace_dir(
+                tool.name,
+                project_root=ctx.project_root,
+                app_path=ctx.app_path,
+                allow_create=True,
+            )
+            if workspace_dir:
+                workspace_dir.mkdir(parents=True, exist_ok=True)
+                read_roots = [str(workspace_dir)]
+            tools_root = app_root / "tools"
+            read_roots = list(read_roots or [])
+            read_roots.append(str(tools_root))
+            for pack_path in resolved.pack_paths or []:
+                read_roots.append(str(pack_path))
+            read_roots = list(dict.fromkeys(read_roots))
         capability_ctx = _capability_context(
             tool,
             runner_name=runner_name,
             resolved_source=resolved_source,
             guarantees=guarantees,
+            filesystem_root=str(workspace_dir) if workspace_dir else None,
+            filesystem_read_roots=read_roots,
         )
         unsafe_used = _preflight_capabilities(
             ctx,
@@ -178,9 +210,16 @@ def _execute_node_tool(
             unsafe_override=unsafe_override,
             line=line,
             column=column,
+            sandbox_override=True if is_foreign else None,
         )
         if unsafe_used:
             trace_event["unsafe_override"] = True
+        execution_root = app_root
+        pack_paths = list(resolved.pack_paths or [])
+        if is_foreign and workspace_dir:
+            execution_root = workspace_dir
+            pack_paths.append(app_root)
+            pack_paths = list(dict.fromkeys(pack_paths))
         runner = get_runner(runner_name)
         result = runner.execute(
             ToolRunnerRequest(
@@ -191,10 +230,11 @@ def _execute_node_tool(
                 timeout_ms=timeout_ms,
                 trace_id=trace_id,
                 app_root=app_root,
+                execution_root=execution_root,
                 flow_name=getattr(ctx.flow, "name", None),
                 binding=binding,
                 config=ctx.config,
-                pack_paths=resolved.pack_paths,
+                pack_paths=pack_paths,
                 capability_context=capability_ctx.to_dict(),
                 allow_unsafe=unsafe_override,
             )
@@ -212,6 +252,8 @@ def _execute_node_tool(
             phase="output",
             line=line,
             column=column,
+            type_mode=type_mode,
+            expect_object=not is_foreign,
         )
     except Exception as err:
         error_type, error_message = _trace_error_details(err, secret_values)
@@ -279,6 +321,8 @@ def _capability_context(
     runner_name: str,
     resolved_source: str,
     guarantees,
+    filesystem_root: str | None = None,
+    filesystem_read_roots: list[str] | None = None,
 ):
     from namel3ss.runtime.capabilities.model import CapabilityContext
     from namel3ss.runtime.tools.runners.node.protocol import PROTOCOL_VERSION
@@ -289,6 +333,8 @@ def _capability_context(
         runner=runner_name,
         protocol_version=PROTOCOL_VERSION,
         guarantees=guarantees,
+        filesystem_root=filesystem_root,
+        filesystem_read_roots=filesystem_read_roots,
     )
 
 

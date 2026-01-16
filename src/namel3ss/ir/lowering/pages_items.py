@@ -5,6 +5,8 @@ import difflib
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.icons.registry import closest_icon, validate_icon_name, icon_names
+from namel3ss.media import validate_media_role
 from namel3ss.ir.lowering.expressions import _lower_expression
 from namel3ss.ir.lowering.page_actions import _validate_overlay_action
 from namel3ss.ir.lowering.flow_refs import unknown_flow_message
@@ -48,7 +50,7 @@ from namel3ss.ir.model.pages import (
     ViewItem,
 )
 from namel3ss.schema import records as schema
-from namel3ss.ui.settings import STORY_ICONS, STORY_TONES, closest_value
+from namel3ss.ui.settings import STORY_TONES, closest_value
 
 
 def _attach_origin(target, source):
@@ -138,6 +140,7 @@ def _lower_page_item(
             icon = _validate_icon(step.icon, step.line, step.column)
             text_value = _normalize_optional(step.text)
             image_value = _normalize_optional(step.image)
+            image_role = validate_media_role(step.image_role, line=step.line, column=step.column)
             requires = _normalize_optional(step.requires)
             next_step = _normalize_optional(step.next)
             if step.text is not None and text_value is None:
@@ -154,6 +157,7 @@ def _lower_page_item(
                     text=text_value,
                     icon=icon,
                     image=image_value,
+                    image_role=image_role,
                     tone=tone,
                     requires=requires,
                     next=next_step,
@@ -329,7 +333,8 @@ def _lower_page_item(
         return _attach_origin(DividerItem(line=item.line, column=item.column), item)
     if isinstance(item, ast.ImageItem):
         alt = item.alt if item.alt is not None else ""
-        return _attach_origin(ImageItem(src=item.src, alt=alt, line=item.line, column=item.column), item)
+        role = validate_media_role(item.role, line=item.line, column=item.column)
+        return _attach_origin(ImageItem(src=item.src, alt=alt, role=role, line=item.line, column=item.column), item)
     if isinstance(item, ast.ModalItem):
         children = [
             _lower_page_item(child, record_map, flow_names, page_name, overlays, compose_names) for child in item.children
@@ -375,23 +380,20 @@ def _validate_tone(value: str | None, line: int | None, column: int | None) -> s
 def _validate_icon(value: str | None, line: int | None, column: int | None) -> str | None:
     if value is None:
         return None
-    normalized = value.strip()
-    if not normalized:
-        raise Namel3ssError("Story icon cannot be empty", line=line, column=column)
-    if normalized in STORY_ICONS:
-        return normalized
-    suggestion = closest_value(normalized, STORY_ICONS)
-    fix = f'Did you mean "{suggestion}"?' if suggestion else f"Use one of: {', '.join(STORY_ICONS)}."
-    raise Namel3ssError(
-        build_guidance_message(
-            what=f"Unknown story icon '{normalized}'.",
-            why=f"Allowed icons: {', '.join(STORY_ICONS)}.",
-            fix=fix,
-            example='story "Checklist"\n  step "Review":\n    icon is info',
-        ),
-        line=line,
-        column=column,
-    )
+    try:
+        return validate_icon_name(value, line=line, column=column)
+    except Namel3ssError as err:
+        if not err.details:
+            err.details = {"error_id": "icon.invalid", "keyword": value}
+        suggestion = closest_icon(value) or (icon_names()[0] if icon_names() else None)
+        fix = f'Did you mean "{suggestion}"?' if suggestion else "Use a built-in icon from the registry."
+        err.message = build_guidance_message(
+            what=f"Unknown story icon '{value}'.",
+            why="Icons must come from the built-in registry.",
+            fix=fix + " Run `n3 icons` to list options.",
+            example='story "Checklist"\n  step "Review":\n    icon is add',
+        )
+        raise
 
 
 def _validate_story_next_targets(story_title: str, steps: list[StoryStep]) -> None:

@@ -23,7 +23,10 @@ def run(args) -> int:
         source, _ = read_source(args.path)
         ast_program = parse(source)
         program_ir = lower_program(ast_program)
-        config = load_config(app_path=Path(args.path))
+        app_path = Path(args.path).resolve()
+        setattr(program_ir, "app_path", app_path)
+        setattr(program_ir, "project_root", app_path.parent)
+        config = load_config(app_path=app_path)
         identity = resolve_identity(
             config,
             getattr(program_ir, "identity", None),
@@ -32,6 +35,7 @@ def run(args) -> int:
         )
         manifest = build_manifest(
             program_ir,
+            config=config,
             state={},
             store=None,
             identity=identity,

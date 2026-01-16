@@ -11,7 +11,7 @@ record "Item":
 flow "demo":
   return "ok"
 
-page "home":
+page "home": requires true
   button "Run":
     calls flow "demo"
 '''
@@ -49,7 +49,7 @@ record "User":
   name string
   email string
 
-page "home":
+page "home": requires true
   form is "User"
 '''
 

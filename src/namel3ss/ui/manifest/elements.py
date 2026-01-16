@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Dict, List
 
+from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
+from namel3ss.media import MediaValidationMode, validate_media_reference
 from namel3ss.runtime.records.service import build_record_scope
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.schema import records as schema
@@ -34,6 +37,7 @@ from namel3ss.ui.manifest_table import (
 )
 from namel3ss.ir.lowering.page_list import _default_list_primary, _list_id_field as _list_id_field_ir
 from namel3ss.validation import ValidationMode, add_warning
+from namel3ss.utils.numbers import is_number, to_decimal
 
 
 def _base_element(element_id: str, page_name: str, page_slug: str, index: int, item: ir.PageItem) -> dict:
@@ -105,6 +109,8 @@ def _build_children(
     identity: dict | None,
     state_ctx: StateContext,
     mode: ValidationMode,
+    media_registry: dict[str, Path],
+    media_mode: MediaValidationMode,
     warnings: list | None,
     taken_actions: set[str],
 ) -> tuple[List[dict], Dict[str, dict]]:
@@ -121,6 +127,8 @@ def _build_children(
             identity,
             state_ctx,
             mode,
+            media_registry,
+            media_mode,
             warnings,
             taken_actions,
         )
@@ -147,6 +155,8 @@ def _page_item_to_manifest(
     identity: dict | None,
     state_ctx: StateContext,
     mode: ValidationMode,
+    media_registry: dict[str, Path],
+    media_mode: MediaValidationMode,
     warnings: list | None,
     taken_actions: set[str],
 ) -> tuple[dict, Dict[str, dict]]:
@@ -187,15 +197,7 @@ def _page_item_to_manifest(
                 scope = build_record_scope(record, identity)
                 rows = store.list_records(record, scope=scope)[:20]
             columns = _resolve_table_columns(record, None)
-            ordering_field = record.fields[0].name if record.fields else None
-            if ordering_field:
-                sort_info = {"by": ordering_field, "order": "asc"}
-                try:
-                    rows = _apply_table_sort(rows, ir.TableSort(by=ordering_field, order="asc", line=item.line, column=item.column), record)
-                except Namel3ssError:
-                    pass
-            else:
-                sort_info = None
+            rows = _stable_rows_by_id(rows, _table_id_field(record))
             element = {
                 "type": "view",
                 "representation": "table",
@@ -205,8 +207,6 @@ def _page_item_to_manifest(
                 "rows": rows,
                 **base,
             }
-            if sort_info:
-                element["sort"] = sort_info
             element["id_field"] = _table_id_field(record)
             return _attach_origin(element, item), {}
         rows = []
@@ -214,6 +214,7 @@ def _page_item_to_manifest(
             scope = build_record_scope(record, identity)
             rows = store.list_records(record, scope=scope)[:20]
         primary = _default_list_primary(record)
+        rows = _stable_rows_by_id(rows, _list_id_field_ir(record))
         element = {
             "type": "view",
             "representation": "list",
@@ -239,6 +240,8 @@ def _page_item_to_manifest(
             identity,
             state_ctx,
             mode,
+            media_registry,
+            media_mode,
             warnings,
             taken_actions,
         )
@@ -264,7 +267,16 @@ def _page_item_to_manifest(
             if step.icon:
                 payload["icon"] = step.icon
             if step.image:
-                payload["image"] = step.image
+                intent = validate_media_reference(
+                    step.image,
+                    registry=media_registry,
+                    role=step.image_role,
+                    mode=media_mode,
+                    warnings=warnings,
+                    line=step.line,
+                    column=step.column,
+                )
+                payload["image"] = intent.as_dict()
             if step.tone:
                 payload["tone"] = step.tone
             if step.requires:
@@ -410,6 +422,8 @@ def _page_item_to_manifest(
             identity,
             state_ctx,
             mode,
+            media_registry,
+            media_mode,
             warnings,
             taken_actions,
         )
@@ -445,6 +459,8 @@ def _page_item_to_manifest(
             identity,
             state_ctx,
             mode,
+            media_registry,
+            media_mode,
             warnings,
             taken_actions,
         )
@@ -470,6 +486,8 @@ def _page_item_to_manifest(
             identity,
             state_ctx,
             mode,
+            media_registry,
+            media_mode,
             warnings,
             taken_actions,
         )
@@ -500,6 +518,8 @@ def _page_item_to_manifest(
                 identity,
                 state_ctx,
                 mode,
+                media_registry,
+                media_mode,
                 warnings,
                 taken_actions,
             )
@@ -553,6 +573,8 @@ def _page_item_to_manifest(
             identity,
             state_ctx,
             mode,
+            media_registry,
+            media_mode,
             warnings,
             taken_actions,
         )
@@ -570,6 +592,8 @@ def _page_item_to_manifest(
             identity,
             state_ctx,
             mode,
+            media_registry,
+            media_mode,
             warnings,
             taken_actions,
         )
@@ -588,6 +612,8 @@ def _page_item_to_manifest(
             identity,
             state_ctx,
             mode,
+            media_registry,
+            media_mode,
             warnings,
             taken_actions,
         )
@@ -611,6 +637,8 @@ def _page_item_to_manifest(
             identity,
             state_ctx,
             mode,
+            media_registry,
+            media_mode,
             warnings,
             taken_actions,
         )
@@ -628,6 +656,8 @@ def _page_item_to_manifest(
             identity,
             state_ctx,
             mode,
+            media_registry,
+            media_mode,
             warnings,
             taken_actions,
         )
@@ -640,7 +670,16 @@ def _page_item_to_manifest(
         return _attach_origin(element, item), {}
     if isinstance(item, ir.ImageItem):
         base = _base_element(_element_id(page_slug, "image", path), page_name, page_slug, index, item)
-        element = {"type": "image", "src": item.src, "alt": item.alt, **base}
+        intent = validate_media_reference(
+            item.src,
+            registry=media_registry,
+            role=item.role,
+            mode=media_mode,
+            warnings=warnings,
+            line=item.line,
+            column=item.column,
+        )
+        element = {"type": "image", **intent.as_dict(), **base}
         return _attach_origin(element, item), {}
     raise Namel3ssError(
         f"Unsupported page item '{type(item)}'",
@@ -666,6 +705,27 @@ def _view_representation(record: schema.RecordSchema) -> str:
     if field_count <= 3:
         return "list"
     return "table"
+
+
+def _stable_rows_by_id(rows: list[dict], id_field: str) -> list[dict]:
+    if len(rows) <= 1:
+        return rows
+
+    def _key(row: dict) -> tuple[int, int, object]:
+        if isinstance(row, dict):
+            value = row.get(id_field)
+            if value is not None:
+                if is_number(value) and not isinstance(value, bool):
+                    return (0, 0, to_decimal(value))
+                if isinstance(value, str):
+                    return (0, 1, value)
+                return (0, 2, str(value))
+        try:
+            return (1, 0, canonical_json_dumps(row, pretty=False))
+        except Exception:
+            return (1, 0, str(row))
+
+    return sorted(rows, key=_key)
 
 
 __all__ = ["_build_children"]

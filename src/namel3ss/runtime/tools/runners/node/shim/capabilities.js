@@ -1,5 +1,7 @@
 "use strict";
 
+const path = require("path");
+
 const { installPatches } = require("./patches");
 
 const CAPABILITY_TO_GUARANTEE = {
@@ -70,6 +72,10 @@ function normalizeCapabilityContext(context, payload) {
   const rawGuarantees =
     context && typeof context.guarantees === "object" && context.guarantees ? context.guarantees : {};
   const rawSources = context && typeof context.sources === "object" && context.sources ? context.sources : {};
+  const rootValue = context && context.filesystem_root ? String(context.filesystem_root) : null;
+  const readRoots = Array.isArray(context && context.filesystem_read_roots)
+    ? context.filesystem_read_roots.map((item) => String(item)).filter(Boolean)
+    : [];
   return {
     toolName: String(context.tool_name || payload.tool || payload.tool_name || "tool"),
     resolvedSource: String(context.resolved_source || "binding"),
@@ -87,6 +93,8 @@ function normalizeCapabilityContext(context, payload) {
         : null,
     },
     sources: rawSources,
+    filesystemRoot: rootValue ? path.resolve(rootValue) : null,
+    filesystemReadRoots: readRoots.map((item) => path.resolve(item)),
   };
 }
 
@@ -169,6 +177,30 @@ function guardFilesystem(pathValue, mode) {
   if (!capabilityContext) {
     return;
   }
+  const root = capabilityContext.filesystemRoot;
+  const readRoots = capabilityContext.filesystemReadRoots || [];
+  if (root || readRoots.length > 0) {
+    const target = resolveTargetPath(pathValue, root);
+    if (isWriteMode(mode)) {
+      if (root && !isWithin(root, target)) {
+        const action = "cannot write outside its workspace";
+        const check = buildCheck("filesystem_write", false, REASON_GUARANTEE_BLOCKED);
+        recordCheck(check);
+        throw new CapabilityViolation(rootBlockMessage(capabilityContext.toolName, action, target, [root]), check);
+      }
+    } else {
+      const allowed = readRoots.slice();
+      if (root) {
+        allowed.push(root);
+      }
+      if (!isWithinAny(allowed, target)) {
+        const action = "cannot read outside its workspace";
+        const check = buildCheck("filesystem_read", false, REASON_GUARANTEE_BLOCKED);
+        recordCheck(check);
+        throw new CapabilityViolation(rootBlockMessage(capabilityContext.toolName, action, target, allowed), check);
+      }
+    }
+  }
   const write = isWriteMode(mode);
   const capability = write ? "filesystem_write" : "filesystem_read";
   const deny = write
@@ -186,6 +218,43 @@ function guardFilesystem(pathValue, mode) {
   const why = `Effective guarantees forbid filesystem access (${target}).`;
   const example = `[capability_overrides]\n"${toolName}" = { no_filesystem_write = true }`;
   throw new CapabilityViolation(buildBlockMessage(toolName, action, why, example), check);
+}
+
+function resolveTargetPath(pathValue, root) {
+  const raw = String(pathValue);
+  if (root && !path.isAbsolute(raw)) {
+    return path.resolve(root, raw);
+  }
+  return path.resolve(raw);
+}
+
+function isWithin(root, target) {
+  const rel = path.relative(root, target);
+  return rel === "" || (!rel.startsWith("..") && !path.isAbsolute(rel));
+}
+
+function isWithinAny(roots, target) {
+  if (!roots || roots.length === 0) {
+    return true;
+  }
+  for (const root of roots) {
+    if (root && isWithin(root, target)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function rootBlockMessage(toolName, action, target, roots) {
+  const labels = Array.from(new Set(roots.map((item) => displayPath(item)))).sort();
+  const allowed = labels.length ? labels.join(", ") : "the allowed workspace";
+  const exampleRoot = labels.length ? labels[0] : "workspace";
+  return buildBlockMessage(
+    toolName,
+    action,
+    `Filesystem access to ${displayPath(target)} is outside ${allowed}.`,
+    `${exampleRoot}/file.txt`,
+  );
 }
 
 function guardEnvRead(key) {

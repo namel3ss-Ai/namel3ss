@@ -5,6 +5,7 @@ from typing import Dict, Iterable, Tuple
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.icons.registry import icon_names
 
 
 UI_FIELD_ORDER: tuple[str, ...] = ("theme", "accent_color", "density", "motion", "shape", "surface")
@@ -28,7 +29,7 @@ UI_ALLOWED_VALUES: dict[str, tuple[str, ...]] = {
 }
 
 STORY_TONES: tuple[str, ...] = ("informative", "success", "caution", "critical", "neutral")
-STORY_ICONS: tuple[str, ...] = ("info", "check", "alert", "flag", "calendar", "clock", "play", "user", "spark", "list")
+STORY_ICONS: tuple[str, ...] = icon_names()
 
 _KEY_ALIASES: dict[str, str] = {
     "accent color": "accent_color",
@@ -105,7 +106,6 @@ __all__ = [
     "UI_ALLOWED_VALUES",
     "UI_DEFAULTS",
     "UI_FIELD_ORDER",
-    "STORY_ICONS",
     "STORY_TONES",
     "closest_value",
     "default_ui_settings_with_meta",

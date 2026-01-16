@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>namel3ss preview</title>
+    <link rel="stylesheet" href="/runtime.css" />
+    <link rel="stylesheet" href="/studio_ui.css" />
+    <link rel="stylesheet" href="/theme_tokens.css" />
+  </head>
+  <body class="n3-runtime">
+    <div class="runtime-shell">
+      <header class="runtime-bar" role="banner">
+        <div class="runtime-brand">
+          <span class="runtime-badge">preview</span>
+          <span id="appLabel">namel3ss</span>
+        </div>
+        <div class="runtime-controls">
+          <label for="pageSelect">Page</label>
+          <select id="pageSelect" aria-label="Page selection"></select>
+        </div>
+      </header>
+      <main class="runtime-canvas" role="main">
+        <div id="ui" class="ui-body" data-testid="runtime-ui"></div>
+      </main>
+    </div>
+    <script>
+      window.N3RuntimeConfig = { mode: "preview" };
+    </script>
+    <script src="/theme_tokens.js"></script>
+    <script src="/theme_runtime.js"></script>
+    <script src="/ui_renderer_collections.js"></script>
+    <script src="/ui_renderer_form.js"></script>
+    <script src="/ui_renderer_chat.js"></script>
+    <script src="/ui_renderer_chart.js"></script>
+    <script src="/ui_renderer.js"></script>
+    <script src="/runtime.js"></script>
+  </body>
+</html>

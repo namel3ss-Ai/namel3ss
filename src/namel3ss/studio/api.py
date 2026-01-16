@@ -15,11 +15,9 @@ from namel3ss.module_loader import load_project
 from namel3ss.secrets import collect_secret_values, discover_required_secrets
 from namel3ss.production_contract import build_run_payload
 from namel3ss.runtime.run_pipeline import finalize_run_payload
-from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.runtime.ui.actions import handle_action
 from namel3ss.runtime.preferences.factory import preference_store_for_app, app_pref_key
 from namel3ss.studio.session import SessionState
-from namel3ss.studio.diagnostics import collect_ai_context_diagnostics
 from namel3ss.studio.trace_adapter import normalize_action_response
 from namel3ss.runtime.tools.bindings import bindings_path
 from namel3ss.tools.health.analyze import analyze_tool_health
@@ -96,12 +94,17 @@ def get_summary_payload(source: str, path: str) -> dict:
 
 
 def get_ui_payload(source: str, session: SessionState | None = None, app_path: str | None = None) -> dict:
+    session = session or SessionState()
+    app_file = _require_app_path(app_path)
     try:
-        session = session or SessionState()
-        app_file = _require_app_path(app_path)
         program_ir = _load_project_program(source, app_file.as_posix())
+    except Namel3ssError as err:
+        return build_error_from_exception(err, kind="parse", source=source)
+    except Exception as err:  # pragma: no cover - defensive guard rail
+        return build_error_payload(str(err), kind="internal")
+
+    try:
         config = load_config(app_path=app_file)
-        warnings: list[ValidationWarning] = []
         store = session.ensure_store(config)
         preference_store = preference_store_for_app(app_path, getattr(program_ir, "theme_preference", {}).get("persist"))
         persisted, _ = preference_store.load_theme(app_pref_key(app_path))
@@ -111,35 +114,53 @@ def get_ui_payload(source: str, session: SessionState | None = None, app_path: s
         if runtime_theme not in allowed_themes:
             runtime_theme = program_theme if program_theme in allowed_themes else UI_DEFAULTS["theme"]
         session.runtime_theme = runtime_theme
+
+        validation_warnings: list[ValidationWarning] = []
+        build_static_manifest(
+            program_ir,
+            config=config,
+            state={},
+            store=None,
+            warnings=validation_warnings,
+            runtime_theme=runtime_theme,
+            persisted_theme=persisted,
+        )
+
         manifest = build_static_manifest(
             program_ir,
             config=config,
             state=session.state,
             store=store,
-            warnings=warnings,
+            warnings=[],
             runtime_theme=runtime_theme,
             persisted_theme=persisted,
         )
-        if warnings:
-            manifest["warnings"] = [warning.to_dict() for warning in warnings]
+        if validation_warnings:
+            manifest["warnings"] = [warning.to_dict() for warning in validation_warnings]
         return manifest
     except Namel3ssError as err:
-        return build_error_from_exception(err, kind="parse", source=source)
+        return build_error_from_exception(err, kind="manifest", source=source)
     except Exception as err:  # pragma: no cover - defensive guard rail
         return build_error_payload(str(err), kind="internal")
 
 
 def get_actions_payload(source: str, app_path: str | None = None) -> dict:
+    app_file = _require_app_path(app_path)
     try:
-        app_file = _require_app_path(app_path)
         program_ir = _load_project_program(source, app_file.as_posix())
+    except Namel3ssError as err:
+        return build_error_from_exception(err, kind="parse", source=source)
+    except Exception as err:  # pragma: no cover - defensive guard rail
+        return build_error_payload(str(err), kind="internal")
+
+    try:
         config = load_config(app_path=app_file)
         warnings: list[ValidationWarning] = []
         manifest = build_static_manifest(
             program_ir,
             config=config,
             state={},
-            store=MemoryStore(),
+            store=None,
             warnings=warnings,
         )
         data = _actions_from_manifest(manifest)
@@ -148,7 +169,7 @@ def get_actions_payload(source: str, app_path: str | None = None) -> dict:
             payload["warnings"] = [warning.to_dict() for warning in warnings]
         return payload
     except Namel3ssError as err:
-        return build_error_from_exception(err, kind="parse", source=source)
+        return build_error_from_exception(err, kind="manifest", source=source)
     except Exception as err:  # pragma: no cover - defensive guard rail
         return build_error_payload(str(err), kind="internal")
 
@@ -200,14 +221,7 @@ def get_secrets_payload(source: str, app_path: str) -> dict:
 
 
 def get_diagnostics_payload(source: str, app_path: str) -> dict:
-    try:
-        program_ir = _load_project_program(source, app_path)
-        diagnostics = collect_ai_context_diagnostics(program_ir)
-        return {"ok": True, "schema_version": 1, "diagnostics": diagnostics}
-    except Namel3ssError as err:
-        return build_error_from_exception(err, kind="diagnostics", source=source)
-    except Exception as err:  # pragma: no cover - defensive guard rail
-        return build_error_payload(str(err), kind="internal")
+    return {"ok": True, "schema_version": 1, "diagnostics": []}
 
 
 def get_version_payload() -> dict:

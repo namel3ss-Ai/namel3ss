@@ -12,7 +12,7 @@ SOURCE = '''record "Order":
 
 spec is "1.0"
 
-flow "demo":
+flow "demo": requires true
   create "Order" with state.order as order
   return order
 '''
@@ -30,7 +30,7 @@ def test_create_rejects_non_object_values():
 
 spec is "1.0"
 
-flow "demo":
+flow "demo": requires true
   create "Order" with 12 as order
 '''
     with pytest.raises(Namel3ssError) as excinfo:

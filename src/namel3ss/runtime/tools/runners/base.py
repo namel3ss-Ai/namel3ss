@@ -20,6 +20,7 @@ class ToolRunnerRequest:
     flow_name: str | None
     binding: ToolBinding
     config: AppConfig
+    execution_root: Path | None = None
     pack_paths: list[Path] | None = None
     capability_context: dict[str, object] | None = None
     allow_unsafe: bool = False

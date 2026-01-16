@@ -12,6 +12,7 @@ from namel3ss.runtime.ai.provider import AIProvider
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.identity.guards import enforce_requires
+from namel3ss.runtime.mutation_policy import requires_mentions_mutation
 from namel3ss.runtime.audit.recorder import record_audit_entry
 from namel3ss.runtime.executor.result import ExecutionResult
 from namel3ss.runtime.executor.signals import _ReturnSignal
@@ -24,6 +25,7 @@ from namel3ss.runtime.storage.factory import resolve_store
 from namel3ss.runtime.flow.runner import run_declarative_flow
 from namel3ss.schema.identity import IdentitySchema
 from namel3ss.schema.records import RecordSchema
+from namel3ss.schema.evolution import enforce_runtime_schema_compatibility, write_workspace_snapshot
 from namel3ss.secrets import collect_secret_values, discover_required_secrets_for_profiles
 from namel3ss.secrets.context import get_engine_target
 from namel3ss.errors.base import Namel3ssError
@@ -62,6 +64,11 @@ class Executor:
         default_ai_provider = ai_provider or MockProvider()
         provider_cache = {"mock": default_ai_provider}
         resolved_store = resolve_store(store, config=resolved_config)
+        enforce_runtime_schema_compatibility(
+            (schemas or {}).values(),
+            project_root=project_root,
+            store=resolved_store,
+        )
         self._state_loaded_from_store = initial_state is None
         starting_state = initial_state if initial_state is not None else resolved_store.load_state()
         resolved_identity = identity if identity is not None else resolve_identity(resolved_config, identity_schema)
@@ -141,13 +148,15 @@ class Executor:
         self.ctx.current_statement = None
         self.ctx.current_statement_index = None
         try:
-            enforce_requires(
-                self.ctx,
-                getattr(self.ctx.flow, "requires", None),
-                subject=f'flow "{self.ctx.flow.name}"',
-                line=self.ctx.flow.line,
-                column=self.ctx.flow.column,
-            )
+            requires_expr = getattr(self.ctx.flow, "requires", None)
+            if not requires_mentions_mutation(requires_expr):
+                enforce_requires(
+                    self.ctx,
+                    requires_expr,
+                    subject=f'flow "{self.ctx.flow.name}"',
+                    line=self.ctx.flow.line,
+                    column=self.ctx.flow.column,
+                )
             audit_before = None
             if getattr(self.ctx.flow, "audited", False):
                 audit_before = copy.deepcopy(self.ctx.state)
@@ -312,6 +321,12 @@ def _persist_execution_artifacts(ctx: ExecutionContext, *, ok: bool, error: Exce
         redacted = redact_sensitive_payload(pack, secret_values)
         plain_text = build_plain_text(redacted if isinstance(redacted, dict) else pack)
         write_last_execution(Path(ctx.project_root), redacted, plain_text)
+        if ok:
+            write_workspace_snapshot(
+                ctx.schemas.values(),
+                project_root=ctx.project_root,
+                store=ctx.store,
+            )
     except Exception:
         return
 

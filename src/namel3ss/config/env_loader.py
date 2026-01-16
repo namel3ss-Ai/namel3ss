@@ -76,6 +76,14 @@ def apply_env_overrides(config: AppConfig) -> bool:
     if service_url:
         config.python_tools.service_url = service_url
         used = True
+    foreign_strict = os.getenv("N3_FOREIGN_STRICT")
+    if foreign_strict is not None:
+        config.foreign.strict = foreign_strict.strip().lower() in RESERVED_TRUE_VALUES
+        used = True
+    foreign_allow = os.getenv("N3_FOREIGN_ALLOW")
+    if foreign_allow is not None:
+        config.foreign.allow = foreign_allow.strip().lower() in RESERVED_TRUE_VALUES
+        used = True
     used = apply_identity_env(config) or used
     return used
 

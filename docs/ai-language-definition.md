@@ -8,6 +8,7 @@ Execution steps explain what happened and why.
 
 ## What is shipped now
 - AI profiles and agent declarations
+- Agent teams with deterministic ordering and optional roles
 - AI calls with tool and memory integration
 - Deterministic execution steps and traces
 - Modules and memory packs for reuse

@@ -19,7 +19,7 @@ flow "demo":
   let result is "hi"
   return result
 
-page "home":
+page "home": requires true
   button "Run":
     calls flow "demo"
   form is "User"

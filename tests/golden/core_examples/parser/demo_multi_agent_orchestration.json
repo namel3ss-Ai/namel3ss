@@ -1,4 +1,5 @@
 {
+  "agent_team": null,
   "agents": [
     {
       "ai_name": "assistant",
@@ -279,6 +280,7 @@
       ],
       "purity": "impure",
       "timeout_seconds": null,
+      "declared_as": "tool",
       "type": "ToolDecl"
     }
   ],

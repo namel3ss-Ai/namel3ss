@@ -12,16 +12,6 @@
     gemini: "Gemini",
     mistral: "Mistral",
   };
-  const AI_CONTEXT_TITLE = "AI may not have the data it needs";
-  const AI_CONTEXT_WHY = [
-    "You queried app data in this flow, but the Ask AI input doesn't reference it.",
-    "AI will answer generically unless you pass a context summary.",
-  ];
-  const AI_CONTEXT_FIX = [
-    "Build a short context string from query results (cap it).",
-    "Append the user question.",
-    "Send the combined prompt to Ask AI.",
-  ];
 
   function formatProvider(provider) {
     const key = String(provider || "").trim().toLowerCase();
@@ -98,10 +88,27 @@
     return /secret|api key/i.test(value);
   }
 
-  function resolveErrorLocation(payload, parsedWhere) {
+  function resolveErrorEntry(payload) {
+    if (!payload || typeof payload !== "object") return null;
+    const entry = payload.error_entry && typeof payload.error_entry === "object" ? payload.error_entry : null;
+    if (!entry) return null;
+    return {
+      code: entry.code ? String(entry.code) : "",
+      category: entry.category ? String(entry.category) : "",
+      message: entry.message ? redactText(entry.message) : "",
+      hint: entry.hint ? redactText(entry.hint) : "",
+      remediation: entry.remediation ? redactText(entry.remediation) : "",
+      location: entry.location && typeof entry.location === "object" ? entry.location : null,
+      details: entry.details && typeof entry.details === "object" ? entry.details : null,
+    };
+  }
+
+  function resolveErrorLocation(payload, parsedWhere, entryLocation) {
     if (parsedWhere) return parsedWhere;
-    const location = payload && payload.location ? payload.location : null;
-    const file = payload && payload.details ? payload.details.file : null;
+    const location = entryLocation || (payload && payload.location ? payload.location : null);
+    const fileFromEntry = location && location.file ? location.file : null;
+    const fileFromDetails = payload && payload.details ? payload.details.file : null;
+    const file = fileFromEntry || fileFromDetails || "";
     if (!location || (!location.line && !location.column) && !file) return "";
     const parts = [];
     if (file) parts.push(`File: ${file}`);
@@ -110,89 +117,6 @@
       parts.push(`line ${location.line}${col}`);
     }
     return parts.join(" ");
-  }
-
-  function getStaticAiContextDiagnostics() {
-    if (!state || typeof state.getCachedDiagnostics !== "function") return [];
-    const payload = state.getCachedDiagnostics();
-    const list = payload && Array.isArray(payload.diagnostics) ? payload.diagnostics : [];
-    return list.filter((item) => item && String(item.id || "").startsWith("AI_CONTEXT_"));
-  }
-
-  function textLooksQuestionLike(text) {
-    if (!text) return false;
-    const trimmed = String(text).trim().toLowerCase();
-    if (!trimmed) return false;
-    if (trimmed.includes("?")) return true;
-    const starters = ["which", "what", "why", "how", "lowest", "highest", "top", "most", "least"];
-    return starters.some((word) => trimmed.startsWith(`${word} `) || trimmed.includes(` ${word} `));
-  }
-
-  function hasContextMarkers(text) {
-    if (!text) return false;
-    const lower = String(text).toLowerCase();
-    const emptyMarkers = [
-      "(none found)",
-      "no records found",
-      "no orders found",
-      "no data found",
-      "0 records",
-      "0 orders",
-    ];
-    if (emptyMarkers.some((marker) => lower.includes(marker))) return true;
-    if (lower.includes("records:") || lower.includes("record:") || lower.includes("data:")) return true;
-    if (/\bn\s*=\s*\d+/.test(lower)) return true;
-    const lines = String(text)
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean);
-    const listLines = lines.filter((line) => line.startsWith("- ") || line.startsWith("* "));
-    return listLines.length >= 2;
-  }
-
-  function hasDataUsage(traces) {
-    const list = Array.isArray(traces) ? traces : [];
-    return list.some((trace) => {
-      if (!trace || typeof trace !== "object") return false;
-      if (["tool_call", "tool_call_requested", "tool_call_completed", "tool_call_failed"].includes(trace.type)) {
-        return true;
-      }
-      if ((trace.tool_calls && trace.tool_calls.length) || (trace.tool_results && trace.tool_results.length)) {
-        return true;
-      }
-      if (trace.record || trace.record_name) return true;
-      const events = Array.isArray(trace.canonical_events) ? trace.canonical_events : [];
-      return events.some((event) => {
-        const type = event && event.type ? String(event.type) : "";
-        return type.startsWith("tool_call");
-      });
-    });
-  }
-
-  function collectRuntimeAiContextDiagnostics(traces) {
-    const list = Array.isArray(traces) ? traces : [];
-    if (!list.length || !hasDataUsage(list)) return [];
-    let latest = null;
-    list.forEach((trace) => {
-      if (!trace || typeof trace !== "object") return;
-      if (!trace.ai_name && !trace.ai_profile_name) return;
-      const input = trace.input;
-      if (typeof input !== "string" || input.length > 400) return;
-      if (!textLooksQuestionLike(input)) return;
-      if (hasContextMarkers(input)) return;
-      latest = trace;
-    });
-    if (!latest) return [];
-    return [
-      {
-        id: "AI_CONTEXT_LIKELY_MISSING",
-        category: "AI Design Warning",
-        severity: "warning",
-        message: "This AI call looks like a data question, but the AI input is mostly the question text.",
-        hint: "Include a compact summary of relevant records/tool output in the AI prompt.",
-        source: "runtime",
-      },
-    ];
   }
 
   function getLatestProviderError(traces) {
@@ -423,97 +347,16 @@
     return card;
   }
 
-  function buildAiContextCard(diagnostic) {
-    const card = document.createElement("div");
-    card.className = "error-card";
-
-    const header = document.createElement("div");
-    header.className = "error-card-header";
-    const title = document.createElement("div");
-    title.className = "error-card-title";
-    title.textContent = AI_CONTEXT_TITLE;
-    const badge = document.createElement("span");
-    badge.className = "error-badge";
-    badge.textContent = diagnostic.category || "AI Design Warning";
-    header.appendChild(title);
-    header.appendChild(badge);
-
-    const summary = document.createElement("div");
-    summary.className = "error-hint";
-    summary.textContent = diagnostic.message || "AI input may be missing app data context.";
-
-    const hint = document.createElement("div");
-    hint.className = "error-hint";
-    hint.textContent = diagnostic.hint || "Include a compact summary of relevant records or tool output.";
-
-    const whyTitle = document.createElement("div");
-    whyTitle.className = "panel-section-title";
-    whyTitle.textContent = "Why";
-    const whyList = document.createElement("ul");
-    whyList.className = "error-why";
-    AI_CONTEXT_WHY.forEach((line) => {
-      const item = document.createElement("li");
-      item.textContent = line;
-      whyList.appendChild(item);
-    });
-
-    const fields = document.createElement("div");
-    fields.className = "error-fields";
-    if (diagnostic.flow) {
-      fields.appendChild(buildFieldRow("Flow", diagnostic.flow));
-      if (diagnostic.line) {
-        const location = diagnostic.column ? `${diagnostic.line}:${diagnostic.column}` : String(diagnostic.line);
-        fields.appendChild(buildFieldRow("Location", location));
-      }
-    }
-
-    const stepsTitle = document.createElement("div");
-    stepsTitle.className = "panel-section-title";
-    stepsTitle.textContent = "How to fix";
-    const steps = document.createElement("div");
-    steps.className = "code-block fix-steps";
-    steps.textContent = AI_CONTEXT_FIX.join("\n");
-
-    const actions = document.createElement("div");
-    actions.className = "json-actions";
-    const copyFix = document.createElement("button");
-    copyFix.type = "button";
-    copyFix.className = "btn ghost";
-    copyFix.textContent = "Copy fix snippet";
-    copyFix.onclick = () => {
-      copyText(AI_CONTEXT_FIX.join("\n"));
-    };
-    actions.appendChild(copyFix);
-
-    if (diagnostic.flow) {
-      const viewFlow = document.createElement("button");
-      viewFlow.type = "button";
-      viewFlow.className = "btn ghost";
-      viewFlow.textContent = "View flow";
-      viewFlow.onclick = () => openTab("graph");
-      actions.appendChild(viewFlow);
-    }
-
-    card.appendChild(header);
-    card.appendChild(summary);
-    card.appendChild(hint);
-    card.appendChild(whyTitle);
-    card.appendChild(whyList);
-    if (fields.childNodes.length) {
-      card.appendChild(fields);
-    }
-    card.appendChild(stepsTitle);
-    card.appendChild(steps);
-    card.appendChild(actions);
-    return card;
-  }
-
   function buildRunErrorCard(payload) {
     const card = document.createElement("div");
     card.className = "error-card";
+    const entry = resolveErrorEntry(payload);
     const rawText = extractErrorText(payload);
     const parsed = parseGuidanceSections(rawText);
-    const where = resolveErrorLocation(payload, parsed.where);
+    const what = (entry && entry.message) || parsed.what || parsed.raw;
+    const why = (entry && entry.hint) || parsed.why;
+    const fix = (entry && entry.remediation) || parsed.fix;
+    const where = resolveErrorLocation(payload, parsed.where, entry && entry.location);
 
     const header = document.createElement("div");
     header.className = "error-card-header";
@@ -528,24 +371,23 @@
 
     const detailStack = document.createElement("div");
     detailStack.className = "error-details";
-    if (parsed.what) {
-      detailStack.appendChild(buildDetailRow("What happened", parsed.what));
-    } else if (parsed.raw) {
-      detailStack.appendChild(buildDetailRow("What happened", parsed.raw));
+    if (what) {
+      detailStack.appendChild(buildDetailRow("What happened", what));
     }
     if (where) {
       detailStack.appendChild(buildDetailRow("Where", where));
     }
-    if (parsed.why) {
-      detailStack.appendChild(buildDetailRow("Why", parsed.why));
+    if (why) {
+      detailStack.appendChild(buildDetailRow("Why", why));
     }
 
-    const code = (payload && payload.error_entry && payload.error_entry.code) || (payload && payload.details && payload.details.error_id) || "";
-    const keyword = (payload && payload.details && payload.details.keyword) || "";
+    const details = (entry && entry.details) || (payload && payload.details) || {};
+    const code = (entry && entry.code) || (details && details.error_id) || "";
+    const keyword = (details && details.keyword) || "";
     const reservedHint = code === "parse.reserved_identifier"
       ? `Rename '${keyword || "this name"}' (for example, 'ticket_${keyword || "name"}'). See also: run \`n3 reserved\`.`
       : "";
-    const fixText = [parsed.fix, parsed.example, reservedHint].filter(Boolean).join("\n");
+    const fixText = [fix, parsed.example, reservedHint].filter(Boolean).join("\n");
     const stepsTitle = document.createElement("div");
     stepsTitle.className = "panel-section-title";
     stepsTitle.textContent = "How to fix";
@@ -571,7 +413,7 @@
       actions.appendChild(copyFix);
     }
 
-    if (shouldShowSetupForError(parsed.raw || parsed.fix || parsed.what)) {
+    if (shouldShowSetupForError(rawText || fix || what)) {
       const openSetup = document.createElement("button");
       openSetup.type = "button";
       openSetup.className = "btn ghost";
@@ -614,18 +456,8 @@
     const event = getLatestProviderError(traces);
     const providerDiagnostic = event && event.diagnostic ? sanitizeDiagnostic(event.diagnostic || {}) : null;
     const safeRunError = runError ? sanitizeDiagnostic(runError) : null;
-    const staticDiagnostics = getStaticAiContextDiagnostics().map((item) => sanitizeDiagnostic(item));
-    const runtimeDiagnostics = collectRuntimeAiContextDiagnostics(traces).map((item) => sanitizeDiagnostic(item));
-    const seen = new Set();
-    const aiDiagnostics = [...staticDiagnostics, ...runtimeDiagnostics].filter((item) => {
-      if (!item) return false;
-      const key = `${item.id || ""}|${item.flow || ""}|${item.source || ""}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
 
-    if (!providerDiagnostic && !aiDiagnostics.length && !safeRunError) {
+    if (!providerDiagnostic && !safeRunError) {
       updateErrorBanner(null);
       dom.showEmpty(panel, "No provider errors yet.");
       return;
@@ -641,9 +473,6 @@
     if (providerDiagnostic) {
       stack.appendChild(buildProviderErrorCard(providerDiagnostic));
     }
-    aiDiagnostics.forEach((diagnostic) => {
-      stack.appendChild(buildAiContextCard(diagnostic));
-    });
     panel.appendChild(stack);
   }
 

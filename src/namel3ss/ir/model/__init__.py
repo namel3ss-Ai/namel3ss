@@ -1,6 +1,7 @@
 from namel3ss.ir.model.base import Expression, Node, Statement
 from namel3ss.ir.model.program import Flow, Program
 from namel3ss.ir.model.flow_steps import (
+    FlowCallForeign,
     FlowCreate,
     FlowDelete,
     FlowField,
@@ -59,7 +60,15 @@ from namel3ss.ir.functions.model import (
     FunctionSignature,
 )
 from namel3ss.ir.model.ai import AIDecl, AIMemory, AskAIStmt
-from namel3ss.ir.model.agents import AgentDecl, AgentMergePolicy, ParallelAgentEntry, RunAgentStmt, RunAgentsParallelStmt
+from namel3ss.ir.model.agents import (
+    AgentDecl,
+    AgentMergePolicy,
+    AgentTeam,
+    AgentTeamMember,
+    ParallelAgentEntry,
+    RunAgentStmt,
+    RunAgentsParallelStmt,
+)
 from namel3ss.ir.model.pages import (
     ButtonItem,
     CardAction,
@@ -113,6 +122,7 @@ __all__ = [
     "Statement",
     "Flow",
     "Program",
+    "FlowCallForeign",
     "ForEach",
     "If",
     "Let",
@@ -159,6 +169,8 @@ __all__ = [
     "AIMemory",
     "AskAIStmt",
     "AgentDecl",
+    "AgentTeam",
+    "AgentTeamMember",
     "ParallelAgentEntry",
     "RunAgentStmt",
     "RunAgentsParallelStmt",

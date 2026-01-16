@@ -3523,10 +3523,11 @@
     "schema_version": "production.v0",
     "state": {},
     "status": "ok",
-    "trace_hash": "f0be10d5c96573a260e82550bef78edd59c80c1ae39c62e09047d555fb8d2024",
+    "trace_hash": "341a26b6205990dbee3d2e9239354db9a9ff1ac34b63b98b838dbde66abd4026",
     "trace_schema_version": "2024-10-01",
     "traces": [
       {
+        "agent_id": null,
         "agent_name": null,
         "ai_name": "assistant",
         "ai_profile_name": "assistant",
@@ -10492,6 +10493,7 @@
         ],
         "model": "gpt-4.1",
         "output": "[gpt-4.1] You are a helper. :: Hello | mem:st=0",
+        "role": null,
         "system_prompt": "You are a helper.",
         "title": "AI assistant",
         "tool_calls": [],
@@ -10506,6 +10508,7 @@
   "state": {},
   "traces": [
     {
+      "agent_id": null,
       "agent_name": null,
       "ai_name": "assistant",
       "ai_profile_name": "assistant",
@@ -17471,6 +17474,7 @@
       ],
       "model": "gpt-4.1",
       "output": "[gpt-4.1] You are a helper. :: Hello | mem:st=0",
+      "role": null,
       "system_prompt": "You are a helper.",
       "title": "AI assistant",
       "tool_calls": [],

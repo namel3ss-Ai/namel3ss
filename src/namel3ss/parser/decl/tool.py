@@ -131,6 +131,7 @@ def parse_tool(parser) -> ast.ToolDecl:
         output_fields=output_fields,
         purity=purity,
         timeout_seconds=timeout_seconds,
+        declared_as="tool",
         line=tool_tok.line,
         column=tool_tok.column,
     )

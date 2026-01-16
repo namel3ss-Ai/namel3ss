@@ -66,6 +66,7 @@ def test_ui_dsl_spec_exists_and_has_sections():
         "What UI DSL is",
         "Core blocks and naming rules",
         "Allowed UI elements",
+        "Media",
         "Core UI primitives",
         "Story progression",
         "Flow actions",
@@ -84,7 +85,23 @@ def test_ui_dsl_spec_exists_and_has_sections():
     assert "purpose is" in text
     assert "Story progression" in text
     assert "Tone must be one of" in text
-    assert "Icon must be one of" in text
+    assert "Icons are runtime-owned" in text or "Icons are runtime owned" in text
+    assert "n3 icons" in text
+    assert "media/" in text
+    assert "Allowed formats" in text
+    assert ".png" in text
+    assert ".jpg" in text
+    assert ".svg" in text
+    assert ".webp" in text
+    assert 'image is "<media_name>"' in text
+    assert 'role is "hero"' in text
+    assert "Roles must be one of" in text
+    assert "n3 check" in text
+    assert "warning" in text
+    assert "n3 build" in text
+    assert "error" in text
+    assert "placeholder" in text
+    assert "fix_hint" in text
     assert "Declarative grammar (no colon form in this surface)" in text
     assert "Supported steps (closed set for phase 4b)" in text
     assert "Values are string/number/boolean literals or `input.<field>` only." in text

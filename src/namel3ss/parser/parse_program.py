@@ -26,6 +26,7 @@ def parse_program(parser) -> ast.Program:
     ais: List[ast.AIDecl] = []
     tools: List[ast.ToolDecl] = []
     agents: List[ast.AgentDecl] = []
+    agent_team: ast.AgentTeamDecl | None = None
     uses: List[ast.UseDecl] = []
     capsule: ast.CapsuleDecl | None = None
     identity: ast.IdentityDecl | None = None
@@ -143,11 +144,28 @@ def parse_program(parser) -> ast.Program:
         if rule.name == "app":
             app_theme, app_line, app_column, theme_tokens, theme_preference = rule.parse(parser)
             continue
+        if rule.name == "foreign":
+            tools.append(rule.parse(parser))
+            continue
         if rule.name == "tool":
             tools.append(rule.parse(parser))
             continue
         if rule.name == "agent":
             agents.append(rule.parse(parser))
+            continue
+        if rule.name == "agent_team":
+            if agent_team is not None:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Team of agents is declared more than once.",
+                        why="Only one team of agents block is allowed.",
+                        fix="Keep a single team of agents block in the app.",
+                        example='team of agents\n  \"planner\"\n  \"reviewer\"',
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            agent_team = rule.parse(parser)
             continue
         if rule.name == "ai":
             ais.append(rule.parse(parser))
@@ -218,6 +236,7 @@ def parse_program(parser) -> ast.Program:
         ais=ais,
         tools=tools,
         agents=agents,
+        agent_team=agent_team,
         uses=uses,
         capsule=capsule,
         identity=identity,

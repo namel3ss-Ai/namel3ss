@@ -1,0 +1,240 @@
+from __future__ import annotations
+
+import json
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
+from typing import Any
+from urllib.parse import urlparse
+
+from namel3ss.errors.base import Namel3ssError
+from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.errors.payload import build_error_from_exception, build_error_payload
+from namel3ss.runtime.dev_server import BrowserAppState
+from namel3ss.ui.external.serve import resolve_external_ui_file
+from namel3ss.utils.json_tools import dumps as json_dumps
+from namel3ss.version import get_version
+
+
+DEFAULT_START_PORT = 8787
+
+
+class ProductionRequestHandler(BaseHTTPRequestHandler):
+    def log_message(self, format: str, *args: Any) -> None:  # pragma: no cover - silence logs
+        pass
+
+    def do_GET(self) -> None:  # noqa: N802
+        path = urlparse(self.path).path
+        if path.startswith("/health"):
+            self._respond_json(self._health_payload())
+            return
+        if path.startswith("/version"):
+            self._respond_json(self._version_payload())
+            return
+        if path == "/api/ui":
+            payload = self._state().manifest_payload()
+            status = 200 if payload.get("ok", True) else 400
+            self._respond_json(payload, status=status)
+            return
+        if path.startswith("/api/"):
+            self.send_error(404)
+            return
+        if self._handle_static(path):
+            return
+        self.send_error(404)
+
+    def do_POST(self) -> None:  # noqa: N802
+        path = urlparse(self.path).path
+        if path == "/api/action":
+            body = self._read_json_body()
+            if body is None:
+                payload = build_error_payload("Invalid JSON body.", kind="engine")
+                self._respond_json(payload, status=400)
+                return
+            self._handle_action_post(body)
+            return
+        self.send_error(404)
+
+    def _health_payload(self) -> dict:
+        return {
+            "ok": True,
+            "status": "ready",
+            "target": getattr(self.server, "target", "service"),  # type: ignore[attr-defined]
+            "build_id": getattr(self.server, "build_id", None),  # type: ignore[attr-defined]
+        }
+
+    def _version_payload(self) -> dict:
+        return {
+            "ok": True,
+            "version": get_version(),
+            "target": getattr(self.server, "target", "service"),  # type: ignore[attr-defined]
+            "build_id": getattr(self.server, "build_id", None),  # type: ignore[attr-defined]
+        }
+
+    def _respond_json(self, payload: dict, status: int = 200) -> None:
+        data = json_dumps(payload).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def _handle_action_post(self, body: dict) -> None:
+        if not isinstance(body, dict):
+            self._respond_json(build_error_payload("Body must be a JSON object.", kind="engine"), status=400)
+            return
+        action_id = body.get("id")
+        payload = body.get("payload") or {}
+        if not isinstance(action_id, str):
+            self._respond_json(build_error_payload("Action id is required.", kind="engine"), status=400)
+            return
+        if not isinstance(payload, dict):
+            self._respond_json(build_error_payload("Payload must be an object.", kind="engine"), status=400)
+            return
+        try:
+            response = self._state().run_action(action_id, payload)
+            status = 200 if response.get("ok", True) else 400
+            self._respond_json(response, status=status)
+        except Namel3ssError as err:
+            payload = build_error_from_exception(err, kind="engine")
+            self._respond_json(payload, status=400)
+        except Exception as err:  # pragma: no cover - defensive guard rail
+            payload = build_error_payload(str(err), kind="internal")
+            self._respond_json(payload, status=500)
+
+    def _handle_static(self, path: str) -> bool:
+        web_root = getattr(self.server, "web_root", None)  # type: ignore[attr-defined]
+        if web_root is None:
+            return False
+        file_path, content_type = resolve_external_ui_file(web_root, path)
+        if not file_path or not content_type:
+            return False
+        try:
+            content = file_path.read_bytes()
+        except OSError:  # pragma: no cover - IO guard
+            return False
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(content)))
+        self.end_headers()
+        self.wfile.write(content)
+        return True
+
+    def _read_json_body(self) -> dict | None:
+        length = int(self.headers.get("Content-Length", "0"))
+        raw_body = self.rfile.read(length) if length else b""
+        if not raw_body:
+            return {}
+        try:
+            decoded = raw_body.decode("utf-8")
+            return json.loads(decoded or "{}")
+        except Exception:
+            return None
+
+    def _state(self) -> BrowserAppState:
+        return self.server.app_state  # type: ignore[attr-defined]
+
+
+class ProductionRunner:
+    def __init__(
+        self,
+        build_path: Path,
+        app_path: Path,
+        *,
+        build_id: str | None,
+        target: str = "service",
+        port: int = DEFAULT_START_PORT,
+        artifacts: dict | None = None,
+    ) -> None:
+        self.build_path = Path(build_path).resolve()
+        self.app_path = Path(app_path).resolve()
+        self.build_id = build_id
+        self.target = target
+        self.port = port or DEFAULT_START_PORT
+        self.server: HTTPServer | None = None
+        self._thread: threading.Thread | None = None
+        self.artifacts = artifacts or {}
+        self.web_root = self._resolve_web_root(self.artifacts)
+        self.app_state = BrowserAppState(
+            self.app_path,
+            mode="preview",
+            debug=False,
+            source_overrides=_build_source_overrides(self.build_path, self.app_path.parent, self.artifacts),
+            watch_sources=False,
+            engine_target=self.target,
+        )
+
+    def start(self, *, background: bool = False) -> None:
+        server = HTTPServer(("0.0.0.0", self.port), ProductionRequestHandler)
+        server.target = self.target  # type: ignore[attr-defined]
+        server.build_id = self.build_id  # type: ignore[attr-defined]
+        server.web_root = self.web_root  # type: ignore[attr-defined]
+        server.app_state = self.app_state  # type: ignore[attr-defined]
+        self.server = server
+        if background:
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            self._thread = thread
+        else:
+            server.serve_forever()
+
+    def shutdown(self) -> None:
+        if self.server:
+            try:
+                self.server.shutdown()
+            except Exception:
+                pass
+        if self._thread and self._thread.is_alive():
+            self._thread.join(timeout=1)
+
+    @property
+    def bound_port(self) -> int:
+        if self.server:
+            return int(self.server.server_address[1])
+        return self.port
+
+    def _resolve_web_root(self, artifacts: dict) -> Path:
+        web_dir = artifacts.get("web") if isinstance(artifacts, dict) else None
+        web_root = self.build_path / (web_dir or "web")
+        if not web_root.exists():
+            raise Namel3ssError(
+                build_guidance_message(
+                    what="Build web assets are missing.",
+                    why="The build output does not include the runtime web bundle.",
+                    fix="Re-run `n3 build` for this target.",
+                    example="n3 build --target service",
+                )
+            )
+        return web_root
+
+
+def _build_source_overrides(build_path: Path, project_root: Path, artifacts: dict) -> dict[Path, str]:
+    program_dir = artifacts.get("program") if isinstance(artifacts, dict) else None
+    program_root = build_path / (program_dir or "program")
+    if not program_root.exists():
+        raise Namel3ssError(
+            build_guidance_message(
+                what="Build program snapshot is missing.",
+                why="The build output does not include program sources.",
+                fix="Re-run `n3 build` for this target.",
+                example="n3 build --target service",
+            )
+        )
+    overrides: dict[Path, str] = {}
+    for src_path in sorted(program_root.rglob("*.ai"), key=lambda path: path.as_posix()):
+        rel = src_path.relative_to(program_root)
+        target_path = project_root / rel
+        overrides[target_path] = src_path.read_text(encoding="utf-8")
+    if not overrides:
+        raise Namel3ssError(
+            build_guidance_message(
+                what="Build program snapshot is empty.",
+                why="No .ai sources were found in the build output.",
+                fix="Re-run `n3 build` for this target.",
+                example="n3 build --target service",
+            )
+        )
+    return overrides
+
+
+__all__ = ["DEFAULT_START_PORT", "ProductionRunner"]

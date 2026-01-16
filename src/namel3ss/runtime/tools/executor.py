@@ -5,6 +5,9 @@ from pathlib import Path
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.foreign.intent import foreign_language_label
+from namel3ss.foreign.policy import foreign_policy_allows, foreign_policy_mode
+from namel3ss.observe import summarize_value
 from namel3ss.runtime.boundary import mark_boundary
 from namel3ss.runtime.capabilities.gates import record_capability_check
 from namel3ss.runtime.capabilities.model import CapabilityCheck, CapabilityContext, EffectiveGuarantees
@@ -19,6 +22,8 @@ from namel3ss.runtime.tools.registry import execute_tool as execute_builtin_tool
 from namel3ss.runtime.tools.resolution import resolve_tool_binding
 from namel3ss.runtime.tools.runners.registry import get_runner
 from namel3ss.runtime.values.normalize import ensure_object
+from namel3ss.secrets import collect_secret_values, redact_text
+from namel3ss.traces.schema import TraceEventType
 
 
 @dataclass(frozen=True)
@@ -76,9 +81,13 @@ def _execute_tool_call_internal(
 ) -> tuple[ToolCallOutcome, Exception | None]:
     ensure_tool_call_allowed(ctx, tool_name, line=line, column=column)
     tool_decl = ctx.tools.get(tool_name)
+    is_foreign = _is_foreign_tool(tool_decl)
+    policy_mode = foreign_policy_mode(getattr(ctx, "config", None))
     builtin_fallback = ctx.tool_call_source == "ai" and is_builtin_tool(tool_name)
     tool_kind = tool_decl.kind if tool_decl else ("builtin" if builtin_fallback else None)
     required_caps = normalize_capabilities(getattr(tool_decl, "capabilities", None) if tool_decl else ())
+    if is_foreign:
+        _record_foreign_boundary_start(ctx, tool_decl, args, policy_mode=policy_mode)
     binding_check = _check_binding(ctx, tool_name, tool_kind, line=line, column=column)
     if not binding_check.ok:
         decision_reason = binding_check.reason or "missing_binding"
@@ -107,6 +116,37 @@ def _execute_tool_call_internal(
         )
         err = _blocked_error(ctx, tool_name, decision, binding_check.error, line=line, column=column)
         mark_boundary(err, "tools")
+        _record_foreign_boundary_end(
+            ctx,
+            tool_decl,
+            status="blocked" if decision_status == "blocked" else "error",
+            error=err,
+            policy_mode=policy_mode,
+        )
+        return outcome, err
+    if is_foreign and not foreign_policy_allows(getattr(ctx, "config", None)):
+        decision = ToolDecision(
+            status="blocked",
+            capability=None,
+            reason="foreign_policy",
+            message=_foreign_policy_message(policy_mode),
+        )
+        outcome = ToolCallOutcome(
+            tool_name=tool_name,
+            decision=decision,
+            result_kind="blocked",
+            result_summary=decision.message,
+        )
+        _record_tool_trace(ctx, tool_name, tool_kind, decision, result="blocked")
+        err = _foreign_policy_error(tool_name, line=line, column=column)
+        mark_boundary(err, "tools")
+        _record_foreign_boundary_end(
+            ctx,
+            tool_decl,
+            status="blocked",
+            error=err,
+            policy_mode=policy_mode,
+        )
         return outcome, err
     policy = load_tool_policy(
         tool_name=tool_name,
@@ -133,6 +173,13 @@ def _execute_tool_call_internal(
         )
         err = _blocked_error(ctx, tool_name, decision, None, line=line, column=column)
         mark_boundary(err, "tools")
+        _record_foreign_boundary_end(
+            ctx,
+            tool_decl,
+            status="blocked" if decision.status == "blocked" else "error",
+            error=err,
+            policy_mode=policy_mode,
+        )
         return outcome, err
     if tool_kind is None:
         err = Namel3ssError(f'Unknown tool "{tool_name}".', line=line, column=column)
@@ -144,6 +191,7 @@ def _execute_tool_call_internal(
             result_kind="error",
             result_summary=str(err),
         )
+        _record_foreign_boundary_end(ctx, tool_decl, status="error", error=err, policy_mode=policy_mode)
         return outcome, err
 
     try:
@@ -163,6 +211,7 @@ def _execute_tool_call_internal(
                 result_kind="error",
                 result_summary=str(err),
             )
+            _record_foreign_boundary_end(ctx, tool_decl, status="error", error=err, policy_mode=policy_mode)
             return outcome, err
     except Exception as err:
         _record_tool_trace(ctx, tool_name, tool_kind, decision, result="error")
@@ -173,9 +222,10 @@ def _execute_tool_call_internal(
             result_kind="error",
             result_summary=str(err),
         )
+        _record_foreign_boundary_end(ctx, tool_decl, status="error", error=err, policy_mode=policy_mode)
         return outcome, err
 
-    result_object = ensure_object(result)
+    result_object = result if is_foreign else ensure_object(result)
     _record_tool_trace(ctx, tool_name, tool_kind, decision, result="ok")
     outcome = ToolCallOutcome(
         tool_name=tool_name,
@@ -184,6 +234,7 @@ def _execute_tool_call_internal(
         result_summary="ok",
         result_value=result_object,
     )
+    _record_foreign_boundary_end(ctx, tool_decl, status="ok", result=result_object, policy_mode=policy_mode)
     return outcome, None
 
 
@@ -400,6 +451,77 @@ def _tool_example(tool_name: str) -> str:
         "  output:\n"
         "    data is json"
     )
+
+
+def _is_foreign_tool(tool_decl) -> bool:
+    return bool(tool_decl) and getattr(tool_decl, "declared_as", "tool") == "foreign"
+
+
+def _foreign_policy_message(policy_mode: str) -> str:
+    if policy_mode == "strict":
+        return "Foreign calls are blocked by strict determinism policy."
+    return "Foreign calls are blocked by policy."
+
+
+def _foreign_policy_error(tool_name: str, *, line: int | None, column: int | None) -> Namel3ssError:
+    return Namel3ssError(
+        build_guidance_message(
+            what=f'Foreign function "{tool_name}" is blocked by strict determinism policy.',
+            why="Strict mode rejects foreign calls unless explicitly allowed.",
+            fix="Allow foreign calls for this run or disable strict mode.",
+            example="N3_FOREIGN_ALLOW=1",
+        ),
+        line=line,
+        column=column,
+    )
+
+
+def _record_foreign_boundary_start(
+    ctx: ExecutionContext,
+    tool_decl,
+    args: dict,
+    *,
+    policy_mode: str,
+) -> None:
+    if tool_decl is None or getattr(tool_decl, "declared_as", "tool") != "foreign":
+        return
+    secret_values = collect_secret_values(getattr(ctx, "config", None))
+    event = {
+        "type": TraceEventType.BOUNDARY_START,
+        "boundary": "foreign",
+        "language": foreign_language_label(getattr(tool_decl, "kind", None)),
+        "function_name": tool_decl.name,
+        "policy_mode": policy_mode,
+        "input_summary": summarize_value(args, secret_values=secret_values),
+    }
+    _trace_target(ctx).append(event)
+
+
+def _record_foreign_boundary_end(
+    ctx: ExecutionContext,
+    tool_decl,
+    *,
+    status: str,
+    result: object | None = None,
+    error: Exception | None = None,
+    policy_mode: str,
+) -> None:
+    if tool_decl is None or getattr(tool_decl, "declared_as", "tool") != "foreign":
+        return
+    secret_values = collect_secret_values(getattr(ctx, "config", None))
+    event = {
+        "type": TraceEventType.BOUNDARY_END,
+        "boundary": "foreign",
+        "language": foreign_language_label(getattr(tool_decl, "kind", None)),
+        "function_name": tool_decl.name,
+        "policy_mode": policy_mode,
+        "status": status,
+    }
+    if status == "ok":
+        event["output_summary"] = summarize_value(result, secret_values=secret_values)
+    elif error is not None:
+        event["error_message"] = redact_text(str(error), secret_values)
+    _trace_target(ctx).append(event)
 
 
 __all__ = ["execute_tool_call", "execute_tool_call_with_outcome"]

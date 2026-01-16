@@ -14,12 +14,13 @@ def build_agent_timeline(
     events: list[dict] = []
     for summary in summaries:
         agent_id = summary.get("agent_id") or summary.get("ai_profile") or "agent"
+        label = summary.get("agent_name") or agent_id
         events.append(
             {
                 "id": f"{agent_id}:start",
                 "kind": "start",
-                "title": f"{agent_id} started",
-                "details": {"input_summary": summary.get("input_summary") or ""},
+                "title": f"{label} started",
+                "details": _start_details(summary),
             }
         )
         memory = summary.get("memory") if isinstance(summary.get("memory"), dict) else {}
@@ -29,7 +30,7 @@ def build_agent_timeline(
                 {
                     "id": f"{agent_id}:memory",
                     "kind": "memory",
-                    "title": f"{agent_id} recalled memory",
+                    "title": f"{label} recalled memory",
                     "details": {
                         "recalled_count": recalled,
                         "spaces": list(memory.get("spaces") or []),
@@ -41,7 +42,7 @@ def build_agent_timeline(
         for idx, tool in enumerate(tools, start=1):
             tool_name = tool.get("tool") or "tool"
             status = tool.get("status") or "requested"
-            title = f"{agent_id} tool {tool_name}"
+            title = f"{label} tool {tool_name}"
             events.append(
                 {
                     "id": f"{agent_id}:tool:{idx}",
@@ -58,7 +59,7 @@ def build_agent_timeline(
             {
                 "id": f"{agent_id}:output",
                 "kind": "output",
-                "title": f"{agent_id} output",
+                "title": f"{label} output",
                 "details": {
                     "output_preview": summary.get("output_preview") or "",
                     "output_hash": summary.get("output_hash") or "",
@@ -101,6 +102,14 @@ def build_agent_timeline(
             }
         )
     return events
+
+
+def _start_details(summary: dict) -> dict:
+    details = {"input_summary": summary.get("input_summary") or ""}
+    reason = summary.get("reason")
+    if isinstance(reason, str) and reason:
+        details["reason"] = reason
+    return details
 
 
 def _memory_explain(memory: dict) -> dict:

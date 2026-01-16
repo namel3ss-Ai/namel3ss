@@ -12,37 +12,9 @@ def parse_flow(parser) -> ast.Flow:
     name_tok = parser._expect("STRING", "Expected flow name string")
     requires_expr = None
     audited = False
-    while True:
-        if _match_ident_value(parser, "requires"):
-            if requires_expr is not None:
-                raise Namel3ssError(
-                    build_guidance_message(
-                        what="Flow declares requires more than once.",
-                        why="Each flow may only have a single requires clause.",
-                        fix="Keep a single requires clause on the flow header.",
-                        example='flow "delete_order": requires identity.role is "admin"',
-                    ),
-                    line=flow_tok.line,
-                    column=flow_tok.column,
-                )
-            requires_expr = parser._parse_expression()
-            continue
-        if _match_ident_value(parser, "audited"):
-            if audited:
-                raise Namel3ssError(
-                    build_guidance_message(
-                        what="Flow declares audited more than once.",
-                        why="Auditing is a single flag on the flow header.",
-                        fix="Remove the extra audited keyword.",
-                        example='flow "update_order": audited',
-                    ),
-                    line=flow_tok.line,
-                    column=flow_tok.column,
-                )
-            audited = True
-            continue
-        break
+    requires_expr, audited = _parse_flow_header_flags(parser, requires_expr, audited, flow_tok)
     if parser._match("COLON"):
+        requires_expr, audited = _parse_flow_header_flags(parser, requires_expr, audited, flow_tok)
         parser._expect("NEWLINE", "Expected newline after flow header")
         parser._expect("INDENT", "Expected indented block for flow body")
         body = parse_statements(parser, until={"DEDENT"})
@@ -83,6 +55,40 @@ def _match_ident_value(parser, value: str) -> bool:
         parser._advance()
         return True
     return False
+
+
+def _parse_flow_header_flags(parser, requires_expr, audited, flow_tok):
+    while True:
+        if _match_ident_value(parser, "requires"):
+            if requires_expr is not None:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Flow declares requires more than once.",
+                        why="Each flow may only have a single requires clause.",
+                        fix="Keep a single requires clause on the flow header.",
+                        example='flow "delete_order": requires identity.role is "admin"',
+                    ),
+                    line=flow_tok.line,
+                    column=flow_tok.column,
+                )
+            requires_expr = parser._parse_expression()
+            continue
+        if _match_ident_value(parser, "audited"):
+            if audited:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Flow declares audited more than once.",
+                        why="Auditing is a single flag on the flow header.",
+                        fix="Remove the extra audited keyword.",
+                        example='flow "update_order": audited',
+                    ),
+                    line=flow_tok.line,
+                    column=flow_tok.column,
+                )
+            audited = True
+            continue
+        break
+    return requires_expr, audited
 
 
 __all__ = ["parse_flow"]

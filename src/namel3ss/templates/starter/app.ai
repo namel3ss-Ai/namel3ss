@@ -1,24 +1,46 @@
 spec is "1.0"
 
+# template: {{TEMPLATE_NAME}}@{{TEMPLATE_VERSION}}
+# A minimal app that shows records, flows, and UI intent.
+
+ui:
+  theme is "light"
+
 record "Note":
   field "summary" is text must be present
   field "details" is text
 
-flow "seed_note"
+# A deterministic flow that creates a starter record.
+flow "seed_note" requires true
   create "Note"
     summary is "hello"
     details is "this note is created by a flow"
 
-page "home":
+page "home": requires true
+  purpose is "Capture notes and show the UI primitives together."
   title is "{{PROJECT_NAME}}"
   text is "starter app for namel3ss."
+  image is "welcome":
+    role is "hero"
   section "notes":
+    compose overview:
+      number:
+        count of "Note" as "notes"
+      view of "Note"
     card "add note":
       form is "Note"
     card "saved notes":
       table is "Note"
+  story "Getting started":
+    step "Create a note":
+      text is "Use the form or button to add a note."
+      icon is add
+      next is "Review notes"
+    step "Review notes":
+      text is "See saved notes in the view and table."
+      image is "welcome":
+        role is "illustration"
   card "flow":
     text is "use the button to add a deterministic note."
     button "add sample note":
       calls flow "seed_note"
-

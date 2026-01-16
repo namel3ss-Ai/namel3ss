@@ -7,6 +7,7 @@ from namel3ss.traces.builders import (
     build_agent_merge_selected,
     build_agent_merge_started,
     build_agent_merge_summary,
+    build_merge_applied,
 )
 from namel3ss.utils.numbers import decimal_to_str
 
@@ -74,13 +75,25 @@ def build_merge_trace_events(outcome: MergeOutcome, merge_policy) -> list[dict]:
                 )
             )
     summary_lines = _summary_lines(outcome)
+    selected_agents = _selected_agents(outcome)
+    rejected_agents = _rejected_agents(outcome)
     events.append(
         build_agent_merge_summary(
             policy=policy,
-            selected_agents=_selected_agents(outcome),
-            rejected_agents=_rejected_agents(outcome),
+            selected_agents=selected_agents,
+            rejected_agents=rejected_agents,
             title="Agent merge summary",
             lines=summary_lines,
+        )
+    )
+    applied_lines = ["Merge applied."] + summary_lines
+    events.append(
+        build_merge_applied(
+            policy=policy,
+            selected_agents=selected_agents,
+            rejected_agents=rejected_agents,
+            title="Merge applied",
+            lines=applied_lines,
         )
     )
     return events

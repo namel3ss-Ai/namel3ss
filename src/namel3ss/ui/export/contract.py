@@ -32,6 +32,7 @@ def build_contract_manifest(
     )
     return build_manifest(
         program_ir,
+        config=resolved_config,
         state=state or {},
         store=resolved_store,
         runtime_theme=runtime_theme,

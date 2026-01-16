@@ -1,0 +1,20 @@
+{
+  "title": "something went wrong",
+  "summary": "Missing media 'welcome'.",
+  "sections": [
+    {
+      "title": "what happened",
+      "body": "Missing media 'welcome'."
+    },
+    {
+      "title": "why",
+      "body": "Images must match a file in the media/ folder."
+    },
+    {
+      "title": "how to fix",
+      "items": [
+        "Put welcome.png (or .jpg/.jpeg/.svg/.webp) in media/."
+      ]
+    }
+  ]
+}

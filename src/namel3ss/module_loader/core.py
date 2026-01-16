@@ -172,6 +172,7 @@ def _merge_programs(
     combined_ais = list(app_ast.ais)
     combined_tools = list(app_ast.tools)
     combined_agents = list(app_ast.agents)
+    agent_team = getattr(app_ast, "agent_team", None)
     identity_decl = app_ast.identity
 
     for name in module_order:
@@ -186,6 +187,15 @@ def _merge_programs(
                         why=f"Module '{name}' defines an identity block.",
                         fix="Move the identity declaration to app.ai.",
                         example='identity \"user\":',
+                    ),
+                )
+            if getattr(program, "agent_team", None) is not None:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Team of agents is only allowed in app.ai.",
+                        why=f"Module '{name}' defines a team of agents block.",
+                        fix="Move the team of agents block into app.ai.",
+                        example='team of agents\n  \"planner\"',
                     ),
                 )
             resolve_program(
@@ -223,6 +233,7 @@ def _merge_programs(
         ais=combined_ais,
         tools=combined_tools,
         agents=combined_agents,
+        agent_team=agent_team,
         uses=[],
         capsule=None,
         identity=identity_decl,

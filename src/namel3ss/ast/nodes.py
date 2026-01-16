@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Optional, Union
 
-from namel3ss.ast.agents import AgentDecl
+from namel3ss.ast.agents import AgentDecl, AgentTeamDecl, AgentTeamMember
 from namel3ss.ast.ai import AIDecl, AIMemory
 from namel3ss.ast.base import Node
 from namel3ss.ast.expressions import (
@@ -28,6 +28,7 @@ from namel3ss.ast.expressions import (
     VarReference,
 )
 from namel3ss.ast.flow_steps import (
+    FlowCallForeign,
     FlowCreate,
     FlowDelete,
     FlowField,
@@ -129,6 +130,7 @@ __all__ = [
     "Flow",
     "Program",
     "FlowStep",
+    "FlowCallForeign",
     "FlowInput",
     "FlowInputField",
     "FlowRequire",
@@ -188,6 +190,8 @@ __all__ = [
     "FieldConstraint",
     "FieldDecl",
     "RecordDecl",
+    "AgentTeamDecl",
+    "AgentTeamMember",
     "PageItem",
     "TitleItem",
     "TextItem",

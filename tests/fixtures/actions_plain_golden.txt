@@ -1,2 +1,5 @@
 page.home.button.run  call_flow   flow=demo
 page.home.form.user  submit_form   record=User
+
+Warnings:
+- requires.missing: Page "home" has a form without requires. (enforced at runtime)

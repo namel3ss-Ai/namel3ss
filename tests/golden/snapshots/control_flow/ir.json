@@ -1,4 +1,5 @@
 {
+  "agent_team": null,
   "agents": {},
   "ais": {},
   "column": null,
@@ -364,7 +365,7 @@
   "pages": [],
   "records": [],
   "spec_version": "1.0",
-  "theme": "system",
+  "theme": "light",
   "theme_preference": {
     "allow_override": false,
     "persist": "none"
@@ -372,5 +373,13 @@
   "theme_runtime_supported": false,
   "theme_tokens": {},
   "tools": {},
-  "type": "Program"
+  "type": "Program",
+  "ui_settings": {
+    "accent_color": "blue",
+    "density": "comfortable",
+    "motion": "subtle",
+    "shape": "rounded",
+    "surface": "flat",
+    "theme": "light"
+  }
 }

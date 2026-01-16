@@ -44,6 +44,7 @@ def test_agent_explain_single_summary_is_stable():
     payload = build_agent_explain_payload(traces, parallel=False)
     summary = payload["agent_run_summary"]
     assert summary["agent_id"] == "support"
+    assert summary["agent_name"] == "support"
     assert summary["ai_profile"] == "assistant"
     assert summary["input_summary"] == "hello"
     assert summary["memory"]["recalled_count"] == 1
@@ -52,6 +53,10 @@ def test_agent_explain_single_summary_is_stable():
     assert summary["tools"][0]["tool"] == "echo"
     assert summary["tools"][0]["status"] == "completed"
     assert summary["output_hash"] == _hash_value("ok")
+    assert summary["memory_facts"]["counts"]["total"] == 0
+    assert summary["memory_facts"]["keys"] == []
+    assert summary["memory_facts"]["last_updated_step"] is None
+    assert payload["memory_facts"][0]["agent_id"] == "support"
 
 
 def test_agent_explain_parallel_summary_order_is_stable():

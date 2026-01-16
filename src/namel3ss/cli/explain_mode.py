@@ -32,11 +32,7 @@ def run_explain_command(args: list[str]) -> int:
         lines = build_why_lines(payload, audience="non_technical" if params.mode == "non_technical" else "default")
         print("\n".join(lines))
         return 0
-    project_root = app_path.parent
-    active = load_active_proof(project_root)
-    proof_id = active.get("proof_id") if isinstance(active, dict) else None
-    proof = read_proof(project_root, proof_id) if proof_id else {}
-    payload = _build_explain_payload(app_path, active, proof)
+    payload = build_explain_payload(app_path)
     if params.json_mode:
         print(dumps_pretty(payload))
         return 0
@@ -90,7 +86,15 @@ def _parse_args(args: list[str]) -> _ExplainParams:
     return _ExplainParams(app_arg, json_mode, mode)
 
 
-def _build_explain_payload(app_path, active: dict, proof: dict) -> dict:
+def build_explain_payload(app_path) -> dict:
+    project_root = app_path.parent
+    active = load_active_proof(project_root)
+    proof_id = active.get("proof_id") if isinstance(active, dict) else None
+    proof = read_proof(project_root, proof_id) if proof_id else {}
+    return _assemble_explain_payload(app_path, active, proof)
+
+
+def _assemble_explain_payload(app_path, active: dict, proof: dict) -> dict:
     project_root = app_path.parent
     config = load_config(app_path=app_path, root=project_root)
     project = load_project(app_path)
@@ -156,4 +160,4 @@ def _print_human(payload: dict) -> None:
     print(f"Governance: {governance.get('status', 'unknown')}")
 
 
-__all__ = ["run_explain_command"]
+__all__ = ["build_explain_payload", "run_explain_command"]

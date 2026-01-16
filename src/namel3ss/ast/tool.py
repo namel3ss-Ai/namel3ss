@@ -21,3 +21,4 @@ class ToolDecl(Node):
     capabilities: tuple[str, ...] = ()
     purity: str = "impure"
     timeout_seconds: int | None = None
+    declared_as: str = "tool"

@@ -8,6 +8,7 @@ This is the authoritative, frozen description of the UI DSL for v0.1.x. It is se
 - Frozen surface for v0.1.x: additive changes only, no silent behavior changes.
 - Text-first: intent over pixels.
 - Studio panels (Setup, Graph, Traces, Memory, etc.) are tooling views; they are not part of the UI DSL contract.
+- Studio renders the same UI manifest intent as `n3 ui` and does not add DSL semantics.
 
 ## 2) Core blocks and naming rules
 - `ui:` (optional global settings; order inside the block is free)
@@ -36,7 +37,7 @@ Structural:
 Content:
 - `title is "Text"`
 - `text is "Text"`
-- `image is "https://..."` (optional `alt`)
+- `image is "<media_name>"`
 
 Data/UI bindings:
 - `form is "RecordName"` auto-fields from record; optional `groups`/`help`/`readonly`; submits as `submit_form` action.
@@ -66,6 +67,20 @@ UI packs:
 - Fragments contain UI items only (no flows, tools, or records).
 - `use ui_pack` is static expansion; origin metadata is preserved in manifests.
 - Packs are static: no parameters, conditionals, or dynamic loading.
+
+## 3.1) Media
+- Media assets live in a locked `media/` folder at the app root (next to app.ai).
+- References use the base name only (no extensions, no paths).
+- Allowed formats: `.png`, `.jpg`/`.jpeg`, `.svg`, `.webp`.
+- Image role is semantic only; runtime controls layout/accessibility:
+  - `image is "welcome":`
+    `role is "hero"`
+- Roles must be one of: `iconic`, `illustration`, `hero`.
+- No other image attributes are supported.
+- Missing media behavior:
+  - `n3 check` -> warning + suggestions
+  - `n3 build` -> error + suggestions
+  - runtime -> placeholder intent with `fix_hint`
 
 ## 4) Data binding & actions
 - Forms bind to records; payload is `{values: {...}}`.
@@ -103,7 +118,7 @@ UI packs:
   - `step "<title>":` with optional fields (no extras allowed):
     - `text is "<string>"`
     - `icon is <icon_name>`
-    - `image is "<media_name>"`
+    - `image is "<media_name>"` (optional `role is "iconic" | "illustration" | "hero"` block)
     - `tone is "<tone>"`
     - `requires is "<string>"`
     - `next is "<step title>"`
@@ -111,7 +126,8 @@ UI packs:
   - Step titles must be unique within a story; unknown `next` targets suggest fixes.
   - Cycles are rejected with a clear path.
 - Tone must be one of: `informative`, `success`, `caution`, `critical`, `neutral`.
-- Icon must be one of: `info`, `check`, `alert`, `flag`, `calendar`, `clock`, `play`, `user`, `spark`, `list`.
+- Icons are runtime-owned and validated against a closed registry (lowercase snake_case). Use `n3 icons` to list available names.
+- Icons are intent-only: runtime applies tint based on theme + tone + state (no user-specified colors). SVGs are monochrome and use `currentColor`; custom uploads are not supported.
 - Built-in icon assets are bundled under `resources/icons/` for engine use; no custom icon references are supported.
 - `requires` is declarative gating; when it references `state.<path>`, readiness is derived from state when available and is explainable in manifests and Studio.
 - Manifest contract:

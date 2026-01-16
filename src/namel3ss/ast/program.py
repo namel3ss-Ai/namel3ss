@@ -43,5 +43,6 @@ class Program(Node):
     ui_packs: List[UIPackDecl]
     uses: List[UseDecl]
     capsule: Optional[CapsuleDecl]
+    agent_team: "AgentTeamDecl | None" = None
     identity: Optional[IdentityDecl] = None
     state_defaults: dict | None = None

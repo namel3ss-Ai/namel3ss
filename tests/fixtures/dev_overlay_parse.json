@@ -1,0 +1,10 @@
+{
+  "title": "something went wrong",
+  "summary": "Expected text string.",
+  "sections": [
+    {
+      "title": "what happened",
+      "body": "Expected text string"
+    }
+  ]
+}

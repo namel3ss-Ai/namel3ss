@@ -6,6 +6,7 @@ from namel3ss.flow_contract import parse_selector_expression
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.executor.stmt.records import execute_create, execute_update, execute_delete
+from namel3ss.runtime.tools.executor import execute_tool_call
 from namel3ss.runtime.flow.gates import evaluate_requires
 from namel3ss.runtime.flow.ids import flow_id, flow_step_id
 from namel3ss.runtime.values.coerce import require_type
@@ -66,6 +67,23 @@ def run_declarative_flow(ctx: ExecutionContext) -> None:
                 _what_for_step(step),
                 status="ran",
                 gate=dict(active_gate),
+                changes=None,
+                fields=None,
+            )
+            continue
+        if isinstance(step, ir.FlowCallForeign):
+            args = _resolve_call_foreign_args(step, ctx)
+            execute_tool_call(ctx, step.foreign_name, args, line=step.line, column=step.column)
+            _record_flow_step(
+                ctx,
+                flow_id_value,
+                flow.name,
+                step_id,
+                step_kind,
+                ordinal,
+                _what_for_step(step),
+                status="ran",
+                gate=dict(active_gate) if active_gate else None,
                 changes=None,
                 fields=None,
             )
@@ -241,6 +259,8 @@ def _what_for_step(step: ir.FlowStep) -> str:
         return f'update "{step.record_name}"'
     if isinstance(step, ir.FlowDelete):
         return f'delete "{step.record_name}"'
+    if isinstance(step, ir.FlowCallForeign):
+        return f'call foreign "{step.foreign_name}"'
     return "step"
 
 
@@ -266,6 +286,8 @@ def _step_kind(step: ir.FlowStep) -> str:
         return "update"
     if isinstance(step, ir.FlowDelete):
         return "delete"
+    if isinstance(step, ir.FlowCallForeign):
+        return "call_foreign"
     return "step"
 
 
@@ -340,6 +362,71 @@ def _input_fields_for_step(step: ir.FlowStep) -> list[str] | None:
     if not isinstance(step, ir.FlowInput):
         return None
     return [field.name for field in step.fields]
+
+
+def _resolve_call_foreign_args(step: ir.FlowCallForeign, ctx: ExecutionContext) -> dict:
+    args: dict[str, object] = {}
+    for argument in step.arguments:
+        args[argument.name] = _resolve_value(argument.value, ctx, line=argument.line, column=argument.column)
+    return args
+
+
+def _resolve_value(
+    expr: ir.Expression,
+    ctx: ExecutionContext,
+    *,
+    line: int | None,
+    column: int | None,
+) -> object:
+    if isinstance(expr, ir.Literal):
+        if expr.value is None:
+            raise Namel3ssError(
+                build_guidance_message(
+                    what="Null values are not allowed in declarative flows.",
+                    why="Declarative values must be text, number, or boolean literals.",
+                    fix="Provide a non-null literal or an input binding.",
+                    example='status is "new"',
+                ),
+                line=line,
+                column=column,
+            )
+        return expr.value
+    if isinstance(expr, ir.AttrAccess) and expr.base == "input" and len(expr.attrs) == 1:
+        payload = ctx.locals.get("input")
+        if not isinstance(payload, dict):
+            raise Namel3ssError(
+                build_guidance_message(
+                    what="Flow input payload is not a JSON object.",
+                    why="Declarative flows expect input to be a dictionary of field values.",
+                    fix="Provide a JSON object with the required fields.",
+                    example='{"name":"Ada"}',
+                ),
+                line=line,
+                column=column,
+            )
+        field_name = expr.attrs[0]
+        if field_name not in payload:
+            raise Namel3ssError(
+                build_guidance_message(
+                    what=f"Input field '{field_name}' is not declared.",
+                    why="Input bindings must match fields in the input block.",
+                    fix="Add the field to input or update the binding.",
+                    example=f'input\\n  {field_name} is text',
+                ),
+                line=line,
+                column=column,
+            )
+        return payload.get(field_name)
+    raise Namel3ssError(
+        build_guidance_message(
+            what="Declarative values must be literals or input bindings.",
+            why="Expressions, state references, and function calls are not supported.",
+            fix="Use a string/number/boolean literal or input.<field>.",
+            example='name is input.name',
+        ),
+        line=line,
+        column=column,
+    )
 
 
 __all__ = ["run_declarative_flow"]

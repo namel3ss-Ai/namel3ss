@@ -13,7 +13,7 @@
       "tool_calls": [
         "agent_lab.hash text"
       ],
-      "trace_hash": "519d91f54e14d5b7d28c49d46d1ce924b0e602935fb2a67d10c6acdece39c462"
+      "trace_hash": "351077c48ef9e41491c5c1476475d53d01531834aaeb512725c0264a5e14537d"
     },
     {
       "ai_calls": 0,
@@ -26,7 +26,7 @@
       "status": "pass",
       "tool_blocks": [],
       "tool_calls": [],
-      "trace_hash": "26b826c755d6a80e3270e8037e147dd58c2e5f4c6f331a390037a642364cb756"
+      "trace_hash": "5ec8087b317a6c07808552220f79edd7ab62a90ea81a9bea577825e7169bfafa"
     },
     {
       "ai_calls": 0,
@@ -52,7 +52,7 @@
       "status": "pass",
       "tool_blocks": [],
       "tool_calls": [],
-      "trace_hash": "e7066484a6f3455065bcfa8323a7926d4c1db25b71ff98c62ab5ec4103c9a9d6"
+      "trace_hash": "d78be889b5d19a160df0c63480e121ffa482d5d5de7c4d03012709346a07dde4"
     },
     {
       "ai_calls": 0,
@@ -70,7 +70,7 @@
       "trace_hash": "e5b36590b2e9e7ad23d799a752b476c5c5a89a90b7c19cc6cba9c59721a5ac09"
     }
   ],
-  "namel3ss_version": "0.1.0a6",
+  "namel3ss_version": "0.1.0a9",
   "schema_version": "evals.v1",
   "status": "pass",
   "summary": {

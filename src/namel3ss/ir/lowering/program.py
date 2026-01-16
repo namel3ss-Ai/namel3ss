@@ -5,7 +5,7 @@ from typing import Dict, List
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
-from namel3ss.ir.lowering.agents import _lower_agents
+from namel3ss.ir.lowering.agents import _lower_agent_team, _lower_agents
 from namel3ss.ir.lowering.ai import _lower_ai_decls
 from namel3ss.ir.lowering.flow import lower_flow
 from namel3ss.flow_contract import validate_declarative_flows, validate_flow_names
@@ -66,12 +66,13 @@ def lower_program(program: ast.Program) -> Program:
     identity_schema = _lower_identity(program.identity) if program.identity else None
     tool_map = _lower_tools(program.tools)
     ai_map = _lower_ai_decls(program.ais, tool_map)
-    agent_map = _lower_agents(program.agents, ai_map)
+    agent_team = _lower_agent_team(getattr(program, "agent_team", None), program.agents)
+    agent_map = _lower_agents(program.agents, ai_map, agent_team)
     function_map = lower_functions(program.functions, agent_map)
     flow_irs: List[Flow] = [lower_flow(flow, agent_map) for flow in program.flows]
     record_map: Dict[str, schema.RecordSchema] = {rec.name: rec for rec in record_schemas}
     flow_names = validate_flow_names(flow_irs)
-    validate_declarative_flows(flow_irs, record_map, mode=ValidationMode.RUNTIME, warnings=None)
+    validate_declarative_flows(flow_irs, record_map, tool_map, mode=ValidationMode.RUNTIME, warnings=None)
     pack_index = build_pack_index(getattr(program, "ui_packs", []))
     pages = [_lower_page(page, record_map, flow_names, pack_index) for page in program.pages]
     _ensure_unique_pages(pages)
@@ -95,6 +96,7 @@ def lower_program(program: ast.Program) -> Program:
         ais=ai_map,
         tools=tool_map,
         agents=agent_map,
+        agent_team=agent_team,
         identity=identity_schema,
         state_defaults=getattr(program, "state_defaults", None),
         line=program.line,

@@ -4,6 +4,7 @@ from namel3ss.traces.builders import (
     build_agent_merge_selected,
     build_agent_merge_started,
     build_agent_merge_summary,
+    build_merge_applied,
 )
 from namel3ss.traces.schema import TRACE_VERSION, TraceEventType
 
@@ -75,5 +76,20 @@ def test_agent_merge_summary_trace_event():
     )
     assert event["type"] == TraceEventType.AGENT_MERGE_SUMMARY
     assert event["policy"] == "consensus"
+    assert event["selected_agents"] == ["alpha"]
+    assert event["rejected_agents"] == ["beta"]
+
+
+def test_merge_applied_trace_event():
+    event = build_merge_applied(
+        policy="ranked",
+        selected_agents=["alpha"],
+        rejected_agents=["beta"],
+        title="Merge applied",
+        lines=["Merge applied."],
+    )
+    assert event["type"] == TraceEventType.MERGE_APPLIED
+    assert event["trace_version"] == TRACE_VERSION
+    assert event["policy"] == "ranked"
     assert event["selected_agents"] == ["alpha"]
     assert event["rejected_agents"] == ["beta"]

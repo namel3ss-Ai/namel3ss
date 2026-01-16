@@ -12,6 +12,21 @@ class AgentDecl(Node):
     name: str
     ai_name: str
     system_prompt: Optional[str]
+    agent_id: str | None = None
+    role: str | None = None
+
+
+@dataclass
+class AgentTeamMember(Node):
+    name: str
+    agent_id: str
+    role: str | None = None
+
+
+@dataclass
+class AgentTeam(Node):
+    team_id: str
+    members: List[AgentTeamMember]
 
 
 @dataclass

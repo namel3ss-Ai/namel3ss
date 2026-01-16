@@ -1,0 +1,229 @@
+:root {
+  --rt-bg: #f7f2ea;
+  --rt-bg-accent: #efe4d6;
+  --rt-panel: #ffffff;
+  --rt-border: #e2d7c7;
+  --rt-text: #1c1a16;
+  --rt-muted: #6a6052;
+  --rt-accent: #b4642d;
+  --rt-danger: #b0382d;
+  --rt-shadow: 0 14px 30px rgba(23, 19, 14, 0.16);
+  --rt-radius: 14px;
+  --rt-font: "IBM Plex Sans", "Avenir Next", "Segoe UI", sans-serif;
+  --rt-display: "Fraunces", "Iowan Old Style", "Georgia", serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body.n3-runtime {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--rt-font);
+  color: var(--rt-text);
+  background:
+    radial-gradient(900px circle at 20% -10%, #fff8f0 0%, transparent 60%),
+    radial-gradient(900px circle at 110% 10%, #f6eadb 0%, transparent 55%),
+    linear-gradient(150deg, var(--rt-bg) 0%, var(--rt-bg-accent) 100%);
+}
+
+.runtime-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px 20px 30px;
+}
+
+.runtime-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-radius: var(--rt-radius);
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid var(--rt-border);
+  box-shadow: 0 8px 20px rgba(26, 21, 15, 0.08);
+  backdrop-filter: blur(10px);
+}
+
+.runtime-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.runtime-brand span {
+  font-family: var(--rt-display);
+  letter-spacing: 0.3px;
+}
+
+.runtime-badge {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--rt-border);
+  background: #f7ede1;
+  color: var(--rt-muted);
+  font-family: var(--rt-font);
+}
+
+.runtime-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--rt-muted);
+}
+
+.runtime-controls label {
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.runtime-controls select {
+  min-height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--rt-border);
+  padding: 6px 12px;
+  background: #fff;
+  color: var(--rt-text);
+  font-size: 14px;
+}
+
+.runtime-status {
+  font-size: 12px;
+  color: var(--rt-muted);
+}
+
+.runtime-canvas {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.ui-body {
+  width: min(1100px, 100%);
+}
+
+.runtime-overlay.hidden {
+  display: none;
+}
+
+.runtime-overlay {
+  position: fixed;
+  inset: 0;
+  padding: 20px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  pointer-events: none;
+  z-index: 40;
+}
+
+.overlay-card {
+  pointer-events: auto;
+  width: min(540px, 100%);
+  background: var(--rt-panel);
+  border-radius: var(--rt-radius);
+  border: 1px solid var(--rt-border);
+  border-left: 6px solid var(--rt-danger);
+  padding: 18px 20px;
+  box-shadow: var(--rt-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.overlay-title {
+  font-family: var(--rt-display);
+  font-size: 20px;
+  text-transform: lowercase;
+}
+
+.overlay-summary {
+  font-size: 14px;
+  color: var(--rt-text);
+}
+
+.overlay-sections {
+  display: grid;
+  gap: 10px;
+}
+
+.overlay-section-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--rt-muted);
+  margin-bottom: 6px;
+}
+
+.overlay-section-body {
+  font-size: 14px;
+  color: var(--rt-text);
+}
+
+.overlay-section-list {
+  padding-left: 18px;
+  margin: 0;
+  color: var(--rt-text);
+}
+
+.overlay-toggle {
+  align-self: flex-start;
+  min-height: 38px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--rt-border);
+  background: #f6ede1;
+  color: var(--rt-text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.overlay-toggle.hidden {
+  display: none;
+}
+
+.overlay-details {
+  margin: 0;
+  padding: 12px;
+  background: #1d1b17;
+  color: #f7f1e9;
+  border-radius: 12px;
+  font-size: 12px;
+  overflow-x: auto;
+  max-height: 240px;
+}
+
+.overlay-details.hidden {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .runtime-shell {
+    padding: 14px 14px 24px;
+  }
+
+  .runtime-overlay {
+    align-items: flex-end;
+  }
+
+  .overlay-card {
+    width: 100%;
+  }
+}

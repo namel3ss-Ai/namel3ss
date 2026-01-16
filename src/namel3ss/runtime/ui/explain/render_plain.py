@@ -57,6 +57,8 @@ def _render_elements(elements: list[dict]) -> list[str]:
             lines.append(f"  - enabled: {enabled_text}")
         if element.get("bound_to"):
             lines.append(f"  - bound to: {stable_truncate(str(element.get('bound_to')))}")
+        if element.get("fix_hint"):
+            lines.append(f"  - fix_hint: {stable_truncate(str(element.get('fix_hint')))}")
         for reason in element.get("reasons") or []:
             lines.append(f"  - because: {stable_truncate(str(reason))}")
     return lines

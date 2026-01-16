@@ -183,6 +183,7 @@ Grammar and compatibility:
 - Backward-compatibility policy is defined in `docs/language/backward_compatibility.md`.
 - Changes that affect grammar or semantics require an RFC (`docs/language/rfc_process.md`).
 - CI enforces grammar contract tests and STATIC build checks for templates/examples to prevent drift.
+- Upgrade guidance and breaking changes live in `UPGRADE.md`.
 
 ## What makes it different
 - One `.ai` file defines data, UI, backend logic, and AI.

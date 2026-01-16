@@ -20,6 +20,7 @@ class LocalRunner:
             entry=request.entry,
             payload=request.payload,
             app_root=request.app_root,
+            cwd=request.execution_root,
             timeout_seconds=timeout_seconds,
             extra_paths=request.pack_paths,
             capability_context=request.capability_context,

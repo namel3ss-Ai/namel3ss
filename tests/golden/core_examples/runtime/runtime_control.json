@@ -162,7 +162,7 @@
     }
   ],
   "last_value": "two",
-  "runtime_theme": "system",
+  "runtime_theme": "light",
   "state": {
     "counter": "2",
     "label": "big",

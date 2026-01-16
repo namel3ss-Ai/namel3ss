@@ -7,12 +7,17 @@ from namel3ss.version import get_version
 def print_usage() -> None:
     usage = """Usage:
   n3 new template name            # scaffold project, omit args to list
+  n3 new example name             # scaffold from read-only example
   n3 init template name           # scaffold project (alias for new)
   n3 version                      # show installed version
   n3 reserved                     # list reserved words
+  n3 icons                        # list built-in icons
   n3 status                       # show .namel3ss runtime artifact status
   n3 clean                        # delete .namel3ss artifacts (with confirmation)
   n3 run app.ai --target T --json # run app
+  n3 dev app.ai --port N          # local browser dev loop with hot reload
+  n3 preview app.ai --port N      # production-like browser preview
+  n3 start app.ai --port N        # production server from build artifacts
   n3 pack app.ai --target T       # build artifacts, alias build
   n3 ship --to T --back           # promote build, alias promote, rollback alias back
   n3 where app.ai                 # show active target and build

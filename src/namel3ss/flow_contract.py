@@ -4,6 +4,7 @@ import difflib
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.foreign.types import is_foreign_type, normalize_foreign_type
 from namel3ss.ir import nodes as ir
 from namel3ss.ir.lowering.expressions import _lower_expression
 from namel3ss.lang.keywords import is_keyword
@@ -48,14 +49,16 @@ def validate_flow_names(flows: list[ir.Flow]) -> set[str]:
 def validate_declarative_flows(
     flows: list[ir.Flow],
     record_map: dict[str, RecordSchema],
+    tools: dict[str, ir.ToolDecl] | None = None,
     *,
     mode: ValidationMode = ValidationMode.RUNTIME,
     warnings: list | None = None,
 ) -> None:
+    tool_map = tools or {}
     for flow in flows:
         if not getattr(flow, "declarative", False):
             continue
-        _validate_declarative_flow(flow, record_map, mode=mode, warnings=warnings)
+        _validate_declarative_flow(flow, record_map, tool_map, mode=mode, warnings=warnings)
 
 
 def parse_selector_expression(selector: str, *, line: int | None, column: int | None) -> ir.Expression:
@@ -83,6 +86,7 @@ def parse_selector_expression(selector: str, *, line: int | None, column: int | 
 def _validate_declarative_flow(
     flow: ir.Flow,
     record_map: dict[str, RecordSchema],
+    tool_map: dict[str, ir.ToolDecl],
     *,
     mode: ValidationMode,
     warnings: list | None,
@@ -120,6 +124,9 @@ def _validate_declarative_flow(
             continue
         if isinstance(step, ir.FlowRequire):
             _validate_require(step, mode=mode, warnings=warnings)
+            continue
+        if isinstance(step, ir.FlowCallForeign):
+            _validate_call_foreign(step, tool_map, input_fields, line=step.line, column=step.column)
             continue
         if isinstance(step, ir.FlowCreate):
             record = _require_record(step.record_name, record_map, line=step.line, column=step.column)
@@ -169,7 +176,7 @@ def _validate_declarative_flow(
         raise Namel3ssError(
             build_guidance_message(
                 what="Flow step type is not supported.",
-                why="Declarative flows only allow input, require, create, update, and delete steps.",
+                why="Declarative flows only allow input, require, call foreign, create, update, and delete steps.",
                 fix="Use one of the supported steps.",
                 example='flow "demo"\\n  input\\n    name is text',
             ),
@@ -273,6 +280,118 @@ def _value_type(
         ),
         line=line,
         column=column,
+    )
+
+
+def _validate_call_foreign(
+    step: ir.FlowCallForeign,
+    tool_map: dict[str, ir.ToolDecl],
+    input_fields: dict[str, ir.FlowInputField],
+    *,
+    line: int | None,
+    column: int | None,
+) -> None:
+    foreign_tools = {
+        name: tool for name, tool in tool_map.items() if getattr(tool, "declared_as", "tool") == "foreign"
+    }
+    foreign = foreign_tools.get(step.foreign_name)
+    if foreign is None:
+        suggestion = difflib.get_close_matches(step.foreign_name, sorted(foreign_tools.keys()), n=1, cutoff=0.6)
+        hint = f" Did you mean '{suggestion[0]}'?" if suggestion else ""
+        raise Namel3ssError(
+            build_guidance_message(
+                what=f'Foreign function "{step.foreign_name}" is not declared.{hint}',
+                why="Declarative flows can only call declared foreign functions.",
+                fix="Declare the foreign function or update the call name.",
+                example=_foreign_decl_example(step.foreign_name),
+            ),
+            line=line,
+            column=column,
+        )
+    if getattr(foreign, "declared_as", "tool") != "foreign":
+        raise Namel3ssError(
+            build_guidance_message(
+                what=f'Foreign function "{step.foreign_name}" is not declared as foreign.',
+                why="The name refers to a tool declaration, not a foreign function.",
+                fix="Declare it with a foreign function block or call the tool directly.",
+                example=_foreign_decl_example(step.foreign_name),
+            ),
+            line=line,
+            column=column,
+        )
+    arg_map = {arg.name: arg for arg in step.arguments}
+    declared_fields = {field.name: field for field in foreign.input_fields}
+    for arg_name in arg_map:
+        if arg_name not in declared_fields:
+            raise Namel3ssError(
+                build_guidance_message(
+                    what=f'Foreign function "{step.foreign_name}" has no input "{arg_name}".',
+                    why="Call inputs must match the foreign function input block.",
+                    fix="Remove the extra input or add it to the foreign declaration.",
+                    example=_foreign_decl_example(step.foreign_name),
+                ),
+                line=arg_map[arg_name].line,
+                column=arg_map[arg_name].column,
+            )
+    for field_name, field in declared_fields.items():
+        if field_name not in arg_map:
+            raise Namel3ssError(
+                build_guidance_message(
+                    what=f'Foreign function "{step.foreign_name}" is missing input "{field_name}".',
+                    why="All foreign inputs are required.",
+                    fix="Provide the missing input in the call.",
+                    example=f'call foreign "{step.foreign_name}"\\n  {field_name} is "value"',
+                ),
+                line=line,
+                column=column,
+            )
+    for field_name, arg in arg_map.items():
+        expected_raw = declared_fields[field_name].type_name
+        expected, _ = normalize_foreign_type(expected_raw)
+        if not is_foreign_type(expected):
+            raise Namel3ssError(
+                build_guidance_message(
+                    what=f'Foreign function "{step.foreign_name}" has unsupported input type "{expected_raw}".',
+                    why="Foreign inputs must be text, number, boolean, or list of those types.",
+                    fix="Update the foreign declaration to a supported type.",
+                    example=_foreign_decl_example(step.foreign_name),
+                ),
+                line=declared_fields[field_name].line,
+                column=declared_fields[field_name].column,
+            )
+        actual = _value_type(arg.value, input_fields, line=arg.line, column=arg.column)
+        if expected.startswith("list of "):
+            if actual != "list":
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what=f'Foreign input "{field_name}" expects {expected} but got {actual}.',
+                        why="Foreign inputs must match the declared type.",
+                        fix=f"Provide a {expected} value or update the declaration.",
+                        example=f'{field_name} is input.{field_name}',
+                    ),
+                    line=arg.line,
+                    column=arg.column,
+                )
+            continue
+        if actual != expected:
+            raise Namel3ssError(
+                build_guidance_message(
+                    what=f'Foreign input "{field_name}" expects {expected} but got {actual}.',
+                    why="Foreign inputs must match the declared type.",
+                    fix=f"Provide a {expected} value or update the declaration.",
+                    example=f'{field_name} is "value"',
+                ),
+                line=arg.line,
+                column=arg.column,
+            )
+
+
+def _foreign_decl_example(name: str) -> str:
+    return (
+        f'foreign python function "{name}"\n'
+        "  input\n"
+        "    amount is number\n"
+        "  output is number"
     )
 
 

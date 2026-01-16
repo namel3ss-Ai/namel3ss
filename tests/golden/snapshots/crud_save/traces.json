@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "action": "save",
+    "canonical_events": [],
+    "flow_name": "demo",
+    "memory_events": [],
+    "record": "Note",
+    "step_id": "flow:demo.save.03",
+    "title": "Mutation Allowed",
+    "type": "mutation_allowed"
+  }
+]

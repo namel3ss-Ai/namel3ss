@@ -12,7 +12,7 @@ RECORD_DECL = '''record "User":
 
 spec is "1.0"
 
-flow "demo":
+flow "demo": requires true
   save User
 '''
 
@@ -42,7 +42,7 @@ def test_presence_length_pattern_errors():
 
 spec is "1.0"
 
-flow "demo":
+flow "demo": requires true
   save Doc
 '''
     with pytest.raises(Namel3ssError) as exc:
@@ -57,7 +57,7 @@ def test_find_query_returns_results():
 
 spec is "1.0"
 
-flow "demo":
+flow "demo": requires true
   save User
   find User where email is equal to "a@b.com"
 '''

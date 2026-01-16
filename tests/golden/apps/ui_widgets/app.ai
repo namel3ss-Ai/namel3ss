@@ -8,7 +8,7 @@ flow "demo":
   set state.status is "ready"
   return state.status
 
-page "home":
+page "home": requires true
   title is "Golden UI"
   text is "Widgets"
   section "Layout":

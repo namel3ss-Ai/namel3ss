@@ -64,10 +64,12 @@ class CapabilityContext:
     runner: str
     protocol_version: int
     guarantees: EffectiveGuarantees
+    filesystem_root: str | None = None
+    filesystem_read_roots: list[str] | None = None
     allowed_emitted: set[str] = field(default_factory=set)
 
     def to_dict(self) -> dict[str, object]:
-        return {
+        payload = {
             "tool_name": self.tool_name,
             "resolved_source": self.resolved_source,
             "runner": self.runner,
@@ -75,9 +77,16 @@ class CapabilityContext:
             "guarantees": self.guarantees.to_dict(),
             "sources": dict(self.guarantees.sources),
         }
+        if self.filesystem_root:
+            payload["filesystem_root"] = self.filesystem_root
+        if self.filesystem_read_roots:
+            payload["filesystem_read_roots"] = list(self.filesystem_read_roots)
+        return payload
 
     @classmethod
     def from_dict(cls, data: dict[str, object]) -> "CapabilityContext":
+        filesystem_root = _get_str(data, "filesystem_root")
+        filesystem_read_roots = _get_list_value(data, "filesystem_read_roots")
         guarantees = EffectiveGuarantees(
             no_filesystem_write=bool(_get_bool(data, "guarantees", "no_filesystem_write")),
             no_filesystem_read=bool(_get_bool(data, "guarantees", "no_filesystem_read")),
@@ -94,6 +103,8 @@ class CapabilityContext:
             runner=str(data.get("runner") or ""),
             protocol_version=int(data.get("protocol_version") or 1),
             guarantees=guarantees,
+            filesystem_root=filesystem_root,
+            filesystem_read_roots=filesystem_read_roots,
         )
 
 
@@ -135,6 +146,22 @@ def _get_list(data: dict[str, object], group: str, key: str) -> list[str] | None
     if isinstance(value, list):
         return [str(item) for item in value if str(item)]
     return None
+
+
+def _get_list_value(data: dict[str, object], key: str) -> list[str] | None:
+    value = data.get(key)
+    if value is None:
+        return None
+    if isinstance(value, list):
+        return [str(item) for item in value if str(item)]
+    return None
+
+
+def _get_str(data: dict[str, object], key: str) -> str | None:
+    value = data.get(key)
+    if not value:
+        return None
+    return str(value)
 
 
 def _get_sources(data: dict[str, object]) -> dict[str, str]:

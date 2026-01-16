@@ -61,6 +61,12 @@ This doc describes the memory contract and trace events.
 - Team lane writes create proposals that must be approved
 Agent lanes do not share memory without a handoff.
 
+## Governed agent memory (facts)
+Agent memory is explicit and traceable:
+- Agent steps write memory only through recorded `memory_write` events.
+- Explain/Studio surfaces a memory facts summary (keys, counts, last_updated_step) without raw values.
+- Snapshots live under `.namel3ss/memory` and use deterministic counters (no wall-clock timestamps).
+
 ## Memory policy contract
 Policies are enforced and recorded under `policy` in traces.
 

@@ -12,6 +12,7 @@ def build_static_manifest(
     state: dict | None = None,
     store=None,
     warnings: list | None = None,
+    media_mode=None,
     **manifest_kwargs,
 ) -> dict:
     """Canonical static manifest builder shared between CLI and Studio surfaces."""
@@ -25,11 +26,13 @@ def build_static_manifest(
     )
     return build_manifest(
         program_ir,
+        config=config,
         state=state if isinstance(state, dict) else {},
         store=store,
         identity=identity,
         mode=ValidationMode.STATIC,
         warnings=warnings,
+        media_mode=media_mode,
         **manifest_kwargs,
     )
 

@@ -6,7 +6,7 @@ from pathlib import Path
 from namel3ss.cli.app_loader import load_program
 from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.cli.devex import parse_project_overrides
-from namel3ss.cli.builds import app_path_from_metadata, load_build_metadata, read_latest_build_id
+from namel3ss.cli.builds import app_path_from_metadata, load_build_metadata, resolve_build_id
 from namel3ss.cli.demo_support import DEMO_NAME, is_demo_project
 from namel3ss.cli.first_run import is_first_run
 from namel3ss.cli.open_url import open_url, should_open_url
@@ -244,9 +244,13 @@ def _print_explain_traces(output: dict) -> None:
         print("Explain traces: none")
         return
     explain_types = {
+        TraceEventType.BOUNDARY_START,
+        TraceEventType.BOUNDARY_END,
         TraceEventType.EXPRESSION_EXPLAIN,
         TraceEventType.FLOW_START,
         TraceEventType.FLOW_STEP,
+        TraceEventType.MUTATION_ALLOWED,
+        TraceEventType.MUTATION_BLOCKED,
     }
     explain = [trace for trace in traces if trace.get("type") in explain_types]
     if not explain:
@@ -257,16 +261,7 @@ def _print_explain_traces(output: dict) -> None:
 
 
 def _resolve_run_path(target: str, project_root: Path, app_path: Path, build_id: str | None) -> tuple[Path, str | None]:
-    chosen_build = build_id
-    if target != "local" and chosen_build is None:
-        state = load_state(project_root)
-        active = state.get("active") or {}
-        if active.get("target") == target and active.get("build_id"):
-            chosen_build = active.get("build_id")
-        elif target in {"service", "edge"}:
-            latest = read_latest_build_id(project_root, target)
-            if latest:
-                chosen_build = latest
+    chosen_build = resolve_build_id(project_root, target, build_id)
     if chosen_build:
         build_path, meta = load_build_metadata(project_root, target, chosen_build)
         return app_path_from_metadata(build_path, meta), chosen_build

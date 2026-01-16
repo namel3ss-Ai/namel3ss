@@ -25,6 +25,7 @@ def lower_program(program: ast.Program) -> ast.Program:
         ais=list(program.ais),
         tools=list(program.tools),
         agents=list(program.agents),
+        agent_team=getattr(program, "agent_team", None),
         uses=list(program.uses),
         capsule=program.capsule,
         identity=_lower_identity(program.identity) if program.identity else None,

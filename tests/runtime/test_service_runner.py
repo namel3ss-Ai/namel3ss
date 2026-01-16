@@ -71,7 +71,7 @@ def test_service_runner_ui_contract_endpoints(tmp_path):
         "  name string\n\n"
         'flow "demo":\n'
         '  return "ok"\n\n'
-        'page "home":\n'
+        'page "home": requires true\n'
         '  form is "User"\n'
         '  button "Run":\n'
         '    calls flow "demo"\n',

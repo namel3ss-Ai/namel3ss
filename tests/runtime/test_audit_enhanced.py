@@ -12,7 +12,7 @@ SOURCE = '''spec is "1.0"
 record "Item":
   field "name" is text
 
-flow "seed": audited
+flow "seed": audited requires true
   save Item
 '''
 

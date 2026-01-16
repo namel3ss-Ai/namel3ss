@@ -8,13 +8,10 @@ from namel3ss.cli.check_mode import run_check
 from namel3ss.cli.constants import RESERVED
 from namel3ss.cli.devex import parse_project_overrides
 from namel3ss.cli.editor_mode import run_editor_command
-from namel3ss.cli.exists_mode import run_exists_command
 from namel3ss.cli.explain_mode import run_explain_command
 from namel3ss.cli.exports_mode import run_exports
-from namel3ss.cli.fix_mode import run_fix_command
 from namel3ss.cli.format_mode import run_format
 from namel3ss.cli.graph_mode import run_graph
-from namel3ss.cli.how_mode import run_how_command
 from namel3ss.cli.json_io import dumps_pretty, parse_payload
 from namel3ss.cli.lint_mode import run_lint
 from namel3ss.cli.observe_mode import run_observe_command
@@ -22,26 +19,20 @@ from namel3ss.cli.persist_mode import run_data, run_persist
 from namel3ss.cli.proof_mode import run_proof_command
 from namel3ss.cli.runner import run_flow
 from namel3ss.cli.secrets_mode import run_secrets_command
-from namel3ss.cli.see_mode import run_see_command
 from namel3ss.cli.studio_mode import run_studio
+from namel3ss.cli.browser_mode import run_dev_command, run_preview_command
 from namel3ss.cli.ui_mode import export_ui_contract, render_manifest, run_action
 from namel3ss.cli.ui_output import print_payload, print_usage
 from namel3ss.cli.verify_mode import run_verify_command
-from namel3ss.cli.what_mode import run_what_command
-from namel3ss.cli.when_mode import run_when_command
-from namel3ss.cli.why_mode import run_why_command
-from namel3ss.cli.with_mode import run_with_command
-from namel3ss.cli.args import (
-    allow_aliases_from_flags,
-    extract_app_override,
-    resolve_explicit_path
-)
+from namel3ss.cli.args import allow_aliases_from_flags, extract_app_override, resolve_explicit_path
 from namel3ss.errors.base import Namel3ssError
+
 
 def run_default(program_ir, *, sources: dict | None = None, json_mode: bool) -> int:
     output = run_flow(program_ir, None, sources=sources)
     print_payload(output, json_mode)
     return 0
+
 
 def handle_app_commands(path: str | None, remainder: list[str], context: dict | None = None) -> int:
     overrides, remaining = parse_project_overrides(remainder)
@@ -127,6 +118,12 @@ def handle_app_commands(path: str | None, remainder: list[str], context: dict | 
                 continue
             i += 1
         return run_studio(resolved_path.as_posix(), port, dry)
+    if remainder and canonical_first == "dev":
+        tail = remainder[1:]
+        return run_dev_command([resolved_path.as_posix(), *tail])
+    if remainder and canonical_first == "preview":
+        tail = remainder[1:]
+        return run_preview_command([resolved_path.as_posix(), *tail])
     if remainder and canonical_first in {"data", "persist"}:
         tail = remainder[1:]
         return run_data(resolved_path.as_posix(), tail) if canonical_first == "data" else run_persist(resolved_path.as_posix(), tail)
@@ -138,11 +135,11 @@ def handle_app_commands(path: str | None, remainder: list[str], context: dict | 
         return run_default(program_ir, sources=sources, json_mode=False)
     if remainder[0] == "--json" and len(remainder) == 1:
         return run_default(program_ir, sources=sources, json_mode=True)
-    
+
     cmd = canonical_command(remainder[0])
     tail = remainder[1:]
-    path_posix = resolved_path.as_posix() # Assuming resolved_path is a Path object from resolve_app_path
-    
+    path_posix = resolved_path.as_posix()
+
     if cmd == "ui":
         if tail and tail[0] == "export":
             result = export_ui_contract(program_ir)
@@ -175,8 +172,6 @@ def handle_app_commands(path: str | None, remainder: list[str], context: dict | 
         return run_explain_command([path_posix, *tail])
     if cmd == "editor":
         return run_editor_command([path_posix, *tail])
-    # Note: reserved check needs to handle the fact that some commands might be valid here if context is loaded.
-    # But original code had this check.
     if cmd in RESERVED:
         raise Namel3ssError(
             f"Unknown command: '{remainder[0]}'.\nWhy: command is reserved or out of place.\nFix: run `n3 help` for usage."

@@ -51,6 +51,7 @@ class StoryStep(Node):
     text: str | None = None
     icon: str | None = None
     image: str | None = None
+    image_role: str | None = None
     tone: str | None = None
     requires: str | None = None
     next: str | None = None
@@ -283,3 +284,4 @@ class DividerItem(PageItem):
 class ImageItem(PageItem):
     src: str
     alt: str
+    role: str | None = None

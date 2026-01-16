@@ -424,6 +424,30 @@ flow "agent_run":
   return result
 ```
 
+**Team of agents (deterministic order)**:
+```ai
+team of agents
+  "planner"
+  "reviewer"
+  "executor"
+```
+
+**Team roles (semantic only)**:
+```ai
+team of agents
+  agent "planner"
+    role is "Plans"
+  agent "reviewer"
+    role is "Reviews"
+```
+
+**Rules**:
+- Team is optional; when present it must list every declared agent.
+- List form and explicit agent blocks cannot be mixed in the same team.
+- Names are required and unique; order is deterministic.
+- Roles are labels only; the runtime owns layout, accessibility, and presentation.
+- Agent ids are stable slugs derived from agent names; the team id derives from the ordered agent ids.
+
 ### Tools
 **What it is**: Explicit capabilities called from flows. Tools are declared in `.ai` and bound to Python functions in `.namel3ss/tools.yaml`.
 

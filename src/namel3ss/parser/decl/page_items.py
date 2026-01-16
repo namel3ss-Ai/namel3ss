@@ -10,6 +10,7 @@ from namel3ss.parser.decl.page_chat import parse_chat_block
 from namel3ss.parser.decl.page_chart import parse_chart_block, parse_chart_header
 from namel3ss.parser.decl.page_form import parse_form_block
 from namel3ss.parser.decl.page_list import parse_list_block
+from namel3ss.parser.decl.page_media import parse_image_role_block
 from namel3ss.parser.decl.page_story import parse_story_block
 from namel3ss.parser.decl.page_table import parse_table_block
 from namel3ss.lang.keywords import is_keyword
@@ -334,7 +335,12 @@ def parse_page_item(parser, *, allow_tabs: bool = False, allow_overlays: bool = 
         parser._advance()
         parser._expect("IS", "Expected 'is' after 'image'")
         value_tok = parser._expect("STRING", "Expected image source string")
-        return ast.ImageItem(src=value_tok.value, alt=None, line=tok.line, column=tok.column)
+        role = None
+        if parser._match("COLON"):
+            role = parse_image_role_block(parser, line=tok.line, column=tok.column)
+        return ast.ImageItem(src=value_tok.value, alt=None, role=role, line=tok.line, column=tok.column)
+    if getattr(tok, "value", None) == "story":
+        return parse_story_block(parser)
     raise Namel3ssError(
         f"Pages are declarative; unexpected item '{tok.type.lower()}'",
         line=tok.line,

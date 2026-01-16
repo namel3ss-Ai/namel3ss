@@ -7,7 +7,7 @@ from tests.conftest import lower_ir_program
 SOURCE = '''record "inventory.Product":
   name text
 
-page "home":
+page "home": requires true
   form is "inventory.Product"
 '''
 

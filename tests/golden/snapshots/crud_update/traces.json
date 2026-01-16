@@ -1,1 +1,22 @@
-[]
+[
+  {
+    "action": "create",
+    "canonical_events": [],
+    "flow_name": "demo",
+    "memory_events": [],
+    "record": "Note",
+    "step_id": "flow:demo.create.03",
+    "title": "Mutation Allowed",
+    "type": "mutation_allowed"
+  },
+  {
+    "action": "update",
+    "canonical_events": [],
+    "flow_name": "demo",
+    "memory_events": [],
+    "record": "Note",
+    "step_id": "flow:demo.update.04",
+    "title": "Mutation Allowed",
+    "type": "mutation_allowed"
+  }
+]

@@ -1,0 +1,91 @@
+{
+  "actions": {},
+  "pages": [
+    {
+      "elements": [
+        {
+          "column": 3,
+          "element_id": "page.home.image.0",
+          "index": 0,
+          "line": 4,
+          "media_name": "welcome",
+          "missing": false,
+          "page": "home",
+          "page_slug": "home",
+          "role": "hero",
+          "type": "image"
+        },
+        {
+          "children": [
+            {
+              "id": "page.home.story.1.step.start",
+              "image": {
+                "fix_hint": "Put missing.png (or .jpg/.jpeg/.svg/.webp) in media/.",
+                "media_name": "missing",
+                "missing": true
+              },
+              "index": 0,
+              "title": "Start",
+              "type": "story_step"
+            }
+          ],
+          "column": 3,
+          "element_id": "page.home.story.1",
+          "id": "page.home.story.1",
+          "index": 1,
+          "line": 6,
+          "page": "home",
+          "page_slug": "home",
+          "slug": "onboarding",
+          "steps": [
+            {
+              "id": "page.home.story.1.step.start",
+              "image": {
+                "fix_hint": "Put missing.png (or .jpg/.jpeg/.svg/.webp) in media/.",
+                "media_name": "missing",
+                "missing": true
+              },
+              "index": 0,
+              "title": "Start",
+              "type": "story_step"
+            }
+          ],
+          "title": "Onboarding",
+          "type": "story"
+        }
+      ],
+      "name": "home",
+      "slug": "home"
+    }
+  ],
+  "theme": {
+    "current": "light",
+    "effective": "light",
+    "persisted_current": null,
+    "preference": {
+      "allow_override": false,
+      "persist": "none"
+    },
+    "runtime_supported": false,
+    "schema_version": "1",
+    "setting": "light",
+    "source": "app",
+    "tokens": {}
+  },
+  "ui": {
+    "persistence": {
+      "enabled": false,
+      "kind": "memory",
+      "path": null,
+      "schema_version": null
+    },
+    "settings": {
+      "accent_color": "blue",
+      "density": "comfortable",
+      "motion": "subtle",
+      "shape": "rounded",
+      "surface": "flat",
+      "theme": "light"
+    }
+  }
+}

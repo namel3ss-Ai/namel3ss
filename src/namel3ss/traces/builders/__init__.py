@@ -72,12 +72,17 @@ from .parallel import (
     build_parallel_started,
     build_parallel_task_finished,
 )
+from .agent_steps import (
+    build_agent_step_end,
+    build_agent_step_start,
+)
 from .agent_merge import (
     build_agent_merge_candidate,
     build_agent_merge_rejected,
     build_agent_merge_selected,
     build_agent_merge_started,
     build_agent_merge_summary,
+    build_merge_applied,
 )
 
 __all__ = [
@@ -114,11 +119,14 @@ __all__ = [
     "build_parallel_started",
     "build_parallel_task_finished",
     "build_parallel_merged",
+    "build_agent_step_start",
+    "build_agent_step_end",
     "build_agent_merge_started",
     "build_agent_merge_candidate",
     "build_agent_merge_selected",
     "build_agent_merge_rejected",
     "build_agent_merge_summary",
+    "build_merge_applied",
     "build_memory_proposed",
     "build_memory_approved",
     "build_memory_rejected",

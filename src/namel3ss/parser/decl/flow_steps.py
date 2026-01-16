@@ -10,7 +10,7 @@ from namel3ss.parser.core.helpers import parse_reference_name
 from namel3ss.parser.decl.record import _FIELD_NAME_TOKENS, type_from_token
 
 
-_DECLARATIVE_STEPS = ("input", "require", "create", "update", "delete")
+_DECLARATIVE_STEPS = ("input", "require", "create", "update", "delete", "call foreign")
 _IMPERATIVE_HINTS = {
     "LET": "let",
     "SET": "set",
@@ -52,6 +52,9 @@ def parse_flow_steps(parser) -> list[ast.FlowStep]:
             continue
         if tok.type == "REQUIRE" or (tok.type == "IDENT" and tok.value == "require"):
             steps.append(_parse_require(parser))
+            continue
+        if tok.type == "CALL" or (tok.type == "IDENT" and tok.value == "call"):
+            steps.append(_parse_call_foreign(parser))
             continue
         if tok.type == "CREATE":
             steps.append(_parse_create(parser))
@@ -161,6 +164,36 @@ def _parse_require(parser) -> ast.FlowRequire:
     cond_tok = parser._expect("STRING", "Expected requires condition string")
     parser._match("NEWLINE")
     return ast.FlowRequire(condition=cond_tok.value, line=tok.line, column=tok.column)
+
+
+def _parse_call_foreign(parser) -> ast.FlowCallForeign:
+    tok = parser._advance()
+    foreign_tok = parser._current()
+    if not _match_word(parser, "IDENT", "foreign"):
+        raise Namel3ssError(
+            build_guidance_message(
+                what="Call step must be 'call foreign'.",
+                why="Declarative flows only allow foreign calls in call steps.",
+                fix='Use `call foreign "<name>"`.',
+                example='call foreign "calculate tax"\\n  amount is input.amount',
+            ),
+            line=foreign_tok.line,
+            column=foreign_tok.column,
+        )
+    name_tok = parser._expect("STRING", "Expected foreign function name string")
+    parser._expect("NEWLINE", "Expected newline after call foreign header")
+    if not parser._match("INDENT"):
+        return ast.FlowCallForeign(foreign_name=name_tok.value, arguments=[], line=tok.line, column=tok.column)
+    arguments = _parse_field_block(parser, section="call foreign")
+    parser._expect("DEDENT", "Expected end of call foreign block")
+    while parser._match("NEWLINE"):
+        pass
+    return ast.FlowCallForeign(
+        foreign_name=name_tok.value,
+        arguments=arguments,
+        line=tok.line,
+        column=tok.column,
+    )
 
 
 def _parse_create(parser) -> ast.FlowCreate:
@@ -364,7 +397,7 @@ def _raise_unknown_step(tok) -> None:
         raise Namel3ssError(
             build_guidance_message(
                 what=f"Declarative flows do not support '{hint}' steps.",
-                why="Declarative flows only allow input, require, create, update, and delete.",
+                why="Declarative flows only allow input, require, create, update, delete, and call foreign.",
                 fix='Use a legacy flow with ":" for imperative statements or rewrite the flow steps.',
                 example='flow "demo":\\n  let count is 1',
             ),
@@ -376,7 +409,7 @@ def _raise_unknown_step(tok) -> None:
     raise Namel3ssError(
         build_guidance_message(
             what=f"Unknown flow step '{value}'.{suggestion_text}",
-            why="Declarative flows only allow input, require, create, update, and delete.",
+            why="Declarative flows only allow input, require, create, update, delete, and call foreign.",
             fix="Use one of the supported steps.",
             example='flow "demo"\\n  input\\n    name is text',
         ),

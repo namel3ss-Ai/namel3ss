@@ -1,72 +1,72 @@
 {
-  "pages": [
-    {
-      "name": "home",
-      "slug": "home",
-      "elements": [
-        {
-          "type": "button",
-          "label": "Run",
-          "id": "page.home.button.run",
-          "action_id": "page.home.button.run",
-          "action": {
-            "type": "call_flow",
-            "flow": "demo"
-          },
-          "element_id": "page.home.button_item.0",
-          "page": "home",
-          "page_slug": "home",
-          "index": 0,
-          "line": 10,
-          "column": 3
-        },
-        {
-          "type": "form",
-          "element_id": "page.home.form_item.1",
-          "id": "page.home.form.user",
-          "action_id": "page.home.form.user",
-          "record": "User",
-          "fields": [
-            {
-              "name": "name",
-              "type": "text",
-              "constraints": []
-            }
-          ],
-          "page": "home",
-          "page_slug": "home",
-          "index": 1,
-          "line": 12,
-          "column": 3
-        }
-      ]
-    }
-  ],
   "actions": {
     "page.home.button.run": {
+      "flow": "demo",
       "id": "page.home.button.run",
-      "type": "call_flow",
-      "flow": "demo"
+      "type": "call_flow"
     },
     "page.home.form.user": {
       "id": "page.home.form.user",
-      "type": "submit_form",
-      "record": "User"
+      "record": "User",
+      "type": "submit_form"
     }
   },
+  "pages": [
+    {
+      "elements": [
+        {
+          "action": {
+            "flow": "demo",
+            "type": "call_flow"
+          },
+          "action_id": "page.home.button.run",
+          "column": 3,
+          "element_id": "page.home.button_item.0",
+          "id": "page.home.button.run",
+          "index": 0,
+          "label": "Run",
+          "line": 10,
+          "page": "home",
+          "page_slug": "home",
+          "type": "button"
+        },
+        {
+          "action_id": "page.home.form.user",
+          "column": 3,
+          "element_id": "page.home.form_item.1",
+          "fields": [
+            {
+              "constraints": [],
+              "name": "name",
+              "type": "text"
+            }
+          ],
+          "id": "page.home.form.user",
+          "index": 1,
+          "line": 12,
+          "page": "home",
+          "page_slug": "home",
+          "record": "User",
+          "type": "form"
+        }
+      ],
+      "name": "home",
+      "slug": "home"
+    }
+  ],
   "theme": {
-    "schema_version": "1",
-    "setting": "light",
     "current": "light",
-    "persisted_current": null,
     "effective": "light",
-    "source": "app",
-    "runtime_supported": false,
-    "tokens": {},
+    "persisted_current": null,
     "preference": {
       "allow_override": false,
       "persist": "none"
-    }
+    },
+    "runtime_supported": false,
+    "schema_version": "1",
+    "setting": "light",
+    "source": "app",
+    "tokens": {}
   },
   "ui": {
     "persistence": {
@@ -76,12 +76,12 @@
       "schema_version": null
     },
     "settings": {
-      "theme": "light",
       "accent_color": "blue",
       "density": "comfortable",
       "motion": "subtle",
       "shape": "rounded",
-      "surface": "flat"
+      "surface": "flat",
+      "theme": "light"
     }
   }
 }

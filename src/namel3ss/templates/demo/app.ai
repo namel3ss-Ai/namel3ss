@@ -1,5 +1,11 @@
 spec is "1.0"
 
+# template: {{TEMPLATE_NAME}}@{{TEMPLATE_VERSION}}
+# Demo app showing the AI boundary with explainable records.
+
+ui:
+  theme is "light"
+
 ai "assistant":
   provider is "mock"
   model is "mock-model"
@@ -13,7 +19,7 @@ record "Answer":
   field "reply" is text must be present
   field "why" is text must be present
 
-flow "ask_ai":
+flow "ask_ai": requires true
   ask ai "assistant" with input: input.message as reply
   set state.prompt with:
     message is input.message
@@ -26,13 +32,29 @@ flow "ask_ai":
   return reply
 
 page "home":
+  purpose is "Show the AI boundary and how records capture why."
   title is "{{PROJECT_NAME}}"
   text is "ask the assistant and see why it answered."
+  image is "welcome":
+    role is "iconic"
   chat:
     composer calls flow "ask_ai"
+  compose summary:
+    number:
+      count of "Answer" as "answers"
+    view of "Answer"
   section "records":
     text is "answers include a why field in the table below."
     card "prompts":
       table is "Prompt"
     card "answers":
       table is "Answer"
+  story "How it works":
+    step "Ask a question":
+      text is "Use the composer to send a prompt."
+      icon is info
+      next is "Review the why"
+    step "Review the why":
+      text is "Each answer records a reply and why."
+      image is "welcome":
+        role is "illustration"

@@ -5,7 +5,8 @@ on:
   pull_request:
 
 jobs:
-  build:
+  release-gate:
+    name: release-gate
     runs-on: ubuntu-latest
     env:
       PYTHONDONTWRITEBYTECODE: "1"
@@ -37,6 +38,9 @@ jobs:
 
       - name: Run tests
         run: python -m pytest -q
+
+      - name: Release smoke (build + start)
+        run: python -m pytest -q tests/runtime/test_production_server.py
 
       - name: Ensure .namel3ss dir
         run: mkdir -p .namel3ss
@@ -95,6 +99,9 @@ jobs:
 
       - name: Report largest source files
         run: python tools/top_files.py
+
+      - name: Repo clean check
+        run: python -m namel3ss.beta_lock.repo_clean
 
   cli-install-gate:
     name: cli-install-gate

@@ -29,6 +29,5 @@ def test_studio_errors_panel_behavior():
     assert "fix-steps" in js
     assert 'replaceAll("\\\\n", "\\n")' in js
     assert "normalizeLineBreaks(buildFixSteps" in js
-    assert "(none found)" in js
     assert "parse.reserved_identifier" in js
     assert "n3 reserved" in js

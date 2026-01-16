@@ -1,20 +1,26 @@
 from __future__ import annotations
 
+from namel3ss.agents.ids import agent_id_from_name
+from namel3ss.agents.intent import ordered_agent_decls
 from namel3ss.ir import nodes as ir
 from namel3ss.studio.agent_builder.templates import list_pattern_metadata, list_memory_presets
 from namel3ss.runtime.memory_packs import list_available_packs, load_memory_pack_catalog, pack_provides
 
 
 def list_agents(program: ir.Program) -> list[dict]:
-    agents = sorted(program.agents.values(), key=lambda agent: agent.name)
-    return [
-        {
+    agents = ordered_agent_decls(program)
+    data: list[dict] = []
+    for agent in agents:
+        entry = {
             "name": agent.name,
+            "agent_id": agent.agent_id or agent_id_from_name(agent.name),
             "ai_name": agent.ai_name,
             "system_prompt": agent.system_prompt or "",
         }
-        for agent in agents
-    ]
+        if agent.role:
+            entry["role"] = agent.role
+        data.append(entry)
+    return data
 
 
 def list_ai_profiles(program: ir.Program) -> list[dict]:

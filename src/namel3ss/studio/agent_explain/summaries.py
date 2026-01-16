@@ -7,7 +7,12 @@ from typing import Any
 from namel3ss.traces.redact import summarize_text
 
 
-def build_agent_run_summary(trace: dict) -> dict:
+def build_agent_run_summary(
+    trace: dict,
+    *,
+    memory_facts: dict | None = None,
+    reason: str | None = None,
+) -> dict:
     canonical_events = _list_events(trace.get("canonical_events"))
     input_summary = _input_summary(trace, canonical_events)
     output_value = trace.get("output")
@@ -16,8 +21,10 @@ def build_agent_run_summary(trace: dict) -> dict:
     memory_summary = _memory_summary(canonical_events)
     tools_summary = _tool_summary(canonical_events)
     failures = _failure_codes(canonical_events)
-    return {
-        "agent_id": trace.get("agent_name") or "",
+    agent_id = trace.get("agent_id") or trace.get("agent_name") or ""
+    agent_name = trace.get("agent_name") or ""
+    summary = {
+        "agent_id": agent_id,
         "ai_profile": trace.get("ai_profile_name") or trace.get("ai_name") or "",
         "input_summary": input_summary,
         "memory": memory_summary,
@@ -26,6 +33,16 @@ def build_agent_run_summary(trace: dict) -> dict:
         "output_hash": output_hash,
         "failures": failures,
     }
+    if agent_name:
+        summary["agent_name"] = agent_name
+    role = trace.get("role")
+    if isinstance(role, str) and role:
+        summary["role"] = role
+    if memory_facts is not None:
+        summary["memory_facts"] = dict(memory_facts)
+    if reason:
+        summary["reason"] = reason
+    return summary
 
 
 def collect_ai_traces(traces: list[dict]) -> list[dict]:
@@ -86,6 +103,27 @@ def summarize_handoff_events(traces: list[dict]) -> list[dict]:
             }
         )
     return summaries
+
+
+def extract_agent_step_context(traces: list[dict]) -> tuple[dict[str, str], dict[str, dict]]:
+    reasons: dict[str, str] = {}
+    memory_facts: dict[str, dict] = {}
+    for trace in traces:
+        if not isinstance(trace, dict):
+            continue
+        key = _agent_key(trace)
+        if not key:
+            continue
+        event_type = trace.get("type")
+        if event_type == "agent_step_start":
+            reason = _first_line(trace)
+            if reason:
+                reasons.setdefault(key, reason)
+        elif event_type == "agent_step_end":
+            facts = trace.get("memory_facts")
+            if isinstance(facts, dict):
+                memory_facts[key] = dict(facts)
+    return reasons, memory_facts
 
 
 def _list_events(value: Any) -> list[dict]:
@@ -227,6 +265,23 @@ def _failure_codes(canonical_events: list[dict]) -> list[str]:
     return ordered
 
 
+def _agent_key(trace: dict) -> str:
+    for key in ("agent_id", "agent_name"):
+        value = trace.get(key)
+        if isinstance(value, str) and value:
+            return value
+    return ""
+
+
+def _first_line(trace: dict) -> str | None:
+    lines = trace.get("lines")
+    if isinstance(lines, list) and lines:
+        line = lines[0]
+        if isinstance(line, str):
+            return line
+    return None
+
+
 def _hash_value(value: object) -> str:
     canonical = _canonicalize_value(value)
     payload = json.dumps(canonical, sort_keys=True, separators=(",", ":"))
@@ -248,6 +303,7 @@ def _canonicalize_value(value: Any) -> Any:
 __all__ = [
     "build_agent_run_summary",
     "collect_ai_traces",
+    "extract_agent_step_context",
     "extract_parallel_traces",
     "summarize_handoff_events",
 ]

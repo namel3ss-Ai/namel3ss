@@ -1,0 +1,440 @@
+{
+  "agent_team": null,
+  "agents": {},
+  "ais": {
+    "assistant": {
+      "column": 1,
+      "exposed_tools": [],
+      "line": 9,
+      "memory": {
+        "column": 1,
+        "line": 9,
+        "profile": false,
+        "semantic": false,
+        "short_term": 0,
+        "type": "AIMemory"
+      },
+      "model": "mock-model",
+      "name": "assistant",
+      "provider": "mock",
+      "system_prompt": "DEMO_SYSTEM_PROMPT",
+      "type": "AIDecl"
+    }
+  },
+  "column": null,
+  "flows": [
+    {
+      "audited": false,
+      "body": [
+        {
+          "ai_name": "assistant",
+          "column": 3,
+          "input_expr": {
+            "attrs": [
+              "message"
+            ],
+            "base": "input",
+            "column": 34,
+            "line": 23,
+            "type": "AttrAccess"
+          },
+          "line": 23,
+          "target": "reply",
+          "type": "AskAIStmt"
+        },
+        {
+          "column": 5,
+          "expression": {
+            "attrs": [
+              "message"
+            ],
+            "base": "input",
+            "column": 16,
+            "line": 25,
+            "type": "AttrAccess"
+          },
+          "line": 25,
+          "target": {
+            "column": 5,
+            "line": 25,
+            "path": [
+              "prompt",
+              "message"
+            ],
+            "type": "StatePath"
+          },
+          "type": "Set"
+        },
+        {
+          "column": 3,
+          "line": 26,
+          "record_name": "Prompt",
+          "target": "prompt",
+          "type": "Create",
+          "values": {
+            "column": 24,
+            "line": 26,
+            "path": [
+              "prompt"
+            ],
+            "type": "StatePath"
+          }
+        },
+        {
+          "column": 5,
+          "expression": {
+            "attrs": [
+              "message"
+            ],
+            "base": "input",
+            "column": 15,
+            "line": 28,
+            "type": "AttrAccess"
+          },
+          "line": 28,
+          "target": {
+            "column": 5,
+            "line": 28,
+            "path": [
+              "answer",
+              "prompt"
+            ],
+            "type": "StatePath"
+          },
+          "type": "Set"
+        },
+        {
+          "column": 5,
+          "expression": {
+            "column": 14,
+            "line": 29,
+            "name": "reply",
+            "type": "VarReference"
+          },
+          "line": 29,
+          "target": {
+            "column": 5,
+            "line": 29,
+            "path": [
+              "answer",
+              "reply"
+            ],
+            "type": "StatePath"
+          },
+          "type": "Set"
+        },
+        {
+          "column": 5,
+          "expression": {
+            "column": 12,
+            "line": 30,
+            "type": "Literal",
+            "value": "ai boundary: provider=DEMO_PROVIDER, model=DEMO_MODEL"
+          },
+          "line": 30,
+          "target": {
+            "column": 5,
+            "line": 30,
+            "path": [
+              "answer",
+              "why"
+            ],
+            "type": "StatePath"
+          },
+          "type": "Set"
+        },
+        {
+          "column": 3,
+          "line": 31,
+          "record_name": "Answer",
+          "target": "answer",
+          "type": "Create",
+          "values": {
+            "column": 24,
+            "line": 31,
+            "path": [
+              "answer"
+            ],
+            "type": "StatePath"
+          }
+        },
+        {
+          "column": 3,
+          "expression": {
+            "column": 10,
+            "line": 32,
+            "name": "reply",
+            "type": "VarReference"
+          },
+          "line": 32,
+          "type": "Return"
+        }
+      ],
+      "column": 1,
+      "line": 22,
+      "name": "ask_ai",
+      "requires": {
+        "column": 25,
+        "line": 22,
+        "type": "Literal",
+        "value": true
+      },
+      "type": "Flow"
+    }
+  ],
+  "identity": null,
+  "line": null,
+  "pages": [
+    {
+      "column": 1,
+      "items": [
+        {
+          "column": 3,
+          "line": 36,
+          "type": "TitleItem",
+          "value": "{{PROJECT_NAME}}"
+        },
+        {
+          "column": 3,
+          "line": 37,
+          "type": "TextItem",
+          "value": "ask the assistant and see why it answered."
+        },
+        {
+          "alt": "",
+          "column": 3,
+          "line": 38,
+          "role": "iconic",
+          "src": "welcome",
+          "type": "ImageItem"
+        },
+        {
+          "children": [
+            {
+              "column": 5,
+              "flow_name": "ask_ai",
+              "line": 41,
+              "type": "ChatComposerItem"
+            }
+          ],
+          "column": 3,
+          "line": 40,
+          "type": "ChatItem"
+        },
+        {
+          "children": [
+            {
+              "column": 5,
+              "entries": [
+                {
+                  "column": 7,
+                  "kind": "count",
+                  "label": "answers",
+                  "line": 44,
+                  "record_name": "Answer",
+                  "type": "NumberEntry",
+                  "value": null
+                }
+              ],
+              "line": 43,
+              "type": "NumberItem"
+            },
+            {
+              "column": 5,
+              "line": 45,
+              "record_name": "Answer",
+              "type": "ViewItem"
+            }
+          ],
+          "column": 3,
+          "line": 42,
+          "name": "summary",
+          "type": "ComposeItem"
+        },
+        {
+          "children": [
+            {
+              "column": 5,
+              "line": 47,
+              "type": "TextItem",
+              "value": "answers include a why field in the table below."
+            },
+            {
+              "actions": null,
+              "children": [
+                {
+                  "column": 7,
+                  "columns": null,
+                  "empty_text": null,
+                  "line": 49,
+                  "pagination": null,
+                  "record_name": "Prompt",
+                  "row_actions": null,
+                  "selection": null,
+                  "sort": null,
+                  "type": "TableItem"
+                }
+              ],
+              "column": 5,
+              "label": "prompts",
+              "line": 48,
+              "stat": null,
+              "type": "CardItem"
+            },
+            {
+              "actions": null,
+              "children": [
+                {
+                  "column": 7,
+                  "columns": null,
+                  "empty_text": null,
+                  "line": 51,
+                  "pagination": null,
+                  "record_name": "Answer",
+                  "row_actions": null,
+                  "selection": null,
+                  "sort": null,
+                  "type": "TableItem"
+                }
+              ],
+              "column": 5,
+              "label": "answers",
+              "line": 50,
+              "stat": null,
+              "type": "CardItem"
+            }
+          ],
+          "column": 3,
+          "label": "records",
+          "line": 46,
+          "type": "SectionItem"
+        },
+        {
+          "column": 3,
+          "line": 52,
+          "steps": [
+            {
+              "column": 5,
+              "icon": "info",
+              "image": null,
+              "image_role": null,
+              "line": 53,
+              "next": "Review the why",
+              "requires": null,
+              "text": "Use the composer to send a prompt.",
+              "title": "Ask a question",
+              "tone": null,
+              "type": "StoryStep"
+            },
+            {
+              "column": 5,
+              "icon": null,
+              "image": "welcome",
+              "image_role": "illustration",
+              "line": 57,
+              "next": null,
+              "requires": null,
+              "text": "Each answer records a reply and why.",
+              "title": "Review the why",
+              "tone": null,
+              "type": "StoryStep"
+            }
+          ],
+          "title": "How it works",
+          "type": "StoryItem"
+        }
+      ],
+      "line": 34,
+      "name": "home",
+      "purpose": "Show the AI boundary and how records capture why.",
+      "requires": null,
+      "type": "Page"
+    }
+  ],
+  "records": [
+    {
+      "fields": [
+        {
+          "constraint": {
+            "expression": null,
+            "expression_high": null,
+            "kind": "present",
+            "pattern": null,
+            "type": "FieldConstraint"
+          },
+          "name": "message",
+          "type": "FieldSchema",
+          "type_name": "text"
+        }
+      ],
+      "name": "Prompt",
+      "system_fields": [],
+      "tenant_key": null,
+      "ttl_hours": null,
+      "type": "RecordSchema"
+    },
+    {
+      "fields": [
+        {
+          "constraint": {
+            "expression": null,
+            "expression_high": null,
+            "kind": "present",
+            "pattern": null,
+            "type": "FieldConstraint"
+          },
+          "name": "prompt",
+          "type": "FieldSchema",
+          "type_name": "text"
+        },
+        {
+          "constraint": {
+            "expression": null,
+            "expression_high": null,
+            "kind": "present",
+            "pattern": null,
+            "type": "FieldConstraint"
+          },
+          "name": "reply",
+          "type": "FieldSchema",
+          "type_name": "text"
+        },
+        {
+          "constraint": {
+            "expression": null,
+            "expression_high": null,
+            "kind": "present",
+            "pattern": null,
+            "type": "FieldConstraint"
+          },
+          "name": "why",
+          "type": "FieldSchema",
+          "type_name": "text"
+        }
+      ],
+      "name": "Answer",
+      "system_fields": [],
+      "tenant_key": null,
+      "ttl_hours": null,
+      "type": "RecordSchema"
+    }
+  ],
+  "spec_version": "1.0",
+  "theme": "light",
+  "theme_preference": {
+    "allow_override": false,
+    "persist": "none"
+  },
+  "theme_runtime_supported": false,
+  "theme_tokens": {},
+  "tools": {},
+  "type": "Program",
+  "ui_settings": {
+    "accent_color": "blue",
+    "density": "comfortable",
+    "motion": "subtle",
+    "shape": "rounded",
+    "surface": "flat",
+    "theme": "light"
+  }
+}

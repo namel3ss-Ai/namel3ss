@@ -43,7 +43,7 @@
         "result": {
           "text": "[mock-model] This is a longer plan prompt. :: Task | mem:st=0"
         },
-        "trace_hash": "26b826c755d6a80e3270e8037e147dd58c2e5f4c6f331a390037a642364cb756"
+        "trace_hash": "5ec8087b317a6c07808552220f79edd7ab62a90ea81a9bea577825e7169bfafa"
       },
       "tags": [
         "fast"
@@ -58,7 +58,7 @@
       },
       "expect": {
         "result": "[mock-model] Memory check. :: Hello | mem:st=0",
-        "trace_hash": "e7066484a6f3455065bcfa8323a7926d4c1db25b71ff98c62ab5ec4103c9a9d6"
+        "trace_hash": "d78be889b5d19a160df0c63480e121ffa482d5d5de7c4d03012709346a07dde4"
       },
       "tags": [
         "fast"

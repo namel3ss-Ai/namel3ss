@@ -1,5 +1,7 @@
 include VERSION
 include CHANGELOG.md
 recursive-include src/namel3ss/templates *
+recursive-include src/namel3ss/examples *
 recursive-include src/namel3ss/studio/web *
+recursive-include src/namel3ss/runtime/web *
 recursive-include resources/icons *

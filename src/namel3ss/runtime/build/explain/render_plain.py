@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from namel3ss.cli.targets_store import BUILD_BASE_DIR
+
 from .normalize import stable_bullets, stable_truncate
 
 
@@ -39,7 +41,7 @@ def render_exists(manifest: dict, diff: dict | None = None) -> str:
 
     lines.append("")
     lines.append("Where it is stored")
-    lines.extend(stable_bullets([f".namel3ss/build/history/{build_id}.json"]))
+    lines.extend(stable_bullets([f"{BUILD_BASE_DIR}/history/{build_id}.json"]))
 
     return "\n".join(lines).rstrip()
 

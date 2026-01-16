@@ -1,6 +1,8 @@
+from namel3ss.determinism import normalize_traces
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.ai.mock_provider import MockProvider
 from namel3ss.runtime.executor import Executor
+from namel3ss.traces.schema import TraceEventType
 
 
 def _ai_profile(name: str = "assistant"):
@@ -38,13 +40,24 @@ def test_sequential_agent_trace_contains_agent_name():
         ai_provider=MockProvider(),
     )
     result = executor.run()
-    assert len(result.traces) == 1
-    trace = result.traces[0]
-    assert trace.agent_name == "planner"
-    assert trace.ai_name == "assistant"
-    assert trace.ai_profile_name == "assistant"
-    assert hasattr(trace, "tool_calls") and trace.tool_calls == []
-    assert hasattr(trace, "tool_results") and trace.tool_results == []
+    traces = normalize_traces(result.traces)
+    ai_traces = [trace for trace in traces if trace.get("type") == "ai_call"]
+    assert len(ai_traces) == 1
+    trace = ai_traces[0]
+    assert trace["agent_name"] == "planner"
+    assert trace["agent_id"] == "planner"
+    assert trace["ai_name"] == "assistant"
+    assert trace["ai_profile_name"] == "assistant"
+    assert trace["tool_calls"] == []
+    assert trace["tool_results"] == []
+    start = next(item for item in traces if item.get("type") == TraceEventType.AGENT_STEP_START)
+    end = next(item for item in traces if item.get("type") == TraceEventType.AGENT_STEP_END)
+    assert start["agent_name"] == "planner"
+    assert start["agent_id"] == "planner"
+    assert start["lines"][0].startswith("invoked by")
+    assert end["status"] == "ok"
+    assert isinstance(end.get("memory_facts"), dict)
+    assert end["memory_facts"].get("last_updated_step")
 
 
 def test_parallel_agent_wrapper_trace_and_order():
@@ -68,12 +81,13 @@ def test_parallel_agent_wrapper_trace_and_order():
     outputs = executor.locals["results"]
     assert outputs[0]["text"].startswith("[gpt-4.1] hi :: A")
     assert outputs[1]["text"].startswith("[gpt-4.1] hi :: B")
-    assert len(result.traces) == 1
-    wrapper = result.traces[0]
+    traces = normalize_traces(result.traces)
+    wrapper = next(item for item in traces if item.get("type") == "parallel_agents")
     assert wrapper["type"] == "parallel_agents"
     assert wrapper["target"] == "results"
     agents_traces = wrapper["agents"]
     assert [a["agent_name"] for a in agents_traces] == ["critic", "researcher"]
+    assert [a["agent_id"] for a in agents_traces] == ["critic", "researcher"]
     assert [a["output"] for a in agents_traces] == [item["text"] for item in executor.locals["results"]]
 
 

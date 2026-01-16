@@ -12,7 +12,7 @@ APP_SOURCE = '''spec is "1.0"
 record "Order":
   field "order_id" is text must be present
 
-flow "seed_demo":
+flow "seed_demo": requires true
   find "Order" where true
   let existing is list length of order_results
   if existing is greater than 0:

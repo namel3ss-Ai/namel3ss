@@ -16,7 +16,7 @@ def test_parse_layout_items_and_nesting():
       column:
         text is "Second column"
   divider
-  image is "https://example.com/logo.png"
+  image is "logo"
 '''
     program = parse_program(source)
     page = program.pages[0]

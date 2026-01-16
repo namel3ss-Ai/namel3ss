@@ -20,7 +20,7 @@ flow "ask_ai":
   ask ai "assistant" with input: "hello" as reply
   return reply
 
-page "home":
+page "home": requires true
   button "Ask":
     calls flow "ask_ai"
   form is "User"

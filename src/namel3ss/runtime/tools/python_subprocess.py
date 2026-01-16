@@ -161,6 +161,7 @@ def run_tool_subprocess(
     entry: str,
     payload: dict,
     app_root: Path,
+    cwd: Path | None = None,
     timeout_seconds: int,
     extra_paths: list[Path] | None = None,
     capability_context: dict[str, object] | None = None,
@@ -181,6 +182,7 @@ def run_tool_subprocess(
         request["trace_id"] = trace_id
     input_text = json_dumps(request)
     env = _build_env(app_root, extra_paths=extra_paths)
+    working_dir = str(cwd or app_root)
     try:
         result = subprocess.run(
             [str(python_path), "-c", _RUNNER],
@@ -188,7 +190,7 @@ def run_tool_subprocess(
             text=True,
             capture_output=True,
             env=env,
-            cwd=str(app_root),
+            cwd=working_dir,
             timeout=timeout_seconds,
             check=False,
         )

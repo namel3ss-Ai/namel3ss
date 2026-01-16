@@ -12,7 +12,7 @@ record "Item":
   field "name" is text must be present
   field "count" is number must be at least 0
 
-flow "seed":
+flow "seed": requires true
   set state.item.id is 1
   set state.item.name is "Alpha"
   set state.item.count is 2
@@ -22,11 +22,11 @@ flow "seed":
   set state.item.count is 1
   create "Item" with state.item as item
 
-flow "bump":
+flow "bump": requires true
   update "Item" where id is 1 set:
     count is count + 3
 
-flow "remove":
+flow "remove": requires true
   delete "Item" where name is "Beta"
 '''
 

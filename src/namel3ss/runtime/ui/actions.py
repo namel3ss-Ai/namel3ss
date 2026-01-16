@@ -8,6 +8,9 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.identity.context import resolve_identity
+from namel3ss.runtime.identity.guards import GuardContext
+from namel3ss.runtime.flow.ids import flow_step_id
+from namel3ss.runtime.mutation_policy import evaluate_mutation_policy_for_rule
 from namel3ss.runtime.records.service import save_record_with_errors
 from namel3ss.runtime.records.state_paths import set_state_record
 from namel3ss.runtime.storage.base import Storage
@@ -18,9 +21,10 @@ from namel3ss.ui.manifest import build_manifest
 from namel3ss.utils.json_tools import dumps as json_dumps
 from namel3ss.secrets import collect_secret_values
 from namel3ss.observe import actor_summary, record_event, summarize_value
-from namel3ss.errors.payload import build_error_payload
+from namel3ss.errors.payload import build_error_payload, build_error_from_exception
 from namel3ss.production_contract import build_run_payload
 from namel3ss.runtime.run_pipeline import build_flow_payload, finalize_run_payload
+from namel3ss.traces.schema import TraceEventType
 import time
 from pathlib import Path
 
@@ -62,6 +66,7 @@ def handle_action(
     working_state = store.load_state() if state is None else state
     manifest = build_manifest(
         program_ir,
+        config=resolved_config,
         state=working_state,
         store=store,
         runtime_theme=runtime_theme,
@@ -102,13 +107,16 @@ def handle_action(
             response = _handle_submit_form(
                 program_ir,
                 action,
+                action_id,
                 payload or {},
                 working_state,
                 store,
                 manifest,
                 runtime_theme,
+                config=resolved_config,
                 identity=identity,
                 secret_values=secret_values,
+                source=source,
             )
         else:
             raise Namel3ssError(f"Unsupported action type '{action_type}'")
@@ -227,6 +235,7 @@ def _handle_call_flow(
     state_payload = response.get("state")
     response["ui"] = build_manifest(
         program_ir,
+        config=config,
         state=state_payload if isinstance(state_payload, dict) else {},
         store=store,
         runtime_theme=next_runtime_theme,
@@ -241,13 +250,16 @@ def _handle_call_flow(
 def _handle_submit_form(
     program_ir: ir.Program,
     action: dict,
+    action_id: str,
     payload: dict,
     state: dict,
     store: Storage,
     manifest: dict,
     runtime_theme: Optional[str],
+    config: AppConfig | None = None,
     identity: dict | None = None,
     secret_values: list[str] | None = None,
+    source: str | None = None,
 ) -> dict:
     payload = _normalize_submit_payload(payload)
     record = action.get("record")
@@ -255,6 +267,49 @@ def _handle_submit_form(
         raise Namel3ssError("Invalid record reference in form action")
     values = payload["values"]
     trace = _submit_form_trace(record, values)
+    policy_trace, decision = _enforce_form_policy(
+        program_ir,
+        manifest,
+        action_id,
+        record,
+        payload,
+        state,
+        identity,
+    )
+    if not decision.allowed:
+        trace["ok"] = False
+        error = Namel3ssError(
+            decision.error_message or decision.message or "Mutation blocked by policy.",
+            details={
+                "category": "policy",
+                "reason_code": decision.reason_code,
+                "flow_name": policy_trace.get("flow_name"),
+                "record": record,
+                "action": "save",
+                "step_id": policy_trace.get("step_id"),
+            },
+        )
+        error_payload = build_error_from_exception(error, kind="runtime", source=source)
+        response = build_run_payload(
+            ok=False,
+            flow_name=None,
+            state=state,
+            result=None,
+            traces=[policy_trace, trace],
+            project_root=getattr(program_ir, "project_root", None),
+            error_payload=error_payload,
+        )
+        response["ui"] = build_manifest(
+            program_ir,
+            config=config,
+            state=state,
+            store=store,
+            runtime_theme=runtime_theme,
+            identity=identity,
+        )
+        _ensure_json_serializable(response)
+        response = finalize_run_payload(response, secret_values)
+        return response
     set_state_record(state, record, values)
     schemas = {schema.name: schema for schema in program_ir.records}
     saved, errors = save_record_with_errors(record, values, schemas, state, store, identity=identity)
@@ -267,13 +322,14 @@ def _handle_submit_form(
             flow_name=None,
             state=state,
             result=None,
-            traces=[trace],
+            traces=[policy_trace, trace],
             project_root=getattr(program_ir, "project_root", None),
             error_payload=error_payload,
         )
         response["errors"] = errors
         response["ui"] = build_manifest(
             program_ir,
+            config=config,
             state=state,
             store=store,
             runtime_theme=runtime_theme,
@@ -292,11 +348,12 @@ def _handle_submit_form(
         flow_name=None,
         state=state,
         result={"record": record, "id": record_id},
-        traces=[trace],
+        traces=[policy_trace, trace],
         project_root=getattr(program_ir, "project_root", None),
     )
     response["ui"] = build_manifest(
         program_ir,
+        config=config,
         state=state,
         store=store,
         runtime_theme=runtime_theme,
@@ -310,6 +367,95 @@ def _handle_submit_form(
 def _submit_form_trace(record: str, values: dict) -> dict:
     fields = sorted({str(key) for key in values.keys()})
     return {"type": "submit_form", "record": record, "ok": True, "fields": fields}
+
+
+def _enforce_form_policy(
+    program_ir: ir.Program,
+    manifest: dict,
+    action_id: str,
+    record: str,
+    payload: dict,
+    state: dict,
+    identity: dict | None,
+) -> tuple[dict, object]:
+    page_slug = _page_slug_from_action(action_id)
+    page_name = _page_name_for_slug(manifest, page_slug)
+    page_decl = _page_decl_for_name(program_ir, page_name)
+    subject = _page_subject(page_name, page_slug)
+    flow_name = _form_flow_name(page_slug, record)
+    step_id = flow_step_id(flow_name, "save", 1)
+    ctx = GuardContext(
+        locals={"input": payload, "mutation": {"action": "save", "record": record}},
+        state=state,
+        identity=identity or {},
+    )
+    decision = evaluate_mutation_policy_for_rule(
+        ctx,
+        action="save",
+        record=record,
+        subject=subject,
+        requires_expr=getattr(page_decl, "requires", None) if page_decl else None,
+        audited=False,
+    )
+    if decision.allowed:
+        entry = {
+            "type": TraceEventType.MUTATION_ALLOWED,
+            "flow_name": flow_name,
+            "step_id": step_id,
+            "record": record,
+            "action": "save",
+        }
+        return entry, decision
+    entry = {
+        "type": TraceEventType.MUTATION_BLOCKED,
+        "flow_name": flow_name,
+        "step_id": step_id,
+        "record": record,
+        "action": "save",
+        "reason_code": decision.reason_code,
+        "message": decision.message,
+        "fix_hint": decision.fix_hint,
+    }
+    return entry, decision
+
+
+def _page_slug_from_action(action_id: str) -> str | None:
+    parts = action_id.split(".")
+    if len(parts) >= 2 and parts[0] == "page":
+        return parts[1]
+    return None
+
+
+def _page_name_for_slug(manifest: dict, slug: str | None) -> str | None:
+    if not slug:
+        return None
+    for page in manifest.get("pages", []):
+        if isinstance(page, dict) and page.get("slug") == slug:
+            name = page.get("name")
+            return str(name) if isinstance(name, str) else None
+    return None
+
+
+def _page_decl_for_name(program_ir: ir.Program, page_name: str | None) -> ir.Page | None:
+    if not page_name:
+        return None
+    for page in getattr(program_ir, "pages", []):
+        if page.name == page_name:
+            return page
+    return None
+
+
+def _page_subject(page_name: str | None, page_slug: str | None) -> str:
+    if page_name:
+        return f'page "{page_name}"'
+    if page_slug:
+        return f'page "{page_slug}"'
+    return "page"
+
+
+def _form_flow_name(page_slug: str | None, record: str) -> str:
+    slug = page_slug or "page"
+    return f"page.{slug}.form.{record}"
 
 
 def _normalize_submit_payload(payload: dict | None) -> dict:

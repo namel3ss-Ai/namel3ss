@@ -8,7 +8,7 @@ from namel3ss.ir.model.statements import Statement
 from namel3ss.ir.model.pages import Page
 from namel3ss.ir.model.expressions import Expression
 from namel3ss.ir.model.ai import AIDecl
-from namel3ss.ir.model.agents import AgentDecl
+from namel3ss.ir.model.agents import AgentDecl, AgentTeam
 from namel3ss.ir.model.tools import ToolDecl
 from namel3ss.ir.functions.model import FunctionDecl
 from namel3ss.schema import records as schema
@@ -42,5 +42,6 @@ class Program(Node):
     ais: Dict[str, AIDecl]
     tools: Dict[str, ToolDecl]
     agents: Dict[str, AgentDecl]
+    agent_team: AgentTeam | None = None
     identity: "IdentitySchema | None" = None
     state_defaults: dict | None = None

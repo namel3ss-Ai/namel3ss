@@ -313,12 +313,25 @@ let renderUI = (manifest) => {
     if (el.type === "image") {
       const wrapper = document.createElement("div");
       wrapper.className = "ui-element ui-image-wrapper";
-      const img = document.createElement("img");
-      img.className = "ui-image";
-      img.src = el.src || "";
-      img.alt = el.alt || "";
-      img.loading = "lazy";
-      wrapper.appendChild(img);
+      const src = typeof el.src === "string" ? el.src : "";
+      const name = el.media_name || "";
+      if (src) {
+        const img = document.createElement("img");
+        img.className = "ui-image";
+        img.src = src;
+        img.alt = el.alt || name || "";
+        img.loading = "lazy";
+        wrapper.appendChild(img);
+        return wrapper;
+      }
+      const placeholder = document.createElement("div");
+      placeholder.className = "ui-image";
+      const label = name ? `image: ${name}` : "image";
+      placeholder.textContent = el.missing ? `${label} (missing)` : label;
+      if (el.missing && el.fix_hint) {
+        placeholder.title = el.fix_hint;
+      }
+      wrapper.appendChild(placeholder);
       return wrapper;
     }
     const wrapper = document.createElement("div");

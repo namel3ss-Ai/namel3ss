@@ -15,7 +15,7 @@ page "home":
       column:
         text is "Other"
   divider
-  image is "https://example.com/img.png"
+  image is "banner"
 '''
 
 
@@ -38,8 +38,9 @@ def test_manifest_includes_layout_elements_and_children():
     assert divider["type"] == "divider"
     image = page["elements"][2]
     assert image["type"] == "image"
-    assert image["src"] == "https://example.com/img.png"
-    assert isinstance(image["alt"], str)
+    assert image["media_name"] == "banner"
+    assert image["missing"] is True
+    assert "fix_hint" in image
     actions = manifest["actions"]
     assert "page.home.button.run" in actions
     assert actions["page.home.button.run"]["type"] == "call_flow"

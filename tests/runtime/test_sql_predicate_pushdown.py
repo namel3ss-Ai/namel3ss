@@ -22,7 +22,7 @@ record "Item":
   field "name" is text must be present
   field "count" is number must be at least 0
 
-flow "seed":
+flow "seed": requires true
   set state.item.id is 1
   set state.item.name is "Alpha"
   set state.item.count is 2
@@ -41,11 +41,11 @@ flow "find_over":
   find "Item" where count is greater than input.values.min
   return list length of item_results
 
-flow "update_named":
+flow "update_named": requires true
   update "Item" where name is input.values.name set:
     count is count + input.values.bump
 
-flow "delete_small":
+flow "delete_small": requires true
   delete "Item" where count is less than input.values.max
 '''
 

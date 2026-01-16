@@ -16,7 +16,7 @@ record "Sample":
   field "range" is number must be between -5 and 5
   field "whole" is number must be an integer
 
-flow "save":
+flow "save": requires true
   set state.sample.min is input.values.min
   set state.sample.max is input.values.max
   set state.sample.range is input.values.range

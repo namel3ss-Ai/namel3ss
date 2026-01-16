@@ -42,10 +42,67 @@ For runner container:
 - image
 - command
 
+## Boundary events
+Boundary events describe explicit boundaries such as foreign function calls.
+
+### boundary_start
+Every boundary_start event includes:
+- type boundary_start
+- boundary foreign
+- language python or js
+- function_name
+- policy_mode strict or default
+- input_summary
+
+### boundary_end
+Every boundary_end event includes:
+- type boundary_end
+- boundary foreign
+- language python or js
+- function_name
+- policy_mode strict or default
+- status ok, error, or blocked
+
+For status ok:
+- output_summary
+
+For status error or blocked:
+- error_message
+
+## Mutation policy events
+Every mutation attempt emits exactly one of:
+
+### mutation_allowed
+- type mutation_allowed
+- flow_name
+- step_id
+- record
+- action (save, create, update, delete)
+
+### mutation_blocked
+- type mutation_blocked
+- flow_name
+- step_id
+- record
+- action (save, create, update, delete)
+- reason_code (policy_missing, audit_required, access_denied, policy_invalid)
+- message
+- fix_hint
+
 ## AI call traces
 AI call traces are versioned separately by TRACE_VERSION.
 Memory trace events are part of the AI trace stream.
 They are defined in docs/memory.md and docs/memory-policy.md.
+
+### Agent step events
+Agent step events appear alongside AI traces:
+- `agent_step_start` includes `agent_name`, optional `agent_id`, optional `role`, `step_id`, `title`, and `lines` (reason).
+- `agent_step_end` includes `agent_name`, optional `agent_id`, optional `role`, `step_id`, `status`, `title`, `lines`,
+  optional `memory_facts` (keys, counts, last_updated_step), and `error_message` on failure.
+
+### Merge applied events
+When a merge policy is executed:
+- `merge_applied` includes `policy`, `selected_agents`, `rejected_agents`, `title`, and `lines`.
 
 Memory events include:
 - memory_recall

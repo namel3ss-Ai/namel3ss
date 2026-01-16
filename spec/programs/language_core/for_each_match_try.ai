@@ -3,7 +3,7 @@ spec is "1.0"
 record "Item":
   field "name" is text
 
-flow "demo":
+flow "demo": requires true
   create "Item" with input as item
   find "Item" where name is input.name
   let count is 0

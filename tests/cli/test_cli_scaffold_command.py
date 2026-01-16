@@ -10,6 +10,8 @@ from namel3ss.parser.core import parse
 def _validate_app_file(app_path: Path) -> None:
     source = app_path.read_text(encoding="utf-8")
     assert "{{PROJECT_NAME}}" not in source
+    assert "{{TEMPLATE_NAME}}" not in source
+    assert "{{TEMPLATE_VERSION}}" not in source
     assert format_source(source) == source
     findings = lint_source(source)
     assert len(findings) == 0
@@ -33,8 +35,13 @@ def test_new_starter_scaffolds(tmp_path, monkeypatch, capsys):
     assert "Next step" in out
     _assert_bracketless(out)
     _validate_app_file(project_dir / "app.ai")
+    app_text = (project_dir / "app.ai").read_text(encoding="utf-8")
+    assert "template: starter@0.1.0" in app_text
+    assert (project_dir / "media" / "welcome.svg").exists()
     readme = (project_dir / "README.md").read_text(encoding="utf-8")
     assert "{{PROJECT_NAME}}" not in readme
+    assert "{{TEMPLATE_NAME}}" not in readme
+    assert "{{TEMPLATE_VERSION}}" not in readme
     assert "first_run" in readme
 
 
@@ -76,7 +83,10 @@ def test_new_demo_defaults_to_mock(tmp_path, monkeypatch):
     assert "DEMO_MODEL" not in source
     assert "DEMO_SYSTEM_PROMPT" not in source
     assert (project_dir / ".env.example").exists()
+    assert (project_dir / "media" / "welcome.svg").exists()
     assert "{{PROJECT_NAME}}" not in readme
+    assert "{{TEMPLATE_NAME}}" not in readme
+    assert "{{TEMPLATE_VERSION}}" not in readme
     assert "demo_app" in readme
 
 
@@ -94,6 +104,51 @@ def test_new_demo_openai_env_controls_provider_and_model(tmp_path, monkeypatch):
     assert "OPENAI_API_KEY=" in env_example
     assert "NAMEL3SS_OPENAI_API_KEY=" in env_example
     assert "N3_DEMO_MODEL=gpt-4o-mini" not in env_example
+
+
+def test_new_example_scaffolds(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    code = main(["new", "example", "notes_journey", "journey_app"])
+    project_dir = tmp_path / "journey_app"
+    assert code == 0
+    assert project_dir.exists()
+    _validate_app_file(project_dir / "app.ai")
+    app_text = (project_dir / "app.ai").read_text(encoding="utf-8")
+    assert "example: notes_journey@0.1.0" in app_text
+    assert (project_dir / "media" / "welcome.svg").exists()
+    readme = (project_dir / "README.md").read_text(encoding="utf-8")
+    assert "{{PROJECT_NAME}}" not in readme
+    assert "journey_app" in readme
+
+
+def _snapshot_tree(root: Path) -> dict[str, bytes]:
+    snapshot: dict[str, bytes] = {}
+    for path in sorted(root.rglob("*")):
+        if path.is_dir():
+            continue
+        snapshot[path.relative_to(root).as_posix()] = path.read_bytes()
+    return snapshot
+
+
+def test_new_scaffold_is_deterministic(tmp_path, monkeypatch):
+    first = tmp_path / "first"
+    second = tmp_path / "second"
+    first.mkdir()
+    second.mkdir()
+    monkeypatch.chdir(first)
+    assert main(["new", "starter", "same_app"]) == 0
+    monkeypatch.chdir(second)
+    assert main(["new", "starter", "same_app"]) == 0
+    first_snapshot = _snapshot_tree(first / "same_app")
+    second_snapshot = _snapshot_tree(second / "same_app")
+    assert first_snapshot == second_snapshot
+
+
+def test_new_scaffold_check_ok(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    assert main(["new", "starter", "check_app"]) == 0
+    app_path = tmp_path / "check_app" / "app.ai"
+    assert main([str(app_path), "check"]) == 0
 
 
 def test_new_unknown_template_errors(tmp_path, monkeypatch, capsys):
@@ -127,3 +182,6 @@ def test_new_lists_templates(capsys):
     assert "Available templates" in out
     for name in ["demo", "starter"]:
         assert name in out
+    assert "starter v0.1.0" in out
+    assert "Examples (read-only)" in out
+    assert "notes_journey" in out

@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
+from namel3ss.agents.ids import agent_id_from_name
+from namel3ss.agents.intent import build_agent_team_intent
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
@@ -60,10 +62,13 @@ def get_agents_payload(source: str, session: SessionState | None, app_path: str)
         handoffs = list_handoffs(memory_manager, program)
         selection_app = resolve_pack_selection(config, agent_id=None)
         selection_agents = {
-            agent.name: resolve_pack_selection(config, agent_id=agent.name)
+            agent.name: resolve_pack_selection(
+                config,
+                agent_id=agent.agent_id or agent_id_from_name(agent.name),
+            )
             for agent in program.agents.values()
         }
-        return {
+        payload = {
             "ok": True,
             "agents": list_agents(program),
             "ais": list_ai_profiles(program),
@@ -80,6 +85,10 @@ def get_agents_payload(source: str, session: SessionState | None, app_path: str)
             },
             "handoffs": handoffs,
         }
+        agent_team = build_agent_team_intent(program)
+        if agent_team is not None:
+            payload["agent_team"] = agent_team
+        return payload
     except Namel3ssError as err:
         return build_error_from_exception(err, kind="agents", source=source)
     except Exception as err:  # pragma: no cover - defensive guard rail

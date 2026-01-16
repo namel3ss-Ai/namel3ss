@@ -7,44 +7,26 @@
   let cachedPayload = null;
   let loading = false;
 
-  function formatCapsules(capsules) {
-    if (!Array.isArray(capsules) || !capsules.length) return "none";
-    return capsules
-      .slice(0, 3)
-      .map((item) => `${item.name || "capsule"} source ${item.source || "unknown"}`)
-      .join(", ");
+  function formatValue(value) {
+    if (value === null || value === undefined) return "None";
+    return String(value);
   }
 
-  function formatRequires(rules) {
-    if (!Array.isArray(rules) || !rules.length) return "no explicit rules";
-    return rules
-      .slice(0, 3)
-      .map((rule) => `${rule.scope || "?"} ${rule.name || "?"} requires ${rule.rule || "?"}`)
-      .join("; ");
-  }
-
-  function formatPersistence(persistence) {
-    if (!persistence || typeof persistence !== "object") return "memory";
-    const target = persistence.target || "memory";
-    const descriptor = persistence.descriptor;
-    return descriptor ? `${target} ${descriptor}` : String(target);
-  }
-
-  function buildWhyLines(payload) {
-    const pages = payload.pages || 0;
-    const flows = payload.flows || 0;
-    const records = payload.records || 0;
-    const engine = payload.engine_target || "unknown";
-    const proof = payload.proof_id || "none";
-    const verify = payload.verify_status || "unknown";
+  function buildExplainLines(payload) {
+    const access = payload && payload.access_rules ? payload.access_rules : {};
+    const flows = Array.isArray(access.flows) ? access.flows : [];
+    const pages = Array.isArray(access.pages) ? access.pages : [];
+    const tenant = payload && payload.tenant_scoping ? payload.tenant_scoping : {};
+    const governance = payload && payload.governance ? payload.governance : {};
+    const tenantCount = Object.prototype.hasOwnProperty.call(tenant, "count") ? tenant.count : 0;
+    const governanceStatus = Object.prototype.hasOwnProperty.call(governance, "status") ? governance.status : "unknown";
     return [
-      `Execution environment: ${engine}.`,
-      `App shape: ${pages} pages, ${flows} flows, ${records} records.`,
-      `Capsules: ${formatCapsules(payload.capsules || [])}.`,
-      `Access rules: ${formatRequires(payload.requires || [])}.`,
-      `Persistence: ${formatPersistence(payload.persistence)}.`,
-      `Run summary: ${proof}.`,
-      `Verify: ${verify}.`,
+      `Engine target: ${formatValue(payload && payload.engine_target)}`,
+      `Active proof: ${formatValue(payload && payload.active_proof_id)}`,
+      `Active build: ${formatValue(payload && payload.active_build_id)}`,
+      `Requires rules: ${flows.length} flows, ${pages.length} pages`,
+      `Tenant scoping: ${formatValue(tenantCount)} records`,
+      `Governance: ${formatValue(governanceStatus)}`,
     ];
   }
 
@@ -72,7 +54,7 @@
     const list = document.createElement("ul");
     list.className = "why-list";
 
-    buildWhyLines(payload).forEach((line) => {
+    buildExplainLines(payload).forEach((line) => {
       const li = document.createElement("li");
       li.textContent = line;
       list.appendChild(li);

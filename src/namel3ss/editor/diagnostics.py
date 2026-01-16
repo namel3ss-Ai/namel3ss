@@ -9,7 +9,7 @@ from namel3ss.lint.engine import lint_project, lint_source
 from namel3ss.lint.types import Finding
 from namel3ss.module_loader.types import ProjectLoadResult
 from namel3ss.editor.workspace import EditorWorkspace, collect_project_files, normalize_path
-from namel3ss.governance.verify import _flow_mutates, _page_has_form
+from namel3ss.runtime.mutation_policy import flow_mutates, page_has_form
 
 
 @dataclass(frozen=True)
@@ -59,7 +59,7 @@ def diagnose(workspace: EditorWorkspace, *, overrides: dict[Path, str] | None = 
 
 def _missing_requires(project: ProjectLoadResult, root: Path) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
-    flows = [flow for flow in project.program.flows if _flow_mutates(flow)]
+    flows = [flow for flow in project.program.flows if flow_mutates(flow)]
     for flow in flows:
         if flow.requires is None:
             flow_name = flow.name.split(".", 1)[1] if "." in flow.name else flow.name
@@ -78,7 +78,7 @@ def _missing_requires(project: ProjectLoadResult, root: Path) -> list[Diagnostic
                 )
             )
     for page in project.program.pages:
-        if _page_has_form(page) and page.requires is None:
+        if page_has_form(page) and page.requires is None:
             page_name = page.name.split(".", 1)[1] if "." in page.name else page.name
             diagnostics.append(
                 Diagnostic(

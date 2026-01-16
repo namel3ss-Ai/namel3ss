@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, Tuple
 
+from namel3ss.cli.promotion_state import load_state
 from namel3ss.cli.targets_store import BUILD_META_FILENAME, build_dir, latest_pointer_path, read_json
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
@@ -50,4 +51,18 @@ def read_latest_build_id(project_root: Path, target: str) -> str | None:
     return str(build_id)
 
 
-__all__ = ["app_path_from_metadata", "load_build_metadata", "read_latest_build_id"]
+def resolve_build_id(project_root: Path, target: str, requested: str | None) -> str | None:
+    chosen = requested
+    if target != "local" and chosen is None:
+        state = load_state(project_root)
+        active = state.get("active") or {}
+        if active.get("target") == target and active.get("build_id"):
+            chosen = active.get("build_id")
+        elif target in {"service", "edge"}:
+            latest = read_latest_build_id(project_root, target)
+            if latest:
+                chosen = latest
+    return chosen
+
+
+__all__ = ["app_path_from_metadata", "load_build_metadata", "read_latest_build_id", "resolve_build_id"]

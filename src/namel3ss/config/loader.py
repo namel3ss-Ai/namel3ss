@@ -72,6 +72,7 @@ def _apply_toml_config(config: AppConfig, data: Dict[str, Any]) -> None:
     _apply_persistence_toml(config, data.get("persistence"))
     _apply_identity_toml(config, data.get("identity"))
     _apply_python_tools_toml(config, data.get("python_tools") or data.get("python"))
+    _apply_foreign_toml(config, data.get("foreign"))
     _apply_tool_packs_toml(config, data.get("tool_packs") or data.get("packs"))
     _apply_memory_packs_toml(config, data.get("memory_packs"))
     _apply_registries_toml(config, data.get("registries"))
@@ -147,6 +148,21 @@ def _apply_python_tools_toml(config: AppConfig, table: Any) -> None:
         if not isinstance(handshake_required, bool):
             raise Namel3ssError("python_tools.service_handshake_required must be true or false")
         config.python_tools.service_handshake_required = handshake_required
+
+
+def _apply_foreign_toml(config: AppConfig, table: Any) -> None:
+    if not isinstance(table, dict):
+        return
+    strict = table.get("strict")
+    if strict is not None:
+        if not isinstance(strict, bool):
+            raise Namel3ssError("foreign.strict must be true or false")
+        config.foreign.strict = strict
+    allow = table.get("allow")
+    if allow is not None:
+        if not isinstance(allow, bool):
+            raise Namel3ssError("foreign.allow must be true or false")
+        config.foreign.allow = allow
 
 
 def _apply_tool_packs_toml(config: AppConfig, table: Any) -> None:

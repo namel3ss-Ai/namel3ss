@@ -1,0 +1,108 @@
+spec is "1.0"
+
+# reference app: release_hub
+# read-only contract app for release readiness gates.
+
+identity "Operator":
+  field "email" is text must be present
+  field "role" is text must be present
+
+ui:
+  theme is "light"
+
+ai "release_ai":
+  provider is "mock"
+  model is "mock-model"
+  system_prompt is "You are a concise release planner."
+
+agent "planner":
+  ai is "release_ai"
+  system_prompt is "Draft a three-step release plan."
+
+agent "reviewer":
+  ai is "release_ai"
+  system_prompt is "List two risks and mitigations."
+
+team of agents
+  agent "planner"
+    role is "Planner"
+  agent "reviewer"
+    role is "Reviewer"
+
+record "ReleasePlan":
+  field "name" is text must be present
+  field "plan" is text must be present
+  field "status" is text must be present
+
+record "ReviewNote":
+  field "plan_title" is text must be present
+  field "risk" is text must be present
+
+flow "seed_release": requires identity.role is "operator"
+  set state.plan with:
+    name is "Release v1"
+    plan is "Draft the checklist."
+    status is "seeded"
+  create "ReleasePlan" with state.plan as plan
+  return "seeded"
+
+flow "draft_release": requires identity.role is "operator"
+  run agent "planner" with input: "Draft a 3-step release plan." as plan
+  set state.plan with:
+    name is "Release v1"
+    plan is plan
+    status is "drafted"
+  create "ReleasePlan" with state.plan as plan
+  return plan
+
+flow "review_release": requires identity.role is "operator"
+  run agent "reviewer" with input: "Review Release v1 for risks." as risk
+  set state.review with:
+    plan_title is "Release v1"
+    risk is risk
+  create "ReviewNote" with state.review as note
+  return risk
+
+flow "approve_release": requires identity.role is "manager"
+  update "ReleasePlan" where name is "Release v1" set:
+    status is "approved"
+  return "approved"
+
+page "home": requires true
+  purpose is "Coordinate release planning with deterministic agents."
+  title is "Release Hub"
+  text is "Draft, review, and approve a release plan."
+  image is "welcome":
+    role is "hero"
+  section "Plan":
+    compose overview:
+      number:
+        count of "ReleasePlan" as "plans"
+      view of "ReleasePlan"
+    card "Actions":
+      text is "Run the core flows in order."
+      button "Seed plan":
+        calls flow "seed_release"
+      button "Draft plan":
+        calls flow "draft_release"
+      button "Review plan":
+        calls flow "review_release"
+      button "Approve plan":
+        calls flow "approve_release"
+    card "Plans":
+      table is "ReleasePlan"
+    card "Reviews":
+      table is "ReviewNote"
+  story "Release path":
+    step "Draft":
+      text is "Draft the release plan."
+      icon is add
+      next is "Review"
+    step "Review":
+      text is "Review the plan for risks."
+      icon is info
+      next is "Approve"
+    step "Approve":
+      text is "Approve when ready."
+      image is "welcome":
+        role is "illustration"

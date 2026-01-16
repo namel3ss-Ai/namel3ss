@@ -51,6 +51,12 @@ class PythonToolsConfig:
 
 
 @dataclass
+class ForeignConfig:
+    strict: bool = False
+    allow: bool = False
+
+
+@dataclass
 class ToolPacksConfig:
     enabled_packs: list[str] = field(default_factory=list)
     disabled_packs: list[str] = field(default_factory=list)
@@ -87,6 +93,7 @@ class AppConfig:
     persistence: PersistenceConfig = field(default_factory=PersistenceConfig)
     identity: IdentityConfig = field(default_factory=IdentityConfig)
     python_tools: PythonToolsConfig = field(default_factory=PythonToolsConfig)
+    foreign: ForeignConfig = field(default_factory=ForeignConfig)
     tool_packs: ToolPacksConfig = field(default_factory=ToolPacksConfig)
     memory_packs: MemoryPacksConfig = field(default_factory=MemoryPacksConfig)
     registries: RegistriesConfig = field(default_factory=RegistriesConfig)
@@ -103,6 +110,7 @@ __all__ = [
     "PersistenceConfig",
     "IdentityConfig",
     "PythonToolsConfig",
+    "ForeignConfig",
     "ToolPacksConfig",
     "MemoryPacksConfig",
     "RegistrySourceConfig",

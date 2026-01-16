@@ -25,6 +25,17 @@
 - `submit_form`: validates incoming form data against record schema, returns structured errors on failure (`field`, `code`, `message`).
 - Manifest regeneration: UI actions can rebuild manifests after state changes.
 
+## Browser development loop
+- `n3 dev` starts a local browser loop with hot reload on save.
+- Failures never render a blank screen; a dev overlay explains what happened, why, and how to fix it.
+- Recovery is automatic after a successful rebuild; no manual refresh required.
+- `n3 preview` renders a production-like UI locally without the dev overlay or reload affordances.
+
+## Production server
+- `n3 start` serves the production UI from build artifacts in `build/`.
+- No dev overlay, watcher, or preview markers are included.
+- Run `n3 build --target service` before starting the production server.
+
 ### Button syntax (block-only)
 - Buttons must use a block:
   ```

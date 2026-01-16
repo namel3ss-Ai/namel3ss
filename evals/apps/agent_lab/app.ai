@@ -6,7 +6,7 @@ identity "Operator":
 
 use "agent_lab" as lab
 
-page "home":
+page "home": requires true
   title is "Agent Lab"
   text is "Run agents with deterministic traces and clear safety boundaries."
 

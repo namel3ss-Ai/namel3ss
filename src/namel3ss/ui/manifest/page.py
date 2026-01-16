@@ -5,14 +5,24 @@ from typing import Dict
 
 from copy import deepcopy
 
+from namel3ss.agents.intent import build_agent_team_intent
+from namel3ss.config.model import AppConfig
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.foreign.intent import build_foreign_functions_intent
+from namel3ss.foreign.policy import foreign_policy_mode
 from namel3ss.ir import nodes as ir
 from namel3ss.flow_contract import validate_declarative_flows
+from namel3ss.media import MediaValidationMode, media_registry, media_root_for_program
 from namel3ss.runtime.identity.guards import build_guard_context, enforce_requires
+from namel3ss.runtime.mutation_policy import append_mutation_policy_warnings
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.storage.metadata import PersistenceMetadata
 from namel3ss.runtime.theme.resolution import ThemeSource, resolve_effective_theme
 from namel3ss.schema import records as schema
+from namel3ss.schema.evolution import (
+    append_schema_evolution_warnings,
+    enforce_runtime_schema_compatibility,
+)
 from namel3ss.ui.manifest.actions import _wire_overlay_actions
 from namel3ss.ui.manifest.canonical import _slugify
 from namel3ss.ui.manifest.elements import _build_children
@@ -24,6 +34,7 @@ from namel3ss.validation import ValidationMode
 def build_manifest(
     program: ir.Program,
     *,
+    config: AppConfig | None = None,
     state: dict | None = None,
     store: Storage | None = None,
     runtime_theme: str | None = None,
@@ -32,16 +43,30 @@ def build_manifest(
     mode: ValidationMode | str = ValidationMode.RUNTIME,
     warnings: list | None = None,
     state_defaults: dict | None = None,
+    media_mode: MediaValidationMode | str | None = None,
 ) -> dict:
     mode = ValidationMode.from_value(mode)
+    media_mode = MediaValidationMode.from_value(media_mode)
     ui_schema_version = "1"
     record_map: Dict[str, schema.RecordSchema] = {rec.name: rec for rec in program.records}
+    if mode == ValidationMode.RUNTIME:
+        enforce_runtime_schema_compatibility(
+            record_map.values(),
+            project_root=getattr(program, "project_root", None),
+            store=store,
+        )
+    if mode == ValidationMode.STATIC:
+        append_schema_evolution_warnings(program, warnings)
     validate_declarative_flows(
         list(getattr(program, "flows", [])),
         record_map,
+        getattr(program, "tools", None),
         mode=mode,
         warnings=warnings,
     )
+    append_mutation_policy_warnings(program, warnings=warnings, mode=mode)
+    media_root = media_root_for_program(program)
+    media_index = media_registry(root=media_root)
     pages = []
     actions: Dict[str, dict] = {}
     taken_actions: set[str] = set()
@@ -85,6 +110,8 @@ def build_manifest(
             identity,
             state_ctx,
             mode,
+            media_index,
+            media_mode,
             warnings,
             taken_actions,
         )
@@ -131,6 +158,12 @@ def build_manifest(
             "settings": ui_settings,
         },
     }
+    agent_team = build_agent_team_intent(program)
+    if agent_team is not None:
+        manifest["agent_team"] = agent_team
+    foreign_intent = build_foreign_functions_intent(program, policy_mode=foreign_policy_mode(config))
+    if foreign_intent:
+        manifest["foreign_functions"] = foreign_intent
     if app_defaults or manifest_state_defaults_pages:
         manifest["state_defaults"] = {"app": deepcopy(app_defaults) if app_defaults else {}, "pages": manifest_state_defaults_pages}
     return manifest

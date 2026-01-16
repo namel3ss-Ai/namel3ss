@@ -11,7 +11,7 @@ record "User":
 flow "demo":
   return "ok"
 
-page "home":
+page "home": requires true
   button "Run":
     calls flow "demo"
   form is "User"
@@ -24,9 +24,10 @@ def test_actions_plain_text(tmp_path, capsys):
     code = main([str(path), "actions"])
     out = capsys.readouterr().out.strip().splitlines()
     assert code == 0
-    assert out[0].startswith("page.home.button.run  call_flow")
-    assert out[1].startswith("page.home.form.user  submit_form")
-    assert out == sorted(out)
+    action_lines = [line for line in out if line.startswith("page.")]
+    assert action_lines[0].startswith("page.home.button.run  call_flow")
+    assert action_lines[1].startswith("page.home.form.user  submit_form")
+    assert action_lines == sorted(action_lines)
 
 
 def test_actions_json(tmp_path, capsys):

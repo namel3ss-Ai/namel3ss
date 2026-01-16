@@ -58,7 +58,31 @@ where = ["src"]
     "**/*.html",
     "**/*.css",
     "**/*.js",
+    "**/*.svg",
+    "**/*.png",
+    "**/*.jpg",
+    "**/*.jpeg",
+    "**/*.webp",
     "**/.gitignore",
+]
+"namel3ss.examples" = [
+    "**/*.ai",
+    "**/*.md",
+    "**/*.toml",
+    "**/*.json",
+    "**/*.html",
+    "**/*.css",
+    "**/*.js",
+    "**/*.svg",
+    "**/*.png",
+    "**/*.jpg",
+    "**/*.jpeg",
+    "**/*.webp",
+]
+"namel3ss.runtime" = [
+    "web/*.html",
+    "web/*.css",
+    "web/*.js",
 ]
 "namel3ss.studio.web" = ["**/*"]
 
@@ -68,6 +92,11 @@ where = ["src"]
 "resources/icons/status" = ["resources/icons/status/*"]
 "resources/icons/tools" = ["resources/icons/tools/*"]
 "resources/icons/data" = ["resources/icons/data/*"]
+"resources/icons/content" = ["resources/icons/content/*"]
+"resources/icons/communication" = ["resources/icons/communication/*"]
+"resources/icons/delight" = ["resources/icons/delight/*"]
+"resources/icons/identity" = ["resources/icons/identity/*"]
+"resources/icons/search" = ["resources/icons/search/*"]
 
 [project.scripts]
 n3 = "namel3ss.cli.main:main"

@@ -38,6 +38,7 @@ def _lower_tools(tools: List[ast.ToolDecl]) -> Dict[str, ToolDecl]:
             capabilities=tuple(tool.capabilities or ()),
             purity=tool.purity,
             timeout_seconds=tool.timeout_seconds,
+            declared_as=getattr(tool, "declared_as", "tool"),
             line=tool.line,
             column=tool.column,
         )

@@ -6,6 +6,7 @@ Story parsing is isolated here to keep the shared page_items module small and fo
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.parser.decl.page_media import parse_image_role_block
 
 _ALLOWED_STEP_FIELDS = ("text", "icon", "image", "tone", "requires", "next")
 
@@ -54,6 +55,7 @@ def _parse_step_block(parser) -> ast.StoryStep:
     text = None
     icon = None
     image = None
+    image_role = None
     tone = None
     requires = None
     next_step = None
@@ -89,6 +91,9 @@ def _parse_step_block(parser) -> ast.StoryStep:
                 raise Namel3ssError("Step image is already declared", line=field_tok.line, column=field_tok.column)
             value_tok = parser._expect("STRING", "Expected image name")
             image = value_tok.value
+            if parser._match("COLON"):
+                image_role = parse_image_role_block(parser, line=field_tok.line, column=field_tok.column)
+                continue
         elif field == "tone":
             if tone is not None:
                 raise Namel3ssError("Step tone is already declared", line=field_tok.line, column=field_tok.column)
@@ -111,6 +116,7 @@ def _parse_step_block(parser) -> ast.StoryStep:
         text=text,
         icon=icon,
         image=image,
+        image_role=image_role,
         tone=tone,
         requires=requires,
         next=next_step,

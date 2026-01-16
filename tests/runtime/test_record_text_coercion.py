@@ -6,7 +6,7 @@ SOURCE = '''record "Answer":
 
 spec is "1.0"
 
-flow "demo":
+flow "demo": requires true
   set state.answer.text is input.values.payload
   create "Answer" with state.answer as answer
   return answer

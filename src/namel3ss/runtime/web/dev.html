@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>namel3ss dev</title>
+    <link rel="stylesheet" href="/runtime.css" />
+    <link rel="stylesheet" href="/studio_ui.css" />
+    <link rel="stylesheet" href="/theme_tokens.css" />
+  </head>
+  <body class="n3-runtime">
+    <div class="runtime-shell">
+      <header class="runtime-bar" role="banner">
+        <div class="runtime-brand">
+          <span class="runtime-badge">dev</span>
+          <span id="appLabel">namel3ss</span>
+        </div>
+        <div class="runtime-controls">
+          <label for="pageSelect">Page</label>
+          <select id="pageSelect" aria-label="Page selection"></select>
+          <span class="runtime-status" id="runtimeStatus" aria-live="polite">Watching for changes</span>
+        </div>
+      </header>
+      <main class="runtime-canvas" role="main">
+        <div id="ui" class="ui-body" data-testid="runtime-ui"></div>
+      </main>
+    </div>
+    <section id="devOverlay" class="runtime-overlay hidden" aria-live="polite" aria-label="Build error">
+      <div class="overlay-card" tabindex="-1">
+        <div class="overlay-title" id="devOverlayTitle">something went wrong</div>
+        <div class="overlay-summary" id="devOverlaySummary"></div>
+        <div class="overlay-sections" id="devOverlaySections"></div>
+        <button
+          type="button"
+          class="overlay-toggle hidden"
+          id="devOverlayToggle"
+          aria-expanded="false"
+          aria-controls="devOverlayDetails"
+        >
+          Show details
+        </button>
+        <pre class="overlay-details hidden" id="devOverlayDetails"></pre>
+      </div>
+    </section>
+    <script>
+      window.N3RuntimeConfig = { mode: "dev", pollIntervalMs: 900 };
+    </script>
+    <script src="/theme_tokens.js"></script>
+    <script src="/theme_runtime.js"></script>
+    <script src="/ui_renderer_collections.js"></script>
+    <script src="/ui_renderer_form.js"></script>
+    <script src="/ui_renderer_chat.js"></script>
+    <script src="/ui_renderer_chart.js"></script>
+    <script src="/ui_renderer.js"></script>
+    <script src="/runtime.js"></script>
+  </body>
+</html>

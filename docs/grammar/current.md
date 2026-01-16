@@ -123,7 +123,7 @@ most
 ## Grammar Surfaces
 
 Top-level declarations (`src/namel3ss/parser/grammar_table.py`):
-- `spec`, `define` (function), `use`, `capsule`, `identity`, `app`, `tool`, `agent`, `ai`, `record`, `flow`, `page`, `ui_pack`.
+- `spec`, `define` (function), `use`, `capsule`, `identity`, `app`, `tool`, `agent`, `ai`, `record`, `flow`, `page`, `ui_pack`, `team of agents`.
 
 Statements (`src/namel3ss/parser/grammar_table.py`):
 - `start`, `plan`, `review`, `timeline`, `compute`, `increment`, `attempt` (two forms), agent verb calls,

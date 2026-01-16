@@ -1,4 +1,5 @@
 {
+  "agent_team": null,
   "agents": {},
   "ais": {},
   "column": null,
@@ -153,7 +154,13 @@
       ],
       "line": 11,
       "name": "home",
-      "requires": null,
+      "purpose": null,
+      "requires": {
+        "column": 23,
+        "line": 11,
+        "type": "Literal",
+        "value": true
+      },
       "type": "Page"
     }
   ],
@@ -187,7 +194,7 @@
     }
   ],
   "spec_version": "1.0",
-  "theme": "system",
+  "theme": "light",
   "theme_preference": {
     "allow_override": false,
     "persist": "none"
@@ -195,5 +202,13 @@
   "theme_runtime_supported": false,
   "theme_tokens": {},
   "tools": {},
-  "type": "Program"
+  "type": "Program",
+  "ui_settings": {
+    "accent_color": "blue",
+    "density": "comfortable",
+    "motion": "subtle",
+    "shape": "rounded",
+    "surface": "flat",
+    "theme": "light"
+  }
 }

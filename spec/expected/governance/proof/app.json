@@ -11,7 +11,7 @@
     "count": 0
   },
   "build": {
-    "artifact_path": ".namel3ss/build/local/spec",
+    "artifact_path": "build/local/spec",
     "build_id": "spec",
     "snapshot_hash": "spec"
   },

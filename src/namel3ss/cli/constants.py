@@ -45,6 +45,9 @@ RESERVED = {
     "kit",
     "editor",
     "run",
+    "dev",
+    "preview",
+    "start",
     "registry",
     "discover",
     "readability",
@@ -52,6 +55,7 @@ RESERVED = {
     "migrate",
     "version",
     "reserved",
+    "icons",
 }
 
 ROOT_APP_COMMANDS = {"check", "ui", "actions", "studio", "fmt", "format", "lint", "graph", "exports", "data", "persist"}

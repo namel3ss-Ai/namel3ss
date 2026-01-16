@@ -25,9 +25,31 @@ n3 pack app.ai --target local     # file-first
 ```
 
 Build artifacts are managed by namel3ss and include program/config snapshots,
-lockfile snapshot, program summary, and the target bundle.
+lockfile snapshot, program summary, the UI intent, and the target bundle.
+Artifacts are written to `build/<target>/<build_id>/` and are deterministic (no timestamps).
+
+Build output layout (stable):
+- `build.json` — build metadata (intent only, no absolute paths).
+- `manifest.json` — normalized UI intent (static).
+- `ui/ui.json`, `ui/actions.json`, `ui/schema.json` — UI contract exports.
+- `schema/records.json` — record schema snapshot (compatibility gate).
+- `program/` — snapshot of the .ai sources used for the build.
+- `config.json`, `lock_snapshot.json`, `program_summary.json` — build inputs summary.
+- `web/` — production runtime assets for `n3 start`.
+- `build_report.json`, `build_report.txt` — deterministic build report.
+- `service/README.txt` or `edge/README.txt` — target bundle notes.
 Use `n3 exists` to explain why a build exists and what changed.
-For run diagnostics use `n3 status` and `n3 explain`; use `n3 clean` to remove artifacts.
+For run diagnostics use `n3 status` and `n3 explain`. `n3 clean` removes runtime artifacts;
+build outputs live in `build/` and are safe to delete and recreate.
+
+## Start (production)
+
+```
+n3 start --target service
+```
+
+`n3 start` serves the production UI from build artifacts. It does not include dev overlays,
+watchers, or preview markers. It uses the service target and the latest build (or the promoted build if present).
 
 ## Promote and rollback (ship)
 
@@ -47,6 +69,7 @@ From a project folder:
 n3 run
 n3 pack --target service
 n3 ship --to service
+n3 start --target service
 n3 where
 n3 ship --back
 ```
@@ -56,4 +79,5 @@ n3 ship --back
 ## Command map
 - ship (alias: promote)
 - pack (alias: build)
+- start
 - where

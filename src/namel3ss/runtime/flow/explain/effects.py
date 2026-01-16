@@ -6,7 +6,7 @@ from typing import Iterable
 
 def expected_effects_from_steps(steps: list[dict]) -> list[str]:
     effects: list[str] = []
-    if _has_step_kind(steps, "tool_call"):
+    if _has_step_kind(steps, "tool_call") or _has_step_kind(steps, "call_foreign"):
         effects.append("may call tools")
     if (
         _has_step_kind(steps, "statement_save")

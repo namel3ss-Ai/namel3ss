@@ -3,6 +3,7 @@
     "agents": [
       {
         "agent_id": "alpha",
+        "agent_name": "alpha",
         "ai_profile": "assistant",
         "failures": [],
         "input_summary": "task",
@@ -12,12 +13,20 @@
           "space_counts": [],
           "spaces": []
         },
+        "memory_facts": {
+          "counts": {
+            "total": 0
+          },
+          "keys": [],
+          "last_updated_step": null
+        },
         "output_hash": "de5f2cbf4c10a0d146f2a671aac363e8640fefc469ad42ac25364f19e4bc194f",
         "output_preview": "first",
         "tools": []
       },
       {
         "agent_id": "beta",
+        "agent_name": "beta",
         "ai_profile": "assistant",
         "failures": [],
         "input_summary": "task",
@@ -26,6 +35,13 @@
           "recalled_count": 0,
           "space_counts": [],
           "spaces": []
+        },
+        "memory_facts": {
+          "counts": {
+            "total": 0
+          },
+          "keys": [],
+          "last_updated_step": null
         },
         "output_hash": "38e452b56a63d9b5f397354cbd207b0e548ef8e4f49729a6f6dd8d6a9a57ab23",
         "output_preview": "second",
@@ -47,9 +63,30 @@
   },
   "agent_run_summary": null,
   "handoff": [],
+  "memory_facts": [
+    {
+      "agent_id": "alpha",
+      "agent_name": "alpha",
+      "counts": {
+        "total": 0
+      },
+      "keys": [],
+      "last_updated_step": null
+    },
+    {
+      "agent_id": "beta",
+      "agent_name": "beta",
+      "counts": {
+        "total": 0
+      },
+      "keys": [],
+      "last_updated_step": null
+    }
+  ],
   "summaries": [
     {
       "agent_id": "alpha",
+      "agent_name": "alpha",
       "ai_profile": "assistant",
       "failures": [],
       "input_summary": "task",
@@ -59,12 +96,20 @@
         "space_counts": [],
         "spaces": []
       },
+      "memory_facts": {
+        "counts": {
+          "total": 0
+        },
+        "keys": [],
+        "last_updated_step": null
+      },
       "output_hash": "de5f2cbf4c10a0d146f2a671aac363e8640fefc469ad42ac25364f19e4bc194f",
       "output_preview": "first",
       "tools": []
     },
     {
       "agent_id": "beta",
+      "agent_name": "beta",
       "ai_profile": "assistant",
       "failures": [],
       "input_summary": "task",
@@ -73,6 +118,13 @@
         "recalled_count": 0,
         "space_counts": [],
         "spaces": []
+      },
+      "memory_facts": {
+        "counts": {
+          "total": 0
+        },
+        "keys": [],
+        "last_updated_step": null
       },
       "output_hash": "38e452b56a63d9b5f397354cbd207b0e548ef8e4f49729a6f6dd8d6a9a57ab23",
       "output_preview": "second",

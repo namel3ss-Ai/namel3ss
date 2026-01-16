@@ -9,6 +9,7 @@ from namel3ss.traces.builders import (
     build_agent_merge_selected,
     build_agent_merge_started,
     build_agent_merge_summary,
+    build_merge_applied,
     build_tool_call_allowed,
     build_tool_call_blocked,
     build_tool_call_completed,
@@ -162,6 +163,18 @@ def test_agent_merge_trace_golden():
             rejected_agents=["alpha"],
             title="Agent merge summary",
             lines=["Merge policy is ranked."],
+        ),
+        build_merge_applied(
+            policy="ranked",
+            selected_agents=["beta"],
+            rejected_agents=["alpha"],
+            title="Merge applied",
+            lines=[
+                "Merge applied.",
+                "Merge policy is ranked.",
+                "Selected agents: beta.",
+                "Rejected agents count is 1.",
+            ],
         ),
     ]
     expected = _load_fixture("agent_merge_trace_golden.json")

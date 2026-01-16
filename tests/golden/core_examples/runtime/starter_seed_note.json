@@ -1,0 +1,71 @@
+{
+  "execution_steps": [
+    {
+      "because": null,
+      "column": 1,
+      "data": {},
+      "id": "step:0001",
+      "kind": "flow_start",
+      "line": 14,
+      "what": "flow \"seed_note\" started"
+    },
+    {
+      "because": null,
+      "column": 3,
+      "data": {},
+      "id": "step:0002",
+      "kind": "statement_create",
+      "line": 15,
+      "what": "created Note"
+    },
+    {
+      "because": "completed successfully",
+      "column": 1,
+      "data": {},
+      "id": "step:0003",
+      "kind": "flow_end",
+      "line": 14,
+      "what": "flow \"seed_note\" ended"
+    }
+  ],
+  "last_value": {
+    "_id": 1,
+    "details": "this note is created by a flow",
+    "summary": "hello"
+  },
+  "runtime_theme": "light",
+  "state": {},
+  "theme_source": null,
+  "traces": [
+    {
+      "flow_id": "flow:seed_note",
+      "flow_name": "seed_note",
+      "type": "flow_start"
+    },
+    {
+      "action": "create",
+      "flow_name": "seed_note",
+      "record": "Note",
+      "step_id": "flow:seed_note.create.01",
+      "type": "mutation_allowed"
+    },
+    {
+      "changes": {
+        "fields": [
+          "summary",
+          "details"
+        ],
+        "record": "Note"
+      },
+      "flow_id": "flow:seed_note",
+      "flow_name": "seed_note",
+      "ordinal": 1,
+      "status": "ran",
+      "step_id": "flow:seed_note.create.01",
+      "step_kind": "create",
+      "type": "flow_step",
+      "what": "create \"Note\"",
+      "why": "flow \"seed_note\" ran"
+    }
+  ]
+}

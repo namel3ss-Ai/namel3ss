@@ -58,5 +58,23 @@
     "title": "Agent merge summary",
     "trace_version": "2024-10-01",
     "type": "agent_merge_summary"
+  },
+  {
+    "lines": [
+      "Merge applied.",
+      "Merge policy is ranked.",
+      "Selected agents: beta.",
+      "Rejected agents count is 1."
+    ],
+    "policy": "ranked",
+    "rejected_agents": [
+      "alpha"
+    ],
+    "selected_agents": [
+      "beta"
+    ],
+    "title": "Merge applied",
+    "trace_version": "2024-10-01",
+    "type": "merge_applied"
   }
 ]

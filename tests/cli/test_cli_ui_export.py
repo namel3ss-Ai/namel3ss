@@ -12,7 +12,7 @@ record "User":
 flow "demo":
   return "ok"
 
-page "Home":
+page "Home": requires true
   form is "User"
   button "Run":
     calls flow "demo"

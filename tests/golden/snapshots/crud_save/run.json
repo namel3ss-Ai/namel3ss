@@ -31,7 +31,7 @@
           "rollback_failed": false,
           "rolled_back": false
         },
-        "traces_count": 0,
+        "traces_count": 1,
         "what_did_not_happen": []
       },
       "summary": {
@@ -65,9 +65,20 @@
       }
     },
     "status": "ok",
-    "trace_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "trace_hash": "4e2832763f159595f1949c611b77090d5d00836a9b0f0ade90767f45b1a52146",
     "trace_schema_version": "2024-10-01",
-    "traces": []
+    "traces": [
+      {
+        "action": "save",
+        "canonical_events": [],
+        "flow_name": "demo",
+        "memory_events": [],
+        "record": "Note",
+        "step_id": "flow:demo.save.03",
+        "title": "Mutation Allowed",
+        "type": "mutation_allowed"
+      }
+    ]
   },
   "flow_name": "demo",
   "ok": true,
@@ -82,5 +93,16 @@
       "title": "First"
     }
   },
-  "traces": []
+  "traces": [
+    {
+      "action": "save",
+      "canonical_events": [],
+      "flow_name": "demo",
+      "memory_events": [],
+      "record": "Note",
+      "step_id": "flow:demo.save.03",
+      "title": "Mutation Allowed",
+      "type": "mutation_allowed"
+    }
+  ]
 }

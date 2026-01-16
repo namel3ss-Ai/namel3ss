@@ -1,18 +1,46 @@
 {
+  "agent_team": {
+    "column": 1,
+    "line": 8,
+    "members": [
+      {
+        "agent_id": "planner",
+        "column": 1,
+        "line": 8,
+        "name": "planner",
+        "role": null,
+        "type": "AgentTeamMember"
+      },
+      {
+        "agent_id": "critic",
+        "column": 1,
+        "line": 12,
+        "name": "critic",
+        "role": null,
+        "type": "AgentTeamMember"
+      }
+    ],
+    "team_id": "team_planner_critic",
+    "type": "AgentTeam"
+  },
   "agents": {
     "critic": {
+      "agent_id": "critic",
       "ai_name": "assistant",
       "column": 1,
       "line": 12,
       "name": "critic",
+      "role": null,
       "system_prompt": "Critic.",
       "type": "AgentDecl"
     },
     "planner": {
+      "agent_id": "planner",
       "ai_name": "assistant",
       "column": 1,
       "line": 8,
       "name": "planner",
+      "role": null,
       "system_prompt": "Plan.",
       "type": "AgentDecl"
     }
@@ -98,7 +126,7 @@
   "pages": [],
   "records": [],
   "spec_version": "1.0",
-  "theme": "system",
+  "theme": "light",
   "theme_preference": {
     "allow_override": false,
     "persist": "none"
@@ -106,5 +134,13 @@
   "theme_runtime_supported": false,
   "theme_tokens": {},
   "tools": {},
-  "type": "Program"
+  "type": "Program",
+  "ui_settings": {
+    "accent_color": "blue",
+    "density": "comfortable",
+    "motion": "subtle",
+    "shape": "rounded",
+    "surface": "flat",
+    "theme": "light"
+  }
 }

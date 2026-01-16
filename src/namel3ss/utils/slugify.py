@@ -4,6 +4,7 @@ import re
 
 
 _NON_ALNUM = re.compile(r"[^a-zA-Z0-9]+")
+_NON_SLUG = re.compile(r"[^a-z0-9_]")
 
 
 def slugify_tool_name(value: str) -> str:
@@ -16,4 +17,11 @@ def slugify_tool_name(value: str) -> str:
     return slug
 
 
-__all__ = ["slugify_tool_name"]
+def slugify_text(value: str) -> str:
+    lowered = value.lower()
+    normalized = re.sub(r"[\s_-]+", "_", lowered)
+    cleaned = _NON_SLUG.sub("", normalized)
+    return re.sub(r"_+", "_", cleaned).strip("_")
+
+
+__all__ = ["slugify_text", "slugify_tool_name"]

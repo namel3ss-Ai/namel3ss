@@ -98,10 +98,30 @@ def build_agent_merge_summary(
     }
 
 
+def build_merge_applied(
+    *,
+    policy: str,
+    selected_agents: list[str],
+    rejected_agents: list[str],
+    title: str,
+    lines: list[str],
+) -> dict:
+    return {
+        "type": TraceEventType.MERGE_APPLIED,
+        "trace_version": TRACE_VERSION,
+        "policy": policy,
+        "selected_agents": list(selected_agents),
+        "rejected_agents": list(rejected_agents),
+        "title": title,
+        "lines": list(lines),
+    }
+
+
 __all__ = [
     "build_agent_merge_candidate",
     "build_agent_merge_rejected",
     "build_agent_merge_selected",
     "build_agent_merge_started",
     "build_agent_merge_summary",
+    "build_merge_applied",
 ]

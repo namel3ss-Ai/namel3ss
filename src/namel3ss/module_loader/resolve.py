@@ -123,6 +123,20 @@ def resolve_program(
             line=agent.line,
             column=agent.column,
         )
+    team = getattr(program, "agent_team", None)
+    if team is not None:
+        for member in team.members:
+            member.name = resolve_name(
+                member.name,
+                kind="agent",
+                module_name=module_name,
+                alias_map=alias_map,
+                local_defs=local_defs,
+                exports_map=exports_map,
+                context_label=context_label,
+                line=member.line,
+                column=member.column,
+            )
     for tool in program.tools:
         tool.name = qualify(module_name, tool.name)
 

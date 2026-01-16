@@ -125,7 +125,7 @@
     const select = document.createElement("select");
     agentsList.forEach((agent) => {
       const option = document.createElement("option");
-      option.value = agent.name;
+      option.value = agent.agent_id || agent.name;
       option.textContent = agent.name;
       select.appendChild(option);
     });

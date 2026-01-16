@@ -56,7 +56,14 @@ class FlowDelete(FlowStep):
     selector: str | None
 
 
+@dataclass
+class FlowCallForeign(FlowStep):
+    foreign_name: str
+    arguments: list[FlowField]
+
+
 __all__ = [
+    "FlowCallForeign",
     "FlowCreate",
     "FlowDelete",
     "FlowField",

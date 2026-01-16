@@ -56,6 +56,8 @@ def build_plain_text(pack: dict) -> str:
                 lines.append(f"{prefix}.enabled: {element.get('enabled')}")
             if element.get("bound_to"):
                 lines.append(f"{prefix}.bound_to: {element.get('bound_to')}")
+            if element.get("fix_hint"):
+                lines.append(f"{prefix}.fix_hint: {element.get('fix_hint')}")
             element_index += 1
 
     what_not = pack.get("what_not") or []

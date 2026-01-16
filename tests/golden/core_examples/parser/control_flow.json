@@ -1,7 +1,8 @@
 {
+  "agent_team": null,
   "agents": [],
   "ais": [],
-  "app_theme": "system",
+  "app_theme": "light",
   "app_theme_column": null,
   "app_theme_line": null,
   "capsule": null,
@@ -290,6 +291,40 @@
   "theme_tokens": {},
   "tools": [],
   "type": "Program",
+  "ui_column": null,
+  "ui_line": null,
   "ui_packs": [],
+  "ui_settings": {
+    "accent_color": [
+      "blue",
+      null,
+      null
+    ],
+    "density": [
+      "comfortable",
+      null,
+      null
+    ],
+    "motion": [
+      "subtle",
+      null,
+      null
+    ],
+    "shape": [
+      "rounded",
+      null,
+      null
+    ],
+    "surface": [
+      "flat",
+      null,
+      null
+    ],
+    "theme": [
+      "light",
+      null,
+      null
+    ]
+  },
   "uses": []
 }

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-label="Welcome">
+  <rect width="640" height="360" fill="#F4F1EC" />
+  <circle cx="120" cy="120" r="60" fill="#F9C74F" />
+  <rect x="220" y="90" width="340" height="28" rx="14" fill="#90BE6D" />
+  <rect x="220" y="140" width="300" height="20" rx="10" fill="#577590" />
+  <rect x="220" y="180" width="260" height="20" rx="10" fill="#577590" />
+  <text x="220" y="250" font-family="Arial, sans-serif" font-size="24" fill="#2F2F2F">Welcome</text>
+</svg>

@@ -22,9 +22,13 @@ ALIAS_MAP: Dict[str, str] = {
     "graph": "graph",
     "exports": "exports",
     "run": "run",
+    "dev": "dev",
+    "preview": "preview",
+    "start": "start",
     "test": "test",
     "editor": "editor",
     "reserved": "reserved",
+    "icons": "icons",
     "init": "new",
     # Data/persistence
     "data": "data",

@@ -14,6 +14,15 @@ Run any `.ai` app with the file-first CLI.
 - The app file lives at `app.ai`; commands below assume you are in the project directory.
 - Multi file apps use module files like `modules/inventory.ai`.
 
+## Scaffolded app structure
+
+- `app.ai` — the app source (includes a template version comment).
+- `media/` — locked media folder with sample images.
+- `README.md` — quick run steps and template notes.
+- `.namel3ss/` — runtime artifacts (created after you run).
+
+Built-in icons are referenced by name only; no icon assets are copied into the app.
+
 ## Demo first win
 
 ```bash
@@ -104,6 +113,13 @@ Bundled templates you can scaffold immediately:
 - Starter: `n3 new starter my_app`
 - Demo: `n3 new demo demo`
 
+## Examples (read-only)
+
+Bundled examples live inside the distribution and are not copied unless you ask.
+
+- List templates and examples: `n3 new`
+- Scaffold an example: `n3 new example <name>`
+
 ## Studio tips
 
 - `Refresh` reloads manifest, actions, lint.
@@ -131,6 +147,7 @@ Bundled templates you can scaffold immediately:
 - Learn packages in [Packages](packages.md).
 - Learn identity + persistence in [Identity and Persistence](identity-and-persistence.md).
 - UI details live in the [UI DSL Spec](ui-dsl.md).
+- Review breaking changes and manual upgrade steps in [UPGRADE.md](../UPGRADE.md).
 
 ## Form payloads (CLI)
 

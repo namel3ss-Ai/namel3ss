@@ -1,6 +1,13 @@
 # Studio
 
-Studio is the command center for namel3ss. It stays fast and minimal while surfacing the architecture, trust posture, data/identity state, and guided fixes you can apply safely.
+Studio is an optional inspection lens for namel3ss. It stays fast and minimal while surfacing architecture, state, traces, and normalized guidance. It never introduces studio-only semantics; every payload mirrors the CLI.
+
+## CLI parity
+- Manifest intent matches `n3 ui --json` (ordering, ids, normalized fields).
+- Validation errors and warnings match `n3 check`.
+- Why panel mirrors `n3 explain --json`.
+- Actions list matches `n3 actions --json`.
+- Traces are the runtime contract traces (no studio-synthesized events).
 
 ## Graph
 - Visual map of the app root, local capsules, and installed packages.
@@ -19,7 +26,7 @@ Studio is the command center for namel3ss. It stays fast and minimal while surfa
 - Secrets: list missing/available secret names (values are never shown).
 - Observe: recent events (last 50).
 - Explain: a compact summary of why the current state is allowed.
-- Why: plain-English summary of architecture + access rules.
+- Why: same payload as `n3 explain --json`, rendered for quick reading.
 
 ## Data & Identity
 - Persistence target and descriptor (URLs are redacted).
@@ -27,10 +34,10 @@ Studio is the command center for namel3ss. It stays fast and minimal while surfa
 - Tenant scoping status and keys.
 - Audit timeline with flow/action filters and text search.
 
-## Fix
-- Diagnostics list with severity, location, and message.
-- One-click fixes show a preview diff; apply only after confirmation.
-- Rename with preview + apply using the same editor patch format as `n3 editor`.
+## Errors & guidance
+- Errors panel uses normalized error payloads (same what/why/fix hints as CLI).
+- Fix hints are deterministic and never apply changes automatically.
+- Studio does not add studio-only fixes or validations.
 
 ## Formulas + Explain (calc)
 - Formulas tab renders calc blocks with a Code/Formula toggle for math-friendly display.
@@ -40,7 +47,9 @@ Studio is the command center for namel3ss. It stays fast and minimal while surfa
 ## Agents
 - Agent Builder scaffolds agents from deterministic patterns (no free-text config).
 - Agents panel lists declared agents and supports single or parallel runs.
+- Agent team intent (names, roles, order) mirrors the manifest contract.
 - Timeline shows trace-backed stages (memory, tools, output, merge, handoff).
+- Memory facts summaries include keys, counts, and last_updated_step (no raw values).
 - Memory Packs and Handoff panels expose active pack selection and packet previews.
 - Explain actions show deterministic reasons for tool decisions, merge outcomes, and handoffs.
 
@@ -55,7 +64,6 @@ Studio is the command center for namel3ss. It stays fast and minimal while surfa
 - Studio never auto-installs; it stays a discovery surface.
 
 ## Notes
-- Studio uses engine terminology (not runtime).
 - Studio rendering and inspection are read-only; only explicit action runs execute flows.
 - All outputs are redacted and deterministic.
-- Guided fixes never change files until you click Apply.
+- Studio does not change runtime behavior or introduce new semantics.

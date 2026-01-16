@@ -1,5 +1,7 @@
 import pytest
 
+from namel3ss.traces.schema import TraceEventType
+
 from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.runtime.ui.actions import handle_action
 from tests.conftest import lower_ir_program
@@ -9,7 +11,7 @@ PROGRAM = '''record "User":
   email string must be unique
   name string must be present
 
-page "home":
+page "home": requires true
   form is "User"
   table is "User"
 '''
@@ -26,7 +28,8 @@ def test_submit_form_saves_record_and_updates_ui():
     )
     assert response["ok"] is True
     assert response["traces"]
-    assert response["traces"][0]["type"] == "submit_form"
+    assert response["traces"][0]["type"] == TraceEventType.MUTATION_ALLOWED
+    assert response["traces"][1]["type"] == "submit_form"
     records = store.list_records(program.records[0])
     assert len(records) == 1
     assert records[0]["email"] == "a@b.com"
@@ -45,7 +48,8 @@ def test_submit_form_returns_validation_errors():
     )
     assert response["ok"] is False
     assert response["traces"]
-    assert response["traces"][0]["type"] == "submit_form"
+    assert response["traces"][0]["type"] == TraceEventType.MUTATION_ALLOWED
+    assert response["traces"][1]["type"] == "submit_form"
     assert any(err["field"] == "name" and err["code"] == "present" for err in response["errors"])
 
 

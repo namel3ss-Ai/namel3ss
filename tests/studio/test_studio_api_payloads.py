@@ -10,7 +10,7 @@ record "User":
 flow "one":
   return "ok"
 
-page "home":
+page "home": requires true
   button "Run":
     calls flow "one"
   form is "User"

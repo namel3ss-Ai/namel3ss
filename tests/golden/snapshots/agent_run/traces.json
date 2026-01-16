@@ -1,5 +1,19 @@
 [
   {
+    "agent_id": "planner",
+    "agent_name": "planner",
+    "canonical_events": [],
+    "lines": [
+      "invoked by flow demo"
+    ],
+    "memory_events": [],
+    "step_id": "step:0003",
+    "title": "Agent step started",
+    "trace_version": "2024-10-01",
+    "type": "agent_step_start"
+  },
+  {
+    "agent_id": "planner",
     "agent_name": "planner",
     "ai_name": "assistant",
     "ai_profile_name": "assistant",
@@ -7483,10 +7497,32 @@
     ],
     "model": "gpt-4.1",
     "output": "[gpt-4.1] Plan. :: Task | mem:st=0",
+    "role": null,
     "system_prompt": "Plan.",
     "title": "Agent planner",
     "tool_calls": [],
     "tool_results": [],
     "type": "ai_call"
+  },
+  {
+    "agent_id": "planner",
+    "agent_name": "planner",
+    "canonical_events": [],
+    "lines": [
+      "invoked by flow demo"
+    ],
+    "memory_events": [],
+    "memory_facts": {
+      "counts": {
+        "total": 0
+      },
+      "keys": [],
+      "last_updated_step": "step:0005"
+    },
+    "status": "ok",
+    "step_id": "step:0005",
+    "title": "Agent step completed",
+    "trace_version": "2024-10-01",
+    "type": "agent_step_end"
   }
 ]

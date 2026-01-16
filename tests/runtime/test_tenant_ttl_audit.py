@@ -14,7 +14,7 @@ record "Item":
   field "name" is text
   tenant_key is identity.org_id
 
-flow "seed":
+flow "seed": requires true
   save Item
 
 flow "list":
@@ -56,7 +56,7 @@ def test_ttl_expires_records(monkeypatch):
   persisted:
     ttl_hours is 1
 
-flow "seed":
+flow "seed": requires true
   save Session
 
 flow "list":

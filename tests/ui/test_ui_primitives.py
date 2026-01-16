@@ -7,6 +7,7 @@ import pytest
 from namel3ss.cli.app_loader import load_program
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.studio.api import get_ui_payload
 from namel3ss.studio.session import SessionState
 from namel3ss.ui.manifest import build_manifest
@@ -41,6 +42,28 @@ page "home":
     assert view["representation"] == "list"
     assert view["record"] == "User"
     assert "id_field" in view
+
+
+def test_view_rows_order_by_id():
+    source = '''
+spec is "1.0"
+
+record "User":
+  id number
+  name text
+
+page "home":
+  view of "User"
+'''.lstrip()
+    program = lower_ir_program(source)
+    store = MemoryStore()
+    record = next(item for item in program.records if item.name == "User")
+    store.save(record, {"id": 10, "name": "Ten"})
+    store.save(record, {"id": 2, "name": "Two"})
+    store.save(record, {"id": 7, "name": "Seven"})
+    manifest = build_manifest(program, state={}, store=store)
+    view = next(el for el in manifest["pages"][0]["elements"] if el["type"] == "view")
+    assert [row["id"] for row in view["rows"]] == [2, 7, 10]
 
 
 def test_compose_groups_children_stably():

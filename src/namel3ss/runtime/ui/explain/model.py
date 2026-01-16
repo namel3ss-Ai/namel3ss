@@ -26,18 +26,22 @@ class UIElementState:
     visible: bool = True
     enabled: bool | None = None
     bound_to: str | None = None
+    fix_hint: str | None = None
     reasons: list[str] = field(default_factory=list)
 
     def as_dict(self) -> dict:
-        return {
+        payload = {
             "id": self.id,
             "kind": self.kind,
             "label": self.label,
             "visible": self.visible,
             "enabled": self.enabled,
             "bound_to": self.bound_to,
-            "reasons": list(self.reasons),
         }
+        if self.fix_hint:
+            payload["fix_hint"] = self.fix_hint
+        payload["reasons"] = list(self.reasons)
+        return payload
 
     @staticmethod
     def from_dict(payload: dict) -> "UIElementState":
@@ -48,6 +52,7 @@ class UIElementState:
             visible=bool(payload.get("visible", True)),
             enabled=payload.get("enabled"),
             bound_to=payload.get("bound_to"),
+            fix_hint=payload.get("fix_hint"),
             reasons=[str(item) for item in payload.get("reasons") or []],
         )
 

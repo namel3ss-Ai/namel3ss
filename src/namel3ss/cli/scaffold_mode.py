@@ -11,15 +11,17 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.format import format_source
 from namel3ss.lint.engine import lint_source
 from namel3ss.pkg.scaffold import scaffold_package
-from namel3ss.resources import templates_root
+from namel3ss.resources import templates_root, examples_root
 from namel3ss.cli.demo_support import DEMO_MARKER, DEMO_NAME
 
 
 @dataclass(frozen=True)
-class TemplateSpec:
+class ScaffoldSpec:
+    kind: str
     name: str
     directory: str
     description: str
+    version: str
     aliases: tuple[str, ...] = ()
     is_demo: bool = False
 
@@ -32,19 +34,59 @@ class TemplateSpec:
         return normalized in normalized_aliases
 
 
-TEMPLATES: tuple[TemplateSpec, ...] = (
-    TemplateSpec(
+_VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
+
+TEMPLATES: tuple[ScaffoldSpec, ...] = (
+    ScaffoldSpec(
+        kind="template",
         name="starter",
         directory="starter",
         description="minimal app with one record, one flow, and one page.",
+        version="0.1.0",
     ),
-    TemplateSpec(
+    ScaffoldSpec(
+        kind="template",
         name="demo",
         directory="demo",
         description="demo app with records and mock ai for explainable outputs.",
+        version="0.1.0",
         is_demo=True,
     ),
 )
+
+EXAMPLES: tuple[ScaffoldSpec, ...] = (
+    ScaffoldSpec(
+        kind="example",
+        name="notes_journey",
+        directory="notes_journey",
+        description="read-only example showing records, flows, and a story.",
+        version="0.1.0",
+    ),
+)
+
+
+def _validate_scaffold_specs(specs: tuple[ScaffoldSpec, ...], *, label: str) -> None:
+    seen_names: set[str] = set()
+    seen_dirs: set[str] = set()
+    for spec in specs:
+        if spec.name in seen_names:
+            raise Namel3ssError(f"Duplicate {label} name '{spec.name}' in scaffold catalog.")
+        if spec.directory in seen_dirs:
+            raise Namel3ssError(f"Duplicate {label} directory '{spec.directory}' in scaffold catalog.")
+        if not _VERSION_RE.match(spec.version):
+            raise Namel3ssError(f"{label} '{spec.name}' has invalid version '{spec.version}'.")
+        seen_names.add(spec.name)
+        seen_dirs.add(spec.directory)
+
+
+def _validate_catalog() -> None:
+    _validate_scaffold_specs(TEMPLATES, label="template")
+    _validate_scaffold_specs(EXAMPLES, label="example")
+    template_names = {spec.name for spec in TEMPLATES}
+    example_names = {spec.name for spec in EXAMPLES}
+    collisions = sorted(template_names.intersection(example_names))
+    if collisions:
+        raise Namel3ssError(f"Template/example name collision: {', '.join(collisions)}")
 
 
 @dataclass(frozen=True)
@@ -68,16 +110,25 @@ def run_new(args: list[str]) -> int:
         print("  n3 pkg validate .")
         print("  n3 test")
         return 0
+    scaffold_specs = TEMPLATES
+    if args[0] in {"example", "examples"}:
+        if len(args) < 2:
+            raise Namel3ssError("Usage: n3 new example name")
+        scaffold_specs = EXAMPLES
+        args = args[1:]
     if len(args) > 2:
-        raise Namel3ssError("Usage: n3 new template name")
+        usage_kind = "example" if scaffold_specs is EXAMPLES else "template"
+        raise Namel3ssError(f"Usage: n3 new {usage_kind} name")
     template_name = args[0]
-    template = _resolve_template(template_name)
+    template = _resolve_scaffold(template_name, scaffold_specs)
     project_input = args[1] if len(args) == 2 else template.name
     project_name = _normalize_project_name(project_input)
 
-    template_dir = _templates_root() / template.directory
+    template_dir = _scaffold_root(template) / template.directory
     if not template_dir.exists():
-        raise Namel3ssError(f"Template '{template.name}' is not installed. Missing {template_dir}.")
+        raise Namel3ssError(
+            f"{template.kind.title()} '{template.name}' is not installed. Missing {template_dir}."
+        )
 
     target_dir = Path.cwd() / project_name
     if target_dir.exists():
@@ -86,8 +137,9 @@ def run_new(args: list[str]) -> int:
     demo_settings = _resolve_demo_settings() if template.is_demo else None
     try:
         shutil.copytree(template_dir, target_dir)
-        _prepare_readme(target_dir, project_name)
-        formatted_source = _prepare_app_file(target_dir, project_name, template, demo_settings)
+        tokens = _build_tokens(project_name, template)
+        _prepare_readme(target_dir, tokens)
+        formatted_source = _prepare_app_file(target_dir, tokens, template, demo_settings)
         if demo_settings and demo_settings.provider == "openai":
             _write_demo_env_example(target_dir)
         if template.is_demo:
@@ -117,7 +169,15 @@ def render_templates_list() -> str:
     lines = ["Available templates:"]
     for template in TEMPLATES:
         padded = template.name.ljust(longest)
-        lines.append(f"  {padded} - {template.description}")
+        lines.append(f"  {padded} v{template.version} - {template.description}")
+    if EXAMPLES:
+        longest_example = max(len(e.name) for e in EXAMPLES)
+        lines.append("")
+        lines.append("Examples (read-only):")
+        for example in EXAMPLES:
+            padded = example.name.ljust(longest_example)
+            lines.append(f"  {padded} v{example.version} - {example.description}")
+        lines.append("  Scaffold: n3 new example <name>")
     return "\n".join(lines)
 
 
@@ -125,12 +185,21 @@ def _templates_root() -> Path:
     return templates_root()
 
 
-def _resolve_template(name: str) -> TemplateSpec:
-    for template in TEMPLATES:
-        if template.matches(name):
-            return template
-    available = ", ".join(t.name for t in TEMPLATES)
-    raise Namel3ssError(f"Unknown template '{name}'. Available templates: {available}")
+def _examples_root() -> Path:
+    return examples_root()
+
+
+def _scaffold_root(spec: ScaffoldSpec) -> Path:
+    return _templates_root() if spec.kind == "template" else _examples_root()
+
+
+def _resolve_scaffold(name: str, specs: tuple[ScaffoldSpec, ...]) -> ScaffoldSpec:
+    for spec in specs:
+        if spec.matches(name):
+            return spec
+    available = ", ".join(spec.name for spec in specs)
+    kind = specs[0].kind if specs else "template"
+    raise Namel3ssError(f"Unknown {kind} '{name}'. Available {kind}s: {available}")
 
 
 def _normalize_project_name(name: str) -> str:
@@ -141,23 +210,23 @@ def _normalize_project_name(name: str) -> str:
     return normalized
 
 
-def _prepare_readme(target_dir: Path, project_name: str) -> None:
+def _prepare_readme(target_dir: Path, tokens: dict[str, str]) -> None:
     readme_path = target_dir / "README.md"
     if not readme_path.exists():
         return
-    _rewrite_with_project_name(readme_path, project_name)
+    _rewrite_with_tokens(readme_path, tokens)
 
 
 def _prepare_app_file(
     target_dir: Path,
-    project_name: str,
-    template: TemplateSpec,
+    tokens: dict[str, str],
+    template: ScaffoldSpec,
     demo_settings: DemoSettings | None,
 ) -> str:
     app_path = target_dir / "app.ai"
     if not app_path.exists():
         raise Namel3ssError(f"Template is missing app.ai at {app_path}")
-    raw = _rewrite_with_project_name(app_path, project_name)
+    raw = _rewrite_with_tokens(app_path, tokens)
     if template.name == "demo" and demo_settings:
         raw = _apply_demo_tokens(raw, demo_settings)
     formatted = format_source(raw)
@@ -167,10 +236,20 @@ def _prepare_app_file(
     return formatted
 
 
-def _rewrite_with_project_name(path: Path, project_name: str) -> str:
+def _build_tokens(project_name: str, template: ScaffoldSpec) -> dict[str, str]:
+    return {
+        "PROJECT_NAME": project_name,
+        "TEMPLATE_NAME": template.name,
+        "TEMPLATE_VERSION": template.version,
+    }
+
+
+def _rewrite_with_tokens(path: Path, tokens: dict[str, str]) -> str:
     original_mode = path.stat().st_mode
     contents = path.read_text(encoding="utf-8")
-    updated = contents.replace("{{PROJECT_NAME}}", project_name)
+    updated = contents
+    for key, value in tokens.items():
+        updated = updated.replace(f"{{{{{key}}}}}", value)
     path.write_text(updated, encoding="utf-8")
     path.chmod(original_mode)
     return updated
@@ -228,10 +307,13 @@ def _ensure_demo_marker(target_dir: Path) -> None:
     marker_path.write_text(canonical_json_dumps(payload, pretty=True), encoding="utf-8")
 
 
-def _print_success_message(template: TemplateSpec, project_name: str, target_dir: Path) -> None:
+def _print_success_message(template: ScaffoldSpec, project_name: str, target_dir: Path) -> None:
     print(f"Created project at {target_dir}")
     if template.name == "demo":
         print(f"Run: cd {project_name} && n3 run")
         return
     print("Next step")
     print(f"  cd {project_name} and run n3 app.ai")
+
+
+_validate_catalog()

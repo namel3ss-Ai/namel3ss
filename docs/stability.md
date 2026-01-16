@@ -28,3 +28,6 @@ namel3ss is in alpha and focused on predictable change.
 - Deprecations are announced in lint and format
 - File first workflow stays stable
 - Type canon uses text, number, boolean, and json
+
+## Release readiness
+- Release gate definition and local checks live in `docs/release-ready.md`.

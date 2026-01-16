@@ -1,16 +1,28 @@
 {
-  "ok": true,
-  "count": 2,
   "actions": [
     {
+      "flow": "demo",
       "id": "page.home.button.run",
-      "type": "call_flow",
-      "flow": "demo"
+      "type": "call_flow"
     },
     {
       "id": "page.home.form.user",
-      "type": "submit_form",
-      "record": "User"
+      "record": "User",
+      "type": "submit_form"
+    }
+  ],
+  "count": 2,
+  "ok": true,
+  "warnings": [
+    {
+      "category": "permissions",
+      "code": "requires.missing",
+      "column": 1,
+      "enforced_at": "runtime",
+      "fix": "Add a requires clause to the page header.",
+      "line": 9,
+      "message": "Page \"home\" has a form without requires.",
+      "path": null
     }
   ]
 }

@@ -103,8 +103,68 @@ flow "demo":
   return result
 ```
 
+## Foreign boundaries (explicit extensions)
+
+Foreign boundaries declare a typed, sandboxed function in the language and call it from a flow without adding a new expression language.
+
+### Declaration
+
+```ai
+foreign python function "calculate_tax"
+  input
+    amount is number
+    country is text
+  output is number
+
+foreign js function "format_currency"
+  input
+    amount is number
+    currency is text
+  output is text
+```
+
+### Call from a flow
+
+```ai
+flow "pricing"
+  input
+    amount is number
+    country is text
+  call foreign "calculate_tax"
+    amount is input.amount
+    country is input.country
+```
+
+### Types
+- Allowed types: text, number, boolean, list of text/number/boolean.
+- Inputs and outputs are validated at runtime and must match the declaration.
+
+### Determinism policy
+- Default mode allows foreign calls and traces the boundary.
+- Strict mode blocks foreign calls unless explicitly allowed.
+- Enable strict mode with `N3_FOREIGN_STRICT=1` or in `namel3ss.toml`:
+  ```
+  [foreign]
+  strict = true
+  ```
+- Allow foreign calls in strict mode with `N3_FOREIGN_ALLOW=1` or:
+  ```
+  [foreign]
+  allow = true
+  ```
+
+### Sandboxing and timeouts
+- Foreign calls run in subprocesses (python or node).
+- Network access is disabled by default.
+- Filesystem access is limited to a safe workspace under `.namel3ss/foreign/<tool-slug>`.
+- Timeouts use the tool timeout rules (default is 10s unless overridden).
+
+### Explain + Studio parity
+- Traces include `boundary_start`/`boundary_end` with deterministic input/output summaries.
+- Manifest and Studio payloads include foreign intent (name, language, input schema, output type, policy mode).
+
 ## Notes
-- Python tools are the only tool kind callable from flows in v0.1.x.
+- Python tools are the only tool kind callable from flows in v0.1.x; foreign boundaries use `call foreign` instead.
 - Tool payloads must be JSON objects; fields must match the declaration.
 - Optional fields use `optional`, e.g. `age is optional number`.
 

@@ -1,0 +1,20 @@
+{
+  "title": "something went wrong",
+  "summary": "Unknown theme 'blorple'.",
+  "sections": [
+    {
+      "title": "what happened",
+      "body": "Unknown theme 'blorple'."
+    },
+    {
+      "title": "why",
+      "body": "Allowed values: light, dark, white, black, midnight, paper, terminal, enterprise."
+    },
+    {
+      "title": "how to fix",
+      "items": [
+        "Use one of: light, dark, white, black, midnight, paper, terminal, enterprise."
+      ]
+    }
+  ]
+}
