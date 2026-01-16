@@ -72,17 +72,18 @@ def resolve_flow_steps(
             )
             continue
         if isinstance(step, ast.FlowCallForeign):
-            step.foreign_name = resolve_name(
-                step.foreign_name,
-                kind="tool",
-                module_name=module_name,
-                alias_map=alias_map,
-                local_defs=local_defs,
-                exports_map=exports_map,
-                context_label=context_label,
-                line=step.line,
-                column=step.column,
-            )
+            if "." in step.foreign_name or step.foreign_name in local_defs.get("tool", set()):
+                step.foreign_name = resolve_name(
+                    step.foreign_name,
+                    kind="tool",
+                    module_name=module_name,
+                    alias_map=alias_map,
+                    local_defs=local_defs,
+                    exports_map=exports_map,
+                    context_label=context_label,
+                    line=step.line,
+                    column=step.column,
+                )
             for arg in step.arguments:
                 _resolve_expr(arg.value)
             continue

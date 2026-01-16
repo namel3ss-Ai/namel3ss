@@ -46,7 +46,7 @@ spec is "1.0"
 record "Note":
   name is text
 
-flow "create_note": requires true
+flow "create_note" requires true
   input
     name is text
   create "Note"

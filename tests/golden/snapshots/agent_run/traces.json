@@ -2,6 +2,7 @@
   {
     "agent_id": "planner",
     "agent_name": "planner",
+    "ai_name": "assistant",
     "canonical_events": [],
     "lines": [
       "invoked by flow demo"
@@ -7507,6 +7508,7 @@
   {
     "agent_id": "planner",
     "agent_name": "planner",
+    "ai_name": "assistant",
     "canonical_events": [],
     "lines": [
       "invoked by flow demo"

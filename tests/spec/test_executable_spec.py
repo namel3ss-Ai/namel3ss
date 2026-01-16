@@ -214,9 +214,12 @@ def _normalize_payload(value, repo_root: Path):
 
 
 def _trace_to_dict(trace) -> dict:
-    if hasattr(trace, "__dict__"):
-        return trace.__dict__
-    return trace if isinstance(trace, dict) else {"value": trace}
+    if isinstance(trace, dict):
+        return dict(trace)
+    data = getattr(trace, "__dict__", None)
+    if isinstance(data, dict):
+        return data
+    return {"value": trace}
 
 
 def _select_flow(program, requested: str | None) -> str:

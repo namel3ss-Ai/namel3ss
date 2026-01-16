@@ -3782,12 +3782,13 @@
     "schema_version": "production.v0",
     "state": {},
     "status": "ok",
-    "trace_hash": "737650910b594532ad5533822a5cf8acb91a62cb5c4b878b5ad5cab0df43faa2",
+    "trace_hash": "a09dd9ef43c17597a4fc4a9efcffcddf473cae60b2f09294330622c6c7401f60",
     "trace_schema_version": "2024-10-01",
     "traces": [
       {
         "agent_id": "planner",
         "agent_name": "planner",
+        "ai_name": "assistant",
         "canonical_events": [],
         "lines": [
           "invoked by flow demo"
@@ -11293,6 +11294,7 @@
       {
         "agent_id": "planner",
         "agent_name": "planner",
+        "ai_name": "assistant",
         "canonical_events": [],
         "lines": [
           "invoked by flow demo"
@@ -11321,6 +11323,7 @@
     {
       "agent_id": "planner",
       "agent_name": "planner",
+      "ai_name": "assistant",
       "canonical_events": [],
       "lines": [
         "invoked by flow demo"
@@ -18826,6 +18829,7 @@
     {
       "agent_id": "planner",
       "agent_name": "planner",
+      "ai_name": "assistant",
       "canonical_events": [],
       "lines": [
         "invoked by flow demo"

@@ -229,6 +229,9 @@ def _parse_base_type(parser) -> str:
     if tok.type.startswith("TYPE_"):
         parser._advance()
         return type_from_token(tok)
+    if tok.type == "IDENT":
+        parser._advance()
+        return str(tok.value)
     raise Namel3ssError("Expected foreign type", line=tok.line, column=tok.column)
 
 

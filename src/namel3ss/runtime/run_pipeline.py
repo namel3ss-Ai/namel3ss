@@ -132,10 +132,11 @@ def _attach_error_metadata(payload: dict, error: Exception, project_root: Path |
 
 
 def _trace_to_dict(trace) -> dict:
-    if hasattr(trace, "__dict__"):
-        return trace.__dict__
     if isinstance(trace, dict):
         return dict(trace)
+    data = getattr(trace, "__dict__", None)
+    if isinstance(data, dict):
+        return dict(data)
     return {"trace": trace}
 
 

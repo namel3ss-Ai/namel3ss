@@ -14,7 +14,6 @@ from namel3ss.runtime.memory_explain import append_explanation_events
 from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
 from namel3ss.runtime.memory_lanes.model import agent_lane_key
-from namel3ss.runtime.memory.spaces import SPACE_PROJECT
 from namel3ss.traces.builders import (
     build_agent_step_end,
     build_agent_step_start,
@@ -29,6 +28,7 @@ def execute_run_agent(ctx: ExecutionContext, stmt: ir.RunAgentStmt) -> None:
     agent = ctx.agents.get(stmt.agent_name)
     agent_name = agent.name if agent else stmt.agent_name
     agent_id = _resolve_agent_id(agent) if agent else None
+    ai_name = agent.ai_name if agent else None
     role = agent.role if agent else None
     reason = _agent_step_reason(ctx)
     start_step = record_step(
@@ -44,6 +44,7 @@ def execute_run_agent(ctx: ExecutionContext, stmt: ir.RunAgentStmt) -> None:
         build_agent_step_start(
             agent_name=agent_name,
             agent_id=agent_id,
+            ai_name=ai_name,
             role=role,
             step_id=start_step.id,
             reason=reason,
@@ -75,6 +76,7 @@ def execute_run_agent(ctx: ExecutionContext, stmt: ir.RunAgentStmt) -> None:
             build_agent_step_end(
                 agent_name=agent_name,
                 agent_id=agent_id,
+                ai_name=ai_name,
                 role=role,
                 step_id=end_step.id,
                 reason=reason,
@@ -101,6 +103,7 @@ def execute_run_agent(ctx: ExecutionContext, stmt: ir.RunAgentStmt) -> None:
             build_agent_step_end(
                 agent_name=agent_name,
                 agent_id=agent_id,
+                ai_name=ai_name,
                 role=role,
                 step_id=end_step.id,
                 reason=reason,
@@ -123,6 +126,7 @@ def execute_run_agents_parallel(ctx: ExecutionContext, stmt: ir.RunAgentsParalle
         agent = ctx.agents.get(entry.agent_name)
         agent_name = agent.name if agent else entry.agent_name
         agent_id = _resolve_agent_id(agent) if agent else None
+        ai_name = agent.ai_name if agent else None
         role = agent.role if agent else None
         start_step = record_step(
             ctx,
@@ -137,6 +141,7 @@ def execute_run_agents_parallel(ctx: ExecutionContext, stmt: ir.RunAgentsParalle
             build_agent_step_start(
                 agent_name=agent_name,
                 agent_id=agent_id,
+                ai_name=ai_name,
                 role=role,
                 step_id=start_step.id,
                 reason=reason,
@@ -166,6 +171,7 @@ def execute_run_agents_parallel(ctx: ExecutionContext, stmt: ir.RunAgentsParalle
                 build_agent_step_end(
                     agent_name=agent_name,
                     agent_id=agent_id,
+                    ai_name=ai_name,
                     role=role,
                     step_id=end_step.id,
                     reason=reason,
@@ -194,6 +200,7 @@ def execute_run_agents_parallel(ctx: ExecutionContext, stmt: ir.RunAgentsParalle
             build_agent_step_end(
                 agent_name=agent_name,
                 agent_id=agent_id,
+                ai_name=ai_name,
                 role=role,
                 step_id=end_step.id,
                 reason=reason,
@@ -437,7 +444,7 @@ def _agent_memory_facts(ctx: ExecutionContext, agent_id: str | None) -> dict:
         project_root=ctx.project_root,
         app_path=ctx.app_path,
     )
-    store_key = agent_lane_key(space_ctx, space=SPACE_PROJECT, agent_id=agent_id)
+    store_key = agent_lane_key(space_ctx, space="project", agent_id=agent_id)
     profile = getattr(memory_manager, "profile", None)
     if profile is None:
         return {"keys": [], "counts": {"total": 0}}

@@ -39,9 +39,9 @@ def _write_basic_app(root: Path) -> None:
         'ai "assistant":\n'
         '  provider is "mock"\n'
         '  model is "gpt-4.1"\n\n'
-        'flow "ask":\n'
+        'flow "ask_flow":\n'
         '  return "ok"\n\n'
-        'flow "review":\n'
+        'flow "review_flow":\n'
         '  return "ok"\n\n'
         'page "Home":\n'
         '  title is "Demo"\n',

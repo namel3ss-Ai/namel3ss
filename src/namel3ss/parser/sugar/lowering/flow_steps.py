@@ -52,6 +52,16 @@ def _lower_flow_steps(steps: list[ast.FlowStep] | None) -> list[ast.FlowStep] | 
                 )
             )
             continue
+        if isinstance(step, ast.FlowCallForeign):
+            lowered.append(
+                ast.FlowCallForeign(
+                    foreign_name=step.foreign_name,
+                    arguments=[_lower_flow_field(field) for field in step.arguments],
+                    line=step.line,
+                    column=step.column,
+                )
+            )
+            continue
         raise TypeError(f"Unhandled flow step type: {type(step)}")
     return lowered
 

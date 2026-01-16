@@ -135,9 +135,9 @@ def test_module_exports_ui_pack(tmp_path: Path) -> None:
     _write(
         app,
         'spec is "1.0"\n\n'
-        'use "ui" as ui\n'
+        'use "ui" as ui_mod\n'
         'page "home":\n'
-        '  use ui_pack "ui.widgets" fragment "summary"\n',
+        '  use ui_pack "ui_mod.widgets" fragment "summary"\n',
     )
     _write(
         tmp_path / "modules" / "ui" / "capsule.ai",
@@ -166,9 +166,9 @@ def test_unexported_ui_pack_is_blocked(tmp_path: Path) -> None:
     _write(
         app,
         'spec is "1.0"\n\n'
-        'use "ui" as ui\n'
+        'use "ui" as ui_mod\n'
         'page "home":\n'
-        '  use ui_pack "ui.widgets" fragment "summary"\n',
+        '  use ui_pack "ui_mod.widgets" fragment "summary"\n',
     )
     _write(
         tmp_path / "modules" / "ui" / "capsule.ai",

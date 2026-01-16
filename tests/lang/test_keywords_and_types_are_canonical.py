@@ -41,6 +41,7 @@ def test_keyword_list_is_stable() -> None:
         "theme",
         "theme_tokens",
         "theme_preference",
+        "ui",
         "form",
         "table",
         "button",

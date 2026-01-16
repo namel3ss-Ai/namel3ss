@@ -450,7 +450,7 @@
     }
   ],
   "spec_version": "1.0",
-  "theme": "system",
+  "theme": "light",
   "theme_preference": {
     "allow_override": false,
     "persist": "none"

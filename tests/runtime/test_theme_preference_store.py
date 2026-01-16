@@ -8,7 +8,7 @@ from tests.conftest import lower_ir_program
 
 def test_preference_load_and_save(tmp_path: Path):
     app_path = tmp_path / "app.ai"
-    app_path.write_text('app:\n  theme is "system"\n  theme_preference:\n    allow_override is true\n    persist is "file"\nspec is "1.0"\n\nflow "demo":\n  set theme to "dark"\n', encoding="utf-8")
+    app_path.write_text('app:\n  theme is "light"\n  theme_preference:\n    allow_override is true\n    persist is "file"\nspec is "1.0"\n\nflow "demo":\n  set theme to "dark"\n', encoding="utf-8")
     program_ir = lower_ir_program(app_path.read_text(encoding="utf-8"))
     store = preference_store_for_app(str(app_path), program_ir.theme_preference.get("persist"))
     key = app_pref_key(str(app_path))

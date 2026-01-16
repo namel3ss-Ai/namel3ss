@@ -19,6 +19,32 @@ class CallFrame:
     return_target: str | None
 
 
+class TraceEvent(dict):
+    __slots__ = ()
+
+    def __getattr__(self, name: str) -> object:
+        if name in self:
+            return self[name]
+        raise AttributeError(name)
+
+
+class TraceList(list):
+    def __init__(self, items: list[object] | None = None) -> None:
+        super().__init__([_wrap_trace(item) for item in (items or [])])
+
+    def append(self, item: object) -> None:
+        super().append(_wrap_trace(item))
+
+    def extend(self, items) -> None:
+        super().extend(_wrap_trace(item) for item in items)
+
+
+def _wrap_trace(item: object) -> object:
+    if isinstance(item, dict) and not isinstance(item, TraceEvent):
+        return TraceEvent(item)
+    return item
+
+
 @dataclass
 class ExecutionContext:
     flow: ir.Flow
@@ -53,3 +79,7 @@ class ExecutionContext:
     last_ai_provider: str | None = None
     calc_assignment_index: dict[int, dict[str, int]] = field(default_factory=dict)
     flow_action_id: str | None = None
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.traces, TraceList):
+            self.traces = TraceList(list(self.traces or []))

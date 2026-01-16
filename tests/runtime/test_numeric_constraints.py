@@ -16,7 +16,7 @@ record "Sample":
   field "range" is number must be between -5 and 5
   field "whole" is number must be an integer
 
-flow "save": requires true
+flow "save_flow": requires true
   set state.sample.min is input.values.min
   set state.sample.max is input.values.max
   set state.sample.range is input.values.range
@@ -29,7 +29,7 @@ def _run_save(values: dict) -> None:
     contract_obj = build_contract(SOURCE)
     program = contract_obj.program
     store = MemoryStore()
-    execute_program_flow(program, "save", store=store, input={"values": values})
+    execute_program_flow(program, "save_flow", store=store, input={"values": values})
 
 
 def test_numeric_constraints_accept_valid_values() -> None:

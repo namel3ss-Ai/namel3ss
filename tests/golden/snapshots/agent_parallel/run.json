@@ -63,12 +63,13 @@
     "schema_version": "production.v0",
     "state": {},
     "status": "ok",
-    "trace_hash": "b6dca68bc49e38a2e6d487d39d03963823fc9d7f62521d26651378b4941a5c01",
+    "trace_hash": "eeaa5867ac9e7b7e3a33edea62b252ba29dc96e85ceb7d0a179a3f9984348a33",
     "trace_schema_version": "2024-10-01",
     "traces": [
       {
         "agent_id": "planner",
         "agent_name": "planner",
+        "ai_name": "assistant",
         "canonical_events": [],
         "lines": [
           "invoked by flow demo"
@@ -82,6 +83,7 @@
       {
         "agent_id": "planner",
         "agent_name": "planner",
+        "ai_name": "assistant",
         "canonical_events": [],
         "lines": [
           "invoked by flow demo"
@@ -103,6 +105,7 @@
       {
         "agent_id": "critic",
         "agent_name": "critic",
+        "ai_name": "assistant",
         "canonical_events": [],
         "lines": [
           "invoked by flow demo"
@@ -116,6 +119,7 @@
       {
         "agent_id": "critic",
         "agent_name": "critic",
+        "ai_name": "assistant",
         "canonical_events": [],
         "lines": [
           "invoked by flow demo"
@@ -7638,6 +7642,7 @@
     {
       "agent_id": "planner",
       "agent_name": "planner",
+      "ai_name": "assistant",
       "canonical_events": [],
       "lines": [
         "invoked by flow demo"
@@ -7651,6 +7656,7 @@
     {
       "agent_id": "planner",
       "agent_name": "planner",
+      "ai_name": "assistant",
       "canonical_events": [],
       "lines": [
         "invoked by flow demo"
@@ -7672,6 +7678,7 @@
     {
       "agent_id": "critic",
       "agent_name": "critic",
+      "ai_name": "assistant",
       "canonical_events": [],
       "lines": [
         "invoked by flow demo"
@@ -7685,6 +7692,7 @@
     {
       "agent_id": "critic",
       "agent_name": "critic",
+      "ai_name": "assistant",
       "canonical_events": [],
       "lines": [
         "invoked by flow demo"

@@ -5,25 +5,25 @@ from namel3ss.ui.manifest import build_manifest
 from tests.conftest import lower_ir_program
 
 
-ORDER_SOURCE = '''flow "run":
+ORDER_SOURCE = '''flow "run_flow":
   return "ok"
 
 page "home":
   button "Second":
-    calls flow "run"
+    calls flow "run_flow"
   button "First":
-    calls flow "run"
+    calls flow "run_flow"
 '''
 
 
-DUPLICATE_SOURCE = '''flow "run":
+DUPLICATE_SOURCE = '''flow "run_flow":
   return "ok"
 
 page "home":
   button "Run":
-    calls flow "run"
+    calls flow "run_flow"
   button "Run":
-    calls flow "run"
+    calls flow "run_flow"
 '''
 
 

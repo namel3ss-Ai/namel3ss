@@ -114,6 +114,9 @@ def _assemble_explain_payload(app_path, active: dict, proof: dict) -> dict:
         "capsules": _summarize_capsules(proof),
         "governance": proof.get("governance") or _load_governance(project_root),
         "tools": collect_tool_reports(project_root, config, project.program.tools),
+        "flows": len(project.program.flows),
+        "pages": len(project.program.pages),
+        "records": len(project.program.records),
     }
 
 

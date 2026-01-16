@@ -2,5 +2,13 @@
   "ok": true,
   "state": {},
   "result": "ok",
-  "traces": []
+  "traces": [
+    {
+      "action": "create",
+      "flow_name": "demo",
+      "record": "Item",
+      "step_id": "flow:demo.create.01",
+      "type": "mutation_allowed"
+    }
+  ]
 }

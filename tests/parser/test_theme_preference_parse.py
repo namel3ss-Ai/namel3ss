@@ -2,7 +2,7 @@ from tests.conftest import parse_program
 
 
 def test_theme_preference_defaults():
-    program = parse_program('app:\n  theme is "system"\n')
+    program = parse_program('app:\n  theme is "light"\n')
     pref = program.theme_preference
     assert pref["allow_override"][0] is False
     assert pref["persist"][0] == "none"

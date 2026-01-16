@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from namel3ss.agents.ids import agent_id_from_name
 from namel3ss.agents.intent import ordered_agent_decls
 from namel3ss.ir import nodes as ir
 from namel3ss.studio.agent_builder.templates import list_pattern_metadata, list_memory_presets
@@ -13,7 +12,6 @@ def list_agents(program: ir.Program) -> list[dict]:
     for agent in agents:
         entry = {
             "name": agent.name,
-            "agent_id": agent.agent_id or agent_id_from_name(agent.name),
             "ai_name": agent.ai_name,
             "system_prompt": agent.system_prompt or "",
         }

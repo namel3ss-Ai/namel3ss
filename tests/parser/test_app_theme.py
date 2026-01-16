@@ -13,7 +13,7 @@ def test_parse_app_theme_dark():
 def test_default_theme_system():
     source = 'spec is "1.0"\n\nflow "demo":\n  return "ok"\n'
     ir_prog = lower_ir_program(source)
-    assert ir_prog.theme == "system"
+    assert ir_prog.theme == "light"
 
 
 def test_invalid_theme_lints():

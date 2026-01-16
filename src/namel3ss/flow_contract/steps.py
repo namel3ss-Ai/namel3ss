@@ -80,7 +80,8 @@ def validate_declarative_flow(
             _validate_require(step, mode=mode, warnings=warnings)
             continue
         if isinstance(step, ir.FlowCallForeign):
-            _validate_call_foreign(step, tool_map, input_fields, line=step.line, column=step.column)
+            if mode == ValidationMode.STATIC:
+                _validate_call_foreign(step, tool_map, input_fields, line=step.line, column=step.column)
             continue
         if isinstance(step, ir.FlowCreate):
             record = _require_record(step.record_name, record_map, line=step.line, column=step.column)

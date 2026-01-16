@@ -71,7 +71,7 @@
     }
   ],
   "theme": {
-    "current": "system",
+    "current": "light",
     "effective": "light",
     "persisted_current": null,
     "preference": {
@@ -80,7 +80,7 @@
     },
     "runtime_supported": false,
     "schema_version": "1",
-    "setting": "system",
+    "setting": "light",
     "source": "app",
     "tokens": {}
   },
@@ -90,6 +90,14 @@
       "kind": "memory",
       "path": null,
       "schema_version": null
+    },
+    "settings": {
+      "accent_color": "blue",
+      "density": "comfortable",
+      "motion": "subtle",
+      "shape": "rounded",
+      "surface": "flat",
+      "theme": "light"
     }
   }
 }

@@ -7,6 +7,7 @@ def build_agent_step_start(
     *,
     agent_name: str,
     agent_id: str | None,
+    ai_name: str | None = None,
     role: str | None,
     step_id: str,
     reason: str,
@@ -21,6 +22,8 @@ def build_agent_step_start(
     }
     if agent_id:
         event["agent_id"] = agent_id
+    if ai_name:
+        event["ai_name"] = ai_name
     if role:
         event["role"] = role
     return event
@@ -30,6 +33,7 @@ def build_agent_step_end(
     *,
     agent_name: str,
     agent_id: str | None,
+    ai_name: str | None = None,
     role: str | None,
     step_id: str,
     reason: str,
@@ -48,6 +52,8 @@ def build_agent_step_end(
     }
     if agent_id:
         event["agent_id"] = agent_id
+    if ai_name:
+        event["ai_name"] = ai_name
     if role:
         event["role"] = role
     if memory_facts is not None:

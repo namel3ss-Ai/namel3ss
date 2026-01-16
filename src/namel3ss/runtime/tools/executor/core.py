@@ -15,12 +15,12 @@ from namel3ss.runtime.tools.executor.traces import (
     _record_policy_block,
     _record_tool_trace,
 )
-from namel3ss.runtime.tools.gate import gate_tool_call
+from namel3ss.runtime.tools.gate import gate_tool_call as _runtime_gate_tool_call
 from namel3ss.runtime.tools.outcome import ToolCallOutcome, ToolDecision
 from namel3ss.runtime.tools.policy import load_tool_policy, normalize_capabilities
-from namel3ss.runtime.tools.python_runtime import execute_python_tool_call
+from namel3ss.runtime.tools.python_runtime import execute_python_tool_call as _runtime_execute_python_tool_call
 from namel3ss.runtime.tools.node_runtime import execute_node_tool_call
-from namel3ss.runtime.tools.registry import execute_tool as execute_builtin_tool, is_builtin_tool
+from namel3ss.runtime.tools.registry import execute_tool as _registry_execute_builtin_tool, is_builtin_tool
 from namel3ss.runtime.tools.resolution import resolve_tool_binding
 from namel3ss.runtime.tools.runners.registry import get_runner
 from namel3ss.runtime.values.normalize import ensure_object
@@ -154,7 +154,7 @@ def _execute_tool_call_internal(
         binding_ok=True,
         config=getattr(ctx, "config", None),
     )
-    decision = gate_tool_call(tool_name=tool_name, required_capabilities=required_caps, policy=policy)
+    decision = _gate_tool_call(tool_name=tool_name, required_capabilities=required_caps, policy=policy)
     if decision.status != "allowed":
         outcome = ToolCallOutcome(
             tool_name=tool_name,
@@ -200,7 +200,7 @@ def _execute_tool_call_internal(
         elif tool_kind == "node":
             result = _run_node_tool(ctx, tool_name, args, line=line, column=column)
         elif tool_kind == "builtin" and ctx.tool_call_source == "ai":
-            result = execute_builtin_tool(tool_name, args)
+            result = _execute_builtin_tool(tool_name, args)
         else:
             err = _unsupported_kind_error(tool_name, tool_kind or "unknown", line=line, column=column)
             _record_tool_trace(ctx, tool_name, tool_kind, decision, result="error")
@@ -248,7 +248,7 @@ def _run_python_tool(
 ) -> object:
     trace_target, original_traces = _swap_trace_target(ctx)
     try:
-        return execute_python_tool_call(ctx, tool_name=tool_name, payload=args, line=line, column=column)
+        return _execute_python_tool_call(ctx, tool_name=tool_name, payload=args, line=line, column=column)
     finally:
         if original_traces is not None:
             ctx.traces = original_traces
@@ -385,6 +385,51 @@ def _tool_example(tool_name: str) -> str:
         "  output:\n"
         "    data is json"
     )
+
+
+def _execute_builtin_tool(tool_name: str, args: dict) -> object:
+    override = _resolve_override("execute_builtin_tool", _execute_builtin_tool)
+    if override is not None:
+        return override(tool_name, args)
+    return _registry_execute_builtin_tool(tool_name, args)
+
+
+def _gate_tool_call(*, tool_name: str, required_capabilities: set[str], policy) -> ToolDecision:
+    override = _resolve_override("gate_tool_call", _gate_tool_call)
+    if override is not None:
+        return override(tool_name=tool_name, required_capabilities=required_capabilities, policy=policy)
+    return _runtime_gate_tool_call(
+        tool_name=tool_name,
+        required_capabilities=required_capabilities,
+        policy=policy,
+    )
+
+
+def _execute_python_tool_call(
+    ctx: ExecutionContext,
+    *,
+    tool_name: str,
+    payload: object,
+    line: int | None,
+    column: int | None,
+) -> object:
+    override = _resolve_override("execute_python_tool_call", _execute_python_tool_call)
+    if override is not None:
+        return override(ctx, tool_name=tool_name, payload=payload, line=line, column=column)
+    return _runtime_execute_python_tool_call(ctx, tool_name=tool_name, payload=payload, line=line, column=column)
+
+
+def _resolve_override(name: str, current: object):
+    try:
+        import importlib
+
+        executor_mod = importlib.import_module("namel3ss.runtime.tools.executor")
+    except Exception:
+        return None
+    override = getattr(executor_mod, name, None)
+    if callable(override) and override is not current:
+        return override
+    return None
 
 
 def _is_foreign_tool(tool_decl) -> bool:
