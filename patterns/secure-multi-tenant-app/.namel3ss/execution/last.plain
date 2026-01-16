@@ -1,7 +1,0 @@
-summary: Flow "tenant.create_account" ran with 5 steps.
-flow.name: tenant.create_account
-ok: True
-steps.total: 5
-steps.skipped: 0
-steps.errors: 0
-traces.count: 0

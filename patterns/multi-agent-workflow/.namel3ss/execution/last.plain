@@ -1,7 +1,0 @@
-summary: Flow "agents.plan_step" ran with 3 steps.
-flow.name: agents.plan_step
-ok: True
-steps.total: 3
-steps.skipped: 0
-steps.errors: 0
-traces.count: 0

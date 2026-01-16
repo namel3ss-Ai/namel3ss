@@ -55,7 +55,7 @@ logs/
 !.env.sample
 
 # namel3ss runtime artifacts (safe to delete)
-.namel3ss/
+**/.namel3ss/
 # Artifacts must never appear in git diffs.
 !spec/**/.namel3ss/
 spec/**/.namel3ss/**
@@ -82,9 +82,8 @@ evals/**/.namel3ss/**
 !tests/fixtures/.namel3ss/tools.yaml
 tests/fixtures/.namel3ss/observe.jsonl
 !patterns/**/.namel3ss/
-!patterns/**/.namel3ss/build/
-!patterns/**/.namel3ss/build/**
-patterns/**/.namel3ss/observe.jsonl
+patterns/**/.namel3ss/**
+!patterns/**/.namel3ss/tools.yaml
 
 # Temp / lock files
 *.tmp

@@ -91,6 +91,9 @@ jobs:
             (cd "${pattern}" && n3 verify --prod)
           done
 
+      - name: Clean pattern artifacts
+        run: python tools/clean_pattern_artifacts.py
+
       - name: Enforce line limit
         run: python tools/line_limit_check.py
 

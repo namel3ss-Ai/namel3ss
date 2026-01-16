@@ -1,7 +1,0 @@
-summary: Flow "research_demo" ran with 34 steps.
-flow.name: research_demo
-ok: True
-steps.total: 34
-steps.skipped: 1
-steps.errors: 0
-traces.count: 3

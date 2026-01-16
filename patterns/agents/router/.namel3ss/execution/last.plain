@@ -1,7 +1,0 @@
-summary: Flow "demo_support" ran with 7 steps.
-flow.name: demo_support
-ok: True
-steps.total: 7
-steps.skipped: 0
-steps.errors: 0
-traces.count: 1
