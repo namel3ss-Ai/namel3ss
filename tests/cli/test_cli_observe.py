@@ -18,7 +18,7 @@ def _write_app(tmp_path):
 def test_observe_emits_events(tmp_path, capsys, monkeypatch):
     _write_app(tmp_path)
     monkeypatch.chdir(tmp_path)
-    main(["run"])
+    main(["run", "--json"])
     capsys.readouterr()
     code = main(["observe", "--json"])
     payload = json.loads(capsys.readouterr().out)

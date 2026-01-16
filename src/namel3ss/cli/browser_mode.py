@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from dataclasses import dataclass
 
-from namel3ss.cli.app_path import resolve_app_path
+from namel3ss.cli.app_path import default_missing_app_message, resolve_app_path
 from namel3ss.cli.devex import parse_project_overrides
 from namel3ss.cli.open_url import open_url, should_open_url
 from namel3ss.errors.base import Namel3ssError
@@ -34,7 +34,12 @@ def _run_browser_command(mode: str, args: list[str]) -> int:
     try:
         overrides, remaining = parse_project_overrides(args)
         params = _parse_args(remaining, allow_debug=mode == "dev")
-        app_path = resolve_app_path(params.app_arg or overrides.app_path, project_root=overrides.project_root)
+        app_path = resolve_app_path(
+            params.app_arg or overrides.app_path,
+            project_root=overrides.project_root,
+            search_parents=False,
+            missing_message=default_missing_app_message(mode),
+        )
         port = params.port or DEFAULT_BROWSER_PORT
         runner = BrowserRunner(app_path, mode=mode, port=port, debug=params.debug)
         url = f"http://127.0.0.1:{runner.bound_port}/"

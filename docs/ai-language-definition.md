@@ -25,3 +25,9 @@ Execution steps explain what happened and why.
 ## Roadmap note
 - This document is descriptive only; it makes no forward-looking commitments.
 - Frozen contracts live in `docs/spec-freeze.md`.
+
+## Related contracts
+- [Application runtime](language/application-runtime.md)
+- [No dependencies](language/no-dependencies.md)
+- [Capability packs](language/capability-packs.md)
+- [Browser Protocol](runtime/browser-protocol.md)

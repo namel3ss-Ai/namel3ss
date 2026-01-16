@@ -26,27 +26,9 @@ def test_commands_resolve_app_from_nested_dir(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(nested)
 
     code = main(["run", "--json"])
-    out = capsys.readouterr().out
-    payload = json.loads(out)
-    assert code == 0
-    assert payload["ok"] is True
-
-    code = main(["lint"])
-    out = capsys.readouterr().out
-    payload = json.loads(out)
-    assert code == 0
-    assert payload["ok"] is True
-
-    code = main(["fmt", "check"])
-    out = capsys.readouterr().out
-    assert code == 0
-    assert "OK" in out
-
-    code = main(["test", "--json"])
-    out = capsys.readouterr().out
-    payload = json.loads(out)
-    assert code == 0
-    assert payload["status"] == "ok"
+    captured = capsys.readouterr()
+    assert code != 0
+    assert "No app.ai found. Run `n3 run <file.ai>` or create app.ai." in captured.err
 
 
 def test_studio_dry_run_from_nested_dir(tmp_path, monkeypatch, capsys):
@@ -57,9 +39,9 @@ def test_studio_dry_run_from_nested_dir(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(nested)
 
     code = main(["studio", "--dry"])
-    out = capsys.readouterr().out
-    assert code == 0
-    assert "Studio: http://127.0.0.1:" in out
+    captured = capsys.readouterr()
+    assert code != 0
+    assert "No app.ai found. Run `n3 studio <file.ai>` or create app.ai." in captured.err
 
 
 def test_project_overrides_app_and_project(tmp_path, monkeypatch, capsys):
@@ -83,3 +65,18 @@ def test_project_overrides_app_and_project(tmp_path, monkeypatch, capsys):
     payload = json.loads(out)
     assert code == 0
     assert payload["status"] == "ok"
+
+
+def test_commands_accept_explicit_app_any_name(tmp_path, capsys, monkeypatch):
+    root = tmp_path / "project"
+    root.mkdir()
+    app_path = root / "orders.ai"
+    app_path.write_text(APP_SOURCE, encoding="utf-8")
+    monkeypatch.chdir(root)
+
+    code = main(["run", str(app_path), "--json"])
+    out = capsys.readouterr().out
+    payload = json.loads(out)
+    assert code == 0
+    assert payload["ok"] is True
+    assert payload["result"] == "ok"

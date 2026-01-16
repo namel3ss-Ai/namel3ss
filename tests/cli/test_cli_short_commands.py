@@ -37,6 +37,6 @@ def test_help_lists_new_short_commands(capsys):
     code = main(["help"])
     out = capsys.readouterr().out.lower()
     assert code == 0
-    assert "pack" in out
+    assert "start" in out
+    assert "quality" in out
     assert "ship" in out
-    assert "where" in out

@@ -29,6 +29,12 @@ Common top-level blocks:
 
 Studio is a viewer and interactor. It shows the UI manifest, available actions, current state, and traces produced by runs.
 
+### Language Contracts
+- [Application runtime](language/application-runtime.md): every valid `.ai` program is an application; the browser renders it, Studio inspects it.
+- [No dependencies](language/no-dependencies.md): install `namel3ss` and run apps without managing pip/npm for each project; packs extend capabilities.
+- [Capability packs](language/capability-packs.md): packs are signed, permissioned capability bundles with deterministic effect boundaries.
+- [Browser Protocol](runtime/browser-protocol.md): `/api/ui`, `/api/state`, `/api/action`, and `/api/health` are stable and deterministic.
+
 ### Explainable execution
 Every run emits deterministic artifacts that answer specific questions:
 - How did the flow run?
@@ -123,6 +129,8 @@ title is "Customer Dashboard"
 - [Quickstart](quickstart.md)
 - [First 5 minutes](first-5-minutes.md)
 - Templates: starter and demo (`n3 new starter`, `n3 new demo`)
+- Demos: browser-ready apps in `src/namel3ss/demos` (copy, then `n3 check` and `n3 run`)
+- Examples: single-file references in `src/namel3ss/examples` (or scaffold with `n3 new example <name>`)
 - [UI DSL](ui-dsl.md)
 - [Execution how](execution-how.md)
 - [Run outcome](flow-what.md)

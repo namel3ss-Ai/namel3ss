@@ -22,10 +22,10 @@ from namel3ss.runtime.ui.actions import handle_action
 from namel3ss.runtime.storage.factory import resolve_store
 from namel3ss.secrets import set_audit_root, set_engine_target
 from namel3ss.studio.session import SessionState
+from namel3ss.determinism import canonical_json_dumps
 from namel3ss.ui.manifest import build_manifest
 from namel3ss.ui.settings import UI_ALLOWED_VALUES, UI_DEFAULTS
 from namel3ss.ui.external.serve import resolve_external_ui_file
-from namel3ss.utils.json_tools import dumps as json_dumps
 from namel3ss.validation import ValidationMode, ValidationWarning
 
 
@@ -60,6 +60,11 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
     def _handle_api_get(self, path: str) -> None:
         if path == "/api/ui":
             payload = self._state().manifest_payload()
+            status = 200 if payload.get("ok", True) else 400
+            self._respond_json(payload, status=status)
+            return
+        if path == "/api/state":
+            payload = self._state().state_payload()
             status = 200 if payload.get("ok", True) else 400
             self._respond_json(payload, status=status)
             return
@@ -105,7 +110,7 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
         return True
 
     def _respond_json(self, payload: dict, status: int = 200) -> None:
-        data = json_dumps(payload).encode("utf-8")
+        data = canonical_json_dumps(payload, pretty=False, drop_run_keys=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(data)))
@@ -164,6 +169,12 @@ class BrowserAppState:
             return self.error_payload
         return self.manifest or {}
 
+    def state_payload(self) -> dict:
+        self._refresh_if_needed()
+        if self.error_payload:
+            return {"ok": False, "error": self.error_payload, "revision": self.revision}
+        return {"ok": True, "state": self._state_snapshot(), "revision": self.revision}
+
     def status_payload(self) -> dict:
         self._refresh_if_needed()
         if self.error_payload:
@@ -217,7 +228,14 @@ class BrowserAppState:
             theme_current = (ui_payload.get("theme") or {}).get("current")
             if isinstance(theme_current, str) and theme_current:
                 self.session.runtime_theme = theme_current
-        return response if isinstance(response, dict) else {"ok": False, "error": "Action failed."}
+        if isinstance(response, dict):
+            if isinstance(response.get("state"), dict):
+                self.session.state = response["state"]
+        if isinstance(response, dict):
+            response["state"] = self._state_snapshot()
+            response.setdefault("revision", self.revision)
+            return response
+        return {"ok": False, "error": "Action failed.", "state": self._state_snapshot(), "revision": self.revision}
 
     def _refresh_if_needed(self) -> None:
         if not self._should_reload():
@@ -312,6 +330,12 @@ class BrowserAppState:
         except OSError:
             return None
 
+    def _state_snapshot(self) -> dict:
+        try:
+            return json.loads(canonical_json_dumps(self.session.state, pretty=False, drop_run_keys=False))
+        except Exception:
+            return {}
+
 
 class BrowserRunner:
     def __init__(
@@ -321,8 +345,10 @@ class BrowserRunner:
         mode: str = "dev",
         port: int = DEFAULT_BROWSER_PORT,
         debug: bool = False,
+        watch_sources: bool = True,
+        engine_target: str = "local",
     ) -> None:
-        if mode not in {"dev", "preview"}:
+        if mode not in {"dev", "preview", "run"}:
             raise ValueError(f"Unknown browser mode: {mode}")
         self.app_path = Path(app_path).resolve()
         self.mode = mode
@@ -330,24 +356,39 @@ class BrowserRunner:
         self.debug = debug
         self._thread: threading.Thread | None = None
         self.server: HTTPServer | None = None
-        self.app_state = BrowserAppState(self.app_path, mode=mode, debug=debug)
+        self.watch_sources = watch_sources
+        self.app_state = BrowserAppState(
+            self.app_path,
+            mode=mode,
+            debug=debug,
+            watch_sources=watch_sources,
+            engine_target=engine_target,
+        )
 
-    def start(self, *, background: bool = False) -> None:
-        server = HTTPServer(("127.0.0.1", self.port), BrowserRequestHandler)
+    def bind(self) -> None:
+        if self.server:
+            return
+        server = _bind_http_server(self.port, BrowserRequestHandler)
+        self.port = int(server.server_address[1])
         server.browser_mode = self.mode  # type: ignore[attr-defined]
         server.app_state = self.app_state  # type: ignore[attr-defined]
         self.server = server
+
+    def start(self, *, background: bool = False) -> None:
+        self.bind()
+        assert self.server is not None
         if background:
-            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread = threading.Thread(target=self.server.serve_forever, daemon=True)
             thread.start()
             self._thread = thread
         else:
-            server.serve_forever()
+            self.server.serve_forever()
 
     def shutdown(self) -> None:
         if self.server:
             try:
                 self.server.shutdown()
+                self.server.server_close()
             except Exception:
                 pass
         if self._thread and self._thread.is_alive():
@@ -364,6 +405,8 @@ def _resolve_runtime_file(path: str, mode: str) -> tuple[Path | None, str | None
     runtime_root = _runtime_web_root()
     if path in {"/", "/index.html"}:
         filename = "dev.html" if mode == "dev" else "preview.html"
+        if mode == "run":
+            filename = "preview.html"
         file_path = runtime_root / filename
         if file_path.exists():
             return file_path, "text/html"
@@ -415,4 +458,17 @@ def _read_source_fallback(app_path: Path) -> dict[Path, str]:
         return {}
 
 
-__all__ = ["BrowserRunner", "DEFAULT_BROWSER_PORT"]
+def _bind_http_server(port: int, handler) -> HTTPServer:
+    base = port or DEFAULT_BROWSER_PORT
+    last_error: Exception | None = None
+    for offset in range(0, 20):
+        candidate = base + offset
+        try:
+            return HTTPServer(("127.0.0.1", candidate), handler)
+        except OSError as err:  # pragma: no cover - bind guard
+            last_error = err
+            continue
+    raise last_error or OSError("Unable to bind HTTP server")
+
+
+__all__ = ["BrowserRunner", "BrowserAppState", "DEFAULT_BROWSER_PORT"]

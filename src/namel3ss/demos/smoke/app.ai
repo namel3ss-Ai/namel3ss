@@ -1,0 +1,22 @@
+spec is "1.0"
+
+# demo: smoke@0.1.0
+# Minimal app to prove UI -> action -> state in the browser.
+
+record "Click":
+  field "message" is text must be present
+
+flow "add_click" requires true
+  create "Click"
+    message is "clicked"
+
+page "home":
+  purpose is "Minimal smoke demo that runs in the browser."
+  title is "{{PROJECT_NAME}}"
+  card "Try it":
+    text is "Click the button to create a record."
+    button "Add click":
+      calls flow "add_click"
+  card "Results":
+    table is "Click"
+    view of "Click"

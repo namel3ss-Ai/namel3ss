@@ -79,6 +79,14 @@ namel3ss provides the following guarantees, enforced by code, tests, and governa
 These guarantees are enforced and frozen for the v0.1.x series.
 See `docs/trust-and-governance.md` for enforcement details.
 
+## Browser protocol
+- [Browser Protocol](docs/runtime/browser-protocol.md): single app runtime server with `/api/ui`, `/api/state`, `/api/action`, and `/api/health` using deterministic ordering and payloads.
+
+## Language Contracts
+- [Application runtime](docs/language/application-runtime.md): every valid `.ai` program is an application; the browser renders the manifest and actions, Studio inspects.
+- [No dependencies](docs/language/no-dependencies.md): installing `namel3ss` is sufficient to run apps; packs extend capabilities instead of imports.
+- [Capability packs](docs/language/capability-packs.md): packs are signed, permissioned capability bundles with deterministic effect boundaries.
+
 ## Installation
 
 The recommended way to install `n3` is with `pipx`, which keeps it isolated and globally available:
@@ -99,6 +107,10 @@ python -m pip install -U namel3ss
 n3 --version
 n3 --help
 ```
+
+### Bundled samples
+- Demos: full browser apps in `src/namel3ss/demos` (copy, then `n3 check` and `n3 run`)
+- Examples: single-file references in `src/namel3ss/examples` or scaffold with `n3 new example <name>`
 
 ### Windows users
 If `n3` is not found, your Python `Scripts/` folder may not be in your PATH.

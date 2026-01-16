@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 from namel3ss.cli.app_loader import load_program
-from namel3ss.cli.app_path import resolve_app_path
+from namel3ss.cli.app_path import default_missing_app_message, resolve_app_path
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.errors.render import format_error
@@ -29,8 +29,15 @@ def run_studio(path: str, port: int, dry: bool) -> int:
 
 def _resolve_studio_app_path(path: str | None) -> Path:
     try:
-        return resolve_app_path(path)
+        return resolve_app_path(
+            path,
+            search_parents=False,
+            missing_message=default_missing_app_message("studio"),
+        )
     except Namel3ssError as err:
+        message = str(err)
+        if "No app.ai found." in message:
+            raise
         raise Namel3ssError(
             build_guidance_message(
                 what="Studio needs an app file path to resolve tools/ bindings.",

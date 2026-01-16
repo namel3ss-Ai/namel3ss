@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from namel3ss.cli.app_loader import load_program
-from namel3ss.cli.app_path import resolve_app_path
+from namel3ss.cli.app_path import default_missing_app_message, resolve_app_path
 from namel3ss.cli.build_mode import artifacts, reports, validate
 from namel3ss.cli.targets import parse_target
 from namel3ss.cli.targets_store import BUILD_META_FILENAME, latest_pointer_path, write_json
@@ -18,7 +18,11 @@ from namel3ss.secrets import set_audit_root, set_engine_target
 def run_build_command(args: list[str]) -> int:
     app_arg, target_raw = validate.parse_args(args)
     target = parse_target(target_raw)
-    app_path = resolve_app_path(app_arg)
+    app_path = resolve_app_path(
+        app_arg,
+        search_parents=False,
+        missing_message=default_missing_app_message("build"),
+    )
     project_root = app_path.resolve().parent
     set_engine_target(target.name)
     set_audit_root(project_root)

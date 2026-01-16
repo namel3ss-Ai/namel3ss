@@ -3,7 +3,7 @@ from __future__ import annotations
 from namel3ss.cli.actions_mode import list_actions
 from namel3ss.cli.aliases import canonical_command
 from namel3ss.cli.app_loader import load_program
-from namel3ss.cli.app_path import resolve_app_path
+from namel3ss.cli.app_path import default_missing_app_message, resolve_app_path
 from namel3ss.cli.check_mode import run_check
 from namel3ss.cli.constants import RESERVED
 from namel3ss.cli.devex import parse_project_overrides
@@ -46,12 +46,23 @@ def handle_app_commands(path: str | None, remainder: list[str], context: dict | 
         app_override = path
     app_override, remainder = extract_app_override(remainder, app_override)
     canonical_first = canonical_command(remainder[0]) if remainder else None
+    missing_message = default_missing_app_message(canonical_first or "run")
     if app_override is None:
-        resolved_path = resolve_app_path(app_override, project_root=overrides.project_root)
+        resolved_path = resolve_app_path(
+            app_override,
+            project_root=overrides.project_root,
+            search_parents=False,
+            missing_message=missing_message,
+        )
     elif canonical_first == "check":
         resolved_path = resolve_explicit_path(app_override, overrides.project_root)
     else:
-        resolved_path = resolve_app_path(app_override, project_root=overrides.project_root)
+        resolved_path = resolve_app_path(
+            app_override,
+            project_root=overrides.project_root,
+            search_parents=False,
+            missing_message=missing_message,
+        )
     if context is not None:
         context["project_root"] = resolved_path.parent
     if remainder and canonical_first == "check":
@@ -72,7 +83,8 @@ def handle_app_commands(path: str | None, remainder: list[str], context: dict | 
         allow_aliases = allow_aliases_from_flags(remainder[1:])
         return run_lint(resolved_path.as_posix(), check_only, strict_types, allow_aliases, strict_tools)
     if remainder and canonical_first == "actions":
-        json_mode = len(remainder) > 1 and remainder[1] == "json"
+        tail = remainder[1:]
+        json_mode = ("json" in tail) or ("--json" in tail)
         allow_aliases = allow_aliases_from_flags(remainder)
         program_ir, sources = load_program(resolved_path.as_posix(), allow_legacy_type_aliases=allow_aliases)
         if context is not None:

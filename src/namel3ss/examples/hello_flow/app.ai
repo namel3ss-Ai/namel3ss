@@ -1,0 +1,21 @@
+spec is "1.0"
+
+# example: hello_flow@0.1.0
+# Single-flow example that creates one record.
+
+record "Greeting":
+  field "message" is text must be present
+
+flow "seed_greeting" requires true
+  create "Greeting"
+    message is "hello from namel3ss"
+
+page "home":
+  purpose is "Minimal example of one flow and one record."
+  title is "{{PROJECT_NAME}}"
+  card "Hello flow":
+    text is "Run the flow to create a greeting record."
+    button "Add greeting":
+      calls flow "seed_greeting"
+  card "Greetings":
+    view of "Greeting"

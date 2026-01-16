@@ -6,6 +6,7 @@ def test_packaging_includes_templates_examples_and_runtime() -> None:
     for line in [
         "recursive-include src/namel3ss/templates *",
         "recursive-include src/namel3ss/examples *",
+        "recursive-include src/namel3ss/demos *",
         "recursive-include src/namel3ss/runtime/web *",
     ]:
         assert line in manifest
@@ -14,6 +15,7 @@ def test_packaging_includes_templates_examples_and_runtime() -> None:
     for block in [
         '"namel3ss.templates"',
         '"namel3ss.examples"',
+        '"namel3ss.demos"',
         '"namel3ss.runtime"',
     ]:
         assert block in pyproject

@@ -4,7 +4,7 @@ from namel3ss.cli.main import main as cli_main
 from namel3ss.compatibility import apply_migration, plan_migration
 from namel3ss.ir.nodes import lower_program
 from namel3ss.parser.core import parse
-from namel3ss.resources import examples_root, package_root, studio_web_root, templates_root
+from namel3ss.resources import demos_root, examples_root, package_root, studio_web_root, templates_root
 from namel3ss.runtime.run_pipeline import build_flow_payload, finalize_run_payload
 from namel3ss.studio.api import get_version_payload
 from namel3ss.version import get_version
@@ -104,8 +104,14 @@ def test_packaging_assets_present():
     assert (templates / "demo" / "media" / "welcome.svg").exists()
 
     examples = examples_root()
-    assert (examples / "notes_journey" / "app.ai").exists()
-    assert (examples / "notes_journey" / "media" / "welcome.svg").exists()
+    assert (examples / "hello_flow" / "app.ai").exists()
+    assert (examples / "hello_flow" / "README.md").exists()
+
+    demos = demos_root()
+    assert (demos / "notes_journey" / "app.ai").exists()
+    assert (demos / "notes_journey" / "media" / "welcome.svg").exists()
+    assert (demos / "smoke" / "app.ai").exists()
+    assert (demos / "smoke" / "README.md").exists()
 
     web_root = studio_web_root()
     for name in ("index.html", "app.js", "styles.css"):

@@ -54,6 +54,21 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.contract import build_error_entry
 from namel3ss.errors.render import format_error, format_first_run_error
 
+PACK_SUBCOMMANDS = {
+    "add",
+    "init",
+    "validate",
+    "review",
+    "bundle",
+    "sign",
+    "remove",
+    "status",
+    "verify",
+    "enable",
+    "disable",
+    "keys",
+}
+
 
 def main(argv: list[str] | None = None) -> int:
     args = sys.argv[1:] if argv is None else list(argv)
@@ -104,6 +119,10 @@ def main(argv: list[str] | None = None) -> int:
         if cmd == "start":
             return run_start_command(args[1:])
         if cmd == "pack":
+            if args[1:]:
+                next_token = canonical_command(args[1])
+                if next_token in PACK_SUBCOMMANDS:
+                    return run_packs(args[1:])
             return run_build_command(args[1:])
         if cmd == "ship":
             return run_promote_command(args[1:])

@@ -57,9 +57,9 @@ TEMPLATES: tuple[ScaffoldSpec, ...] = (
 EXAMPLES: tuple[ScaffoldSpec, ...] = (
     ScaffoldSpec(
         kind="example",
-        name="notes_journey",
-        directory="notes_journey",
-        description="read-only example showing records, flows, and a story.",
+        name="hello_flow",
+        directory="hello_flow",
+        description="single-flow example that creates one record and renders it.",
         version="0.1.0",
     ),
 )

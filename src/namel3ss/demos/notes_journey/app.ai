@@ -1,7 +1,7 @@
 spec is "1.0"
 
-# example: {{TEMPLATE_NAME}}@{{TEMPLATE_VERSION}}
-# Read-only example showing a short flow and story.
+# demo: notes_journey@0.1.0
+# Read-only demo showing a short flow and story.
 
 record "Note":
   field "summary" is text must be present
@@ -10,12 +10,12 @@ record "Note":
 flow "seed_note" requires true
   create "Note"
     summary is "example note"
-    details is "notes_journey example"
+    details is "notes_journey demo"
 
 page "home":
-  purpose is "Show a compact notes journey example."
+  purpose is "Show a compact notes journey demo."
   title is "{{PROJECT_NAME}}"
-  text is "read-only example for namel3ss."
+  text is "read-only demo for namel3ss."
   image is "welcome":
     role is "iconic"
   compose highlights:

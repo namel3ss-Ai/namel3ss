@@ -15,6 +15,10 @@ def examples_root() -> Path:
     return package_root() / "examples"
 
 
+def demos_root() -> Path:
+    return package_root() / "demos"
+
+
 def studio_web_root() -> Path:
     return package_root() / "studio" / "web"
 
@@ -29,4 +33,4 @@ def icons_root() -> Path:
     return root
 
 
-__all__ = ["package_root", "templates_root", "examples_root", "studio_web_root", "icons_root"]
+__all__ = ["package_root", "templates_root", "examples_root", "demos_root", "studio_web_root", "icons_root"]

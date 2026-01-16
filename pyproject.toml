@@ -79,6 +79,20 @@ where = ["src"]
     "**/*.jpeg",
     "**/*.webp",
 ]
+"namel3ss.demos" = [
+    "**/*.ai",
+    "**/*.md",
+    "**/*.toml",
+    "**/*.json",
+    "**/*.html",
+    "**/*.css",
+    "**/*.js",
+    "**/*.svg",
+    "**/*.png",
+    "**/*.jpg",
+    "**/*.jpeg",
+    "**/*.webp",
+]
 "namel3ss.runtime" = [
     "web/*.html",
     "web/*.css",

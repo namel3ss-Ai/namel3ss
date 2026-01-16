@@ -108,17 +108,16 @@ def test_new_demo_openai_env_controls_provider_and_model(tmp_path, monkeypatch):
 
 def test_new_example_scaffolds(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    code = main(["new", "example", "notes_journey", "journey_app"])
-    project_dir = tmp_path / "journey_app"
+    code = main(["new", "example", "hello_flow", "hello_app"])
+    project_dir = tmp_path / "hello_app"
     assert code == 0
     assert project_dir.exists()
     _validate_app_file(project_dir / "app.ai")
     app_text = (project_dir / "app.ai").read_text(encoding="utf-8")
-    assert "example: notes_journey@0.1.0" in app_text
-    assert (project_dir / "media" / "welcome.svg").exists()
+    assert "example: hello_flow@0.1.0" in app_text
     readme = (project_dir / "README.md").read_text(encoding="utf-8")
     assert "{{PROJECT_NAME}}" not in readme
-    assert "journey_app" in readme
+    assert "hello_app" in readme
 
 
 def _snapshot_tree(root: Path) -> dict[str, bytes]:
@@ -184,4 +183,4 @@ def test_new_lists_templates(capsys):
         assert name in out
     assert "starter v0.1.0" in out
     assert "Examples (read-only)" in out
-    assert "notes_journey" in out
+    assert "hello_flow" in out
