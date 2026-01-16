@@ -1,0 +1,62 @@
+{
+  "app_relative_path": "app.ai",
+  "artifacts": {
+    "build_report_json": "build_report.json",
+    "build_report_text": "build_report.txt",
+    "config": "config.json",
+    "lock_snapshot": "lock_snapshot.json",
+    "manifest": "manifest.json",
+    "program": "program",
+    "program_summary": "program_summary.json",
+    "schema_snapshot": "schema/records.json",
+    "ui": {
+      "actions": "ui/actions.json",
+      "schema": "ui/schema.json",
+      "ui": "ui/ui.json"
+    },
+    "web": "web"
+  },
+  "build_id": "local-45cfe94dfaca",
+  "lockfile_digest": "89ad18848f3694c58074e15881b55349971ebd0efa12ad4d746631b51c8f8aa4",
+  "lockfile_status": "present",
+  "namel3ss_version": "0.1.0a9",
+  "persistence_target": "sqlite",
+  "process_model": "dev",
+  "program_summary": {
+    "agents": [],
+    "ai_profiles": [],
+    "entry_flows": [],
+    "flows": [
+      "agents.critic_step",
+      "agents.plan_step",
+      "agents.research_step"
+    ],
+    "pages": [
+      "home"
+    ],
+    "public_flows": [
+      "agents.critic_step",
+      "agents.plan_step",
+      "agents.research_step"
+    ],
+    "records": [],
+    "theme": "light",
+    "tools": []
+  },
+  "recommended_persistence": "sqlite",
+  "source_fingerprints": [
+    {
+      "path": "app.ai",
+      "sha256": "317322017ea8ccc4e6f554891e9aabab906331fdcba841da4af5efa3629d1e50"
+    },
+    {
+      "path": "modules/agents/capsule.ai",
+      "sha256": "a802183a42e25f1c65889290cad6d503f1eee70b65f848ac41a131621c3be7c8"
+    },
+    {
+      "path": "modules/agents/logic.ai",
+      "sha256": "a5a8b2696fa50a86d7b8e85223323ebc094acc05352213557573e8ee87cba7f0"
+    }
+  ],
+  "target": "local"
+}

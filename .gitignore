@@ -20,6 +20,12 @@ spec/programs/**/build/**
 !spec/programs/**/build/local/latest.json
 !spec/programs/**/build/local/spec/
 !spec/programs/**/build/local/spec/build.json
+!patterns/**/build/
+patterns/**/build/**
+!patterns/**/build/local/
+!patterns/**/build/local/latest.json
+!patterns/**/build/local/*/
+!patterns/**/build/local/*/build.json
 
 # Test / coverage artifacts
 .pytest_cache/

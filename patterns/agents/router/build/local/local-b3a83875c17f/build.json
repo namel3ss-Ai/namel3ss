@@ -1,0 +1,67 @@
+{
+  "app_relative_path": "app.ai",
+  "artifacts": {
+    "build_report_json": "build_report.json",
+    "build_report_text": "build_report.txt",
+    "config": "config.json",
+    "lock_snapshot": "lock_snapshot.json",
+    "manifest": "manifest.json",
+    "program": "program",
+    "program_summary": "program_summary.json",
+    "schema_snapshot": "schema/records.json",
+    "ui": {
+      "actions": "ui/actions.json",
+      "schema": "ui/schema.json",
+      "ui": "ui/ui.json"
+    },
+    "web": "web"
+  },
+  "build_id": "local-b3a83875c17f",
+  "lockfile_digest": "eace60f110c5557498329db02fb252da7f95598dd3246d174053dac13c3b35c4",
+  "lockfile_status": "present",
+  "namel3ss_version": "0.1.0a9",
+  "persistence_target": "sqlite",
+  "process_model": "dev",
+  "program_summary": {
+    "agents": [
+      "billing_agent",
+      "sales_agent",
+      "support_agent"
+    ],
+    "ai_profiles": [
+      "router_ai"
+    ],
+    "entry_flows": [
+      "route_request",
+      "demo_billing",
+      "demo_sales",
+      "demo_support"
+    ],
+    "flows": [
+      "demo_billing",
+      "demo_sales",
+      "demo_support",
+      "route_request"
+    ],
+    "pages": [
+      "home"
+    ],
+    "public_flows": [
+      "demo_billing",
+      "demo_sales",
+      "demo_support",
+      "route_request"
+    ],
+    "records": [],
+    "theme": "light",
+    "tools": []
+  },
+  "recommended_persistence": "sqlite",
+  "source_fingerprints": [
+    {
+      "path": "app.ai",
+      "sha256": "e5639272cece82492c1bd48c0fde00bb50fd04d1e93efac3b7a07705797861c0"
+    }
+  ],
+  "target": "local"
+}

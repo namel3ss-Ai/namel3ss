@@ -1,0 +1,60 @@
+{
+  "app_relative_path": "app.ai",
+  "artifacts": {
+    "build_report_json": "build_report.json",
+    "build_report_text": "build_report.txt",
+    "config": "config.json",
+    "lock_snapshot": "lock_snapshot.json",
+    "manifest": "manifest.json",
+    "program": "program",
+    "program_summary": "program_summary.json",
+    "schema_snapshot": "schema/records.json",
+    "ui": {
+      "actions": "ui/actions.json",
+      "schema": "ui/schema.json",
+      "ui": "ui/ui.json"
+    },
+    "web": "web"
+  },
+  "build_id": "local-a96b158ee4ce",
+  "lockfile_digest": "eace60f110c5557498329db02fb252da7f95598dd3246d174053dac13c3b35c4",
+  "lockfile_status": "present",
+  "namel3ss_version": "0.1.0a9",
+  "persistence_target": "sqlite",
+  "process_model": "dev",
+  "program_summary": {
+    "agents": [
+      "alpha",
+      "beta",
+      "gamma"
+    ],
+    "ai_profiles": [
+      "parallel_ai"
+    ],
+    "entry_flows": [
+      "run_parallel_demo"
+    ],
+    "flows": [
+      "run_parallel_demo"
+    ],
+    "pages": [
+      "home"
+    ],
+    "public_flows": [
+      "run_parallel_demo"
+    ],
+    "records": [
+      "ParallelResult"
+    ],
+    "theme": "light",
+    "tools": []
+  },
+  "recommended_persistence": "sqlite",
+  "source_fingerprints": [
+    {
+      "path": "app.ai",
+      "sha256": "268471aeb44b0111cde62c8890ad1d93eb08828f7b64d36d534473bc2655dcdf"
+    }
+  ],
+  "target": "local"
+}
