@@ -10,27 +10,20 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
 from namel3ss.observe import summarize_value
 from namel3ss.runtime.capabilities import build_effective_guarantees, resolve_tool_capabilities
-from namel3ss.runtime.capabilities.coverage import container_runner_coverage, local_runner_coverage
-from namel3ss.runtime.capabilities.gates import (
-    check_network,
-    check_secret_allowed,
-    record_capability_check,
-    record_capability_checks,
-)
-from namel3ss.runtime.capabilities.gates.base import CapabilityViolation, REASON_COVERAGE_MISSING
-from namel3ss.runtime.capabilities.model import CapabilityCheck, CapabilityContext
+from namel3ss.runtime.capabilities.gates import record_capability_checks
+from namel3ss.runtime.capabilities.gates.base import CapabilityViolation
+from namel3ss.runtime.capabilities.model import CapabilityContext
 from namel3ss.runtime.capabilities.overrides import unsafe_override_enabled
-from namel3ss.runtime.capabilities.secrets import secret_names_in_payload
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.packs.policy import load_pack_policy
-from namel3ss.runtime.tools.resolution import resolve_tool_binding
 from namel3ss.runtime.tools.entry_validation import validate_python_tool_entry, validate_python_tool_entry_exists
 from namel3ss.runtime.tools.foreign_workspace import foreign_workspace_dir
 from namel3ss.runtime.tools.python_runtime_helpers import _binding_example, _tool_example, _tool_pack_example
-from namel3ss.runtime.tools.schema_validate import validate_tool_fields
+from namel3ss.runtime.tools.python_runtime.policy import _preflight_capabilities
+from namel3ss.runtime.tools.resolution import resolve_tool_binding
 from namel3ss.runtime.tools.runners.base import ToolRunnerRequest
 from namel3ss.runtime.tools.runners.registry import get_runner
-from namel3ss.runtime.tools.sandbox import sandbox_enabled
+from namel3ss.runtime.tools.schema_validate import validate_tool_fields
 from namel3ss.runtime.tools.python_subprocess import PROTOCOL_VERSION
 from namel3ss.secrets import collect_secret_values, redact_text
 
@@ -372,11 +365,15 @@ def _trace_error_details(err: Exception, secret_values: list[str]) -> tuple[str,
         error_type = cause.__class__.__name__
         error_message = _strip_traceback(str(cause))
     return error_type, redact_text(error_message, secret_values)
+
+
 def _strip_traceback(message: str | None) -> str:
     text = str(message or "")
     if "Traceback" not in text:
         return text
     return text.split("Traceback", 1)[0].strip()
+
+
 def _resolve_timeout_seconds(ctx: ExecutionContext, tool: ir.ToolDecl, *, line: int | None, column: int | None) -> int:
     if tool.timeout_seconds is not None:
         return tool.timeout_seconds
@@ -386,139 +383,6 @@ def _resolve_timeout_seconds(ctx: ExecutionContext, tool: ir.ToolDecl, *, line: 
     return DEFAULT_TOOL_TIMEOUT_SECONDS
 
 
-def _preflight_capabilities(
-    ctx: ExecutionContext,
-    capability_ctx: CapabilityContext,
-    *,
-    runner_name: str,
-    payload: object,
-    binding,
-    resolved_source: str,
-    unsafe_override: bool,
-    sandbox_override: bool | None = None,
-    line: int | None,
-    column: int | None,
-) -> bool:
-    unsafe_used = False
-    if runner_name in {"local", "node"}:
-        if sandbox_override is not None:
-            sandbox_on = sandbox_override
-        else:
-            sandbox_on = sandbox_enabled(
-                resolved_source=resolved_source,
-                runner=runner_name,
-                binding=binding,
-            )
-        coverage = local_runner_coverage(capability_ctx.guarantees, sandbox_enabled=sandbox_on)
-        if coverage.status != "enforced":
-            if unsafe_override:
-                unsafe_used = True
-            else:
-                _record_coverage_block(ctx, capability_ctx, coverage.missing)
-                raise Namel3ssError(
-                    build_guidance_message(
-                        what=f'Tool "{capability_ctx.tool_name}" requires sandbox enforcement.',
-                        why=f"Sandbox is disabled but guarantees require: {', '.join(coverage.missing)}.",
-                        fix="Enable sandbox in tools.yaml or relax the capability overrides.",
-                        example='sandbox: true',
-                    ),
-                    line=line,
-                    column=column,
-                )
-    if runner_name == "container":
-        if capability_ctx.guarantees.no_subprocess:
-            if unsafe_override:
-                unsafe_used = True
-            else:
-                _record_coverage_block(ctx, capability_ctx, ["subprocess"])
-                raise Namel3ssError(
-                    build_guidance_message(
-                        what=f'Tool "{capability_ctx.tool_name}" cannot run in a container runner.',
-                        why="Container execution requires subprocess access.",
-                        fix="Switch to the local runner or relax the no_subprocess guarantee.",
-                        example=f'n3 tools set-runner "{capability_ctx.tool_name}" --runner local',
-                    ),
-                    line=line,
-                    column=column,
-                )
-        coverage = container_runner_coverage(capability_ctx.guarantees, enforcement=getattr(binding, "enforcement", None))
-        if coverage.status == "not_enforceable":
-            if unsafe_override:
-                unsafe_used = True
-            else:
-                _record_coverage_block(ctx, capability_ctx, coverage.missing)
-                raise Namel3ssError(
-                    build_guidance_message(
-                        what=f'Tool "{capability_ctx.tool_name}" requires container enforcement.',
-                        why="Container bindings must declare enforcement coverage.",
-                        fix="Set enforcement to declared/verified or choose a local runner.",
-                        example='enforcement: "declared"',
-                    ),
-                    line=line,
-                    column=column,
-                )
-    if runner_name == "service":
-        url = binding.url or ctx.config.python_tools.service_url
-        if url:
-            _gate_capability(
-                ctx,
-                capability_ctx,
-                lambda: check_network(capability_ctx, _record_for(ctx, capability_ctx), url=url, method="POST"),
-                line=line,
-                column=column,
-            )
-        _check_payload_secrets(ctx, capability_ctx, payload, line=line, column=column)
-    return unsafe_used
-
-
-def _gate_capability(ctx: ExecutionContext, capability_ctx: CapabilityContext, fn, *, line: int | None, column: int | None) -> None:
-    try:
-        fn()
-    except CapabilityViolation as err:
-        raise Namel3ssError(str(err), line=line, column=column) from err
-
-
-def _check_payload_secrets(
-    ctx: ExecutionContext,
-    capability_ctx: CapabilityContext,
-    payload: object,
-    *,
-    line: int | None,
-    column: int | None,
-) -> None:
-    if capability_ctx.guarantees.secrets_allowed is None:
-        return
-    names = secret_names_in_payload(payload, ctx.config)
-    if not names:
-        return
-    record = _record_for(ctx, capability_ctx)
-    for name in sorted(names):
-        _gate_capability(
-            ctx,
-            capability_ctx,
-            lambda n=name: check_secret_allowed(capability_ctx, record, secret_name=n),
-            line=line,
-            column=column,
-        )
-
-
-def _record_for(ctx: ExecutionContext, capability_ctx: CapabilityContext):
-    return lambda check: record_capability_check(capability_ctx, check, ctx.traces)
-
-
-def _record_coverage_block(ctx: ExecutionContext, capability_ctx: CapabilityContext, missing: list[str]) -> None:
-    for capability in missing:
-        source = capability_ctx.guarantees.source_for_capability(capability) or "pack"
-        record_capability_check(
-            capability_ctx,
-            CapabilityCheck(
-                capability=capability,
-                allowed=False,
-                guarantee_source=source,
-                reason=REASON_COVERAGE_MISSING,
-            ),
-            ctx.traces,
-        )
 def _pack_root_from_paths(paths: list[Path] | None) -> Path | None:
     if not paths:
         return None

@@ -7,58 +7,12 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.foreign.types import is_foreign_type, normalize_foreign_type
 from namel3ss.ir import nodes as ir
 from namel3ss.ir.lowering.expressions import _lower_expression
-from namel3ss.lang.keywords import is_keyword
+from namel3ss.lexer.lexer import Lexer
+from namel3ss.parser.core import Parser
 from namel3ss.runtime.flow.gates import parse_state_requires
 from namel3ss.runtime.values.types import type_name_for_value
 from namel3ss.schema.records import FieldSchema, RecordSchema
 from namel3ss.validation import ValidationMode, add_warning
-from namel3ss.lexer.lexer import Lexer
-from namel3ss.parser.core import Parser
-
-
-def validate_flow_names(flows: list[ir.Flow]) -> set[str]:
-    seen: dict[str, ir.Flow] = {}
-    for flow in flows:
-        name = flow.name
-        if is_keyword(name):
-            raise Namel3ssError(
-                build_guidance_message(
-                    what=f"Flow name '{name}' is reserved.",
-                    why="Reserved words have fixed meaning in the language.",
-                    fix="Rename the flow to a non-reserved name.",
-                    example=f'flow "{name}_flow":',
-                ),
-                line=flow.line,
-                column=flow.column,
-            )
-        if name in seen:
-            raise Namel3ssError(
-                build_guidance_message(
-                    what=f"Duplicate flow name '{name}'.",
-                    why="Flow names must be unique.",
-                    fix="Rename one of the flows so each name is unique.",
-                    example=f'flow "{name}_v2":',
-                ),
-                line=flow.line,
-                column=flow.column,
-            )
-        seen[name] = flow
-    return set(seen.keys())
-
-
-def validate_declarative_flows(
-    flows: list[ir.Flow],
-    record_map: dict[str, RecordSchema],
-    tools: dict[str, ir.ToolDecl] | None = None,
-    *,
-    mode: ValidationMode = ValidationMode.RUNTIME,
-    warnings: list | None = None,
-) -> None:
-    tool_map = tools or {}
-    for flow in flows:
-        if not getattr(flow, "declarative", False):
-            continue
-        _validate_declarative_flow(flow, record_map, tool_map, mode=mode, warnings=warnings)
 
 
 def parse_selector_expression(selector: str, *, line: int | None, column: int | None) -> ir.Expression:
@@ -83,7 +37,7 @@ def parse_selector_expression(selector: str, *, line: int | None, column: int | 
     return lowered
 
 
-def _validate_declarative_flow(
+def validate_declarative_flow(
     flow: ir.Flow,
     record_map: dict[str, RecordSchema],
     tool_map: dict[str, ir.ToolDecl],
@@ -102,7 +56,7 @@ def _validate_declarative_flow(
                         what="Flow declares input more than once.",
                         why="Declarative flows may only declare a single input block.",
                         fix="Combine the input fields into one input block.",
-                        example='flow "demo"\\n  input\\n    name is text',
+                        example='flow "demo"\n  input\n    name is text',
                     ),
                     line=step.line,
                     column=step.column,
@@ -115,7 +69,7 @@ def _validate_declarative_flow(
                             what=f"Input field '{field.name}' is duplicated.",
                             why="Input fields must be unique.",
                             fix="Remove the duplicate or rename it.",
-                            example='input\\n  name is text\\n  email is text',
+                            example='input\n  name is text\n  email is text',
                         ),
                         line=field.line,
                         column=field.column,
@@ -145,7 +99,7 @@ def _validate_declarative_flow(
                         what="Update step is missing a where selector.",
                         why="Declarative updates require a selector to target records.",
                         fix='Add a where line like `where "id is 1"`.',
-                        example='update "Order"\\n  where "id is 1"\\n  set\\n    status is "shipped"',
+                        example='update "Order"\n  where "id is 1"\n  set\n    status is "shipped"',
                     ),
                     line=step.line,
                     column=step.column,
@@ -166,7 +120,7 @@ def _validate_declarative_flow(
                         what="Delete step is missing a where selector.",
                         why="Declarative deletes require a selector to target records.",
                         fix='Add a where line like `where "id is 1"`.',
-                        example='delete "Order"\\n  where "id is 1"',
+                        example='delete "Order"\n  where "id is 1"',
                     ),
                     line=step.line,
                     column=step.column,
@@ -178,7 +132,7 @@ def _validate_declarative_flow(
                 what="Flow step type is not supported.",
                 why="Declarative flows only allow input, require, call foreign, create, update, and delete steps.",
                 fix="Use one of the supported steps.",
-                example='flow "demo"\\n  input\\n    name is text',
+                example='flow "demo"\n  input\n    name is text',
             ),
             line=getattr(step, "line", None),
             column=getattr(step, "column", None),
@@ -265,7 +219,7 @@ def _value_type(
                     what=f"Input field '{field_name}' is not declared.",
                     why="Input bindings must match fields in the input block.",
                     fix="Add the field to input or update the binding.",
-                    example=f'input\\n  {field_name} is text',
+                    example=f'input\n  {field_name} is text',
                 ),
                 line=line,
                 column=column,
@@ -340,7 +294,7 @@ def _validate_call_foreign(
                     what=f'Foreign function "{step.foreign_name}" is missing input "{field_name}".',
                     why="All foreign inputs are required.",
                     fix="Provide the missing input in the call.",
-                    example=f'call foreign "{step.foreign_name}"\\n  {field_name} is "value"',
+                    example=f'call foreign "{step.foreign_name}"\n  {field_name} is "value"',
                 ),
                 line=line,
                 column=column,
@@ -411,7 +365,7 @@ def _require_record(
             what=f"Unknown record '{name}'.{hint}",
             why="Declarative steps must reference declared records.",
             fix="Define the record or update the record name.",
-            example=f'record "{name}":\\n  id is number',
+            example=f'record "{name}":\n  id is number',
         ),
         line=line,
         column=column,
@@ -435,7 +389,7 @@ def _require_field(
             what=f"Unknown field '{field_name}' in record '{record.name}'.{hint}",
             why="Field assignments must match declared record fields.",
             fix="Use a field declared on the record.",
-            example=f'create "{record.name}"\\n  {sample} is "value"',
+            example=f'create "{record.name}"\n  {sample} is "value"',
         ),
         line=line,
         column=column,
@@ -507,4 +461,4 @@ def _validate_selector_expr(expr: ir.Expression, *, line: int | None, column: in
         )
 
 
-__all__ = ["parse_selector_expression", "validate_declarative_flows", "validate_flow_names"]
+__all__ = ["parse_selector_expression", "validate_declarative_flow"]

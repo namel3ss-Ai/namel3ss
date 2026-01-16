@@ -1,34 +1,44 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Dict, Optional
+import time
 
+from namel3ss.compatibility import validate_spec_version
 from namel3ss.config.loader import load_config
 from namel3ss.config.model import AppConfig
 from namel3ss.errors.base import Namel3ssError
-from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.errors.payload import build_error_from_exception, build_error_payload
 from namel3ss.ir import nodes as ir
+from namel3ss.observe import actor_summary, record_event, summarize_value
+from namel3ss.production_contract import build_run_payload
+from namel3ss.runtime.flow.ids import flow_step_id
 from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.identity.guards import GuardContext
-from namel3ss.runtime.flow.ids import flow_step_id
+from namel3ss.runtime.memory.api import MemoryManager
 from namel3ss.runtime.mutation_policy import evaluate_mutation_policy_for_rule
 from namel3ss.runtime.records.service import save_record_with_errors
 from namel3ss.runtime.records.state_paths import set_state_record
-from namel3ss.runtime.storage.base import Storage
-from namel3ss.runtime.memory.api import MemoryManager
-from namel3ss.runtime.storage.factory import resolve_store
-from namel3ss.compatibility import validate_spec_version
-from namel3ss.ui.manifest import build_manifest
-from namel3ss.utils.json_tools import dumps as json_dumps
-from namel3ss.secrets import collect_secret_values
-from namel3ss.observe import actor_summary, record_event, summarize_value
-from namel3ss.errors.payload import build_error_payload, build_error_from_exception
-from namel3ss.production_contract import build_run_payload
 from namel3ss.runtime.run_pipeline import build_flow_payload, finalize_run_payload
+from namel3ss.runtime.storage.base import Storage
+from namel3ss.runtime.storage.factory import resolve_store
+from namel3ss.secrets import collect_secret_values
 from namel3ss.traces.schema import TraceEventType
-import time
-from pathlib import Path
+from namel3ss.ui.manifest import build_manifest
 
-SUBMIT_RESERVED_KEYS = {"values", "errors", "ok", "result", "state", "traces"}
+from namel3ss.runtime.ui.actions.model import (
+    form_flow_name,
+    page_decl_for_name,
+    page_name_for_slug,
+    page_slug_from_action,
+    page_subject,
+)
+from namel3ss.runtime.ui.actions.validate import (
+    action_payload_message,
+    ensure_json_serializable,
+    normalize_submit_payload,
+    unknown_action_message,
+)
 
 
 def handle_action(
@@ -50,7 +60,7 @@ def handle_action(
     """Execute a UI action against the program."""
     start_time = time.time()
     if payload is not None and not isinstance(payload, dict):
-        raise Namel3ssError(_action_payload_message())
+        raise Namel3ssError(action_payload_message())
     validate_spec_version(program_ir)
 
     action_error: Exception | None = None
@@ -74,7 +84,7 @@ def handle_action(
     )
     actions: Dict[str, dict] = manifest.get("actions", {})
     if action_id not in actions:
-        raise Namel3ssError(_unknown_action_message(action_id, actions))
+        raise Namel3ssError(unknown_action_message(action_id, actions))
 
     action = actions[action_id]
     action_type = action.get("type")
@@ -149,13 +159,6 @@ def handle_action(
                 secret_values=secret_values,
             )
     return response
-
-
-def _ensure_json_serializable(data: dict) -> None:
-    try:
-        json_dumps(data)
-    except Exception as exc:  # pragma: no cover - guard rail
-        raise Namel3ssError(f"Response is not JSON-serializable: {exc}")
 
 
 def _record_engine_error(
@@ -242,7 +245,7 @@ def _handle_call_flow(
         persisted_theme=next_runtime_theme if allow_theme_override and preference_store else None,
         identity=identity,
     )
-    _ensure_json_serializable(response)
+    ensure_json_serializable(response)
     response = finalize_run_payload(response, secret_values)
     return response, None
 
@@ -261,7 +264,7 @@ def _handle_submit_form(
     secret_values: list[str] | None = None,
     source: str | None = None,
 ) -> dict:
-    payload = _normalize_submit_payload(payload)
+    payload = normalize_submit_payload(payload)
     record = action.get("record")
     if not isinstance(record, str):
         raise Namel3ssError("Invalid record reference in form action")
@@ -307,7 +310,7 @@ def _handle_submit_form(
             runtime_theme=runtime_theme,
             identity=identity,
         )
-        _ensure_json_serializable(response)
+        ensure_json_serializable(response)
         response = finalize_run_payload(response, secret_values)
         return response
     set_state_record(state, record, values)
@@ -337,7 +340,7 @@ def _handle_submit_form(
         )
         response.pop("error", None)
         response.pop("message", None)
-        _ensure_json_serializable(response)
+        ensure_json_serializable(response)
         response = finalize_run_payload(response, secret_values)
         return response
 
@@ -359,7 +362,7 @@ def _handle_submit_form(
         runtime_theme=runtime_theme,
         identity=identity,
     )
-    _ensure_json_serializable(response)
+    ensure_json_serializable(response)
     response = finalize_run_payload(response, secret_values)
     return response
 
@@ -378,11 +381,11 @@ def _enforce_form_policy(
     state: dict,
     identity: dict | None,
 ) -> tuple[dict, object]:
-    page_slug = _page_slug_from_action(action_id)
-    page_name = _page_name_for_slug(manifest, page_slug)
-    page_decl = _page_decl_for_name(program_ir, page_name)
-    subject = _page_subject(page_name, page_slug)
-    flow_name = _form_flow_name(page_slug, record)
+    page_slug = page_slug_from_action(action_id)
+    page_name = page_name_for_slug(manifest, page_slug)
+    page_decl = page_decl_for_name(program_ir, page_name)
+    subject = page_subject(page_name, page_slug)
+    flow_name = form_flow_name(page_slug, record)
     step_id = flow_step_id(flow_name, "save", 1)
     ctx = GuardContext(
         locals={"input": payload, "mutation": {"action": "save", "record": record}},
@@ -419,97 +422,4 @@ def _enforce_form_policy(
     return entry, decision
 
 
-def _page_slug_from_action(action_id: str) -> str | None:
-    parts = action_id.split(".")
-    if len(parts) >= 2 and parts[0] == "page":
-        return parts[1]
-    return None
-
-
-def _page_name_for_slug(manifest: dict, slug: str | None) -> str | None:
-    if not slug:
-        return None
-    for page in manifest.get("pages", []):
-        if isinstance(page, dict) and page.get("slug") == slug:
-            name = page.get("name")
-            return str(name) if isinstance(name, str) else None
-    return None
-
-
-def _page_decl_for_name(program_ir: ir.Program, page_name: str | None) -> ir.Page | None:
-    if not page_name:
-        return None
-    for page in getattr(program_ir, "pages", []):
-        if page.name == page_name:
-            return page
-    return None
-
-
-def _page_subject(page_name: str | None, page_slug: str | None) -> str:
-    if page_name:
-        return f'page "{page_name}"'
-    if page_slug:
-        return f'page "{page_slug}"'
-    return "page"
-
-
-def _form_flow_name(page_slug: str | None, record: str) -> str:
-    slug = page_slug or "page"
-    return f"page.{slug}.form.{record}"
-
-
-def _normalize_submit_payload(payload: dict | None) -> dict:
-    payload = payload or {}
-    if not isinstance(payload, dict):
-        raise Namel3ssError(_submit_payload_type_message())
-    if "values" in payload:
-        if not isinstance(payload.get("values"), dict):
-            raise Namel3ssError(_missing_values_message({"values"}))
-        return payload
-    reserved = {key for key in payload if key in SUBMIT_RESERVED_KEYS}
-    if reserved:
-        raise Namel3ssError(_missing_values_message(reserved))
-    return {"values": payload}
-
-
-def _submit_payload_type_message() -> str:
-    return build_guidance_message(
-        what="Submit form payload was not a JSON object.",
-        why="Form submissions need a dictionary of field values; numbers, strings, or lists cannot be mapped to fields.",
-        fix='Send {"values": {...}} or a flat object that can be wrapped automatically.',
-        example='{"values":{"email":"ada@example.com"}} (or {"email":"ada@example.com"})',
-    )
-
-
-def _missing_values_message(reserved_keys: set[str]) -> str:
-    reserved_note = f" Payload included reserved keys: {', '.join(sorted(reserved_keys))}." if reserved_keys else ""
-    return build_guidance_message(
-        what="Submit form payload is missing a 'values' object.",
-        why="Form submissions read values from the 'values' key; other top-level keys are ignored." + reserved_note,
-        fix='Send {"values": {...}} or pass a flat object so it can be wrapped automatically.',
-        example='{"values":{"email":"ada@example.com"}} (or {"email":"ada@example.com"})',
-    )
-
-
-def _action_payload_message() -> str:
-    return build_guidance_message(
-        what="Action payload was not a JSON object.",
-        why="UI actions expect a dictionary of inputs; arrays, numbers, or strings cannot be unpacked into fields.",
-        fix='Send {} for empty payloads or pass an object like {"values":{"name":"Ada"}}.',
-        example='n3 app.ai page.home.button.run "{}"',
-    )
-
-
-def _unknown_action_message(action_id: str, actions: Dict[str, dict]) -> str:
-    available = sorted(actions.keys())
-    sample = ", ".join(available[:5]) if available else "none"
-    if len(available) > 5:
-        sample += ", …"
-    why = f"The manifest exposes actions: {sample}." if available else "No actions were generated for this app."
-    example = f"n3 app.ai {available[0]} {{}}" if available else "n3 app.ai actions"
-    return build_guidance_message(
-        what=f"Unknown action '{action_id}'.",
-        why=why,
-        fix="Use an action id from `n3 app.ai actions` or define the action in app.ai.",
-        example=example,
-    )
+__all__ = ["handle_action"]
