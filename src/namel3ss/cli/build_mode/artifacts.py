@@ -31,6 +31,7 @@ STUDIO_WEB_ASSETS = (
     "ui_renderer_collections.js",
     "ui_renderer_form.js",
 )
+_TEXT_ASSET_SUFFIXES = {".css", ".html", ".js"}
 
 
 def prepare_build_dir(project_root: Path, target: str, build_id: str) -> Path:
@@ -173,7 +174,23 @@ def _copy_asset(src: Path, dest: Path) -> None:
             )
         )
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_bytes(src.read_bytes())
+    if src.suffix.lower() in _TEXT_ASSET_SUFFIXES:
+        _copy_text_asset(src, dest)
+    else:
+        dest.write_bytes(src.read_bytes())
+
+
+def _copy_text_asset(src: Path, dest: Path) -> None:
+    text = src.read_text(encoding="utf-8")
+    normalized = _normalize_text_asset(text)
+    dest.write_text(normalized, encoding="utf-8", newline="\n")
+
+
+def _normalize_text_asset(text: str) -> str:
+    lines = [line.rstrip() for line in text.splitlines()]
+    if not lines:
+        return ""
+    return "\n".join(lines) + "\n"
 
 
 def _runtime_web_root() -> Path:
