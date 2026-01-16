@@ -14,6 +14,12 @@ dist/
 *.egg-info/
 !src/namel3ss/runtime/build/
 !src/namel3ss/runtime/build/**
+!spec/programs/**/build/
+spec/programs/**/build/**
+!spec/programs/**/build/local/
+!spec/programs/**/build/local/latest.json
+!spec/programs/**/build/local/spec/
+!spec/programs/**/build/local/spec/build.json
 
 # Test / coverage artifacts
 .pytest_cache/
