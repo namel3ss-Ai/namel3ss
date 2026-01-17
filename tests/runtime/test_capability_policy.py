@@ -21,7 +21,10 @@ def test_policy_downgrade_enforced_at_runtime(tmp_path: Path) -> None:
     policy_path.parent.mkdir(parents=True, exist_ok=True)
     policy_path.write_text('allowed_capabilities = { network = "none" }\n', encoding="utf-8")
 
-    source = '''tool "get json from web":
+    source = '''packs:
+  "builtin.http"
+
+tool "get json from web":
   implemented using python
 
   input:
@@ -47,6 +50,7 @@ flow "demo":
         input_data={},
         config=AppConfig(),
         project_root=str(tmp_path),
+        pack_allowlist=getattr(program, "pack_allowlist", None),
     )
     with pytest.raises(Namel3ssError):
         executor.run()

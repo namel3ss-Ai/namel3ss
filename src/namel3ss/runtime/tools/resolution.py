@@ -7,6 +7,11 @@ from pathlib import Path
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.config.model import AppConfig
+from namel3ss.runtime.packs.pack_executor import (
+    apply_pack_allowlist,
+    normalize_pack_allowlist,
+    pack_not_declared_message,
+)
 from namel3ss.runtime.packs.registry import load_pack_registry
 from namel3ss.runtime.tools.bindings import bindings_path, load_tool_bindings
 from namel3ss.runtime.tools.bindings_yaml import ToolBinding
@@ -32,6 +37,7 @@ def resolve_tool_binding(
     tool_kind: str | None = None,
     line: int | None,
     column: int | None,
+    allowed_packs: list[str] | tuple[str, ...] | None = None,
 ) -> ResolvedToolBinding:
     bindings = None
     binding_error: Namel3ssError | None = None
@@ -39,9 +45,17 @@ def resolve_tool_binding(
         bindings = load_tool_bindings(app_root)
     except Namel3ssError as err:
         binding_error = err
+    allowlist = normalize_pack_allowlist(allowed_packs)
     registry = load_pack_registry(app_root, config)
     pack_candidates = registry.tools.get(tool_name, [])
-    active_candidates = [item for item in pack_candidates if item.source == "builtin_pack" or (item.verified and item.enabled)]
+    allowlist_result = apply_pack_allowlist(tool_name, pack_candidates, allowlist, line=line, column=column)
+    pack_candidates = allowlist_result.candidates
+    blocked_pack_ids = allowlist_result.blocked_pack_ids
+    active_candidates = [
+        item
+        for item in pack_candidates
+        if item.source == "builtin_pack" or (item.verified and item.enabled)
+    ]
     if active_candidates:
         if bindings is not None and tool_name in bindings:
             raise Namel3ssError(
@@ -65,6 +79,13 @@ def resolve_tool_binding(
             return ResolvedToolBinding(binding=binding, source="binding")
     if binding_error is not None:
         raise binding_error
+    if blocked_pack_ids:
+        raise Namel3ssError(
+            pack_not_declared_message(tool_name, blocked_pack_ids),
+            line=line,
+            column=column,
+            details={"tool_reason": "pack_not_declared", "pack_ids": list(blocked_pack_ids)},
+        )
     if pack_candidates:
         raise Namel3ssError(
             _pack_unavailable_message(tool_name, pack_candidates),
@@ -143,8 +164,18 @@ def _bindings_example(tool_name: str, tool_kind: str | None) -> str:
 
 def _pack_unavailable_message(tool_name: str, candidates: list) -> str:
     pack_ids = ", ".join(sorted({item.pack_id for item in candidates}))
+    sources = {item.source for item in candidates if getattr(item, "source", None)}
+    if sources == {"installed_pack"}:
+        pack_label = "installed pack"
+    elif sources == {"local_pack"}:
+        pack_label = "local pack"
+    elif sources == {"builtin_pack"}:
+        pack_label = "built-in pack"
+    else:
+        pack_label = "pack"
+    article = "an" if pack_label[:1].lower() in {"a", "e", "i", "o", "u"} else "a"
     return build_guidance_message(
-        what=f'Tool "{tool_name}" is provided by an installed pack but is unavailable.',
+        what=f'Tool "{tool_name}" is provided by {article} {pack_label} but is unavailable.',
         why=f"Pack tool is not verified or enabled (packs: {pack_ids}).",
         fix=(
             f'Run `n3 packs verify {pack_ids.split(",")[0]}` then '

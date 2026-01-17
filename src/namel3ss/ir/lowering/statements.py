@@ -7,6 +7,7 @@ from namel3ss.ir.model.ai import AskAIStmt
 from namel3ss.ir.model.statements import (
     Create,
     Delete,
+    EnqueueJob,
     Find,
     ForEach,
     If,
@@ -183,6 +184,13 @@ def _lower_statement(stmt: ast.Statement, agents) -> IRStatement:
             ],
             target=stmt.target,
             merge=merge,
+            line=stmt.line,
+            column=stmt.column,
+        )
+    if isinstance(stmt, ast.EnqueueJob):
+        return EnqueueJob(
+            job_name=stmt.job_name,
+            input_expr=_lower_expression(stmt.input_expr) if stmt.input_expr else None,
             line=stmt.line,
             column=stmt.column,
         )

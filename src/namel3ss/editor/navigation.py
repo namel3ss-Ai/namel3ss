@@ -92,6 +92,9 @@ def _format_hover(definition: SymbolDefinition | None, node: ast.Node | None) ->
         requires = "yes" if node.requires is not None else "no"
         audited = "yes" if getattr(node, "audited", False) else "no"
         return f'{label} (requires: {requires}, audited: {audited})'
+    if isinstance(node, ast.JobDecl):
+        when = "yes" if node.when is not None else "no"
+        return f'{label} (when: {when})'
     if isinstance(node, ast.PageDecl):
         title = _page_title(node)
         requires = "yes" if node.requires is not None else "no"

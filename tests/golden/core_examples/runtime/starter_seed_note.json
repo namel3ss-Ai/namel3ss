@@ -1,4 +1,10 @@
 {
+  "state": {},
+  "last_value": {
+    "_id": 1,
+    "details": "this note is created by a flow",
+    "summary": "hello"
+  },
   "execution_steps": [
     {
       "because": null,
@@ -12,7 +18,11 @@
     {
       "because": null,
       "column": 3,
-      "data": {},
+      "data": {
+        "action": "create",
+        "count": 0,
+        "record": "Note"
+      },
       "id": "step:0002",
       "kind": "statement_create",
       "line": 15,
@@ -28,14 +38,6 @@
       "what": "flow \"seed_note\" ended"
     }
   ],
-  "last_value": {
-    "_id": 1,
-    "details": "this note is created by a flow",
-    "summary": "hello"
-  },
-  "runtime_theme": "light",
-  "state": {},
-  "theme_source": null,
   "traces": [
     {
       "flow_id": "flow:seed_note",
@@ -67,5 +69,7 @@
       "what": "create \"Note\"",
       "why": "flow \"seed_note\" ran"
     }
-  ]
+  ],
+  "runtime_theme": "light",
+  "theme_source": null
 }

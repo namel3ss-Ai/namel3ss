@@ -58,7 +58,7 @@
     "schema_version": "production",
     "state": {},
     "status": "ok",
-    "trace_hash": "c0d531ba9e85923f50c313ab5b2a12dae5ae858be211657aeec3a9e0b1499f2f",
+    "trace_hash": "8c003156772f3904aba9bb2a1a6116407a77adb994f28d082faf4119df70275b",
     "trace_schema_version": "2024-10-01",
     "traces": [
       {
@@ -87,7 +87,7 @@
         },
         "protocol_version": 1,
         "python_env": "system",
-        "python_path": "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "python_path": "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12",
         "reason": "policy_allowed",
         "resolved_source": "binding",
         "result": "ok",
@@ -135,7 +135,7 @@
       },
       "protocol_version": 1,
       "python_env": "system",
-      "python_path": "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+      "python_path": "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12",
       "reason": "policy_allowed",
       "resolved_source": "binding",
       "result": "ok",

@@ -1,0 +1,33 @@
+spec is "1.0"
+
+capabilities:
+  jobs
+
+record "Entry":
+  field "id" is number must be present
+  field "label" is text must be present
+
+job "persist entry" when state.persist_pending is true:
+  create "Entry" with state.pending_entry as saved_entry
+  set state.persist_pending is false
+
+flow "queue entry" requires true:
+  if state.next_id is null:
+    set state.next_id is 1
+  else:
+    set state.next_id is state.next_id + 1
+  set state.pending_entry with:
+    id is state.next_id
+    label is "Queued entry"
+  set state.persist_pending is true
+  return state.pending_entry
+
+page "home":
+  purpose is "Demo that persists records via a background job."
+  title is "Jobs and Persistence"
+  text is "Queue an entry to run the background job."
+  card "Queue":
+    button "Queue entry":
+      calls flow "queue entry"
+  card "Entries":
+    table is "Entry"

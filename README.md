@@ -88,10 +88,13 @@ See `docs/trust-and-governance.md` for enforcement details.
 ## Application Data Model
 - [Application Data Model](docs/language/application-data-model.md): record schemas, CRUD operations, persistence, and deterministic ordering.
 
+## Backend Capabilities
+- [Backend Capabilities](docs/language/backend-capabilities.md): built-in HTTP calls, background jobs, and file I/O with deterministic boundaries.
+
 ## Language Contracts
 - [Application runtime](docs/language/application-runtime.md): every valid `.ai` program is an application; the browser renders the manifest and actions, Studio inspects.
 - [No dependencies](docs/language/no-dependencies.md): installing `namel3ss` is sufficient to run apps; packs extend capabilities instead of imports.
-- [Capability packs](docs/language/capability-packs.md): packs are signed, permissioned capability bundles with deterministic effect boundaries.
+- [Capability packs](docs/language/capability-packs.md): explicit pack declarations, permissions, and inspection for local and installed packs.
 
 ## Installation
 

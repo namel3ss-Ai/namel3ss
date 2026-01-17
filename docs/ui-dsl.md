@@ -163,6 +163,7 @@ UI packs:
 - Triggering from UI:
   - `button "Label":` use either `calls flow "<name>"` (existing) or `runs "<name>"` (alias) to bind to a flow.
   - Unknown flow references error with fix hints; runtime surfaces disabled affordance if requirements are unmet.
+- Flow actions run normal flows; those flows may enqueue background jobs or invoke backend capabilities when explicitly enabled.
 
 ## 8) Global UI settings
 - Grammar (keys may appear in any order; output is normalized deterministically):

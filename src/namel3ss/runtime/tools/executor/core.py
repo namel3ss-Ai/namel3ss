@@ -15,6 +15,10 @@ from namel3ss.runtime.tools.executor.traces import (
     _record_policy_block,
     _record_tool_trace,
 )
+from namel3ss.runtime.packs.permission_enforcer import evaluate_pack_permission
+from namel3ss.runtime.packs.policy import policy_denied_message
+from namel3ss.runtime.packs.registry import load_pack_registry
+from namel3ss.runtime.packs.studio_pack_adapter import record_pack_allowlist, record_pack_policy
 from namel3ss.runtime.tools.gate import gate_tool_call as _runtime_gate_tool_call
 from namel3ss.runtime.tools.outcome import ToolCallOutcome, ToolDecision
 from namel3ss.runtime.tools.policy import load_tool_policy, normalize_capabilities
@@ -24,6 +28,8 @@ from namel3ss.runtime.tools.registry import execute_tool as _registry_execute_bu
 from namel3ss.runtime.tools.resolution import resolve_tool_binding
 from namel3ss.runtime.tools.runners.registry import get_runner
 from namel3ss.runtime.values.normalize import ensure_object
+from namel3ss.runtime.backend.file_store import execute_file_tool
+from namel3ss.runtime.backend.http_capability import execute_http_tool
 
 
 @dataclass(frozen=True)
@@ -85,7 +91,7 @@ def _execute_tool_call_internal(
     policy_mode = foreign_policy_mode(getattr(ctx, "config", None))
     builtin_fallback = ctx.tool_call_source == "ai" and is_builtin_tool(tool_name)
     tool_kind = tool_decl.kind if tool_decl else ("builtin" if builtin_fallback else None)
-    required_caps = normalize_capabilities(getattr(tool_decl, "capabilities", None) if tool_decl else ())
+    required_caps = _resolve_required_capabilities(tool_kind, getattr(tool_decl, "capabilities", None), args)
     if is_foreign:
         _record_foreign_boundary_start(ctx, tool_decl, args, policy_mode=policy_mode)
     binding_check = _check_binding(ctx, tool_name, tool_kind, line=line, column=column)
@@ -114,6 +120,13 @@ def _execute_tool_call_internal(
             decision,
             result="blocked" if decision_status == "blocked" else "error",
         )
+        _ensure_tool_trace(
+            ctx,
+            tool_name,
+            tool_kind,
+            status="blocked" if decision_status == "blocked" else "error",
+            reason=decision_reason,
+        )
         err = _blocked_error(ctx, tool_name, decision, binding_check.error, line=line, column=column)
         mark_boundary(err, "tools")
         _record_foreign_boundary_end(
@@ -138,6 +151,13 @@ def _execute_tool_call_internal(
             result_summary=decision.message,
         )
         _record_tool_trace(ctx, tool_name, tool_kind, decision, result="blocked")
+        _ensure_tool_trace(
+            ctx,
+            tool_name,
+            tool_kind,
+            status="blocked",
+            reason=decision.reason,
+        )
         err = _foreign_policy_error(tool_name, line=line, column=column)
         mark_boundary(err, "tools")
         _record_foreign_boundary_end(
@@ -154,6 +174,32 @@ def _execute_tool_call_internal(
         binding_ok=True,
         config=getattr(ctx, "config", None),
     )
+    capability_decision = _capability_gate(ctx, tool_name, tool_kind, line=line, column=column)
+    if capability_decision is not None:
+        outcome = ToolCallOutcome(
+            tool_name=tool_name,
+            decision=capability_decision,
+            result_kind="blocked",
+            result_summary=capability_decision.message,
+        )
+        _record_tool_trace(ctx, tool_name, tool_kind, capability_decision, result="blocked")
+        _ensure_tool_trace(
+            ctx,
+            tool_name,
+            tool_kind,
+            status="blocked",
+            reason=capability_decision.reason,
+        )
+        err = _blocked_error(ctx, tool_name, capability_decision, None, line=line, column=column)
+        mark_boundary(err, "tools")
+        _record_foreign_boundary_end(
+            ctx,
+            tool_decl,
+            status="blocked",
+            error=err,
+            policy_mode=policy_mode,
+        )
+        return outcome, err
     decision = _gate_tool_call(tool_name=tool_name, required_capabilities=required_caps, policy=policy)
     if decision.status != "allowed":
         outcome = ToolCallOutcome(
@@ -171,6 +217,13 @@ def _execute_tool_call_internal(
             decision,
             result="blocked" if decision.status == "blocked" else "error",
         )
+        _ensure_tool_trace(
+            ctx,
+            tool_name,
+            tool_kind,
+            status="blocked" if decision.status == "blocked" else "error",
+            reason=decision.reason,
+        )
         err = _blocked_error(ctx, tool_name, decision, None, line=line, column=column)
         mark_boundary(err, "tools")
         _record_foreign_boundary_end(
@@ -184,6 +237,13 @@ def _execute_tool_call_internal(
     if tool_kind is None:
         err = Namel3ssError(f'Unknown tool "{tool_name}".', line=line, column=column)
         _record_tool_trace(ctx, tool_name, tool_kind, decision, result="error")
+        _ensure_tool_trace(
+            ctx,
+            tool_name,
+            tool_kind,
+            status="error",
+            reason=decision.reason,
+        )
         mark_boundary(err, "tools")
         outcome = ToolCallOutcome(
             tool_name=tool_name,
@@ -199,6 +259,14 @@ def _execute_tool_call_internal(
             result = _run_python_tool(ctx, tool_name, args, line=line, column=column)
         elif tool_kind == "node":
             result = _run_node_tool(ctx, tool_name, args, line=line, column=column)
+        elif tool_kind == "http":
+            if tool_decl is None:
+                raise Namel3ssError(f'Unknown tool "{tool_name}".', line=line, column=column)
+            result = execute_http_tool(ctx, tool_decl, args, line=line, column=column)
+        elif tool_kind == "file":
+            if tool_decl is None:
+                raise Namel3ssError(f'Unknown tool "{tool_name}".', line=line, column=column)
+            result = execute_file_tool(ctx, tool_decl, args, line=line, column=column)
         elif tool_kind == "builtin" and ctx.tool_call_source == "ai":
             result = _execute_builtin_tool(tool_name, args)
         else:
@@ -215,6 +283,13 @@ def _execute_tool_call_internal(
             return outcome, err
     except Exception as err:
         _record_tool_trace(ctx, tool_name, tool_kind, decision, result="error")
+        _ensure_tool_trace(
+            ctx,
+            tool_name,
+            tool_kind,
+            status="error",
+            reason=decision.reason,
+        )
         mark_boundary(err, "tools")
         outcome = ToolCallOutcome(
             tool_name=tool_name,
@@ -294,6 +369,8 @@ def _check_binding(
         return _BindingCheck(ok=True, error=None, reason=None, status=None)
     if not ctx.project_root:
         return _BindingCheck(ok=True, error=None, reason=None, status=None)
+    pack_allowlist = getattr(ctx, "pack_allowlist", None)
+    allowed_packs = pack_allowlist if pack_allowlist is not None else ()
     try:
         resolved = resolve_tool_binding(
             Path(ctx.project_root),
@@ -302,16 +379,67 @@ def _check_binding(
             tool_kind=tool_kind,
             line=line,
             column=column,
+            allowed_packs=allowed_packs,
         )
     except Namel3ssError as err:
         reason = _binding_reason(err)
-        status = "blocked" if reason == "pack_unavailable_or_unverified" else "error"
+        status = "blocked" if reason in {"pack_unavailable_or_unverified", "pack_not_declared"} else "error"
+        if reason == "pack_not_declared":
+            runner_name = "node" if tool_kind == "node" else "local"
+            record_pack_allowlist(
+                ctx,
+                tool_name=tool_name,
+                resolved_source="pack",
+                runner=runner_name,
+                allowed=False,
+            )
         return _BindingCheck(ok=False, error=err, reason=reason, status=status)
     runner_name = resolved.binding.runner or ("node" if tool_kind == "node" else "local")
     try:
         get_runner(runner_name)
     except Namel3ssError as err:
         return _BindingCheck(ok=False, error=err, reason="unknown_runner", status="error")
+    if resolved.source in {"builtin_pack", "installed_pack", "local_pack"} and resolved.pack_id:
+        if not (resolved.source == "builtin_pack" and pack_allowlist is None):
+            record_pack_allowlist(
+                ctx,
+                tool_name=tool_name,
+                resolved_source=resolved.source,
+                runner=runner_name,
+                allowed=True,
+            )
+            registry = load_pack_registry(Path(ctx.project_root), ctx.config)
+            pack = registry.packs.get(resolved.pack_id)
+            if pack:
+                decision = evaluate_pack_permission(pack, app_root=Path(ctx.project_root))
+                record_pack_policy(
+                    ctx,
+                    tool_name=tool_name,
+                    resolved_source=resolved.source,
+                    runner=runner_name,
+                    allowed=decision.allowed,
+                    policy_source=decision.policy_source,
+                )
+                if not decision.allowed:
+                    err = Namel3ssError(
+                        policy_denied_message(pack.pack_id, "enable", decision.reasons),
+                        line=line,
+                        column=column,
+                        details={"tool_reason": "pack_permission_denied"},
+                    )
+                    _ensure_tool_trace(
+                        ctx,
+                        tool_name,
+                        tool_kind,
+                        status="blocked",
+                        reason="pack_permission_denied",
+                    )
+                    return _BindingCheck(
+                        ok=False,
+                        error=err,
+                        reason="pack_permission_denied",
+                        status="blocked",
+                    )
     return _BindingCheck(ok=True, error=None, reason=None, status=None)
 
 
@@ -321,6 +449,37 @@ def _binding_reason(err: Namel3ssError) -> str:
     if isinstance(reason, str) and reason:
         return reason
     return "binding_error"
+
+
+def _ensure_tool_trace(
+    ctx: ExecutionContext,
+    tool_name: str,
+    tool_kind: str | None,
+    *,
+    status: str,
+    reason: str,
+) -> None:
+    for target in (ctx.traces, ctx.pending_tool_traces):
+        for event in reversed(target):
+            if not isinstance(event, dict):
+                continue
+            if event.get("type") != "tool_call":
+                continue
+            if event.get("tool") == tool_name or event.get("tool_name") == tool_name:
+                return
+    ctx.traces.append(
+        {
+            "type": "tool_call",
+            "tool": tool_name,
+            "tool_name": tool_name,
+            "kind": tool_kind,
+            "status": status,
+            "decision": status,
+            "capability": "none",
+            "reason": reason,
+            "result": status,
+        }
+    )
 
 
 def _binding_message(tool_name: str, reason: str) -> str:
@@ -346,6 +505,8 @@ def _blocked_error(
         "pack_collision",
         "pack_pin_missing",
         "pack_unavailable_or_unverified",
+        "pack_not_declared",
+        "pack_permission_denied",
         "unknown_runner",
     }:
         return binding_error
@@ -367,8 +528,8 @@ def _unsupported_kind_error(tool_name: str, kind: str, *, line: int | None, colu
     return Namel3ssError(
         build_guidance_message(
             what=f'Tool "{tool_name}" has unsupported kind "{kind}".',
-            why="Only python and node tools can be called directly from flows.",
-            fix='Declare the tool with `implemented using python` or `implemented using node` before calling it.',
+            why="Only python, node, http, and file tools can be called directly from flows.",
+            fix='Declare the tool with `implemented using python`, `implemented using node`, `implemented using http`, or `implemented using file` before calling it.',
             example=_tool_example(tool_name),
         ),
         line=line,
@@ -403,6 +564,52 @@ def _gate_tool_call(*, tool_name: str, required_capabilities: set[str], policy) 
         required_capabilities=required_capabilities,
         policy=policy,
     )
+
+
+def _resolve_required_capabilities(tool_kind: str | None, declared: tuple[str, ...] | list[str] | None, args: dict) -> tuple[str, ...]:
+    required = set(normalize_capabilities(declared))
+    if tool_kind == "http":
+        required.add("network")
+    elif tool_kind == "file":
+        operation = None
+        if isinstance(args, dict):
+            operation = args.get("operation")
+        if operation == "read":
+            required.add("filesystem_read")
+        elif operation == "write":
+            required.add("filesystem_write")
+        else:
+            required.update({"filesystem_read", "filesystem_write"})
+    return tuple(sorted(required))
+
+
+def _capability_gate(ctx: ExecutionContext, tool_name: str, tool_kind: str | None, *, line: int | None, column: int | None) -> ToolDecision | None:
+    capability = _builtin_capability_for_kind(tool_kind)
+    if capability is None:
+        return None
+    allowed = set(getattr(ctx, "capabilities", ()) or ())
+    if capability in allowed:
+        return None
+    message = build_guidance_message(
+        what=f'Capability "{capability}" is required for tool "{tool_name}".',
+        why="Built-in backend capabilities are deny-by-default.",
+        fix="Add the capability to the app capabilities block.",
+        example=f"capabilities:\n  {capability}",
+    )
+    return ToolDecision(
+        status="blocked",
+        capability=capability,
+        reason="capability_missing",
+        message=message,
+    )
+
+
+def _builtin_capability_for_kind(tool_kind: str | None) -> str | None:
+    if tool_kind == "http":
+        return "http"
+    if tool_kind == "file":
+        return "files"
+    return None
 
 
 def _execute_python_tool_call(

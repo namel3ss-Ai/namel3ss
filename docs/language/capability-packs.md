@@ -1,23 +1,44 @@
-# Capability Packs Contract
+# Capability Packs
 
-Packs are capability bundles with contracts. They are not arbitrary libraries or imports.
+Capability Packs are governed bundles of tools and permissions. They let apps use extended capabilities without managing dependencies.
 
-## Definition
-- Packs expose named capabilities (tools) with declared inputs, outputs, and capability boundaries.
-- Packs are installed and invoked by name, not imported as modules.
-- Example commands (conceptual): `n3 pack add postgres`, `n3 pack add stripe`, `n3 pack add whatsapp`.
+## Structure
+- `pack.yaml`: manifest (id, name, version, description, author, license, tools).
+- `tools.yaml`: bindings for each tool in the pack.
+- `capabilities.yaml`: per-tool permissions (filesystem, network, env, subprocess, secrets).
+- `intent.md`: short human description of what the pack provides.
+- `tools/` and optional `src/`: executable logic for the pack tools.
 
-## Principles
-- **Signed**: packs carry signer metadata and verification before use.
-- **Permissioned**: capabilities declare required permissions (network, filesystem, secrets, subprocess) and enforce them on every call.
-- **Deterministic effect boundaries**: tool calls are traced and capability checks are recorded; runtime behavior stays deterministic outside explicit IO.
+## Declaring packs in apps
+Packs are explicit in the language:
 
-## Boundaries
-- Packs replace ad-hoc dependency installs; capability declarations plus signing/verification gate execution.
-- Studio and CLI read the same manifest, capabilities, and traces; no pack can alter app semantics outside declared tools.
-- This contract is documentation-only; registry, installer, and runtime behavior are unchanged.
+```
+packs:
+  "builtin.text"
+  "example.greeting"
+```
+
+Tools provided by packs are resolved only when the pack id is listed in the packs block.
+Declare each pack tool in your app to define its input/output fields; the pack supplies bindings and permissions.
+
+## Local packs
+Local packs live under `packs/capability/<pack_id>/` in the project root. They are loaded deterministically and are inspected the same way as installed packs.
+
+## Permissions and governance
+- Pack permissions are deny-by-default; missing permissions default to no access.
+- Trust policy at `.namel3ss/trust/policy.toml` can restrict or block pack usage.
+- Policy decisions are enforced at runtime and surfaced in Studio explain output.
+
+## Execution and inspection
+- Tool calls record pack metadata (pack id, name, version).
+- Capability checks include pack permission grants and denials.
+- Studio and CLI use the same manifests and capability summaries.
+
+## CLI
+- `n3 pack list`
+- `n3 pack info <pack_id>`
 
 ## Related docs
-- `docs/tool-packs.md` for current pack flows and commands.
+- `docs/tool-packs.md` for detailed pack tooling.
 - `docs/capabilities.md` for capability enforcement details.
 - `docs/trust-and-governance.md` for trust and signature coverage.

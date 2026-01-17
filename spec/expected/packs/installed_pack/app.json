@@ -8,6 +8,17 @@
   },
   "traces": [
     {
+      "type": "capability_check",
+      "tool_name": "pack echo",
+      "runner": "local",
+      "resolved_source": "installed_pack",
+      "capability": "pack_permission",
+      "allowed": true,
+      "guarantee_source": "pack",
+      "reason": "pack_declared",
+      "protocol_version": 1
+    },
+    {
       "type": "tool_call",
       "tool": "pack echo",
       "tool_name": "pack echo",
@@ -23,12 +34,12 @@
       "resolved_source": "installed_pack",
       "timeout_ms": 10000,
       "runner": "local",
-      "python_env": "system",
-      "python_path": "<python_path>",
-      "deps_source": "none",
       "pack_id": "spec.pack",
       "pack_name": "Spec Pack",
       "pack_version": "1.0.0",
+      "python_env": "system",
+      "python_path": "<python_path>",
+      "deps_source": "none",
       "protocol_version": 1,
       "status": "ok",
       "output_summary": {

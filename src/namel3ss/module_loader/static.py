@@ -35,6 +35,7 @@ def _merge_programs(
     combined_records = list(app_ast.records)
     combined_functions = list(getattr(app_ast, "functions", []))
     combined_flows = list(app_ast.flows)
+    combined_jobs = list(getattr(app_ast, "jobs", []))
     combined_pages = list(app_ast.pages)
     combined_ui_packs = list(getattr(app_ast, "ui_packs", []))
     combined_ais = list(app_ast.ais)
@@ -77,13 +78,14 @@ def _merge_programs(
             combined_records.extend(program.records)
             combined_functions.extend(getattr(program, "functions", []))
             combined_flows.extend(program.flows)
+            combined_jobs.extend(getattr(program, "jobs", []))
             combined_ais.extend(program.ais)
             combined_tools.extend(program.tools)
             combined_agents.extend(program.agents)
             combined_pages.extend(_exported_pages(program.pages, name, exports_map))
             combined_ui_packs.extend(_exported_ui_packs(getattr(program, "ui_packs", []), name, exports_map))
 
-    return ast.Program(
+    combined = ast.Program(
         spec_version=app_ast.spec_version,
         app_theme=app_ast.app_theme,
         app_theme_line=app_ast.app_theme_line,
@@ -93,9 +95,11 @@ def _merge_programs(
         ui_settings=app_ast.ui_settings,
         ui_line=getattr(app_ast, "ui_line", None),
         ui_column=getattr(app_ast, "ui_column", None),
+        capabilities=list(getattr(app_ast, "capabilities", []) or []),
         records=combined_records,
         functions=combined_functions,
         flows=combined_flows,
+        jobs=combined_jobs,
         pages=combined_pages,
         ui_packs=combined_ui_packs,
         ais=combined_ais,
@@ -108,6 +112,9 @@ def _merge_programs(
         line=app_ast.line,
         column=app_ast.column,
     )
+    raw_allowlist = getattr(app_ast, "pack_allowlist", None)
+    setattr(combined, "pack_allowlist", list(raw_allowlist) if raw_allowlist is not None else None)
+    return combined
 
 
 def _exported_pages(

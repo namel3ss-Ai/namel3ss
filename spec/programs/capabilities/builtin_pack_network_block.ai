@@ -1,5 +1,8 @@
 spec is "1.0"
 
+packs:
+  "builtin.http"
+
 tool "get json from web":
   implemented using python
 

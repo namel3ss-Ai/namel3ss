@@ -1,4 +1,0 @@
-Memory proof: ok
-Scenario: 006_team_lane_agreement - Team lane agreement
-Invariant notes:
-- TODO: memory_deleted explanation field is not emitted yet.

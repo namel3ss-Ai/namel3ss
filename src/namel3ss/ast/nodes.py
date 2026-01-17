@@ -46,6 +46,7 @@ from namel3ss.ast.functions import (
     FunctionSignature,
 )
 from namel3ss.ast.modules import CapsuleDecl, CapsuleExport, UseDecl
+from namel3ss.ast.jobs import JobDecl
 from namel3ss.ast.pages import (
     ButtonItem,
     CardAction,
@@ -99,6 +100,7 @@ from namel3ss.ast.identity import IdentityDecl
 from namel3ss.ast.statements import (
     AskAIStmt,
     Delete,
+    EnqueueJob,
     Find,
     ForEach,
     If,
@@ -130,6 +132,7 @@ __all__ = [
     "Node",
     "Flow",
     "Program",
+    "JobDecl",
     "FlowStep",
     "FlowCallForeign",
     "FlowInput",
@@ -152,6 +155,7 @@ __all__ = [
     "ParallelTask",
     "ParallelBlock",
     "ThemeChange",
+    "EnqueueJob",
     "Repeat",
     "RepeatWhile",
     "ForEach",

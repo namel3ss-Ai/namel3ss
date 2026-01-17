@@ -60,6 +60,10 @@ class ExecutionContext:
     agents: Dict[str, ir.AgentDecl]
     tools: Dict[str, ir.ToolDecl]
     functions: Dict[str, ir.FunctionDecl]
+    capabilities: tuple[str, ...]
+    pack_allowlist: tuple[str, ...] | None
+    jobs: Dict[str, ir.JobDecl]
+    job_order: list[str]
     traces: list[AITrace]
     memory_manager: MemoryManager
     agent_calls: int
@@ -79,6 +83,8 @@ class ExecutionContext:
     last_ai_provider: str | None = None
     calc_assignment_index: dict[int, dict[str, int]] = field(default_factory=dict)
     flow_action_id: str | None = None
+    job_queue: list[dict] = field(default_factory=list)
+    job_trigger_state: dict[str, bool] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not isinstance(self.traces, TraceList):

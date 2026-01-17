@@ -1,6 +1,6 @@
 # Identity and Persistence
 
-Phase 4 adds identity declarations, access controls, and environment-driven persistence targets.
+Identity declarations, access controls, and environment-driven persistence targets for namel3ss apps.
 
 ## Identity basics
 

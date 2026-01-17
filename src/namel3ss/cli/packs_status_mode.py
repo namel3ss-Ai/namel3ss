@@ -63,8 +63,10 @@ def _config_from_app(config):
 
 
 def _pack_source_info(pack) -> dict[str, object]:
-    if not pack.pack_root:
+    if pack.source == "builtin_pack" or not pack.pack_root:
         return {"source_type": "builtin", "path": None}
+    if pack.source == "local_pack":
+        return {"source_type": "local", "path": str(pack.pack_root)}
     info = read_pack_source(pack.pack_root)
     if info is None:
         return {"source_type": "installed", "path": str(pack.pack_root)}

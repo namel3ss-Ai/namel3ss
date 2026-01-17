@@ -1,0 +1,8 @@
+id: "example.greeting"
+name: "Greeting Tools"
+version: "stable"
+description: "Local greeting tools."
+author: "Namel3ss"
+license: "MIT"
+tools:
+  - "compose greeting"

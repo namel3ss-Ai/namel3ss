@@ -1,4 +1,0 @@
-Memory proof: ok
-Scenario: 009_cache_version_bumps - Cache version bumps
-Invariant notes:
-- TODO: memory_deleted explanation field is not emitted yet.

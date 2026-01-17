@@ -18,8 +18,12 @@ def parse_program(parser) -> ast.Program:
     ui_settings = default_ui_settings_with_meta()
     ui_line = None
     ui_column = None
+    capabilities: list[str] = []
+    packs: list[str] = []
+    packs_declared = False
     records: List[ast.RecordDecl] = []
     flows: List[ast.Flow] = []
+    jobs: List[ast.JobDecl] = []
     pages: List[ast.PageDecl] = []
     ui_packs: List[ast.UIPackDecl] = []
     functions: List[ast.FunctionDecl] = []
@@ -144,6 +148,35 @@ def parse_program(parser) -> ast.Program:
         if rule.name == "app":
             app_theme, app_line, app_column, theme_tokens, theme_preference = rule.parse(parser)
             continue
+        if rule.name == "capabilities":
+            if capabilities:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Capabilities are already declared.",
+                        why="The capabilities block is global and must appear only once.",
+                        fix="Remove duplicate capabilities blocks and keep a single block in app.ai.",
+                        example="capabilities:\n  http\n  jobs\n  files",
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            capabilities = rule.parse(parser)
+            continue
+        if rule.name == "packs":
+            if packs:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Packs are already declared.",
+                        why="The packs block is global and must appear only once.",
+                        fix="Remove duplicate packs blocks and keep a single block in app.ai.",
+                        example='packs:\\n  "builtin.text"',
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            packs = rule.parse(parser)
+            packs_declared = True
+            continue
         if rule.name == "foreign":
             tools.append(rule.parse(parser))
             continue
@@ -175,6 +208,9 @@ def parse_program(parser) -> ast.Program:
             continue
         if rule.name == "flow":
             flows.append(rule.parse(parser))
+            continue
+        if rule.name == "job":
+            jobs.append(rule.parse(parser))
             continue
         if rule.name == "page":
             pages.append(rule.parse(parser))
@@ -218,7 +254,7 @@ def parse_program(parser) -> ast.Program:
         )
     if ui_line is None:
         ui_settings["theme"] = (app_theme, app_line, app_column)
-    return ast.Program(
+    program = ast.Program(
         spec_version=spec_version,
         app_theme=app_theme,
         app_theme_line=app_line,
@@ -228,9 +264,11 @@ def parse_program(parser) -> ast.Program:
         ui_settings=ui_settings,
         ui_line=ui_line,
         ui_column=ui_column,
+        capabilities=capabilities,
         records=records,
         functions=functions,
         flows=flows,
+        jobs=jobs,
         pages=pages,
         ui_packs=ui_packs,
         ais=ais,
@@ -243,6 +281,8 @@ def parse_program(parser) -> ast.Program:
         line=None,
         column=None,
     )
+    setattr(program, "pack_allowlist", list(packs) if packs_declared else None)
+    return program
 
 
 __all__ = ["parse_program"]

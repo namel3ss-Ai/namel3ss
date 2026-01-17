@@ -20,6 +20,7 @@ from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.runtime.flow.runner import run_declarative_flow
 from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.identity.guards import enforce_requires
+from namel3ss.runtime.backend.job_queue import initialize_job_triggers, run_job_queue, update_job_triggers
 from namel3ss.runtime.memory.api import MemoryManager
 from namel3ss.runtime.mutation_policy import requires_mentions_mutation
 from namel3ss.runtime.storage.factory import resolve_store
@@ -50,6 +51,10 @@ class Executor:
         agents: Optional[Dict[str, ir.AgentDecl]] = None,
         tools: Optional[Dict[str, ir.ToolDecl]] = None,
         functions: Optional[Dict[str, ir.FunctionDecl]] = None,
+        jobs: Optional[Dict[str, ir.JobDecl]] = None,
+        capabilities: tuple[str, ...] | None = None,
+        pack_allowlist: tuple[str, ...] | None = None,
+        job_order: list[str] | None = None,
         config: Optional[AppConfig] = None,
         runtime_theme: Optional[str] = None,
         identity_schema: IdentitySchema | None = None,
@@ -86,6 +91,10 @@ class Executor:
             agents=agents or {},
             tools=tools or {},
             functions=functions or {},
+            capabilities=tuple(capabilities or ()),
+            pack_allowlist=pack_allowlist,
+            jobs=jobs or {},
+            job_order=list(job_order or list((jobs or {}).keys())),
             traces=[],
             memory_manager=memory_manager or MemoryManager(project_root=project_root, app_path=app_path),
             agent_calls=0,
@@ -130,6 +139,7 @@ class Executor:
             line=self.ctx.flow.line,
             column=self.ctx.flow.column,
         )
+        initialize_job_triggers(self.ctx)
         error: Exception | None = None
         store_started = False
         store_began = False
@@ -175,6 +185,8 @@ class Executor:
                         execute_statement(self.ctx, stmt)
             except _ReturnSignal as signal:
                 self.ctx.last_value = signal.value
+            update_job_triggers(self.ctx)
+            run_job_queue(self.ctx)
             if audit_before is not None:
                 secret_values = collect_secret_values(self.ctx.config)
                 record_audit_entry(
@@ -252,6 +264,9 @@ class Executor:
                 details=details,
             ) from exc
         finally:
+            from namel3ss.runtime.executor.ai_runner import _flush_pending_tool_traces
+
+            _flush_pending_tool_traces(self.ctx)
             _record_flow_end(self.ctx, ok=error is None)
             _persist_execution_artifacts(self.ctx, ok=error is None, error=error)
             _write_tools_with_pack(self.ctx)
@@ -333,6 +348,8 @@ def _statement_kind(stmt: object) -> str | None:
         return "return"
     if isinstance(stmt, ir.ThemeChange):
         return "theme"
+    if isinstance(stmt, ir.EnqueueJob):
+        return "enqueue_job"
     if isinstance(stmt, ir.RunAgentStmt):
         return "run_agent"
     if isinstance(stmt, ir.RunAgentsParallelStmt):

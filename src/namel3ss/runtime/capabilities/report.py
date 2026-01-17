@@ -11,7 +11,9 @@ from namel3ss.runtime.capabilities.coverage import (
 )
 from namel3ss.runtime.capabilities.effective import build_effective_guarantees, resolve_tool_capabilities
 from namel3ss.runtime.capabilities.overrides import unsafe_override_enabled
+from namel3ss.runtime.packs.permission_enforcer import evaluate_pack_permission
 from namel3ss.runtime.packs.policy import load_pack_policy
+from namel3ss.runtime.packs.registry import load_pack_registry
 from namel3ss.runtime.tools.resolution import resolve_tool_binding
 from namel3ss.runtime.tools.sandbox import sandbox_enabled
 
@@ -20,8 +22,13 @@ def collect_tool_reports(
     app_root: Path,
     config: AppConfig,
     tools: dict[str, object],
+    *,
+    pack_allowlist: list[str] | tuple[str, ...] | None = None,
 ) -> list[dict[str, object]]:
     reports: list[dict[str, object]] = []
+    policy = load_pack_policy(app_root)
+    registry = load_pack_registry(app_root, config)
+    effective_allowlist = pack_allowlist if pack_allowlist is not None else ()
     for tool_name in sorted(tools.keys()):
         tool_decl = tools[tool_name]
         try:
@@ -32,11 +39,11 @@ def collect_tool_reports(
                 tool_kind=getattr(tool_decl, "kind", None),
                 line=None,
                 column=None,
+                allowed_packs=effective_allowlist,
             )
             binding = resolved.binding
             runner_name = binding.runner or "local"
             pack_root = _pack_root_from_paths(resolved.pack_paths)
-            policy = load_pack_policy(app_root) if resolved.source in {"builtin_pack", "installed_pack"} else None
             overrides = config.capability_overrides.get(tool_name)
             unsafe_override = unsafe_override_enabled(overrides)
             handshake_required = _handshake_required(config)
@@ -46,7 +53,7 @@ def collect_tool_reports(
                 binding_purity=binding.purity,
                 capabilities=resolve_tool_capabilities(tool_name, resolved.source, pack_root),
                 overrides=overrides,
-                policy=policy,
+                policy=policy if resolved.source in {"builtin_pack", "installed_pack", "local_pack"} else None,
             )
             coverage = _coverage_for(
                 guarantees,
@@ -67,6 +74,18 @@ def collect_tool_reports(
                 "unsafe_override": unsafe_override,
                 "blocked": blocked,
             }
+            if resolved.source in {"builtin_pack", "installed_pack", "local_pack"} and resolved.pack_id:
+                pack = registry.packs.get(resolved.pack_id)
+                if pack:
+                    decision = evaluate_pack_permission(pack, app_root=app_root, policy=policy)
+                    report["pack_permission"] = {
+                        "pack_id": decision.pack_id,
+                        "allowed": decision.allowed,
+                        "reasons": list(decision.reasons),
+                        "summary": dict(decision.summary),
+                        "risk": decision.risk,
+                        "policy_source": decision.policy_source,
+                    }
             if blocked:
                 report["blocked_reason"] = _blocked_reason(coverage, runner_name, binding, unsafe_override)
             reports.append(report)

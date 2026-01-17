@@ -8,6 +8,7 @@ from namel3ss.errors.guidance import build_guidance_message
 ALLOWED_EXPORT_KINDS = {
     "RECORD": "record",
     "FLOW": "flow",
+    "JOB": "job",
     "PAGE": "page",
     "AI": "ai",
     "AGENT": "agent",
@@ -72,7 +73,7 @@ def parse_capsule_decl(parser) -> ast.CapsuleDecl:
                     raise Namel3ssError(
                         build_guidance_message(
                             what="Unsupported export entry in capsule.",
-                            why="Exports must be record, flow, page, ai, agent, tool, function, or ui_pack names.",
+                            why="Exports must be record, flow, job, page, ai, agent, tool, function, or ui_pack names.",
                             fix="List exported symbols with their type.",
                             example='exports:\n  record "Product"\n  flow "calc_total"',
                         ),

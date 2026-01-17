@@ -8,6 +8,7 @@ def test_use_module_parses_blocks():
         'only:\n'
         '  functions\n'
         '  records\n'
+        '  jobs\n'
         'allow override:\n'
         '  tools\n\n'
         'flow "demo":\n'
@@ -19,5 +20,5 @@ def test_use_module_parses_blocks():
     assert use.module == "modules/common.ai"
     assert use.module_path == "modules/common.ai"
     assert use.alias == "common"
-    assert use.only == ["functions", "records"]
+    assert use.only == ["functions", "records", "jobs"]
     assert use.allow_override == ["tools"]

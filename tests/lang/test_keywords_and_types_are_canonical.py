@@ -107,6 +107,9 @@ def test_keyword_list_is_stable() -> None:
         "at",
         "least",
         "most",
+        "capabilities",
+        "job",
+        "enqueue",
     ]
     assert KEYWORD_LIST == expected
 

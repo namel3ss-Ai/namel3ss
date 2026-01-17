@@ -24,7 +24,7 @@ from namel3ss.runtime.memory.proof.runner import run_scenario
 
 def main() -> int:
     scenarios_dir = ROOT / "tests" / "memory_proof" / "scenarios"
-    output_dir = ROOT / "tests" / "memory_proof" / "output"
+    output_dir = ROOT / ".namel3ss" / "memory_proof" / "output"
     golden_dir = ROOT / "tests" / "memory_proof" / "golden"
     scenario_paths = list_scenario_paths(scenarios_dir)
     if not scenario_paths:

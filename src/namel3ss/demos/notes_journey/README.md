@@ -1,7 +1,4 @@
-# {{PROJECT_NAME}}
-
-demo
-- notes_journey v0.1.0
+# Notes Journey Demo
 
 A read-only demo that pairs a record, flow, and story to show how UI intent is wired.
 

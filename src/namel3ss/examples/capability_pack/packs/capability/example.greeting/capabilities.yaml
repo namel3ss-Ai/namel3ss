@@ -1,0 +1,7 @@
+capabilities:
+  "compose greeting":
+    filesystem: none
+    network: none
+    env: none
+    subprocess: none
+    secrets: []

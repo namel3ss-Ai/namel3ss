@@ -65,6 +65,7 @@
       "type": "AIDecl"
     }
   },
+  "capabilities": [],
   "column": null,
   "flows": [
     {
@@ -122,6 +123,7 @@
     }
   ],
   "identity": null,
+  "jobs": [],
   "line": null,
   "pages": [],
   "records": [],

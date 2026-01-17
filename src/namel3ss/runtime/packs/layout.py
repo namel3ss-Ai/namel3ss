@@ -4,6 +4,7 @@ from pathlib import Path
 
 
 PACKS_DIR = ".namel3ss/packs"
+LOCAL_PACKS_DIR = "packs/capability"
 TRUST_DIR = ".namel3ss/trust"
 PACK_MANIFEST = "pack.yaml"
 PACK_SIGNATURE = "signature.txt"
@@ -18,6 +19,10 @@ PACK_SOURCE_META = ".n3pack_source.json"
 
 def packs_root(app_root: Path) -> Path:
     return app_root / PACKS_DIR
+
+
+def local_packs_root(app_root: Path) -> Path:
+    return app_root / LOCAL_PACKS_DIR
 
 
 def pack_path(app_root: Path, pack_id: str) -> Path:
@@ -61,6 +66,7 @@ def trust_policy_path(app_root: Path) -> Path:
 
 
 __all__ = [
+    "LOCAL_PACKS_DIR",
     "PACK_BINDINGS",
     "PACK_CAPABILITIES",
     "PACK_INTENT",
@@ -72,6 +78,7 @@ __all__ = [
     "TRUST_KEYS",
     "TRUST_POLICY",
     "TRUST_DIR",
+    "local_packs_root",
     "pack_bindings_path",
     "pack_capabilities_path",
     "pack_intent_path",

@@ -39,6 +39,8 @@ def load_pack_capabilities(pack_dir: Path) -> dict[str, ToolCapabilities]:
     if not path.exists():
         return {}
     text = path.read_text(encoding="utf-8")
+    if "\n" not in text and "\\n" in text:
+        text = text.replace("\\n", "\n")
     return parse_capabilities_yaml(text, path)
 
 

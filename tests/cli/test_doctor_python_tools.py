@@ -25,7 +25,10 @@ flow "demo":
   return "ok"
 '''
 
-PACK_SOURCE = '''tool "slugify text":
+PACK_SOURCE = '''packs:
+  "builtin.text"
+
+tool "slugify text":
   implemented using python
 
   input:

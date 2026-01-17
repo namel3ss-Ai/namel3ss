@@ -19,6 +19,14 @@ def derive_required_capabilities(program: Program) -> tuple[str, ...]:
         required.add("ai_v1")
     if program.tools:
         required.add("tools_v1")
+    if program.jobs:
+        required.add("jobs")
+    for tool in program.tools.values():
+        kind = getattr(tool, "kind", None)
+        if kind == "http":
+            required.add("http")
+        elif kind == "file":
+            required.add("files")
     if program.agents:
         required.add("agents_v1")
     if program.identity is not None:

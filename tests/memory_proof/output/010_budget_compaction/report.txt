@@ -1,4 +1,0 @@
-Memory proof: ok
-Scenario: 010_budget_compaction - Budget compaction
-Invariant notes:
-- TODO: memory_deleted explanation field is not emitted yet.

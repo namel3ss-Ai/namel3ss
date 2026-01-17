@@ -16,6 +16,14 @@ def run_packs(args: list[str]) -> int:
         from namel3ss.cli.packs_add_mode import run_packs_add
 
         return run_packs_add(tail, json_mode=json_mode)
+    if cmd == "list":
+        from namel3ss.cli.packs_list_mode import run_packs_list
+
+        return run_packs_list(tail, json_mode=json_mode)
+    if cmd == "info":
+        from namel3ss.cli.packs_info_mode import run_packs_info
+
+        return run_packs_info(tail, json_mode=json_mode)
     if cmd == "init":
         from namel3ss.cli.packs_init_mode import run_packs_init
 
@@ -63,7 +71,7 @@ def run_packs(args: list[str]) -> int:
     raise Namel3ssError(
         build_guidance_message(
             what=f"Unknown packs command '{cmd}'.",
-        why="Supported commands are add, init, validate, review, bundle, sign, remove, status, verify, enable, disable, and keys.",
+        why="Supported commands are list, info, add, init, validate, review, bundle, sign, remove, status, verify, enable, disable, and keys.",
         fix="Run `n3 packs help` to see usage.",
         example="n3 packs status",
     )
@@ -73,6 +81,8 @@ def run_packs(args: list[str]) -> int:
 def _print_usage() -> None:
     usage = """Usage:
   n3 packs add path_or_pack --from registry_id --json
+  n3 packs list --json
+  n3 packs info pack_id --json
   n3 packs init pack_id --dir path --no-code --json
   n3 packs validate path_or_pack --strict --json
   n3 packs review path_or_pack --json

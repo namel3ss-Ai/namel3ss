@@ -1,7 +1,6 @@
-# {{PROJECT_NAME}}
+# Hello Flow Example
 
-example
-- hello_flow v0.1.0
+Project: {{PROJECT_NAME}}
 
 Single-concept example: one flow creates a record and a page renders it.
 

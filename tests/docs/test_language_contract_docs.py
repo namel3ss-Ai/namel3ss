@@ -4,6 +4,7 @@ from pathlib import Path
 LANGUAGE_CONTRACT_DOCS = [
     Path("docs/language/application-runtime.md"),
     Path("docs/language/application-data-model.md"),
+    Path("docs/language/backend-capabilities.md"),
     Path("docs/language/no-dependencies.md"),
     Path("docs/language/capability-packs.md"),
 ]

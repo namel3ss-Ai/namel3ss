@@ -10,6 +10,7 @@ from namel3ss.module_loader.types import ModuleExports
 KIND_LABELS = {
     "record": "record",
     "flow": "flow",
+    "job": "job",
     "page": "page",
     "ai": "AI profile",
     "agent": "agent",

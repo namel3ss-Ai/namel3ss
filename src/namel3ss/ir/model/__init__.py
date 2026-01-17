@@ -1,5 +1,6 @@
 from namel3ss.ir.model.base import Expression, Node, Statement
 from namel3ss.ir.model.program import Flow, Program
+from namel3ss.ir.model.jobs import JobDecl
 from namel3ss.ir.model.flow_steps import (
     FlowCallForeign,
     FlowCreate,
@@ -31,6 +32,7 @@ from namel3ss.ir.model.statements import (
     UpdateField,
     ThemeChange,
     TryCatch,
+    EnqueueJob,
 )
 from namel3ss.ir.model.expressions import (
     Assignable,
@@ -123,6 +125,7 @@ __all__ = [
     "Statement",
     "Flow",
     "Program",
+    "JobDecl",
     "FlowCallForeign",
     "ForEach",
     "If",
@@ -138,6 +141,7 @@ __all__ = [
     "Create",
     "Set",
     "ThemeChange",
+    "EnqueueJob",
     "TryCatch",
     "Find",
     "UpdateField",

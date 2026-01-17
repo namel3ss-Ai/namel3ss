@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, TYPE_CHECKING
 
 from namel3ss.ast.base import Node
+from namel3ss.ast.jobs import JobDecl
 from namel3ss.ast.modules import CapsuleDecl, UseDecl
 from namel3ss.ast.expressions import Expression
 from namel3ss.ast.identity import IdentityDecl
@@ -33,9 +34,11 @@ class Program(Node):
     ui_settings: Dict[str, tuple[str, int | None, int | None]]
     ui_line: int | None
     ui_column: int | None
+    capabilities: List[str]
     records: List["RecordDecl"]
     functions: List["FunctionDecl"]
     flows: List[Flow]
+    jobs: List[JobDecl]
     pages: List["PageDecl"]
     ais: List["AIDecl"]
     tools: List["ToolDecl"]

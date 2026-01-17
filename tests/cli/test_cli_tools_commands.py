@@ -119,7 +119,10 @@ def test_tools_bind_from_app_conflict_requires_overwrite(tmp_path: Path, monkeyp
 
 
 def test_tools_list_shows_pack_and_declared(tmp_path: Path, monkeypatch, capsys) -> None:
-    source = '''tool "slugify text":
+    source = '''packs:
+  "builtin.text"
+
+tool "slugify text":
   implemented using python
 
   input:

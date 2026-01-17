@@ -11,7 +11,10 @@ from tests.conftest import lower_ir_program
 
 
 def test_capability_check_trace_schema_v1(tmp_path: Path) -> None:
-    source = '''tool "get json from web":
+    source = '''packs:
+  "builtin.http"
+
+tool "get json from web":
   implemented using python
 
   input:
@@ -39,12 +42,13 @@ flow "demo":
         input_data={},
         config=config,
         project_root=str(tmp_path),
+        pack_allowlist=getattr(program, "pack_allowlist", None),
     )
     with pytest.raises(Namel3ssError):
         executor.run()
     checks = [event for event in executor.traces if isinstance(event, dict) and event.get("type") == "capability_check"]
     assert checks, "Expected a capability_check trace event"
-    event = checks[0]
+    event = next(check for check in checks if check.get("capability") == "network")
     required = {
         "type",
         "tool_name",

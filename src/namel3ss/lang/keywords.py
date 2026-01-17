@@ -106,6 +106,9 @@ KEYWORDS = {
     "at": "AT",
     "least": "LEAST",
     "most": "MOST",
+    "capabilities": "CAPABILITIES",
+    "job": "JOB",
+    "enqueue": "ENQUEUE",
 }
 
 KEYWORD_LIST = list(KEYWORDS.keys())

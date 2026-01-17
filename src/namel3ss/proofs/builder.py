@@ -54,7 +54,14 @@ def build_engine_proof(
         },
         "persistence": _persistence_summary(config, project_root),
         "capsules": _capsule_summary(project, lock_snapshot.get("lockfile")),
-        "capabilities": {"tools": collect_tool_reports(project_root, config, project.program.tools)},
+        "capabilities": {
+            "tools": collect_tool_reports(
+                project_root,
+                config,
+                project.program.tools,
+                pack_allowlist=getattr(project.program, "pack_allowlist", None),
+            )
+        },
         "packages": lock_snapshot,
         "identity": identity_summary,
         "governance": governance_summary,

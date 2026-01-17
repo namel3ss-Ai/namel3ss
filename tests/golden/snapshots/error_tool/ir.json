@@ -2,6 +2,7 @@
   "agent_team": null,
   "agents": {},
   "ais": {},
+  "capabilities": [],
   "column": null,
   "flows": [
     {
@@ -54,6 +55,7 @@
     }
   ],
   "identity": null,
+  "jobs": [],
   "line": null,
   "pages": [],
   "records": [],

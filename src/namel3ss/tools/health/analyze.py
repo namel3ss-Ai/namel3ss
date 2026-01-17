@@ -27,6 +27,7 @@ def analyze_tool_health(project: ProjectLoadResult) -> ToolHealthReport:
     bindings, bindings_valid, bindings_error, bindings_issues = _load_bindings(app_root)
     pack_registry = load_pack_registry(app_root, config)
     pack_tools, pack_summaries, pack_issues, pack_collisions = collect_pack_inventory(pack_registry, config)
+    allowed_packs = set(getattr(project.program, "pack_allowlist", []) or [])
 
     issues: list[ToolIssue] = []
     issues.extend(duplicate_issues)
@@ -44,7 +45,7 @@ def analyze_tool_health(project: ProjectLoadResult) -> ToolHealthReport:
     empty_io: list[str] = []
 
     if bindings_valid:
-        active_pack_tools = active_pack_tool_names(pack_tools)
+        active_pack_tools = active_pack_tool_names(pack_tools, allowed_packs)
         collisions = sorted(name for name in bindings if name in active_pack_tools)
         for name in collisions:
             issues.append(
@@ -69,7 +70,7 @@ def analyze_tool_health(project: ProjectLoadResult) -> ToolHealthReport:
         issues.extend(runner_issues)
 
         declared_names = {tool.name for tool in declared_tools}
-        pack_names = set(active_pack_tool_names(pack_tools))
+        pack_names = set(active_pack_tool_names(pack_tools, allowed_packs))
         missing_bindings = sorted(
             name
             for name, tool in declared_map.items()

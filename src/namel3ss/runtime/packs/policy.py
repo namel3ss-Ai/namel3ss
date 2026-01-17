@@ -109,6 +109,8 @@ def _capability_allows(field: str, allowed: str, actual: str) -> bool:
 
 def _parse_policy_toml(path: Path) -> dict[str, object]:
     text = path.read_text(encoding="utf-8")
+    if "\n" not in text and "\\n" in text:
+        text = text.replace("\\n", "\n")
     try:
         import tomllib  # type: ignore
 

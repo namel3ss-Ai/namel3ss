@@ -234,8 +234,13 @@ class SQLiteStore:
     def save(self, schema: RecordSchema, record: dict) -> dict:
         self._ensure_table(schema)
         id_col = "id" if "id" in schema.field_map else "_id"
+        explicit_id = record.get(id_col) if id_col in schema.field_map else None
         col_names = []
         values = []
+        if explicit_id is not None and id_col in schema.field_map:
+            id_field = schema.field_map[id_col]
+            col_names.append(quote_identifier(id_col))
+            values.append(self._serialize_value(id_field.type_name, explicit_id))
         for field in schema.storage_fields():
             if field.name == id_col:
                 continue
@@ -251,7 +256,10 @@ class SQLiteStore:
         except sqlite3.IntegrityError as err:
             raise Namel3ssError(f"Record '{schema.name}' violates constraints: {err}") from err
         rec = dict(record)
-        rec[id_col] = self.conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        if explicit_id is not None:
+            rec[id_col] = explicit_id
+        else:
+            rec[id_col] = self.conn.execute("SELECT last_insert_rowid()").fetchone()[0]
         return rec
 
     def update(self, schema: RecordSchema, record: dict) -> dict:

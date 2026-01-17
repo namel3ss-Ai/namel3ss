@@ -55,6 +55,8 @@ from namel3ss.errors.contract import build_error_entry
 from namel3ss.errors.render import format_error, format_first_run_error
 
 PACK_SUBCOMMANDS = {
+    "list",
+    "info",
     "add",
     "init",
     "validate",

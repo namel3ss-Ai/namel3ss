@@ -8,7 +8,7 @@ def sandbox_enabled(*, resolved_source: str, runner: str, binding: ToolBinding) 
         return False
     if binding.sandbox is not None:
         return bool(binding.sandbox)
-    if resolved_source in {"builtin_pack", "installed_pack"}:
+    if resolved_source in {"builtin_pack", "installed_pack", "local_pack"}:
         return True
     return False
 

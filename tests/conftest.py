@@ -60,6 +60,7 @@ def run_flow(
         runtime_theme=getattr(ir_program, "theme", None),
         identity_schema=getattr(ir_program, "identity", None),
         identity=identity,
+        pack_allowlist=getattr(ir_program, "pack_allowlist", None),
     )
     return executor.run()
 

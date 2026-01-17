@@ -5,6 +5,7 @@
   "app_theme": "light",
   "app_theme_column": null,
   "app_theme_line": null,
+  "capabilities": [],
   "capsule": null,
   "column": null,
   "flows": [
@@ -59,6 +60,7 @@
     }
   ],
   "identity": null,
+  "jobs": [],
   "line": null,
   "pages": [
     {

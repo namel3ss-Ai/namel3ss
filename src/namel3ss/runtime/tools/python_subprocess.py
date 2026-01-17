@@ -276,7 +276,10 @@ def run_tool_subprocess(
 def _build_env(app_root: Path, *, extra_paths: list[Path] | None) -> dict[str, str]:
     env = os.environ.copy()
     python_path = env.get("PYTHONPATH", "")
-    package_root = Path(__file__).resolve().parents[3]
+    module_path = Path(__file__).resolve()
+    package_root = module_path.parents[4]
+    if not (package_root / "namel3ss").exists():
+        package_root = module_path.parents[3]
     parts = [str(path) for path in (extra_paths or []) if path.exists()]
     parts.extend([str(app_root), str(package_root)])
     if python_path:

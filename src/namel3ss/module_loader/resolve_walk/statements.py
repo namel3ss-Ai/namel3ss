@@ -77,6 +77,20 @@ def resolve_statements(
                     line=entry.line,
                     column=entry.column,
                 )
+        elif isinstance(stmt, ast.EnqueueJob):
+            stmt.job_name = resolve_name(
+                stmt.job_name,
+                kind="job",
+                module_name=module_name,
+                alias_map=alias_map,
+                local_defs=local_defs,
+                exports_map=exports_map,
+                context_label=context_label,
+                line=stmt.line,
+                column=stmt.column,
+            )
+            if stmt.input_expr is not None:
+                _resolve_expr(stmt.input_expr)
         elif isinstance(stmt, ast.Save):
             stmt.record_name = resolve_name(
                 stmt.record_name,

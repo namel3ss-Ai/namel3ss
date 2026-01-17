@@ -55,7 +55,10 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
     from namel3ss.parser.decl.agent_team import parse_agent_team_decl
     from namel3ss.parser.decl.app import parse_app
     from namel3ss.parser.decl.capsule import parse_capsule_decl
+    from namel3ss.parser.decl.capabilities import parse_capabilities
+    from namel3ss.parser.decl.packs import parse_packs
     from namel3ss.parser.decl.flow import parse_flow
+    from namel3ss.parser.decl.job import parse_job
     from namel3ss.parser.decl.foreign import parse_foreign_decl
     from namel3ss.parser.decl.function import parse_function_decl
     from namel3ss.parser.decl.identity import parse_identity
@@ -74,6 +77,8 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
         TopLevelRule("capsule", "IDENT", parse_capsule_decl, token_value="capsule"),
         TopLevelRule("identity", "IDENT", parse_identity, token_value="identity"),
         TopLevelRule("app", "APP", parse_app),
+        TopLevelRule("capabilities", "CAPABILITIES", parse_capabilities),
+        TopLevelRule("packs", "IDENT", parse_packs, token_value="packs"),
         TopLevelRule("foreign", "IDENT", parse_foreign_decl, token_value="foreign"),
         TopLevelRule("tool", "TOOL", parse_tool),
         TopLevelRule("agent_team", "IDENT", parse_agent_team_decl, token_value="team"),
@@ -81,6 +86,7 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
         TopLevelRule("ai", "AI", parse_ai_decl),
         TopLevelRule("record", "RECORD", parse_record),
         TopLevelRule("flow", "FLOW", parse_flow),
+        TopLevelRule("job", "JOB", parse_job),
         TopLevelRule("page", "PAGE", parse_page),
         TopLevelRule("ui", "UI", parse_ui_decl),
         TopLevelRule("ui_pack", "IDENT", parse_ui_pack_decl, token_value="ui_pack"),
@@ -100,6 +106,7 @@ def statement_rules() -> tuple[StatementRule, ...]:
     from namel3ss.parser.stmt.repeat import parse_repeat
     from namel3ss.parser.stmt.return_stmt import parse_return
     from namel3ss.parser.stmt.run_agent import parse_run_agent_stmt, parse_run_agents_parallel
+    from namel3ss.parser.stmt.enqueue_job import parse_enqueue_job
     from namel3ss.parser.stmt.save import parse_save
     from namel3ss.parser.stmt.set import parse_set
     from namel3ss.parser.stmt.theme import parse_set_theme
@@ -168,6 +175,7 @@ def statement_rules() -> tuple[StatementRule, ...]:
         StatementRule("parallel", "PARALLEL", parse_parallel),
         StatementRule("run_agents_parallel", "RUN", parse_run_agents_parallel, predicate=_is_run_agents_parallel),
         StatementRule("run_agent", "RUN", parse_run_agent_stmt, predicate=_is_run_agent),
+        StatementRule("enqueue_job", "ENQUEUE", parse_enqueue_job),
         StatementRule("repeat", "REPEAT", parse_repeat),
         StatementRule("for_each", "FOR", parse_for_each),
         StatementRule("match", "MATCH", parse_match),

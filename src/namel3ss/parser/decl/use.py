@@ -5,7 +5,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 
 
-_MODULE_CATEGORIES = ("functions", "records", "tools", "pages")
+_MODULE_CATEGORIES = ("functions", "records", "tools", "pages", "jobs")
 
 
 def parse_use_decl(parser) -> ast.UseDecl:
@@ -199,6 +199,9 @@ def _parse_use_category(parser) -> str:
     if tok.type == "PAGE":
         parser._advance()
         return "pages"
+    if tok.type == "JOB":
+        parser._advance()
+        return "jobs"
     if tok.type == "IDENT":
         value = tok.value
         if value in {"function", "functions"}:
@@ -213,10 +216,13 @@ def _parse_use_category(parser) -> str:
         if value in {"tool", "tools"}:
             parser._advance()
             return "tools"
+        if value in {"job", "jobs"}:
+            parser._advance()
+            return "jobs"
     raise Namel3ssError(
         build_guidance_message(
             what="Use module block has an unknown category.",
-            why="Only functions, records, tools, and pages are supported.",
+            why="Only functions, records, tools, pages, and jobs are supported.",
             fix="Use one of the supported categories.",
             example="only:\n  functions\n  records",
         ),
@@ -231,7 +237,7 @@ def _validate_use_categories(categories: list[str], module_tok, *, label: str) -
             raise Namel3ssError(
                 build_guidance_message(
                     what=f"{label} has an unknown category.",
-                    why="Only functions, records, tools, and pages are supported.",
+                    why="Only functions, records, tools, pages, and jobs are supported.",
                     fix="Use a supported category name.",
                     example="only:\n  functions\n  records",
                 ),

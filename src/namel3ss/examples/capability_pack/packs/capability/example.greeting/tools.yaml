@@ -1,0 +1,4 @@
+tools:
+  "compose greeting":
+    kind: "python"
+    entry: "tools.greet:run"

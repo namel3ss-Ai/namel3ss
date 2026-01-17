@@ -112,6 +112,8 @@ def _add_program_nodes(
         nodes[(module_name, "record", _local_name(module_name, record.name))] = record
     for flow in program.flows:
         nodes[(module_name, "flow", _local_name(module_name, flow.name))] = flow
+    for job in getattr(program, "jobs", []):
+        nodes[(module_name, "job", _local_name(module_name, job.name))] = job
     for page in program.pages:
         nodes[(module_name, "page", _local_name(module_name, page.name))] = page
     for ai in program.ais:
@@ -190,6 +192,11 @@ def _scan_file(
             definitions.append(_make_definition("flow", name_tok, module_name, path, origin, exports))
             i += 2
             continue
+        if _is_definition(tokens, i, "JOB"):
+            name_tok = tokens[i + 1]
+            definitions.append(_make_definition("job", name_tok, module_name, path, origin, exports))
+            i += 2
+            continue
         if _is_definition(tokens, i, "PAGE"):
             name_tok = tokens[i + 1]
             definitions.append(_make_definition("page", name_tok, module_name, path, origin, exports))
@@ -225,6 +232,12 @@ def _scan_file(
             ref, consumed = _parse_reference(tokens, i + 2)
             if ref:
                 references.append(_make_reference("flow", ref, path))
+                i += consumed + 2
+                continue
+        if tok.type == "ENQUEUE" and next_tok and next_tok.type == "JOB":
+            ref, consumed = _parse_reference(tokens, i + 2)
+            if ref:
+                references.append(_make_reference("job", ref, path))
                 i += consumed + 2
                 continue
         if tok.type == "FORM" and next_tok and next_tok.type == "IS":
@@ -290,7 +303,7 @@ def _scan_file(
                 i += consumed + 1
                 continue
 
-        if path.name == "capsule.ai" and tok.type in {"RECORD", "FLOW", "PAGE", "AI", "AGENT", "TOOL"}:
+        if path.name == "capsule.ai" and tok.type in {"RECORD", "FLOW", "JOB", "PAGE", "AI", "AGENT", "TOOL"}:
             ref, consumed = _parse_reference(tokens, i + 1)
             if ref:
                 kind = tok.type.lower()

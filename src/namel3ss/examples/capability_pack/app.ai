@@ -1,0 +1,18 @@
+packs:
+  "example.greeting"
+
+tool "compose greeting":
+  implemented using python
+
+  input:
+    name is text
+
+  output:
+    message is text
+
+spec is "1.0"
+
+flow "demo":
+  let result is compose greeting:
+    name is input.name
+  return result

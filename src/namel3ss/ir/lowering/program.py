@@ -8,6 +8,7 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir.lowering.agents import _lower_agent_team, _lower_agents
 from namel3ss.ir.lowering.ai import _lower_ai_decls
 from namel3ss.ir.lowering.flow import lower_flow
+from namel3ss.ir.lowering.jobs import lower_jobs
 from namel3ss.flow_contract import validate_declarative_flows, validate_flow_names
 from namel3ss.ir.functions.lowering import lower_functions
 from namel3ss.ir.lowering.identity import _lower_identity
@@ -22,6 +23,7 @@ from namel3ss.ir.model.statements import ThemeChange, If, Repeat, RepeatWhile, F
 from namel3ss.schema import records as schema
 from namel3ss.ui.settings import normalize_ui_settings
 from namel3ss.validation import ValidationMode
+from namel3ss.lang.capabilities import normalize_builtin_capability
 
 
 def _statement_has_theme_change(stmt) -> bool:
@@ -70,9 +72,13 @@ def lower_program(program: ast.Program) -> Program:
     agent_map = _lower_agents(program.agents, ai_map, agent_team)
     function_map = lower_functions(program.functions, agent_map)
     flow_irs: List[Flow] = [lower_flow(flow, agent_map) for flow in program.flows]
+    job_irs = lower_jobs(getattr(program, "jobs", []), agent_map)
     record_map: Dict[str, schema.RecordSchema] = {rec.name: rec for rec in record_schemas}
     flow_names = validate_flow_names(flow_irs)
     validate_declarative_flows(flow_irs, record_map, tool_map, mode=ValidationMode.RUNTIME, warnings=None)
+    capabilities = _normalize_capabilities(getattr(program, "capabilities", []) or [])
+    _require_capabilities(capabilities, tool_map, job_irs)
+    pack_allowlist = _normalize_pack_allowlist(getattr(program, "pack_allowlist", None))
     pack_index = build_pack_index(getattr(program, "ui_packs", []))
     page_names = {page.name for page in program.pages}
     pages = [_lower_page(page, record_map, flow_names, page_names, pack_index) for page in program.pages]
@@ -80,7 +86,7 @@ def lower_program(program: ast.Program) -> Program:
     theme_runtime_supported = any(_flow_has_theme_change(flow) for flow in flow_irs)
     ui_settings = normalize_ui_settings(getattr(program, "ui_settings", None))
     theme_setting = ui_settings.get("theme", program.app_theme)
-    return Program(
+    lowered = Program(
         spec_version=str(program.spec_version),
         theme=theme_setting,
         theme_tokens={name: val for name, (val, _, _) in program.theme_tokens.items()},
@@ -90,9 +96,11 @@ def lower_program(program: ast.Program) -> Program:
             "persist": program.theme_preference.get("persist", ("none", None, None))[0],
         },
         ui_settings=ui_settings,
+        capabilities=capabilities,
         records=record_schemas,
         functions=function_map,
         flows=flow_irs,
+        jobs=job_irs,
         pages=pages,
         ais=ai_map,
         tools=tool_map,
@@ -103,6 +111,8 @@ def lower_program(program: ast.Program) -> Program:
         line=program.line,
         column=program.column,
     )
+    setattr(lowered, "pack_allowlist", pack_allowlist)
+    return lowered
 
 
 def _ensure_unique_pages(pages: list[Page]) -> None:
@@ -120,3 +130,58 @@ def _ensure_unique_pages(pages: list[Page]) -> None:
                 column=getattr(page, "column", None),
             )
         seen[page.name] = True
+
+
+def _normalize_capabilities(items: list[str]) -> tuple[str, ...]:
+    normalized: list[str] = []
+    for item in items:
+        value = normalize_builtin_capability(item)
+        if value:
+            normalized.append(value)
+    return tuple(sorted(set(normalized)))
+
+
+def _normalize_pack_allowlist(items: list[str] | None) -> tuple[str, ...] | None:
+    if items is None:
+        return None
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for item in items:
+        if not isinstance(item, str):
+            continue
+        value = item.strip()
+        if not value or value in seen:
+            continue
+        seen.add(value)
+        normalized.append(value)
+    if not normalized:
+        return None
+    return tuple(normalized)
+
+
+def _require_capabilities(
+    allowed: tuple[str, ...],
+    tools: Dict[str, object],
+    jobs: list,
+) -> None:
+    required: set[str] = set()
+    for tool in tools.values():
+        kind = getattr(tool, "kind", None)
+        if kind == "http":
+            required.add("http")
+        elif kind == "file":
+            required.add("files")
+    if jobs:
+        required.add("jobs")
+    missing = sorted(required - set(allowed))
+    if not missing:
+        return
+    missing_text = ", ".join(missing)
+    raise Namel3ssError(
+        build_guidance_message(
+            what=f"Missing capabilities: {missing_text}.",
+            why="Apps must explicitly enable built-in backend capabilities.",
+            fix="Add a capabilities block that lists the missing entries.",
+            example="capabilities:\n  http\n  jobs\n  files",
+        )
+    )

@@ -85,10 +85,12 @@ def collect_pack_inventory(pack_registry, config) -> tuple[dict[str, list[PackTo
     return pack_tools, pack_summaries, issues, pack_collisions
 
 
-def active_pack_tool_names(pack_tools: dict[str, list[PackToolSummary]]) -> set[str]:
+def active_pack_tool_names(pack_tools: dict[str, list[PackToolSummary]], allowed_packs: set[str] | None = None) -> set[str]:
     active = set()
     for name, providers in pack_tools.items():
         for provider in providers:
+            if allowed_packs is not None and provider.pack_id not in allowed_packs:
+                continue
             if provider.source == "builtin_pack" or (provider.verified and provider.enabled):
                 active.add(name)
                 break

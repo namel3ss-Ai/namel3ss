@@ -1,4 +1,0 @@
-Memory proof: ok
-Scenario: 004_profile_on - Profile memory on
-Invariant notes:
-- TODO: memory_deleted explanation field is not emitted yet.

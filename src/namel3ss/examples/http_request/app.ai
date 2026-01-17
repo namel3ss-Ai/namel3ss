@@ -1,0 +1,27 @@
+spec is "1.0"
+
+capabilities:
+  http
+
+tool "fetch status":
+  implemented using http
+
+  input:
+    url is text
+
+  output:
+    status is number
+    body is text
+
+flow "fetch_homepage" requires true:
+  let response is fetch status:
+    url is "https://example.com"
+  return response
+
+page "home":
+  purpose is "Minimal example of an HTTP call using the built-in capability."
+  title is "HTTP Request"
+  text is "Call the HTTP tool to fetch a response."
+  card "Request":
+    button "Fetch status":
+      calls flow "fetch_homepage"

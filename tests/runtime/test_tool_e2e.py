@@ -9,7 +9,10 @@ from tests.conftest import lower_ir_program
 
 
 def test_no_wiring_story(tmp_path: Path, monkeypatch, capsys) -> None:
-    source = '''tool "convert text to lowercase":
+    source = '''packs:
+  "builtin.text"
+
+tool "convert text to lowercase":
   implemented using python
 
   input:
@@ -56,6 +59,7 @@ flow "demo":
         tools=program.tools,
         input_data={"text": "Hello World", "name": "Ada"},
         project_root=str(tmp_path),
+        pack_allowlist=getattr(program, "pack_allowlist", None),
     )
     result = executor.run()
     assert result.last_value == {"message": "", "ok": False}

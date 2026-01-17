@@ -46,7 +46,10 @@ def test_installed_pack_import_error_includes_reason(tmp_path: Path) -> None:
     config = AppConfig()
     config.tool_packs.enabled_packs = ["broken.pack"]
 
-    source = '''tool "pack echo":
+    source = '''packs:
+  "broken.pack"
+
+tool "pack echo":
   implemented using python
 
   input:
@@ -71,6 +74,7 @@ flow "demo":
         input_data={"payload": {"ok": True}},
         project_root=str(tmp_path),
         config=config,
+        pack_allowlist=getattr(program, "pack_allowlist", None),
     )
     with pytest.raises(Namel3ssError) as exc:
         executor.run()
@@ -86,7 +90,7 @@ def test_pack_collision_trace_classification(tmp_path: Path) -> None:
     config = AppConfig()
     config.tool_packs.enabled_packs = ["collision.a", "collision.b"]
 
-    source = _tool_source("pack echo")
+    source = _tool_source("pack echo", packs=["collision.a", "collision.b"])
     program = lower_ir_program(source)
     executor = Executor(
         program.flows[0],
@@ -95,6 +99,7 @@ def test_pack_collision_trace_classification(tmp_path: Path) -> None:
         input_data={"payload": {"ok": True}},
         project_root=str(tmp_path),
         config=config,
+        pack_allowlist=getattr(program, "pack_allowlist", None),
     )
     with pytest.raises(Namel3ssError) as exc:
         executor.run()
@@ -111,7 +116,7 @@ def test_unverified_pack_trace_blocked(tmp_path: Path) -> None:
     config = AppConfig()
     config.tool_packs.enabled_packs = ["enabled.pack"]
 
-    source = _tool_source("pack echo")
+    source = _tool_source("pack echo", packs=["enabled.pack"])
     program = lower_ir_program(source)
     executor = Executor(
         program.flows[0],
@@ -120,6 +125,7 @@ def test_unverified_pack_trace_blocked(tmp_path: Path) -> None:
         input_data={"payload": {"ok": True}},
         project_root=str(tmp_path),
         config=config,
+        pack_allowlist=getattr(program, "pack_allowlist", None),
     )
     with pytest.raises(Namel3ssError) as exc:
         executor.run()
@@ -128,6 +134,119 @@ def test_unverified_pack_trace_blocked(tmp_path: Path) -> None:
     assert trace["decision"] == "blocked"
     assert trace["reason"] == "pack_unavailable_or_unverified"
     assert trace["result"] == "blocked"
+
+
+def test_pack_not_declared_trace_blocked(tmp_path: Path) -> None:
+    pack_root = tmp_path / ".namel3ss" / "packs"
+    _write_pack(pack_root, pack_id="declared.pack", tool_name="pack echo", entry="tools.echo:run", verified=True)
+    config = AppConfig()
+    config.tool_packs.enabled_packs = ["declared.pack"]
+
+    source = '''packs:
+  "builtin.text"
+
+tool "pack echo":
+  implemented using python
+
+  input:
+    payload is json
+
+  output:
+    result is json
+
+spec is "1.0"
+
+flow "demo":
+  let result is pack echo:
+    payload is input.payload
+  return result
+'''
+    program = lower_ir_program(source)
+    executor = Executor(
+        program.flows[0],
+        schemas={},
+        tools=program.tools,
+        input_data={"payload": {"ok": True}},
+        project_root=str(tmp_path),
+        config=config,
+        pack_allowlist=getattr(program, "pack_allowlist", None),
+    )
+    with pytest.raises(Namel3ssError) as exc:
+        executor.run()
+    print("pack_policy_denied_error", str(exc.value))
+    print("pack_policy_denied_traces", executor.ctx.traces)
+    trace = _tool_trace(executor, "pack echo")
+    assert trace["decision"] == "blocked"
+    assert trace["reason"] == "pack_not_declared"
+    checks = _pack_permission_checks(executor)
+    assert any(
+        check.get("allowed") is False and check.get("reason") == "pack_not_declared" for check in checks
+    )
+
+
+def test_pack_policy_denied_trace_blocked(tmp_path: Path) -> None:
+    pack_root = tmp_path / ".namel3ss" / "packs"
+    pack_dir = _write_pack(
+        pack_root,
+        pack_id="restricted.pack",
+        tool_name="pack echo",
+        entry="tools.echo:run",
+        verified=True,
+        capabilities_text=(
+            "capabilities:\\n"
+            '  "pack echo":\\n'
+            "    filesystem: none\\n"
+            "    network: outbound\\n"
+            "    env: none\\n"
+            "    subprocess: none\\n"
+            "    secrets: []\\n"
+        ),
+    )
+    policy_dir = tmp_path / ".namel3ss" / "trust"
+    policy_dir.mkdir(parents=True, exist_ok=True)
+    (policy_dir / "policy.toml").write_text(
+        'allowed_capabilities = { network = "none", filesystem = "none", env = "none", subprocess = "none" }\\n',
+        encoding="utf-8",
+    )
+    config = AppConfig()
+    config.tool_packs.enabled_packs = ["restricted.pack"]
+
+    source = '''packs:
+  "restricted.pack"
+
+tool "pack echo":
+  implemented using python
+
+  input:
+    payload is json
+
+  output:
+    result is json
+
+spec is "1.0"
+
+flow "demo":
+  let result is pack echo:
+    payload is input.payload
+  return result
+'''
+    program = lower_ir_program(source)
+    executor = Executor(
+        program.flows[0],
+        schemas={},
+        tools=program.tools,
+        input_data={"payload": {"ok": True}},
+        project_root=str(tmp_path),
+        config=config,
+        pack_allowlist=getattr(program, "pack_allowlist", None),
+    )
+    with pytest.raises(Namel3ssError):
+        executor.run()
+    trace = _tool_trace(executor, "pack echo")
+    assert trace["decision"] == "blocked"
+    assert trace["reason"] == "pack_permission_denied"
+    checks = _pack_permission_checks(executor)
+    assert any(check.get("allowed") is False and check.get("reason") == "policy_denied" for check in checks)
 
 
 def test_unknown_runner_trace_classification(tmp_path: Path) -> None:
@@ -178,8 +297,12 @@ def test_missing_binding_trace_classification(tmp_path: Path) -> None:
     assert trace["result"] == "error"
 
 
-def _tool_source(tool_name: str) -> str:
-    return f'''tool "{tool_name}":
+def _tool_source(tool_name: str, *, packs: list[str] | None = None) -> str:
+    packs_block = ""
+    if packs:
+        entries = "\n".join(f'  "{pack_id}"' for pack_id in packs)
+        packs_block = f"packs:\n{entries}\n\n"
+    return f'''{packs_block}tool "{tool_name}":
   implemented using python
 
   input:
@@ -208,6 +331,20 @@ def _tool_trace(executor: Executor, tool_name: str) -> dict:
     raise AssertionError(f"Missing tool_call trace for {tool_name}")
 
 
+def _pack_permission_checks(executor: Executor) -> list[dict]:
+    checks: list[dict] = []
+    for event in executor.ctx.traces:
+        if not isinstance(event, dict):
+            continue
+        if event.get("type") != "capability_check":
+            continue
+        if event.get("capability") == "pack_permission":
+            checks.append(event)
+    if not checks:
+        raise AssertionError("Missing pack_permission capability_check trace")
+    return checks
+
+
 def _read_expected(relative: str) -> dict:
     path = SPEC_FAILURES / relative
     return json.loads(path.read_text(encoding="utf-8"))
@@ -229,7 +366,15 @@ def _assert_guidance(message: str, expected: dict) -> None:
         assert f"- {fix}" in message or f"Fix: {fix}" in message
 
 
-def _write_pack(root: Path, *, pack_id: str, tool_name: str, entry: str, verified: bool) -> Path:
+def _write_pack(
+    root: Path,
+    *,
+    pack_id: str,
+    tool_name: str,
+    entry: str,
+    verified: bool,
+    capabilities_text: str | None = None,
+) -> Path:
     pack_dir = root / pack_id
     pack_dir.mkdir(parents=True, exist_ok=True)
     manifest_text = (
@@ -250,6 +395,8 @@ def _write_pack(root: Path, *, pack_id: str, tool_name: str, entry: str, verifie
     )
     (pack_dir / "pack.yaml").write_text(manifest_text, encoding="utf-8")
     (pack_dir / "tools.yaml").write_text(tools_text, encoding="utf-8")
+    if capabilities_text:
+        (pack_dir / "capabilities.yaml").write_text(capabilities_text, encoding="utf-8")
     if verified:
         digest = compute_pack_digest(manifest_text, tools_text)
         payload = {

@@ -113,7 +113,12 @@ def _assemble_explain_payload(app_path, active: dict, proof: dict) -> dict:
         "tenant_scoping": proof.get("identity", {}).get("tenant_scoping", {}),
         "capsules": _summarize_capsules(proof),
         "governance": proof.get("governance") or _load_governance(project_root),
-        "tools": collect_tool_reports(project_root, config, project.program.tools),
+        "tools": collect_tool_reports(
+            project_root,
+            config,
+            project.program.tools,
+            pack_allowlist=getattr(project.program, "pack_allowlist", None),
+        ),
         "flows": len(project.program.flows),
         "pages": len(project.program.pages),
         "records": len(project.program.records),

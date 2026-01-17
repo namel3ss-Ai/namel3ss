@@ -1,5 +1,9 @@
 spec is "1.0"
 
+packs:
+  "collision.a"
+  "collision.b"
+
 tool "pack echo":
   implemented using python
 

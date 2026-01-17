@@ -10,6 +10,7 @@ Execution steps explain what happened and why.
 - AI profiles and agent declarations
 - Agent teams with deterministic ordering and optional roles
 - AI calls with tool and memory integration
+- Built-in backend capabilities (HTTP calls, background jobs, file I/O)
 - Deterministic execution steps and traces
 - Modules and memory packs for reuse
 - Deterministic parallel blocks
@@ -19,7 +20,7 @@ Execution steps explain what happened and why.
 - Unbounded loops
 - Hidden recursion
 - Implicit type coercion
-- Background tasks
+- Time-based scheduling or cron
 - Silent tool or memory access
 
 ## Roadmap note
@@ -29,6 +30,7 @@ Execution steps explain what happened and why.
 ## Related contracts
 - [Application runtime](language/application-runtime.md)
 - [Application Data Model](language/application-data-model.md)
+- [Backend Capabilities](language/backend-capabilities.md)
 - [No dependencies](language/no-dependencies.md)
 - [Capability packs](language/capability-packs.md)
 - [Browser Protocol](runtime/browser-protocol.md)

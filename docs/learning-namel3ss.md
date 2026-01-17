@@ -15,8 +15,10 @@ A `.ai` file is a declarative program plus a deterministic execution model. Top-
 
 Common top-level blocks:
 - `spec is "1.0"` (declares the language contract version)
+- `capabilities` (enable built-in backend capabilities)
 - `record "Name"` (data schema)
 - `flow "name"` (logic)
+- `job "name"` (background work)
 - `page "name"` (UI)
 - `tool "name"` and `ai "name"` (capabilities and AI boundary)
 - `agent "name"` (multi-agent profiles)
@@ -33,8 +35,9 @@ Studio is a viewer and interactor. It shows the UI manifest, available actions, 
 - [Application runtime](language/application-runtime.md): every valid `.ai` program is an application; the browser renders it, Studio inspects it.
 - [Application Data Model](language/application-data-model.md): structured records, persistence, and deterministic ordering.
 - [Application UI Model](language/application-ui-model.md): declarative pages, layout, components, and navigation with deterministic manifests.
+- [Backend Capabilities](language/backend-capabilities.md): built-in HTTP, jobs, and file I/O with explicit capability gates.
 - [No dependencies](language/no-dependencies.md): install `namel3ss` and run apps without managing pip/npm for each project; packs extend capabilities.
-- [Capability packs](language/capability-packs.md): packs are signed, permissioned capability bundles with deterministic effect boundaries.
+- [Capability packs](language/capability-packs.md): explicit pack declarations, permissions, and inspection for local and installed packs.
 - [Browser Protocol](runtime/browser-protocol.md): `/api/ui`, `/api/state`, `/api/action`, and `/api/health` are stable and deterministic.
 
 ### Explainable execution
@@ -54,7 +57,7 @@ Use `n3 status` for the last run summary, `n3 explain` for failures, and
 - No implicit AI behavior; AI must be declared and called explicitly.
 - No unbounded loops or hidden recursion.
 - No implicit type coercion.
-- No background tasks.
+- No time-based scheduling or cron.
 - No streaming or JSON-mode responses; `ollama` is text-only.
 
 #### References
@@ -62,6 +65,7 @@ Use `n3 status` for the last run summary, `n3 explain` for failures, and
 - [Runtime model](runtime.md)
 - [Application Data Model](language/application-data-model.md)
 - [Application UI Model](language/application-ui-model.md)
+- [Backend Capabilities](language/backend-capabilities.md)
 - [UI DSL](ui-dsl.md)
 - [Studio](studio.md)
 - [Stability](stability.md)
@@ -494,7 +498,7 @@ n3 tools bind "greet someone" --entry "tools.sample_tool:greet"
 - Trust policy can enforce stricter limits in `.namel3ss/trust/policy.toml`.
 
 ### Tool packs
-Built-in packs provide reusable tools (text, datetime, file). Declaring the tool is enough; no bindings are required.
+Built-in packs provide reusable tools (text, datetime, file). Declare the pack in `packs:` and declare the tool; no bindings are required.
 
 #### References
 - [AI language definition](ai-language-definition.md)

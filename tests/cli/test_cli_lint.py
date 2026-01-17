@@ -86,7 +86,10 @@ flow "demo":
 
 
 def test_cli_lint_fails_on_tool_collision(tmp_path, capsys):
-    source = '''tool "slugify text":
+    source = '''packs:
+  "builtin.text"
+
+tool "slugify text":
   implemented using python
 
   input:

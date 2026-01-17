@@ -19,6 +19,7 @@ def _run_blocked(source: str, config: AppConfig, tmp_path: Path) -> list[dict[st
         input_data={},
         config=config,
         project_root=str(tmp_path),
+        pack_allowlist=getattr(program, "pack_allowlist", None),
     )
     with pytest.raises(Namel3ssError):
         executor.run()
@@ -34,7 +35,10 @@ def _expect_block(traces: list[dict[str, object]], capability: str) -> dict[str,
 
 
 def test_builtin_pack_blocks_network(tmp_path: Path) -> None:
-    source = '''tool "get json from web":
+    source = '''packs:
+  "builtin.http"
+
+tool "get json from web":
   implemented using python
 
   input:
@@ -59,7 +63,10 @@ flow "demo":
 
 
 def test_builtin_pack_blocks_filesystem_write(tmp_path: Path) -> None:
-    source = '''tool "write text file":
+    source = '''packs:
+  "builtin.file"
+
+tool "write text file":
   implemented using python
 
   input:

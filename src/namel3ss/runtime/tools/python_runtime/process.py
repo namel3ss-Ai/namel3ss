@@ -112,7 +112,17 @@ def _execute_python_tool(
             expect_object=True,
         )
         app_root = _resolve_project_root(ctx.project_root, tool.name, line=line, column=column)
-        resolved = resolve_tool_binding(app_root, tool.name, ctx.config, tool_kind=tool.kind, line=line, column=column)
+        pack_allowlist = getattr(ctx, "pack_allowlist", None)
+        allowed_packs = pack_allowlist if pack_allowlist is not None else ()
+        resolved = resolve_tool_binding(
+            app_root,
+            tool.name,
+            ctx.config,
+            tool_kind=tool.kind,
+            line=line,
+            column=column,
+            allowed_packs=allowed_packs,
+        )
         binding = resolved.binding
         resolved_source = resolved.source
         pack_id = resolved.pack_id
@@ -121,7 +131,7 @@ def _execute_python_tool(
         entry = binding.entry
         module_path = entry.split(":", 1)[0].strip()
         runner_name = binding.runner or "local"
-        allow_external = resolved_source in {"installed_pack"} or module_path.startswith("tests.fixtures.")
+        allow_external = resolved_source in {"installed_pack", "local_pack"} or module_path.startswith("tests.fixtures.")
         if (
             runner_name == "local"
             and resolved_source == "binding"
@@ -169,13 +179,17 @@ def _execute_python_tool(
                 trace_event["command"] = " ".join(binding.command)
             if getattr(binding, "enforcement", None):
                 trace_event["container_enforcement"] = binding.enforcement
-        if resolved_source in {"builtin_pack", "installed_pack"} and pack_id:
+        if resolved_source in {"builtin_pack", "installed_pack", "local_pack"} and pack_id:
             trace_event["pack_id"] = pack_id
             if pack_name:
                 trace_event["pack_name"] = pack_name
             trace_event["pack_version"] = pack_version
         pack_root = _pack_root_from_paths(resolved.pack_paths)
-        policy = load_pack_policy(app_root) if resolved_source in {"builtin_pack", "installed_pack"} else None
+        policy = (
+            load_pack_policy(app_root)
+            if resolved_source in {"builtin_pack", "installed_pack", "local_pack"}
+            else None
+        )
         tool_caps = resolve_tool_capabilities(tool.name, resolved_source, pack_root)
         overrides = getattr(ctx.config, "capability_overrides", {}).get(tool.name) if ctx.config else None
         unsafe_override = unsafe_override_enabled(overrides)
@@ -292,7 +306,7 @@ def _execute_python_tool(
             if err.error_type == "CapabilityViolation":
                 raise Namel3ssError(err.error_message, line=line, column=column) from err
             redacted_message = redact_text(err.error_message or "The tool returned an error.", secret_values)
-            if resolved_source in {"builtin_pack", "installed_pack"} and pack_id:
+            if resolved_source in {"builtin_pack", "installed_pack", "local_pack"} and pack_id:
                 fix = "Review the tool inputs or upgrade namel3ss if the issue persists."
                 example = _tool_pack_example(tool.name)
             else:
@@ -313,10 +327,10 @@ def _execute_python_tool(
                 what=f'Python tool "{tool.name}" failed with {err.__class__.__name__}.',
                 why="The tool function raised an exception during execution.",
                 fix="Fix the tool implementation in tools/ and try again."
-                if resolved_source not in {"builtin_pack", "installed_pack"}
+                if resolved_source not in {"builtin_pack", "installed_pack", "local_pack"}
                 else "Review the tool inputs or upgrade namel3ss if the issue persists.",
                 example=_tool_example(tool.name)
-                if resolved_source not in {"builtin_pack", "installed_pack"}
+                if resolved_source not in {"builtin_pack", "installed_pack", "local_pack"}
                 else _tool_pack_example(tool.name),
             ),
             line=line,

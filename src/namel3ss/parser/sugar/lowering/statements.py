@@ -136,6 +136,15 @@ def _lower_statement(stmt: ast.Statement) -> list[ast.Statement]:
                 column=stmt.column,
             )
         ]
+    if isinstance(stmt, ast.EnqueueJob):
+        return [
+            ast.EnqueueJob(
+                job_name=stmt.job_name,
+                input_expr=_lower_expression(stmt.input_expr) if stmt.input_expr else None,
+                line=stmt.line,
+                column=stmt.column,
+            )
+        ]
     if isinstance(stmt, ast.ParallelBlock):
         tasks = [
             ast.ParallelTask(

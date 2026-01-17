@@ -7,7 +7,7 @@ from namel3ss.parser.sugar.lowering.statements import _lower_statements
 
 
 def lower_program(program: ast.Program) -> ast.Program:
-    return ast.Program(
+    lowered = ast.Program(
         spec_version=program.spec_version,
         app_theme=program.app_theme,
         app_theme_line=program.app_theme_line,
@@ -17,9 +17,11 @@ def lower_program(program: ast.Program) -> ast.Program:
         ui_settings=program.ui_settings,
         ui_line=getattr(program, "ui_line", None),
         ui_column=getattr(program, "ui_column", None),
+        capabilities=list(getattr(program, "capabilities", []) or []),
         records=[_lower_record(record) for record in program.records],
         functions=[_lower_function(func) for func in getattr(program, "functions", [])],
         flows=[_lower_flow(flow) for flow in program.flows],
+        jobs=[_lower_job(job) for job in getattr(program, "jobs", [])],
         pages=[_lower_page(page) for page in program.pages],
         ui_packs=[_lower_ui_pack(pack) for pack in getattr(program, "ui_packs", [])],
         ais=list(program.ais),
@@ -32,6 +34,9 @@ def lower_program(program: ast.Program) -> ast.Program:
         line=program.line,
         column=program.column,
     )
+    raw_allowlist = getattr(program, "pack_allowlist", None)
+    setattr(lowered, "pack_allowlist", list(raw_allowlist) if raw_allowlist is not None else None)
+    return lowered
 
 
 def _lower_flow(flow: ast.Flow) -> ast.Flow:
@@ -44,6 +49,16 @@ def _lower_flow(flow: ast.Flow) -> ast.Flow:
         declarative=bool(getattr(flow, "declarative", False)),
         line=flow.line,
         column=flow.column,
+    )
+
+
+def _lower_job(job: ast.JobDecl) -> ast.JobDecl:
+    return ast.JobDecl(
+        name=job.name,
+        body=_lower_statements(job.body),
+        when=_lower_expression(job.when) if job.when else None,
+        line=job.line,
+        column=job.column,
     )
 
 

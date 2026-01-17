@@ -43,9 +43,12 @@ def test_examples_are_single_concept_and_validate() -> None:
         root = app_path.parent
         files = [p for p in root.rglob("*") if p.is_file()]
         allowed = {"app.ai", "README.md"}
+        allowed_prefixes = {"packs"}
         for path in files:
             rel = path.relative_to(root)
             if rel.parts[0].startswith("__pycache__"):
+                continue
+            if rel.parts[0] in allowed_prefixes:
                 continue
             assert rel.as_posix() in allowed
         assert main([app_path.as_posix(), "check"]) == 0

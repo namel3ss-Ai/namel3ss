@@ -1,4 +1,0 @@
-Memory proof: ok
-Scenario: 007_handoff_flow - Handoff flow
-Invariant notes:
-- TODO: memory_deleted explanation field is not emitted yet.

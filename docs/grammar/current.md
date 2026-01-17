@@ -114,6 +114,9 @@ length
 at
 least
 most
+capabilities
+job
+enqueue
 ```
 
 ## Parser Entry Points
@@ -123,7 +126,8 @@ most
 ## Grammar Surfaces
 
 Top-level declarations (`src/namel3ss/parser/grammar_table.py`):
-- `spec`, `define` (function), `use`, `capsule`, `identity`, `app`, `tool`, `agent`, `ai`, `record`, `flow`, `page`, `ui_pack`, `team of agents`.
+- `spec`, `define` (function), `use`, `capsule`, `identity`, `app`, `capabilities`, `packs`, `foreign`, `tool`,
+  `agent`, `team of agents`, `ai`, `record`, `flow`, `job`, `page`, `ui`, `ui_pack`.
 
 Statements (`src/namel3ss/parser/grammar_table.py`):
 - `start`, `plan`, `review`, `timeline`, `compute`, `increment`, `attempt` (two forms), agent verb calls,

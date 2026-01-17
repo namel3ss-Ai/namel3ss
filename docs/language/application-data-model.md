@@ -17,13 +17,11 @@ record "Order":
     status is text must be present
     total is number must be at least 0
   tenant_key is identity.organization_id
-  persisted:
-    ttl_hours is 24
 ```
 - Use `record "Name":` to declare the schema.
 - Fields are typed (`text`, `number`, `boolean`, `json`) and can include constraints (`present`, `unique`, `pattern`, `greater than`).
 - `tenant_key` scopes records to an identity field.
-- `persisted` settings (like `ttl_hours`) are optional and deterministic.
+- `persisted` settings (like `ttl_hours`) are optional; `ttl_hours` uses runtime time to compute retention windows.
 
 ## CRUD operations in flows
 ```ai
@@ -41,10 +39,20 @@ flow "create_order": requires true
 - `update` modifies matching records with a `set:` block.
 - `delete` removes matching records.
 
-## Deterministic ordering
-- Record reads are ordered by the record id field (`id` if present, otherwise `_id`).
+```ai
+flow "clean_orders": requires true
+  update "Order" where status is "new" set:
+    status is "paid"
+  delete "Order" where status is "cancelled"
+  find "Order" where status is "paid"
+  return order_results
+```
+
+## Record identity and ordering
+- Records use `id` if declared; otherwise `_id` is assigned by the store.
+- If you omit an id, the store assigns the next numeric id in insertion order.
+- Reads are ordered by id ascending; updates and deletes apply in the same order.
 - `find` returns results in deterministic order.
-- `update` and `delete` apply to matches in deterministic order.
 - `latest "Record"` uses the same ordering rules.
 
 ## Persistence (local-first)

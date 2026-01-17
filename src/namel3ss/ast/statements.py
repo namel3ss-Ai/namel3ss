@@ -168,3 +168,9 @@ class Delete(Statement):
 @dataclass
 class ThemeChange(Statement):
     value: str
+
+
+@dataclass
+class EnqueueJob(Statement):
+    job_name: str
+    input_expr: Expression | None = None

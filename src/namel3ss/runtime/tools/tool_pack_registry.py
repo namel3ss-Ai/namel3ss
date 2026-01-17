@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
-TOOL_PACK_VERSION = "v1"
+TOOL_PACK_VERSION = "stable"
 
 
 @dataclass(frozen=True)

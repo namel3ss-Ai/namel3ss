@@ -5,6 +5,7 @@ from typing import Dict, Iterable
 from namel3ss.ast import nodes as ast
 from namel3ss.module_loader.resolve_names import qualify, resolve_name
 from namel3ss.module_loader.resolve_walk import resolve_flow_steps, resolve_page_item, resolve_statements
+from namel3ss.module_loader.resolve_walk.expressions import resolve_expression
 from namel3ss.module_loader.types import ModuleExports
 
 
@@ -12,6 +13,7 @@ def collect_definitions(programs: Iterable[ast.Program]) -> Dict[str, set[str]]:
     defs: Dict[str, set[str]] = {
         "record": set(),
         "flow": set(),
+        "job": set(),
         "page": set(),
         "ai": set(),
         "agent": set(),
@@ -23,6 +25,7 @@ def collect_definitions(programs: Iterable[ast.Program]) -> Dict[str, set[str]]:
         defs["record"].update({rec.name for rec in program.records})
         defs["function"].update({func.name for func in getattr(program, "functions", [])})
         defs["flow"].update({flow.name for flow in program.flows})
+        defs["job"].update({job.name for job in getattr(program, "jobs", [])})
         defs["page"].update({page.name for page in program.pages})
         defs["ui_pack"].update({pack.name for pack in getattr(program, "ui_packs", [])})
         defs["ai"].update({ai.name for ai in program.ais})
@@ -65,6 +68,25 @@ def resolve_program(
         if getattr(flow, "steps", None):
             resolve_flow_steps(
                 flow.steps,
+                module_name=module_name,
+                alias_map=alias_map,
+                local_defs=local_defs,
+                exports_map=exports_map,
+                context_label=context_label,
+            )
+    for job in getattr(program, "jobs", []):
+        job.name = qualify(module_name, job.name)
+        resolve_statements(
+            job.body,
+            module_name=module_name,
+            alias_map=alias_map,
+            local_defs=local_defs,
+            exports_map=exports_map,
+            context_label=context_label,
+        )
+        if job.when is not None:
+            resolve_expression(
+                job.when,
                 module_name=module_name,
                 alias_map=alias_map,
                 local_defs=local_defs,

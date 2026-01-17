@@ -91,7 +91,10 @@ def test_tool_trace_schema_v1(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -
     _write_local_tool(tmp_path)
     _write_bindings(tmp_path)
 
-    source = '''tool "local echo":
+    source = '''packs:
+  "builtin.text"
+
+tool "local echo":
   implemented using python
 
   input:
@@ -148,6 +151,7 @@ flow "demo":
         tools=program.tools,
         input_data={"payload": {"ok": True}, "text": "Hello World"},
         project_root=str(tmp_path),
+        pack_allowlist=getattr(program, "pack_allowlist", None),
     )
     result = executor.run()
     tool_events = [event for event in result.traces if isinstance(event, dict) and event.get("type") == "tool_call"]

@@ -22,6 +22,7 @@ from namel3ss.cli.secrets_mode import run_secrets_command
 from namel3ss.cli.studio_mode import run_studio
 from namel3ss.cli.browser_mode import run_dev_command, run_preview_command
 from namel3ss.cli.ui_mode import export_ui_contract, render_manifest, run_action
+from namel3ss.cli.run_mode import run_run_command
 from namel3ss.cli.ui_output import print_payload, print_usage
 from namel3ss.cli.verify_mode import run_verify_command
 from namel3ss.cli.args import allow_aliases_from_flags, extract_app_override, resolve_explicit_path
@@ -160,6 +161,8 @@ def handle_app_commands(path: str | None, remainder: list[str], context: dict | 
         manifest = render_manifest(program_ir)
         print(dumps_pretty(manifest))
         return 0
+    if cmd == "run":
+        return run_run_command([path_posix, *tail])
     if cmd == "flow":
         json_mode = "--json" in tail
         tail = [item for item in tail if item != "--json"]

@@ -102,6 +102,40 @@ _CAPABILITIES = (
         examples=(),
     ),
     _cap(
+        cap_id="runtime.http",
+        title="HTTP calls",
+        category="tools",
+        status=STATUS_SHIPPED,
+        tests=(
+            "tests/runtime/test_backend_capabilities.py",
+        ),
+        examples=(
+            "src/namel3ss/examples/http_request/app.ai",
+        ),
+    ),
+    _cap(
+        cap_id="runtime.files",
+        title="File I/O",
+        category="tools",
+        status=STATUS_SHIPPED,
+        tests=(
+            "tests/runtime/test_backend_capabilities.py",
+        ),
+        examples=(),
+    ),
+    _cap(
+        cap_id="runtime.jobs",
+        title="Background jobs",
+        category="runtime",
+        status=STATUS_SHIPPED,
+        tests=(
+            "tests/runtime/test_backend_capabilities.py",
+        ),
+        examples=(
+            "src/namel3ss/demos/jobs_persistence/app.ai",
+        ),
+    ),
+    _cap(
         cap_id="runtime.ai",
         title="AI calls and agents",
         category="ai",

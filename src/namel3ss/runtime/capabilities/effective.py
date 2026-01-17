@@ -82,11 +82,21 @@ def resolve_tool_capabilities(
     pack_root: Path | None,
 ) -> ToolCapabilities | None:
     if resolved_source == "builtin_pack":
-        return get_builtin_tool_capabilities(tool_name)
-    if resolved_source == "installed_pack" and pack_root:
+        return get_builtin_tool_capabilities(tool_name) or _default_capabilities()
+    if resolved_source in {"installed_pack", "local_pack"} and pack_root:
         capabilities = load_pack_capabilities(pack_root)
-        return capabilities.get(tool_name)
+        return capabilities.get(tool_name) or _default_capabilities()
     return None
+
+
+def _default_capabilities() -> ToolCapabilities:
+    return ToolCapabilities(
+        filesystem="none",
+        network="none",
+        env="none",
+        subprocess="none",
+        secrets=[],
+    )
 
 
 def summarize_guarantees(capabilities: dict[str, ToolCapabilities]) -> dict[str, object]:

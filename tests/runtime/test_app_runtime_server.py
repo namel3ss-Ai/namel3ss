@@ -21,7 +21,7 @@ record "Item":
   field "id" is number must be present
   field "name" is text must be present
 
-flow "seed":
+flow "seed" requires true:
   set state.item.id is 10
   set state.item.name is "Ten"
   create "Item" with state.item as item

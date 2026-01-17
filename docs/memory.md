@@ -117,7 +117,7 @@ Use `n3 memory show` / `n3 memory why` to review them,
 ## Memory proof harness
 Deterministic scenarios live under `tests/memory_proof/scenarios`.
 Goldens live under `tests/memory_proof/golden`.
-Run output is written under `tests/memory_proof/output`.
+Run output is written under `.namel3ss/memory_proof/output`.
 
 Generate or refresh goldens:
 ```bash

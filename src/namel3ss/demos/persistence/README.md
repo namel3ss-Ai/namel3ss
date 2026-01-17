@@ -1,9 +1,6 @@
-# {{PROJECT_NAME}}
+# Persistence Demo
 
-demo
-- persistence
-
-A minimal demo that writes records and reads them back.
+Small demo that writes records and reads them back with persistence enabled.
 
 How to use it:
 - copy this folder to a new project directory

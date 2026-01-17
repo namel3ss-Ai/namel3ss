@@ -6,7 +6,7 @@ It is meant to catch behavioral changes without changing memory behavior.
 ## Where files live
 - Scenarios: `tests/memory_proof/scenarios/*.yaml`
 - Goldens: `tests/memory_proof/golden/<scenario_id>/`
-- Output: `tests/memory_proof/output/<scenario_id>/`
+- Output: `.namel3ss/memory_proof/output/<scenario_id>/`
 
 ## Commands
 Generate or update goldens:

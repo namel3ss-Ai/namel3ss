@@ -1,0 +1,42 @@
+packs:
+  "builtin.text"
+
+capabilities:
+  jobs
+
+tool "slugify text":
+  implemented using python
+
+  input:
+    text is text
+    separator is optional text
+
+  output:
+    text is text
+
+record "Slug":
+  field "value" is text must be present
+
+job "store slug" when state.persist_pending is true:
+  create "Slug" with state.pending_slug as slug
+  set state.persist_pending is false
+
+spec is "1.0"
+
+flow "queue slug" requires true:
+  let result is slugify text:
+    text is "Hello Packs"
+  set state.pending_slug with:
+    value is result.text
+  set state.persist_pending is true
+  return state.pending_slug
+
+page "home":
+  purpose is "Demo of capability packs with a background job."
+  title is "Capability Packs"
+  text is "Queue a slug created by a pack tool, then persist it in a job."
+  card "Actions":
+    button "Queue slug":
+      calls flow "queue slug"
+  card "Stored slugs":
+    table is "Slug"
