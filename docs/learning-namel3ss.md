@@ -1,7 +1,7 @@
 # Learning namel3ss
 Build AI-native applications you can explain
 
-This book is a single, progressive path through the current namel3ss alpha. It teaches the language, runtime model, and toolchain without requiring you to read the full /docs tree. All examples use the current .ai syntax and CLI behavior.
+This book is a single, progressive path through the current namel3ss release. It teaches the language, runtime model, and toolchain without requiring you to read the full /docs tree. All examples use the current .ai syntax and CLI behavior.
 
 If something fails to run, start with `n3 doctor`.
 
@@ -31,6 +31,8 @@ Studio is a viewer and interactor. It shows the UI manifest, available actions, 
 
 ### Language Contracts
 - [Application runtime](language/application-runtime.md): every valid `.ai` program is an application; the browser renders it, Studio inspects it.
+- [Application Data Model](language/application-data-model.md): structured records, persistence, and deterministic ordering.
+- [Application UI Model](language/application-ui-model.md): declarative pages, layout, components, and navigation with deterministic manifests.
 - [No dependencies](language/no-dependencies.md): install `namel3ss` and run apps without managing pip/npm for each project; packs extend capabilities.
 - [Capability packs](language/capability-packs.md): packs are signed, permissioned capability bundles with deterministic effect boundaries.
 - [Browser Protocol](runtime/browser-protocol.md): `/api/ui`, `/api/state`, `/api/action`, and `/api/health` are stable and deterministic.
@@ -58,6 +60,8 @@ Use `n3 status` for the last run summary, `n3 explain` for failures, and
 #### References
 - [AI language definition](ai-language-definition.md)
 - [Runtime model](runtime.md)
+- [Application Data Model](language/application-data-model.md)
+- [Application UI Model](language/application-ui-model.md)
 - [UI DSL](ui-dsl.md)
 - [Studio](studio.md)
 - [Stability](stability.md)
@@ -323,10 +327,10 @@ with catch err:
 **Minimal example**:
 ```ai
 parallel:
-  run "alpha":
+  run "primary":
     let a is 1 + 1
     return a
-  run "beta":
+  run "secondary":
     let b is 2 + 2
     return b
 ```
@@ -618,7 +622,7 @@ Tool packs bundle reusable tools with explicit capabilities. Packs are installed
 Targets describe how an app runs:
 - `local` for development
 - `service` for long-running servers (with `/health` and `/version`)
-- `edge` is a stub in this alpha
+- `edge` is a stub target
 
 Build and promote with `n3 pack` and `n3 ship`.
 
@@ -633,8 +637,8 @@ Build and promote with `n3 pack` and `n3 ship`.
 
 ## Part IX - Limits, Stability, and Trust
 
-### Alpha status and stability
-namel3ss is in alpha. The core surface is stable and the UI DSL is frozen for v0.1.x. Remaining change areas are:
+### Status and stability
+The core surface is stable and the UI DSL is frozen. Remaining change areas are:
 - Formatting and lint rules may evolve.
 - Templates and examples may be refined.
 
@@ -646,7 +650,7 @@ Core contracts are frozen. The parser, IR, and trace schemas are locked by tests
 - Proofs and explain output are deterministic and redacted.
 - Capabilities and trust policies restrict what tools can do.
 
-### Known limits in the current alpha
+### Known limits right now
 - No CSS or styling DSL.
 - No unbounded loops or hidden recursion.
 - No implicit type coercion.

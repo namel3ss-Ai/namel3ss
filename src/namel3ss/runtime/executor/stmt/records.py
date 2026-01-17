@@ -6,6 +6,7 @@ from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.runtime.executor.records_ops import handle_create, handle_delete, handle_find, handle_save, handle_update
 from namel3ss.runtime.flow.ids import flow_step_id
 from namel3ss.runtime.mutation_policy import evaluate_mutation_policy
+from namel3ss.runtime.records.ordering import normalize_record_id, sorted_record_ids
 from namel3ss.traces.schema import TraceEventType
 
 
@@ -68,11 +69,14 @@ def _run_record_write(ctx, stmt: ir.Statement, handler, *, kind: str, verb: str,
             },
         )
     _record_mutation_allowed(ctx, stmt, action, step_id)
+    changes_start = len(getattr(ctx, "record_changes", []) or [])
     handler(ctx, stmt, deterministic=deterministic)
+    record_ids = _record_ids_for_step(stmt, ctx.record_changes[changes_start:])
     record_step(
         ctx,
         kind=kind,
         what=f"{verb} {stmt.record_name}",
+        data=_record_step_data(action, stmt.record_name, record_ids),
         line=stmt.line,
         column=stmt.column,
     )
@@ -123,6 +127,37 @@ def _record_mutation_blocked(ctx, stmt: ir.Statement, action: str, decision, ste
         "fix_hint": decision.fix_hint,
     }
     ctx.traces.append(entry)
+
+
+def _record_ids_for_step(record_name: str, changes: list[dict]) -> list[object]:
+    raw_ids: list[object] = []
+    for entry in changes:
+        if not isinstance(entry, dict):
+            continue
+        if entry.get("record") != record_name:
+            continue
+        record_id = entry.get("id")
+        if record_id is None:
+            continue
+        raw_ids.append(record_id)
+    if not raw_ids:
+        return []
+    seen: set[object] = set()
+    unique: list[object] = []
+    for record_id in raw_ids:
+        normalized = normalize_record_id(record_id)
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        unique.append(record_id)
+    return sorted_record_ids(unique)
+
+
+def _record_step_data(action: str, record_name: str, record_ids: list[object]) -> dict:
+    data = {"record": record_name, "action": action, "count": len(record_ids)}
+    if record_ids:
+        data["ids"] = record_ids
+    return data
 
 
 __all__ = ["execute_create", "execute_delete", "execute_find", "execute_save", "execute_update"]

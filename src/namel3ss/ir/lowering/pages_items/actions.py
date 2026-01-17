@@ -15,6 +15,7 @@ from namel3ss.ir.model.pages import (
     ComposeItem,
     DividerItem,
     DrawerItem,
+    LinkItem,
     ModalItem,
     PageItem,
     RowItem,
@@ -29,6 +30,7 @@ def lower_compose_item(
     record_map,
     flow_names: set[str],
     page_name: str,
+    page_names: set[str],
     overlays: dict[str, set[str]],
     compose_names: set[str],
     *,
@@ -43,7 +45,7 @@ def lower_compose_item(
         )
     compose_names.add(item.name)
     children = [
-        lower_page_item(child, record_map, flow_names, page_name, overlays, compose_names)
+        lower_page_item(child, record_map, flow_names, page_name, page_names, overlays, compose_names)
         for child in item.children
     ]
     return attach_origin(ComposeItem(name=item.name, children=children, line=item.line, column=item.column), item)
@@ -76,11 +78,31 @@ def lower_button_item(
     )
 
 
+def lower_link_item(
+    item: ast.LinkItem,
+    page_names: set[str],
+    *,
+    attach_origin,
+    unknown_page_message,
+) -> LinkItem:
+    if item.page_name not in page_names:
+        raise Namel3ssError(
+            unknown_page_message(item.page_name, page_names),
+            line=item.line,
+            column=item.column,
+        )
+    return attach_origin(
+        LinkItem(label=item.label, page_name=item.page_name, line=item.line, column=item.column),
+        item,
+    )
+
+
 def lower_section_item(
     item: ast.SectionItem,
     record_map,
     flow_names: set[str],
     page_name: str,
+    page_names: set[str],
     overlays: dict[str, set[str]],
     compose_names: set[str],
     *,
@@ -88,7 +110,8 @@ def lower_section_item(
     attach_origin,
 ) -> SectionItem:
     children = [
-        lower_page_item(child, record_map, flow_names, page_name, overlays, compose_names) for child in item.children
+        lower_page_item(child, record_map, flow_names, page_name, page_names, overlays, compose_names)
+        for child in item.children
     ]
     return attach_origin(
         SectionItem(label=item.label, children=children, line=item.line, column=item.column),
@@ -101,6 +124,7 @@ def lower_card_group_item(
     record_map,
     flow_names: set[str],
     page_name: str,
+    page_names: set[str],
     overlays: dict[str, set[str]],
     compose_names: set[str],
     *,
@@ -111,7 +135,9 @@ def lower_card_group_item(
     for child in item.children:
         if not isinstance(child, ast.CardItem):
             raise Namel3ssError("Card groups may only contain cards", line=child.line, column=child.column)
-        lowered_children.append(lower_page_item(child, record_map, flow_names, page_name, overlays, compose_names))
+        lowered_children.append(
+            lower_page_item(child, record_map, flow_names, page_name, page_names, overlays, compose_names)
+        )
     return attach_origin(CardGroupItem(children=lowered_children, line=item.line, column=item.column), item)
 
 
@@ -120,6 +146,7 @@ def lower_card_item(
     record_map,
     flow_names: set[str],
     page_name: str,
+    page_names: set[str],
     overlays: dict[str, set[str]],
     compose_names: set[str],
     *,
@@ -127,7 +154,8 @@ def lower_card_item(
     attach_origin,
 ) -> CardItem:
     children = [
-        lower_page_item(child, record_map, flow_names, page_name, overlays, compose_names) for child in item.children
+        lower_page_item(child, record_map, flow_names, page_name, page_names, overlays, compose_names)
+        for child in item.children
     ]
     stat = _lower_card_stat(item.stat)
     actions = _lower_card_actions(item.actions, flow_names, page_name, overlays)
@@ -142,6 +170,7 @@ def lower_row_item(
     record_map,
     flow_names: set[str],
     page_name: str,
+    page_names: set[str],
     overlays: dict[str, set[str]],
     compose_names: set[str],
     *,
@@ -152,7 +181,9 @@ def lower_row_item(
     for child in item.children:
         if not isinstance(child, ast.ColumnItem):
             raise Namel3ssError("Rows may only contain columns", line=child.line, column=child.column)
-        lowered_children.append(lower_page_item(child, record_map, flow_names, page_name, overlays, compose_names))
+        lowered_children.append(
+            lower_page_item(child, record_map, flow_names, page_name, page_names, overlays, compose_names)
+        )
     return attach_origin(RowItem(children=lowered_children, line=item.line, column=item.column), item)
 
 
@@ -161,6 +192,7 @@ def lower_column_item(
     record_map,
     flow_names: set[str],
     page_name: str,
+    page_names: set[str],
     overlays: dict[str, set[str]],
     compose_names: set[str],
     *,
@@ -168,7 +200,8 @@ def lower_column_item(
     attach_origin,
 ) -> ColumnItem:
     children = [
-        lower_page_item(child, record_map, flow_names, page_name, overlays, compose_names) for child in item.children
+        lower_page_item(child, record_map, flow_names, page_name, page_names, overlays, compose_names)
+        for child in item.children
     ]
     return attach_origin(ColumnItem(children=children, line=item.line, column=item.column), item)
 
@@ -182,6 +215,7 @@ def lower_modal_item(
     record_map,
     flow_names: set[str],
     page_name: str,
+    page_names: set[str],
     overlays: dict[str, set[str]],
     compose_names: set[str],
     *,
@@ -189,7 +223,8 @@ def lower_modal_item(
     attach_origin,
 ) -> ModalItem:
     children = [
-        lower_page_item(child, record_map, flow_names, page_name, overlays, compose_names) for child in item.children
+        lower_page_item(child, record_map, flow_names, page_name, page_names, overlays, compose_names)
+        for child in item.children
     ]
     return attach_origin(ModalItem(label=item.label, children=children, line=item.line, column=item.column), item)
 
@@ -199,6 +234,7 @@ def lower_drawer_item(
     record_map,
     flow_names: set[str],
     page_name: str,
+    page_names: set[str],
     overlays: dict[str, set[str]],
     compose_names: set[str],
     *,
@@ -206,7 +242,8 @@ def lower_drawer_item(
     attach_origin,
 ) -> DrawerItem:
     children = [
-        lower_page_item(child, record_map, flow_names, page_name, overlays, compose_names) for child in item.children
+        lower_page_item(child, record_map, flow_names, page_name, page_names, overlays, compose_names)
+        for child in item.children
     ]
     return attach_origin(DrawerItem(label=item.label, children=children, line=item.line, column=item.column), item)
 
@@ -327,6 +364,7 @@ def _reject_card_stat_calls(expr: ast.Expression) -> None:
 
 __all__ = [
     "lower_button_item",
+    "lower_link_item",
     "lower_card_group_item",
     "lower_card_item",
     "lower_column_item",

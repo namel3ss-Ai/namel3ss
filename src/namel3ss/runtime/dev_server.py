@@ -15,6 +15,7 @@ from namel3ss.media import MediaValidationMode
 from namel3ss.module_loader import load_project
 from namel3ss.module_loader.source_io import ParseCache
 from namel3ss.resources import studio_web_root
+from namel3ss.runtime.browser_state import record_data_effects, record_rows_snapshot, records_snapshot
 from namel3ss.runtime.dev_overlay import build_dev_overlay_payload
 from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.preferences.factory import app_pref_key, preference_store_for_app
@@ -173,7 +174,20 @@ class BrowserAppState:
         self._refresh_if_needed()
         if self.error_payload:
             return {"ok": False, "error": self.error_payload, "revision": self.revision}
-        return {"ok": True, "state": self._state_snapshot(), "revision": self.revision}
+        records = []
+        if self.program is not None:
+            config = load_config(app_path=self.app_path)
+            store = self.session.ensure_store(config)
+            records = records_snapshot(self.program, store, config)
+        payload = {
+            "ok": True,
+            "state": self._state_snapshot(),
+            "records": records,
+            "revision": self.revision,
+        }
+        if self.session.data_effects:
+            payload["effects"] = self.session.data_effects
+        return payload
 
     def status_payload(self) -> dict:
         self._refresh_if_needed()
@@ -199,6 +213,9 @@ class BrowserAppState:
         preference = getattr(self.program, "theme_preference", {}) or {}
         response = {}
         try:
+            before_rows = None
+            if self.program is not None:
+                before_rows = record_rows_snapshot(self.program, store, config)
             response = handle_action(
                 self.program,
                 action_id=action_id,
@@ -214,6 +231,15 @@ class BrowserAppState:
                 source=self._main_source(),
                 raise_on_error=False,
             )
+            if before_rows is not None:
+                self.session.data_effects = record_data_effects(
+                    self.program,
+                    store,
+                    config,
+                    action_id,
+                    response,
+                    before_rows,
+                )
         except Namel3ssError as err:
             response = build_error_from_exception(err, kind="engine", source=self._source_payload())
             if self.mode == "dev":

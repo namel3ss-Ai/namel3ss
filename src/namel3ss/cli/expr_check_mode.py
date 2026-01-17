@@ -10,7 +10,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 
 
-EXPR_CHECK_SCHEMA_VERSION = "expression.surface.v1"
+EXPR_CHECK_SCHEMA_VERSION = "expression.surface"
 EXPR_CHECK_TESTS = (
     "tests/contract/test_expression_surface_contract.py",
     "tests/runtime/test_expression_explain_trace.py",
@@ -72,7 +72,7 @@ def _missing_flag_value(flag: str) -> str:
         what=f"{flag} flag is missing a value.",
         why="expr-check requires a file path when the flag is present.",
         fix=f"Pass a path after {flag}.",
-        example=f"n3 expr-check {flag} expr_report.json",
+        example=f"n3 expr-check {flag} .namel3ss/expr_report.json",
     )
 
 
@@ -81,7 +81,7 @@ def _unknown_flag_message(flag: str) -> str:
         what=f"Unknown flag '{flag}'.",
         why="expr-check supports only --json.",
         fix="Remove the unsupported flag.",
-        example="n3 expr-check --json expr_report.json",
+        example="n3 expr-check --json .namel3ss/expr_report.json",
     )
 
 
@@ -90,7 +90,7 @@ def _too_many_args_message() -> str:
         what="expr-check does not accept positional arguments.",
         why="All arguments are flags.",
         fix="Remove the extra arguments.",
-        example="n3 expr-check --json expr_report.json",
+        example="n3 expr-check --json .namel3ss/expr_report.json",
     )
 
 

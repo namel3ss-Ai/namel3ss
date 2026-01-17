@@ -6,7 +6,7 @@ from namel3ss.runtime.build.explain.store import write_history
 
 def test_manifest_writes_history(tmp_path: Path) -> None:
     manifest = BuildManifest(
-        api_version="build.v1",
+        api_version="build",
         build_id="abc123",
         created_at="2024-01-01T00:00:00+00:00",
         project_root=str(tmp_path),

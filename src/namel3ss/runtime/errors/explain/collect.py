@@ -5,6 +5,8 @@ from pathlib import Path
 
 from namel3ss.runtime.errors.explain.model import ErrorState, ErrorWhere
 
+_ERRORS_API_VERSIONS = {"errors", "errors.v1"}
+
 
 def collect_last_error(project_root: Path) -> ErrorState | None:
     run_last = _load_json(project_root / ".namel3ss" / "run" / "last.json")
@@ -173,7 +175,7 @@ def _load_json(path: Path) -> dict | None:
 def _runtime_error_pack(payload: dict | None) -> dict | None:
     if not isinstance(payload, dict):
         return None
-    if payload.get("api_version") == "errors.v1":
+    if payload.get("api_version") in _ERRORS_API_VERSIONS:
         return None
     error = payload.get("error")
     if not isinstance(error, dict):

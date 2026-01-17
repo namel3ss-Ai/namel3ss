@@ -28,6 +28,7 @@ Execution steps explain what happened and why.
 
 ## Related contracts
 - [Application runtime](language/application-runtime.md)
+- [Application Data Model](language/application-data-model.md)
 - [No dependencies](language/no-dependencies.md)
 - [Capability packs](language/capability-packs.md)
 - [Browser Protocol](runtime/browser-protocol.md)

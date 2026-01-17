@@ -323,3 +323,12 @@ def test_action_unknown_modal_errors():
     with pytest.raises(Namel3ssError) as exc:
         lower_ir_program(source)
     assert "unknown modal" in str(exc.value).lower()
+
+
+def test_link_unknown_page_errors():
+    source = '''page "home":
+  link "Settings" to page "Settings"
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "unknown page" in str(exc.value).lower()

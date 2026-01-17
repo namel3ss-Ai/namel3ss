@@ -97,6 +97,7 @@
       }
       clearManifestErrorIfPresent();
       applyManifest(payload);
+      refreshData();
       if (root.setup && root.setup.refreshSetup) {
         root.setup.refreshSetup();
       }
@@ -151,8 +152,33 @@
     }
   }
 
+  async function refreshData() {
+    try {
+      const payload = await net.fetchJson("/api/state");
+      if (state && typeof state.setCachedData === "function") {
+        state.setCachedData(payload);
+      }
+      if (root.data && typeof root.data.renderData === "function") {
+        root.data.renderData(payload);
+      } else if (typeof window.renderData === "function") {
+        window.renderData(payload);
+      }
+    } catch (err) {
+      const detail = err && err.message ? err.message : "Unable to load data.";
+      if (state && typeof state.setCachedData === "function") {
+        state.setCachedData({ ok: false, error: detail, kind: "state" });
+      }
+      if (root.data && typeof root.data.renderData === "function") {
+        root.data.renderData({ ok: false, error: detail, kind: "state" });
+      } else if (typeof window.renderData === "function") {
+        window.renderData({ ok: false, error: detail, kind: "state" });
+      }
+    }
+  }
+
   refresh.applyManifest = applyManifest;
   refresh.refreshUI = refreshUI;
   refresh.refreshSummary = refreshSummary;
   refresh.refreshDiagnostics = refreshDiagnostics;
+  refresh.refreshData = refreshData;
 })();

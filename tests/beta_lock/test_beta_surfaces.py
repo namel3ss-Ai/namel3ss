@@ -29,4 +29,4 @@ def test_beta_surfaces_catalog_is_valid():
 
 def test_beta_surfaces_schema_version_is_present():
     payload = json.loads(SURFACES_PATH.read_text(encoding="utf-8"))
-    assert payload.get("schema_version") == "beta_surfaces.v1"
+    assert payload.get("schema_version") == "beta_surfaces"

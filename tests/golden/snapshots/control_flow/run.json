@@ -53,7 +53,7 @@
       }
     },
     "result": "two",
-    "schema_version": "production.v0",
+    "schema_version": "production",
     "state": {
       "items": [
         1,

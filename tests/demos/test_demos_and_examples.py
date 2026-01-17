@@ -24,6 +24,18 @@ def test_smoke_demo_validates() -> None:
     assert main([smoke_app.as_posix(), "check"]) == 0
 
 
+def test_smoke_demo_runs_dry() -> None:
+    smoke_app = DEMOS_ROOT / "smoke" / "app.ai"
+    assert smoke_app.exists()
+    assert main([smoke_app.as_posix(), "run", "--target", "local", "--dry", "--no-open"]) == 0
+
+
+def test_demos_render_ui() -> None:
+    demo_apps = _ai_paths(DEMOS_ROOT)
+    for app_path in demo_apps:
+        assert main([app_path.as_posix(), "ui"]) == 0
+
+
 def test_examples_are_single_concept_and_validate() -> None:
     example_apps = _ai_paths(EXAMPLES_ROOT)
     assert example_apps, "No examples found"

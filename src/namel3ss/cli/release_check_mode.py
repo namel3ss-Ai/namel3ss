@@ -33,7 +33,7 @@ def run_release_check_command(args: list[str]) -> int:
 
 
 def _parse_args(args: list[str]) -> _ReleaseParams:
-    json_path = Path.cwd() / "release_report.json"
+    json_path = Path(".namel3ss") / "release_report.json"
     txt_path: Path | None = None
     fast = False
     idx = 0
@@ -70,11 +70,12 @@ def _parse_args(args: list[str]) -> _ReleaseParams:
 
 
 def _missing_flag_value(flag: str) -> str:
+    filename = "release_report.txt" if flag == "--txt" else "release_report.json"
     return build_guidance_message(
         what=f"{flag} flag is missing a value.",
         why="release-check requires a file path when the flag is present.",
         fix=f"Pass a path after {flag}.",
-        example=f"n3 release-check {flag} release_report.json",
+        example=f"n3 release-check {flag} .namel3ss/{filename}",
     )
 
 
@@ -83,7 +84,7 @@ def _unknown_flag_message(flag: str) -> str:
         what=f"Unknown flag '{flag}'.",
         why="release-check supports --json, --txt, and --fast.",
         fix="Remove the unsupported flag.",
-        example="n3 release-check --json release_report.json",
+        example="n3 release-check --json .namel3ss/release_report.json",
     )
 
 
@@ -92,7 +93,7 @@ def _too_many_args_message() -> str:
         what="release-check does not accept positional arguments.",
         why="All arguments are flags.",
         fix="Remove the extra arguments.",
-        example="n3 release-check --json release_report.json",
+        example="n3 release-check --json .namel3ss/release_report.json",
     )
 
 

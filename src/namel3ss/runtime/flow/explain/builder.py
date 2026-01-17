@@ -18,7 +18,25 @@ from .model import FlowIntent, FlowOutcome, FlowSummary
 from .normalize import build_plain_text, normalize_lines, write_last_flow
 from .render_plain import render_what
 
-API_VERSION = "flow.v1"
+API_VERSION = "flow"
+_RECORD_STEP_KINDS = {
+    "statement_save",
+    "statement_create",
+    "statement_update",
+    "statement_delete",
+}
+_DECISION_STEP_KINDS = {
+    "decision_if",
+    "decision_match",
+    "decision_repeat",
+    "decision_for_each",
+    "decision_try",
+    "branch_taken",
+    "case_taken",
+    "otherwise_taken",
+    "catch_taken",
+    "statement_return",
+}
 
 
 def build_flow_explain_pack(project_root: Path, app_path: str | None = None) -> dict | None:
@@ -113,21 +131,15 @@ def _build_outcome(
 def _build_reasons(steps: list[dict], tool_entries: list[dict], memory_last: dict | None) -> list[str]:
     lines: list[str] = []
     for step in steps:
-        if step.get("kind") in {
-            "decision_if",
-            "decision_match",
-            "decision_repeat",
-            "decision_for_each",
-            "decision_try",
-            "branch_taken",
-            "case_taken",
-            "otherwise_taken",
-            "catch_taken",
-            "statement_return",
-        }:
+        kind = step.get("kind")
+        if kind in _DECISION_STEP_KINDS:
             line = _step_line(step)
-            if line:
-                lines.append(line)
+        elif kind in _RECORD_STEP_KINDS:
+            line = _record_step_line(step)
+        else:
+            line = None
+        if line:
+            lines.append(line)
     written = memory_write_count(memory_last)
     if written and written > 0:
         lines.append(f"wrote {written} memory items.")
@@ -263,6 +275,30 @@ def _step_line(step: dict) -> str | None:
     if because:
         return f"{_strip_period(what)} because {because}."
     return _ensure_period(what)
+
+
+def _record_step_line(step: dict) -> str | None:
+    what = str(step.get("what") or "").strip()
+    if not what:
+        return None
+    data = step.get("data") if isinstance(step.get("data"), dict) else {}
+    ids = data.get("ids") if isinstance(data.get("ids"), list) else []
+    count = data.get("count") if isinstance(data.get("count"), int) else None
+    details: list[str] = []
+    if ids:
+        details.append(f"ids: {_format_ids(ids)}")
+    if count is not None and not ids:
+        details.append(f"count: {count}")
+    if details:
+        return f"{_strip_period(what)} ({'; '.join(details)})."
+    return _ensure_period(what)
+
+
+def _format_ids(ids: list[object], limit: int = 5) -> str:
+    items = [str(item) for item in ids[:limit]]
+    if len(ids) > limit:
+        items.append("...")
+    return ", ".join(items)
 
 
 def _tool_blocked_line(entry: dict, *, verb: str) -> str:

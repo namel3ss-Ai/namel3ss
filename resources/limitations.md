@@ -53,7 +53,7 @@ This document lists current limitations and boundaries based on runtime, CLI, St
 
 ## Intentional Constraints
 
-- UI components are limited to the built-in set: title, text, image, form, table, list, chart, button, section, card, card_group, tabs/tab, modal/drawer, chat elements, and layout (row/column/divider) — keeps the UI DSL small and stable.
+- UI components are limited to the built-in set: title, text, image, form, table, list, chart, button, link, section, card, card_group, tabs/tab, modal/drawer, chat elements, and layout (row/column/divider) — keeps the UI DSL small and stable.
 - UI packs are static composition only; no parameters, conditionals, flows, tools, or records — avoids runtime drift.
 - Theme control is limited to light/dark/system plus optional theme tokens — arbitrary CSS is not supported.
 - Canonical types are required; legacy aliases are accepted but linted as errors by default and rewritten by the formatter — keeps type naming stable.
@@ -75,7 +75,7 @@ This document lists current limitations and boundaries based on runtime, CLI, St
 ## Known Edge Cases
 
 - Determinism guarantees apply to canonicalization and hashing — external providers or tools that depend on time/network can produce different outcomes.
-- Studio page navigation is a simple page selector — there is no URL routing or deep-linking.
+- Studio page navigation uses a simple page selector with a `?page=` query param; there are no nested routes or guard rules.
 
 ## What Is Explicitly Not Supported
 

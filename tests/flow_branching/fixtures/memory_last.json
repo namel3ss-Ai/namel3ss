@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "api_version": "memory.v1",
+  "api_version": "memory",
   "payload": [
     {
       "id": "session:anon:my:short_term:1",

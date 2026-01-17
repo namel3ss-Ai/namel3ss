@@ -71,7 +71,7 @@
     }
   ],
   "namel3ss_version": "0.1.0a9",
-  "schema_version": "evals.v1",
+  "schema_version": "evals",
   "status": "pass",
   "summary": {
     "ai_calls": 2,

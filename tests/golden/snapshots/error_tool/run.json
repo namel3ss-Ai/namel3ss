@@ -83,7 +83,7 @@
       }
     },
     "result": null,
-    "schema_version": "production.v0",
+    "schema_version": "production",
     "state": {},
     "status": "error",
     "trace_hash": "94aae2da6fbd7e3e85810e267baecdc090c6968fc1207cc9f7d40edc15ee8bae",

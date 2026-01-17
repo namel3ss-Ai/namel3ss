@@ -4,7 +4,7 @@ from namel3ss.runtime.build.explain.manifest import BuildManifest
 
 def test_diff_reports_changes() -> None:
     old = BuildManifest(
-        api_version="build.v1",
+        api_version="build",
         build_id="old",
         created_at="2024-01-01T00:00:00+00:00",
         project_root="/tmp/project",
@@ -18,7 +18,7 @@ def test_diff_reports_changes() -> None:
         notes=[],
     )
     new = BuildManifest(
-        api_version="build.v1",
+        api_version="build",
         build_id="new",
         created_at="2024-01-02T00:00:00+00:00",
         project_root="/tmp/project",

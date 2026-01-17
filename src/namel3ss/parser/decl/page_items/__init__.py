@@ -77,6 +77,8 @@ def parse_page_item(parser, *, allow_tabs: bool = False, allow_overlays: bool = 
         return actions_mod.parse_drawer_item(parser, tok, _parse_block, allow_overlays=allow_overlays)
     if tok.type == "BUTTON":
         return actions_mod.parse_button_item(parser, tok)
+    if tok.type == "IDENT" and tok.value == "link":
+        return actions_mod.parse_link_item(parser, tok)
     if tok.type == "SECTION":
         return actions_mod.parse_section_item(parser, tok, _parse_block)
     if tok.type == "IDENT" and tok.value == "card_group":

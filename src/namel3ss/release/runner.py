@@ -13,7 +13,7 @@ from namel3ss.release.model import GateResult, GateSpec, ReleaseReport
 from namel3ss.version import get_version
 
 
-RELEASE_SCHEMA_VERSION = "release.v1"
+RELEASE_SCHEMA_VERSION = "release"
 
 DEFAULT_GATES: tuple[GateSpec, ...] = (
     GateSpec(
@@ -79,9 +79,9 @@ DEFAULT_GATES: tuple[GateSpec, ...] = (
             "namel3ss.cli.main",
             "eval",
             "--json",
-            ".namel3ss/eval_report.json",
+            ".namel3ss/outcome/eval_report.json",
             "--txt",
-            ".namel3ss/eval_report.txt",
+            ".namel3ss/outcome/eval_report.txt",
         ),
     ),
     GateSpec(

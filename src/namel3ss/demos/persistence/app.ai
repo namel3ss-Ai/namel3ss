@@ -1,0 +1,13 @@
+spec is "1.0"
+
+record "Entry":
+  field "label" is text must be present
+
+page "home":
+  purpose is "Small demo that shows deterministic record persistence."
+  title is "Persistence"
+  text is "Add an entry, restart with persistence enabled, and it will remain."
+  card "Add entry":
+    form is "Entry"
+  card "Saved entries":
+    table is "Entry"

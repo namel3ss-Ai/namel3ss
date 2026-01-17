@@ -3,6 +3,7 @@
   const state = root.state || (root.state = {});
 
   let cachedManifest = null;
+  let cachedData = null;
   let cachedSummary = null;
   let cachedTraces = [];
   let cachedDiagnostics = null;
@@ -27,6 +28,13 @@
   function setCachedManifest(value) {
     cachedManifest = value || null;
     return cachedManifest;
+  }
+  function getCachedData() {
+    return cachedData;
+  }
+  function setCachedData(value) {
+    cachedData = value || null;
+    return cachedData;
   }
   function getCachedSummary() {
     return cachedSummary;
@@ -119,6 +127,8 @@
 
   state.getCachedManifest = getCachedManifest;
   state.setCachedManifest = setCachedManifest;
+  state.getCachedData = getCachedData;
+  state.setCachedData = setCachedData;
   state.getCachedSummary = getCachedSummary;
   state.setCachedSummary = setCachedSummary;
   state.getCachedTraces = getCachedTraces;

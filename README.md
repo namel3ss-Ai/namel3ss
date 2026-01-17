@@ -82,6 +82,12 @@ See `docs/trust-and-governance.md` for enforcement details.
 ## Browser protocol
 - [Browser Protocol](docs/runtime/browser-protocol.md): single app runtime server with `/api/ui`, `/api/state`, `/api/action`, and `/api/health` using deterministic ordering and payloads.
 
+## Application UI Model
+- [Application UI Model](docs/language/application-ui-model.md): declarative pages, layout, components, and navigation wired to flows, records, and state with deterministic manifests.
+
+## Application Data Model
+- [Application Data Model](docs/language/application-data-model.md): record schemas, CRUD operations, persistence, and deterministic ordering.
+
 ## Language Contracts
 - [Application runtime](docs/language/application-runtime.md): every valid `.ai` program is an application; the browser renders the manifest and actions, Studio inspects.
 - [No dependencies](docs/language/no-dependencies.md): installing `namel3ss` is sufficient to run apps; packs extend capabilities instead of imports.

@@ -11,7 +11,12 @@ from namel3ss.outcome.api import load_outcome_pack
 from namel3ss.traces.schema import TRACE_VERSION
 
 
-PRODUCTION_CONTRACT_VERSION = "production.v0"
+PRODUCTION_CONTRACT_VERSION = "production"
+LEGACY_PRODUCTION_CONTRACT_VERSION = "production.v0"
+_SUPPORTED_PRODUCTION_CONTRACT_VERSIONS = {
+    PRODUCTION_CONTRACT_VERSION,
+    LEGACY_PRODUCTION_CONTRACT_VERSION,
+}
 _ALLOWED_ERROR_CATEGORIES = {"parse", "runtime", "tool", "provider", "capability", "policy", "internal"}
 _ALLOWED_STATUSES = {"ok", "partial", "error"}
 
@@ -71,7 +76,7 @@ def validate_run_contract(payload: dict) -> list[str]:
     if not isinstance(contract, dict):
         issues.append("payload.contract must be a dict")
         return issues
-    if contract.get("schema_version") != PRODUCTION_CONTRACT_VERSION:
+    if contract.get("schema_version") not in _SUPPORTED_PRODUCTION_CONTRACT_VERSIONS:
         issues.append("contract.schema_version mismatch")
     if contract.get("trace_schema_version") != TRACE_VERSION:
         issues.append("contract.trace_schema_version mismatch")

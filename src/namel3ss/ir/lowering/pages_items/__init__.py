@@ -25,6 +25,10 @@ def _unknown_record_message(name: str, record_map: dict[str, schema.RecordSchema
     return f"Page references unknown record '{name}'.{hint}"
 
 
+def _unknown_page_message(name: str, page_names: set[str]) -> str:
+    suggestion = difflib.get_close_matches(name, page_names, n=1, cutoff=0.6)
+    hint = f' Did you mean "{suggestion[0]}"?' if suggestion else ""
+    return f"Page references unknown page '{name}'.{hint}"
 
 
 def _lower_page_item(
@@ -32,6 +36,7 @@ def _lower_page_item(
     record_map: dict[str, schema.RecordSchema],
     flow_names: set[str],
     page_name: str,
+    page_names: set[str],
     overlays: dict[str, set[str]],
     compose_names: set[str] | None = None,
 ):
@@ -56,6 +61,7 @@ def _lower_page_item(
             record_map,
             flow_names,
             page_name,
+            page_names,
             overlays,
             compose_names,
             lower_page_item=_lower_page_item,
@@ -80,6 +86,7 @@ def _lower_page_item(
             record_map,
             flow_names,
             page_name,
+            page_names,
             overlays,
             attach_origin=_attach_origin,
         )
@@ -89,6 +96,7 @@ def _lower_page_item(
             record_map,
             flow_names,
             page_name,
+            page_names,
             overlays,
             attach_origin=_attach_origin,
         )
@@ -102,6 +110,7 @@ def _lower_page_item(
             record_map,
             flow_names,
             page_name,
+            page_names,
             overlays,
             compose_names,
             lower_page_item=_lower_page_item,
@@ -114,12 +123,20 @@ def _lower_page_item(
             page_name,
             attach_origin=_attach_origin,
         )
+    if isinstance(item, ast.LinkItem):
+        return actions_mod.lower_link_item(
+            item,
+            page_names,
+            attach_origin=_attach_origin,
+            unknown_page_message=_unknown_page_message,
+        )
     if isinstance(item, ast.SectionItem):
         return actions_mod.lower_section_item(
             item,
             record_map,
             flow_names,
             page_name,
+            page_names,
             overlays,
             compose_names,
             lower_page_item=_lower_page_item,
@@ -131,6 +148,7 @@ def _lower_page_item(
             record_map,
             flow_names,
             page_name,
+            page_names,
             overlays,
             compose_names,
             lower_page_item=_lower_page_item,
@@ -142,6 +160,7 @@ def _lower_page_item(
             record_map,
             flow_names,
             page_name,
+            page_names,
             overlays,
             compose_names,
             lower_page_item=_lower_page_item,
@@ -153,6 +172,7 @@ def _lower_page_item(
             record_map,
             flow_names,
             page_name,
+            page_names,
             overlays,
             compose_names,
             lower_page_item=_lower_page_item,
@@ -164,6 +184,7 @@ def _lower_page_item(
             record_map,
             flow_names,
             page_name,
+            page_names,
             overlays,
             compose_names,
             lower_page_item=_lower_page_item,
@@ -179,6 +200,7 @@ def _lower_page_item(
             record_map,
             flow_names,
             page_name,
+            page_names,
             overlays,
             compose_names,
             lower_page_item=_lower_page_item,
@@ -190,6 +212,7 @@ def _lower_page_item(
             record_map,
             flow_names,
             page_name,
+            page_names,
             overlays,
             compose_names,
             lower_page_item=_lower_page_item,

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from namel3ss.ir.model.program import Program
 
 
-CONTRACT_SPEC_VERSION = "contract.v1"
+CONTRACT_SPEC_VERSION = "contract"
 
 
 @dataclass(frozen=True)

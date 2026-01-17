@@ -74,6 +74,7 @@ def lower_table_item(
     record_map: dict[str, schema.RecordSchema],
     flow_names: set[str],
     page_name: str,
+    page_names: set[str],
     overlays: dict[str, set[str]],
     *,
     attach_origin,
@@ -110,6 +111,7 @@ def lower_list_item(
     record_map: dict[str, schema.RecordSchema],
     flow_names: set[str],
     page_name: str,
+    page_names: set[str],
     overlays: dict[str, set[str]],
     *,
     attach_origin,
@@ -164,6 +166,7 @@ def lower_tabs_item(
     record_map: dict[str, schema.RecordSchema],
     flow_names: set[str],
     page_name: str,
+    page_names: set[str],
     overlays: dict[str, set[str]],
     compose_names: set[str],
     *,
@@ -181,7 +184,8 @@ def lower_tabs_item(
             )
         seen_labels.add(tab.label)
         children = [
-            lower_page_item(child, record_map, flow_names, page_name, overlays, compose_names) for child in tab.children
+            lower_page_item(child, record_map, flow_names, page_name, page_names, overlays, compose_names)
+            for child in tab.children
         ]
         lowered_tab = TabItem(label=tab.label, children=children, line=tab.line, column=tab.column)
         attach_origin(lowered_tab, tab)

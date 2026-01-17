@@ -251,6 +251,14 @@ def _page_item_to_manifest(
             path=path,
             taken_actions=taken_actions,
         )
+    if isinstance(item, ir.LinkItem):
+        return actions_mod.build_link_item(
+            item,
+            page_name=page_name,
+            page_slug=page_slug,
+            path=path,
+            taken_actions=taken_actions,
+        )
     if isinstance(item, ir.SectionItem):
         return actions_mod.build_section_item(
             item,

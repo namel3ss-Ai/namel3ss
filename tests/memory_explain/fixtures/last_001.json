@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "api_version": "memory.v1",
+  "api_version": "memory",
   "payload": {
     "short_term": [
       {

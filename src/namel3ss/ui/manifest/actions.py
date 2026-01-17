@@ -13,6 +13,10 @@ def _form_action_id(page_slug: str, record_name: str) -> str:
     return f"page.{page_slug}.form.{_slugify(record_name)}"
 
 
+def _link_action_id(page_slug: str, label: str) -> str:
+    return f"page.{page_slug}.link.{_slugify(label)}"
+
+
 def _allocate_action_id(base_id: str, element_id: str, taken: set[str]) -> str:
     if base_id not in taken:
         return base_id
@@ -65,4 +69,4 @@ def _walk_elements(elements: list[dict]) -> list[dict]:
     return collected
 
 
-__all__ = ["_button_action_id", "_form_action_id", "_wire_overlay_actions", "_allocate_action_id"]
+__all__ = ["_button_action_id", "_form_action_id", "_link_action_id", "_wire_overlay_actions", "_allocate_action_id"]

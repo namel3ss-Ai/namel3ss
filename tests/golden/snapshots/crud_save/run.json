@@ -57,7 +57,7 @@
       "id": 1,
       "title": "First"
     },
-    "schema_version": "production.v0",
+    "schema_version": "production",
     "state": {
       "note": {
         "body": "Body",

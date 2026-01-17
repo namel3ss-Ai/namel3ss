@@ -58,7 +58,7 @@
       "size": 3,
       "value_b": 1
     },
-    "schema_version": "production.v0",
+    "schema_version": "production",
     "state": {
       "profile": {
         "name": "Ada",

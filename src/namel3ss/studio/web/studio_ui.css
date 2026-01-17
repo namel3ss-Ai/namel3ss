@@ -116,6 +116,17 @@
   display: flex;
   gap: 8px;
 }
+.ui-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #2c55b7;
+  font-weight: 600;
+  text-decoration: underline;
+}
+.ui-link:hover {
+  text-decoration: none;
+}
 .ui-element.selected {
   border-color: #000;
 }

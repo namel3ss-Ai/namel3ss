@@ -8,6 +8,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.evals.model import (
     EVAL_SCHEMA_VERSION,
+    LEGACY_EVAL_SCHEMA_VERSIONS,
     EvalCase,
     EvalExpectations,
     EvalMemoryPacks,
@@ -17,6 +18,8 @@ from namel3ss.evals.model import (
     ToolCallSpec,
 )
 
+_SUPPORTED_EVAL_SCHEMA_VERSIONS = {EVAL_SCHEMA_VERSION, *LEGACY_EVAL_SCHEMA_VERSIONS}
+
 
 def load_eval_suite(path: Path) -> EvalSuite:
     suite_path = _resolve_suite_path(path)
@@ -24,7 +27,7 @@ def load_eval_suite(path: Path) -> EvalSuite:
     if not isinstance(raw, dict):
         raise Namel3ssError(_suite_error(suite_path, "Suite payload must be a JSON object."))
     schema_version = raw.get("schema_version")
-    if schema_version != EVAL_SCHEMA_VERSION:
+    if schema_version not in _SUPPORTED_EVAL_SCHEMA_VERSIONS:
         raise Namel3ssError(
             _suite_error(
                 suite_path,
@@ -325,7 +328,7 @@ def _suite_error(path: Path, message: str) -> str:
         what=message,
         why=f"Eval suite path: {path.as_posix()}",
         fix="Update the eval suite JSON and try again.",
-        example="n3 eval --json eval_report.json",
+        example="n3 eval --out-dir .namel3ss/outcome",
     )
 
 

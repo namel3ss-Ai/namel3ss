@@ -3520,7 +3520,7 @@
       }
     },
     "result": "[gpt-4.1] You are a helper. :: Hello | mem:st=0",
-    "schema_version": "production.v0",
+    "schema_version": "production",
     "state": {},
     "status": "ok",
     "trace_hash": "341a26b6205990dbee3d2e9239354db9a9ff1ac34b63b98b838dbde66abd4026",

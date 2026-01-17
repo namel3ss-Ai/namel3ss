@@ -3779,7 +3779,7 @@
       }
     },
     "result": "[gpt-4.1] Plan. :: Task | mem:st=0",
-    "schema_version": "production.v0",
+    "schema_version": "production",
     "state": {},
     "status": "ok",
     "trace_hash": "a09dd9ef43c17597a4fc4a9efcffcddf473cae60b2f09294330622c6c7401f60",

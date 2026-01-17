@@ -122,6 +122,19 @@ def resolve_page_item(
             column=item.column,
         )
         return
+    if isinstance(item, ast.LinkItem):
+        item.page_name = resolve_name(
+            item.page_name,
+            kind="page",
+            module_name=module_name,
+            alias_map=alias_map,
+            local_defs=local_defs,
+            exports_map=exports_map,
+            context_label=context_label,
+            line=item.line,
+            column=item.column,
+        )
+        return
     if isinstance(item, ast.ChatItem):
         for child in item.children:
             if isinstance(child, ast.ChatComposerItem):

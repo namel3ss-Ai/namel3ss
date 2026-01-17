@@ -15,6 +15,7 @@ from namel3ss.module_loader import load_project
 from namel3ss.secrets import collect_secret_values, discover_required_secrets
 from namel3ss.production_contract import build_run_payload
 from namel3ss.runtime.run_pipeline import finalize_run_payload
+from namel3ss.runtime.browser_state import record_data_effects, record_rows_snapshot
 from namel3ss.runtime.ui.actions import handle_action
 from namel3ss.runtime.preferences.factory import preference_store_for_app, app_pref_key
 from namel3ss.studio.session import SessionState
@@ -262,6 +263,7 @@ def execute_action(source: str, session: SessionState | None, action_id: str, pa
         program_ir = _load_project_program(source, app_file.as_posix())
         config = load_config(app_path=app_file)
         store = session.ensure_store(config)
+        before_rows = record_rows_snapshot(program_ir, store, config)
         response = handle_action(
             program_ir,
             action_id=action_id,
@@ -276,6 +278,14 @@ def execute_action(source: str, session: SessionState | None, action_id: str, pa
             memory_manager=session.memory_manager,
             source=source,
             raise_on_error=False,
+        )
+        session.data_effects = record_data_effects(
+            program_ir,
+            store,
+            config,
+            action_id,
+            response if isinstance(response, dict) else {},
+            before_rows,
         )
         if response and isinstance(response, dict):
             ui_theme = (response.get("ui") or {}).get("theme") if response.get("ui") else None

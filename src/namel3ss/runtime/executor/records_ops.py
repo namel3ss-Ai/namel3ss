@@ -14,9 +14,9 @@ from namel3ss.runtime.records.service import build_record_scope, save_record_or_
 from namel3ss.runtime.records.state_paths import get_state_record, record_state_path
 from namel3ss.runtime.storage.predicate import PredicatePlan
 from namel3ss.runtime.values.types import type_name_for_value
-from namel3ss.determinism import canonical_json_dumps
 from namel3ss.schema.records import RecordSchema
 from namel3ss.secrets import collect_secret_values
+from namel3ss.runtime.records.ordering import sort_records
 
 
 def handle_save(ctx: ExecutionContext, stmt: ir.Save, *, deterministic: bool = False) -> None:
@@ -327,14 +327,4 @@ def _apply_updates(ctx: ExecutionContext, record: dict, updates: list[ir.UpdateF
 
 
 def _sorted_records(schema: RecordSchema, records: list[dict]) -> list[dict]:
-    id_field = "id" if "id" in schema.field_map else "_id"
-    return sorted(records, key=lambda rec: _record_sort_key(rec, id_field=id_field))
-
-
-def _record_sort_key(record: dict, *, id_field: str) -> str:
-    if isinstance(record, dict) and id_field in record:
-        return str(record.get(id_field))
-    try:
-        return canonical_json_dumps(record, pretty=False)
-    except Exception:
-        return str(record)
+    return sort_records(schema, records)

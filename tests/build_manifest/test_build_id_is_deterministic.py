@@ -24,14 +24,14 @@ flow "demo":
     inputs = collect_inputs(tmp_path, app_path)
     guarantees, constraints, capabilities, _components = infer_guarantees(tmp_path)
     build_id_one = compute_build_id(
-        api_version="build.v1",
+        api_version="build",
         source_fingerprint=inputs.get("source_fingerprint") or "",
         guarantees=guarantees,
         constraints=constraints,
         capabilities=capabilities,
     )
     build_id_two = compute_build_id(
-        api_version="build.v1",
+        api_version="build",
         source_fingerprint=inputs.get("source_fingerprint") or "",
         guarantees=guarantees,
         constraints=constraints,

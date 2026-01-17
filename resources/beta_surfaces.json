@@ -1,9 +1,9 @@
 {
-  "schema_version": "beta_surfaces.v1",
+  "schema_version": "beta_surfaces",
   "surfaces": [
     {
       "id": "agent_explain_payload",
-      "version": "agent_explain.v1",
+      "version": "agent_explain",
       "artifacts": [
         "tests/fixtures/agent_explain_payload_single.json",
         "tests/fixtures/agent_explain_payload_parallel.json"
@@ -11,14 +11,14 @@
     },
     {
       "id": "agent_merge_lifecycle",
-      "version": "agent_merge.v1",
+      "version": "agent_merge",
       "artifacts": [
         "tests/fixtures/agent_merge_trace_golden.json"
       ]
     },
     {
       "id": "cli.actions",
-      "version": "ui_actions.v1",
+      "version": "ui_actions",
       "artifacts": [
         "tests/fixtures/actions_plain_golden.txt",
         "tests/fixtures/actions_json_golden.json"
@@ -26,7 +26,7 @@
     },
     {
       "id": "cli.eval",
-      "version": "evals.v1",
+      "version": "evals",
       "artifacts": [
         "tests/fixtures/eval_report_golden.json",
         "tests/fixtures/eval_report_golden.txt"
@@ -34,14 +34,14 @@
     },
     {
       "id": "cli.ui",
-      "version": "ui_manifest.v1",
+      "version": "ui_manifest",
       "artifacts": [
         "tests/fixtures/ui_manifest_golden.json"
       ]
     },
     {
       "id": "memory_pack_events",
-      "version": "memory_pack.v1",
+      "version": "memory_pack",
       "artifacts": [
         "tests/fixtures/memory_pack_loaded_trace_golden.json",
         "tests/fixtures/memory_pack_merged_trace_golden.json",
@@ -50,14 +50,14 @@
     },
     {
       "id": "memory_handoff_preview",
-      "version": "memory_handoff_preview.v1",
+      "version": "memory_handoff_preview",
       "artifacts": [
         "tests/fixtures/handoff_preview_golden.json"
       ]
     },
     {
       "id": "tool_call_lifecycle",
-      "version": "tool_call.v1",
+      "version": "tool_call",
       "artifacts": [
         "tests/fixtures/tool_call_trace_golden.json"
       ]
@@ -74,7 +74,7 @@
     },
     {
       "id": "template.demo",
-      "version": "demo.v1",
+      "version": "demo",
       "artifacts": [
         "src/namel3ss/templates/demo/app.ai",
         "src/namel3ss/templates/demo/manifest/ui.json"

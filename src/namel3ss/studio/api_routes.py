@@ -21,6 +21,7 @@ from namel3ss.studio.api import (
 )
 from namel3ss.studio.graph_api import get_exports_payload, get_graph_payload
 from namel3ss.studio.formulas_api import get_formulas_payload
+from namel3ss.studio.state_api import get_state_payload
 from namel3ss.studio.routes.core import handle_action
 from namel3ss.studio.why_api import get_why_payload
 
@@ -37,6 +38,9 @@ def handle_api_get(handler: Any) -> None:
         return
     if handler.path == "/api/ui":
         _respond_with_source(handler, source, get_ui_payload, kind="manifest", include_session=True)
+        return
+    if handler.path == "/api/state":
+        _respond_with_source(handler, source, get_state_payload, kind="state", include_session=True, include_app_path=True)
         return
     if handler.path == "/api/actions":
         _respond_with_source(handler, source, get_actions_payload, kind="manifest", include_app_path=True)

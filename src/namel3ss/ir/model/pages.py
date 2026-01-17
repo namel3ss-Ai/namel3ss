@@ -233,6 +233,12 @@ class ButtonItem(PageItem):
 
 
 @dataclass
+class LinkItem(PageItem):
+    label: str
+    page_name: str
+
+
+@dataclass
 class SectionItem(PageItem):
     label: str | None
     children: List["PageItem"]

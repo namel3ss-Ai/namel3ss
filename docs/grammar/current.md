@@ -133,7 +133,7 @@ Statements (`src/namel3ss/parser/grammar_table.py`):
 
 UI page items (`src/namel3ss/parser/decl/page_items.py`):
 - `title`, `text`, `form`, `table`, `list`, `chart`, `use ui_pack`, `chat` (messages/composer/thinking/citations/memory),
-  `tabs`/`tab`/`default`, `modal`, `drawer`, `button`, `section`, `card_group`, `card`, `row`, `column`, `divider`, `image`.
+  `tabs`/`tab`/`default`, `modal`, `drawer`, `button`, `link`, `section`, `card_group`, `card`, `row`, `column`, `divider`, `image`.
 
 Expressions (`src/namel3ss/parser/grammar_table.py` and `src/namel3ss/parser/expr`):
 - literals (`number`, `string`, `boolean`, `null`), `latest`, `input`, `state.<path>`, identifier/attribute access,

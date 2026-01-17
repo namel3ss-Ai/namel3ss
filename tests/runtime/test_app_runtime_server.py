@@ -15,6 +15,25 @@ page "home":
     calls flow "increment"
 '''
 
+APP_SOURCE_RECORDS = '''spec is "1.0"
+
+record "Item":
+  field "id" is number must be present
+  field "name" is text must be present
+
+flow "seed":
+  set state.item.id is 10
+  set state.item.name is "Ten"
+  create "Item" with state.item as item
+  set state.item.id is 2
+  set state.item.name is "Two"
+  create "Item" with state.item as item
+
+page "home":
+  button "Seed":
+    calls flow "seed"
+'''
+
 
 def test_app_state_endpoints(tmp_path):
     """
@@ -71,3 +90,27 @@ def test_app_runtime_http_endpoints(tmp_path):
 
     conn.close()
     runner.shutdown()
+
+
+def test_state_payload_includes_records_and_effects(tmp_path):
+    app_path = tmp_path / "app.ai"
+    app_path.write_text(APP_SOURCE_RECORDS, encoding="utf-8")
+    state = BrowserAppState(app_path, mode="run", debug=False, watch_sources=False)
+
+    manifest = state.manifest_payload()
+    action_id = sorted(manifest.get("actions", {}).keys())[0]
+    response = state.run_action(action_id, {})
+    assert response["ok"] is True
+
+    payload = state.state_payload()
+    records = payload.get("records") or []
+    assert records and records[0]["name"] == "Item"
+    rows = records[0]["rows"]
+    assert [row["id"] for row in rows] == [2, 10]
+    fields = records[0]["fields"]
+    assert fields == [{"name": "id", "type": "number"}, {"name": "name", "type": "text"}]
+
+    effects = payload.get("effects") or {}
+    assert effects.get("action", {}).get("id") == action_id
+    changes = effects.get("records") or []
+    assert changes and changes[0]["ids"] == [2, 10]

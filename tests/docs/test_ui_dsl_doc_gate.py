@@ -103,7 +103,7 @@ def test_ui_dsl_spec_exists_and_has_sections():
     assert "placeholder" in text
     assert "fix_hint" in text
     assert "Declarative grammar (no colon form in this surface)" in text
-    assert "Supported steps (closed set for phase 4b)" in text
+    assert "Supported steps (closed set)" in text
     assert "Values are string/number/boolean literals or `input.<field>` only." in text
     assert "Step ids derive from flow name + step kind + ordinal position." in text
     assert "No timestamps or random ids in explain traces." in text

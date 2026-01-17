@@ -1,11 +1,11 @@
-# UI DSL (v0.1.x) Spec Freeze
+# UI DSL
 
-This is the authoritative, frozen description of the UI DSL for v0.1.x. It is semantic and explicit. There is no styling DSL, no CSS, no custom colors.
+This is the authoritative description of the UI DSL. It is semantic and explicit. There is no styling DSL, no CSS, no custom colors.
 
 ## 1) What UI DSL is
 - Declarative, semantic UI that maps to flows and records.
 - Deterministic structure; no per-component styling knobs.
-- Frozen surface for v0.1.x: additive changes only, no silent behavior changes.
+- Frozen surface: additive changes only, no silent behavior changes.
 - Text-first: intent over pixels.
 - Studio panels (Setup, Graph, Traces, Memory, etc.) are tooling views; they are not part of the UI DSL contract.
 - Studio renders the same UI manifest intent as `n3 ui` and does not add DSL semantics.
@@ -20,7 +20,7 @@ This is the authoritative, frozen description of the UI DSL for v0.1.x. It is se
 - `ui_pack "name":`
 Rule: use `keyword "name"`; never `keyword is "name"`.
 
-## 3) Allowed UI elements (v0.1.x)
+## 3) Allowed UI elements
 Structural:
 - `section "Label":` children: any page items.
 - `card_group:` children: `card` only.
@@ -50,6 +50,7 @@ Data/UI bindings:
 - `citations from is state.<path>` display-only citations list from state.
 - `memory from is state.<path> [lane is "my"|"team"|"system"]` display-only memory list from state.
 - `button "Label":` `calls flow "flow_name"` creates `call_flow` action.
+- `link "Label" to page "PageName"` navigates to a named page; emits an `open_page` action.
 - `use ui_pack "pack_name" fragment "fragment_name"` static expansion of a pack fragment.
 - Record/flow names may be module-qualified (for example `inv.Product`, `inv.seed_item`) when using Capsules.
 
@@ -84,7 +85,7 @@ UI packs:
 
 ## 4) Data binding & actions
 - Forms bind to records; payload is `{values: {...}}`.
-- Buttons call flows by name; actions are deterministic (`call_flow`, `submit_form`).
+- Buttons call flows by name; links navigate to pages; actions are deterministic (`call_flow`, `submit_form`, `open_page`).
 - Overlays open/close via actions (`open_modal`, `close_modal`, `open_drawer`, `close_drawer`).
 - Chat elements bind to explicit state paths; list ordering is preserved as provided.
 - Composer submissions call flows and include `{message: "<text>"}` in payload.
@@ -96,7 +97,7 @@ UI packs:
 - Output is deterministic, bounded, and lists pages, elements, bindings, and action availability.
 - Pack origin metadata is included when elements are expanded from a `ui_pack`.
 
-## 5) Core UI primitives (Phase 2)
+## 5) Core UI primitives
 - `page "<title>":` container with optional `purpose is "<string>"` metadata (page-only; deterministic id generation). Duplicate page titles are rejected.
 - `purpose is "<string>"` may only appear at the page root; it is persisted to manifests and Studio payloads as metadata for runtime decisions.
 - `number:` deterministic numeric intent (runtime-owned visuals; no sizing):
@@ -106,10 +107,10 @@ UI packs:
 - `view of "<record>":`
   - Record must exist (suggestions on typos).
   - Runtime selects representation deterministically today: records with three or fewer fields render as list/cards; otherwise as table.
-  - Defaults are runtime-owned: deterministic column order (record field order), default ordering by the first field, stable empty-state/paging defaults.
+  - Defaults are runtime-owned: deterministic column order (record field order), default ordering by the record id field, stable empty-state/paging defaults.
 - `compose <name>:` semantic grouping (no layout positioning). Name must be an identifier, not reserved, unique within a page. Children are supported primitives; order is preserved.
 
-## 6) Story progression (Phase 3)
+## 6) Story progression
 - `story "<title>"` inside pages or `compose` blocks describes a deterministic progression of steps.
 - Simple form:
   - Each quoted line is a step title in written order.
@@ -135,14 +136,14 @@ UI packs:
 - Step order is preserved; default `next` links follow written order unless overridden.
 - Gates carry `requires`, optional `state` path, and readiness (`ready` is `true`/`false`/`null` when not evaluated).
 
-## 7) Flow actions (Phase 4)
+## 7) Flow actions
 - Declarative grammar (no colon form in this surface):
   - `flow "<name>"`
     `<steps...>`
 - Names: unique and non-reserved identifiers.
-- Supported steps (closed set for phase 4b):
+- Supported steps (closed set):
   - `input` block: `input` then `<field> is <type>`; input fields are unique and types are validated.
-  - `require "<condition>"` (string gate; no expression language in this phase).
+  - `require "<condition>"` (string gate; no expression language in this surface).
   - `create "<record>"` with one or more `<field> is <value>` assignments.
   - `update "<record>"` with `where "<selector>"` and a `set` block of assignments.
   - `delete "<record>"` with `where "<selector>"`.
@@ -163,7 +164,7 @@ UI packs:
   - `button "Label":` use either `calls flow "<name>"` (existing) or `runs "<name>"` (alias) to bind to a flow.
   - Unknown flow references error with fix hints; runtime surfaces disabled affordance if requirements are unmet.
 
-## 8) Global UI settings (Phase 1)
+## 8) Global UI settings
 - Grammar (keys may appear in any order; output is normalized deterministically):
   - `ui`:
     - `theme is "<theme>"`
@@ -212,7 +213,7 @@ record "User":
 
 ## 9) Intentionally missing
 - CSS or styling DSL
-- Arbitrary routing/navigation
+- Advanced routing (guards, parameters, auth)
 - Per-component styles or custom colors
 - Pixel-perfect layout controls
 - Implicit AI calls or memory access from UI elements
@@ -225,5 +226,5 @@ record "User":
 - `set theme to "dark"` when `allow_override` is false (lint/engine error)
 
 ## 11) Compatibility promise
-- Spec is frozen for v0.1.x + v1.x; changes must be additive and documented.
+- Spec is frozen; changes must be additive and documented.
 - Any change to UI DSL code must update this spec, examples, and tests together.

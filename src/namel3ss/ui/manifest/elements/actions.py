@@ -7,7 +7,7 @@ from namel3ss.ir import nodes as ir
 from namel3ss.media import MediaValidationMode, validate_media_reference
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.schema import records as schema
-from namel3ss.ui.manifest.actions import _allocate_action_id, _button_action_id
+from namel3ss.ui.manifest.actions import _allocate_action_id, _button_action_id, _link_action_id
 from namel3ss.ui.manifest.canonical import _element_id, _slugify
 from namel3ss.ui.manifest.origin import _attach_origin
 from namel3ss.ui.manifest_card import _build_card_actions, _build_card_stat
@@ -115,6 +115,32 @@ def build_button_item(
         "id": action_id,
         "action_id": action_id,
         "action": {"type": "call_flow", "flow": item.flow_name},
+        **base,
+    }
+    return _attach_origin(element, item), {action_id: action_entry}
+
+
+def build_link_item(
+    item: ir.LinkItem,
+    *,
+    page_name: str,
+    page_slug: str,
+    path: List[int],
+    taken_actions: set[str],
+) -> tuple[dict, Dict[str, dict]]:
+    index = path[-1] if path else 0
+    element_id = _element_id(page_slug, "link_item", path)
+    base_action_id = _link_action_id(page_slug, item.label)
+    action_id = _allocate_action_id(base_action_id, element_id, taken_actions)
+    action_entry = {"id": action_id, "type": "open_page", "target": item.page_name}
+    base = _base_element(element_id, page_name, page_slug, index, item)
+    element = {
+        "type": "link",
+        "label": item.label,
+        "target": item.page_name,
+        "id": action_id,
+        "action_id": action_id,
+        "action": {"type": "open_page", "target": item.page_name},
         **base,
     }
     return _attach_origin(element, item), {action_id: action_entry}
@@ -449,6 +475,7 @@ def build_image_item(
 
 __all__ = [
     "build_button_item",
+    "build_link_item",
     "build_card_group_item",
     "build_card_item",
     "build_column_item",

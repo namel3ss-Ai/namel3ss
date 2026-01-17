@@ -1,5 +1,5 @@
 {
-  "schema_version": "evals.v1",
+  "schema_version": "evals",
   "thresholds": {
     "max_policy_violations": 0,
     "success_rate": 1.0

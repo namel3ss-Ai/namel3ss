@@ -74,7 +74,8 @@ def lower_program(program: ast.Program) -> Program:
     flow_names = validate_flow_names(flow_irs)
     validate_declarative_flows(flow_irs, record_map, tool_map, mode=ValidationMode.RUNTIME, warnings=None)
     pack_index = build_pack_index(getattr(program, "ui_packs", []))
-    pages = [_lower_page(page, record_map, flow_names, pack_index) for page in program.pages]
+    page_names = {page.name for page in program.pages}
+    pages = [_lower_page(page, record_map, flow_names, page_names, pack_index) for page in program.pages]
     _ensure_unique_pages(pages)
     theme_runtime_supported = any(_flow_has_theme_change(flow) for flow in flow_irs)
     ui_settings = normalize_ui_settings(getattr(program, "ui_settings", None))

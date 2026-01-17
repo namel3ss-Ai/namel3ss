@@ -8,7 +8,7 @@ from .decision import ToolDecision
 from .normalize import build_plain_text, write_last_tools
 from .render_plain import render_with
 
-API_VERSION = "tools.v1"
+API_VERSION = "tools"
 
 
 def build_tool_explain_pack(execution_last: dict | None, run_last: dict | None) -> dict:

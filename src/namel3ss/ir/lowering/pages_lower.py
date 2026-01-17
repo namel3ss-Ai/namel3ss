@@ -14,6 +14,7 @@ def _lower_page(
     page: ast.PageDecl,
     record_map: dict[str, schema.RecordSchema],
     flow_names: set[str],
+    page_names: set[str],
     pack_index: dict[str, ast.UIPackDecl],
 ) -> Page:
     expanded_items = expand_page_items(
@@ -27,7 +28,7 @@ def _lower_page(
     overlays = _collect_overlays(expanded_items)
     compose_names: set[str] = set()
     items = [
-        _lower_page_item(item, record_map, flow_names, page.name, overlays, compose_names)
+        _lower_page_item(item, record_map, flow_names, page.name, page_names, overlays, compose_names)
         for item in expanded_items
     ]
     _validate_chart_pairing(items, page.name)

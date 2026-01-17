@@ -42,14 +42,14 @@ jobs:
       - name: Release smoke (build + start)
         run: python -m pytest -q tests/runtime/test_production_server.py
 
-      - name: Ensure .namel3ss dir
-        run: mkdir -p .namel3ss
+      - name: Ensure CI artifacts dir
+        run: mkdir -p .namel3ss/ci_artifacts
 
       - name: Expression surface gate
-        run: n3 expr-check --json .namel3ss/expr_report.json
+        run: n3 expr-check --json .namel3ss/ci_artifacts/expr_report.json
 
       - name: Release check
-        run: n3 release-check --json .namel3ss/release_report.json --txt .namel3ss/release_report.txt --fast
+        run: n3 release-check --json .namel3ss/ci_artifacts/release_report.json --txt .namel3ss/ci_artifacts/release_report.txt --fast
 
       - name: Dump release-check context (always)
         if: ${{ always() }}
@@ -57,25 +57,16 @@ jobs:
           echo "=== COMMIT ==="
           git rev-parse HEAD || true
           echo "=== release_report.txt ==="
-          (test -f .namel3ss/release_report.txt && cat .namel3ss/release_report.txt) || echo "missing release_report.txt"
+          (test -f .namel3ss/ci_artifacts/release_report.txt && cat .namel3ss/ci_artifacts/release_report.txt) || echo "missing release_report.txt"
           echo "=== release_report.json ==="
-          (test -f .namel3ss/release_report.json && cat .namel3ss/release_report.json) || echo "missing release_report.json"
+          (test -f .namel3ss/ci_artifacts/release_report.json && cat .namel3ss/ci_artifacts/release_report.json) || echo "missing release_report.json"
 
-      - name: Upload expr-check report
+      - name: Upload release gate reports
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: expr-report
-          path: .namel3ss/expr_report.json
-
-      - name: Upload release report
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-report
-          path: |
-            .namel3ss/release_report.json
-            .namel3ss/release_report.txt
+          name: release-gate-reports
+          path: .namel3ss/ci_artifacts/
 
       - name: DX verify gate
         run: n3 verify --dx --json

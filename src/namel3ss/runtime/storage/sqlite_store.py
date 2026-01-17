@@ -294,6 +294,7 @@ class SQLiteStore:
         scope = scope or RecordScope()
         self._ensure_table(schema)
         self._cleanup_expired(schema, scope)
+        id_col = "id" if "id" in schema.field_map else "_id"
         if isinstance(predicate, PredicatePlan):
             if predicate.sql:
                 scope_clause, scope_params = self._scope_where(schema, scope)
@@ -301,6 +302,7 @@ class SQLiteStore:
                 sql = f"SELECT * FROM {quote_identifier(slug_identifier(schema.name))}"
                 if clauses:
                     sql += " WHERE " + " AND ".join(clauses)
+                sql += f" ORDER BY {quote_identifier(id_col)} ASC"
                 cursor = self.conn.execute(sql, [*scope_params, *predicate.sql.params])
                 return [self._deserialize_row(schema, row) for row in cursor.fetchall()]
             predicate = predicate.predicate
@@ -310,6 +312,7 @@ class SQLiteStore:
         sql = f"SELECT * FROM {quote_identifier(slug_identifier(schema.name))}"
         if where_clause:
             sql += f" WHERE {where_clause}"
+        sql += f" ORDER BY {quote_identifier(id_col)} ASC"
         cursor = self.conn.execute(sql, params)
         rows = cursor.fetchall()
         results: List[dict] = []
@@ -371,10 +374,12 @@ class SQLiteStore:
         scope_clause, scope_params = self._scope_where(schema, scope)
         where_clause, params = self._build_where_clause(schema, filters)
         table = quote_identifier(slug_identifier(schema.name))
+        id_col = "id" if "id" in schema.field_map else "_id"
         clauses = [clause for clause in [scope_clause, where_clause] if clause]
         sql = f"SELECT * FROM {table}"
         if clauses:
             sql += " WHERE " + " AND ".join(clauses)
+        sql += f" ORDER BY {quote_identifier(id_col)} ASC"
         cursor = self.conn.execute(sql, [*scope_params, *params])
         return [self._deserialize_row(schema, row) for row in cursor.fetchall()]
 

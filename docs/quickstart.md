@@ -76,7 +76,7 @@ Formatter and linter:
 
 Evaluation:
 - Run evals: `n3 eval`
-- Deterministic reports: `n3 eval --json /tmp/eval.json --txt /tmp/eval.txt`
+- Deterministic reports: `n3 eval --out-dir .namel3ss/outcome`
 - Fast subset: `n3 eval --fast`
 
 Try this:

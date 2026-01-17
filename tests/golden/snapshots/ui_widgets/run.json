@@ -53,7 +53,7 @@
       }
     },
     "result": "ready",
-    "schema_version": "production.v0",
+    "schema_version": "production",
     "state": {
       "status": "ready"
     },

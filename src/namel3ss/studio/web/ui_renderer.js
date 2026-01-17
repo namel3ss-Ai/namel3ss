@@ -11,14 +11,70 @@ let renderUI = (manifest) => {
   const renderChartElement = collectionRender.renderChartElement;
   const overlayRegistry = new Map();
   if (!uiContainer) return;
+  const pageEntries = (pages || [])
+    .filter((p) => p && p.name)
+    .map((p, idx) => ({
+      name: String(p.name),
+      slug: p && p.slug ? String(p.slug) : String(p.name),
+      page: p,
+      index: idx,
+    }));
+  const pageBySlug = new Map(pageEntries.map((entry) => [entry.slug, entry]));
+  const pageByName = new Map(pageEntries.map((entry) => [entry.name, entry]));
+
+  function resolvePageEntry(value) {
+    if (!value) return null;
+    return pageBySlug.get(value) || pageByName.get(value) || null;
+  }
+
+  function resolvePageSlug(value) {
+    const entry = resolvePageEntry(value);
+    return entry ? entry.slug : "";
+  }
+
+  function readRouteSlug() {
+    if (typeof window === "undefined") return "";
+    const params = new URLSearchParams(window.location.search || "");
+    return resolvePageSlug(params.get("page"));
+  }
+
+  function writeRouteSlug(slug) {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (slug) {
+      url.searchParams.set("page", slug);
+    } else {
+      url.searchParams.delete("page");
+    }
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, "", url.toString());
+    } else {
+      window.location.search = url.search;
+    }
+  }
+
+  function buildPageUrl(slug) {
+    if (typeof window === "undefined") return "";
+    const url = new URL(window.location.href);
+    if (slug) {
+      url.searchParams.set("page", slug);
+    } else {
+      url.searchParams.delete("page");
+    }
+    return `${url.pathname}${url.search}${url.hash}`;
+  }
+
   const currentSelection = select ? select.value : "";
+  const urlSelection = readRouteSlug();
+  const initialSelection =
+    urlSelection || resolvePageSlug(currentSelection) || (pageEntries[0] ? pageEntries[0].slug : "");
   if (select) {
     select.innerHTML = "";
-    pages.forEach((p, idx) => {
+    pageEntries.forEach((entry, idx) => {
       const opt = document.createElement("option");
-      opt.value = p.name;
-      opt.textContent = p.name;
-      if (p.name === currentSelection || (currentSelection === "" && idx === 0)) {
+      opt.value = entry.slug;
+      opt.textContent = entry.name;
+      if (entry.slug === initialSelection || (!initialSelection && idx === 0)) {
         opt.selected = true;
       }
       select.appendChild(opt);
@@ -88,6 +144,15 @@ let renderUI = (manifest) => {
     }
     entry.returnFocus = null;
   }
+  function navigateToPage(value) {
+    const slug = resolvePageSlug(value);
+    if (!slug) return;
+    if (select) {
+      select.value = slug;
+    }
+    writeRouteSlug(slug);
+    renderPage(slug);
+  }
   function handleAction(action, payload, opener) {
     if (!action || !action.id) return;
     const actionType = action.type || "call_flow";
@@ -97,6 +162,10 @@ let renderUI = (manifest) => {
     }
     if (actionType === "close_modal" || actionType === "close_drawer") {
       closeOverlay(action.target);
+      return { ok: true };
+    }
+    if (actionType === "open_page") {
+      navigateToPage(action.target);
       return { ok: true };
     }
     return executeAction(action.id, payload);
@@ -360,10 +429,43 @@ let renderUI = (manifest) => {
       btn.textContent = el.label;
       btn.onclick = (e) => {
         e.stopPropagation();
-        handleAction({ id: el.action_id, type: "call_flow", flow: el.action && el.action.flow }, {}, e.currentTarget);
+        const action = el.action || {};
+        const actionId = el.action_id || el.id;
+        handleAction(
+          {
+            id: actionId,
+            type: action.type || "call_flow",
+            flow: action.flow,
+            target: action.target,
+          },
+          {},
+          e.currentTarget
+        );
       };
       actions.appendChild(btn);
       wrapper.appendChild(actions);
+    } else if (el.type === "link") {
+      const action = el.action || {};
+      const target = action.target || el.target;
+      const slug = resolvePageSlug(target);
+      const link = document.createElement("a");
+      link.className = "ui-link";
+      link.textContent = el.label || "Open page";
+      link.href = buildPageUrl(slug);
+      link.onclick = (e) => {
+        e.preventDefault();
+        const actionId = el.action_id || el.id;
+        handleAction(
+          {
+            id: actionId,
+            type: action.type || "open_page",
+            target: target,
+          },
+          {},
+          e.currentTarget
+        );
+      };
+      wrapper.appendChild(link);
     } else if (el.type === "form") {
       if (typeof renderFormElement === "function") {
         return renderFormElement(el, handleAction);
@@ -402,10 +504,11 @@ let renderUI = (manifest) => {
     }
     return wrapper;
   }
-  function renderPage(pageName) {
+  function renderPage(pageKey) {
     uiContainer.innerHTML = "";
     overlayRegistry.clear();
-    const page = pages.find((p) => p.name === pageName) || pages[0];
+    const entry = resolvePageEntry(pageKey) || pageEntries[0];
+    const page = entry ? entry.page : null;
     if (!page) {
       showEmpty(uiContainer, emptyMessage);
       return;
@@ -432,9 +535,9 @@ let renderUI = (manifest) => {
     }
   }
   if (select) {
-    select.onchange = (e) => renderPage(e.target.value);
+    select.onchange = (e) => navigateToPage(e.target.value);
   }
-  const initialPage = (select && select.value) || (pages[0] ? pages[0].name : "");
+  const initialPage = (select && select.value) || (pageEntries[0] ? pageEntries[0].slug : "");
   if (initialPage) {
     renderPage(initialPage);
   } else {

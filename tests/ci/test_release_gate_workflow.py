@@ -8,6 +8,8 @@ def test_release_gate_workflow_has_full_suite_and_clean_check() -> None:
         "python -m pytest -q",
         "tests/runtime/test_production_server.py",
         "tools/clean_pattern_artifacts.py",
+        ".namel3ss/ci_artifacts",
+        "release-gate-reports",
         "repo_clean",
     ]
     for item in required:

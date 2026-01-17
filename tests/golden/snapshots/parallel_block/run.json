@@ -56,7 +56,7 @@
       3,
       6
     ],
-    "schema_version": "production.v0",
+    "schema_version": "production",
     "state": {},
     "status": "ok",
     "trace_hash": "5754048ab0e93bb66c65fff3ef465904b4a49c505dec4e12597fdd0617a65fdd",

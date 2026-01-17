@@ -60,7 +60,7 @@
         "text": "[gpt-4.1] Critic. :: Task | mem:st=0"
       }
     ],
-    "schema_version": "production.v0",
+    "schema_version": "production",
     "state": {},
     "status": "ok",
     "trace_hash": "eeaa5867ac9e7b7e3a33edea62b252ba29dc96e85ceb7d0a179a3f9984348a33",

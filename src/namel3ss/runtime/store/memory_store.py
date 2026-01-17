@@ -5,6 +5,7 @@ from typing import Dict, List, Callable, Optional, Any
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.schema.records import EXPIRES_AT_FIELD, SYSTEM_FIELDS, TENANT_KEY_FIELD, RecordSchema
+from namel3ss.runtime.records.ordering import sort_records
 from namel3ss.runtime.storage.predicate import PredicatePlan
 from namel3ss.runtime.storage.metadata import PersistenceMetadata
 from namel3ss.runtime.storage.base import RecordScope
@@ -129,11 +130,12 @@ class MemoryStore:
             predicate = predicate.predicate
         records = self._data.get(schema.name, [])
         if isinstance(predicate, dict):
-            return [
+            results = [
                 _strip_system_fields(rec)
                 for rec in records
                 if _record_visible(schema, rec, scope) and _matches_filter(rec, predicate)
             ]
+            return sort_records(schema, results)
         results = []
         for rec in records:
             if not _record_visible(schema, rec, scope):
@@ -141,7 +143,7 @@ class MemoryStore:
             clean = _strip_system_fields(rec)
             if predicate(clean):
                 results.append(clean)
-        return results
+        return sort_records(schema, results)
 
     def check_unique(self, schema: RecordSchema, record: dict, scope: RecordScope | None = None) -> str | None:
         scope = scope or RecordScope()
@@ -162,12 +164,9 @@ class MemoryStore:
         scope = scope or RecordScope()
         self._cleanup_expired(schema, scope)
         records = list(self._data.get(schema.name, []))
-        key_order = "id" if "id" in schema.field_map else "_id"
-        records.sort(key=lambda rec: rec.get(key_order, 0))
-        visible = [
-            _strip_system_fields(rec) for rec in records if _record_visible(schema, rec, scope)
-        ]
-        return visible[:limit]
+        visible = [_strip_system_fields(rec) for rec in records if _record_visible(schema, rec, scope)]
+        ordered = sort_records(schema, visible)
+        return ordered[:limit]
 
     def _cleanup_expired(self, schema: RecordSchema, scope: RecordScope) -> None:
         if schema.ttl_hours is None or scope.now is None:

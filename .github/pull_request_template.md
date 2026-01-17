@@ -2,6 +2,10 @@
 - What does this change do?
 - Which files/areas does it touch?
 
+## Files changed
+- List each file once (deduplicated).
+- Do not list runtime outputs (for example anything under `.namel3ss/`).
+
 ## Checks
 - [ ] No grammar or semantic changes (or linked accepted RFC).
 - [ ] Files stay ≤500 LOC and single responsibility.

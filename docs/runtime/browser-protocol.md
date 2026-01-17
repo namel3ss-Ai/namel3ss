@@ -14,7 +14,9 @@ The App Runtime server that `n3 run` starts exposes a single browser protocol. T
 - Order matches source order; action ids are deterministic.
 
 ### GET /api/state
-- Returns `{"ok": true, "state": {...}, "revision": "<hash>"}` when the program loads.
+- Returns `{"ok": true, "state": {...}, "records": [...], "revision": "<hash>"}` when the program loads.
+- `records` is a deterministic snapshot of record collections (ordered by record declarations and record ids).
+- `effects` may be included to summarize the most recent data changes in a deterministic order.
 - If load fails, returns `{"ok": false, "error": {...}, "revision": "<hash>"}`.
 
 ### POST /api/action

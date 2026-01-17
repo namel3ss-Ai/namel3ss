@@ -14,7 +14,9 @@ from namel3ss.schema.records import FieldConstraint, FieldSchema, RecordSchema
 from namel3ss.validation import add_warning
 
 
-SCHEMA_SNAPSHOT_VERSION = "records.v1"
+SCHEMA_SNAPSHOT_VERSION = "records"
+LEGACY_SCHEMA_SNAPSHOT_VERSION = "records.v1"
+_SUPPORTED_SCHEMA_SNAPSHOT_VERSIONS = {SCHEMA_SNAPSHOT_VERSION, LEGACY_SCHEMA_SNAPSHOT_VERSION}
 WORKSPACE_SCHEMA_DIR = "schema"
 WORKSPACE_SCHEMA_FILENAME = "last.json"
 BUILD_SCHEMA_DIR = "schema"
@@ -94,7 +96,7 @@ def load_schema_snapshot(path: Path) -> dict | None:
             )
         )
     version = data.get("schema_version")
-    if version != SCHEMA_SNAPSHOT_VERSION:
+    if version not in _SUPPORTED_SCHEMA_SNAPSHOT_VERSIONS:
         raise Namel3ssError(
             build_guidance_message(
                 what="Schema snapshot version is not supported.",

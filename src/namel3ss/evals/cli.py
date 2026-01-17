@@ -10,6 +10,11 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 
 
+DEFAULT_OUTPUT_DIR = Path(".namel3ss") / "outcome"
+DEFAULT_JSON_NAME = "eval_report.json"
+DEFAULT_TXT_NAME = "eval_report.txt"
+
+
 @dataclass(frozen=True)
 class _EvalParams:
     suite_path: Path
@@ -35,13 +40,27 @@ def run_eval_command(args: list[str]) -> int:
 
 
 def _parse_args(args: list[str]) -> _EvalParams:
-    json_path = Path.cwd() / "eval_report.json"
+    json_path: Path | None = None
     txt_path: Path | None = None
+    out_dir = DEFAULT_OUTPUT_DIR
+    out_dir_explicit = False
     fast = False
     suite_path: Path | None = None
     idx = 0
     while idx < len(args):
         arg = args[idx]
+        if arg == "--out-dir":
+            if idx + 1 >= len(args):
+                raise Namel3ssError(_missing_flag_value("--out-dir"))
+            out_dir = Path(args[idx + 1])
+            out_dir_explicit = True
+            idx += 2
+            continue
+        if arg.startswith("--out-dir="):
+            out_dir = Path(arg.split("=", 1)[1])
+            out_dir_explicit = True
+            idx += 1
+            continue
         if arg == "--json":
             if idx + 1 >= len(args):
                 raise Namel3ssError(_missing_flag_value("--json"))
@@ -73,24 +92,32 @@ def _parse_args(args: list[str]) -> _EvalParams:
         suite_path = Path(arg)
         idx += 1
     suite_path = suite_path or Path.cwd() / "evals"
+    json_path = json_path or (out_dir / DEFAULT_JSON_NAME)
+    if txt_path is None and out_dir_explicit:
+        txt_path = out_dir / DEFAULT_TXT_NAME
     return _EvalParams(suite_path=suite_path, json_path=json_path, txt_path=txt_path, fast=fast)
 
 
 def _missing_flag_value(flag: str) -> str:
+    if flag == "--out-dir":
+        example = "n3 eval --out-dir .namel3ss/outcome"
+    else:
+        name = DEFAULT_TXT_NAME if flag == "--txt" else DEFAULT_JSON_NAME
+        example = f"n3 eval {flag} .namel3ss/outcome/{name}"
     return build_guidance_message(
         what=f"{flag} flag is missing a value.",
         why="eval requires a file path when the flag is present.",
         fix=f"Pass a path after {flag}.",
-        example=f"n3 eval {flag} eval_report.json",
+        example=example,
     )
 
 
 def _unknown_flag_message(flag: str) -> str:
     return build_guidance_message(
         what=f"Unknown flag '{flag}'.",
-        why="eval supports --json, --txt, and --fast.",
+        why="eval supports --json, --txt, --out-dir, and --fast.",
         fix="Remove the unsupported flag.",
-        example="n3 eval --json eval_report.json",
+        example="n3 eval --out-dir .namel3ss/outcome",
     )
 
 

@@ -55,7 +55,7 @@
     "result": {
       "message": "alpha:2:True"
     },
-    "schema_version": "production.v0",
+    "schema_version": "production",
     "state": {},
     "status": "ok",
     "trace_hash": "c0d531ba9e85923f50c313ab5b2a12dae5ae858be211657aeec3a9e0b1499f2f",

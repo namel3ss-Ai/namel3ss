@@ -98,6 +98,9 @@
       if (actionResult && typeof actionResult.applyActionResult === "function") {
         actionResult.applyActionResult(data);
       }
+      if (root.refresh && typeof root.refresh.refreshData === "function") {
+        root.refresh.refreshData();
+      }
       if (data && data.ok === false) {
         setRunStatus("error", dom.buildErrorLines(data));
       } else {

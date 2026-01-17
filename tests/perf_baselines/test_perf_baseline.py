@@ -10,7 +10,7 @@ BASELINE_PATH = Path("tests/perf_baselines/agent_stack.json")
 
 def test_perf_baseline_schema_version():
     payload = json.loads(BASELINE_PATH.read_text(encoding="utf-8"))
-    assert payload.get("schema_version") == "perf_baselines.v1"
+    assert payload.get("schema_version") == "perf_baselines"
 
 
 def test_perf_baselines_are_within_limits():

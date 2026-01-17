@@ -9,7 +9,7 @@ from namel3ss.runtime.errors.explain.model import ErrorState, RecoveryOption
 from namel3ss.runtime.errors.explain.normalize import build_plain_text, write_last_error
 from namel3ss.runtime.errors.explain.render_plain import render_fix
 
-API_VERSION = "errors.v1"
+API_VERSION = "errors"
 
 
 def build_error_explain_pack(project_root: Path) -> dict | None:

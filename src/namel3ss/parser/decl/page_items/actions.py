@@ -86,6 +86,18 @@ def parse_button_item(parser, tok) -> ast.ButtonItem:
     return ast.ButtonItem(label=label_tok.value, flow_name=flow_name, line=tok.line, column=tok.column)
 
 
+def parse_link_item(parser, tok) -> ast.LinkItem:
+    parser._advance()
+    label_tok = parser._expect("STRING", "Expected link label string")
+    parser._expect("TO", "Expected 'to' after link label")
+    page_tok = parser._current()
+    if page_tok.type != "PAGE":
+        raise Namel3ssError("Expected 'page' after 'to'", line=page_tok.line, column=page_tok.column)
+    parser._advance()
+    name_tok = parser._expect("STRING", "Expected page name string")
+    return ast.LinkItem(label=label_tok.value, page_name=name_tok.value, line=tok.line, column=tok.column)
+
+
 def parse_section_item(parser, tok, parse_block) -> ast.SectionItem:
     parser._advance()
     label_tok = parser._current() if parser._current().type == "STRING" else None
@@ -287,6 +299,7 @@ def _parse_card_actions_block(parser) -> List[ast.CardAction]:
 
 __all__ = [
     "parse_button_item",
+    "parse_link_item",
     "parse_card_group_item",
     "parse_card_item",
     "parse_column_item",

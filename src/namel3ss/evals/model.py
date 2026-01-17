@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import Any
 
 
-EVAL_SCHEMA_VERSION = "evals.v1"
+EVAL_SCHEMA_VERSION = "evals"
+LEGACY_EVAL_SCHEMA_VERSIONS = ("evals.v1",)
 
 
 @dataclass(frozen=True)

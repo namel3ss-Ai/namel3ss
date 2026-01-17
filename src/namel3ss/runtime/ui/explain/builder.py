@@ -21,7 +21,7 @@ from .reasons import (
 )
 from .render_plain import render_see
 
-API_VERSION = "ui.v1"
+API_VERSION = "ui"
 _MAX_REASON_ITEMS = 8
 
 
@@ -198,7 +198,7 @@ def _element_label(kind: str, element: dict) -> str | None:
         return element.get("value")
     if kind in {"story", "story_step"}:
         return element.get("title")
-    if kind in {"button", "section", "card", "tab", "modal", "drawer"}:
+    if kind in {"button", "link", "section", "card", "tab", "modal", "drawer"}:
         return element.get("label")
     if kind in {"messages", "citations", "memory"}:
         return element.get("source")
@@ -223,6 +223,8 @@ def _element_fix_hint(kind: str, element: dict) -> str | None:
         if isinstance(image, dict) and image.get("missing") and image.get("fix_hint"):
             return image.get("fix_hint")
     return None
+
+
 def _bound_to(kind: str, element: dict) -> str | None:
     if kind in {"form", "table", "list"}:
         record = element.get("record")
@@ -240,6 +242,10 @@ def _bound_to(kind: str, element: dict) -> str | None:
         flow = element.get("flow")
         if flow:
             return f"flow:{flow}"
+    if kind == "link":
+        target = element.get("target")
+        if target:
+            return f"page:{target}"
     if kind == "chart":
         record = element.get("record")
         if record:

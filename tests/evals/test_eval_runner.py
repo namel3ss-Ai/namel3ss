@@ -50,7 +50,7 @@ def _write_tool_app(root: Path) -> None:
 
 def _write_suite(root: Path, *, mismatch: bool = False) -> Path:
     suite = {
-        "schema_version": "evals.v1",
+        "schema_version": "evals",
         "thresholds": {"success_rate": 1.0, "max_policy_violations": 0},
         "cases": [
             {

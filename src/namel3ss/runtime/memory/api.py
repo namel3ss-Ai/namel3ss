@@ -8,7 +8,7 @@ from namel3ss.runtime.memory.explain.render_plain import render_why
 from namel3ss.runtime.memory.manager import MemoryManager as _MemoryManager
 from namel3ss.runtime.memory.types import ProofPack
 
-API_VERSION = "memory.v1"
+API_VERSION = "memory"
 MemoryManager = _MemoryManager
 
 
