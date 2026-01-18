@@ -6,6 +6,7 @@ from pathlib import Path
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.packs.layout import trust_keys_path
+from namel3ss.runtime.packs.signature import normalize_key_text
 
 
 @dataclass(frozen=True)
@@ -25,6 +26,7 @@ def load_trusted_keys(app_root: Path) -> list[TrustedKey]:
 def add_trusted_key(app_root: Path, key: TrustedKey) -> Path:
     path = trust_keys_path(app_root)
     keys = load_trusted_keys(app_root)
+    key = TrustedKey(key_id=key.key_id, public_key=normalize_key_text(key.public_key))
     if any(item.key_id == key.key_id for item in keys):
         raise Namel3ssError(
             build_guidance_message(
@@ -85,7 +87,7 @@ def _build_key(data: dict[str, str], path: Path) -> TrustedKey:
     public_key = data.get("public_key")
     if not key_id or not public_key:
         raise Namel3ssError(_invalid_keys_message(path))
-    return TrustedKey(key_id=key_id, public_key=public_key)
+    return TrustedKey(key_id=key_id, public_key=normalize_key_text(public_key))
 
 
 def _render_keys_yaml(keys: list[TrustedKey]) -> str:

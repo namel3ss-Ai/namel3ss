@@ -1,0 +1,16 @@
+id: "official.stripe"
+name: "Official Stripe Pack"
+version: "stable"
+description: "Stripe API contract stubs."
+author: "namel3ss"
+license: "MIT"
+tools:
+  - "stripe request"
+entrypoints:
+  "stripe request":
+    kind: "python"
+    entry: "tools.stripe_request:run"
+    purity: "impure"
+signer_id: "official.key"
+signed_at: "not_recorded"
+digest: "sha256:046cfce8ead19579bca480a44b1792f2714cbe264b04f0a88d548b983b3eef40"

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import zipfile
 from pathlib import Path
 
 from namel3ss.cli.main import main as cli_main
@@ -9,6 +8,7 @@ from namel3ss.runtime.registry.entry import validate_registry_entry
 
 
 FIXTURES_ROOT = Path(__file__).resolve().parents[1] / "fixtures" / "registry" / "bundles"
+TEST_KEY = "secret"
 
 
 def test_registry_add_creates_entry(tmp_path: Path, capsys, monkeypatch) -> None:
@@ -28,7 +28,7 @@ def test_discover_ranking_and_filters(tmp_path: Path, capsys, monkeypatch) -> No
     _write_app(tmp_path)
     monkeypatch.chdir(tmp_path)
     bundle_local = FIXTURES_ROOT / "sample.local-0.1.0.n3pack.zip"
-    _add_trusted_key(tmp_path, _signature_from_bundle(bundle_local))
+    _add_trusted_key(tmp_path, TEST_KEY)
     assert cli_main(["registry", "add", str(bundle_local), "--json"]) == 0
     capsys.readouterr()
     bundle_service = FIXTURES_ROOT / "sample.nocode-0.1.0.n3pack.zip"
@@ -55,25 +55,19 @@ def test_packs_add_from_registry(tmp_path: Path, capsys, monkeypatch) -> None:
     _write_app(tmp_path)
     monkeypatch.chdir(tmp_path)
     bundle_local = FIXTURES_ROOT / "sample.local-0.1.0.n3pack.zip"
-    _add_trusted_key(tmp_path, _signature_from_bundle(bundle_local))
+    _add_trusted_key(tmp_path, TEST_KEY)
     assert cli_main(["registry", "add", str(bundle_local), "--json"]) == 0
     capsys.readouterr()
-    assert cli_main(["packs", "add", "sample.local@0.1.0", "--json"]) == 0
+    assert cli_main(["packs", "add", "sample.local", "--json"]) == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload["status"] == "ok"
     pack_path = tmp_path / ".namel3ss" / "packs" / "sample.local" / "pack.yaml"
     assert pack_path.exists()
 
 
-def _signature_from_bundle(path: Path) -> str:
-    with zipfile.ZipFile(path, "r") as archive:
-        data = archive.read("signature.txt")
-    return data.decode("utf-8").strip()
-
-
-def _add_trusted_key(app_root: Path, digest: str) -> None:
+def _add_trusted_key(app_root: Path, key_text: str) -> None:
     key_file = app_root / "trusted.key"
-    key_file.write_text(digest, encoding="utf-8")
+    key_file.write_text(key_text, encoding="utf-8")
     assert cli_main(["packs", "keys", "add", "--id", "test.key", "--public-key", str(key_file), "--json"]) == 0
 
 

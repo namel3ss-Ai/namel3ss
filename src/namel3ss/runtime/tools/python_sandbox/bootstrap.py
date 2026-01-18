@@ -141,9 +141,10 @@ def _install_patches() -> None:
 
 
 def _patched_open(path, mode="r", *args, **kwargs):
+    target = _resolve_path(path)
     if _CONTEXT:
-        check_filesystem(_CONTEXT, _record_check, path=path, mode=mode)
-    return _ORIGINALS["open"](path, mode, *args, **kwargs)
+        check_filesystem(_CONTEXT, _record_check, path=target, mode=mode)
+    return _ORIGINALS["open"](target, mode, *args, **kwargs)
 
 
 def _patched_path_open(self, *args, **kwargs):
@@ -152,16 +153,18 @@ def _patched_path_open(self, *args, **kwargs):
         mode = args[0]
     elif "mode" in kwargs:
         mode = kwargs["mode"]
+    target = _resolve_path(self)
     if _CONTEXT:
-        check_filesystem(_CONTEXT, _record_check, path=self, mode=mode)
-    return _ORIGINALS["path_open"](self, *args, **kwargs)
+        check_filesystem(_CONTEXT, _record_check, path=target, mode=mode)
+    return _ORIGINALS["path_open"](Path(target), *args, **kwargs)
 
 
 def _patched_os_open(path, flags, *args, **kwargs):
+    target = _resolve_path(path)
     if _CONTEXT:
         mode = _mode_from_flags(flags)
-        check_filesystem(_CONTEXT, _record_check, path=path, mode=mode)
-    return _ORIGINALS["os_open"](path, flags, *args, **kwargs)
+        check_filesystem(_CONTEXT, _record_check, path=target, mode=mode)
+    return _ORIGINALS["os_open"](target, flags, *args, **kwargs)
 
 
 def _patched_urlopen(req, *args, **kwargs):
@@ -286,6 +289,21 @@ def _is_write_flags(flags: int) -> bool:
         | getattr(os, "O_EXCL", 0)
     )
     return bool(flags & write_flags)
+
+
+def _resolve_path(path) -> Path | str:
+    if _CONTEXT is None:
+        return path
+    root = getattr(_CONTEXT, "filesystem_root", None)
+    if not root:
+        return path
+    try:
+        candidate = Path(path)
+    except Exception:
+        return path
+    if candidate.is_absolute():
+        return candidate
+    return Path(root) / candidate
 
 
 class EnvProxy(MutableMapping):

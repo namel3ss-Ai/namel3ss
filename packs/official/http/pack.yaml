@@ -1,0 +1,16 @@
+id: "official.http"
+name: "Official HTTP Pack"
+version: "stable"
+description: "HTTP tools for deterministic outbound requests."
+author: "namel3ss"
+license: "MIT"
+tools:
+  - "http get json"
+entrypoints:
+  "http get json":
+    kind: "python"
+    entry: "tools.http_get_json:run"
+    purity: "impure"
+signer_id: "official.key"
+signed_at: "not_recorded"
+digest: "sha256:929600de191de06a691f8c32e0b463a0ab6b4e03fd0853a5d07ee8374689273b"

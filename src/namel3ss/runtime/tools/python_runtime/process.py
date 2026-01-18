@@ -15,7 +15,10 @@ from namel3ss.runtime.capabilities.gates.base import CapabilityViolation
 from namel3ss.runtime.capabilities.model import CapabilityContext
 from namel3ss.runtime.capabilities.overrides import unsafe_override_enabled
 from namel3ss.runtime.executor.context import ExecutionContext
+from namel3ss.runtime.backend.job_queue import enqueue_job
+from namel3ss.runtime.packs.broker import drain_job_requests
 from namel3ss.runtime.packs.policy import load_pack_policy
+from namel3ss.runtime.packs.runtime_paths import pack_runtime_root
 from namel3ss.runtime.tools.entry_validation import validate_python_tool_entry, validate_python_tool_entry_exists
 from namel3ss.runtime.tools.foreign_workspace import foreign_workspace_dir
 from namel3ss.runtime.tools.python_runtime_helpers import _binding_example, _tool_example, _tool_pack_example
@@ -131,6 +134,8 @@ def _execute_python_tool(
         entry = binding.entry
         module_path = entry.split(":", 1)[0].strip()
         runner_name = binding.runner or "local"
+        if resolved_source in {"builtin_pack", "installed_pack", "local_pack"} and runner_name == "local":
+            binding = replace(binding, sandbox=True)
         allow_external = resolved_source in {"installed_pack", "local_pack"} or module_path.startswith("tests.fixtures.")
         if (
             runner_name == "local"
@@ -185,6 +190,10 @@ def _execute_python_tool(
                 trace_event["pack_name"] = pack_name
             trace_event["pack_version"] = pack_version
         pack_root = _pack_root_from_paths(resolved.pack_paths)
+        pack_runtime_root_path = None
+        if resolved_source in {"builtin_pack", "installed_pack", "local_pack"} and pack_id:
+            pack_runtime_root_path = pack_runtime_root(app_root, pack_id)
+            pack_runtime_root_path.mkdir(parents=True, exist_ok=True)
         policy = (
             load_pack_policy(app_root)
             if resolved_source in {"builtin_pack", "installed_pack", "local_pack"}
@@ -222,13 +231,24 @@ def _execute_python_tool(
             for pack_path in resolved.pack_paths or []:
                 read_roots.append(str(pack_path))
             read_roots = list(dict.fromkeys(read_roots))
+        if pack_root:
+            read_roots = list(read_roots or [])
+            read_roots.append(str(pack_root))
+        if pack_runtime_root_path:
+            read_roots = list(read_roots or [])
+            read_roots.append(str(pack_runtime_root_path))
+        if read_roots:
+            read_roots = list(dict.fromkeys(read_roots))
+        filesystem_root = str(workspace_dir) if workspace_dir else None
+        if pack_runtime_root_path and not is_foreign:
+            filesystem_root = str(pack_runtime_root_path)
         capability_ctx = CapabilityContext(
             tool_name=tool.name,
             resolved_source=resolved_source,
             runner=runner_name,
             protocol_version=PROTOCOL_VERSION,
             guarantees=guarantees,
-            filesystem_root=str(workspace_dir) if workspace_dir else None,
+            filesystem_root=filesystem_root,
             filesystem_read_roots=read_roots,
         )
         unsafe_used = _preflight_capabilities(
@@ -270,6 +290,8 @@ def _execute_python_tool(
                 allow_unsafe=unsafe_override,
             )
         )
+        if pack_runtime_root_path:
+            _apply_pack_jobs(ctx, pack_runtime_root_path, line=line, column=column)
         if result.capability_checks:
             record_capability_checks(capability_ctx, result.capability_checks, ctx.traces)
         if result.metadata:
@@ -367,6 +389,16 @@ def _resolve_project_root(
             column=column,
         )
     return Path(project_root).resolve()
+
+
+def _apply_pack_jobs(ctx: ExecutionContext, runtime_root: Path, *, line: int | None, column: int | None) -> None:
+    requests = drain_job_requests(runtime_root)
+    for entry in requests:
+        job_name = entry.get("job")
+        payload = entry.get("payload")
+        if not isinstance(job_name, str) or not job_name.strip():
+            raise Namel3ssError("Pack job request is missing a job name", line=line, column=column)
+        enqueue_job(ctx, job_name, payload if payload is not None else {}, line=line, column=column, reason="pack_tool")
 
 
 def _trace_error_details(err: Exception, secret_values: list[str]) -> tuple[str, str]:

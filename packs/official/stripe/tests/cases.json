@@ -1,0 +1,15 @@
+{
+  "cases": [
+    {
+      "tool": "stripe request",
+      "payload": {
+        "stub_response": {"ok": true, "id": "ch_test"}
+      },
+      "expect": {
+        "ok": true,
+        "stub": true,
+        "response": {"ok": true, "id": "ch_test"}
+      }
+    }
+  ]
+}

@@ -12,6 +12,8 @@ from namel3ss.runtime.packs.pack_executor import (
     normalize_pack_allowlist,
     pack_not_declared_message,
 )
+from namel3ss.runtime.packs.permission_enforcer import evaluate_pack_permission
+from namel3ss.runtime.packs.policy import load_pack_policy
 from namel3ss.runtime.packs.registry import load_pack_registry
 from namel3ss.runtime.tools.bindings import bindings_path, load_tool_bindings
 from namel3ss.runtime.tools.bindings_yaml import ToolBinding
@@ -47,15 +49,26 @@ def resolve_tool_binding(
         binding_error = err
     allowlist = normalize_pack_allowlist(allowed_packs)
     registry = load_pack_registry(app_root, config)
+    policy = load_pack_policy(app_root)
     pack_candidates = registry.tools.get(tool_name, [])
     allowlist_result = apply_pack_allowlist(tool_name, pack_candidates, allowlist, line=line, column=column)
     pack_candidates = allowlist_result.candidates
     blocked_pack_ids = allowlist_result.blocked_pack_ids
-    active_candidates = [
-        item
-        for item in pack_candidates
-        if item.source == "builtin_pack" or (item.verified and item.enabled)
-    ]
+    active_candidates = []
+    for item in pack_candidates:
+        if item.source == "builtin_pack":
+            active_candidates.append(item)
+            continue
+        if not item.enabled:
+            continue
+        if item.verified:
+            active_candidates.append(item)
+            continue
+        pack_record = registry.packs.get(item.pack_id) if item.pack_id else None
+        if pack_record:
+            decision = evaluate_pack_permission(pack_record, app_root=app_root, policy=policy)
+            if decision.allowed:
+                active_candidates.append(item)
     if active_candidates:
         if bindings is not None and tool_name in bindings:
             raise Namel3ssError(

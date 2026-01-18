@@ -7,6 +7,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.packs.authoring_paths import resolve_pack_dir
 from namel3ss.runtime.packs.authoring_sign import sign_pack
+from namel3ss.utils.path_display import display_path_hint
 from namel3ss.utils.json_tools import dumps_pretty
 
 
@@ -58,8 +59,9 @@ def run_packs_sign(args: list[str], *, json_mode: bool) -> int:
         "digest": result.digest,
         "signer_id": result.signer_id,
         "signed_at": result.signed_at,
-        "signature_path": str(result.signature_path),
-        "manifest_path": str(result.manifest_path),
+        "signature": result.signature,
+        "signature_path": display_path_hint(result.signature_path, base=Path.cwd()),
+        "manifest_path": display_path_hint(result.manifest_path, base=Path.cwd()),
     }
     if json_mode:
         print(dumps_pretty(payload))

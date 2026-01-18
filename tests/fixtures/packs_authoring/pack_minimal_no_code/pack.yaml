@@ -9,3 +9,6 @@ tools:
 runners:
   default: "service"
 service_url: "http://127.0.0.1:8787/tools"
+signer_id: "test.key"
+signed_at: "not_recorded"
+digest: "sha256:2e80cf9b774cf8aade4a24c3d9a38cca67f602c758da75666a033b0d695ee455"

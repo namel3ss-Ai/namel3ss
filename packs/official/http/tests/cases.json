@@ -1,0 +1,18 @@
+{
+  "cases": [
+    {
+      "tool": "http get json",
+      "payload": {
+        "url": "https://example.test/data",
+        "stub_response": {
+          "status": 200,
+          "body": "ok"
+        }
+      },
+      "expect": {
+        "status": 200,
+        "body": "ok"
+      }
+    }
+  ]
+}

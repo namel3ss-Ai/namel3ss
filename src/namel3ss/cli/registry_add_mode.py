@@ -6,6 +6,7 @@ from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.registry.ops import add_bundle_to_registry
+from namel3ss.utils.path_display import display_path_hint
 from namel3ss.utils.json_tools import dumps_pretty
 
 
@@ -31,7 +32,7 @@ def run_registry_add(args: list[str], *, json_mode: bool) -> int:
     if json_mode:
         print(dumps_pretty(payload))
         return 0
-    print(f"Registry entry added: {entry.pack_id}@{entry.pack_version}")
+    print(f"Registry entry added: {entry.pack_id}")
     print(f"Digest: {entry.pack_digest}")
     return 0
 
@@ -50,16 +51,16 @@ def _unknown_args_message(args: list[str]) -> str:
         what=f"Unknown arguments: {' '.join(args)}.",
         why="n3 registry add accepts a single bundle path.",
         fix="Remove the extra arguments and try again.",
-        example="n3 registry add ./dist/team.pack-0.1.0.n3pack.zip",
+        example="n3 registry add ./dist/team.pack.n3pack.zip",
     )
 
 
 def _missing_path_message(path: Path) -> str:
     return build_guidance_message(
         what="Bundle path is missing.",
-        why=f"Expected {path.as_posix()} to exist.",
+        why=f"Expected {display_path_hint(path, base=Path.cwd())} to exist.",
         fix="Provide a valid .n3pack.zip path.",
-        example="n3 registry add ./dist/team.pack-0.1.0.n3pack.zip",
+        example="n3 registry add ./dist/team.pack.n3pack.zip",
     )
 
 

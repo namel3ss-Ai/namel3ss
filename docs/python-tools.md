@@ -164,7 +164,7 @@ See [Tool packs](tool-packs.md) for available tools.
 
 You can install packs from disk and use their English tools without wiring:
 ```bash
-n3 packs add ./my_pack
+n3 pack add ./my_pack
 n3 packs keys add --id "maintainer.alice" --public-key ./alice.pub
 n3 packs verify my.pack
 n3 packs enable my.pack

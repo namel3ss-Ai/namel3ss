@@ -13,6 +13,7 @@ from namel3ss.runtime.packs.intent import summarize_intent
 from namel3ss.runtime.packs.manifest import PackManifest, parse_pack_manifest_text
 from namel3ss.runtime.packs.runners import pack_runner_default
 from namel3ss.runtime.packs.trust_store import load_trusted_keys
+from namel3ss.runtime.packs.signature import parse_signature_text, verify_signature
 from namel3ss.runtime.packs.verification import compute_pack_digest
 from namel3ss.runtime.tools.bindings_yaml import ToolBinding, parse_bindings_yaml
 from namel3ss.runtime.registry.entry import RegistryEntry, normalize_registry_entry
@@ -41,7 +42,13 @@ def build_registry_entry_from_bundle(
     summary, guarantees = _capabilities_summary(bundle_path, caps_text)
     runner_default = pack_runner_default(manifest, bindings)
     digest = _bundle_digest(bundle_path)
-    signed, verified_by = _signature_status(app_root, manifest_text, tools_text, signature_text)
+    signed, verified_by = _signature_status(
+        app_root,
+        manifest_text,
+        tools_text,
+        signature_text,
+        signer_id=manifest.signer_id,
+    )
     intent_phrases = _intent_phrases(intent_text, manifest, bindings)
     intent_tags = _intent_tags(intent_phrases, manifest.tools)
     entry = RegistryEntry(
@@ -135,20 +142,23 @@ def _signature_status(
     manifest_text: str,
     tools_text: str | None,
     signature_text: str | None,
+    *,
+    signer_id: str | None,
 ) -> tuple[bool, list[str]]:
     if not signature_text:
         return False, []
-    signature = signature_text.strip()
-    if not signature:
+    if not signer_id:
         return False, []
-    if not signature.startswith("sha256:"):
-        signature = f"sha256:{signature}"
+    if parse_signature_text(signature_text) is None:
+        return False, []
     digest = compute_pack_digest(manifest_text, tools_text)
-    if signature != digest:
-        return False, []
     keys = load_trusted_keys(app_root)
-    verified_by = [key.key_id for key in keys if key.public_key == signature or key.public_key == digest]
-    return True, sorted(verified_by)
+    key = next((item for item in keys if item.key_id == signer_id), None)
+    if key is None:
+        return False, []
+    if not verify_signature(digest, signature_text, key.public_key):
+        return False, []
+    return True, [key.key_id]
 
 
 def _intent_phrases(intent_text: str, manifest: PackManifest, bindings: dict[str, ToolBinding]) -> list[str]:

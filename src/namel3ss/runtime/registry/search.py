@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from namel3ss.runtime.packs.policy import PackTrustPolicy, evaluate_policy
+from namel3ss.pkg.versions import parse_semver
 from namel3ss.runtime.packs.risk import risk_from_summary, risk_rank
 
 
@@ -39,12 +40,16 @@ def discover_entries(
         if capability_filter and not _entry_has_capability(entry, capability_filter):
             continue
         trusted = bool(entry.get("verified_by"))
+        pack_id = entry.get("pack_id") if isinstance(entry.get("pack_id"), str) else None
+        signer_id = entry.get("signer_id") if isinstance(entry.get("signer_id"), str) else None
         decision = evaluate_policy(
             policy,
             operation="install",
             verified=trusted,
             risk=risk,
             capabilities=_capabilities_from_entry(entry),
+            pack_id=pack_id,
+            signer_id=signer_id,
         )
         results.append(
             DiscoverMatch(
@@ -65,10 +70,14 @@ def select_best_entry(
     entries: list[dict[str, object]],
     *,
     pack_id: str,
-    pack_version: str,
+    pack_version: str | None,
     policy: PackTrustPolicy,
 ) -> DiscoverMatch | None:
-    filtered = [entry for entry in entries if entry.get("pack_id") == pack_id and entry.get("pack_version") == pack_version]
+    filtered = [entry for entry in entries if entry.get("pack_id") == pack_id]
+    if pack_version:
+        filtered = [entry for entry in filtered if entry.get("pack_version") == pack_version]
+    else:
+        filtered = sorted(filtered, key=_version_sort_key, reverse=True)
     matches = discover_entries(filtered, phrase="", policy=policy)
     if not matches:
         return None
@@ -143,6 +152,19 @@ def _tokenize(text: str) -> list[str]:
         cleaned.append(ch if ch.isalnum() else " ")
     tokens = [token for token in "".join(cleaned).split() if token and token not in stopwords]
     return tokens
+
+
+def _version_sort_key(entry: dict[str, object]) -> tuple[int, tuple[int, int, int], str]:
+    version = entry.get("pack_version")
+    if not isinstance(version, str):
+        return (0, (0, 0, 0), "")
+    if version.strip() == "stable":
+        return (2, (0, 0, 0), "stable")
+    try:
+        semver = parse_semver(version)
+        return (1, (semver.major, semver.minor, semver.patch), version)
+    except Exception:
+        return (0, (0, 0, 0), version)
 
 
 __all__ = ["DiscoverMatch", "discover_entries", "select_best_entry"]

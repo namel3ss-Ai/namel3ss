@@ -14,9 +14,10 @@ from namel3ss.runtime.packs.verification import verify_pack as verify_pack_signa
 from namel3ss.runtime.packs.config import read_pack_config, write_pack_config
 from namel3ss.runtime.tools.bindings_yaml import parse_bindings_yaml
 from namel3ss.utils.fs import remove_tree
+from namel3ss.utils.path_display import display_path_hint
 
 
-def install_pack(app_root: Path, source_path: Path) -> str:
+def install_pack(app_root: Path, source_path: Path, *, source_info: PackSourceInfo | None = None) -> str:
     source = _unpack_source(source_path)
     manifest = parse_pack_manifest(pack_manifest_path(source))
     _validate_pack_files(source, manifest.pack_id)
@@ -25,8 +26,11 @@ def install_pack(app_root: Path, source_path: Path) -> str:
         raise Namel3ssError(_pack_exists_message(manifest.pack_id))
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(source, target)
-    source_type = "bundle" if source_path.suffix == ".zip" else "directory"
-    write_pack_source(target, PackSourceInfo(source_type=source_type, path=str(source_path.resolve())))
+    if source_info is None:
+        source_type = "bundle" if source_path.suffix == ".zip" else "directory"
+        source_hint = display_path_hint(source_path, base=app_root)
+        source_info = PackSourceInfo(source_type=source_type, path=source_hint)
+    write_pack_source(target, source_info)
     return manifest.pack_id
 
 

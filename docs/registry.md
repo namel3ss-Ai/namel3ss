@@ -1,4 +1,4 @@
-# Registry (Intent Graph, v1)
+# Registry (Intent Graph)
 
 The namel3ss registry is not a package store. It is an intent graph:
 metadata about packs and tools, indexed by intent phrases, capabilities, and trust.
@@ -11,7 +11,7 @@ Local registry entries live under:
 
 Add a bundle to the local registry:
 ```bash
-n3 registry add ./dist/team.pack-0.1.0.n3pack.zip
+n3 registry add ./dist/team.pack.n3pack.zip
 n3 registry build
 ```
 
@@ -29,10 +29,12 @@ when applicable.
 
 Install by id once you decide:
 ```bash
-n3 packs add team.pack@0.1.0
+n3 pack add team.pack
+n3 pack add team.pack --registry team
+n3 pack add team.pack --offline
 ```
 
-Ranking (v1):
+Ranking:
 1) trusted signature (verified + trusted key)
 2) lower risk
 3) intent token overlap
@@ -60,7 +62,7 @@ allowed_capabilities = { network = "outbound", filesystem = "read", subprocess =
 Policies also feed runtime guarantees; tools are downgraded at execution time
 and denied if they exceed policy limits.
 
-## Risk scoring (v1)
+## Risk scoring
 - low: no network, no fs write, no subprocess, no secrets
 - medium: network outbound OR fs read OR env read OR secrets
 - high: fs write OR subprocess OR container runner OR unknown capabilities

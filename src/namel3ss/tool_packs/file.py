@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from namel3ss_safeio import filesystem_root as safeio_filesystem_root
 from namel3ss_safeio import safe_open
 
 
@@ -49,12 +50,14 @@ def _safe_path(payload: dict) -> Path:
         raise ValueError("payload.path must be a non-empty string")
     raw = value.strip()
     candidate = Path(raw)
+    base_root = safeio_filesystem_root()
+    base = Path(base_root).resolve() if base_root else Path.cwd().resolve()
     if candidate.is_absolute():
-        raise ValueError("payload.path must be a relative path")
-    base = Path.cwd().resolve()
-    resolved = (base / candidate).resolve()
+        resolved = candidate.resolve()
+    else:
+        resolved = (base / candidate).resolve()
     if not resolved.is_relative_to(base):
-        raise ValueError("payload.path must stay within the app directory")
+        raise ValueError("payload.path must stay within the pack file scope")
     return resolved
 
 

@@ -11,13 +11,14 @@ from namel3ss.runtime.registry.bundle import build_registry_entry_from_bundle
 
 
 FIXTURES_ROOT = Path(__file__).resolve().parents[1] / "fixtures" / "registry" / "bundles"
+TEST_KEY = "secret"
 
 
 def test_http_registry_discover_and_install(tmp_path: Path, capsys, monkeypatch) -> None:
     _write_app(tmp_path)
     monkeypatch.chdir(tmp_path)
     bundle_local = FIXTURES_ROOT / "sample.local-0.1.0.n3pack.zip"
-    _add_trusted_key(tmp_path, _signature_from_bundle(bundle_local))
+    _add_trusted_key(tmp_path, TEST_KEY)
     capsys.readouterr()
 
     bundles_map: dict[str, bytes] = {}
@@ -39,7 +40,7 @@ def test_http_registry_discover_and_install(tmp_path: Path, capsys, monkeypatch)
         assert cli_main(["discover", "provide", "--json"]) == 0
         payload = json.loads(capsys.readouterr().out)
         assert payload["count"] >= 1
-        assert cli_main(["packs", "add", "sample.local@0.1.0", "--from", "team", "--json"]) == 0
+        assert cli_main(["packs", "add", "sample.local", "--registry", "team", "--json"]) == 0
         capsys.readouterr()
         assert (tmp_path / ".namel3ss" / "packs" / "sample.local" / "pack.yaml").exists()
     finally:
@@ -102,17 +103,9 @@ def _handler(entries: list[dict[str, object]], bundles: dict[str, bytes]):
     return RegistryHandler
 
 
-def _signature_from_bundle(path: Path) -> str:
-    import zipfile
-
-    with zipfile.ZipFile(path, "r") as archive:
-        data = archive.read("signature.txt")
-    return data.decode("utf-8").strip()
-
-
-def _add_trusted_key(app_root: Path, digest: str) -> None:
+def _add_trusted_key(app_root: Path, key_text: str) -> None:
     key_file = app_root / "trusted.key"
-    key_file.write_text(digest, encoding="utf-8")
+    key_file.write_text(key_text, encoding="utf-8")
     assert cli_main(["packs", "keys", "add", "--id", "test.key", "--public-key", str(key_file), "--json"]) == 0
 
 

@@ -33,7 +33,7 @@ def evaluate_pack_permission(
     runner_default = _pack_runner_default(pack)
     risk = risk_from_summary(summary, runner_default)
     policy = policy if policy is not None else (load_pack_policy(app_root) if app_root else None)
-    if policy is None or policy.source_path is None:
+    if policy is None:
         return PackPermissionDecision(
             pack_id=pack.pack_id,
             allowed=True,
@@ -48,6 +48,8 @@ def evaluate_pack_permission(
         verified=bool(pack.verified),
         risk=risk,
         capabilities=_flatten_capabilities(summary),
+        pack_id=pack.pack_id,
+        signer_id=getattr(pack, "signer_id", None),
     )
     return PackPermissionDecision(
         pack_id=pack.pack_id,
@@ -125,7 +127,7 @@ def _flatten_capabilities(summary: dict[str, object]) -> dict[str, object]:
 
 def _normalize_policy_source(source: Path | None, app_root: Path | None) -> str | None:
     if source is None:
-        return None
+        return "default"
     try:
         path = source if isinstance(source, Path) else Path(str(source))
     except Exception:

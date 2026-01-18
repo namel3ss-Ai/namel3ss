@@ -13,7 +13,10 @@ from namel3ss.runtime.capabilities import build_effective_guarantees, resolve_to
 from namel3ss.runtime.capabilities.gates import record_capability_checks
 from namel3ss.runtime.capabilities.overrides import unsafe_override_enabled
 from namel3ss.runtime.executor.context import ExecutionContext
+from namel3ss.runtime.backend.job_queue import enqueue_job
+from namel3ss.runtime.packs.broker import drain_job_requests
 from namel3ss.runtime.packs.policy import load_pack_policy
+from namel3ss.runtime.packs.runtime_paths import pack_runtime_root
 from namel3ss.runtime.tools.entry_validation import validate_node_tool_entry
 from namel3ss.runtime.tools.foreign_workspace import foreign_workspace_dir
 from namel3ss.runtime.tools.resolution import resolve_tool_binding
@@ -169,6 +172,10 @@ def _execute_node_tool(
                 trace_event["pack_name"] = pack_name
             trace_event["pack_version"] = pack_version
         pack_root = _pack_root_from_paths(resolved.pack_paths)
+        pack_runtime_root_path = None
+        if resolved_source in {"builtin_pack", "installed_pack", "local_pack"} and pack_id:
+            pack_runtime_root_path = pack_runtime_root(app_root, pack_id)
+            pack_runtime_root_path.mkdir(parents=True, exist_ok=True)
         policy = (
             load_pack_policy(app_root)
             if resolved_source in {"builtin_pack", "installed_pack", "local_pack"}
@@ -206,12 +213,23 @@ def _execute_node_tool(
             for pack_path in resolved.pack_paths or []:
                 read_roots.append(str(pack_path))
             read_roots = list(dict.fromkeys(read_roots))
+        if pack_root:
+            read_roots = list(read_roots or [])
+            read_roots.append(str(pack_root))
+        if pack_runtime_root_path:
+            read_roots = list(read_roots or [])
+            read_roots.append(str(pack_runtime_root_path))
+        if read_roots:
+            read_roots = list(dict.fromkeys(read_roots))
+        filesystem_root = str(workspace_dir) if workspace_dir else None
+        if pack_runtime_root_path and not is_foreign:
+            filesystem_root = str(pack_runtime_root_path)
         capability_ctx = _capability_context(
             tool,
             runner_name=runner_name,
             resolved_source=resolved_source,
             guarantees=guarantees,
-            filesystem_root=str(workspace_dir) if workspace_dir else None,
+            filesystem_root=filesystem_root,
             filesystem_read_roots=read_roots,
         )
         unsafe_used = _preflight_capabilities(
@@ -253,6 +271,8 @@ def _execute_node_tool(
                 allow_unsafe=unsafe_override,
             )
         )
+        if pack_runtime_root_path:
+            _apply_pack_jobs(ctx, pack_runtime_root_path, line=line, column=column)
         if result.capability_checks:
             record_capability_checks(capability_ctx, result.capability_checks, ctx.traces)
         if result.metadata:
@@ -350,6 +370,16 @@ def _capability_context(
         filesystem_root=filesystem_root,
         filesystem_read_roots=filesystem_read_roots,
     )
+
+
+def _apply_pack_jobs(ctx: ExecutionContext, runtime_root: Path, *, line: int | None, column: int | None) -> None:
+    requests = drain_job_requests(runtime_root)
+    for entry in requests:
+        job_name = entry.get("job")
+        payload = entry.get("payload")
+        if not isinstance(job_name, str) or not job_name.strip():
+            raise Namel3ssError("Pack job request is missing a job name", line=line, column=column)
+        enqueue_job(ctx, job_name, payload if payload is not None else {}, line=line, column=column, reason="pack_tool")
 
 
 def _tool_example(tool_name: str) -> str:

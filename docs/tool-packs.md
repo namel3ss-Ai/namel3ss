@@ -78,18 +78,18 @@ n3 packs sign ./team.pack --key-id "maintainer.alice" --private-key ./alice.key
 
 Distribute the `.n3pack.zip` and install locally:
 ```bash
-n3 packs add ./dist/team.pack-0.1.0.n3pack.zip
+n3 pack add ./dist/team.pack.n3pack.zip
 ```
 
 Add the bundle to the local registry for discovery:
 ```bash
-n3 registry add ./dist/team.pack-0.1.0.n3pack.zip
+n3 registry add ./dist/team.pack.n3pack.zip
 n3 registry build
 ```
 
 Install, verify, enable:
 ```bash
-n3 packs add ./my_pack
+n3 pack add ./my_pack
 n3 packs keys add --id "maintainer.alice" --public-key ./alice.pub
 n3 packs keys list
 n3 packs verify my.pack
@@ -98,7 +98,7 @@ n3 packs enable my.pack
 
 Install by id from the registry:
 ```bash
-n3 packs add team.pack@0.1.0
+n3 pack add team.pack
 ```
 
 Check status or remove:
@@ -108,12 +108,12 @@ n3 packs disable my.pack
 n3 packs remove my.pack --yes
 ```
 
-## Pack manifest (v1)
+## Pack manifest
 Each pack includes `pack.yaml` with metadata:
 ```yaml
 id: "pack.slug"
 name: "Sample Pack"
-version: "0.1.0"
+version: "stable"
 description: "Example tools"
 author: "Team"
 license: "MIT"
@@ -121,12 +121,12 @@ tools:
   - "greet someone"
 ```
 
-Pack manifests are frozen at `pack_manifest` v1 (see `resources/spec_versions.json`).
+Pack manifests are stable (see `resources/spec_versions.json`).
 
 Bindings come from `tools.yaml` (preferred) or `entrypoints` in `pack.yaml`.
 `tools.yaml` uses the same schema as app bindings.
 
-## Capabilities (v1)
+## Capabilities
 Packs declare capabilities in `capabilities.yaml`:
 ```yaml
 capabilities:
@@ -149,23 +149,22 @@ baseline via `capabilities.yaml`, and apps can further downgrade using
 `[capability_overrides]` in `namel3ss.toml`. Trust policy can also restrict
 capabilities. See `docs/capabilities.md` for the full model.
 
-Coverage notes (v1):
+Coverage notes:
 - Local pack tools run with sandbox enforcement by default.
 - Service runners should support the capability handshake.
 - Container runners must declare enforcement (`declared` or `verified`).
 
-## Trust model (v1)
+## Trust model
 Verification is a digest-based signature:
 - `signature.txt` contains the digest of `pack.yaml` + `tools.yaml`.
 - Trusted keys live in `.namel3ss/trust/keys.yaml`.
 - Verification writes `verification.json` inside the pack directory.
 
-Pack trust is frozen at v1 alongside the pack manifest (see `resources/spec_versions.json`).
 Signer metadata is recorded in `pack.yaml` (`signer_id`, `signed_at`, `digest`).
 
 Unverified packs are inactive and cannot run by default.
 
-## Registry discovery (v1)
+## Registry discovery
 Discover packs by intent, capability, and trust:
 ```bash
 n3 discover "send email securely"

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.packs.ops import remove_pack
+from namel3ss.utils.path_display import display_path_hint
 from namel3ss.utils.json_tools import dumps_pretty
 
 
@@ -16,7 +19,11 @@ def run_packs_remove(args: list[str], *, json_mode: bool) -> int:
     app_path = resolve_app_path(None)
     app_root = app_path.parent
     path = remove_pack(app_root, pack_id)
-    payload = {"status": "ok", "pack_id": pack_id, "pack_path": str(path)}
+    payload = {
+        "status": "ok",
+        "pack_id": pack_id,
+        "pack_path": display_path_hint(path, base=Path.cwd()),
+    }
     if json_mode:
         print(dumps_pretty(payload))
         return 0

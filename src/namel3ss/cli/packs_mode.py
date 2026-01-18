@@ -80,7 +80,8 @@ def run_packs(args: list[str]) -> int:
 
 def _print_usage() -> None:
     usage = """Usage:
-  n3 packs add path_or_pack --from registry_id --json
+  n3 pack add pack_name --registry alias_or_url --offline --json
+  n3 pack add path_or_pack --json
   n3 packs list --json
   n3 packs info pack_id --json
   n3 packs init pack_id --dir path --no-code --json

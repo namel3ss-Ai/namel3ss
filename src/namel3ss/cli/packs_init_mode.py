@@ -5,6 +5,7 @@ from pathlib import Path
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.packs.authoring_init import init_pack
+from namel3ss.utils.path_display import display_path_hint
 from namel3ss.utils.json_tools import dumps_pretty
 
 
@@ -38,14 +39,14 @@ def run_packs_init(args: list[str], *, json_mode: bool) -> int:
     payload = {
         "status": "ok",
         "pack_id": result.pack_id,
-        "path": str(result.path),
+        "path": display_path_hint(result.path, base=Path.cwd()),
         "files": result.files,
         "no_code": result.no_code,
     }
     if json_mode:
         print(dumps_pretty(payload))
         return 0
-    print(f"Pack initialized at {result.path.as_posix()}")
+    print(f"Pack initialized at {display_path_hint(result.path, base=Path.cwd())}")
     return 0
 
 

@@ -40,11 +40,12 @@ def drain_checks() -> list[dict[str, object]]:
 
 
 def safe_open(path: str | Path, mode: str = "r", *, encoding: str | None = None, create_dirs: bool = False):
+    resolved = _resolve_path(path)
     if _context:
-        check_filesystem(_context, _record_check, path=path, mode=mode)
+        check_filesystem(_context, _record_check, path=resolved, mode=mode)
     if create_dirs and _is_write_mode(mode):
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
-    return open(path, mode, encoding=encoding)
+        Path(resolved).parent.mkdir(parents=True, exist_ok=True)
+    return open(resolved, mode, encoding=encoding)
 
 
 def safe_urlopen(req, *args, **kwargs):
@@ -78,6 +79,13 @@ def safe_run(argv: list[str], *args, **kwargs):
     return subprocess.run(argv, *args, **kwargs)
 
 
+def filesystem_root() -> str | None:
+    if _context is None:
+        return None
+    root = getattr(_context, "filesystem_root", None)
+    return str(root) if root else None
+
+
 def _record_check(check: CapabilityCheck) -> None:
     if _context is None:
         return
@@ -92,6 +100,14 @@ def _is_write_mode(mode: str) -> bool:
     return any(flag in mode for flag in ("w", "a", "x", "+"))
 
 
+def _resolve_path(path: str | Path) -> Path:
+    candidate = Path(path)
+    root = getattr(_context, "filesystem_root", None) if _context else None
+    if root and not candidate.is_absolute():
+        return Path(root) / candidate
+    return candidate
+
+
 def _url_and_method(req) -> tuple[str, str]:
     if isinstance(req, request.Request):
         return req.full_url, req.get_method()
@@ -102,6 +118,7 @@ __all__ = [
     "clear_checks",
     "configure",
     "drain_checks",
+    "filesystem_root",
     "safe_env_get",
     "safe_env_set",
     "safe_open",

@@ -340,6 +340,7 @@ Expect breaking changes between alpha revisions, but grammar, execution phases, 
 ### Tools & packs
 - [Python tools](docs/python-tools.md)
 - [Tool packs](docs/tool-packs.md)
+- [Capability packs](docs/language/capability-packs.md)
 - [Capabilities](docs/capabilities.md)
 - [Publishing packs](docs/publishing-packs.md)
 - [Registry](docs/registry.md)

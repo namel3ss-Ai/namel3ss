@@ -6,6 +6,7 @@ from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.packs.trust_store import TrustedKey, add_trusted_key, load_trusted_keys
+from namel3ss.utils.path_display import display_path_hint
 from namel3ss.utils.json_tools import dumps_pretty
 
 
@@ -23,7 +24,11 @@ def run_packs_keys(args: list[str], *, json_mode: bool) -> int:
         if not key_text:
             raise Namel3ssError(_invalid_key_file_message(key_path))
         path = add_trusted_key(app_root, TrustedKey(key_id=key_id, public_key=key_text))
-        payload = {"status": "ok", "key_id": key_id, "keys_path": str(path)}
+        payload = {
+            "status": "ok",
+            "key_id": key_id,
+            "keys_path": display_path_hint(path, base=Path.cwd()),
+        }
         if json_mode:
             print(dumps_pretty(payload))
             return 0

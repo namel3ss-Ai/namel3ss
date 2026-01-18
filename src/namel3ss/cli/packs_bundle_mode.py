@@ -7,6 +7,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.packs.authoring_bundle import bundle_pack
 from namel3ss.runtime.packs.authoring_paths import resolve_pack_dir
+from namel3ss.utils.path_display import display_path_hint
 from namel3ss.utils.json_tools import dumps_pretty
 
 
@@ -42,14 +43,14 @@ def run_packs_bundle(args: list[str], *, json_mode: bool) -> int:
         "status": "ok",
         "pack_id": result.pack_id,
         "version": result.version,
-        "bundle_path": str(result.bundle_path),
+        "bundle_path": display_path_hint(result.bundle_path, base=Path.cwd()),
         "file_count": result.file_count,
         "digest": result.digest,
     }
     if json_mode:
         print(dumps_pretty(payload))
         return 0
-    print(f"Bundle created at {result.bundle_path.as_posix()}")
+    print(f"Bundle created at {display_path_hint(result.bundle_path, base=Path.cwd())}")
     return 0
 
 

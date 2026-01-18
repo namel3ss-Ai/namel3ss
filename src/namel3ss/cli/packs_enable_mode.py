@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
@@ -13,6 +15,7 @@ from namel3ss.runtime.packs.policy import evaluate_policy, load_pack_policy, pol
 from namel3ss.runtime.packs.risk import risk_from_summary
 from namel3ss.runtime.packs.runners import pack_runner_default
 from namel3ss.runtime.packs.registry import load_pack_registry
+from namel3ss.utils.path_display import display_path_hint
 from namel3ss.utils.json_tools import dumps_pretty
 
 
@@ -43,13 +46,19 @@ def run_packs_enable(args: list[str], *, json_mode: bool) -> int:
         verified=pack.verified,
         risk=risk,
         capabilities=_flatten_capabilities(policy_summary),
+        pack_id=pack.pack_id,
+        signer_id=getattr(pack, "signer_id", None),
     )
-    if policy.source_path and not decision.allowed:
+    if not decision.allowed:
         raise Namel3ssError(policy_denied_message(pack_id, "enable", decision.reasons))
     if policy.source_path is None and risk != "low":
         warning = "Pack capabilities are elevated. Add .namel3ss/trust/policy.toml to enforce capability limits."
     path = enable_pack(app_root, pack_id)
-    payload = {"status": "ok", "pack_id": pack_id, "config_path": str(path)}
+    payload = {
+        "status": "ok",
+        "pack_id": pack_id,
+        "config_path": display_path_hint(path, base=Path.cwd()),
+    }
     if warning:
         payload["warning"] = warning
     if json_mode:

@@ -69,8 +69,10 @@ def check_pack_capabilities(project_root: Path, config, prod: bool) -> VerifyChe
             verified=pack.verified,
             risk=risk,
             capabilities=_flatten_capabilities(policy_summary or summary),
+            pack_id=pack.pack_id,
+            signer_id=getattr(pack, "signer_id", None),
         )
-        if policy.source_path and not decision.allowed:
+        if not decision.allowed:
             policy_blocked.append({"pack_id": pack.pack_id, "reasons": decision.reasons, "risk": risk})
     status = "ok"
     message = "Pack capabilities are within the declared baseline."

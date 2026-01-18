@@ -16,6 +16,8 @@ def test_packs_init_creates_structure(tmp_path: Path, capsys) -> None:
     assert cli_main(["packs", "init", pack_id, "--dir", str(tmp_path), "--no-code", "--json"]) == 0
     payload = json.loads(capsys.readouterr().out)
     pack_path = Path(payload["path"])
+    if not pack_path.is_absolute():
+        pack_path = (tmp_path / pack_path).resolve()
     assert pack_path.exists()
     assert (pack_path / "pack.yaml").exists()
     assert (pack_path / "tools.yaml").exists()
@@ -62,10 +64,14 @@ def test_packs_bundle_is_deterministic(tmp_path: Path, capsys) -> None:
     assert cli_main(["packs", "bundle", str(pack_dir), "--out", str(out_dir), "--json"]) == 0
     first = json.loads(capsys.readouterr().out)
     bundle_path = Path(first["bundle_path"])
+    if not bundle_path.is_absolute():
+        bundle_path = (out_dir / bundle_path).resolve()
     digest_one = _hash_file(bundle_path)
     assert cli_main(["packs", "bundle", str(pack_dir), "--out", str(out_dir), "--json"]) == 0
     second = json.loads(capsys.readouterr().out)
     bundle_path_two = Path(second["bundle_path"])
+    if not bundle_path_two.is_absolute():
+        bundle_path_two = (out_dir / bundle_path_two).resolve()
     digest_two = _hash_file(bundle_path_two)
     assert digest_one == digest_two
 
@@ -80,7 +86,7 @@ def test_packs_sign_creates_signature_and_metadata(tmp_path: Path, capsys) -> No
     ) == 0
     payload = json.loads(capsys.readouterr().out)
     signature_text = (pack_dir / "signature.txt").read_text(encoding="utf-8")
-    assert signature_text.startswith("sha256:")
+    assert signature_text.startswith("hmac-sha256:")
     manifest_text = (pack_dir / "pack.yaml").read_text(encoding="utf-8")
     assert f'signer_id: "{payload["signer_id"]}"' in manifest_text
     assert f'digest: "{payload["digest"]}"' in manifest_text
@@ -95,16 +101,18 @@ def test_packs_add_bundle_verify_enable(tmp_path: Path, monkeypatch, capsys) -> 
     assert cli_main(
         ["packs", "sign", str(pack_dir), "--key-id", "test.key", "--private-key", str(key_file), "--json"]
     ) == 0
-    sign_payload = json.loads(capsys.readouterr().out)
+    json.loads(capsys.readouterr().out)
     out_dir = tmp_path / "dist"
     assert cli_main(["packs", "bundle", str(pack_dir), "--out", str(out_dir), "--json"]) == 0
     bundle_payload = json.loads(capsys.readouterr().out)
-    bundle_path = bundle_payload["bundle_path"]
+    bundle_path = Path(bundle_payload["bundle_path"])
+    if not bundle_path.is_absolute():
+        bundle_path = (out_dir / bundle_path).resolve()
     monkeypatch.chdir(tmp_path)
-    assert cli_main(["packs", "add", bundle_path, "--json"]) == 0
+    assert cli_main(["packs", "add", str(bundle_path), "--json"]) == 0
     capsys.readouterr()
     trusted_key = tmp_path / "pack.pub"
-    trusted_key.write_text(sign_payload["digest"], encoding="utf-8")
+    trusted_key.write_text("secret", encoding="utf-8")
     assert cli_main(
         ["packs", "keys", "add", "--id", "test.key", "--public-key", str(trusted_key), "--json"]
     ) == 0

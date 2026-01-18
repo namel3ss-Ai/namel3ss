@@ -46,7 +46,7 @@ def init_pack(pack_id: str, *, target_dir: Path, no_code: bool) -> PackInitResul
         files.extend([PACK_MANIFEST, f"tools/{tool_slug}.py", "tools/__init__.py"])
     _write_text(root / "README.md", _readme(pack_name, tool_name))
     _write_text(root / PACK_INTENT, _intent_template(tool_name))
-    _write_text(root / PACK_SIGNATURE, "sha256:TODO\n")
+    _write_text(root / PACK_SIGNATURE, "hmac-sha256:TODO\n")
     files.extend(["README.md", PACK_INTENT, PACK_SIGNATURE])
     return PackInitResult(pack_id=pack_id, path=root, files=files, no_code=no_code)
 
@@ -60,7 +60,7 @@ def _manifest_no_code(pack_id: str, pack_name: str, tool_name: str) -> str:
     return (
         f'id: "{pack_id}"\n'
         f'name: "{pack_name}"\n'
-        'version: "0.1.0"\n'
+        'version: "stable"\n'
         'description: "Describe what this pack does."\n'
         'author: "You"\n'
         'license: "MIT"\n'
@@ -76,7 +76,7 @@ def _manifest_python(pack_id: str, pack_name: str, tool_name: str, tool_slug: st
     return (
         f'id: "{pack_id}"\n'
         f'name: "{pack_name}"\n'
-        'version: "0.1.0"\n'
+        'version: "stable"\n'
         'description: "Describe what this pack does."\n'
         'author: "You"\n'
         'license: "MIT"\n'

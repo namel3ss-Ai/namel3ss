@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 
 from namel3ss.cli.main import main as cli_main
-from namel3ss.runtime.packs.verification import compute_pack_digest
 from namel3ss.utils.fs import remove_tree
 
 
@@ -32,6 +31,18 @@ def test_packs_add_status_remove(tmp_path: Path, monkeypatch, capsys) -> None:
             remove_tree(pack_root)
 
 
+def test_packs_add_writes_stable_source_metadata(tmp_path: Path, monkeypatch, capsys) -> None:
+    _write_app(tmp_path)
+    pack_src = _fixture_path("pack_good_unverified")
+    monkeypatch.chdir(tmp_path)
+    assert cli_main(["packs", "add", str(pack_src), "--json"]) == 0
+    capsys.readouterr()
+    source_meta = tmp_path / ".namel3ss" / "packs" / "sample.unverified" / ".n3pack_source.json"
+    data = json.loads(source_meta.read_text(encoding="utf-8"))
+    assert data["source_type"] == "directory"
+    assert data["path"] == "pack_good_unverified"
+
+
 def test_packs_enable_requires_verification(tmp_path: Path, monkeypatch, capsys) -> None:
     _write_app(tmp_path)
     pack_src = _fixture_path("pack_good_unverified")
@@ -51,12 +62,8 @@ def test_packs_verify_and_enable(tmp_path: Path, monkeypatch, capsys) -> None:
     monkeypatch.chdir(tmp_path)
     assert cli_main(["packs", "add", str(pack_src), "--json"]) == 0
     capsys.readouterr()
-    digest = compute_pack_digest(
-        (pack_src / "pack.yaml").read_text(encoding="utf-8"),
-        (pack_src / "tools.yaml").read_text(encoding="utf-8"),
-    )
     key_file = tmp_path / "pack.key"
-    key_file.write_text(digest, encoding="utf-8")
+    key_file.write_text("secret", encoding="utf-8")
     assert cli_main(["packs", "keys", "add", "--id", "test.key", "--public-key", str(key_file), "--json"]) == 0
     capsys.readouterr()
     assert cli_main(["packs", "verify", "sample.greeter", "--json"]) == 0

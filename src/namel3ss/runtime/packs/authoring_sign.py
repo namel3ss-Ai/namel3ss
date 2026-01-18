@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.packs.layout import pack_bindings_path, pack_signature_path
 from namel3ss.runtime.packs.manifest import parse_pack_manifest
+from namel3ss.runtime.packs.signature import sign_digest
 from namel3ss.runtime.packs.verification import compute_pack_digest
 
 
@@ -18,8 +18,12 @@ class PackSignResult:
     digest: str
     signer_id: str
     signed_at: str
+    signature: str
     signature_path: Path
     manifest_path: Path
+
+
+SIGNED_AT_PLACEHOLDER = "not_recorded"
 
 
 def sign_pack(pack_dir: Path, *, key_id: str, private_key_path: Path) -> PackSignResult:
@@ -40,9 +44,10 @@ def sign_pack(pack_dir: Path, *, key_id: str, private_key_path: Path) -> PackSig
     if bindings_path.exists():
         tools_text = bindings_path.read_text(encoding="utf-8")
     digest = compute_pack_digest(manifest_text, tools_text)
+    signature = sign_digest(digest, key_text)
     signature_path = pack_signature_path(pack_dir)
-    signature_path.write_text(digest + "\n", encoding="utf-8")
-    signed_at = _utc_now()
+    signature_path.write_text(signature + "\n", encoding="utf-8")
+    signed_at = SIGNED_AT_PLACEHOLDER
     updated = _update_signing_fields(manifest_text, key_id, signed_at, digest)
     manifest_path.write_text(updated, encoding="utf-8")
     return PackSignResult(
@@ -51,6 +56,7 @@ def sign_pack(pack_dir: Path, *, key_id: str, private_key_path: Path) -> PackSig
         digest=digest,
         signer_id=key_id,
         signed_at=signed_at,
+        signature=signature,
         signature_path=signature_path,
         manifest_path=manifest_path,
     )
@@ -81,10 +87,6 @@ def _update_signing_fields(text: str, signer_id: str, signed_at: str, digest: st
 
 def _escape(value: str) -> str:
     return value.replace("\\", "\\\\").replace('"', '\\"')
-
-
-def _utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
 def _missing_key_id_message() -> str:

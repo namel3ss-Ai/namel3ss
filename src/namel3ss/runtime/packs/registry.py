@@ -35,6 +35,7 @@ class PackRecord:
     author: str
     license: str
     tools: list[str]
+    signer_id: str | None
     source: str
     verified: bool
     enabled: bool
@@ -129,6 +130,7 @@ def _load_builtin_packs() -> list[PackRecord]:
                 author="namel3ss",
                 license="MIT",
                 tools=sorted(tools),
+                signer_id="namel3ss",
                 source="builtin_pack",
                 verified=True,
                 enabled=True,
@@ -143,13 +145,13 @@ def _load_builtin_packs() -> list[PackRecord]:
 def _load_local_packs(app_root: Path) -> list[PackRecord]:
     records: list[PackRecord] = []
     for item in load_local_pack_items(app_root):
-        record = _local_pack_record(item.pack_dir, item.contents)
+        record = _local_pack_record(item.pack_dir, item.contents, app_root=app_root)
         if record:
             records.append(record)
     return records
 
 
-def _local_pack_record(pack_dir: Path, contents: PackContents) -> PackRecord | None:
+def _local_pack_record(pack_dir: Path, contents: PackContents, *, app_root: Path) -> PackRecord | None:
     manifest = contents.manifest
     errors = list(contents.errors)
     if manifest is None:
@@ -161,13 +163,15 @@ def _local_pack_record(pack_dir: Path, contents: PackContents) -> PackRecord | N
             author="",
             license="",
             tools=[],
+            signer_id=None,
             source="local_pack",
-            verified=True,
+            verified=False,
             enabled=True,
             bindings={},
             pack_root=pack_dir,
             errors=errors,
         )
+    verified = _is_pack_verified(pack_dir, manifest, contents.bindings, app_root=app_root)
     return PackRecord(
         pack_id=manifest.pack_id,
         name=manifest.name,
@@ -176,8 +180,9 @@ def _local_pack_record(pack_dir: Path, contents: PackContents) -> PackRecord | N
         author=manifest.author,
         license=manifest.license,
         tools=manifest.tools,
+        signer_id=manifest.signer_id,
         source="local_pack",
-        verified=True,
+        verified=verified,
         enabled=True,
         bindings=contents.bindings,
         pack_root=pack_dir,
@@ -209,6 +214,7 @@ def _load_installed_pack(pack_dir: Path, app_root: Path, config: AppConfig) -> P
             author="",
             license="",
             tools=[],
+            signer_id=None,
             source="installed_pack",
             verified=False,
             enabled=False,
@@ -217,7 +223,7 @@ def _load_installed_pack(pack_dir: Path, app_root: Path, config: AppConfig) -> P
             errors=list(contents.errors),
         )
     errors = list(contents.errors)
-    verified = _is_pack_verified(pack_dir, manifest, contents.bindings)
+    verified = _is_pack_verified(pack_dir, manifest, contents.bindings, app_root=app_root)
     enabled = _is_pack_enabled(config, manifest.pack_id)
     return PackRecord(
         pack_id=manifest.pack_id,
@@ -227,6 +233,7 @@ def _load_installed_pack(pack_dir: Path, app_root: Path, config: AppConfig) -> P
         author=manifest.author,
         license=manifest.license,
         tools=manifest.tools,
+        signer_id=manifest.signer_id,
         source="installed_pack",
         verified=verified,
         enabled=enabled,
@@ -236,7 +243,13 @@ def _load_installed_pack(pack_dir: Path, app_root: Path, config: AppConfig) -> P
     )
 
 
-def _is_pack_verified(pack_dir: Path, manifest: PackManifest, bindings: dict[str, ToolBinding]) -> bool:
+def _is_pack_verified(
+    pack_dir: Path,
+    manifest: PackManifest,
+    bindings: dict[str, ToolBinding],
+    *,
+    app_root: Path,
+) -> bool:
     try:
         manifest_text = pack_manifest_path(pack_dir).read_text(encoding="utf-8")
     except Exception:
@@ -248,7 +261,7 @@ def _is_pack_verified(pack_dir: Path, manifest: PackManifest, bindings: dict[str
             tools_text = bindings_path.read_text(encoding="utf-8")
         except Exception:
             tools_text = None
-    verification = load_pack_verification(pack_dir, manifest_text, tools_text)
+    verification = load_pack_verification(pack_dir, manifest_text, tools_text, app_root=app_root)
     if not verification.verified:
         return False
     if verification.pack_id and verification.pack_id != manifest.pack_id:
@@ -277,6 +290,7 @@ def pack_payload(pack: PackRecord) -> dict[str, object]:
         "author": pack.author,
         "license": pack.license,
         "tools": list(pack.tools),
+        "signer_id": pack.signer_id,
         "source": pack.source,
         "verified": pack.verified,
         "enabled": pack.enabled,

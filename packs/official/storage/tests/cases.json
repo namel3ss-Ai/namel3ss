@@ -1,0 +1,17 @@
+{
+  "cases": [
+    {
+      "tool": "storage write json",
+      "payload": {
+        "path": "data/record.json",
+        "data": {"ok": true}
+      },
+      "expect": {"ok": true, "path": "data/record.json"}
+    },
+    {
+      "tool": "storage read json",
+      "payload": {"path": "data/record.json"},
+      "expect": {"data": {"ok": true}}
+    }
+  ]
+}

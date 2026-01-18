@@ -1,0 +1,7 @@
+capabilities:
+  "stripe request":
+    filesystem: "none"
+    network: "outbound"
+    env: "none"
+    subprocess: "none"
+    secrets: ["stripe.api_key"]

@@ -30,6 +30,8 @@ class PackTrustPolicy:
     allow_unverified_enable: bool
     max_risk: str
     allowed_capabilities: dict[str, str]
+    allowed_signers: list[str] | None
+    allowed_packs: list[str] | None
     source_path: Path | None
 
 
@@ -47,6 +49,8 @@ def load_pack_policy(app_root: Path) -> PackTrustPolicy:
             allow_unverified_enable=False,
             max_risk=DEFAULT_MAX_RISK,
             allowed_capabilities=dict(DEFAULT_ALLOWED_CAPABILITIES),
+            allowed_signers=None,
+            allowed_packs=None,
             source_path=None,
         )
     data = _parse_policy_toml(path)
@@ -56,11 +60,15 @@ def load_pack_policy(app_root: Path) -> PackTrustPolicy:
     if max_risk not in {"low", "medium", "high"}:
         raise Namel3ssError(_invalid_policy_value("max_risk", max_risk))
     allowed_caps = _parse_allowed_capabilities(data.get("allowed_capabilities"))
+    allowed_signers = _parse_allowed_list(data.get("allowed_signers"), key="allowed_signers")
+    allowed_packs = _parse_allowed_list(data.get("allowed_packs"), key="allowed_packs")
     return PackTrustPolicy(
         allow_unverified_installs=allow_installs,
         allow_unverified_enable=allow_enable,
         max_risk=max_risk,
         allowed_capabilities=allowed_caps,
+        allowed_signers=allowed_signers,
+        allowed_packs=allowed_packs,
         source_path=path,
     )
 
@@ -72,12 +80,20 @@ def evaluate_policy(
     verified: bool,
     risk: str,
     capabilities: dict[str, object],
+    pack_id: str | None = None,
+    signer_id: str | None = None,
 ) -> PolicyDecision:
     reasons: list[str] = []
     if operation == "install" and not verified and not policy.allow_unverified_installs:
         reasons.append("unverified packs are blocked by policy")
     if operation == "enable" and not verified and not policy.allow_unverified_enable:
         reasons.append("unverified packs cannot be enabled")
+    if policy.allowed_packs is not None:
+        if not pack_id or pack_id not in policy.allowed_packs:
+            reasons.append("pack id is not allowed by policy")
+    if policy.allowed_signers is not None:
+        if not signer_id or signer_id not in policy.allowed_signers:
+            reasons.append("signer is not allowed by policy")
     if policy.max_risk and risk_rank(risk) > risk_rank(policy.max_risk):
         reasons.append(f"risk {risk} exceeds max_risk {policy.max_risk}")
     for field, allowed in policy.allowed_capabilities.items():
@@ -145,6 +161,8 @@ def _parse_policy_value(value: str, path: Path, line_no: int) -> object:
         return value[1:-1]
     if value.startswith("{") and value.endswith("}"):
         return _parse_inline_table(value[1:-1], path, line_no)
+    if value.startswith("[") and value.endswith("]"):
+        return _parse_list(value[1:-1], path, line_no)
     raise Namel3ssError(_invalid_policy_format(path, line_no))
 
 
@@ -162,6 +180,17 @@ def _parse_inline_table(text: str, path: Path, line_no: int) -> dict[str, str]:
         if not key:
             raise Namel3ssError(_invalid_policy_format(path, line_no))
         entries[key] = _strip_quotes(value)
+    return entries
+
+
+def _parse_list(text: str, path: Path, line_no: int) -> list[str]:
+    if not text.strip():
+        return []
+    entries: list[str] = []
+    for part in [item.strip() for item in text.split(",") if item.strip()]:
+        if not (part.startswith('"') and part.endswith('"')):
+            raise Namel3ssError(_invalid_policy_format(path, line_no))
+        entries.append(part[1:-1])
     return entries
 
 
@@ -186,6 +215,14 @@ def _parse_allowed_capabilities(value: object) -> dict[str, str]:
             raise Namel3ssError(_invalid_policy_value("allowed_capabilities", raw))
         allowed[key] = raw
     return allowed
+
+
+def _parse_allowed_list(value: object, *, key: str) -> list[str] | None:
+    if value is None:
+        return None
+    if not isinstance(value, list) or any(not isinstance(item, str) or not item for item in value):
+        raise Namel3ssError(_invalid_policy_value(key, str(value)))
+    return sorted(dict.fromkeys(value))
 
 
 def _bool_value(value: object, *, default: bool, key: str) -> bool:

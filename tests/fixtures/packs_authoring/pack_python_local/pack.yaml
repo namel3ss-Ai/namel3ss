@@ -11,3 +11,6 @@ entrypoints:
     kind: "python"
     entry: "tools.say_hello:run"
     purity: "pure"
+signer_id: "test.key"
+signed_at: "not_recorded"
+digest: "sha256:d2554e2b6764177cfbb0ff20a88b24152000e09c2c637a8d20c27b12db4e2775"

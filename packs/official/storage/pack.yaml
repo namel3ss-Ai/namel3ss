@@ -1,0 +1,21 @@
+id: "official.storage"
+name: "Official Storage Pack"
+version: "stable"
+description: "Deterministic local storage tools."
+author: "namel3ss"
+license: "MIT"
+tools:
+  - "storage write json"
+  - "storage read json"
+entrypoints:
+  "storage write json":
+    kind: "python"
+    entry: "tools.storage_write_json:run"
+    purity: "impure"
+  "storage read json":
+    kind: "python"
+    entry: "tools.storage_read_json:run"
+    purity: "impure"
+signer_id: "official.key"
+signed_at: "not_recorded"
+digest: "sha256:f9035247c30ce736ffad21b6f3aa10c8dec897b1c0f9e8fd6d2539db2e019b40"

@@ -1,0 +1,13 @@
+capabilities:
+  "storage write json":
+    filesystem: "write"
+    network: "none"
+    env: "none"
+    subprocess: "none"
+    secrets: []
+  "storage read json":
+    filesystem: "read"
+    network: "none"
+    env: "none"
+    subprocess: "none"
+    secrets: []
