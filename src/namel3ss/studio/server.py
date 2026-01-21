@@ -27,11 +27,14 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
     def _get_session(self) -> SessionState:
         return self.server.session_state  # type: ignore[attr-defined]
 
-    def _respond_json(self, payload: dict, status: int = 200) -> None:
+    def _respond_json(self, payload: dict, status: int = 200, headers: dict[str, str] | None = None) -> None:
         data = json_dumps(to_json_safe(payload)).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(data)))
+        if headers:
+            for key, value in headers.items():
+                self.send_header(key, value)
         self.end_headers()
         self.wfile.write(data)
 

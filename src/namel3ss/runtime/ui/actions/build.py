@@ -55,6 +55,8 @@ def handle_action(
     preference_key: str | None = None,
     allow_theme_override: bool | None = None,
     config: AppConfig | None = None,
+    identity: dict | None = None,
+    auth_context: object | None = None,
     source: str | None = None,
     raise_on_error: bool = True,
 ) -> tuple[dict, Exception | None]:
@@ -71,7 +73,7 @@ def handle_action(
     )
     secret_values = collect_secret_values(resolved_config)
     store = resolve_store(store, config=resolved_config)
-    identity = resolve_identity(resolved_config, getattr(program_ir, "identity", None))
+    identity = identity if identity is not None else resolve_identity(resolved_config, getattr(program_ir, "identity", None))
     actor = actor_summary(identity)
     project_root = getattr(program_ir, "project_root", None)
     working_state = store.load_state() if state is None else state
@@ -82,6 +84,7 @@ def handle_action(
         store=store,
         runtime_theme=runtime_theme,
         identity=identity,
+        auth_context=auth_context,
     )
     actions: Dict[str, dict] = manifest.get("actions", {})
     if action_id not in actions:
@@ -109,6 +112,7 @@ def handle_action(
                 allow_theme_override=allow_theme_override,
                 config=resolved_config,
                 identity=identity,
+                auth_context=auth_context,
                 secret_values=secret_values,
                 source=source,
                 raise_on_error=raise_on_error,
@@ -231,6 +235,7 @@ def _handle_call_flow(
     allow_theme_override: bool | None = None,
     config: AppConfig | None = None,
     identity: dict | None = None,
+    auth_context: object | None = None,
     secret_values: list[str] | None = None,
     source: str | None = None,
     raise_on_error: bool = True,
@@ -250,6 +255,7 @@ def _handle_call_flow(
         preference_key=preference_key,
         config=config,
         identity=identity,
+        auth_context=auth_context,
         source=source,
         project_root=getattr(program_ir, "project_root", None),
         action_id=action_id,
@@ -271,6 +277,7 @@ def _handle_call_flow(
         runtime_theme=next_runtime_theme,
         persisted_theme=next_runtime_theme if allow_theme_override and preference_store else None,
         identity=identity,
+        auth_context=auth_context,
     )
     ensure_json_serializable(response)
     response = finalize_run_payload(response, secret_values)
@@ -288,6 +295,7 @@ def _handle_submit_form(
     runtime_theme: Optional[str],
     config: AppConfig | None = None,
     identity: dict | None = None,
+    auth_context: object | None = None,
     secret_values: list[str] | None = None,
     source: str | None = None,
 ) -> dict:
@@ -305,6 +313,7 @@ def _handle_submit_form(
         payload,
         state,
         identity,
+        auth_context,
     )
     if not decision.allowed:
         trace["ok"] = False
@@ -336,6 +345,7 @@ def _handle_submit_form(
             store=store,
             runtime_theme=runtime_theme,
             identity=identity,
+            auth_context=auth_context,
         )
         ensure_json_serializable(response)
         response = finalize_run_payload(response, secret_values)
@@ -364,6 +374,7 @@ def _handle_submit_form(
             store=store,
             runtime_theme=runtime_theme,
             identity=identity,
+            auth_context=auth_context,
         )
         response.pop("error", None)
         response.pop("message", None)
@@ -388,6 +399,7 @@ def _handle_submit_form(
         store=store,
         runtime_theme=runtime_theme,
         identity=identity,
+        auth_context=auth_context,
     )
     ensure_json_serializable(response)
     response = finalize_run_payload(response, secret_values)
@@ -407,6 +419,7 @@ def _enforce_form_policy(
     payload: dict,
     state: dict,
     identity: dict | None,
+    auth_context: object | None,
 ) -> tuple[dict, object]:
     page_slug = page_slug_from_action(action_id)
     page_name = page_name_for_slug(manifest, page_slug)
@@ -418,6 +431,7 @@ def _enforce_form_policy(
         locals={"input": payload, "mutation": {"action": "save", "record": record}},
         state=state,
         identity=identity or {},
+        auth_context=auth_context,
     )
     decision = evaluate_mutation_policy_for_rule(
         ctx,

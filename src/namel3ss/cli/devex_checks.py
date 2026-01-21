@@ -18,7 +18,7 @@ MIN_PYTHON = (3, 10)
 SUPPORTED_PYTHON_RANGE = ">=3.10"
 STATUS_ICONS = {"ok": "✅", "warning": "⚠️", "error": "❌"}
 RESERVED_TRUE_VALUES = {"1", "true", "yes", "on"}
-SUPPORTED_TARGETS = {"memory", "sqlite", "postgres", "edge"}
+SUPPORTED_TARGETS = {"memory", "sqlite", "postgres", "mysql", "edge"}
 STUDIO_ASSETS = ["index.html", "app.js", "styles.css"]
 
 
@@ -81,7 +81,18 @@ def optional_dependencies_check(config: AppConfig | None) -> DoctorCheck:
             message=message,
             fix=fix,
         )
-    message = "Optional dependencies: install psycopg only if you use Postgres."
+    if target == "mysql" and not _has_mysql_driver():
+        message = "MySQL driver missing. pymysql not installed."
+        fix = "Install mysql support with pip, then re-run n3 doctor."
+        return DoctorCheck(
+            id="optional_dependencies",
+            category="environment",
+            code="deps.mysql.missing",
+            status="error",
+            message=message,
+            fix=fix,
+        )
+    message = "Optional dependencies: install database drivers only if you use Postgres or MySQL."
     fix = "No action needed."
     return DoctorCheck(id="optional_dependencies", category="environment", code="deps.optional.ok", status="ok", message=message, fix=fix)
 
@@ -90,7 +101,7 @@ def persistence_check(config: AppConfig | None) -> DoctorCheck:
     target = resolve_target(config)
     if target not in SUPPORTED_TARGETS:
         message = f"Persistence target '{target}' is not supported."
-        fix = "Set N3_PERSIST_TARGET to sqlite, postgres, edge, or memory."
+        fix = "Set N3_PERSIST_TARGET to sqlite, postgres, mysql, edge, or memory."
         return DoctorCheck(id="persistence", category="project", code="persistence.invalid", status="error", message=message, fix=fix)
     if target == "memory":
         message = "Persistence disabled in memory store."
@@ -124,6 +135,16 @@ def persistence_check(config: AppConfig | None) -> DoctorCheck:
         message = f"Persistence target postgres with N3_DATABASE_URL set {redacted}."
         fix = "No action needed."
         return DoctorCheck(id="persistence", category="project", code="persistence.postgres.ok", status="ok", message=message, fix=fix)
+    if target == "mysql":
+        url = config.persistence.database_url if config else os.getenv("N3_DATABASE_URL")
+        if not url:
+            message = "Persistence target mysql but N3_DATABASE_URL is missing."
+            fix = "Set N3_DATABASE_URL to a valid mysql:// URL."
+            return DoctorCheck(id="persistence", category="project", code="persistence.mysql.missing", status="error", message=message, fix=fix)
+        redacted = _redact_url(url)
+        message = f"Persistence target mysql with N3_DATABASE_URL set {redacted}."
+        fix = "No action needed."
+        return DoctorCheck(id="persistence", category="project", code="persistence.mysql.ok", status="ok", message=message, fix=fix)
     if target == "edge":
         url = config.persistence.edge_kv_url if config else os.getenv("N3_EDGE_KV_URL")
         if not url:
@@ -217,6 +238,10 @@ def _find_shadow_paths(origin: Path | None) -> list[str]:
 
 def _has_postgres_driver() -> bool:
     return importlib.util.find_spec("psycopg") is not None or importlib.util.find_spec("psycopg2") is not None
+
+
+def _has_mysql_driver() -> bool:
+    return importlib.util.find_spec("pymysql") is not None
 
 
 def _redact_url(raw: str) -> str:

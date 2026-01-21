@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Any
 
+from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
+from namel3ss.module_loader import load_project
 from namel3ss.studio.api import (
     get_actions_payload,
     apply_agent_wizard_wrapper,
@@ -25,6 +28,12 @@ from namel3ss.studio.state_api import get_state_payload
 from namel3ss.studio.routes.core import handle_action
 from namel3ss.studio.why_api import get_why_payload
 from namel3ss.runtime.observability_api import get_logs_payload, get_metrics_payload, get_trace_payload
+from namel3ss.runtime.auth.auth_routes import handle_login, handle_logout, handle_session
+from namel3ss.runtime.data.studio_adapters import (
+    get_data_status_payload,
+    get_migrations_plan_payload,
+    get_migrations_status_payload,
+)
 
 
 def handle_api_get(handler: Any) -> None:
@@ -34,6 +43,10 @@ def handle_api_get(handler: Any) -> None:
         payload = build_error_payload(f"Cannot read source: {err}", kind="engine")
         handler._respond_json(payload, status=500)
         return
+    if handler.path == "/api/session":
+        payload, status, headers = _handle_session(handler, source)
+        handler._respond_json(payload, status=status, headers=headers)
+        return
     if handler.path == "/api/summary":
         _respond_with_source(handler, source, get_summary_payload, kind="parse", include_app_path=True)
         return
@@ -42,6 +55,15 @@ def handle_api_get(handler: Any) -> None:
         return
     if handler.path == "/api/state":
         _respond_with_source(handler, source, get_state_payload, kind="state", include_session=True, include_app_path=True)
+        return
+    if handler.path == "/api/data/status":
+        _respond_with_source(handler, source, get_data_status_payload, kind="data", include_app_path=True)
+        return
+    if handler.path == "/api/migrations/status":
+        _respond_with_source(handler, source, get_migrations_status_payload, kind="data", include_app_path=True)
+        return
+    if handler.path == "/api/migrations/plan":
+        _respond_with_source(handler, source, get_migrations_plan_payload, kind="data", include_app_path=True)
         return
     if handler.path == "/api/logs":
         payload = get_logs_payload(handler.server.project_root, handler.server.app_path)  # type: ignore[attr-defined]
@@ -118,6 +140,14 @@ def handle_api_post(handler: Any) -> None:
         payload = build_error_payload(f"Cannot read source: {err}", kind="engine")
         handler._respond_json(payload, status=500)
         return
+    if handler.path == "/api/login":
+        payload, status, headers = _handle_login(handler, source, body)
+        handler._respond_json(payload, status=status, headers=headers)
+        return
+    if handler.path == "/api/logout":
+        payload, status, headers = _handle_logout(handler, source)
+        handler._respond_json(payload, status=status, headers=headers)
+        return
     if handler.path == "/api/action":
         handle_action(handler, source, body)
         return
@@ -134,6 +164,55 @@ def handle_api_post(handler: Any) -> None:
         _respond_post(handler, source, body, update_memory_packs_wrapper, kind="agent", include_session=True, include_app_path=True)
         return
     handler.send_error(404)
+
+
+def _auth_inputs(handler: Any, source: str) -> tuple[object, object | None, object]:
+    app_path = Path(handler.server.app_path)  # type: ignore[attr-defined]
+    project = load_project(app_path, source_overrides={app_path: source})
+    config = load_config(app_path=app_path)
+    store = handler._get_session().ensure_store(config)
+    identity_schema = getattr(project.program, "identity", None)
+    return config, identity_schema, store
+
+
+def _handle_session(handler: Any, source: str) -> tuple[dict, int, dict[str, str]]:
+    try:
+        config, identity_schema, store = _auth_inputs(handler, source)
+    except Namel3ssError as err:
+        return build_error_from_exception(err, kind="authentication"), 400, {}
+    return handle_session(
+        dict(handler.headers.items()),
+        config=config,
+        identity_schema=identity_schema,
+        store=store,
+    )
+
+
+def _handle_login(handler: Any, source: str, body: dict) -> tuple[dict, int, dict[str, str]]:
+    try:
+        config, identity_schema, store = _auth_inputs(handler, source)
+    except Namel3ssError as err:
+        return build_error_from_exception(err, kind="authentication"), 400, {}
+    return handle_login(
+        dict(handler.headers.items()),
+        body,
+        config=config,
+        identity_schema=identity_schema,
+        store=store,
+    )
+
+
+def _handle_logout(handler: Any, source: str) -> tuple[dict, int, dict[str, str]]:
+    try:
+        config, identity_schema, store = _auth_inputs(handler, source)
+    except Namel3ssError as err:
+        return build_error_from_exception(err, kind="authentication"), 400, {}
+    return handle_logout(
+        dict(handler.headers.items()),
+        config=config,
+        identity_schema=identity_schema,
+        store=store,
+    )
 
 
 def _respond_with_source(

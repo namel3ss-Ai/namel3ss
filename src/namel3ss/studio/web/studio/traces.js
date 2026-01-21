@@ -142,6 +142,35 @@
     container.appendChild(block);
   }
 
+  const AUTH_TRACE_TYPES = new Set([
+    "identity_resolution",
+    "authorization_check",
+    "session_created",
+    "session_revoked",
+    "token_verified",
+  ]);
+
+  function buildAuthDetails(trace) {
+    if (!trace || typeof trace !== "object") return null;
+    if (!AUTH_TRACE_TYPES.has(trace.type)) return null;
+    const details = {};
+    [
+      "source",
+      "status",
+      "subject",
+      "outcome",
+      "reason",
+      "reason_code",
+      "session_id",
+      "token",
+    ].forEach((key) => {
+      if (trace[key] !== undefined && trace[key] !== null && trace[key] !== "") {
+        details[key] = trace[key];
+      }
+    });
+    return Object.keys(details).length ? details : null;
+  }
+
   function appendProviderDiagnostics(container, trace) {
     const error = latestProviderError(trace);
     if (!error || !error.diagnostic) return;
@@ -221,6 +250,8 @@
         appendDetail(details, "Error", trace.error);
         appendDetail(details, "Tool calls", trace.tool_calls);
         appendDetail(details, "Tool results", trace.tool_results);
+        const authDetails = buildAuthDetails(trace);
+        if (authDetails) appendDetail(details, "Auth", authDetails);
         appendProviderDiagnostics(details, trace);
 
         row.appendChild(header);

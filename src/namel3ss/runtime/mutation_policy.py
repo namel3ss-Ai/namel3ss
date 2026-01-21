@@ -8,6 +8,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
+from namel3ss.runtime.identity.guards import requires_mentions_identity
 from namel3ss.validation import ValidationMode, add_warning
 
 
@@ -185,6 +186,9 @@ def evaluate_mutation_policy_for_rule(
     if not isinstance(result, bool):
         return _requires_not_boolean(subject, result)
     if not result:
+        auth_decision = _auth_denied(subject, requires_expr, ctx)
+        if auth_decision is not None:
+            return auth_decision
         return _access_denied(subject)
     return MutationDecision.allow()
 
@@ -244,6 +248,125 @@ def _access_denied(subject: str) -> MutationDecision:
     )
     return MutationDecision.block(
         reason_code="access_denied",
+        message=f"{subject} access is not permitted.",
+        fix_hint=fix,
+        error_message=error_message,
+    )
+
+
+def _auth_denied(subject: str, requires_expr: ir.Expression | None, ctx) -> MutationDecision | None:
+    if not requires_mentions_identity(requires_expr):
+        return None
+    auth_ctx = getattr(ctx, "auth_context", None)
+    auth_error = getattr(auth_ctx, "error", None) if auth_ctx is not None else None
+    authenticated = bool(getattr(auth_ctx, "authenticated", False)) if auth_ctx is not None else False
+    if auth_error == "missing_authentication":
+        return _missing_authentication(subject)
+    if auth_error == "token_invalid":
+        return _token_invalid(subject)
+    if auth_error == "token_expired":
+        return _token_expired(subject)
+    if auth_error == "session_invalid":
+        return _session_revoked(subject)
+    if auth_error == "session_revoked":
+        return _session_revoked(subject)
+    if auth_error == "session_expired":
+        return _session_expired(subject)
+    if authenticated:
+        return _insufficient_permissions(subject)
+    return None
+
+
+def _missing_authentication(subject: str) -> MutationDecision:
+    fix = "Login to create a session or provide a bearer token."
+    error_message = build_guidance_message(
+        what=f"{subject} requires authentication.",
+        why="No active session or token was provided.",
+        fix=fix,
+        example="POST /api/login",
+    )
+    return MutationDecision.block(
+        reason_code="missing_authentication",
+        message=f"{subject} requires authentication.",
+        fix_hint=fix,
+        error_message=error_message,
+    )
+
+
+def _token_invalid(subject: str) -> MutationDecision:
+    fix = "Provide a valid bearer token."
+    error_message = build_guidance_message(
+        what=f"{subject} cannot verify the token.",
+        why="The bearer token could not be verified.",
+        fix=fix,
+        example="Authorization: Bearer <token>",
+    )
+    return MutationDecision.block(
+        reason_code="token_invalid",
+        message=f"{subject} cannot verify the token.",
+        fix_hint=fix,
+        error_message=error_message,
+    )
+
+
+def _token_expired(subject: str) -> MutationDecision:
+    fix = "Login again to obtain a new token."
+    error_message = build_guidance_message(
+        what=f"{subject} requires a valid token.",
+        why="The bearer token has expired.",
+        fix=fix,
+        example="POST /api/login",
+    )
+    return MutationDecision.block(
+        reason_code="token_expired",
+        message=f"{subject} requires a valid token.",
+        fix_hint=fix,
+        error_message=error_message,
+    )
+
+
+def _session_revoked(subject: str) -> MutationDecision:
+    fix = "Login again to create a new session."
+    error_message = build_guidance_message(
+        what=f"{subject} requires an active session.",
+        why="The session is revoked.",
+        fix=fix,
+        example="POST /api/login",
+    )
+    return MutationDecision.block(
+        reason_code="session_revoked",
+        message=f"{subject} requires an active session.",
+        fix_hint=fix,
+        error_message=error_message,
+    )
+
+
+def _session_expired(subject: str) -> MutationDecision:
+    fix = "Login again to create a new session."
+    error_message = build_guidance_message(
+        what=f"{subject} requires an active session.",
+        why="The session has expired.",
+        fix=fix,
+        example="POST /api/login",
+    )
+    return MutationDecision.block(
+        reason_code="session_expired",
+        message=f"{subject} requires an active session.",
+        fix_hint=fix,
+        error_message=error_message,
+    )
+
+
+def _insufficient_permissions(subject: str) -> MutationDecision:
+    fix = "Provide an identity with the required permissions or update the requires clause."
+    error_message = build_guidance_message(
+        what=f"{subject} access is not permitted.",
+        why="The identity does not meet the required role or permission.",
+        fix=fix,
+        example='requires has_role("admin")',
+    )
+    return MutationDecision.block(
+        reason_code="insufficient_permissions",
         message=f"{subject} access is not permitted.",
         fix_hint=fix,
         error_message=error_message,

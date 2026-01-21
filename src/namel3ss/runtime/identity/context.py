@@ -43,6 +43,10 @@ def resolve_identity(
     return identity
 
 
+def validate_identity(schema: IdentitySchema, identity: dict) -> None:
+    _validate_identity(schema, identity)
+
+
 def _validate_identity(schema: IdentitySchema, identity: dict) -> None:
     errors = _type_errors(schema.fields, identity, schema.name)
     if errors:

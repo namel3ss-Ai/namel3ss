@@ -71,6 +71,7 @@ def _apply_toml_config(config: AppConfig, data: Dict[str, Any]) -> None:
     _apply_provider_toml(config, data.get("mistral"), provider="mistral")
     _apply_persistence_toml(config, data.get("persistence"))
     _apply_identity_toml(config, data.get("identity"))
+    _apply_authentication_toml(config, data.get("authentication") or data.get("auth"))
     _apply_python_tools_toml(config, data.get("python_tools") or data.get("python"))
     _apply_foreign_toml(config, data.get("foreign"))
     _apply_tool_packs_toml(config, data.get("tool_packs") or data.get("packs"))
@@ -120,6 +121,14 @@ def _apply_persistence_toml(config: AppConfig, table: Any) -> None:
     edge_kv_url = table.get("edge_kv_url")
     if edge_kv_url is not None:
         config.persistence.edge_kv_url = str(edge_kv_url)
+    replicas = table.get("replicas")
+    if replicas is None:
+        replicas = table.get("replica_urls")
+    if replicas is not None:
+        if isinstance(replicas, list):
+            config.persistence.replica_urls = [str(item) for item in replicas if item is not None]
+        else:
+            config.persistence.replica_urls = [str(replicas)]
 
 
 def _apply_identity_toml(config: AppConfig, table: Any) -> None:
@@ -129,6 +138,81 @@ def _apply_identity_toml(config: AppConfig, table: Any) -> None:
         if value is None:
             continue
         config.identity.defaults[str(key)] = value
+
+
+def _apply_authentication_toml(config: AppConfig, table: Any) -> None:
+    if not isinstance(table, dict):
+        return
+    signing_key = table.get("signing_key")
+    if signing_key is not None:
+        config.authentication.signing_key = str(signing_key)
+    allow_identity = table.get("allow_identity")
+    if allow_identity is not None:
+        if not isinstance(allow_identity, bool):
+            raise Namel3ssError("authentication.allow_identity must be true or false")
+        config.authentication.allow_identity = allow_identity
+    username = table.get("username")
+    if username is not None:
+        config.authentication.username = str(username)
+    password = table.get("password")
+    if password is not None:
+        config.authentication.password = str(password)
+    credentials = table.get("credentials")
+    if isinstance(credentials, dict):
+        _apply_authentication_credentials(config, credentials, label="authentication.credentials")
+    identity = table.get("identity")
+    if isinstance(identity, dict):
+        config.authentication.identity = dict(identity)
+    elif isinstance(identity, str):
+        config.authentication.identity = _parse_auth_identity_json(identity, label="authentication.identity")
+    identity_json = table.get("identity_json")
+    if identity_json is not None:
+        if not isinstance(identity_json, str):
+            raise Namel3ssError("authentication.identity_json must be a JSON string")
+        config.authentication.identity = _parse_auth_identity_json(identity_json, label="authentication.identity_json")
+    credentials_json = table.get("credentials_json")
+    if credentials_json is not None:
+        if not isinstance(credentials_json, str):
+            raise Namel3ssError("authentication.credentials_json must be a JSON string")
+        parsed = _parse_auth_identity_json(credentials_json, label="authentication.credentials_json")
+        if not isinstance(parsed, dict):
+            raise Namel3ssError("authentication.credentials_json must be a JSON object")
+        _apply_authentication_credentials(config, parsed, label="authentication.credentials_json")
+
+
+def _apply_authentication_credentials(config: AppConfig, payload: dict, *, label: str) -> None:
+    username = payload.get("username")
+    password = payload.get("password")
+    identity = payload.get("identity")
+    if username is not None:
+        config.authentication.username = str(username)
+    if password is not None:
+        config.authentication.password = str(password)
+    if isinstance(identity, dict):
+        config.authentication.identity = dict(identity)
+    elif identity is not None:
+        config.authentication.identity = _parse_auth_identity_json(identity, label=f"{label}.identity")
+
+
+def _parse_auth_identity_json(value: object, *, label: str) -> dict:
+    if isinstance(value, dict):
+        return dict(value)
+    if not isinstance(value, str):
+        raise Namel3ssError(f"{label} must be a JSON object string")
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError as err:
+        raise Namel3ssError(
+            build_guidance_message(
+                what=f"{label} is not valid JSON.",
+                why=f"JSON parsing failed: {err}.",
+                fix="Provide a valid JSON object string.",
+                example='identity_json = "{\\"role\\": \\"admin\\"}"',
+            )
+        ) from err
+    if not isinstance(parsed, dict):
+        raise Namel3ssError(f"{label} must be a JSON object string")
+    return dict(parsed)
 
 
 def _apply_python_tools_toml(config: AppConfig, table: Any) -> None:

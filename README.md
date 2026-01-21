@@ -80,13 +80,19 @@ These guarantees are enforced and frozen for the v0.1.x series.
 See `docs/trust-and-governance.md` for enforcement details.
 
 ## Browser protocol
-- [Browser Protocol](docs/runtime/browser-protocol.md): single app runtime server with `/api/ui`, `/api/state`, `/api/action`, `/api/upload`, `/api/uploads`, and `/api/health` using deterministic ordering and payloads.
+- [Browser Protocol](docs/runtime/browser-protocol.md): single app runtime server with `/api/ui`, `/api/state`, `/api/action`, `/api/session`, `/api/login`, `/api/logout`, `/api/data/status`, `/api/migrations/status`, `/api/migrations/plan`, `/api/upload`, `/api/uploads`, and `/api/health` using deterministic ordering and payloads.
+
+## Authentication and identity
+- [Authentication](docs/authentication.md): identity model, sessions, tokens, roles, permissions, and redaction.
 
 ## Application UI Model
 - [Application UI Model](docs/language/application-ui-model.md): declarative pages, layout, components, and navigation wired to flows, records, and state with deterministic manifests.
 
 ## Application Data Model
 - [Application Data Model](docs/language/application-data-model.md): record schemas, CRUD operations, persistence, and deterministic ordering.
+
+## Data backends and migrations
+- [Data](docs/data.md): backends, migrations, promotion safety, exports, imports, and redaction rules.
 
 ## Backend Capabilities
 - [Backend Capabilities](docs/language/backend-capabilities.md): built-in HTTP calls, scheduling, background jobs, uploads, file I/O, and secrets/auth helpers with deterministic boundaries.

@@ -11,14 +11,26 @@ from namel3ss.runtime.records.inspection import (
 from namel3ss.runtime.storage.base import Storage
 
 
-def records_snapshot(program: ir.Program, store: Storage, config: AppConfig | None) -> list[dict]:
-    identity = _identity_defaults(config)
+def records_snapshot(
+    program: ir.Program,
+    store: Storage,
+    config: AppConfig | None,
+    *,
+    identity: dict | None = None,
+) -> list[dict]:
+    identity = identity if identity is not None else _identity_defaults(config)
     rows, errors = collect_record_rows(program.records, store, identity)
     return build_records_payload(program.records, rows, errors, limit=DEFAULT_RECORD_LIMIT)
 
 
-def record_rows_snapshot(program: ir.Program, store: Storage, config: AppConfig | None) -> dict[str, list[dict]]:
-    identity = _identity_defaults(config)
+def record_rows_snapshot(
+    program: ir.Program,
+    store: Storage,
+    config: AppConfig | None,
+    *,
+    identity: dict | None = None,
+) -> dict[str, list[dict]]:
+    identity = identity if identity is not None else _identity_defaults(config)
     rows, _errors = collect_record_rows(program.records, store, identity)
     return rows
 
@@ -30,8 +42,10 @@ def record_data_effects(
     action_id: str,
     response: dict,
     before_rows: dict[str, list[dict]],
+    *,
+    identity: dict | None = None,
 ) -> dict:
-    identity = _identity_defaults(config)
+    identity = identity if identity is not None else _identity_defaults(config)
     after_rows, _errors = collect_record_rows(program.records, store, identity)
     effects = build_record_effects(program.records, before_rows, after_rows)
     action_meta = _action_metadata(action_id, response)

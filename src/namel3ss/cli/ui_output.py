@@ -35,7 +35,7 @@ Advanced
   n3 how | what | why | with      # explain the last run
   n3 lint <file.ai> [check]       # lint (strict tools via --strict-tools)
   n3 graph | exports <file.ai>    # dependency graph or exports (use --json)
-  n3 data | persist <file.ai> ... # data store status and reset
+  n3 data | persist <file.ai> ... # data status, reset, export, import
   n3 secrets | observe | explain  # secrets, observability, engine explain
   n3 memory | kit | exists        # memory recall, adoption kit, contract status
   n3 tools | packs | registry     # tool and pack management commands

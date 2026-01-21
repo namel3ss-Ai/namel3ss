@@ -6,6 +6,7 @@ How to use it:
 - copy this folder to a new project directory
 - enable persistence with sqlite (examples below)
 - run `n3 run`
+- open `n3 app.ai studio` and inspect the Data panel for backend target and migration status
 - add an entry
 - stop and run again; entries remain when persistence is enabled
 

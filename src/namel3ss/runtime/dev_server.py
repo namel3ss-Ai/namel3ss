@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from types import SimpleNamespace
 import threading
@@ -17,8 +18,16 @@ from namel3ss.module_loader import load_project
 from namel3ss.module_loader.source_io import ParseCache
 from namel3ss.resources import studio_web_root
 from namel3ss.runtime.browser_state import record_data_effects, record_rows_snapshot, records_snapshot
+from namel3ss.runtime.data.data_routes import (
+    build_data_status_payload,
+    build_migrations_plan_payload,
+    build_migrations_status_payload,
+)
 from namel3ss.runtime.dev_overlay import build_dev_overlay_payload
 from namel3ss.runtime.identity.context import resolve_identity
+from namel3ss.runtime.auth.auth_context import resolve_auth_context
+from namel3ss.runtime.auth.identity_model import normalize_identity
+from namel3ss.runtime.auth.auth_routes import handle_login, handle_logout, handle_session
 from namel3ss.runtime.preferences.factory import app_pref_key, preference_store_for_app
 from namel3ss.runtime.ui.actions import handle_action
 from namel3ss.runtime.storage.factory import resolve_store
@@ -60,6 +69,19 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
                 return
             self._handle_action_post(body)
             return
+        if path == "/api/login":
+            body = self._read_json_body()
+            if body is None:
+                payload = build_error_payload("Invalid JSON body.", kind="authentication")
+                self._respond_json(payload, status=400)
+                return
+            payload, status, headers = self._handle_login_post(body)
+            self._respond_json(payload, status=status, headers=headers)
+            return
+        if path == "/api/logout":
+            payload, status, headers = self._handle_logout_post()
+            self._respond_json(payload, status=status, headers=headers)
+            return
         if path == "/api/upload":
             response, status = self._handle_upload_post(parsed.query)
             self._respond_json(response, status=status)
@@ -67,13 +89,38 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
         self.send_error(404)
 
     def _handle_api_get(self, path: str) -> None:
+        if path == "/api/session":
+            payload, status, headers = self._handle_session_get()
+            self._respond_json(payload, status=status, headers=headers)
+            return
         if path == "/api/ui":
-            payload = self._state().manifest_payload()
+            auth_context = self._auth_context_or_error(kind="manifest")
+            if auth_context is None:
+                return
+            payload = self._state().manifest_payload(identity=auth_context.identity, auth_context=auth_context)
             status = 200 if payload.get("ok", True) else 400
             self._respond_json(payload, status=status)
             return
         if path == "/api/state":
-            payload = self._state().state_payload()
+            auth_context = self._auth_context_or_error(kind="state")
+            if auth_context is None:
+                return
+            payload = self._state().state_payload(identity=auth_context.identity)
+            status = 200 if payload.get("ok", True) else 400
+            self._respond_json(payload, status=status)
+            return
+        if path == "/api/data/status":
+            payload = self._data_status_payload()
+            status = 200 if payload.get("ok", True) else 400
+            self._respond_json(payload, status=status)
+            return
+        if path == "/api/migrations/status":
+            payload = self._migrations_status_payload()
+            status = 200 if payload.get("ok", True) else 400
+            self._respond_json(payload, status=status)
+            return
+        if path == "/api/migrations/plan":
+            payload = self._migrations_plan_payload()
             status = 200 if payload.get("ok", True) else 400
             self._respond_json(payload, status=status)
             return
@@ -118,7 +165,15 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
         if not isinstance(payload, dict):
             self._respond_json(build_error_payload("Payload must be an object.", kind="engine"), status=400)
             return
-        response = self._state().run_action(action_id, payload)
+        auth_context = self._auth_context_or_error(kind="engine")
+        if auth_context is None:
+            return
+        response = self._state().run_action(
+            action_id,
+            payload,
+            identity=auth_context.identity,
+            auth_context=auth_context,
+        )
         status = 200 if response.get("ok", True) else 400
         self._respond_json(response, status=status)
 
@@ -200,6 +255,117 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
             return build_error_payload("Program not loaded.", kind="engine")
         return builder(getattr(program, "project_root", None), getattr(program, "app_path", None))
 
+    def _data_status_payload(self) -> dict:
+        state = self._state()
+        state._refresh_if_needed()
+        try:
+            config = load_config(app_path=state.app_path)
+            return build_data_status_payload(
+                config,
+                project_root=state.project_root,
+                app_path=state.app_path,
+            )
+        except Namel3ssError as err:
+            payload = build_error_from_exception(err, kind="data", source=state._source_payload())
+            if self._mode() == "dev":
+                payload["overlay"] = build_dev_overlay_payload(payload, debug=state.debug)
+            return payload
+        except Exception as err:  # pragma: no cover - defensive guard rail
+            payload = build_error_payload(str(err), kind="internal")
+            if self._mode() == "dev":
+                payload["overlay"] = build_dev_overlay_payload(payload, debug=state.debug)
+            return payload
+
+    def _migrations_status_payload(self) -> dict:
+        return self._migrations_payload(build_migrations_status_payload)
+
+    def _migrations_plan_payload(self) -> dict:
+        return self._migrations_payload(build_migrations_plan_payload)
+
+    def _migrations_payload(self, builder) -> dict:
+        state = self._state()
+        state._refresh_if_needed()
+        program = state.program
+        if program is None:
+            return build_error_payload("Program not loaded.", kind="engine")
+        try:
+            return builder(program, project_root=state.project_root)
+        except Namel3ssError as err:
+            payload = build_error_from_exception(err, kind="data", source=state._source_payload())
+            if self._mode() == "dev":
+                payload["overlay"] = build_dev_overlay_payload(payload, debug=state.debug)
+            return payload
+        except Exception as err:  # pragma: no cover - defensive guard rail
+            payload = build_error_payload(str(err), kind="internal")
+            if self._mode() == "dev":
+                payload["overlay"] = build_dev_overlay_payload(payload, debug=state.debug)
+            return payload
+
+    def _auth_params(self) -> tuple[object, object | None, object]:
+        state = self._state()
+        state._refresh_if_needed()
+        program = state.program
+        config = load_config(app_path=state.app_path)
+        store = state.session.ensure_store(config)
+        identity_schema = getattr(program, "identity", None) if program is not None else None
+        return config, identity_schema, store
+
+    def _handle_session_get(self) -> tuple[dict, int, dict[str, str]]:
+        try:
+            config, identity_schema, store = self._auth_params()
+        except Namel3ssError as err:
+            return build_error_from_exception(err, kind="authentication"), 400, {}
+        return handle_session(
+            dict(self.headers.items()),
+            config=config,
+            identity_schema=identity_schema,
+            store=store,
+        )
+
+    def _handle_login_post(self, body: dict) -> tuple[dict, int, dict[str, str]]:
+        try:
+            config, identity_schema, store = self._auth_params()
+        except Namel3ssError as err:
+            return build_error_from_exception(err, kind="authentication"), 400, {}
+        return handle_login(
+            dict(self.headers.items()),
+            body,
+            config=config,
+            identity_schema=identity_schema,
+            store=store,
+        )
+
+    def _handle_logout_post(self) -> tuple[dict, int, dict[str, str]]:
+        try:
+            config, identity_schema, store = self._auth_params()
+        except Namel3ssError as err:
+            return build_error_from_exception(err, kind="authentication"), 400, {}
+        return handle_logout(
+            dict(self.headers.items()),
+            config=config,
+            identity_schema=identity_schema,
+            store=store,
+        )
+
+    def _resolve_auth_context(self) -> object:
+        config, identity_schema, store = self._auth_params()
+        return resolve_auth_context(
+            dict(self.headers.items()),
+            config=config,
+            identity_schema=identity_schema,
+            store=store,
+        )
+
+    def _auth_context_or_error(self, *, kind: str) -> object | None:
+        try:
+            return self._resolve_auth_context()
+        except Namel3ssError as err:
+            payload = build_error_from_exception(err, kind=kind, source=self._state()._source_payload())
+            if self._mode() == "dev":
+                payload["overlay"] = build_dev_overlay_payload(payload, debug=self._state().debug)
+            self._respond_json(payload, status=400)
+            return None
+
     def _handle_static(self, path: str) -> bool:
         file_path, content_type = _resolve_runtime_file(path, self._mode())
         if not file_path or not content_type:
@@ -215,11 +381,14 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(content)
         return True
 
-    def _respond_json(self, payload: dict, status: int = 200) -> None:
+    def _respond_json(self, payload: dict, status: int = 200, headers: dict[str, str] | None = None) -> None:
         data = canonical_json_dumps(payload, pretty=False, drop_run_keys=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(data)))
+        if headers:
+            for key, value in headers.items():
+                self.send_header(key, value)
         self.end_headers()
         self.wfile.write(data)
 
@@ -262,20 +431,56 @@ class BrowserAppState:
         self.session = SessionState()
         self.program = None
         self.sources: dict[Path, str] = {}
-        self.manifest: dict | None = None
+        self.manifest_cache: dict[str, dict] = {}
+        self.manifest_errors: dict[str, dict] = {}
         self.error_payload: dict | None = None
         self.revision = ""
         self._watch_snapshot: dict[Path, tuple[int, int]] = {}
         set_audit_root(self.project_root)
         set_engine_target(engine_target)
 
-    def manifest_payload(self) -> dict:
+    def manifest_payload(self, *, identity: dict | None = None, auth_context: object | None = None) -> dict:
         self._refresh_if_needed()
         if self.error_payload:
             return self.error_payload
-        return self.manifest or {}
+        if self.program is None:
+            return {}
+        config = load_config(app_path=self.app_path)
+        warnings: list[ValidationWarning] = []
+        resolved_identity = dict(identity) if isinstance(identity, dict) else None
+        if resolved_identity is None:
+            resolved_identity = resolve_identity(
+                config,
+                getattr(self.program, "identity", None),
+                mode=ValidationMode.RUNTIME,
+                warnings=warnings,
+            )
+        resolved_identity = normalize_identity(resolved_identity)
+        cache_key = self._identity_cache_key(resolved_identity, auth_context=auth_context)
+        cached = self.manifest_cache.get(cache_key)
+        if cached is not None:
+            return cached
+        cached_error = self.manifest_errors.get(cache_key)
+        if cached_error is not None:
+            return cached_error
+        try:
+            manifest = self._build_manifest(
+                self.program,
+                config=config,
+                identity=resolved_identity,
+                warnings=warnings,
+                auth_context=auth_context,
+            )
+            if warnings:
+                manifest["warnings"] = [warning.to_dict() for warning in warnings]
+            self.manifest_cache[cache_key] = manifest
+            return manifest
+        except Namel3ssError as err:
+            payload = self._build_error_payload(err)
+            self.manifest_errors[cache_key] = payload
+            return payload
 
-    def state_payload(self) -> dict:
+    def state_payload(self, *, identity: dict | None = None) -> dict:
         self._refresh_if_needed()
         if self.error_payload:
             return {"ok": False, "error": self.error_payload, "revision": self.revision}
@@ -283,7 +488,7 @@ class BrowserAppState:
         if self.program is not None:
             config = load_config(app_path=self.app_path)
             store = self.session.ensure_store(config)
-            records = records_snapshot(self.program, store, config)
+            records = records_snapshot(self.program, store, config, identity=identity)
         payload = {
             "ok": True,
             "state": self._state_snapshot(),
@@ -306,7 +511,14 @@ class BrowserAppState:
             return payload
         return {"ok": True, "revision": self.revision}
 
-    def run_action(self, action_id: str, payload: dict) -> dict:
+    def run_action(
+        self,
+        action_id: str,
+        payload: dict,
+        *,
+        identity: dict | None = None,
+        auth_context: object | None = None,
+    ) -> dict:
         self._refresh_if_needed()
         if self.error_payload:
             return self.error_payload
@@ -317,10 +529,19 @@ class BrowserAppState:
         runtime_theme = self.session.runtime_theme or getattr(self.program, "theme", UI_DEFAULTS["theme"])
         preference = getattr(self.program, "theme_preference", {}) or {}
         response = {}
+        identity_value = dict(identity) if isinstance(identity, dict) else None
+        if identity_value is None:
+            identity_value = resolve_identity(
+                config,
+                getattr(self.program, "identity", None),
+                mode=ValidationMode.RUNTIME,
+            )
+        identity_value = normalize_identity(identity_value)
+        cache_key = self._identity_cache_key(identity_value, auth_context=auth_context)
         try:
             before_rows = None
             if self.program is not None:
-                before_rows = record_rows_snapshot(self.program, store, config)
+                before_rows = record_rows_snapshot(self.program, store, config, identity=identity_value)
             response = handle_action(
                 self.program,
                 action_id=action_id,
@@ -332,6 +553,8 @@ class BrowserAppState:
                 preference_key=app_pref_key(self.app_path.as_posix()),
                 allow_theme_override=bool(preference.get("allow_override", False)),
                 config=config,
+                identity=identity_value,
+                auth_context=auth_context,
                 memory_manager=self.session.memory_manager,
                 source=self._main_source(),
                 raise_on_error=False,
@@ -344,6 +567,7 @@ class BrowserAppState:
                     action_id,
                     response,
                     before_rows,
+                    identity=identity_value,
                 )
         except Namel3ssError as err:
             response = build_error_from_exception(err, kind="engine", source=self._source_payload())
@@ -355,7 +579,8 @@ class BrowserAppState:
                 response["overlay"] = build_dev_overlay_payload(response, debug=self.debug)
         ui_payload = response.get("ui") if isinstance(response, dict) else None
         if isinstance(ui_payload, dict):
-            self.manifest = ui_payload
+            self.manifest_cache[cache_key] = ui_payload
+            self.manifest_errors.pop(cache_key, None)
             theme_current = (ui_payload.get("theme") or {}).get("current")
             if isinstance(theme_current, str) and theme_current:
                 self.session.runtime_theme = theme_current
@@ -377,7 +602,8 @@ class BrowserAppState:
             self.sources = sources
             self.revision = _compute_revision(sources)
             self._watch_snapshot = _snapshot_paths(list(sources.keys()))
-            self.manifest = self._build_manifest(program)
+            self.manifest_cache = {}
+            self.manifest_errors = {}
             self.error_payload = None
         except Namel3ssError as err:
             self.error_payload = self._build_error_payload(err)
@@ -411,9 +637,15 @@ class BrowserAppState:
         project = load_project(self.app_path, parse_cache=self.parse_cache, source_overrides=self.source_overrides)
         return project.program, project.sources
 
-    def _build_manifest(self, program) -> dict:
-        config = load_config(app_path=self.app_path)
-        warnings: list[ValidationWarning] = []
+    def _build_manifest(
+        self,
+        program,
+        *,
+        config,
+        identity: dict,
+        warnings: list[ValidationWarning],
+        auth_context: object | None = None,
+    ) -> dict:
         store = self.session.ensure_store(config)
         preference = getattr(program, "theme_preference", {}) or {}
         preference_store = preference_store_for_app(self.app_path.as_posix(), preference.get("persist"))
@@ -425,7 +657,6 @@ class BrowserAppState:
         if runtime_theme not in allowed_themes:
             runtime_theme = program_theme if program_theme in allowed_themes else UI_DEFAULTS["theme"]
         self.session.runtime_theme = runtime_theme
-        identity = resolve_identity(config, getattr(program, "identity", None), mode=ValidationMode.RUNTIME, warnings=warnings)
         manifest = build_manifest(
             program,
             config=config,
@@ -434,13 +665,26 @@ class BrowserAppState:
             runtime_theme=runtime_theme,
             persisted_theme=persisted,
             identity=identity,
+            auth_context=auth_context,
             mode=ValidationMode.RUNTIME,
             warnings=warnings,
             media_mode=MediaValidationMode.CHECK,
         )
-        if warnings:
-            manifest["warnings"] = [warning.to_dict() for warning in warnings]
         return manifest
+
+    def _identity_cache_key(self, identity: dict | None, auth_context: object | None = None) -> str:
+        normalized = normalize_identity(identity if isinstance(identity, dict) else {})
+        payload_map: dict[str, object] = {"identity": normalized}
+        if auth_context is not None:
+            error = getattr(auth_context, "error", None)
+            authenticated = getattr(auth_context, "authenticated", None)
+            if error is not None:
+                payload_map["auth_error"] = error
+            if isinstance(authenticated, bool):
+                payload_map["authenticated"] = authenticated
+        payload = canonical_json_dumps(payload_map, pretty=False, drop_run_keys=False)
+        digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+        return digest[:12]
 
     def _build_error_payload(self, err: Namel3ssError) -> dict:
         payload = build_error_from_exception(err, kind="manifest", source=self._source_payload())

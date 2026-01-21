@@ -3,21 +3,26 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from namel3ss.cli.app_loader import load_program
 from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.cli.builds import app_path_from_metadata, load_build_metadata, read_latest_build_id
 from namel3ss.cli.proofs import record_active_proof, record_proof_rollback, write_proof
 from namel3ss.cli.promotion_state import load_state, record_promotion, record_rollback
 from namel3ss.cli.targets import parse_target
 from namel3ss.cli.targets_store import write_json
+from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.governance.verify import run_verify
 from namel3ss.proofs import build_engine_proof
+from namel3ss.runtime.data.migration_runner import apply_plan, status_payload
+from namel3ss.runtime.data.migration_store import load_state as load_migration_state
+from namel3ss.runtime.storage.factory import create_store
 from namel3ss.secrets import set_audit_root, set_engine_target
 
 
 def run_promote_command(args: list[str]) -> int:
-    app_arg, target_raw, build_id, rollback = _parse_args(args)
+    app_arg, target_raw, build_id, rollback, with_migrations = _parse_args(args)
     project_root = resolve_app_path(app_arg).parent
     set_engine_target(target_raw or "local")
     set_audit_root(project_root)
@@ -58,6 +63,7 @@ def run_promote_command(args: list[str]) -> int:
     app_snapshot = app_path_from_metadata(build_path, metadata)
     lock_snapshot = _load_build_lock_snapshot(build_path)
     _maybe_verify_on_ship(app_snapshot, project_root, target.name)
+    _maybe_handle_migrations(app_snapshot, project_root, with_migrations=with_migrations)
     proof_id, proof = build_engine_proof(
         app_snapshot,
         target=target.name,
@@ -137,11 +143,12 @@ def _load_build_lock_snapshot(build_path: Path) -> dict | None:
     return data if isinstance(data, dict) else None
 
 
-def _parse_args(args: list[str]) -> tuple[str | None, str | None, str | None, bool]:
+def _parse_args(args: list[str]) -> tuple[str | None, str | None, str | None, bool, bool]:
     app_arg = None
     target = None
     build_id = None
     rollback = False
+    with_migrations = False
     i = 0
     while i < len(args):
         arg = args[i]
@@ -171,6 +178,10 @@ def _parse_args(args: list[str]) -> tuple[str | None, str | None, str | None, bo
             build_id = args[i + 1]
             i += 2
             continue
+        if arg == "--with-migrations":
+            with_migrations = True
+            i += 1
+            continue
         if arg in {"--rollback", "--back"}:
             rollback = True
             i += 1
@@ -179,7 +190,7 @@ def _parse_args(args: list[str]) -> tuple[str | None, str | None, str | None, bo
             raise Namel3ssError(
                 build_guidance_message(
                     what=f"Unknown flag '{arg}'.",
-                    why="Only --to, --build, and --rollback are supported.",
+                    why="Only --to, --build, --rollback, and --with-migrations are supported.",
                     fix="Remove the unsupported flag.",
                     example="n3 ship --to local",
                 )
@@ -205,7 +216,69 @@ def _parse_args(args: list[str]) -> tuple[str | None, str | None, str | None, bo
                 example="n3 ship --back",
             )
         )
-    return app_arg, target, build_id, rollback
+    if rollback and with_migrations:
+        raise Namel3ssError(
+            build_guidance_message(
+                what="Rollback cannot apply migrations.",
+                why="Rollback reverts the last promotion only.",
+                fix="Run rollback alone.",
+                example="n3 ship --back",
+            )
+        )
+    return app_arg, target, build_id, rollback, with_migrations
+
+
+def _maybe_handle_migrations(app_snapshot: Path, project_root: Path, *, with_migrations: bool) -> None:
+    program, _sources = load_program(app_snapshot.as_posix())
+    set_audit_root(project_root)
+    records = list(getattr(program, "records", []))
+    if not records:
+        return
+    migration_state = load_migration_state(project_root)
+    if not migration_state.last_plan_id and not migration_state.applied_plan_id and not with_migrations:
+        return
+    status = status_payload(records, project_root=project_root)
+    if status.get("plan_changed") and not with_migrations:
+        raise Namel3ssError(_plan_changed_message())
+    if status.get("pending") and not with_migrations:
+        raise Namel3ssError(_pending_migrations_message())
+    if with_migrations and (status.get("pending") or status.get("plan_changed")):
+        config = load_config(app_path=app_snapshot, root=project_root)
+        store = create_store(config=config)
+        try:
+            payload = apply_plan(records, project_root=project_root, store=store)
+        finally:
+            _close_store(store)
+        plan = payload.get("plan") if isinstance(payload.get("plan"), dict) else {}
+        plan_id = plan.get("plan_id") or "unknown"
+        print(f"Applied migrations: {plan_id}")
+
+
+def _close_store(store) -> None:
+    closer = getattr(store, "close", None)
+    if callable(closer):
+        try:
+            closer()
+        except Exception:
+            pass
+
+
+def _pending_migrations_message() -> str:
+    return build_guidance_message(
+        what="Pending migrations detected.",
+        why="Data schema changes must be applied before promotion.",
+        fix="Apply migrations or ship with --with-migrations.",
+        example="n3 migrate apply",
+    )
+
+
+def _plan_changed_message() -> str:
+    return build_guidance_message(
+        what="Migration plan changed.",
+        why="Schema changes differ from the last planned migrations.",
+        fix="Regenerate and apply the migration plan before promotion.",
+        example="n3 migrate plan",
+    )
 
 
 __all__ = ["run_promote_command"]

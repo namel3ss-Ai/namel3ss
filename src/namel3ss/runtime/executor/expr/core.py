@@ -15,6 +15,7 @@ from namel3ss.runtime.executor.expr.lists import (
 )
 from namel3ss.runtime.executor.expr.ops import eval_binary_op, eval_comparison, eval_unary_op
 from namel3ss.runtime.backend.http_auth_helpers import auth_basic, auth_bearer, auth_header
+from namel3ss.runtime.auth.permission_helpers import has_permission, has_role
 from namel3ss.runtime.secrets_store import SecretValue, resolve_secret_value
 from namel3ss.runtime.tools.executor import execute_tool_call
 from namel3ss.runtime.values.coerce import require_type
@@ -228,11 +229,19 @@ def _evaluate_builtin_call(
             )
         secret_value = evaluate_expression(ctx, expr.arguments[1], collector)
         return auth_header(header_name, secret_value)
+    if name == "has_role":
+        _require_arg_count(expr, 1)
+        role_value = evaluate_expression(ctx, expr.arguments[0], collector)
+        return has_role(ctx.identity, role_value)
+    if name == "has_permission":
+        _require_arg_count(expr, 1)
+        perm_value = evaluate_expression(ctx, expr.arguments[0], collector)
+        return has_permission(ctx.identity, perm_value)
     raise Namel3ssError(
         build_guidance_message(
             what=f"Unknown builtin '{name}'.",
-            why="Only secret and auth helper calls are supported here.",
-            fix="Use secret(), auth_bearer(), auth_basic(), or auth_header().",
+            why="Only secret, auth helpers, and identity checks are supported here.",
+            fix="Use secret(), auth_bearer(), auth_basic(), auth_header(), has_role(), or has_permission().",
             example='auth_bearer(secret("stripe_key"))',
         ),
         line=expr.line,
@@ -270,6 +279,8 @@ def _builtin_example(name: str) -> str:
         "auth_bearer": 'auth_bearer(secret("stripe_key"))',
         "auth_basic": 'auth_basic(secret("api_user"), secret("api_password"))',
         "auth_header": 'auth_header("X-API-Key", secret("stripe_key"))',
+        "has_role": 'has_role("admin")',
+        "has_permission": 'has_permission("records.read")',
     }.get(name, 'secret("stripe_key")')
 
 

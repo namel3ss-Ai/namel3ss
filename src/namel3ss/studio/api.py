@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Mapping
 
 from namel3ss.cli.promotion_state import load_state
 from namel3ss.cli.targets import parse_target
@@ -16,6 +17,7 @@ from namel3ss.secrets import collect_secret_values, discover_required_secrets
 from namel3ss.production_contract import build_run_payload
 from namel3ss.runtime.run_pipeline import finalize_run_payload
 from namel3ss.runtime.browser_state import record_data_effects, record_rows_snapshot
+from namel3ss.runtime.auth.auth_context import resolve_auth_context
 from namel3ss.runtime.ui.actions import handle_action
 from namel3ss.runtime.preferences.factory import preference_store_for_app, app_pref_key
 from namel3ss.studio.session import SessionState
@@ -254,7 +256,14 @@ def update_memory_packs_wrapper(source: str, session: SessionState | None, paylo
     return update_memory_packs(source, session, app_file.as_posix(), payload)
 
 
-def execute_action(source: str, session: SessionState | None, action_id: str, payload: dict, app_path: str | None = None) -> dict:
+def execute_action(
+    source: str,
+    session: SessionState | None,
+    action_id: str,
+    payload: dict,
+    app_path: str | None = None,
+    headers: Mapping[str, str] | None = None,
+) -> dict:
     app_file: Path | None = None
     config = None
     try:
@@ -263,7 +272,14 @@ def execute_action(source: str, session: SessionState | None, action_id: str, pa
         program_ir = _load_project_program(source, app_file.as_posix())
         config = load_config(app_path=app_file)
         store = session.ensure_store(config)
-        before_rows = record_rows_snapshot(program_ir, store, config)
+        auth_context = resolve_auth_context(
+            headers,
+            config=config,
+            identity_schema=getattr(program_ir, "identity", None),
+            store=store,
+        )
+        identity = getattr(auth_context, "identity", None)
+        before_rows = record_rows_snapshot(program_ir, store, config, identity=identity)
         response = handle_action(
             program_ir,
             action_id=action_id,
@@ -275,6 +291,8 @@ def execute_action(source: str, session: SessionState | None, action_id: str, pa
             preference_key=app_pref_key(app_path),
             allow_theme_override=getattr(program_ir, "theme_preference", {}).get("allow_override"),
             config=config,
+            identity=identity,
+            auth_context=auth_context,
             memory_manager=session.memory_manager,
             source=source,
             raise_on_error=False,
@@ -286,6 +304,7 @@ def execute_action(source: str, session: SessionState | None, action_id: str, pa
             action_id,
             response if isinstance(response, dict) else {},
             before_rows,
+            identity=identity,
         )
         if response and isinstance(response, dict):
             ui_theme = (response.get("ui") or {}).get("theme") if response.get("ui") else None

@@ -20,7 +20,14 @@ def handle_action(handler: Any, source: str, body: dict) -> None:
         handler._respond_json(build_error_payload("Payload must be an object", kind="engine"), status=400)
         return
     try:
-        resp = execute_action(source, handler._get_session(), action_id, payload, handler.server.app_path)  # type: ignore[attr-defined]
+        resp = execute_action(
+            source,
+            handler._get_session(),
+            action_id,
+            payload,
+            handler.server.app_path,  # type: ignore[attr-defined]
+            headers=dict(handler.headers.items()),
+        )
         handler._respond_json(resp, status=200)
         return
     except Namel3ssError as err:

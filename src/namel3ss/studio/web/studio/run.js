@@ -101,6 +101,9 @@
       if (root.refresh && typeof root.refresh.refreshData === "function") {
         root.refresh.refreshData();
       }
+      if (root.refresh && typeof root.refresh.refreshSession === "function") {
+        root.refresh.refreshSession();
+      }
       if (data && data.ok === false) {
         setRunStatus("error", dom.buildErrorLines(data));
       } else {

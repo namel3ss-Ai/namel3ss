@@ -10,6 +10,12 @@ from namel3ss.errors.guidance import build_guidance_message
 
 ENV_IDENTITY_JSON = "N3_IDENTITY_JSON"
 ENV_IDENTITY_PREFIX = "N3_IDENTITY_"
+ENV_AUTH_SIGNING_KEY = "N3_AUTH_SIGNING_KEY"
+ENV_AUTH_ALLOW_IDENTITY = "N3_AUTH_ALLOW_IDENTITY"
+ENV_AUTH_USERNAME = "N3_AUTH_USERNAME"
+ENV_AUTH_PASSWORD = "N3_AUTH_PASSWORD"
+ENV_AUTH_IDENTITY_JSON = "N3_AUTH_IDENTITY_JSON"
+ENV_AUTH_CREDENTIALS_JSON = "N3_AUTH_CREDENTIALS_JSON"
 RESERVED_TRUE_VALUES = {"1", "true", "yes", "on"}
 
 
@@ -65,6 +71,11 @@ def apply_env_overrides(config: AppConfig) -> bool:
     if edge_kv_url:
         config.persistence.edge_kv_url = edge_kv_url
         used = True
+    replica_urls = os.getenv("N3_REPLICA_URLS")
+    if replica_urls:
+        values = [item.strip() for item in replica_urls.split(",")]
+        config.persistence.replica_urls = [item for item in values if item]
+        used = True
     tool_timeout = os.getenv("N3_PYTHON_TOOL_TIMEOUT_SECONDS")
     if tool_timeout:
         try:
@@ -84,6 +95,7 @@ def apply_env_overrides(config: AppConfig) -> bool:
     if foreign_allow is not None:
         config.foreign.allow = foreign_allow.strip().lower() in RESERVED_TRUE_VALUES
         used = True
+    used = apply_authentication_env(config) or used
     used = apply_identity_env(config) or used
     return used
 
@@ -111,16 +123,59 @@ def apply_identity_env(config: AppConfig) -> bool:
     return used
 
 
+def apply_authentication_env(config: AppConfig) -> bool:
+    used = False
+    signing_key = os.getenv(ENV_AUTH_SIGNING_KEY)
+    if signing_key:
+        config.authentication.signing_key = signing_key
+        used = True
+    allow_identity = os.getenv(ENV_AUTH_ALLOW_IDENTITY)
+    if allow_identity is not None:
+        config.authentication.allow_identity = allow_identity.strip().lower() in RESERVED_TRUE_VALUES
+        used = True
+    username = os.getenv(ENV_AUTH_USERNAME)
+    if username:
+        config.authentication.username = username
+        used = True
+    password = os.getenv(ENV_AUTH_PASSWORD)
+    if password:
+        config.authentication.password = password
+        used = True
+    identity_json = os.getenv(ENV_AUTH_IDENTITY_JSON)
+    if identity_json:
+        parsed = _parse_auth_json(identity_json, ENV_AUTH_IDENTITY_JSON)
+        if not isinstance(parsed, dict):
+            raise Namel3ssError(_auth_json_error(ENV_AUTH_IDENTITY_JSON, "Expected a JSON object"))
+        config.authentication.identity = dict(parsed)
+        used = True
+    credentials_json = os.getenv(ENV_AUTH_CREDENTIALS_JSON)
+    if credentials_json:
+        parsed = _parse_auth_json(credentials_json, ENV_AUTH_CREDENTIALS_JSON)
+        if not isinstance(parsed, dict):
+            raise Namel3ssError(_auth_json_error(ENV_AUTH_CREDENTIALS_JSON, "Expected a JSON object"))
+        username = parsed.get("username")
+        password = parsed.get("password")
+        identity = parsed.get("identity")
+        if username is not None:
+            config.authentication.username = str(username)
+        if password is not None:
+            config.authentication.password = str(password)
+        if isinstance(identity, dict):
+            config.authentication.identity = dict(identity)
+        used = True
+    return used
+
+
 def normalize_target(raw: str) -> str:
     normalized = raw.strip().lower()
     if normalized in {"memory", "mem", "none", "off"}:
         return "memory"
-    if normalized in {"sqlite", "postgres", "edge"}:
+    if normalized in {"sqlite", "postgres", "mysql", "edge"}:
         return normalized
     raise Namel3ssError(
         build_guidance_message(
             what=f"Unsupported persistence target '{raw}'.",
-            why="Targets must be one of sqlite, postgres, edge, or memory.",
+            why="Targets must be one of sqlite, postgres, mysql, edge, or memory.",
             fix="Set N3_PERSIST_TARGET to a supported value.",
             example="N3_PERSIST_TARGET=sqlite",
         )
@@ -141,9 +196,34 @@ def _identity_json_error(details: str) -> str:
     )
 
 
+def _auth_json_error(label: str, details: str) -> str:
+    return build_guidance_message(
+        what=f"{label} is invalid.",
+        why=f"Parsing {label} failed: {details}.",
+        fix="Provide a valid JSON object for authentication settings.",
+        example=f'{label}={{"username":"dev","password":"dev","identity":{{"role":"admin"}}}}',
+    )
+
+
+def _parse_auth_json(value: str, label: str) -> dict:
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError as err:
+        raise Namel3ssError(_auth_json_error(label, str(err))) from err
+    if not isinstance(parsed, dict):
+        raise Namel3ssError(_auth_json_error(label, "Expected a JSON object"))
+    return parsed
+
+
 __all__ = [
     "ENV_IDENTITY_JSON",
     "ENV_IDENTITY_PREFIX",
+    "ENV_AUTH_SIGNING_KEY",
+    "ENV_AUTH_ALLOW_IDENTITY",
+    "ENV_AUTH_USERNAME",
+    "ENV_AUTH_PASSWORD",
+    "ENV_AUTH_IDENTITY_JSON",
+    "ENV_AUTH_CREDENTIALS_JSON",
     "RESERVED_TRUE_VALUES",
     "apply_env_overrides",
     "normalize_target",

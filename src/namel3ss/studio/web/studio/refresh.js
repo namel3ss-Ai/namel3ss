@@ -82,6 +82,14 @@
     }
   }
 
+  function rerenderDataPanels() {
+    if (root.data && typeof root.data.renderData === "function") {
+      root.data.renderData(state.getCachedData ? state.getCachedData() : null);
+    } else if (typeof window.renderData === "function") {
+      window.renderData(state.getCachedData ? state.getCachedData() : null);
+    }
+  }
+
   async function refreshUI() {
     const container = document.getElementById("previewShell");
     try {
@@ -98,6 +106,10 @@
       clearManifestErrorIfPresent();
       applyManifest(payload);
       refreshData();
+      refreshSession();
+      refreshDataStatus();
+      refreshMigrationsStatus();
+      refreshMigrationsPlan();
       if (root.setup && root.setup.refreshSetup) {
         root.setup.refreshSetup();
       }
@@ -158,21 +170,81 @@
       if (state && typeof state.setCachedData === "function") {
         state.setCachedData(payload);
       }
-      if (root.data && typeof root.data.renderData === "function") {
-        root.data.renderData(payload);
-      } else if (typeof window.renderData === "function") {
-        window.renderData(payload);
-      }
+      rerenderDataPanels();
     } catch (err) {
       const detail = err && err.message ? err.message : "Unable to load data.";
       if (state && typeof state.setCachedData === "function") {
         state.setCachedData({ ok: false, error: detail, kind: "state" });
       }
-      if (root.data && typeof root.data.renderData === "function") {
-        root.data.renderData({ ok: false, error: detail, kind: "state" });
-      } else if (typeof window.renderData === "function") {
-        window.renderData({ ok: false, error: detail, kind: "state" });
+      rerenderDataPanels();
+    }
+  }
+
+  async function refreshSession() {
+    if (!net || typeof net.fetchJson !== "function") return;
+    try {
+      const payload = await net.fetchJson("/api/session");
+      if (state && typeof state.setCachedSession === "function") {
+        state.setCachedSession(payload);
       }
+      rerenderDataPanels();
+    } catch (err) {
+      const detail = err && err.message ? err.message : "Unable to load session.";
+      if (state && typeof state.setCachedSession === "function") {
+        state.setCachedSession({ ok: false, error: detail, kind: "authentication" });
+      }
+      rerenderDataPanels();
+    }
+  }
+
+  async function refreshDataStatus() {
+    if (!net || typeof net.fetchJson !== "function") return;
+    try {
+      const payload = await net.fetchJson("/api/data/status");
+      if (state && typeof state.setCachedDataStatus === "function") {
+        state.setCachedDataStatus(payload);
+      }
+      rerenderDataPanels();
+    } catch (err) {
+      const detail = err && err.message ? err.message : "Unable to load data status.";
+      if (state && typeof state.setCachedDataStatus === "function") {
+        state.setCachedDataStatus({ ok: false, error: detail, kind: "data" });
+      }
+      rerenderDataPanels();
+    }
+  }
+
+  async function refreshMigrationsStatus() {
+    if (!net || typeof net.fetchJson !== "function") return;
+    try {
+      const payload = await net.fetchJson("/api/migrations/status");
+      if (state && typeof state.setCachedMigrationStatus === "function") {
+        state.setCachedMigrationStatus(payload);
+      }
+      rerenderDataPanels();
+    } catch (err) {
+      const detail = err && err.message ? err.message : "Unable to load migration status.";
+      if (state && typeof state.setCachedMigrationStatus === "function") {
+        state.setCachedMigrationStatus({ ok: false, error: detail, kind: "data" });
+      }
+      rerenderDataPanels();
+    }
+  }
+
+  async function refreshMigrationsPlan() {
+    if (!net || typeof net.fetchJson !== "function") return;
+    try {
+      const payload = await net.fetchJson("/api/migrations/plan");
+      if (state && typeof state.setCachedMigrationPlan === "function") {
+        state.setCachedMigrationPlan(payload);
+      }
+      rerenderDataPanels();
+    } catch (err) {
+      const detail = err && err.message ? err.message : "Unable to load migration plan.";
+      if (state && typeof state.setCachedMigrationPlan === "function") {
+        state.setCachedMigrationPlan({ ok: false, error: detail, kind: "data" });
+      }
+      rerenderDataPanels();
     }
   }
 
@@ -181,4 +253,8 @@
   refresh.refreshSummary = refreshSummary;
   refresh.refreshDiagnostics = refreshDiagnostics;
   refresh.refreshData = refreshData;
+  refresh.refreshSession = refreshSession;
+  refresh.refreshDataStatus = refreshDataStatus;
+  refresh.refreshMigrationsStatus = refreshMigrationsStatus;
+  refresh.refreshMigrationsPlan = refreshMigrationsPlan;
 })();

@@ -36,11 +36,21 @@ class PersistenceConfig:
     db_path: str = ".namel3ss/data.db"
     database_url: str | None = None
     edge_kv_url: str | None = None
+    replica_urls: list[str] = field(default_factory=list)
 
 
 @dataclass
 class IdentityConfig:
     defaults: dict[str, object] = field(default_factory=dict)
+
+
+@dataclass
+class AuthenticationConfig:
+    signing_key: str | None = None
+    allow_identity: bool = False
+    username: str | None = None
+    password: str | None = None
+    identity: dict[str, object] = field(default_factory=dict)
 
 
 @dataclass
@@ -92,6 +102,7 @@ class AppConfig:
     mistral: MistralConfig = field(default_factory=MistralConfig)
     persistence: PersistenceConfig = field(default_factory=PersistenceConfig)
     identity: IdentityConfig = field(default_factory=IdentityConfig)
+    authentication: AuthenticationConfig = field(default_factory=AuthenticationConfig)
     python_tools: PythonToolsConfig = field(default_factory=PythonToolsConfig)
     foreign: ForeignConfig = field(default_factory=ForeignConfig)
     tool_packs: ToolPacksConfig = field(default_factory=ToolPacksConfig)
@@ -109,6 +120,7 @@ __all__ = [
     "MistralConfig",
     "PersistenceConfig",
     "IdentityConfig",
+    "AuthenticationConfig",
     "PythonToolsConfig",
     "ForeignConfig",
     "ToolPacksConfig",

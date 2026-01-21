@@ -1,0 +1,20 @@
+spec is "1.0"
+
+record "Contact":
+  field "id" is text must be present
+  field "email" is text must be present
+
+flow "seed_contact":
+  set state.contact with:
+    id is "c-1"
+    email is "ada@example.com"
+  create "Contact" with state.contact as saved
+  return saved
+
+page "home":
+  purpose is "Seed a record for the data migrations example."
+  title is "Data Migrations"
+  card "Seed":
+    text is "Create a Contact record."
+    button "Seed contact":
+      calls flow "seed_contact"

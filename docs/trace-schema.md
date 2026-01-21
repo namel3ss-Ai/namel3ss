@@ -89,6 +89,38 @@ Every mutation attempt emits exactly one of:
 - message
 - fix_hint
 
+## Authentication events
+Authentication events are emitted when identity is resolved or a requires check runs.
+
+### identity_resolution
+- type identity_resolution
+- source (session, token, config, none)
+- status
+- session_id (redacted, optional)
+- token (fingerprint, optional)
+- subject (optional)
+
+### authorization_check
+- type authorization_check
+- subject
+- outcome (allowed, denied, invalid)
+- reason (optional)
+
+### session_created
+- type session_created
+- session_id (redacted)
+- subject (optional)
+
+### session_revoked
+- type session_revoked
+- session_id (redacted)
+- reason (optional)
+
+### token_verified
+- type token_verified
+- status (valid, expired, revoked)
+- token (fingerprint, optional)
+
 ## AI call traces
 AI call traces are versioned separately by TRACE_VERSION.
 Memory trace events are part of the AI trace stream.

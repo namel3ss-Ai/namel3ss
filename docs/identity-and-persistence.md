@@ -20,6 +20,19 @@ Identity values come from config, not `.ai`:
 - `N3_IDENTITY_JSON='{"email":"dev@example.com","role":"admin"}'`
 - `N3_IDENTITY_EMAIL=dev@example.com` (prefixed env vars)
 
+## Authentication and sessions
+
+Identity is resolved in this order:
+1. Session cookie (`n3_session`)
+2. Bearer token (`Authorization: Bearer <token>`)
+3. Config defaults (`N3_IDENTITY_*` or `namel3ss.toml`)
+
+Sessions are stored in the configured persistence backend and created via `POST /api/login`.
+Session ids are never returned raw in JSON; only redacted values like `session:abc123...`.
+
+Tokens can be issued by `POST /api/login` when a signing key is configured.
+Verification is deterministic with categories: `valid`, `expired`, `revoked`.
+
 ## Requires (authorization)
 
 You can guard flows and pages:
@@ -31,6 +44,10 @@ page "admin": requires identity.role is one of ["admin", "staff"]
 ```
 
 If the requirement fails, the engine returns a clear guidance error.
+
+Helpers can keep requires clauses readable:
+- `has_role("admin")`
+- `has_permission("reports.view")`
 
 ## Mutation access policy
 

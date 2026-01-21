@@ -8,6 +8,7 @@ Studio is an optional inspection lens for namel3ss. It stays fast and minimal wh
 - Why panel mirrors `n3 explain --json`.
 - Actions list matches `n3 actions --json`.
 - Traces are the runtime contract traces (no studio-synthesized events).
+- Authentication and authorization events appear in the Traces panel when present.
 
 ## Graph
 - Visual map of the app root, local capsules, and installed packages.
@@ -30,7 +31,11 @@ Studio is an optional inspection lens for namel3ss. It stays fast and minimal wh
 
 ## Data & Identity
 - Persistence target and descriptor (URLs are redacted).
+- Migration status (plan id, pending state, breaking flags).
+- Export/import summaries for the last data snapshot actions.
 - Identity mode (none/dev defaults/runtime required).
+- Authentication summary (source, token status, session state).
+- Identity summary (subject, roles, permissions, trust_level).
 - Tenant scoping status and keys.
 - Audit timeline with flow/action filters and text search.
 

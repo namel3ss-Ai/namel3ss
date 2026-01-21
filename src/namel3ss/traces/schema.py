@@ -79,6 +79,11 @@ class TraceEventType:
     FLOW_STEP = "flow_step"
     MUTATION_ALLOWED = "mutation_allowed"
     MUTATION_BLOCKED = "mutation_blocked"
+    IDENTITY_RESOLUTION = "identity_resolution"
+    AUTHORIZATION_CHECK = "authorization_check"
+    SESSION_CREATED = "session_created"
+    SESSION_REVOKED = "session_revoked"
+    TOKEN_VERIFIED = "token_verified"
 
 
 __all__ = ["TRACE_VERSION", "TraceEventType"]

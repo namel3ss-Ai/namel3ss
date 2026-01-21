@@ -5,6 +5,9 @@
   let cachedManifest = null;
   let cachedData = null;
   let cachedSummary = null;
+  let cachedDataStatus = null;
+  let cachedMigrationStatus = null;
+  let cachedMigrationPlan = null;
   let cachedTraces = [];
   let cachedSpans = [];
   let cachedLogs = [];
@@ -14,6 +17,7 @@
   let cachedFormulas = null;
   let cachedAgents = null;
   let cachedAgentRun = null;
+  let cachedSession = null;
   let seedActionId = null;
   let resetActionId = null;
   let lastAction = null;
@@ -45,6 +49,27 @@
   function setCachedSummary(value) {
     cachedSummary = value || null;
     return cachedSummary;
+  }
+  function getCachedDataStatus() {
+    return cachedDataStatus;
+  }
+  function setCachedDataStatus(value) {
+    cachedDataStatus = value || null;
+    return cachedDataStatus;
+  }
+  function getCachedMigrationStatus() {
+    return cachedMigrationStatus;
+  }
+  function setCachedMigrationStatus(value) {
+    cachedMigrationStatus = value || null;
+    return cachedMigrationStatus;
+  }
+  function getCachedMigrationPlan() {
+    return cachedMigrationPlan;
+  }
+  function setCachedMigrationPlan(value) {
+    cachedMigrationPlan = value || null;
+    return cachedMigrationPlan;
   }
   function getCachedTraces() {
     return cachedTraces;
@@ -109,6 +134,13 @@
     cachedAgentRun = value || null;
     return cachedAgentRun;
   }
+  function getCachedSession() {
+    return cachedSession;
+  }
+  function setCachedSession(value) {
+    cachedSession = value || null;
+    return cachedSession;
+  }
   function getSeedActionId() {
     return seedActionId;
   }
@@ -155,6 +187,12 @@
   state.setCachedData = setCachedData;
   state.getCachedSummary = getCachedSummary;
   state.setCachedSummary = setCachedSummary;
+  state.getCachedDataStatus = getCachedDataStatus;
+  state.setCachedDataStatus = setCachedDataStatus;
+  state.getCachedMigrationStatus = getCachedMigrationStatus;
+  state.setCachedMigrationStatus = setCachedMigrationStatus;
+  state.getCachedMigrationPlan = getCachedMigrationPlan;
+  state.setCachedMigrationPlan = setCachedMigrationPlan;
   state.getCachedTraces = getCachedTraces;
   state.setCachedTraces = setCachedTraces;
   state.getCachedSpans = getCachedSpans;
@@ -173,6 +211,8 @@
   state.setCachedAgents = setCachedAgents;
   state.getCachedAgentRun = getCachedAgentRun;
   state.setCachedAgentRun = setCachedAgentRun;
+  state.getCachedSession = getCachedSession;
+  state.setCachedSession = setCachedSession;
   state.getSeedActionId = getSeedActionId;
   state.setSeedActionId = setSeedActionId;
   state.getResetActionId = getResetActionId;

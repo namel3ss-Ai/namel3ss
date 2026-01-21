@@ -38,7 +38,9 @@ Studio is a viewer and interactor. It shows the UI manifest, available actions, 
 - [Backend Capabilities](language/backend-capabilities.md): built-in HTTP, scheduling, uploads, secrets/auth helpers, jobs, and file I/O with explicit capability gates.
 - [No dependencies](language/no-dependencies.md): install `namel3ss` and run apps without managing pip/npm for each project; packs extend capabilities.
 - [Capability packs](language/capability-packs.md): explicit pack declarations, permissions, and inspection for local and installed packs.
-- [Browser Protocol](runtime/browser-protocol.md): `/api/ui`, `/api/state`, `/api/action`, `/api/logs`, `/api/trace`, `/api/metrics`, and `/api/health` are stable and deterministic.
+- [Authentication](authentication.md): identity model, sessions, tokens, and redaction rules.
+- [Data](data.md): backends, migrations, promotion safety, and snapshots.
+- [Browser Protocol](runtime/browser-protocol.md): `/api/ui`, `/api/state`, `/api/action`, `/api/session`, `/api/login`, `/api/logout`, `/api/data/status`, `/api/migrations/status`, `/api/migrations/plan`, `/api/logs`, `/api/trace`, `/api/metrics`, and `/api/health` are stable and deterministic.
 
 ### Explainable execution
 Every run emits deterministic artifacts that answer specific questions:
@@ -70,6 +72,7 @@ Studio also surfaces Logs, Tracing, and Metrics for each run; see Observability.
 - [UI DSL](ui-dsl.md)
 - [Studio](studio.md)
 - [Observability](observability.md)
+- [Data](data.md)
 - [Stability](stability.md)
 - [Providers](providers.md)
 - [Reserved words and safe naming](language/reserved-words.md)
@@ -365,14 +368,18 @@ flow "demo":
 **Common mistake**: Calling tools or AI from a function (functions are pure).
 
 ### Guards and identity
-**What it is**: Access control for flows and pages using identity fields.
+**What it is**: Access control for flows and pages using identity fields, sessions, and tokens.
 
 **Minimal example**:
 ```ai
 identity "user":
-  field "role" is text must be present
+  field "subject" is text must be present
+  field "roles" is json
+  field "permissions" is json
+  field "trust_level" is text must be present
+  trust_level is one of ["guest", "member", "admin"]
 
-flow "admin_report": requires identity.role is "admin"
+flow "admin_report": requires has_role("admin")
 ```
 
 **Common mistake**: Using `requires` without declaring the `identity` fields first.
@@ -395,6 +402,7 @@ use module "modules/common.ai" as common
 - [Concurrency](concurrency.md)
 - [Runtime model](runtime.md)
 - [Identity and persistence](identity-and-persistence.md)
+- [Authentication](authentication.md)
 - [Modules](modules.md)
 - [Modules and tests](modules-and-tests.md)
 - Templates: starter and demo (`n3 new starter`, `n3 new demo`)

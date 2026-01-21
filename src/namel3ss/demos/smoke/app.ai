@@ -1,12 +1,19 @@
 spec is "1.0"
 
-# demo: smoke@0.1.0
+# demo: smoke
 # Minimal app to prove UI -> action -> state in the browser.
+
+identity "user":
+  field "subject" is text must be present
+  field "roles" is json
+  field "permissions" is json
+  field "trust_level" is text must be present
+  trust_level is one of ["guest", "member", "admin"]
 
 record "Click":
   field "message" is text must be present
 
-flow "add_click" requires true
+flow "add_click" requires has_permission("click.create")
   create "Click"
     message is "clicked"
 

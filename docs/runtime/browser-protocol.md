@@ -19,6 +19,33 @@ The App Runtime server that `n3 run` starts exposes a single browser protocol. T
 - `effects` may be included to summarize the most recent data changes in a deterministic order.
 - If load fails, returns `{"ok": false, "error": {...}, "revision": "<hash>"}`.
 
+### GET /api/data/status
+- Returns backend status including target, kind, enabled flag, descriptor, and replica hints.
+- Includes last export/import summaries when present.
+- Payloads are redacted; no host paths or secrets appear.
+
+### GET /api/migrations/status
+- Returns migration status with plan ids, pending state, breaking flags, and reversibility.
+- `plan_changed` is true when the stored plan id differs from the current plan.
+
+### GET /api/migrations/plan
+- Returns the last recorded migration plan when present, otherwise the current plan.
+- `changes` and `breaking` lists are ordered deterministically.
+
+### GET /api/session
+- Returns an authentication summary with `auth`, `identity`, and `session` fields.
+- Session ids are redacted; tokens are represented by fingerprints.
+- Errors return deterministic guidance payloads with HTTP 401/403.
+
+### POST /api/login
+- Body: `{"username":"...","password":"..."}` or `{"identity": {...}}` when identity login is enabled.
+- Optional: `issue_token` (boolean), `expires_in` (ticks).
+- Response includes identity summary, session summary, optional token, and trace events.
+
+### POST /api/logout
+- Revokes the active session and clears the session cookie.
+- Response includes session summary and a deterministic revocation trace.
+
 ### POST /api/action
 - Body: `{"id": "<action id>", "payload": {}}` with `Content-Type: application/json`.
 - Response mirrors the existing action response schema: `ok`, `state` snapshot, `revision`, and optional `overlay` and `error` keys for failures.

@@ -7,6 +7,7 @@ from namel3ss.config.model import AppConfig
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.store.memory_store import MemoryStore
+from namel3ss.runtime.storage.mysql_store import MySQLStore
 from namel3ss.runtime.storage.postgres_store import PostgresStore
 from namel3ss.runtime.storage.sqlite_store import SQLiteStore
 from namel3ss.runtime.persistence_paths import resolve_writable_path
@@ -31,6 +32,12 @@ def create_store(db_path: Path | None = None, config: AppConfig | None = None):
             raise Namel3ssError(_missing_postgres_url_message())
         record_secret_access("N3_DATABASE_URL", caller="persistence:postgres", source="env")
         return PostgresStore(url)
+    if target == "mysql":
+        url = cfg.persistence.database_url or ""
+        if not url:
+            raise Namel3ssError(_missing_mysql_url_message())
+        record_secret_access("N3_DATABASE_URL", caller="persistence:mysql", source="env")
+        return MySQLStore(url)
     if target == "edge":
         raise Namel3ssError(_edge_stub_message())
     raise Namel3ssError(_unsupported_target_message(target))
@@ -49,6 +56,15 @@ def _missing_postgres_url_message() -> str:
     )
 
 
+def _missing_mysql_url_message() -> str:
+    return build_guidance_message(
+        what="MySQL persistence target is missing N3_DATABASE_URL.",
+        why="MySQL mode needs a connection string to open the database.",
+        fix="Set N3_DATABASE_URL to a valid mysql:// URL.",
+        example="N3_PERSIST_TARGET=mysql N3_DATABASE_URL=mysql://user:pass@host/db",
+    )
+
+
 def _edge_stub_message() -> str:
     return build_guidance_message(
         what="Edge persistence target is not implemented yet.",
@@ -61,7 +77,7 @@ def _edge_stub_message() -> str:
 def _unsupported_target_message(target: str) -> str:
     return build_guidance_message(
         what=f"Unsupported persistence target '{target}'.",
-        why="Targets must be one of sqlite, postgres, edge, or memory.",
+        why="Targets must be one of sqlite, postgres, mysql, edge, or memory.",
         fix="Set N3_PERSIST_TARGET to a supported value.",
         example="N3_PERSIST_TARGET=sqlite",
     )

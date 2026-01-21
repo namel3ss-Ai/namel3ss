@@ -53,6 +53,7 @@ class ExecutionContext:
     state: Dict[str, object]
     locals: Dict[str, object]
     identity: Dict[str, object]
+    auth_context: object | None = None
     constants: set[str]
     last_value: Optional[object]
     store: Storage

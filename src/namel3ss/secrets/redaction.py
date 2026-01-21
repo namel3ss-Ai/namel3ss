@@ -18,6 +18,8 @@ _KNOWN_ENV_VARS = {
     "NAMEL3SS_MISTRAL_API_KEY",
     "N3_DATABASE_URL",
     "N3_EDGE_KV_URL",
+    "N3_AUTH_SIGNING_KEY",
+    "N3_AUTH_PASSWORD",
 }
 
 
@@ -35,6 +37,8 @@ def collect_secret_values(config: AppConfig | None = None) -> list[str]:
             getattr(config.mistral, "api_key", None),
             getattr(config.persistence, "database_url", None),
             getattr(config.persistence, "edge_kv_url", None),
+            getattr(config.authentication, "signing_key", None),
+            getattr(config.authentication, "password", None),
         ]
         values.extend([val for val in candidates if isinstance(val, str) and val])
     return _unique(values)

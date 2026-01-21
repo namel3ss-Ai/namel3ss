@@ -7,3 +7,4 @@ How to use it:
 - run `n3 check` from the copied folder
 - run `n3 run` and open the browser
 - click "Add click" to create a record and watch the table update
+- identity defaults in `namel3ss.toml` enable the permission guard and Studio traces

@@ -41,6 +41,9 @@ dev = [
 postgres = [
     "psycopg[binary]>=3",
 ]
+mysql = [
+    "pymysql>=1",
+]
 
 [tool.setuptools]
 package-dir = {"" = "src"}

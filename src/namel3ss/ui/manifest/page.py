@@ -40,6 +40,7 @@ def build_manifest(
     runtime_theme: str | None = None,
     persisted_theme: str | None = None,
     identity: dict | None = None,
+    auth_context: object | None = None,
     mode: ValidationMode | str = ValidationMode.RUNTIME,
     warnings: list | None = None,
     state_defaults: dict | None = None,
@@ -91,7 +92,7 @@ def build_manifest(
         defaults = StateDefaults(app_defaults, page_defaults_raw)
         state_ctx = StateContext(deepcopy(state_base), defaults)
         enforce_requires(
-            build_guard_context(identity=identity, state=state_ctx.state),
+            build_guard_context(identity=identity, state=state_ctx.state, auth_context=auth_context),
             getattr(page, "requires", None),
             subject=f'page "{page.name}"',
             line=page.line,

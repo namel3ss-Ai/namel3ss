@@ -1,0 +1,17 @@
+spec is "1.0"
+
+identity "user":
+  field "subject" is text
+  field "roles" is json
+  field "permissions" is json
+  field "trust_level" is text
+
+flow "protected_report" requires has_permission("reports.view")
+  return map:
+    "message" is "Access granted."
+
+page "home":
+  title is "Authentication example"
+  text is "Create a session, then run the protected flow."
+  button "Run protected flow":
+    calls flow "protected_report"

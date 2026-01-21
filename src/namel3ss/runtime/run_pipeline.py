@@ -36,6 +36,7 @@ def build_flow_payload(
     preference_key: str | None = None,
     config: AppConfig | None = None,
     identity: dict | None = None,
+    auth_context: object | None = None,
     source: str | None = None,
     project_root: str | Path | None = None,
     action_id: str | None = None,
@@ -56,6 +57,7 @@ def build_flow_payload(
             preference_key=preference_key,
             config=config,
             identity=identity,
+            auth_context=auth_context,
             action_id=action_id,
         )
     except Exception as err:

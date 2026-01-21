@@ -1,0 +1,5 @@
+[identity]
+subject = "smoke-user"
+trust_level = "member"
+roles = ["viewer"]
+permissions = ["click.create"]
