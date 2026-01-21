@@ -17,11 +17,12 @@ Existing `identity.role` checks continue to work. Roles and permissions normaliz
 
 ```ai
 identity "user":
-  field "subject" is text must be present
-  field "roles" is json
-  field "permissions" is json
-  field "trust_level" is text must be present
-  trust_level is one of ["guest", "member", "admin"]
+  fields:
+    subject is text must be present
+    roles is json
+    permissions is json
+    trust_level is text must be present
+  trust_level is one of "guest", "member", "admin"
 
 flow "admin_report": requires has_role("admin")
 ```

@@ -124,8 +124,8 @@ List literal
 
 ```
 let numbers is list:
-  1
-  2
+  1,
+  2,
 ```
 
 List operations

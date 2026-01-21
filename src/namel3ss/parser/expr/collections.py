@@ -12,6 +12,8 @@ def looks_like_list_expression(parser) -> bool:
         return False
     if next_tok.type == "COLON":
         return True
+    if _looks_like_typed_list_literal(parser):
+        return True
     return isinstance(next_tok.value, str) and next_tok.value in {"length", "append", "get"}
 
 
@@ -237,8 +239,12 @@ def parse_list_reduce_expr(parser) -> ast.Expression:
 
 def parse_list_expression(parser) -> ast.Expression:
     list_tok = parser._advance()
+    saw_type = _maybe_consume_list_type(parser)
     if parser._match("COLON"):
         return _parse_list_literal(parser, list_tok.line, list_tok.column)
+    if saw_type:
+        tok = parser._current()
+        raise Namel3ssError("Expected ':' after list type", line=tok.line, column=tok.column)
     if _match_word(parser, "length"):
         _expect_word(parser, "of")
         target = parser._parse_expression()
@@ -309,18 +315,30 @@ def parse_map_expression(parser) -> ast.Expression:
 
 
 def _parse_list_literal(parser, line: int, column: int) -> ast.ListExpr:
-    parser._expect("NEWLINE", "Expected newline after list")
-    parser._expect("INDENT", "Expected indented list items")
+    if parser._match("NEWLINE"):
+        if not parser._match("INDENT"):
+            return ast.ListExpr(items=[], line=line, column=column)
+        items = _parse_list_items_block(parser)
+        return ast.ListExpr(items=items, line=line, column=column)
+    items = _parse_list_items_inline(parser)
+    return ast.ListExpr(items=items, line=line, column=column)
+
+
+def _parse_list_items_block(parser) -> list[ast.Expression]:
     items: list[ast.Expression] = []
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
         items.append(parser._parse_expression())
+        if parser._match("COMMA"):
+            if parser._current().type in {"NEWLINE", "DEDENT"}:
+                continue
+            continue
         parser._match("NEWLINE")
     parser._expect("DEDENT", "Expected end of list")
     while parser._match("NEWLINE"):
         pass
-    return ast.ListExpr(items=items, line=line, column=column)
+    return items
 
 
 def _parse_map_literal(parser, line: int, column: int) -> ast.MapExpr:
@@ -353,6 +371,53 @@ def _peek(parser):
     if pos >= len(parser.tokens):
         return None
     return parser.tokens[pos]
+
+
+def _looks_like_typed_list_literal(parser) -> bool:
+    tokens = parser.tokens
+    pos = parser.position + 1
+    if pos >= len(tokens):
+        return False
+    tok = tokens[pos]
+    if tok.type != "IDENT" or tok.value != "of":
+        return False
+    pos += 1
+    if pos >= len(tokens):
+        return False
+    if not _is_type_token(tokens[pos]):
+        return False
+    pos += 1
+    if pos >= len(tokens):
+        return False
+    return tokens[pos].type == "COLON"
+
+
+def _is_type_token(tok) -> bool:
+    return tok.type in {"TEXT", "IDENT"} or tok.type.startswith("TYPE_")
+
+
+def _maybe_consume_list_type(parser) -> bool:
+    if not _match_word(parser, "of"):
+        return False
+    type_tok = parser._current()
+    if not _is_type_token(type_tok):
+        raise Namel3ssError("Expected list type after 'of'", line=type_tok.line, column=type_tok.column)
+    parser._advance()
+    return True
+
+
+def _parse_list_items_inline(parser) -> list[ast.Expression]:
+    items: list[ast.Expression] = []
+    if parser._current().type in {"NEWLINE", "DEDENT", "EOF"}:
+        return items
+    while parser._current().type not in {"NEWLINE", "DEDENT", "EOF"}:
+        items.append(parser._parse_expression())
+        if parser._match("COMMA"):
+            if parser._current().type in {"NEWLINE", "DEDENT", "EOF"}:
+                break
+            continue
+        break
+    return items
 
 
 def _match_word(parser, value: str) -> bool:

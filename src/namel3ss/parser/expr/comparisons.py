@@ -22,7 +22,7 @@ def parse_comparison(parser) -> ast.Expression:
         return ast.Comparison(kind="ne", left=left, right=right, line=is_tok.line, column=is_tok.column)
     if _match_ident_value(parser, "one"):
         _expect_ident_value(parser, "of")
-        values = _parse_literal_list(parser)
+        values = _parse_literal_list(parser, line=is_tok.line, column=is_tok.column)
         return _one_of_expression(left, values, is_tok.line, is_tok.column)
     if _looks_like_strictly_between(parser):
         parser._advance()
@@ -65,48 +65,107 @@ def parse_comparison(parser) -> ast.Expression:
     return ast.Comparison(kind="eq", left=left, right=right, line=is_tok.line, column=is_tok.column)
 
 
-def _parse_literal_list(parser) -> List[ast.Expression]:
-    parser._expect("LBRACKET", "Expected '[' to start list")
-    items: List[ast.Expression] = []
-    if parser._match("RBRACKET"):
-        tok = parser._current()
+def _parse_literal_list(parser, *, line: int, column: int) -> List[ast.Expression]:
+    if parser._match("LBRACKET"):
+        items = _parse_literal_bracket_list(parser)
+    elif parser._match("COLON"):
+        items = _parse_literal_block_list(parser)
+    else:
+        items = _parse_literal_inline_list(parser, line=line, column=column)
+    if not items:
         raise Namel3ssError(
             build_guidance_message(
                 what="One-of list cannot be empty.",
                 why="Membership checks need at least one literal value.",
                 fix="Add one or more literal values.",
-                example='requires identity.role is one of ["admin", "staff"]',
+                example='requires identity.role is one of "admin", "staff"',
             ),
-            line=tok.line,
-            column=tok.column,
+            line=line,
+            column=column,
         )
+    return items
+
+
+def _parse_literal_bracket_list(parser) -> List[ast.Expression]:
+    items: List[ast.Expression] = []
+    if parser._match("RBRACKET"):
+        return items
     while True:
-        tok = parser._current()
-        if tok.type == "STRING":
-            parser._advance()
-            items.append(ast.Literal(value=tok.value, line=tok.line, column=tok.column))
-        elif tok.type == "NUMBER":
-            parser._advance()
-            items.append(ast.Literal(value=tok.value, line=tok.line, column=tok.column))
-        elif tok.type == "BOOLEAN":
-            parser._advance()
-            items.append(ast.Literal(value=tok.value, line=tok.line, column=tok.column))
-        else:
-            raise Namel3ssError(
-                build_guidance_message(
-                    what="One-of list contains a non-literal value.",
-                    why="Only string, number, or boolean literals are allowed in one-of lists.",
-                    fix="Replace the value with a literal.",
-                    example='requires identity.role is one of ["admin", "staff"]',
-                ),
-                line=tok.line,
-                column=tok.column,
-            )
+        items.append(_parse_literal_value(parser))
         if parser._match("COMMA"):
             continue
         parser._expect("RBRACKET", "Expected ']' after list")
         break
     return items
+
+
+def _parse_literal_block_list(parser) -> List[ast.Expression]:
+    parser._expect("NEWLINE", "Expected newline after one-of list")
+    if not parser._match("INDENT"):
+        return []
+    items: List[ast.Expression] = []
+    while parser._current().type != "DEDENT":
+        if parser._match("NEWLINE"):
+            continue
+        items.append(_parse_literal_value(parser))
+        if parser._match("COMMA"):
+            if parser._current().type in {"NEWLINE", "DEDENT"}:
+                continue
+            continue
+        parser._match("NEWLINE")
+    parser._expect("DEDENT", "Expected end of one-of list")
+    while parser._match("NEWLINE"):
+        pass
+    return items
+
+
+def _parse_literal_inline_list(parser, *, line: int, column: int) -> List[ast.Expression]:
+    items: List[ast.Expression] = []
+    while True:
+        tok = parser._current()
+        if tok.type not in {"STRING", "NUMBER", "BOOLEAN"}:
+            if not items:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="One-of list contains a non-literal value.",
+                        why="Only string, number, or boolean literals are allowed in one-of lists.",
+                        fix="Replace the value with a literal.",
+                        example='requires identity.role is one of "admin", "staff"',
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            break
+        items.append(_parse_literal_value(parser))
+        if parser._match("COMMA"):
+            if parser._current().type in {"NEWLINE", "DEDENT", "EOF"}:
+                break
+            continue
+        break
+    return items
+
+
+def _parse_literal_value(parser) -> ast.Expression:
+    tok = parser._current()
+    if tok.type == "STRING":
+        parser._advance()
+        return ast.Literal(value=tok.value, line=tok.line, column=tok.column)
+    if tok.type == "NUMBER":
+        parser._advance()
+        return ast.Literal(value=tok.value, line=tok.line, column=tok.column)
+    if tok.type == "BOOLEAN":
+        parser._advance()
+        return ast.Literal(value=tok.value, line=tok.line, column=tok.column)
+    raise Namel3ssError(
+        build_guidance_message(
+            what="One-of list contains a non-literal value.",
+            why="Only string, number, or boolean literals are allowed in one-of lists.",
+            fix="Replace the value with a literal.",
+            example='requires identity.role is one of "admin", "staff"',
+        ),
+        line=tok.line,
+        column=tok.column,
+    )
 
 
 def _one_of_expression(
@@ -203,9 +262,9 @@ def _expect_ident_value(parser, value: str) -> None:
         raise Namel3ssError(
             build_guidance_message(
                 what=f"Expected '{value}' after 'is'.",
-                why="Membership checks use `is one of [..]` with the word sequence.",
+                why="Membership checks use `is one of` followed by a comma list.",
                 fix=f"Add '{value}' in the membership clause.",
-                example='requires identity.role is one of ["admin", "staff"]',
+                example='requires identity.role is one of "admin", "staff"',
             ),
             line=tok.line,
             column=tok.column,

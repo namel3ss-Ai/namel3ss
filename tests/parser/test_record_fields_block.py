@@ -55,7 +55,7 @@ def test_fields_block_empty_error():
 
 
 def test_fields_block_invalid_identifier_error():
-    source = 'record "Order":\n  fields:\n    "email" is text\n'
+    source = 'record "Order":\n  fields:\n    field "email" is text\n'
     with pytest.raises(Namel3ssError) as exc:
         parse_program(source)
-    assert "Fields block entries" in str(exc.value)
+    assert "field keyword" in str(exc.value)

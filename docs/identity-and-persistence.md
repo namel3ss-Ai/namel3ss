@@ -8,9 +8,10 @@ Declare who exists, then reference identity fields in flows and guards:
 
 ```ai
 identity "user":
-  field "email" is text must be present
-  field "role" is text must be present
-  trust_level is one of ["guest", "verified", "internal"]
+  fields:
+    email is text must be present
+    role is text must be present
+  trust_level is one of "guest", "verified", "internal"
 
 flow "delete_order": requires identity.role is "admin"
 ```
@@ -40,7 +41,7 @@ You can guard flows and pages:
 ```ai
 flow "admin_report": requires identity.role is "admin"
 
-page "admin": requires identity.role is one of ["admin", "staff"]
+page "admin": requires identity.role is one of "admin", "staff"
 ```
 
 If the requirement fails, the engine returns a clear guidance error.

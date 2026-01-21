@@ -9,6 +9,7 @@ from namel3ss.lint.types import Finding
 LEGACY_DECL = re.compile(r'^(flow|page|record|ai|agent|tool)\s+is\s+"')
 ONE_LINE_BUTTON = re.compile(r'^\s*button\s+"[^"]+"\s+calls\s+flow\s+"[^"]+"\s*$')
 PAGE_HEADER = re.compile(r'^\s*page\s+"[^"]+"\s*:\s*$')
+LEGACY_FIELD_DECL = re.compile(r'^\s*field\s+"[^"]+"\s+is\s+')
 FORBIDDEN_PAGE_TOKENS = {
     "let",
     "set",
@@ -36,6 +37,16 @@ def scan_text(lines: List[str]) -> List[Finding]:
                     message="Declaration uses 'is'; use: <keyword> \"name\":",
                     line=idx,
                     column=1,
+                )
+            )
+        if LEGACY_FIELD_DECL.search(line):
+            findings.append(
+                Finding(
+                    code="grammar.fields_block_preferred",
+                    message="Prefer fields: block for records and identity.",
+                    line=idx,
+                    column=1,
+                    severity="warning",
                 )
             )
         if ONE_LINE_BUTTON.search(line):

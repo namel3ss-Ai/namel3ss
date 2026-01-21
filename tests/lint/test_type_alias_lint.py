@@ -9,7 +9,8 @@ def test_alias_types_warn_with_replacement_message():
     src = '''spec is "1.0"
 
 record "User":
-  field "age" is int
+  fields:
+    age is int
 '''
     findings = lint_source(src)
     assert "N3LINT_TYPE_NON_CANONICAL" in _finding_codes(findings)
@@ -22,7 +23,8 @@ def test_strict_mode_escalates_alias_to_error():
     src = '''spec is "1.0"
 
 record "User":
-  field "name" is string
+  fields:
+    name is string
 '''
     findings = lint_source(src, strict=True)
     assert "N3LINT_TYPE_NON_CANONICAL" in _finding_codes(findings)
@@ -33,7 +35,8 @@ def test_canonical_types_do_not_warn():
     src = '''spec is "1.0"
 
 record "User":
-  field "name" is text
+  fields:
+    name is text
 '''
     findings = lint_source(src)
     assert not findings
@@ -43,7 +46,8 @@ def test_relaxed_mode_downgrades_alias():
     src = '''spec is "1.0"
 
 record "User":
-  field "age" is int
+  fields:
+    age is int
 '''
     findings = lint_source(src, strict=False)
     assert "N3LINT_TYPE_NON_CANONICAL" in _finding_codes(findings)

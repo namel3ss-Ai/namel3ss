@@ -24,10 +24,10 @@ This document describes the code-backed expression surface. The source of truth 
 spec is "1.0"
 flow "demo":
   let numbers is list:
-    1
-    2
-    3
-    10
+    1,
+    2,
+    3,
+    10,
 
   calc:
     doubled = map numbers with item as n:

@@ -158,7 +158,8 @@ Minimal file:
 spec is "1.0"
 
 record "Note":
-  field "content" is text must be present
+  fields:
+    content is text must be present
 
 flow "hello":
   return "ok"
@@ -200,9 +201,10 @@ record "Customer":
 **Minimal example**:
 ```ai
 record "User":
-  field "email" is text must be present
-  field "age" is number must be greater than 17
-  field "bio" is text must have length at least 10
+  fields:
+    email is text must be present
+    age is number must be greater than 17
+    bio is text must have length at least 10
 ```
 
 **Common mistake**: Mixing constraints that do not match the type (for example, applying numeric comparisons to text).
@@ -230,8 +232,8 @@ flow "seed_customers":
 flow "compute":
   let subtotal is 2 + 3 * 4
   let items is list:
-    1
-    2
+    1,
+    2,
   let count is list length of items
   return subtotal + count
 ```
@@ -373,11 +375,12 @@ flow "demo":
 **Minimal example**:
 ```ai
 identity "user":
-  field "subject" is text must be present
-  field "roles" is json
-  field "permissions" is json
-  field "trust_level" is text must be present
-  trust_level is one of ["guest", "member", "admin"]
+  fields:
+    subject is text must be present
+    roles is json
+    permissions is json
+    trust_level is text must be present
+  trust_level is one of "guest", "member", "admin"
 
 flow "admin_report": requires has_role("admin")
 ```

@@ -1,10 +1,12 @@
 spec is "1.0"
 
 identity "user":
-  field "subject" is text
-  field "roles" is json
-  field "permissions" is json
-  field "trust_level" is text
+  fields:
+    subject is text
+    roles is json
+    permissions is json
+    trust_level is text
+  trust_level is one of "guest", "member", "admin"
 
 flow "protected_report" requires has_permission("reports.view")
   return map:

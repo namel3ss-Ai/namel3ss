@@ -33,5 +33,7 @@ def test_formatter_keeps_reserved_keyword_fields_legacy():
   field "amount" is number
 '''
     formatted = format_source(source)
-    assert "fields:" not in formatted
-    assert 'field "to" is text' in formatted
+    assert "fields:" in formatted
+    assert "from is text" in formatted
+    assert '"to" is text' in formatted
+    assert "amount is number" in formatted

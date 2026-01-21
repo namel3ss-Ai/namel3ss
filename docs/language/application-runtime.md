@@ -23,7 +23,8 @@ Every valid `.ai` program is an application. The runtime reads declarations and 
 spec is "1.0"
 
 record "Note":
-  field "body" is text must be present
+  fields:
+    body is text must be present
 
 flow "save_note":
   set state.note with:

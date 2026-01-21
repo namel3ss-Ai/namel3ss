@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from namel3ss.format.list_rules import normalize_list_literals, normalize_one_of_lists
 from namel3ss.format.rules import (
     collapse_blank_lines,
     migrate_buttons,
@@ -18,6 +19,8 @@ def format_source(source: str) -> str:
     lines = normalize_indentation(lines)
     lines = normalize_record_fields(lines)
     lines = normalize_function_fields(lines)
+    lines = normalize_one_of_lists(lines)
+    lines = normalize_list_literals(lines)
     lines = collapse_blank_lines(lines)
     formatted = "\n".join(lines)
     if formatted and not formatted.endswith("\n"):

@@ -22,6 +22,14 @@ record "Order":
 - Fields are typed (`text`, `number`, `boolean`, `json`) and can include constraints (`present`, `unique`, `pattern`, `greater than`).
 - `tenant_key` scopes records to an identity field.
 - `persisted` settings (like `ttl_hours`) are optional; `ttl_hours` uses runtime time to compute retention windows.
+- Legacy `field "name" is <type>` lines are also accepted.
+
+List literals use comma syntax:
+```ai
+let roles is list of text:
+  "admin",
+  "staff"
+```
 
 ## CRUD operations in flows
 ```ai

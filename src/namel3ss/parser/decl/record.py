@@ -196,26 +196,30 @@ def _parse_record_field(
     use_guidance: bool,
 ) -> ast.FieldDecl:
     name_tok = parser._current()
-    if name_tok.type not in _FIELD_NAME_TOKENS:
+    allow_quoted = not allow_field_keyword
+    if name_tok.type not in _FIELD_NAME_TOKENS and not (allow_quoted and name_tok.type == "STRING"):
         if use_guidance:
             raise Namel3ssError(
                 build_guidance_message(
                     what="Fields block entries must start with a field name.",
-                    why="Fields blocks use unquoted identifiers followed by `is` and a type.",
-                    fix="Use a simple name like order_id.",
+                    why="Fields blocks use identifiers (quoted if reserved) followed by `is` and a type.",
+                    fix="Use a simple name like order_id or quote a reserved word.",
                     example='fields:\n  order_id is text',
                 ),
                 line=name_tok.line,
                 column=name_tok.column,
             )
         raise Namel3ssError("Expected field name", line=name_tok.line, column=name_tok.column)
-    if name_tok.value == "field":
+    if name_tok.type == "STRING":
+        parser._advance()
+        field_name_tok = name_tok
+    elif name_tok.value == "field":
         if not allow_field_keyword:
             raise Namel3ssError(
                 build_guidance_message(
-                    what="Fields block entries must use unquoted names.",
+                    what="Fields block entries must use names without the field keyword.",
                     why="Fields blocks replace the `field \"name\"` syntax.",
-                    fix="Remove the field keyword and quotes.",
+                    fix="Remove the field keyword and quotes (or just the keyword if quoted).",
                     example='fields:\n  order_id is text',
                 ),
                 line=name_tok.line,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from typing import List
 
@@ -67,7 +68,7 @@ def normalize_spacing(line: str) -> str:
     # record field declarations to canonical "field \"name\" is <type> ..."
     field_pattern = re.compile(
         r'^(?:field\s+"([^"]+)"\s+)?([A-Za-z_][A-Za-z0-9_]*)\s+(?:is\s+)?'
-        r'(string|str|int|integer|number|boolean|bool|json|list|map)(\s+.+)?$'
+        r'(text|string|str|int|integer|number|boolean|bool|json|list|map)(\s+.+)?$'
     )
     m = field_pattern.match(rest)
     if m:
@@ -122,7 +123,9 @@ def collapse_blank_lines(lines: List[str]) -> List[str]:
 
 
 _FIELD_LINE_RE = re.compile(r'^(\s*)field\s+"([^"]+)"\s+is\s+(.+)$')
-_RECORD_HEADER_RE = re.compile(r'^\s*record\s+"[^"]+"\s*:$')
+_QUOTED_FIELD_LINE_RE = re.compile(r'^(\s*)"([^"]+)"\s+is\s+(.+)$')
+_BARE_FIELD_LINE_RE = re.compile(r'^(\s*)([A-Za-z_][A-Za-z0-9_]*)\s+is\s+(.+)$')
+_SCHEMA_HEADER_RE = re.compile(r'^\s*(record|identity)\s+"[^"]+"\s*:$')
 _TOOL_HEADER_RE = re.compile(r'^\s*tool\s+"[^"]+"\s*:$')
 _FUNCTION_HEADER_RE = re.compile(r'^\s*define\s+function\s+"[^"]+"\s*:$', re.IGNORECASE)
 _FIELDS_HEADER_RE = re.compile(r'^\s*fields\s*:$')
@@ -130,6 +133,19 @@ _TOOL_SECTION_RE = re.compile(r'^\s*(input|output)\s*:$')
 _FUNCTION_SECTION_RE = re.compile(r'^\s*(input|output)\s*:$')
 _VALID_FIELD_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _ALLOWED_KEYWORD_FIELD_NAMES = {"title", "text", "form", "table", "button", "page"}
+_ALLOWED_FIELD_TYPES = {
+    "text",
+    "string",
+    "str",
+    "int",
+    "integer",
+    "number",
+    "boolean",
+    "bool",
+    "json",
+    "list",
+    "map",
+}
 
 
 def normalize_record_fields(lines: List[str]) -> List[str]:
@@ -137,12 +153,12 @@ def normalize_record_fields(lines: List[str]) -> List[str]:
     idx = 0
     while idx < len(lines):
         line = lines[idx]
-        if _RECORD_HEADER_RE.match(line):
+        if _SCHEMA_HEADER_RE.match(line):
             record_indent = _line_indent(line)
             normalized.append(line)
             idx += 1
             block_lines, idx = _collect_block(lines, idx, record_indent)
-            normalized.extend(_normalize_record_block(block_lines, record_indent))
+            normalized.extend(_normalize_schema_block(block_lines, record_indent))
             continue
         if _TOOL_HEADER_RE.match(line):
             tool_indent = _line_indent(line)
@@ -195,10 +211,12 @@ def _normalize_function_block(lines: List[str], func_indent: int) -> List[str]:
     return normalized
 
 
-def _normalize_record_block(lines: List[str], record_indent: int) -> List[str]:
+def _normalize_schema_block(lines: List[str], record_indent: int) -> List[str]:
     normalized: List[str] = []
     idx = 0
     body_indent = record_indent + 2
+    fields: List[tuple[str, str]] = []
+    insert_at: int | None = None
     while idx < len(lines):
         line = lines[idx]
         if line.strip() == "":
@@ -207,40 +225,84 @@ def _normalize_record_block(lines: List[str], record_indent: int) -> List[str]:
             continue
         indent = _line_indent(line)
         if indent == body_indent and _FIELDS_HEADER_RE.match(line):
-            normalized.append(line)
+            if insert_at is None:
+                insert_at = len(normalized)
             idx += 1
             block_lines, idx = _collect_block(lines, idx, indent)
-            normalized.extend(_normalize_fields_block(block_lines))
+            fields.extend(_extract_fields(block_lines))
             continue
         if indent == body_indent:
-            run_start = idx
-            run_lines: List[str] = []
-            run_names: List[str] = []
-            while idx < len(lines):
-                next_line = lines[idx]
-                if next_line.strip() == "":
-                    break
-                if _line_indent(next_line) != body_indent:
-                    break
-                match = _FIELD_LINE_RE.match(next_line)
-                if not match:
-                    break
-                run_lines.append(next_line)
-                run_names.append(match.group(2))
+            field_entry = _field_decl_from_line(line, require_type=True)
+            if field_entry:
+                if insert_at is None:
+                    insert_at = len(normalized)
+                fields.append(field_entry)
                 idx += 1
-            if run_lines:
-                if len(run_lines) >= 3 and all(_is_field_identifier(name) for name in run_names):
-                    normalized.append(" " * body_indent + "fields:")
-                    for field_line, name in zip(run_lines, run_names):
-                        tail = _FIELD_LINE_RE.match(field_line).group(3)
-                        normalized.append(" " * (body_indent + 2) + f"{name} is {tail}")
-                    continue
-                normalized.extend(run_lines)
                 continue
-            idx = run_start
         normalized.append(line)
         idx += 1
+    if fields:
+        if insert_at is None:
+            insert_at = len(normalized)
+        normalized[insert_at:insert_at] = _format_fields_block(fields, body_indent)
     return normalized
+
+
+def _extract_fields(lines: List[str]) -> List[tuple[str, str]]:
+    fields: List[tuple[str, str]] = []
+    for line in lines:
+        if line.strip() == "":
+            continue
+        field_entry = _field_decl_from_line(line, require_type=False)
+        if field_entry:
+            fields.append(field_entry)
+    return fields
+
+
+def _field_decl_from_line(line: str, *, require_type: bool) -> tuple[str, str] | None:
+    match = _FIELD_LINE_RE.match(line)
+    if match:
+        name = match.group(2)
+        tail = match.group(3)
+        if require_type and not _tail_has_field_type(tail):
+            return None
+        return name, tail
+    match = _QUOTED_FIELD_LINE_RE.match(line)
+    if match:
+        name = match.group(2)
+        tail = match.group(3)
+        if require_type and not _tail_has_field_type(tail):
+            return None
+        return name, tail
+    match = _BARE_FIELD_LINE_RE.match(line)
+    if match:
+        name = match.group(2)
+        tail = match.group(3)
+        if require_type and not _tail_has_field_type(tail):
+            return None
+        return name, tail
+    return None
+
+
+def _tail_has_field_type(tail: str) -> bool:
+    head = tail.strip().split()
+    if not head:
+        return False
+    return head[0].lower() in _ALLOWED_FIELD_TYPES
+
+
+def _format_fields_block(fields: List[tuple[str, str]], body_indent: int) -> List[str]:
+    normalized = [" " * body_indent + "fields:"]
+    for name, tail in fields:
+        field_name = _format_field_name(name)
+        normalized.append(" " * (body_indent + 2) + f"{field_name} is {tail}")
+    return normalized
+
+
+def _format_field_name(name: str) -> str:
+    if _is_field_identifier(name):
+        return name
+    return json.dumps(name, ensure_ascii=True)
 
 
 def _normalize_tool_block(lines: List[str], tool_indent: int) -> List[str]:

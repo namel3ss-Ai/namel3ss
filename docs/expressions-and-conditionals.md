@@ -38,8 +38,8 @@ flow "demo":
 ```
 flow "demo":
   let numbers is list:
-    1
-    2
+    1,
+    2,
   let total is sum(numbers)
 ```
 
@@ -47,9 +47,9 @@ flow "demo":
 ```
 flow "demo":
   let numbers is list:
-    1
-    2
-    3
+    1,
+    2,
+    3,
   let doubled is map numbers with item as n:
     n * 2
   let big is filter doubled with item as x:
@@ -72,10 +72,10 @@ flow "demo":
 spec is "1.0"
 flow "demo":
   let numbers is list:
-    1
-    2
-    3
-    10
+    1,
+    2,
+    3,
+    10,
 
   calc:
     doubled = map numbers with item as n:
