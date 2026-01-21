@@ -1,0 +1,20 @@
+spec is "1.0"
+
+capabilities:
+  jobs
+  scheduling
+
+job "refresh":
+  return "refreshed"
+
+flow "schedule_refresh":
+  enqueue job "refresh" after 2
+  tick 2
+  return "scheduled"
+
+page "home":
+  purpose is "Single-concept example of scheduling jobs with logical time."
+  title is "Scheduling"
+  text is "Schedule a job and advance logical time deterministically."
+  button "Schedule refresh":
+    calls flow "schedule_refresh"

@@ -10,6 +10,7 @@ from namel3ss.ast.expressions import (
     Assignable,
     AttrAccess,
     BinaryOp,
+    BuiltinCallExpr,
     Comparison,
     Expression,
     ListExpr,
@@ -99,6 +100,7 @@ from namel3ss.ast.program import Flow, Program
 from namel3ss.ast.identity import IdentityDecl
 from namel3ss.ast.statements import (
     AskAIStmt,
+    AdvanceTime,
     Delete,
     EnqueueJob,
     Find,
@@ -156,6 +158,7 @@ __all__ = [
     "ParallelBlock",
     "ThemeChange",
     "EnqueueJob",
+    "AdvanceTime",
     "Repeat",
     "RepeatWhile",
     "ForEach",
@@ -184,6 +187,7 @@ __all__ = [
     "UnaryOp",
     "BinaryOp",
     "Comparison",
+    "BuiltinCallExpr",
     "ToolCallArg",
     "ToolCallExpr",
     "FunctionCallArg",

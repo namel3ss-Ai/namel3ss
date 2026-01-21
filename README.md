@@ -80,7 +80,7 @@ These guarantees are enforced and frozen for the v0.1.x series.
 See `docs/trust-and-governance.md` for enforcement details.
 
 ## Browser protocol
-- [Browser Protocol](docs/runtime/browser-protocol.md): single app runtime server with `/api/ui`, `/api/state`, `/api/action`, and `/api/health` using deterministic ordering and payloads.
+- [Browser Protocol](docs/runtime/browser-protocol.md): single app runtime server with `/api/ui`, `/api/state`, `/api/action`, `/api/upload`, `/api/uploads`, and `/api/health` using deterministic ordering and payloads.
 
 ## Application UI Model
 - [Application UI Model](docs/language/application-ui-model.md): declarative pages, layout, components, and navigation wired to flows, records, and state with deterministic manifests.
@@ -89,7 +89,7 @@ See `docs/trust-and-governance.md` for enforcement details.
 - [Application Data Model](docs/language/application-data-model.md): record schemas, CRUD operations, persistence, and deterministic ordering.
 
 ## Backend Capabilities
-- [Backend Capabilities](docs/language/backend-capabilities.md): built-in HTTP calls, background jobs, and file I/O with deterministic boundaries.
+- [Backend Capabilities](docs/language/backend-capabilities.md): built-in HTTP calls, scheduling, background jobs, uploads, file I/O, and secrets/auth helpers with deterministic boundaries.
 
 ## Language Contracts
 - [Application runtime](docs/language/application-runtime.md): every valid `.ai` program is an application; the browser renders the manifest and actions, Studio inspects.
@@ -341,6 +341,7 @@ Expect breaking changes between alpha revisions, but grammar, execution phases, 
 - [Python tools](docs/python-tools.md)
 - [Tool packs](docs/tool-packs.md)
 - [Capability packs](docs/language/capability-packs.md)
+- Official packs (signed contracts under `packs/official/`)
 - [Capabilities](docs/capabilities.md)
 - [Publishing packs](docs/publishing-packs.md)
 - [Registry](docs/registry.md)

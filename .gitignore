@@ -72,6 +72,10 @@ spec/**/.namel3ss/**
 !examples/tool_permissions/.namel3ss/tools.yaml
 !examples/tool_usage/.namel3ss/
 !examples/tool_usage/.namel3ss/tools.yaml
+!src/namel3ss/examples/capability_pack/.namel3ss/
+src/namel3ss/examples/capability_pack/.namel3ss/**
+!src/namel3ss/examples/capability_pack/.namel3ss/trust/
+!src/namel3ss/examples/capability_pack/.namel3ss/trust/keys.yaml
 !src/namel3ss/templates/**/.namel3ss/
 src/namel3ss/templates/**/.namel3ss/**
 !src/namel3ss/templates/**/.namel3ss/tools.yaml

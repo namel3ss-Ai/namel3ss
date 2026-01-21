@@ -5,6 +5,7 @@ from namel3ss.ir.model.expressions import (
     Assignable,
     AttrAccess,
     BinaryOp,
+    BuiltinCallExpr,
     Comparison,
     ListExpr,
     ListFilterExpr,
@@ -74,6 +75,13 @@ def _lower_expression(expr: ast.Expression | None):
         return ToolCallExpr(
             tool_name=expr.tool_name,
             arguments=args,
+            line=expr.line,
+            column=expr.column,
+        )
+    if isinstance(expr, ast.BuiltinCallExpr):
+        return BuiltinCallExpr(
+            name=expr.name,
+            arguments=[_lower_expression(arg) for arg in expr.arguments],
             line=expr.line,
             column=expr.column,
         )

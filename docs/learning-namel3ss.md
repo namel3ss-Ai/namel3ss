@@ -35,7 +35,7 @@ Studio is a viewer and interactor. It shows the UI manifest, available actions, 
 - [Application runtime](language/application-runtime.md): every valid `.ai` program is an application; the browser renders it, Studio inspects it.
 - [Application Data Model](language/application-data-model.md): structured records, persistence, and deterministic ordering.
 - [Application UI Model](language/application-ui-model.md): declarative pages, layout, components, and navigation with deterministic manifests.
-- [Backend Capabilities](language/backend-capabilities.md): built-in HTTP, jobs, and file I/O with explicit capability gates.
+- [Backend Capabilities](language/backend-capabilities.md): built-in HTTP, scheduling, uploads, secrets/auth helpers, jobs, and file I/O with explicit capability gates.
 - [No dependencies](language/no-dependencies.md): install `namel3ss` and run apps without managing pip/npm for each project; packs extend capabilities.
 - [Capability packs](language/capability-packs.md): explicit pack declarations, permissions, and inspection for local and installed packs.
 - [Browser Protocol](runtime/browser-protocol.md): `/api/ui`, `/api/state`, `/api/action`, and `/api/health` are stable and deterministic.
@@ -57,7 +57,7 @@ Use `n3 status` for the last run summary, `n3 explain` for failures, and
 - No implicit AI behavior; AI must be declared and called explicitly.
 - No unbounded loops or hidden recursion.
 - No implicit type coercion.
-- No time-based scheduling or cron.
+- No wall-clock scheduling or cron; use the logical clock.
 - No streaming or JSON-mode responses; `ollama` is text-only.
 
 #### References
@@ -499,6 +499,7 @@ n3 tools bind "greet someone" --entry "tools.sample_tool:greet"
 
 ### Tool packs
 Built-in packs provide reusable tools (text, datetime, file). Declare the pack in `packs:` and declare the tool; no bindings are required.
+Official packs live under `packs/official/` and are signed; local packs require signing or explicit trust policy.
 
 #### References
 - [AI language definition](ai-language-definition.md)

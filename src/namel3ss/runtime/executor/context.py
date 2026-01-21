@@ -85,6 +85,9 @@ class ExecutionContext:
     flow_action_id: str | None = None
     job_queue: list[dict] = field(default_factory=list)
     job_trigger_state: dict[str, bool] = field(default_factory=dict)
+    scheduled_jobs: list[dict] = field(default_factory=list)
+    job_enqueue_counter: int = 0
+    logical_time: int = 0
 
     def __post_init__(self) -> None:
         if not isinstance(self.traces, TraceList):

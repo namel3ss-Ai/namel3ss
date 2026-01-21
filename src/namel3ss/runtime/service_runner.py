@@ -1,17 +1,19 @@
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from typing import Any, Dict
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 from namel3ss.cli.app_loader import load_program
 from namel3ss.cli.demo_support import is_demo_project
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
 from namel3ss.runtime.executor import execute_program_flow
+from namel3ss.runtime.backend.upload_handler import handle_upload, handle_upload_list
 from namel3ss.ui.actions.dispatch import dispatch_ui_action
 from namel3ss.ui.export.contract import build_ui_contract_payload
 from namel3ss.ui.external.detect import resolve_external_ui_root
@@ -43,7 +45,8 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         self.send_error(404)
 
     def do_POST(self) -> None:  # noqa: N802
-        path = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        path = parsed.path
         if path == "/api/action":
             body = self._read_json_body()
             if body is None:
@@ -51,6 +54,10 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
                 self._respond_json(payload, status=400)
                 return
             self._handle_action_post(body)
+            return
+        if path == "/api/upload":
+            response, status = self._handle_upload_post(parsed.query)
+            self._respond_json(response, status=status)
             return
         self.send_error(404)
 
@@ -86,6 +93,10 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         contract_kind = _contract_kind_for_path(normalized)
         if contract_kind is not None:
             self._respond_contract(contract_kind)
+            return
+        if normalized == "/api/uploads":
+            response, status = self._handle_upload_list()
+            self._respond_json(response, status=status, sort_keys=True)
             return
         self.send_error(404)
 
@@ -136,6 +147,62 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         except Exception as err:  # pragma: no cover - defensive
             payload = build_error_payload(f"Action failed: {err}", kind="engine")
             self._respond_json(payload, status=500)
+
+    def _handle_upload_post(self, query: str) -> tuple[dict, int]:
+        program_ir = self._program()
+        if program_ir is None:
+            return build_error_payload("Program not loaded", kind="engine"), 500
+        upload_name = self.headers.get("X-Upload-Name")
+        if not upload_name:
+            params = parse_qs(query or "")
+            name_values = params.get("name") or []
+            upload_name = name_values[0] if name_values else None
+        length_header = self.headers.get("Content-Length")
+        content_length = None
+        if length_header:
+            try:
+                content_length = int(length_header)
+            except ValueError:
+                content_length = None
+        ctx = SimpleNamespace(
+            capabilities=getattr(program_ir, "capabilities", ()),
+            project_root=getattr(program_ir, "project_root", None),
+            app_path=getattr(program_ir, "app_path", None),
+        )
+        try:
+            response = handle_upload(
+                ctx,
+                headers=dict(self.headers.items()),
+                rfile=self.rfile,
+                content_length=content_length,
+                upload_name=upload_name,
+            )
+            return response, 200
+        except Namel3ssError as err:
+            payload = build_error_from_exception(err, kind="engine")
+            return payload, 400
+        except Exception as err:  # pragma: no cover - defensive
+            payload = build_error_payload(str(err), kind="internal")
+            return payload, 500
+
+    def _handle_upload_list(self) -> tuple[dict, int]:
+        program_ir = self._program()
+        if program_ir is None:
+            return build_error_payload("Program not loaded", kind="engine"), 500
+        ctx = SimpleNamespace(
+            capabilities=getattr(program_ir, "capabilities", ()),
+            project_root=getattr(program_ir, "project_root", None),
+            app_path=getattr(program_ir, "app_path", None),
+        )
+        try:
+            response = handle_upload_list(ctx)
+            return response, 200
+        except Namel3ssError as err:
+            payload = build_error_from_exception(err, kind="engine")
+            return payload, 400
+        except Exception as err:  # pragma: no cover - defensive
+            payload = build_error_payload(str(err), kind="internal")
+            return payload, 500
 
     def _handle_static(self, path: str) -> bool:
         ui_root = getattr(self.server, "external_ui_root", None)  # type: ignore[attr-defined]

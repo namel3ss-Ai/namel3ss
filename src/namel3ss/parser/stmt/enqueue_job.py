@@ -11,6 +11,17 @@ def parse_enqueue_job(parser) -> ast.EnqueueJob:
         raise Namel3ssError("Expected 'job' after enqueue", line=enqueue_tok.line, column=enqueue_tok.column)
     name_tok = parser._current()
     job_name = parse_reference_name(parser, context="job")
+    schedule_kind = None
+    schedule_expr = None
+    if parser._match("AT"):
+        schedule_kind = "at"
+        schedule_expr = parser._parse_expression()
+    else:
+        tok = parser._current()
+        if tok.type == "IDENT" and tok.value == "after":
+            parser._advance()
+            schedule_kind = "after"
+            schedule_expr = parser._parse_expression()
     input_expr = None
     if parser._match("WITH"):
         parser._expect("INPUT", "Expected 'input' after with")
@@ -19,6 +30,8 @@ def parse_enqueue_job(parser) -> ast.EnqueueJob:
     return ast.EnqueueJob(
         job_name=job_name,
         input_expr=input_expr,
+        schedule_kind=schedule_kind,
+        schedule_expr=schedule_expr,
         line=name_tok.line,
         column=name_tok.column,
     )

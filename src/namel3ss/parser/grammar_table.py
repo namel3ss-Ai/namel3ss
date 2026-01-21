@@ -107,6 +107,7 @@ def statement_rules() -> tuple[StatementRule, ...]:
     from namel3ss.parser.stmt.return_stmt import parse_return
     from namel3ss.parser.stmt.run_agent import parse_run_agent_stmt, parse_run_agents_parallel
     from namel3ss.parser.stmt.enqueue_job import parse_enqueue_job
+    from namel3ss.parser.stmt.tick import parse_tick
     from namel3ss.parser.stmt.save import parse_save
     from namel3ss.parser.stmt.set import parse_set
     from namel3ss.parser.stmt.theme import parse_set_theme
@@ -176,6 +177,7 @@ def statement_rules() -> tuple[StatementRule, ...]:
         StatementRule("run_agents_parallel", "RUN", parse_run_agents_parallel, predicate=_is_run_agents_parallel),
         StatementRule("run_agent", "RUN", parse_run_agent_stmt, predicate=_is_run_agent),
         StatementRule("enqueue_job", "ENQUEUE", parse_enqueue_job),
+        StatementRule("tick", "IDENT", parse_tick, token_value="tick"),
         StatementRule("repeat", "REPEAT", parse_repeat),
         StatementRule("for_each", "FOR", parse_for_each),
         StatementRule("match", "MATCH", parse_match),

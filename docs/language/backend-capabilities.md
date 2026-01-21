@@ -9,7 +9,10 @@ These capabilities are deny-by-default. Apps must opt in with a `capabilities` b
 capabilities:
   http
   jobs
+  scheduling
   files
+  uploads
+  secrets
 ```
 
 ## HTTP calls (read-only)
@@ -55,9 +58,32 @@ Triggering jobs:
 Determinism:
 - Jobs run in FIFO order based on enqueue order.
 - `when` triggers are evaluated at stable points in the run.
-- No time-based scheduling or cron is available.
+- Scheduling uses a logical clock (see below); no wall-clock scheduling or cron.
 
 Studio shows job enqueued, job started, and job finished events.
+
+## Scheduling (logical time)
+Scheduling runs jobs later without wall clocks. Time only moves when the program advances it.
+
+```ai
+capabilities:
+  jobs
+  scheduling
+
+flow "demo":
+  enqueue job "refresh" after 2
+  tick 2
+  return "done"
+```
+
+Rules:
+- `after` schedules relative to the current logical time.
+- `at` schedules at a specific logical time.
+- `tick <number>` advances the logical clock by a whole number.
+- Jobs become eligible only when logical time reaches the due time.
+- Order is deterministic: due time, enqueue order, then job name.
+
+Studio shows job scheduled and logical time advanced events.
 
 ## File I/O (scoped, local-only)
 Declare a file tool using `implemented using file`.
@@ -85,8 +111,60 @@ Rules:
 
 Studio shows file operations with the scoped path and result summary.
 
+## Uploads (multipart + streaming-safe)
+Uploads accept multipart form data or streaming (chunked) bodies and store files under the scoped runtime store.
+
+```ai
+capabilities:
+  uploads
+```
+
+Rules:
+- Uploads write under `.namel3ss/files/<app-scope>/uploads/`.
+- Metadata is deterministic: `bytes`, `checksum`, and `content_type`.
+- Uploads are deny-by-default and must be explicitly enabled.
+- Upload responses include deterministic trace events for upload received and stored.
+
+Endpoints:
+- `POST /api/upload` with multipart or chunked data.
+- `GET /api/uploads` to list stored uploads.
+
+Use `X-Upload-Name` or `?name=` to set a logical filename when the client does not send one.
+
+## Secrets and auth helpers
+Secrets are loaded from `.namel3ss/secrets.json` or environment variables and are always redacted in traces.
+Environment variables use `N3_SECRET_<NAME>` or `NAMEL3SS_SECRET_<NAME>`.
+
+```ai
+capabilities:
+  http
+  secrets
+
+flow "call_api":
+  let headers is auth_bearer(secret("stripe_key"))
+  let response is fetch status:
+    url is "https://example.com"
+    headers is headers
+  return response
+```
+
+Define the HTTP tool as shown in the HTTP section above.
+
+Helpers:
+- `secret("name")` loads a secret by name.
+- `auth_bearer(secret("name"))` builds an Authorization header.
+- `auth_basic(secret("user"), secret("password"))` builds basic auth.
+- `auth_header("X-API-Key", secret("name"))` sets a custom header.
+
+Rules:
+- Secrets require the `secrets` capability.
+- Auth helpers require both `http` and `secrets` capabilities.
+- Studio shows redacted headers like `Authorization: Bearer [redacted: stripe_key]`.
+
 ## Determinism and safety
 - All capability use is explicit and deny-by-default.
 - No timestamps, random ids, or host paths are surfaced.
 - HTTP and file outputs are canonicalized for stable ordering.
 - Job scheduling is deterministic and controlled by the runtime.
+- Upload metadata is checksum-based and ordered deterministically.
+- Secrets are redacted from traces and outputs.

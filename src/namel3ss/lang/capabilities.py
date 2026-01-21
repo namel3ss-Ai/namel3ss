@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-BUILTIN_CAPABILITIES = ("http", "jobs", "files")
+BUILTIN_CAPABILITIES = ("http", "jobs", "files", "scheduling", "uploads", "secrets")
 
 
 def normalize_builtin_capability(name: str | None) -> str | None:

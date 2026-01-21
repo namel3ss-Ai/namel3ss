@@ -47,6 +47,10 @@ def _ensure_no_tool_calls(expr: ir.Expression, job: ast.JobDecl) -> None:
             line=job.line,
             column=job.column,
         )
+    if isinstance(expr, ir.BuiltinCallExpr):
+        for arg in expr.arguments:
+            _ensure_no_tool_calls(arg, job)
+        return
     if isinstance(expr, ir.CallFunctionExpr):
         for arg in expr.arguments:
             _ensure_no_tool_calls(arg.value, job)

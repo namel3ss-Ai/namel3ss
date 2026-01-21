@@ -91,6 +91,10 @@ def resolve_statements(
             )
             if stmt.input_expr is not None:
                 _resolve_expr(stmt.input_expr)
+            if stmt.schedule_expr is not None:
+                _resolve_expr(stmt.schedule_expr)
+        elif isinstance(stmt, ast.AdvanceTime):
+            _resolve_expr(stmt.amount)
         elif isinstance(stmt, ast.Save):
             stmt.record_name = resolve_name(
                 stmt.record_name,

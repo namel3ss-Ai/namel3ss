@@ -34,6 +34,7 @@ from namel3ss.runtime.executor.stmt.records import (
     execute_update,
 )
 from namel3ss.runtime.backend.job_queue import enqueue_job
+from namel3ss.runtime.backend.scheduler import advance_time, schedule_job
 from namel3ss.ui.settings import UI_ALLOWED_VALUES
 
 
@@ -97,6 +98,9 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
         return
     if isinstance(stmt, ir.EnqueueJob):
         _execute_enqueue_job(ctx, stmt)
+        return
+    if isinstance(stmt, ir.AdvanceTime):
+        _execute_advance_time(ctx, stmt)
         return
     raise Namel3ssError(f"Unsupported statement type: {type(stmt)}", line=stmt.line, column=stmt.column)
 
@@ -235,8 +239,26 @@ def _execute_enqueue_job(ctx: ExecutionContext, stmt: ir.EnqueueJob) -> None:
     payload = {}
     if stmt.input_expr is not None:
         payload = evaluate_expression(ctx, stmt.input_expr)
-    enqueue_job(ctx, stmt.job_name, payload, line=stmt.line, column=stmt.column)
+    if stmt.schedule_kind and stmt.schedule_expr is not None:
+        schedule_value = evaluate_expression(ctx, stmt.schedule_expr)
+        schedule_job(
+            ctx,
+            stmt.job_name,
+            payload,
+            schedule_kind=stmt.schedule_kind,
+            schedule_value=schedule_value,
+            line=stmt.line,
+            column=stmt.column,
+        )
+    else:
+        enqueue_job(ctx, stmt.job_name, payload, line=stmt.line, column=stmt.column)
     ctx.last_value = payload
+
+
+def _execute_advance_time(ctx: ExecutionContext, stmt: ir.AdvanceTime) -> None:
+    value = evaluate_expression(ctx, stmt.amount)
+    advance_time(ctx, value, line=stmt.line, column=stmt.column)
+    ctx.last_value = value
 
 
 def _calc_assignment_info(ctx: ExecutionContext, line: int | None) -> dict[str, int] | None:

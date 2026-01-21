@@ -55,6 +55,25 @@ def _error_payload(err, protocol_version, checks):
     }
 
 
+def _merge_checks(primary, secondary):
+    checks = []
+    seen = set()
+    for item in list(primary or []) + list(secondary or []):
+        if not isinstance(item, dict):
+            continue
+        key = (
+            item.get("capability"),
+            item.get("allowed"),
+            item.get("guarantee_source"),
+            item.get("reason"),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        checks.append(item)
+    return checks
+
+
 def _run_plain(payload):
     entry = payload.get("entry")
     args = payload.get("payload")
@@ -68,6 +87,7 @@ def _run_plain(payload):
     try:
         context = payload.get("capability_context")
         sandbox_active = False
+        safeio_active = False
         module = importlib.import_module(module_path)
         func = getattr(module, function_name)
         if not callable(func):
@@ -75,17 +95,17 @@ def _run_plain(payload):
         if _sandbox is not None and isinstance(context, dict):
             _sandbox.configure(context)
             sandbox_active = True
-        elif _safeio is not None and isinstance(context, dict):
+        if _safeio is not None and isinstance(context, dict):
             _safeio.configure(context)
+            safeio_active = True
         stdout_buf = io.StringIO()
         stderr_buf = io.StringIO()
         with contextlib.redirect_stdout(stdout_buf), contextlib.redirect_stderr(stderr_buf):
             result = func(args)
-        checks = []
-        if sandbox_active:
-            checks = _sandbox.drain_checks()
-        elif _safeio is not None:
-            checks = _safeio.drain_checks()
+        checks = _merge_checks(
+            _sandbox.drain_checks() if sandbox_active else [],
+            _safeio.drain_checks() if safeio_active else [],
+        )
         return {
             "ok": True,
             "result": result,
@@ -93,11 +113,10 @@ def _run_plain(payload):
             "capability_checks": checks,
         }
     except Exception as err:
-        checks = []
-        if sandbox_active:
-            checks = _sandbox.drain_checks()
-        elif _safeio is not None:
-            checks = _safeio.drain_checks()
+        checks = _merge_checks(
+            _sandbox.drain_checks() if sandbox_active else [],
+            _safeio.drain_checks() if safeio_active else [],
+        )
         return _error_payload(err, protocol_version, checks)
 
 

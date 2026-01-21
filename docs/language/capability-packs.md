@@ -22,9 +22,11 @@ packs:
 
 Tools provided by packs are resolved only when the pack id is listed in the packs block.
 Declare each pack tool in your app to define its input/output fields; the pack supplies bindings and permissions.
+Built-in packs follow the same rule: list `builtin.*` packs explicitly.
 
 ## Local packs
 Local packs live under `packs/capability/<pack_id>/` in the project root. They are loaded deterministically and are inspected the same way as installed packs.
+Local packs still require signing unless trust policy explicitly allows unsigned use.
 
 ## Signing and trust
 - Packs are signed with `n3 pack sign` and embed signer metadata in `pack.yaml`.
@@ -53,6 +55,11 @@ Local packs live under `packs/capability/<pack_id>/` in the project root. They a
 ## Official packs
 - Official packs live under `packs/official/` in the repo and are signed by maintainers.
 - They provide stable contracts for common capabilities without dependencies.
+
+## Authoring official packs
+- Keep tool behavior deterministic and covered by `tests/cases.json`.
+- Run `n3 packs sign` with a maintainer key, then verify with `n3 packs verify`.
+- Submit changes to `packs/official/<pack_id>/` with manifest, bindings, capabilities, intent, and README.
 
 ## Execution and inspection
 - Tool calls record pack metadata (pack id, name, version).

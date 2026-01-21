@@ -63,6 +63,17 @@ def test_packs_add_from_registry(tmp_path: Path, capsys, monkeypatch) -> None:
     assert payload["status"] == "ok"
     pack_path = tmp_path / ".namel3ss" / "packs" / "sample.local" / "pack.yaml"
     assert pack_path.exists()
+    source_meta_path = pack_path.parent / ".n3pack_source.json"
+    source_meta = json.loads(source_meta_path.read_text(encoding="utf-8"))
+    assert source_meta["source_type"] == "registry"
+    assert isinstance(source_meta.get("path"), str)
+    assert source_meta["path"].startswith("registry:")
+    unexpected = [
+        item.name
+        for item in tmp_path.iterdir()
+        if item.is_file() and item.name not in {"app.ai", "trusted.key"}
+    ]
+    assert not unexpected
 
 
 def _add_trusted_key(app_root: Path, key_text: str) -> None:

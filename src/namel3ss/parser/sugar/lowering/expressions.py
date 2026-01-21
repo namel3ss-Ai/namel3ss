@@ -57,6 +57,13 @@ def _lower_expression(expr: ast.Expression | None):
     if isinstance(expr, ast.ToolCallExpr):
         args = [ast.ToolCallArg(name=arg.name, value=_lower_expression(arg.value), line=arg.line, column=arg.column) for arg in expr.arguments]
         return ast.ToolCallExpr(tool_name=expr.tool_name, arguments=args, line=expr.line, column=expr.column)
+    if isinstance(expr, ast.BuiltinCallExpr):
+        return ast.BuiltinCallExpr(
+            name=expr.name,
+            arguments=[_lower_expression(arg) for arg in expr.arguments],
+            line=expr.line,
+            column=expr.column,
+        )
     if isinstance(expr, ast.ListExpr):
         return ast.ListExpr(items=[_lower_expression(item) for item in expr.items], line=expr.line, column=expr.column)
     if isinstance(expr, ast.MapExpr):

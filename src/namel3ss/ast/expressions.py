@@ -60,6 +60,12 @@ class ToolCallExpr(Expression):
 
 
 @dataclass
+class BuiltinCallExpr(Expression):
+    name: str
+    arguments: List[Expression]
+
+
+@dataclass
 class ToolCallArg(Node):
     name: str
     value: Expression

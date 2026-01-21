@@ -36,15 +36,12 @@ def apply_pack_allowlist(
     line: int | None,
     column: int | None,
 ) -> PackAllowlistResult:
-    builtin = [item for item in candidates if getattr(item, "source", None) == "builtin_pack"]
-    non_builtin = [item for item in candidates if getattr(item, "source", None) != "builtin_pack"]
     if allowlist is None:
         return PackAllowlistResult(candidates=candidates, blocked_pack_ids=None)
-    allowed = list(builtin)
-    allowed.extend([item for item in non_builtin if item.pack_id in allowlist])
+    allowed = [item for item in candidates if item.pack_id in allowlist]
     if allowed:
         return PackAllowlistResult(candidates=allowed, blocked_pack_ids=None)
-    blocked = tuple(sorted({item.pack_id for item in non_builtin}))
+    blocked = tuple(sorted({item.pack_id for item in candidates if getattr(item, "pack_id", None)}))
     if blocked:
         return PackAllowlistResult(candidates=[], blocked_pack_ids=blocked)
     return PackAllowlistResult(candidates=[], blocked_pack_ids=None)

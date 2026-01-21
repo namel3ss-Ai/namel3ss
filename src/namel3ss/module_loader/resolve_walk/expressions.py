@@ -106,6 +106,17 @@ def resolve_expression(
                 context_label=context_label,
             )
         return
+    if isinstance(expr, ast.BuiltinCallExpr):
+        for arg in expr.arguments:
+            resolve_expression(
+                arg,
+                module_name=module_name,
+                alias_map=alias_map,
+                local_defs=local_defs,
+                exports_map=exports_map,
+                context_label=context_label,
+            )
+        return
     if isinstance(expr, ast.ListExpr):
         for item in expr.items:
             resolve_expression(

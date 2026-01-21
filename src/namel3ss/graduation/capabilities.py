@@ -136,6 +136,42 @@ _CAPABILITIES = (
         ),
     ),
     _cap(
+        cap_id="runtime.scheduling",
+        title="Logical scheduling",
+        category="runtime",
+        status=STATUS_SHIPPED,
+        tests=(
+            "tests/runtime/test_scheduling.py",
+        ),
+        examples=(
+            "src/namel3ss/examples/scheduled_jobs/app.ai",
+        ),
+    ),
+    _cap(
+        cap_id="runtime.uploads",
+        title="Uploads",
+        category="runtime",
+        status=STATUS_SHIPPED,
+        tests=(
+            "tests/runtime/test_uploads.py",
+        ),
+        examples=(
+            "src/namel3ss/demos/uploads/app.ai",
+        ),
+    ),
+    _cap(
+        cap_id="runtime.secrets",
+        title="Secrets and auth helpers",
+        category="runtime",
+        status=STATUS_SHIPPED,
+        tests=(
+            "tests/runtime/test_secrets_auth_helpers.py",
+        ),
+        examples=(
+            "src/namel3ss/examples/http_auth_helpers/app.ai",
+        ),
+    ),
+    _cap(
         cap_id="runtime.ai",
         title="AI calls and agents",
         category="ai",

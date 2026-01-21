@@ -350,6 +350,8 @@ def _statement_kind(stmt: object) -> str | None:
         return "theme"
     if isinstance(stmt, ir.EnqueueJob):
         return "enqueue_job"
+    if isinstance(stmt, ir.AdvanceTime):
+        return "tick"
     if isinstance(stmt, ir.RunAgentStmt):
         return "run_agent"
     if isinstance(stmt, ir.RunAgentsParallelStmt):

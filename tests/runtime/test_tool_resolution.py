@@ -184,6 +184,29 @@ flow "demo":
     )
 
 
+def test_builtin_pack_requires_declaration(tmp_path: Path) -> None:
+    source = _tool_source("slugify text")
+    program = lower_ir_program(source)
+    executor = Executor(
+        program.flows[0],
+        schemas={},
+        tools=program.tools,
+        input_data={"payload": {"ok": True}},
+        project_root=str(tmp_path),
+        config=AppConfig(),
+        pack_allowlist=getattr(program, "pack_allowlist", None),
+    )
+    with pytest.raises(Namel3ssError):
+        executor.run()
+    trace = _tool_trace(executor, "slugify text")
+    assert trace["decision"] == "blocked"
+    assert trace["reason"] == "pack_not_declared"
+    checks = _pack_permission_checks(executor)
+    assert any(
+        check.get("allowed") is False and check.get("reason") == "pack_not_declared" for check in checks
+    )
+
+
 def test_pack_policy_denied_trace_blocked(tmp_path: Path) -> None:
     pack_root = tmp_path / ".namel3ss" / "packs"
     pack_dir = _write_pack(

@@ -8,6 +8,7 @@ from namel3ss.ir import nodes as ir
 from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.runtime.executor.signals import _ReturnSignal
 from namel3ss.runtime.backend import studio_effect_adapter
+from namel3ss.runtime.backend.logical_clock import current_logical_time
 
 
 @dataclass
@@ -41,21 +42,31 @@ def update_job_triggers(ctx) -> None:
             enqueue_job(ctx, job_name, {}, line=job.line, column=job.column, reason="state_change")
 
 
-def enqueue_job(ctx, job_name: str, payload: object, *, line: int | None, column: int | None, reason: str | None = None) -> None:
+def enqueue_job(
+    ctx,
+    job_name: str,
+    payload: object,
+    *,
+    line: int | None,
+    column: int | None,
+    reason: str | None = None,
+    due_time: int | None = None,
+    order: int | None = None,
+) -> None:
     _require_jobs_capability(ctx, line=line, column=column)
-    job = ctx.jobs.get(job_name) if getattr(ctx, "jobs", None) else None
-    if job is None:
-        raise Namel3ssError(
-            build_guidance_message(
-                what=f"Unknown job '{job_name}'.",
-                why="Jobs must be declared before they are enqueued.",
-                fix="Declare the job in your app.ai file.",
-                example=f'job "{job_name}":\n  return "ok"',
-            ),
-            line=line,
-            column=column,
-        )
-    ctx.job_queue.append({"name": job_name, "payload": payload})
+    require_job(ctx, job_name, line=line, column=column)
+    if due_time is None:
+        due_time = current_logical_time(ctx)
+    if order is None:
+        order = next_job_order(ctx)
+    ctx.job_queue.append(
+        {
+            "name": job_name,
+            "payload": payload,
+            "due_time": int(due_time),
+            "order": int(order),
+        }
+    )
     reason_text = f" ({reason})" if reason else ""
     record_step(
         ctx,
@@ -71,6 +82,7 @@ def run_job_queue(ctx) -> None:
     if not getattr(ctx, "job_queue", None):
         return
     while ctx.job_queue:
+        ctx.job_queue.sort(key=_job_sort_key)
         entry = ctx.job_queue.pop(0)
         job_name = entry.get("name") if isinstance(entry, dict) else None
         payload = entry.get("payload") if isinstance(entry, dict) else None
@@ -163,6 +175,38 @@ def _evaluate_when(ctx, expr: ir.Expression) -> bool:
     return value
 
 
+def require_job(ctx, job_name: str, *, line: int | None, column: int | None) -> ir.JobDecl:
+    job = ctx.jobs.get(job_name) if getattr(ctx, "jobs", None) else None
+    if job is None:
+        raise Namel3ssError(
+            build_guidance_message(
+                what=f"Unknown job '{job_name}'.",
+                why="Jobs must be declared before they are enqueued.",
+                fix="Declare the job in your app.ai file.",
+                example=f'job "{job_name}":\n  return "ok"',
+            ),
+            line=line,
+            column=column,
+        )
+    return job
+
+
+def next_job_order(ctx) -> int:
+    current = getattr(ctx, "job_enqueue_counter", 0)
+    ctx.job_enqueue_counter = current + 1
+    return current
+
+
+def _job_sort_key(entry: dict) -> tuple[int, int, str]:
+    due_time = entry.get("due_time")
+    order = entry.get("order")
+    job_name = entry.get("name")
+    due_val = due_time if isinstance(due_time, int) else 0
+    order_val = order if isinstance(order, int) else 0
+    name_val = job_name if isinstance(job_name, str) else ""
+    return (due_val, order_val, name_val)
+
+
 def _require_jobs_capability(ctx, *, line: int | None, column: int | None) -> None:
     allowed = set(getattr(ctx, "capabilities", ()) or ())
     if "jobs" in allowed:
@@ -179,4 +223,12 @@ def _require_jobs_capability(ctx, *, line: int | None, column: int | None) -> No
     )
 
 
-__all__ = ["JobRequest", "enqueue_job", "initialize_job_triggers", "run_job_queue", "update_job_triggers"]
+__all__ = [
+    "JobRequest",
+    "enqueue_job",
+    "initialize_job_triggers",
+    "next_job_order",
+    "require_job",
+    "run_job_queue",
+    "update_job_triggers",
+]

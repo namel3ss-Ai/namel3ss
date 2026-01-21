@@ -223,6 +223,8 @@ def _format_expr(
         return "state." + ".".join(expr.path), _PREC_PRIMARY
     if isinstance(expr, ir.ToolCallExpr):
         return _format_tool_call(expr), _PREC_PRIMARY
+    if isinstance(expr, ir.BuiltinCallExpr):
+        return _format_builtin_call(expr), _PREC_PRIMARY
     if isinstance(expr, ir.CallFunctionExpr):
         return _format_function_call(expr), _PREC_PRIMARY
     if isinstance(expr, ir.ListExpr):
@@ -354,6 +356,13 @@ def _format_tool_call(expr: ir.ToolCallExpr) -> str:
         line = f"{arg.name} is {format_expression_canonical(arg.value)}"
         lines.extend(_indent_block(line))
     return "\n".join(lines)
+
+
+def _format_builtin_call(expr: ir.BuiltinCallExpr) -> str:
+    if not expr.arguments:
+        return f"{expr.name}()"
+    args = ", ".join(format_expression_canonical(arg) for arg in expr.arguments)
+    return f"{expr.name}({args})"
 
 
 def _format_function_call(expr: ir.CallFunctionExpr) -> str:

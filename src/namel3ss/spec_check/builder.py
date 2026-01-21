@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from namel3ss.ir.model.program import Program
+from namel3ss.ir import nodes as ir
 from namel3ss.spec_check.engine_map import ENGINE_SUPPORTED_SPECS, SPEC_CAPABILITIES
 from namel3ss.spec_check.model import SpecDecision, SpecPack
 from namel3ss.spec_check.normalize import normalize_decision, normalize_list, write_spec_artifacts
@@ -21,12 +22,22 @@ def derive_required_capabilities(program: Program) -> tuple[str, ...]:
         required.add("tools_v1")
     if program.jobs:
         required.add("jobs")
+    if _program_uses_scheduling(program):
+        required.add("scheduling")
+    if "scheduling" in program.capabilities:
+        required.add("scheduling")
+    if "uploads" in program.capabilities:
+        required.add("uploads")
     for tool in program.tools.values():
         kind = getattr(tool, "kind", None)
         if kind == "http":
             required.add("http")
         elif kind == "file":
             required.add("files")
+    if _program_uses_secrets(program):
+        required.add("secrets")
+    if "secrets" in program.capabilities:
+        required.add("secrets")
     if program.agents:
         required.add("agents_v1")
     if program.identity is not None:
@@ -34,6 +45,183 @@ def derive_required_capabilities(program: Program) -> tuple[str, ...]:
     if _theme_used(program):
         required.add("theme_v1")
     return tuple(sorted(required))
+
+
+def _program_uses_scheduling(program: Program) -> bool:
+    for flow in program.flows:
+        if _statements_use_scheduling(flow.body):
+            return True
+    for job in program.jobs:
+        if _statements_use_scheduling(job.body):
+            return True
+    return False
+
+
+def _statements_use_scheduling(statements: list[ir.Statement]) -> bool:
+    for stmt in statements:
+        if isinstance(stmt, ir.AdvanceTime):
+            return True
+        if isinstance(stmt, ir.EnqueueJob) and stmt.schedule_kind:
+            return True
+        if isinstance(stmt, ir.If):
+            if _statements_use_scheduling(stmt.then_body) or _statements_use_scheduling(stmt.else_body):
+                return True
+        if isinstance(stmt, ir.Repeat):
+            if _statements_use_scheduling(stmt.body):
+                return True
+        if isinstance(stmt, ir.RepeatWhile):
+            if _statements_use_scheduling(stmt.body):
+                return True
+        if isinstance(stmt, ir.ForEach):
+            if _statements_use_scheduling(stmt.body):
+                return True
+        if isinstance(stmt, ir.Match):
+            if any(_statements_use_scheduling(case.body) for case in stmt.cases):
+                return True
+            if stmt.otherwise and _statements_use_scheduling(stmt.otherwise):
+                return True
+        if isinstance(stmt, ir.TryCatch):
+            if _statements_use_scheduling(stmt.try_body) or _statements_use_scheduling(stmt.catch_body):
+                return True
+        if isinstance(stmt, ir.RunAgentsParallelStmt):
+            continue
+        if isinstance(stmt, ir.ParallelBlock):
+            if any(_statements_use_scheduling(task.body) for task in stmt.tasks):
+                return True
+    return False
+
+
+def _program_uses_secrets(program: Program) -> bool:
+    for flow in program.flows:
+        if _statements_use_secrets(flow.body):
+            return True
+    for job in program.jobs:
+        if _statements_use_secrets(job.body):
+            return True
+        if job.when is not None and _expression_uses_secrets(job.when):
+            return True
+    for func in program.functions.values():
+        if _statements_use_secrets(func.body):
+            return True
+    return False
+
+
+def _statements_use_secrets(statements: list[ir.Statement]) -> bool:
+    for stmt in statements:
+        if isinstance(stmt, (ir.Let, ir.Set, ir.Return)):
+            if _expression_uses_secrets(stmt.expression):
+                return True
+        if isinstance(stmt, ir.If):
+            if _expression_uses_secrets(stmt.condition):
+                return True
+            if _statements_use_secrets(stmt.then_body) or _statements_use_secrets(stmt.else_body):
+                return True
+        if isinstance(stmt, ir.Repeat):
+            if _expression_uses_secrets(stmt.count) or _statements_use_secrets(stmt.body):
+                return True
+        if isinstance(stmt, ir.RepeatWhile):
+            if _expression_uses_secrets(stmt.condition) or _statements_use_secrets(stmt.body):
+                return True
+        if isinstance(stmt, ir.ForEach):
+            if _expression_uses_secrets(stmt.iterable) or _statements_use_secrets(stmt.body):
+                return True
+        if isinstance(stmt, ir.Match):
+            if _expression_uses_secrets(stmt.expression):
+                return True
+            for case in stmt.cases:
+                if _expression_uses_secrets(case.pattern) or _statements_use_secrets(case.body):
+                    return True
+            if stmt.otherwise and _statements_use_secrets(stmt.otherwise):
+                return True
+        if isinstance(stmt, ir.TryCatch):
+            if _statements_use_secrets(stmt.try_body) or _statements_use_secrets(stmt.catch_body):
+                return True
+        if isinstance(stmt, ir.AskAIStmt):
+            if _expression_uses_secrets(stmt.input_expr):
+                return True
+        if isinstance(stmt, ir.RunAgentStmt):
+            if _expression_uses_secrets(stmt.input_expr):
+                return True
+        if isinstance(stmt, ir.RunAgentsParallelStmt):
+            if any(_expression_uses_secrets(entry.input_expr) for entry in stmt.entries):
+                return True
+        if isinstance(stmt, ir.ParallelBlock):
+            if any(_statements_use_secrets(task.body) for task in stmt.tasks):
+                return True
+        if isinstance(stmt, ir.Create):
+            if _expression_uses_secrets(stmt.values):
+                return True
+        if isinstance(stmt, ir.Find):
+            if _expression_uses_secrets(stmt.predicate):
+                return True
+        if isinstance(stmt, ir.Update):
+            if _expression_uses_secrets(stmt.predicate):
+                return True
+            if any(_expression_uses_secrets(update.expression) for update in stmt.updates):
+                return True
+        if isinstance(stmt, ir.Delete):
+            if _expression_uses_secrets(stmt.predicate):
+                return True
+        if isinstance(stmt, ir.EnqueueJob):
+            if stmt.input_expr is not None and _expression_uses_secrets(stmt.input_expr):
+                return True
+            if stmt.schedule_expr is not None and _expression_uses_secrets(stmt.schedule_expr):
+                return True
+        if isinstance(stmt, ir.AdvanceTime):
+            if _expression_uses_secrets(stmt.amount):
+                return True
+    return False
+
+
+def _expression_uses_secrets(expr: ir.Expression) -> bool:
+    if isinstance(expr, ir.BuiltinCallExpr):
+        if expr.name in {"secret", "auth_bearer", "auth_basic", "auth_header"}:
+            return True
+        return any(_expression_uses_secrets(arg) for arg in expr.arguments)
+    if isinstance(expr, ir.ToolCallExpr):
+        return any(_expression_uses_secrets(arg.value) for arg in expr.arguments)
+    if isinstance(expr, ir.CallFunctionExpr):
+        return any(_expression_uses_secrets(arg.value) for arg in expr.arguments)
+    if isinstance(expr, ir.UnaryOp):
+        return _expression_uses_secrets(expr.operand)
+    if isinstance(expr, ir.BinaryOp):
+        return _expression_uses_secrets(expr.left) or _expression_uses_secrets(expr.right)
+    if isinstance(expr, ir.Comparison):
+        return _expression_uses_secrets(expr.left) or _expression_uses_secrets(expr.right)
+    if isinstance(expr, ir.ListExpr):
+        return any(_expression_uses_secrets(item) for item in expr.items)
+    if isinstance(expr, ir.MapExpr):
+        return any(
+            _expression_uses_secrets(entry.key) or _expression_uses_secrets(entry.value)
+            for entry in expr.entries
+        )
+    if isinstance(expr, ir.ListOpExpr):
+        if _expression_uses_secrets(expr.target):
+            return True
+        if expr.value is not None and _expression_uses_secrets(expr.value):
+            return True
+        if expr.index is not None and _expression_uses_secrets(expr.index):
+            return True
+        return False
+    if isinstance(expr, ir.MapOpExpr):
+        if _expression_uses_secrets(expr.target):
+            return True
+        if expr.key is not None and _expression_uses_secrets(expr.key):
+            return True
+        if expr.value is not None and _expression_uses_secrets(expr.value):
+            return True
+        return False
+    if isinstance(expr, ir.ListMapExpr):
+        return _expression_uses_secrets(expr.target) or _expression_uses_secrets(expr.body)
+    if isinstance(expr, ir.ListFilterExpr):
+        return _expression_uses_secrets(expr.target) or _expression_uses_secrets(expr.predicate)
+    if isinstance(expr, ir.ListReduceExpr):
+        return (
+            _expression_uses_secrets(expr.target)
+            or _expression_uses_secrets(expr.start)
+            or _expression_uses_secrets(expr.body)
+        )
+    return False
 
 
 def build_spec_pack(

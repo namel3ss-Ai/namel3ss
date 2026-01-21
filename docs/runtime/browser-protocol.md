@@ -24,6 +24,15 @@ The App Runtime server that `n3 run` starts exposes a single browser protocol. T
 - Response mirrors the existing action response schema: `ok`, `state` snapshot, `revision`, and optional `overlay` and `error` keys for failures.
 - Errors are deterministic engine payloads; invalid bodies return an engine error payload with HTTP 400.
 
+### POST /api/upload
+- Accepts multipart form data or chunked upload bodies.
+- Stores uploads under the scoped runtime store and returns deterministic metadata.
+- Response includes `ok`, `upload`, and `traces` (upload received and stored).
+
+### GET /api/uploads
+- Returns `{"ok": true, "uploads": [...]}` with deterministic ordering.
+- Upload entries include logical name, size, checksum, and scoped stored path.
+
 ### GET /api/health
 - Returns `{"ok": true, "status": "ready", "mode": "<run|dev|preview>"}` with no timestamps.
 

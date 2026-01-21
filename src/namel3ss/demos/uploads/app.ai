@@ -1,0 +1,14 @@
+spec is "1.0"
+
+capabilities:
+  uploads
+
+flow "status":
+  return "Uploads demo is ready."
+
+page "home":
+  purpose is "Demo for uploads using the external UI."
+  title is "Uploads"
+  text is "Open the external UI to upload files and list stored uploads."
+  button "Show status":
+    calls flow "status"

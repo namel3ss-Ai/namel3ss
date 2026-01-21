@@ -7,6 +7,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.backend import studio_effect_adapter
+from namel3ss.runtime.secrets_store import SecretValue
 from namel3ss.runtime.tools.schema_validate import validate_tool_fields
 from namel3ss.utils.numbers import is_number
 from namel3ss_safeio import safe_urlopen
@@ -42,16 +43,19 @@ def execute_http_tool(
     headers = _read_headers(payload, line=line, column=column)
     timeout_seconds = _read_timeout(payload, line=line, column=column)
     body = _read_body(payload, method=method, line=line, column=column)
+    send_headers, trace_headers, secret_names = _resolve_headers(headers)
+    if secret_names:
+        _require_secrets_capability(ctx, line=line, column=column)
     trace_event = studio_effect_adapter.record_http_request(
         ctx,
         tool_name=tool.name,
         method=method,
         url=url,
-        headers=headers,
+        headers=trace_headers,
         body=body,
     )
     try:
-        req = request.Request(url, method=method, headers=_header_dict(headers), data=None)
+        req = request.Request(url, method=method, headers=_header_dict(send_headers), data=None)
         with safe_urlopen(req, timeout=timeout_seconds) as resp:
             status = int(getattr(resp, "status", None) or resp.getcode())
             raw = resp.read()
@@ -195,7 +199,9 @@ def _read_headers(payload: dict, *, line: int | None, column: int | None) -> lis
     for key, raw in value.items():
         if not isinstance(key, str) or not isinstance(raw, str):
             raise Namel3ssError("HTTP headers must be string keys and values", line=line, column=column)
-        headers.append({"name": key.strip(), "value": raw.strip()})
+        header_name = key.strip()
+        header_value = raw if isinstance(raw, SecretValue) else raw.strip()
+        headers.append({"name": header_name, "value": header_value})
     return _sorted_headers(headers)
 
 
@@ -255,6 +261,43 @@ def _sorted_headers(items) -> list[dict]:
 
 def _header_dict(headers: list[dict]) -> dict[str, str]:
     return {entry["name"]: entry["value"] for entry in headers}
+
+
+def _resolve_headers(headers: list[dict]) -> tuple[list[dict], list[dict], set[str]]:
+    send_headers: list[dict] = []
+    trace_headers: list[dict] = []
+    secret_names: set[str] = set()
+    for header in headers:
+        name = header.get("name") if isinstance(header, dict) else None
+        value = header.get("value") if isinstance(header, dict) else None
+        if not isinstance(name, str) or not isinstance(value, str):
+            continue
+        if isinstance(value, SecretValue):
+            secret_names.update(value.secret_names)
+            send_value = value.secret_value
+            trace_value = str(value)
+        else:
+            send_value = value
+            trace_value = value
+        send_headers.append({"name": name, "value": send_value})
+        trace_headers.append({"name": name, "value": trace_value})
+    return send_headers, trace_headers, secret_names
+
+
+def _require_secrets_capability(ctx, *, line: int | None, column: int | None) -> None:
+    allowed = set(getattr(ctx, "capabilities", ()) or ())
+    if "secrets" in allowed:
+        return
+    raise Namel3ssError(
+        build_guidance_message(
+            what="Secrets capability is not enabled.",
+            why="Secrets are deny-by-default and must be explicitly allowed.",
+            fix="Add 'secrets' to the capabilities block in app.ai.",
+            example="capabilities:\n  secrets",
+        ),
+        line=line,
+        column=column,
+    )
 
 
 def _require_field(fields: dict[str, ir.ToolField], name: str, tool_name: str, *, line: int | None, column: int | None) -> None:

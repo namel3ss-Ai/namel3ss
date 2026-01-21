@@ -8,6 +8,7 @@ import pytest
 from namel3ss.config.loader import load_config
 from namel3ss.config.model import AppConfig
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.runtime.packs.authoring_sign import sign_pack
 from namel3ss.runtime.executor import Executor
 from namel3ss.runtime.packs.ops import enable_pack, verify_pack
 from namel3ss.runtime.packs.trust_store import TrustedKey, add_trusted_key
@@ -186,6 +187,11 @@ def test_local_pack_resolves(tmp_path: Path) -> None:
         "    secrets: []\n",
         encoding="utf-8",
     )
+    key_text = "example-secret"
+    key_path = tmp_path / "example.key"
+    key_path.write_text(key_text, encoding="utf-8")
+    sign_pack(pack_dir, key_id="example.key", private_key_path=key_path)
+    add_trusted_key(tmp_path, TrustedKey(key_id="example.key", public_key=key_text))
     config = AppConfig()
     resolved = resolve_tool_binding(
         tmp_path,

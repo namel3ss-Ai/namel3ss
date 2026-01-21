@@ -174,3 +174,10 @@ class ThemeChange(Statement):
 class EnqueueJob(Statement):
     job_name: str
     input_expr: Expression | None = None
+    schedule_kind: str | None = None
+    schedule_expr: Expression | None = None
+
+
+@dataclass
+class AdvanceTime(Statement):
+    amount: Expression

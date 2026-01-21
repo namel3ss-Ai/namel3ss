@@ -141,6 +141,16 @@ def _lower_statement(stmt: ast.Statement) -> list[ast.Statement]:
             ast.EnqueueJob(
                 job_name=stmt.job_name,
                 input_expr=_lower_expression(stmt.input_expr) if stmt.input_expr else None,
+                schedule_kind=stmt.schedule_kind,
+                schedule_expr=_lower_expression(stmt.schedule_expr) if stmt.schedule_expr else None,
+                line=stmt.line,
+                column=stmt.column,
+            )
+        ]
+    if isinstance(stmt, ast.AdvanceTime):
+        return [
+            ast.AdvanceTime(
+                amount=_lower_expression(stmt.amount),
                 line=stmt.line,
                 column=stmt.column,
             )

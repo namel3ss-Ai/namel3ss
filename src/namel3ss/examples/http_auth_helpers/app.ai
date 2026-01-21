@@ -1,0 +1,30 @@
+spec is "1.0"
+
+capabilities:
+  http
+  secrets
+
+tool "fetch status":
+  implemented using http
+
+  input:
+    url is text
+    headers is optional json
+
+  output:
+    status is number
+    body is text
+
+flow "fetch_with_auth":
+  let headers is auth_bearer(secret("example_key"))
+  let response is fetch status:
+    url is "https://example.com"
+    headers is headers
+  return response
+
+page "home":
+  purpose is "Single-concept example of HTTP auth helpers with secrets."
+  title is "HTTP Auth Helpers"
+  text is "Use auth helpers with secret() to build authorization headers."
+  button "Fetch with auth":
+    calls flow "fetch_with_auth"

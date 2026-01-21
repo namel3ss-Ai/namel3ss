@@ -6,3 +6,6 @@ author: "Namel3ss"
 license: "MIT"
 tools:
   - "compose greeting"
+signer_id: "example.key"
+signed_at: "not_recorded"
+digest: "sha256:c7295165215b720d7f44bdf623600ae0d5046dc285a6511f6ad4adf867a6ff81"

@@ -14,6 +14,8 @@ from namel3ss.runtime.executor.expr.lists import (
     eval_map_op_expr,
 )
 from namel3ss.runtime.executor.expr.ops import eval_binary_op, eval_comparison, eval_unary_op
+from namel3ss.runtime.backend.http_auth_helpers import auth_basic, auth_bearer, auth_header
+from namel3ss.runtime.secrets_store import SecretValue, resolve_secret_value
 from namel3ss.runtime.tools.executor import execute_tool_call
 from namel3ss.runtime.values.coerce import require_type
 from namel3ss.runtime.values.types import type_name_for_value
@@ -111,6 +113,8 @@ def evaluate_expression(
             column=expr.column,
         )
         return outcome.result_value
+    if isinstance(expr, ir.BuiltinCallExpr):
+        return _evaluate_builtin_call(ctx, expr, collector)
     if isinstance(expr, ir.ListExpr):
         return [evaluate_expression(ctx, item, collector) for item in expr.items]
     if isinstance(expr, ir.MapExpr):
@@ -166,12 +170,122 @@ def resolve_state_path(ctx: ExecutionContext, expr: ir.StatePath) -> object:
     return cursor
 
 
+def _evaluate_builtin_call(
+    ctx: ExecutionContext,
+    expr: ir.BuiltinCallExpr,
+    collector: ExpressionExplainCollector | None = None,
+) -> object:
+    name = expr.name
+    if name == "secret":
+        _require_capability(ctx, "secrets", line=expr.line, column=expr.column)
+        _require_arg_count(expr, 1)
+        value = evaluate_expression(ctx, expr.arguments[0], collector)
+        if isinstance(value, SecretValue) or not isinstance(value, str):
+            raise Namel3ssError(
+                build_guidance_message(
+                    what="Secret name must be text.",
+                    why="Secrets are referenced by name.",
+                    fix="Pass a string name.",
+                    example='secret("stripe_key")',
+                ),
+                line=expr.line,
+                column=expr.column,
+            )
+        normalized, secret_value = resolve_secret_value(value, project_root=ctx.project_root, app_path=ctx.app_path)
+        return SecretValue(
+            f"[redacted: {normalized}]",
+            secret_names=(normalized,),
+            secret_value=secret_value,
+        )
+    if name == "auth_bearer":
+        _require_capability(ctx, "http", line=expr.line, column=expr.column)
+        _require_capability(ctx, "secrets", line=expr.line, column=expr.column)
+        _require_arg_count(expr, 1)
+        token = evaluate_expression(ctx, expr.arguments[0], collector)
+        return auth_bearer(token)
+    if name == "auth_basic":
+        _require_capability(ctx, "http", line=expr.line, column=expr.column)
+        _require_capability(ctx, "secrets", line=expr.line, column=expr.column)
+        _require_arg_count(expr, 2)
+        user = evaluate_expression(ctx, expr.arguments[0], collector)
+        password = evaluate_expression(ctx, expr.arguments[1], collector)
+        return auth_basic(user, password)
+    if name == "auth_header":
+        _require_capability(ctx, "http", line=expr.line, column=expr.column)
+        _require_capability(ctx, "secrets", line=expr.line, column=expr.column)
+        _require_arg_count(expr, 2)
+        header_name = evaluate_expression(ctx, expr.arguments[0], collector)
+        if not isinstance(header_name, str):
+            raise Namel3ssError(
+                build_guidance_message(
+                    what="Header name must be text.",
+                    why="Auth headers use a text header name.",
+                    fix="Pass a header name string.",
+                    example='auth_header("X-API-Key", secret("stripe_key"))',
+                ),
+                line=expr.line,
+                column=expr.column,
+            )
+        secret_value = evaluate_expression(ctx, expr.arguments[1], collector)
+        return auth_header(header_name, secret_value)
+    raise Namel3ssError(
+        build_guidance_message(
+            what=f"Unknown builtin '{name}'.",
+            why="Only secret and auth helper calls are supported here.",
+            fix="Use secret(), auth_bearer(), auth_basic(), or auth_header().",
+            example='auth_bearer(secret("stripe_key"))',
+        ),
+        line=expr.line,
+        column=expr.column,
+    )
+
+
 def _identity_attribute_message(attr: str) -> str:
     return build_guidance_message(
         what=f"Identity is missing '{attr}'.",
         why="The app referenced identity data that was not provided.",
         fix="Provide the field via N3_IDENTITY_* or N3_IDENTITY_JSON.",
         example="N3_IDENTITY_EMAIL=dev@example.com",
+    )
+
+
+def _require_arg_count(expr: ir.BuiltinCallExpr, expected: int) -> None:
+    if len(expr.arguments) == expected:
+        return
+    raise Namel3ssError(
+        build_guidance_message(
+            what=f"{expr.name} expects {expected} arguments.",
+            why="Builtin calls use positional arguments.",
+            fix="Match the expected argument count.",
+            example=_builtin_example(expr.name),
+        ),
+        line=expr.line,
+        column=expr.column,
+    )
+
+
+def _builtin_example(name: str) -> str:
+    return {
+        "secret": 'secret("stripe_key")',
+        "auth_bearer": 'auth_bearer(secret("stripe_key"))',
+        "auth_basic": 'auth_basic(secret("api_user"), secret("api_password"))',
+        "auth_header": 'auth_header("X-API-Key", secret("stripe_key"))',
+    }.get(name, 'secret("stripe_key")')
+
+
+def _require_capability(ctx: ExecutionContext, capability: str, *, line: int | None, column: int | None) -> None:
+    allowed = set(getattr(ctx, "capabilities", ()) or ())
+    if capability in allowed:
+        return
+    raise Namel3ssError(
+        build_guidance_message(
+            what=f"{capability.capitalize()} capability is not enabled.",
+            why="Capabilities are deny-by-default and must be explicitly allowed.",
+            fix=f"Add '{capability}' to the capabilities block in app.ai.",
+            example=f"capabilities:\n  {capability}",
+        ),
+        line=line,
+        column=column,
     )
 
 

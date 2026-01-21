@@ -4,6 +4,7 @@ import json
 import os
 
 from namel3ss.config.model import AppConfig
+from namel3ss.runtime.secrets_store import SecretValue
 
 
 _SECRET_ALIASES = {
@@ -27,11 +28,12 @@ def normalize_secret_name(name: str) -> str | None:
 
 
 def secret_names_in_payload(payload: object, config: AppConfig | None) -> set[str]:
+    names = _secret_names_from_payload(payload)
     value_index = _secret_value_index(config)
     if not value_index:
-        return set()
+        return names
     text = _payload_text(payload)
-    hits: set[str] = set()
+    hits: set[str] = set(names)
     for value, names in value_index.items():
         if value and value in text:
             hits.update(names)
@@ -69,6 +71,22 @@ def _payload_text(payload: object) -> str:
 def _assign(target: dict[str, str], key: str, value: str | None) -> None:
     if value:
         target.setdefault(key, value)
+
+
+def _secret_names_from_payload(payload: object) -> set[str]:
+    if isinstance(payload, SecretValue):
+        return set(payload.secret_names)
+    if isinstance(payload, dict):
+        names: set[str] = set()
+        for value in payload.values():
+            names.update(_secret_names_from_payload(value))
+        return names
+    if isinstance(payload, list):
+        names: set[str] = set()
+        for item in payload:
+            names.update(_secret_names_from_payload(item))
+        return names
+    return set()
 
 
 __all__ = ["normalize_secret_name", "secret_names_in_payload"]

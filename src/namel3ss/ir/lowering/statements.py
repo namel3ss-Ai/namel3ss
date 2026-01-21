@@ -5,6 +5,7 @@ from namel3ss.ir.lowering.expressions import _lower_assignable, _lower_expressio
 from namel3ss.ir.model.agents import AgentMergePolicy, ParallelAgentEntry, RunAgentStmt, RunAgentsParallelStmt
 from namel3ss.ir.model.ai import AskAIStmt
 from namel3ss.ir.model.statements import (
+    AdvanceTime,
     Create,
     Delete,
     EnqueueJob,
@@ -191,6 +192,14 @@ def _lower_statement(stmt: ast.Statement, agents) -> IRStatement:
         return EnqueueJob(
             job_name=stmt.job_name,
             input_expr=_lower_expression(stmt.input_expr) if stmt.input_expr else None,
+            schedule_kind=stmt.schedule_kind,
+            schedule_expr=_lower_expression(stmt.schedule_expr) if stmt.schedule_expr else None,
+            line=stmt.line,
+            column=stmt.column,
+        )
+    if isinstance(stmt, ast.AdvanceTime):
+        return AdvanceTime(
+            amount=_lower_expression(stmt.amount),
             line=stmt.line,
             column=stmt.column,
         )
