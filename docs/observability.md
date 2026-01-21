@@ -1,6 +1,6 @@
 # Observability
 
-Deterministic logging, tracing, and metrics for namel3ss. Outputs are structured, ordered, and scrubbed for safety.
+Deterministic logging, tracing, and metrics for namel3ss. Observability is a first-class explanation system, not debug logging. Outputs are structured, ordered, and scrubbed for safety.
 
 ## Structured logging
 Use `log` statements to emit structured events from flows and jobs.
@@ -45,9 +45,9 @@ Timings use logical steps. Automatic timings are recorded for actions, jobs, and
 
 ## Storage
 Runtime output is stored under:
-- `.namel3ss/observability/logs.json`
-- `.namel3ss/observability/trace.json`
-- `.namel3ss/observability/metrics.json`
+- `.namel3ss/observability/logs/logs.json`
+- `.namel3ss/observability/traces/trace.json`
+- `.namel3ss/observability/metrics/metrics.json`
 
 ## Redaction and determinism
 - Secrets are replaced with `***REDACTED***`.
@@ -59,7 +59,8 @@ Studio surfaces Logs, Tracing, and Metrics in dedicated panels alongside other e
 
 ## Runtime endpoints
 - `GET /api/logs` returns `ok`, `count`, and `logs`.
-- `GET /api/trace` returns `ok`, `count`, and `spans`.
+- `GET /api/traces` returns `ok`, `count`, and `spans`.
 - `GET /api/metrics` returns `ok`, `counters`, and `timings`.
+- `GET /api/trace` is retained for compatibility.
 
 All payloads are structured, scrubbed, and ordered.

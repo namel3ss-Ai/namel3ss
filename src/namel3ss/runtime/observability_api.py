@@ -24,6 +24,10 @@ def get_trace_payload(project_root: str | Path | None, app_path: str | Path | No
     return {"ok": True, "count": len(spans), "spans": spans}
 
 
+def get_traces_payload(project_root: str | Path | None, app_path: str | Path | None) -> dict:
+    return get_trace_payload(project_root, app_path)
+
+
 def get_metrics_payload(project_root: str | Path | None, app_path: str | Path | None) -> dict:
     scrub = _scrubber(project_root, app_path)
     metrics = read_metrics(project_root, app_path)
@@ -50,4 +54,4 @@ def _scrubber(project_root: str | Path | None, app_path: str | Path | None):
     return _scrub
 
 
-__all__ = ["get_logs_payload", "get_metrics_payload", "get_trace_payload"]
+__all__ = ["get_logs_payload", "get_metrics_payload", "get_trace_payload", "get_traces_payload"]

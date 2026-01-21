@@ -4,8 +4,9 @@ from pathlib import Path
 def test_build_docs_contract() -> None:
     text = Path("docs/targets-and-promotion.md").read_text(encoding="utf-8")
     required = [
-        "build/<target>/<build_id>",
+        ".namel3ss/build/<target>/<build_id>",
         "build.json",
+        "entry.json",
         "manifest.json",
         "schema/records.json",
         "web/",

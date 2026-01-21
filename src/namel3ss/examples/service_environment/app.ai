@@ -1,0 +1,14 @@
+spec is "1.0"
+
+# Example: service environment configuration
+
+flow "health_check":
+  log info "service check"
+  return "ok"
+
+page "home":
+  title is "Service Environment"
+  card "Status":
+    text is "Use this example to validate environment configuration."
+    button "Check":
+      calls flow "health_check"

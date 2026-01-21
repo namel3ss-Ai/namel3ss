@@ -6,6 +6,7 @@ from pathlib import Path
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.utils.path_display import display_path_hint
 
 
 REGISTRY_ENTRY_SCHEMA_PATH = Path(__file__).resolve().parents[4] / "resources" / "registry_entry_v1.json"
@@ -15,11 +16,14 @@ REQUIRED_FIELDS = {
     "pack_name",
     "pack_version",
     "pack_digest",
+    "intent_text",
+    "risk",
     "verified_by",
     "tools",
     "intent_tags",
     "intent_phrases",
     "capabilities",
+    "signature",
     "runner",
     "source",
 }
@@ -32,8 +36,11 @@ class RegistryEntry:
     pack_name: str
     pack_version: str
     pack_digest: str
+    intent_text: str
+    risk: str
     signer_id: str | None
     verified_by: list[str]
+    signature: dict[str, object]
     tools: list[str]
     intent_tags: list[str]
     intent_phrases: list[str]
@@ -49,8 +56,11 @@ class RegistryEntry:
             "pack_name": self.pack_name,
             "pack_version": self.pack_version,
             "pack_digest": self.pack_digest,
+            "intent_text": self.intent_text,
+            "risk": self.risk,
             "signer_id": self.signer_id,
             "verified_by": list(self.verified_by),
+            "signature": dict(self.signature),
             "tools": list(self.tools),
             "intent_tags": list(self.intent_tags),
             "intent_phrases": list(self.intent_phrases),
@@ -66,10 +76,11 @@ class RegistryEntry:
 def load_registry_entry_schema(path: Path | None = None) -> dict:
     target = path or REGISTRY_ENTRY_SCHEMA_PATH
     if not target.exists():
+        safe_path = display_path_hint(target)
         raise Namel3ssError(
             build_guidance_message(
                 what="Registry entry schema is missing.",
-                why=f"Expected {target.as_posix()} to exist.",
+                why=f"Expected {safe_path} to exist.",
                 fix="Restore resources/registry_entry_v1.json.",
                 example="resources/registry_entry_v1.json",
             )
@@ -103,6 +114,12 @@ def normalize_registry_entry(data: dict[str, object]) -> dict[str, object]:
         value = normalized.get(key)
         if isinstance(value, list):
             normalized[key] = sorted(str(item) for item in value)
+    signature = normalized.get("signature")
+    if isinstance(signature, dict):
+        normalized["signature"] = {
+            "status": str(signature.get("status") or "unverified"),
+            "algorithm": str(signature.get("algorithm")) if signature.get("algorithm") else None,
+        }
     capabilities = normalized.get("capabilities")
     if isinstance(capabilities, dict):
         secrets = capabilities.get("secrets")
@@ -135,11 +152,21 @@ def validate_registry_entry(data: dict[str, object]) -> list[str]:
     for key in ("pack_id", "pack_name", "pack_version", "pack_digest"):
         if not _is_str(data.get(key)):
             errors.append(f"{key} must be a string")
+    if not _is_str(data.get("intent_text")):
+        errors.append("intent_text must be a string")
+    risk = data.get("risk")
+    if not _is_str(risk) or risk not in {"low", "medium", "high"}:
+        errors.append("risk must be low, medium, or high")
     signer = data.get("signer_id")
     if signer is not None and not _is_str(signer):
         errors.append("signer_id must be a string or null")
     if not _is_str_list(data.get("verified_by")):
         errors.append("verified_by must be a list of strings")
+    signature = data.get("signature")
+    if not isinstance(signature, dict):
+        errors.append("signature must be an object")
+    else:
+        errors.extend(_validate_signature(signature))
     for key in ("tools", "intent_tags", "intent_phrases"):
         if not _is_str_list(data.get(key)):
             errors.append(f"{key} must be a list of strings")
@@ -217,6 +244,17 @@ def _validate_source(source: dict[str, object]) -> list[str]:
         errors.append("source.kind must be a string")
     if not _is_str(uri):
         errors.append("source.uri must be a string")
+    return errors
+
+
+def _validate_signature(signature: dict[str, object]) -> list[str]:
+    errors: list[str] = []
+    status = signature.get("status")
+    if not _is_str(status) or status not in {"verified", "unverified", "unsigned", "invalid"}:
+        errors.append("signature.status must be verified, unverified, unsigned, or invalid")
+    algorithm = signature.get("algorithm")
+    if algorithm is not None and not _is_str(algorithm):
+        errors.append("signature.algorithm must be a string or null")
     return errors
 
 

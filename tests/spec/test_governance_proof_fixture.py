@@ -17,7 +17,7 @@ def test_spec_program_build_metadata_present() -> None:
             continue
         target = str(meta.get("target", "local"))
         app_root = spec_path.parent
-        build_root = app_root / "build" / target
+        build_root = app_root / ".namel3ss" / "build" / target
         app_path = app_root / "app.ai"
         _assert_build_metadata(build_root, app_path, target, repo_root=root)
 

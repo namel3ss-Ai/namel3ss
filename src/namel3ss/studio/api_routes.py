@@ -27,7 +27,14 @@ from namel3ss.studio.formulas_api import get_formulas_payload
 from namel3ss.studio.state_api import get_state_payload
 from namel3ss.studio.routes.core import handle_action
 from namel3ss.studio.why_api import get_why_payload
-from namel3ss.runtime.observability_api import get_logs_payload, get_metrics_payload, get_trace_payload
+from namel3ss.studio.registry_api import get_registry_payload
+from namel3ss.studio.deploy_api import get_build_payload_from_source, get_deploy_payload_from_source
+from namel3ss.runtime.observability_api import (
+    get_logs_payload,
+    get_metrics_payload,
+    get_trace_payload,
+    get_traces_payload,
+)
 from namel3ss.runtime.auth.auth_routes import handle_login, handle_logout, handle_session
 from namel3ss.runtime.data.studio_adapters import (
     get_data_status_payload,
@@ -69,6 +76,10 @@ def handle_api_get(handler: Any) -> None:
         payload = get_logs_payload(handler.server.project_root, handler.server.app_path)  # type: ignore[attr-defined]
         handler._respond_json(payload, status=200)
         return
+    if handler.path == "/api/traces":
+        payload = get_traces_payload(handler.server.project_root, handler.server.app_path)  # type: ignore[attr-defined]
+        handler._respond_json(payload, status=200)
+        return
     if handler.path == "/api/trace":
         payload = get_trace_payload(handler.server.project_root, handler.server.app_path)  # type: ignore[attr-defined]
         handler._respond_json(payload, status=200)
@@ -76,6 +87,12 @@ def handle_api_get(handler: Any) -> None:
     if handler.path == "/api/metrics":
         payload = get_metrics_payload(handler.server.project_root, handler.server.app_path)  # type: ignore[attr-defined]
         handler._respond_json(payload, status=200)
+        return
+    if handler.path == "/api/build":
+        _respond_with_source(handler, source, get_build_payload_from_source, kind="build", include_app_path=True)
+        return
+    if handler.path == "/api/deploy":
+        _respond_with_source(handler, source, get_deploy_payload_from_source, kind="deploy", include_app_path=True)
         return
     if handler.path == "/api/actions":
         _respond_with_source(handler, source, get_actions_payload, kind="manifest", include_app_path=True)
@@ -162,6 +179,9 @@ def handle_api_post(handler: Any) -> None:
         return
     if handler.path == "/api/agent/memory_packs":
         _respond_post(handler, source, body, update_memory_packs_wrapper, kind="agent", include_session=True, include_app_path=True)
+        return
+    if handler.path == "/api/registry":
+        _respond_post(handler, source, body, get_registry_payload, kind="registry", include_app_path=True)
         return
     handler.send_error(404)
 

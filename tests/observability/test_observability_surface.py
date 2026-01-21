@@ -3,12 +3,18 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from namel3ss.beta_lock.repo_clean import repo_dirty_entries
 from namel3ss.module_loader import load_project
 from namel3ss.observability.log_store import read_logs
 from namel3ss.observability.metrics_store import read_metrics
 from namel3ss.observability.trace_store import read_spans
 from namel3ss.runtime.executor import execute_program_flow
-from namel3ss.runtime.observability_api import get_logs_payload, get_metrics_payload, get_trace_payload
+from namel3ss.runtime.observability_api import (
+    get_logs_payload,
+    get_metrics_payload,
+    get_trace_payload,
+    get_traces_payload,
+)
 
 
 def _build_source(secret_value: str, path_value: str) -> str:
@@ -65,9 +71,13 @@ def test_logs_metrics_spans_are_scrubbed_and_stable(tmp_path: Path, monkeypatch)
     assert logs[1].get("id") == "log:0002"
     assert logs[0].get("fields", {}).get("token") == "***REDACTED***"
     assert logs[0].get("fields", {}).get("path") == "<path>"
+    log_ids = [entry.get("id") for entry in logs]
+    assert log_ids == sorted(log_ids)
 
     assert spans[0].get("id") == "span:0001"
     assert spans[0].get("status") == "ok"
+    span_ids = [entry.get("id") for entry in spans]
+    assert span_ids == sorted(span_ids)
 
     counter_names = {entry.get("name") for entry in metrics.get("counters", [])}
     timing_names = {entry.get("name") for entry in metrics.get("timings", [])}
@@ -80,6 +90,10 @@ def test_logs_metrics_spans_are_scrubbed_and_stable(tmp_path: Path, monkeypatch)
     label_values = set(str(val) for entry in labeled for val in entry.get("labels", {}).values())
     assert "***REDACTED***" in label_values
     assert "<path>" in label_values
+    counters = metrics.get("counters", [])
+    timings = metrics.get("timings", [])
+    assert counters == sorted(counters, key=_metric_sort_key)
+    assert timings == sorted(timings, key=_metric_sort_key)
 
     _run_app(tmp_path, secret_value, path_value)
     logs_again = read_logs(tmp_path, app_file)
@@ -98,12 +112,41 @@ def test_observability_endpoints_payloads(tmp_path: Path, monkeypatch) -> None:
 
     logs_payload = get_logs_payload(tmp_path, app_file)
     trace_payload = get_trace_payload(tmp_path, app_file)
+    traces_payload = get_traces_payload(tmp_path, app_file)
     metrics_payload = get_metrics_payload(tmp_path, app_file)
 
     assert logs_payload.get("ok") is True
     assert trace_payload.get("ok") is True
+    assert traces_payload.get("ok") is True
     assert metrics_payload.get("ok") is True
+    assert logs_payload.get("count") == len(logs_payload.get("logs", []))
+    assert trace_payload.get("count") == len(trace_payload.get("spans", []))
+    assert traces_payload.get("count") == len(traces_payload.get("spans", []))
+    assert isinstance(metrics_payload.get("counters"), list)
+    assert isinstance(metrics_payload.get("timings"), list)
+    assert trace_payload == traces_payload
 
     _assert_scrubbed(logs_payload, secret_value, path_value)
     _assert_scrubbed(trace_payload, secret_value, path_value)
+    _assert_scrubbed(traces_payload, secret_value, path_value)
     _assert_scrubbed(metrics_payload, secret_value, path_value)
+
+
+def test_observability_repo_clean(tmp_path: Path, monkeypatch) -> None:
+    root = Path(__file__).resolve().parents[2]
+    baseline = set(repo_dirty_entries(root))
+    secret_value = "sk-test-secret"
+    monkeypatch.setenv("OPENAI_API_KEY", secret_value)
+    path_value = (tmp_path / "secrets.txt").as_posix()
+    _run_app(tmp_path, secret_value, path_value)
+    dirty = set(repo_dirty_entries(root))
+    assert dirty == baseline
+
+
+def _metric_sort_key(entry: dict) -> tuple:
+    name = str(entry.get("name", ""))
+    labels = entry.get("labels", {})
+    if not isinstance(labels, dict):
+        labels = {}
+    label_key = tuple((str(key), str(labels.get(key))) for key in sorted(labels.keys(), key=lambda item: str(item)))
+    return (name, label_key)

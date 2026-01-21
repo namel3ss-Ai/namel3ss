@@ -112,7 +112,7 @@
   async function refreshTracing() {
     if (!net || typeof net.fetchJson !== "function") return;
     try {
-      const payload = await net.fetchJson("/api/trace");
+      const payload = await net.fetchJson("/api/traces");
       const spans = payload && Array.isArray(payload.spans) ? payload.spans : [];
       if (state && typeof state.setCachedSpans === "function") {
         state.setCachedSpans(spans);

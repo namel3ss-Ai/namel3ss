@@ -62,7 +62,7 @@ def _render_build_report(payload: dict) -> str:
         ui_entries = [ui_paths.get("ui"), ui_paths.get("actions"), ui_paths.get("schema")]
         ui_entries = [entry for entry in ui_entries if entry]
         lines.append(f"- ui contract: {', '.join(ui_entries)}")
-    for key in ("program", "config", "lock_snapshot", "program_summary", "web"):
+    for key in ("program", "config", "lock_snapshot", "program_summary", "entry_instructions", "web"):
         value = artifacts.get(key)
         if value:
             lines.append(f"- {key.replace('_', ' ')}: {value}")

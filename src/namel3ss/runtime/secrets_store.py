@@ -116,4 +116,16 @@ def _load_secret_file(*, project_root: str | None, app_path: str | None) -> dict
     return normalized
 
 
-__all__ = ["SECRET_ENV_PREFIXES", "SECRETS_FILENAME", "SecretValue", "normalize_secret_name", "resolve_secret_value"]
+def list_secret_keys(*, project_root: str | None, app_path: str | None) -> list[str]:
+    secrets = _load_secret_file(project_root=project_root, app_path=app_path)
+    return sorted(secrets.keys())
+
+
+__all__ = [
+    "SECRET_ENV_PREFIXES",
+    "SECRETS_FILENAME",
+    "SecretValue",
+    "list_secret_keys",
+    "normalize_secret_name",
+    "resolve_secret_value",
+]

@@ -81,7 +81,7 @@ flow "update_order": audited requires identity.role is "admin"
 Record schemas are snapshotted deterministically for compatibility checks:
 
 - Runtime snapshot: `.namel3ss/schema/last.json`
-- Build snapshot: `build/<target>/<build_id>/schema/records.json`
+- Build snapshot: `.namel3ss/build/<target>/<build_id>/schema/records.json`
 
 `n3 check` warns when the current schema is incompatible with the stored snapshot.
 `n3 build` fails on breaking changes, and the runtime refuses to start when persistence is enabled.

@@ -6,7 +6,7 @@ def test_schema_evolution_doc_contract() -> None:
     required = [
         "Schema evolution and data contracts",
         ".namel3ss/schema/last.json",
-        "build/<target>/<build_id>/schema/records.json",
+        ".namel3ss/build/<target>/<build_id>/schema/records.json",
         "Add a new optional field",
         "Change a field type",
         'view of "<Record>"',

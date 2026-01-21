@@ -64,13 +64,24 @@ The App Runtime server that `n3 run` starts exposes a single browser protocol. T
 - Returns `{"ok": true, "count": <number>, "logs": [...]}` with deterministic ordering.
 - Logs are structured events with stable ids, levels, messages, and optional fields.
 
-### GET /api/trace
+### GET /api/traces
 - Returns `{"ok": true, "count": <number>, "spans": [...]}` with deterministic ordering.
 - Spans include stable ids, names, parent relationships, status, and step ranges.
+
+### GET /api/trace
+- Compatibility alias for `/api/traces`.
 
 ### GET /api/metrics
 - Returns `{"ok": true, "counters": [...], "timings": [...]}` with deterministic ordering.
 - Counters and timings include stable labels and step-based timing data.
+
+### GET /api/build
+- Returns build summaries for each target, including build id, location, and entry instructions.
+- Ordering is deterministic; no host paths or secrets appear.
+
+### GET /api/deploy
+- Returns deployment state, including active build, last ship, and rollback availability.
+- Includes a redacted environment summary with required vs optional keys and guidance.
 
 ### GET /api/health
 - Returns `{"ok": true, "status": "ready", "mode": "<run|dev|preview>"}` with no timestamps.

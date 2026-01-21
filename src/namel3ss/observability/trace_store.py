@@ -8,11 +8,19 @@ from namel3ss.determinism import canonical_json_dump
 from namel3ss.runtime.persistence_paths import resolve_persistence_root
 
 
+TRACE_DIRNAME = "traces"
 TRACE_FILENAME = "trace.json"
 
 
 def trace_path(project_root: str | Path | None, app_path: str | Path | None) -> Path | None:
     root = resolve_persistence_root(project_root, app_path, allow_create=True)
+    if root is None:
+        return None
+    return Path(root) / ".namel3ss" / "observability" / TRACE_DIRNAME / TRACE_FILENAME
+
+
+def _legacy_trace_path(project_root: str | Path | None, app_path: str | Path | None) -> Path | None:
+    root = resolve_persistence_root(project_root, app_path, allow_create=False)
     if root is None:
         return None
     return Path(root) / ".namel3ss" / "observability" / TRACE_FILENAME
@@ -94,8 +102,13 @@ class TraceStore:
 
 def read_spans(project_root: str | Path | None, app_path: str | Path | None) -> list[dict]:
     path = trace_path(project_root, app_path)
-    if path is None or not path.exists():
+    if path is None:
         return []
+    if not path.exists():
+        legacy = _legacy_trace_path(project_root, app_path)
+        if legacy is None or not legacy.exists():
+            return []
+        path = legacy
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except Exception:

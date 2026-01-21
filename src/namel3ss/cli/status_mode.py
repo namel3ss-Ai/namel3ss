@@ -6,7 +6,7 @@ from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.cli.builds import load_build_metadata
 from namel3ss.cli.promotion_state import load_state
 from namel3ss.cli.targets import parse_target
-from namel3ss.cli.targets_store import build_dir
+from namel3ss.cli.targets_store import resolve_build_dir
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
@@ -39,8 +39,11 @@ def run_status_command(args: list[str]) -> int:
         except Exception:
             pass
     if active_target != "none" and active_build != "none":
-        build_path = build_dir(project_root, active_target, active_build)
-        lines.append(f"Build path: {build_path.as_posix()}")
+        build_path = resolve_build_dir(project_root, active_target, active_build)
+        if build_path is None:
+            lines.append("Build path: unavailable (missing build artifacts)")
+        else:
+            lines.append(f"Build path: {_relative_path(project_root, build_path)}")
         try:
             _, meta = load_build_metadata(project_root, active_target, active_build)
             lines.append(f"Build lock status: {meta.get('lockfile_status', 'n/a')}")
@@ -85,6 +88,13 @@ def _parse_args(args: list[str]) -> str | None:
             )
         )
     return app_arg
+
+
+def _relative_path(project_root: Path, path: Path) -> str:
+    try:
+        return path.resolve().relative_to(project_root.resolve()).as_posix()
+    except Exception:
+        return path.name
 
 
 __all__ = ["run_status_command"]

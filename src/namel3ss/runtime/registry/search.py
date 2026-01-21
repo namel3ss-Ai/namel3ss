@@ -3,8 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from namel3ss.runtime.packs.policy import PackTrustPolicy, evaluate_policy
-from namel3ss.pkg.versions import parse_semver
-from namel3ss.runtime.packs.risk import risk_from_summary, risk_rank
+from namel3ss.runtime.packs.risk import risk_rank
+from namel3ss.runtime.registry.model import entry_risk
+from namel3ss.runtime.registry.pack_version import version_sort_key
 
 
 @dataclass(frozen=True)
@@ -108,23 +109,7 @@ def _entry_tokens(entry: dict[str, object]) -> set[str]:
 
 
 def _entry_risk(entry: dict[str, object]) -> str:
-    capabilities = _capabilities_from_entry(entry)
-    summary = {
-        "levels": {
-            "filesystem": capabilities.get("filesystem", "none"),
-            "network": capabilities.get("network", "none"),
-            "env": capabilities.get("env", "none"),
-            "subprocess": capabilities.get("subprocess", "none"),
-        },
-        "secrets": capabilities.get("secrets", []),
-    }
-    runner_default = None
-    runner = entry.get("runner")
-    if isinstance(runner, dict):
-        value = runner.get("default")
-        if isinstance(value, str):
-            runner_default = value
-    return risk_from_summary(summary, runner_default)
+    return entry_risk(entry)
 
 
 def _capabilities_from_entry(entry: dict[str, object]) -> dict[str, object]:
@@ -155,16 +140,7 @@ def _tokenize(text: str) -> list[str]:
 
 
 def _version_sort_key(entry: dict[str, object]) -> tuple[int, tuple[int, int, int], str]:
-    version = entry.get("pack_version")
-    if not isinstance(version, str):
-        return (0, (0, 0, 0), "")
-    if version.strip() == "stable":
-        return (2, (0, 0, 0), "stable")
-    try:
-        semver = parse_semver(version)
-        return (1, (semver.major, semver.minor, semver.patch), version)
-    except Exception:
-        return (0, (0, 0, 0), version)
+    return version_sort_key(entry.get("pack_version") if isinstance(entry.get("pack_version"), str) else None)
 
 
 __all__ = ["DiscoverMatch", "discover_entries", "select_best_entry"]

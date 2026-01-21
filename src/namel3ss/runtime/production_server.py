@@ -21,7 +21,13 @@ from namel3ss.runtime.data.data_routes import (
     build_migrations_plan_payload,
     build_migrations_status_payload,
 )
-from namel3ss.runtime.observability_api import get_logs_payload, get_metrics_payload, get_trace_payload
+from namel3ss.runtime.observability_api import (
+    get_logs_payload,
+    get_metrics_payload,
+    get_trace_payload,
+    get_traces_payload,
+)
+from namel3ss.runtime.deploy_routes import get_build_payload, get_deploy_payload
 from namel3ss.ui.external.serve import resolve_external_ui_file
 from namel3ss.utils.json_tools import dumps as json_dumps
 from namel3ss.version import get_version
@@ -77,12 +83,24 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             payload, status = self._handle_observability(get_logs_payload)
             self._respond_json(payload, status=status, sort_keys=True)
             return
+        if path == "/api/traces":
+            payload, status = self._handle_observability(get_traces_payload)
+            self._respond_json(payload, status=status, sort_keys=True)
+            return
         if path == "/api/trace":
             payload, status = self._handle_observability(get_trace_payload)
             self._respond_json(payload, status=status, sort_keys=True)
             return
         if path == "/api/metrics":
             payload, status = self._handle_observability(get_metrics_payload)
+            self._respond_json(payload, status=status, sort_keys=True)
+            return
+        if path == "/api/build":
+            payload, status = self._handle_build()
+            self._respond_json(payload, status=status, sort_keys=True)
+            return
+        if path == "/api/deploy":
+            payload, status = self._handle_deploy()
             self._respond_json(payload, status=status, sort_keys=True)
             return
         if path.startswith("/api/"):
@@ -248,6 +266,26 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
         if program is None:
             return build_error_payload("Program not loaded.", kind="engine"), 500
         payload = builder(getattr(program, "project_root", None), getattr(program, "app_path", None))
+        status = 200 if payload.get("ok", True) else 400
+        return payload, status
+
+    def _handle_build(self) -> tuple[dict, int]:
+        state = self._state()
+        state._refresh_if_needed()
+        program = getattr(state, "program", None)
+        root = getattr(program, "project_root", None) if program is not None else state.project_root
+        app_path = getattr(program, "app_path", None) if program is not None else state.app_path
+        payload = get_build_payload(root, app_path)
+        status = 200 if payload.get("ok", True) else 400
+        return payload, status
+
+    def _handle_deploy(self) -> tuple[dict, int]:
+        state = self._state()
+        state._refresh_if_needed()
+        program = getattr(state, "program", None)
+        root = getattr(program, "project_root", None) if program is not None else state.project_root
+        app_path = getattr(program, "app_path", None) if program is not None else state.app_path
+        payload = get_deploy_payload(root, app_path, program=program, target=getattr(self.server, "target", None))
         status = 200 if payload.get("ok", True) else 400
         return payload, status
 

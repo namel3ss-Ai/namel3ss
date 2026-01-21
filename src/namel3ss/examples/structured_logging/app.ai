@@ -7,11 +7,12 @@ flow "emit logs" requires true:
   log warn "Low inventory" with map:
     "sku" is "sku-42"
   log error "Payment declined"
+  metric counter "log_runs" increment
   return "ok"
 
 page "home":
   purpose is "Single-flow example of structured logging."
   title is "Structured Logging"
-  text is "Run the flow to emit log events."
+  text is "Run the flow to emit log events, a counter metric, and trace spans."
   button "Emit logs":
     calls flow "emit logs"

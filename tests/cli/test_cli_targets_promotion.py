@@ -1,6 +1,7 @@
 import json
 
 from namel3ss.cli.main import main
+from namel3ss.cli.targets_store import BUILD_BASE_DIR
 from namel3ss.pkg.lockfile import LOCKFILE_FILENAME
 
 
@@ -39,10 +40,10 @@ def test_pack_creates_artifacts_for_service_target(tmp_path, capsys, monkeypatch
     code = main(["pack", "--target", "service"])
     assert code == 0
     capsys.readouterr()
-    latest_path = tmp_path / "build" / "service" / "latest.json"
+    latest_path = tmp_path / BUILD_BASE_DIR / "service" / "latest.json"
     latest = json.loads(latest_path.read_text(encoding="utf-8"))
     build_id = latest["build_id"]
-    build_dir = tmp_path / "build" / "service" / build_id
+    build_dir = tmp_path / BUILD_BASE_DIR / "service" / build_id
     assert (build_dir / "build.json").exists()
     assert (build_dir / "program" / "app.ai").exists()
     meta = json.loads((build_dir / "build.json").read_text(encoding="utf-8"))
@@ -58,7 +59,7 @@ def test_ship_where_and_back(tmp_path, capsys, monkeypatch):
     _write_app(tmp_path)
     monkeypatch.chdir(tmp_path)
     main(["pack", "--target", "service"])
-    latest_path = tmp_path / "build" / "service" / "latest.json"
+    latest_path = tmp_path / BUILD_BASE_DIR / "service" / "latest.json"
     latest = json.loads(latest_path.read_text(encoding="utf-8"))
     build_id = latest["build_id"]
 
@@ -92,7 +93,7 @@ def test_status_reports_artifacts_after_promote(tmp_path, capsys, monkeypatch):
     _write_app(tmp_path)
     monkeypatch.chdir(tmp_path)
     main(["build", "--target", "service"])
-    latest_path = tmp_path / "build" / "service" / "latest.json"
+    latest_path = tmp_path / BUILD_BASE_DIR / "service" / "latest.json"
     latest = json.loads(latest_path.read_text(encoding="utf-8"))
     build_id = latest["build_id"]
 

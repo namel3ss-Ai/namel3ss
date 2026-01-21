@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Dict, Tuple
 
 from namel3ss.cli.builds import read_latest_build_id
-from namel3ss.cli.targets_store import build_dir
+from namel3ss.cli.targets_store import resolve_build_dir
 from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
@@ -65,10 +65,12 @@ def parse_args(args: list[str]) -> tuple[str | None, str | None]:
 def load_previous_schema_snapshot(project_root: Path, target: str) -> dict | None:
     latest_id = read_latest_build_id(project_root, target)
     if latest_id:
-        previous_path = build_snapshot_path(build_dir(project_root, target, latest_id))
-        snapshot = load_schema_snapshot(previous_path)
-        if snapshot:
-            return snapshot
+        build_path = resolve_build_dir(project_root, target, latest_id)
+        if build_path:
+            previous_path = build_snapshot_path(build_path)
+            snapshot = load_schema_snapshot(previous_path)
+            if snapshot:
+                return snapshot
     workspace_path = workspace_snapshot_path(project_root)
     return load_schema_snapshot(workspace_path)
 

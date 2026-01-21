@@ -167,8 +167,15 @@ Unverified packs are inactive and cannot run by default.
 ## Registry discovery
 Discover packs by intent, capability, and trust:
 ```bash
-n3 discover "send email securely"
-n3 discover "webhook" --capability network --risk medium
+n3 registry search "send email securely"
+n3 registry search "webhook" --capability network --risk medium
+```
+
+Inspect and install:
+```bash
+n3 registry list
+n3 registry info team.pack
+n3 pack add team.pack@0.1.0
 ```
 
 ## Example

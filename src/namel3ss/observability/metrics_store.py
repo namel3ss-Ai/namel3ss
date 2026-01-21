@@ -8,11 +8,19 @@ from namel3ss.determinism import canonical_json_dump
 from namel3ss.runtime.persistence_paths import resolve_persistence_root
 
 
+METRICS_DIRNAME = "metrics"
 METRICS_FILENAME = "metrics.json"
 
 
 def metrics_path(project_root: str | Path | None, app_path: str | Path | None) -> Path | None:
     root = resolve_persistence_root(project_root, app_path, allow_create=True)
+    if root is None:
+        return None
+    return Path(root) / ".namel3ss" / "observability" / METRICS_DIRNAME / METRICS_FILENAME
+
+
+def _legacy_metrics_path(project_root: str | Path | None, app_path: str | Path | None) -> Path | None:
+    root = resolve_persistence_root(project_root, app_path, allow_create=False)
     if root is None:
         return None
     return Path(root) / ".namel3ss" / "observability" / METRICS_FILENAME
@@ -101,8 +109,13 @@ class MetricsStore:
 
 def read_metrics(project_root: str | Path | None, app_path: str | Path | None) -> dict:
     path = metrics_path(project_root, app_path)
-    if path is None or not path.exists():
+    if path is None:
         return {"counters": [], "timings": []}
+    if not path.exists():
+        legacy = _legacy_metrics_path(project_root, app_path)
+        if legacy is None or not legacy.exists():
+            return {"counters": [], "timings": []}
+        path = legacy
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except Exception:

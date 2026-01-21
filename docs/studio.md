@@ -44,6 +44,11 @@ Studio is an optional inspection lens for namel3ss. It stays fast and minimal wh
 - Fix hints are deterministic and never apply changes automatically.
 - Studio does not add studio-only fixes or validations.
 
+## Observability
+- Logs show structured log events with levels and fields (redacted).
+- Tracing shows deterministic spans for actions, jobs, capabilities, and packs.
+- Metrics lists counters and logical timings with stable ordering.
+
 ## Formulas + Explain (calc)
 - Formulas tab renders calc blocks with a Code/Formula toggle for math-friendly display.
 - Explain tab shows deterministic calc-line explanations (inputs, steps, outputs).
@@ -57,6 +62,17 @@ Studio is an optional inspection lens for namel3ss. It stays fast and minimal wh
 - Memory facts summaries include keys, counts, and last_updated_step (no raw values).
 - Memory Packs and Handoff panels expose active pack selection and packet previews.
 - Explain actions show deterministic reasons for tool decisions, merge outcomes, and handoffs.
+
+## Registry
+- Registry tab lists available capability packs from configured registries.
+- Each pack shows version options, intent text, capabilities, risk, and signature status.
+- Trust status and policy reasons explain why a pack is allowed or blocked.
+- No raw keys or secrets are displayed.
+
+## Deploy
+- Deploy tab shows the active build and target, last ship action, and rollback availability.
+- Build summaries include entry instructions and artifact locations.
+- Environment summary lists required vs optional variables with redacted guidance.
 
 ## Learning Overlay
 - Toggle **Learn** to highlight key panels with short explanations.

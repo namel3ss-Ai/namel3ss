@@ -71,16 +71,16 @@ def run_packs(args: list[str]) -> int:
     raise Namel3ssError(
         build_guidance_message(
             what=f"Unknown packs command '{cmd}'.",
-        why="Supported commands are list, info, add, init, validate, review, bundle, sign, remove, status, verify, enable, disable, and keys.",
-        fix="Run `n3 packs help` to see usage.",
-        example="n3 packs status",
-    )
+            why="Supported commands are list, info, add, init, validate, review, bundle, sign, remove, status, verify, enable, disable, and keys.",
+            fix="Run `n3 packs help` to see usage.",
+            example="n3 packs status",
+        )
     )
 
 
 def _print_usage() -> None:
     usage = """Usage:
-  n3 pack add pack_name --registry alias_or_url --offline --json
+  n3 pack add pack_name[@version] --registry alias_or_url --offline --json
   n3 pack add path_or_pack --json
   n3 packs list --json
   n3 packs info pack_id --json

@@ -9,11 +9,19 @@ from namel3ss.runtime.persistence_paths import resolve_persistence_root
 
 
 LOG_LEVELS = {"debug", "info", "warn", "error"}
+LOG_DIRNAME = "logs"
 LOG_FILENAME = "logs.json"
 
 
 def logs_path(project_root: str | Path | None, app_path: str | Path | None) -> Path | None:
     root = resolve_persistence_root(project_root, app_path, allow_create=True)
+    if root is None:
+        return None
+    return Path(root) / ".namel3ss" / "observability" / LOG_DIRNAME / LOG_FILENAME
+
+
+def _legacy_logs_path(project_root: str | Path | None, app_path: str | Path | None) -> Path | None:
+    root = resolve_persistence_root(project_root, app_path, allow_create=False)
     if root is None:
         return None
     return Path(root) / ".namel3ss" / "observability" / LOG_FILENAME
@@ -77,8 +85,13 @@ class LogStore:
 
 def read_logs(project_root: str | Path | None, app_path: str | Path | None) -> list[dict]:
     path = logs_path(project_root, app_path)
-    if path is None or not path.exists():
+    if path is None:
         return []
+    if not path.exists():
+        legacy = _legacy_logs_path(project_root, app_path)
+        if legacy is None or not legacy.exists():
+            return []
+        path = legacy
     try:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except Exception:

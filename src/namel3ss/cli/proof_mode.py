@@ -11,6 +11,7 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.proofs import build_engine_proof
 from namel3ss.secrets import set_audit_root, set_engine_target
 from namel3ss.utils.json_tools import dumps_pretty
+from namel3ss.utils.path_display import display_path_hint
 
 
 @dataclass
@@ -38,7 +39,7 @@ def run_proof_command(args: list[str]) -> int:
         return 0
     print(f"Engine proof: {proof_id}")
     if proof_path:
-        print(f"Stored: {proof_path.as_posix()}")
+        print(f"Stored: {display_path_hint(proof_path, base=project_root)}")
     else:
         print("Stored: disabled (use --write to persist).")
     return 0

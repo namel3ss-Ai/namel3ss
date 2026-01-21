@@ -19,6 +19,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.pkg.lockfile import LOCKFILE_FILENAME
 from namel3ss.secrets import collect_secret_values, redact_text
+from namel3ss.utils.path_display import display_path_hint
 
 
 @dataclass(frozen=True)
@@ -45,7 +46,7 @@ def run_kit_command(args: list[str]) -> int:
     secret_values = collect_secret_values(config)
     safe_text = redact_text(kit_text, secret_values)
     kit_path = _write_kit(app_path.parent, safe_text, technical=params.technical)
-    print(f"Kit written to {kit_path.as_posix()}")
+    print(f"Kit written to {display_path_hint(kit_path, base=app_path.parent)}")
     return 0
 
 

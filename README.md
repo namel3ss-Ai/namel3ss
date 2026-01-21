@@ -101,6 +101,7 @@ See `docs/trust-and-governance.md` for enforcement details.
 - [Application runtime](docs/language/application-runtime.md): every valid `.ai` program is an application; the browser renders the manifest and actions, Studio inspects.
 - [No dependencies](docs/language/no-dependencies.md): installing `namel3ss` is sufficient to run apps; packs extend capabilities instead of imports.
 - [Capability packs](docs/language/capability-packs.md): explicit pack declarations, permissions, and inspection for local and installed packs.
+- [Observability](docs/observability.md): deterministic logs, traces, and metrics with redaction by default.
 
 ## Installation
 
@@ -355,6 +356,7 @@ Expect breaking changes between alpha revisions, but grammar, execution phases, 
 - [Editor](docs/editor.md)
 
 ### Deployment & production
+- [Packaging and deployment](docs/deployment.md)
 - [Quick deployment guide](docs/quick-deployment-guide.md) - Docker and systemd deployment
 - [Production deployment guide](docs/production-deployment.md) - Comprehensive production setup
 - [Production readiness roadmap](docs/production-readiness-roadmap.md) - Path to v1.0

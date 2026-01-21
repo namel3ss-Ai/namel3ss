@@ -18,6 +18,8 @@ record "Click":
 flow "add_click" requires has_permission("click.create")
   create "Click"
     message is "clicked"
+  log info "Click stored"
+  metric counter "clicks" increment
 
 page "home":
   purpose is "Minimal smoke demo that runs in the browser."

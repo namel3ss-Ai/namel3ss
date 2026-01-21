@@ -19,6 +19,7 @@ from namel3ss.runtime.data.migration_runner import apply_plan, status_payload
 from namel3ss.runtime.data.migration_store import load_state as load_migration_state
 from namel3ss.runtime.storage.factory import create_store
 from namel3ss.secrets import set_audit_root, set_engine_target
+from namel3ss.utils.path_display import display_path_hint
 
 
 def run_promote_command(args: list[str]) -> int:
@@ -74,14 +75,14 @@ def run_promote_command(args: list[str]) -> int:
     record_promotion(project_root, target.name, selected_build)
     record_active_proof(project_root, proof_id, target.name, selected_build)
     print(f"Promoted build {selected_build} to target '{target.name}'.")
-    print(f"Snapshot: {app_snapshot.parent.as_posix()}")
+    print(f"Snapshot: {display_path_hint(app_snapshot.parent, base=project_root)}")
     print(f"Engine proof: {proof_id}")
-    print(f"Proof stored: {proof_path.as_posix()}")
+    print(f"Proof stored: {display_path_hint(proof_path, base=project_root)}")
     if target.name == "service":
         print("Next: n3 run --target service --build {id}".format(id=selected_build))
     if target.name == "edge":
         print("Edge engine is simulated; run `n3 run --target edge` for the stub.")
-    print("Note: database migrations are not auto-rolled back in this phase.")
+    print("Note: database migrations are not auto-rolled back.")
     return 0
 
 

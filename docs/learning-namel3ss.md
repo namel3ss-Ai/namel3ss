@@ -40,7 +40,7 @@ Studio is a viewer and interactor. It shows the UI manifest, available actions, 
 - [Capability packs](language/capability-packs.md): explicit pack declarations, permissions, and inspection for local and installed packs.
 - [Authentication](authentication.md): identity model, sessions, tokens, and redaction rules.
 - [Data](data.md): backends, migrations, promotion safety, and snapshots.
-- [Browser Protocol](runtime/browser-protocol.md): `/api/ui`, `/api/state`, `/api/action`, `/api/session`, `/api/login`, `/api/logout`, `/api/data/status`, `/api/migrations/status`, `/api/migrations/plan`, `/api/logs`, `/api/trace`, `/api/metrics`, and `/api/health` are stable and deterministic.
+- [Browser Protocol](runtime/browser-protocol.md): `/api/ui`, `/api/state`, `/api/action`, `/api/session`, `/api/login`, `/api/logout`, `/api/data/status`, `/api/migrations/status`, `/api/migrations/plan`, `/api/logs`, `/api/traces`, `/api/metrics`, and `/api/health` are stable and deterministic.
 
 ### Explainable execution
 Every run emits deterministic artifacts that answer specific questions:
@@ -634,7 +634,7 @@ n3 fix
 Packages are reusable capsules installed under `packages/`. Use `n3 pkg` to add and install, and import with `use "name" as alias`.
 
 ### Tool packs and registry
-Tool packs bundle reusable tools with explicit capabilities. Packs are installed locally, verified, and enabled. The registry is an intent index for discovery, not a package store.
+Tool packs bundle reusable tools with explicit capabilities. Packs are installed locally, verified, and enabled. The registry is an intent index for discovery, not a package store. Use `n3 registry list | search | info` to review intent, capabilities, risk, and trust status. Install a specific pack version with `n3 pack add name@version`. Studio includes a Registry panel for the same data.
 
 ### Targets and promotion
 Targets describe how an app runs:
@@ -649,6 +649,7 @@ Build and promote with `n3 pack` and `n3 ship`.
 - [Registry](registry.md)
 - [Tool packs](tool-packs.md)
 - [Publishing packs](publishing-packs.md)
+- [Packaging and deployment](deployment.md)
 - [Targets and promotion](targets-and-promotion.md)
 - [Package model](models/package.md)
 - [Capsule model](models/capsule.md)

@@ -11,12 +11,14 @@ from namel3ss.runtime.capabilities.effective import summarize_guarantees
 from namel3ss.runtime.packs.capabilities import capabilities_summary, parse_capabilities_yaml
 from namel3ss.runtime.packs.intent import summarize_intent
 from namel3ss.runtime.packs.manifest import PackManifest, parse_pack_manifest_text
+from namel3ss.runtime.packs.risk import risk_from_summary
 from namel3ss.runtime.packs.runners import pack_runner_default
 from namel3ss.runtime.packs.trust_store import load_trusted_keys
 from namel3ss.runtime.packs.signature import parse_signature_text, verify_signature
 from namel3ss.runtime.packs.verification import compute_pack_digest
 from namel3ss.runtime.tools.bindings_yaml import ToolBinding, parse_bindings_yaml
 from namel3ss.runtime.registry.entry import RegistryEntry, normalize_registry_entry
+from namel3ss.utils.path_display import display_path_hint
 
 
 @dataclass(frozen=True)
@@ -42,7 +44,7 @@ def build_registry_entry_from_bundle(
     summary, guarantees = _capabilities_summary(bundle_path, caps_text)
     runner_default = pack_runner_default(manifest, bindings)
     digest = _bundle_digest(bundle_path)
-    signed, verified_by = _signature_status(
+    signature_status, signature_algorithm, verified_by = _signature_status(
         app_root,
         manifest_text,
         tools_text,
@@ -51,14 +53,19 @@ def build_registry_entry_from_bundle(
     )
     intent_phrases = _intent_phrases(intent_text, manifest, bindings)
     intent_tags = _intent_tags(intent_phrases, manifest.tools)
+    intent_text = _normalize_text(intent_text)
+    risk = risk_from_summary(summary, runner_default)
     entry = RegistryEntry(
         entry_version=1,
         pack_id=manifest.pack_id,
         pack_name=manifest.name,
         pack_version=manifest.version,
         pack_digest=digest,
+        intent_text=intent_text,
+        risk=risk,
         signer_id=manifest.signer_id,
         verified_by=verified_by,
+        signature={"status": signature_status, "algorithm": signature_algorithm},
         tools=manifest.tools,
         intent_tags=intent_tags,
         intent_phrases=intent_phrases,
@@ -144,21 +151,23 @@ def _signature_status(
     signature_text: str | None,
     *,
     signer_id: str | None,
-) -> tuple[bool, list[str]]:
+) -> tuple[str, str | None, list[str]]:
     if not signature_text:
-        return False, []
+        return "unsigned", None, []
     if not signer_id:
-        return False, []
-    if parse_signature_text(signature_text) is None:
-        return False, []
+        return "unverified", None, []
+    parsed = parse_signature_text(signature_text)
+    if parsed is None:
+        return "invalid", None, []
+    algorithm = parsed.algorithm
     digest = compute_pack_digest(manifest_text, tools_text)
     keys = load_trusted_keys(app_root)
     key = next((item for item in keys if item.key_id == signer_id), None)
     if key is None:
-        return False, []
+        return "unverified", algorithm, []
     if not verify_signature(digest, signature_text, key.public_key):
-        return False, []
-    return True, [key.key_id]
+        return "invalid", algorithm, []
+    return "verified", algorithm, [key.key_id]
 
 
 def _intent_phrases(intent_text: str, manifest: PackManifest, bindings: dict[str, ToolBinding]) -> list[str]:
@@ -266,28 +275,35 @@ def _dedupe_preserve_order(items: list[str]) -> list[str]:
     return output
 
 
+def _normalize_text(text: str) -> str:
+    return "\n".join(line.rstrip() for line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n")).strip()
+
+
 def _missing_bundle_message(path: Path) -> str:
+    safe_path = display_path_hint(path)
     return build_guidance_message(
         what="Bundle path was not found.",
-        why=f"Expected {path.as_posix()} to exist.",
+        why=f"Expected {safe_path} to exist.",
         fix="Pass a valid .n3pack.zip file.",
         example="n3 registry add ./dist/pack.n3pack.zip",
     )
 
 
 def _missing_manifest_message(path: Path) -> str:
+    safe_path = display_path_hint(path)
     return build_guidance_message(
         what="Bundle is missing pack.yaml.",
-        why=f"{path.as_posix()} does not contain pack.yaml.",
+        why=f"{safe_path} does not contain pack.yaml.",
         fix="Bundle the pack again.",
         example="n3 packs bundle ./pack --out ./dist",
     )
 
 
 def _missing_intent_message(path: Path) -> str:
+    safe_path = display_path_hint(path)
     return build_guidance_message(
         what="Bundle is missing intent.md.",
-        why=f"{path.as_posix()} does not contain intent.md.",
+        why=f"{safe_path} does not contain intent.md.",
         fix="Add intent.md and rebuild the bundle.",
         example="intent.md",
     )

@@ -32,7 +32,7 @@
 - `n3 preview` renders a production-like UI locally without the dev overlay or reload affordances.
 
 ## Production server
-- `n3 start` serves the production UI from build artifacts in `build/`.
+- `n3 start` serves the production UI from build artifacts in `.namel3ss/build/`.
 - No dev overlay, watcher, or preview markers are included.
 - Run `n3 build --target service` before starting the production server.
 

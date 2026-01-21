@@ -17,15 +17,15 @@ from namel3ss.runtime.packs.trust_store import load_trusted_keys
 from namel3ss.runtime.packs.verification import compute_pack_digest
 from namel3ss.runtime.registry.bundle import build_registry_entry_from_bundle
 from namel3ss.runtime.registry.entry import RegistryEntry, validate_registry_entry
-from namel3ss.runtime.registry.http_client import fetch_registry_bundle, fetch_registry_entries
+from namel3ss.runtime.registry.http_client import fetch_registry_bundle
 from namel3ss.runtime.registry.layout import REGISTRY_COMPACT, registry_cache_path
 from namel3ss.runtime.registry.local_index import (
     append_registry_entry,
     build_compact_index_from_path,
-    load_registry_entries_from_path,
 )
 from namel3ss.runtime.registry.search import discover_entries, select_best_entry
-from namel3ss.runtime.registry.sources import RegistrySource, resolve_registry_sources
+from namel3ss.runtime.registry.sources import resolve_registry_sources
+from namel3ss.runtime.registry.resolver import resolve_registry_entries
 
 
 def add_bundle_to_registry(app_root: Path, bundle_path: Path) -> RegistryEntry:
@@ -62,15 +62,17 @@ def discover_registry(
     risk: str | None,
 ) -> list:
     policy = load_pack_policy(app_root)
-    entries = _collect_entries(
+    resolution = resolve_registry_entries(
         app_root,
         config,
+        registry_id=None,
+        registry_url=None,
         phrase=phrase,
         capability=capability,
         risk=risk,
         offline=False,
     )
-    return discover_entries(entries, phrase=phrase, policy=policy, capability_filter=capability, risk_filter=risk)
+    return discover_entries(resolution.entries, phrase=phrase, policy=policy, capability_filter=capability, risk_filter=risk)
 
 
 def install_pack_from_registry(
@@ -85,23 +87,29 @@ def install_pack_from_registry(
 ) -> tuple[str, Path]:
     policy = load_pack_policy(app_root)
     if registry_url:
-        if offline:
-            raise Namel3ssError(_offline_registry_message(registry_url))
-        entries = fetch_registry_entries(registry_url, phrase=pack_id, capability=None, risk=None)
-        for entry in entries:
-            _ensure_registry_source(entry, registry_url)
-        _apply_trusted_keys(app_root, entries)
-    else:
-        _assert_offline_sources(app_root, config, registry_id=registry_id, offline=offline)
-        entries = _collect_entries(
+        resolution = resolve_registry_entries(
             app_root,
             config,
+            registry_id=None,
+            registry_url=registry_url,
             phrase=pack_id,
-            registry_id=registry_id,
             capability=None,
             risk=None,
             offline=offline,
         )
+        entries = resolution.entries
+    else:
+        resolution = resolve_registry_entries(
+            app_root,
+            config,
+            phrase=pack_id,
+            registry_id=registry_id,
+            registry_url=None,
+            capability=None,
+            risk=None,
+            offline=offline,
+        )
+        entries = resolution.entries
     match = select_best_entry(entries, pack_id=pack_id, pack_version=pack_version, policy=policy)
     if match is None:
         raise Namel3ssError(_missing_pack_message(pack_id))
@@ -146,65 +154,6 @@ def install_pack_from_registry(
         source_info=PackSourceInfo(source_type="registry", path=_registry_label(registry_id, registry_url, uri)),
     )
     return installed_id, bundle_path
-
-
-def _collect_entries(
-    app_root: Path,
-    config: AppConfig,
-    *,
-    phrase: str,
-    registry_id: str | None = None,
-    capability: str | None,
-    risk: str | None,
-    offline: bool,
-) -> list[dict[str, object]]:
-    sources, defaults = resolve_registry_sources(app_root, config)
-    selected = [registry_id] if registry_id else defaults
-    entries: list[dict[str, object]] = []
-    for source in sources:
-        if source.id not in selected:
-            continue
-        if source.kind == "local_index":
-            entries.extend(_load_local_entries(source))
-            continue
-        if source.kind == "http" and source.url:
-            if offline:
-                continue
-            remote = fetch_registry_entries(source.url, phrase=phrase, capability=capability, risk=risk)
-            for entry in remote:
-                _ensure_registry_source(entry, source.url)
-            entries.extend(remote)
-    _apply_trusted_keys(app_root, entries)
-    return entries
-
-
-def _load_local_entries(source: RegistrySource) -> list[dict[str, object]]:
-    if not source.path:
-        return []
-    compact_path = source.path.parent / REGISTRY_COMPACT
-    return load_registry_entries_from_path(source.path, compact_path)
-
-
-def _ensure_registry_source(entry: dict[str, object], base_url: str) -> None:
-    source = entry.get("source")
-    if not isinstance(source, dict):
-        entry["source"] = {"kind": "registry_url", "uri": base_url}
-        return
-    if source.get("kind") != "registry_url":
-        source["kind"] = "registry_url"
-    if not source.get("uri"):
-        source["uri"] = base_url
-
-
-def _apply_trusted_keys(app_root: Path, entries: list[dict[str, object]]) -> None:
-    trusted_ids = {key.key_id for key in load_trusted_keys(app_root)}
-    for entry in entries:
-        verified = entry.get("verified_by")
-        if isinstance(verified, list):
-            if not trusted_ids:
-                entry["verified_by"] = []
-            else:
-                entry["verified_by"] = [item for item in verified if item in trusted_ids]
 
 
 def _resolve_bundle_path(
@@ -423,45 +372,12 @@ def _offline_bundle_message(pack_id: str) -> str:
     )
 
 
-def _offline_registry_message(registry: str) -> str:
-    return build_guidance_message(
-        what="Registry access is offline.",
-        why=f"Registry {registry} requires network access.",
-        fix="Remove --offline or use a local registry.",
-        example="n3 pack add pack.name --registry local",
-    )
-
-
 def _registry_label(registry_id: str | None, registry_url: str | None, uri: str) -> str:
     if registry_id:
         return f"registry:{registry_id}"
     if registry_url:
         return f"registry:{registry_url}"
     return f"registry:{uri}"
-
-
-def _assert_offline_sources(
-    app_root: Path,
-    config: AppConfig,
-    *,
-    registry_id: str | None,
-    offline: bool,
-) -> None:
-    if not offline:
-        return
-    sources, defaults = resolve_registry_sources(app_root, config)
-    selected = [registry_id] if registry_id else defaults
-    local_available = False
-    for source in sources:
-        if source.id not in selected:
-            continue
-        if source.kind == "local_index":
-            local_available = True
-            continue
-        if source.kind == "http":
-            raise Namel3ssError(_offline_registry_message(source.id or "remote"))
-    if not local_available:
-        raise Namel3ssError(_offline_registry_message("remote"))
 
 
 def _source_uri(path: Path, *, base_root: Path) -> str:

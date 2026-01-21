@@ -16,6 +16,7 @@ from namel3ss.ui.export.ui import build_ui_export
 from namel3ss.version import get_version
 
 MANIFEST_FILENAME = "manifest.json"
+ENTRY_FILENAME = "entry.json"
 UI_DIRNAME = "ui"
 WEB_DIRNAME = "web"
 PROD_HTML_FILENAME = "prod.html"
@@ -72,13 +73,20 @@ def build_metadata(
     recommended_persistence: str,
     app_relative_path: str,
     artifacts: dict,
+    entry_instructions: dict,
 ) -> Dict[str, object]:
     return {
         "build_id": build_id,
         "target": target,
         "process_model": process_model,
+        "target_info": {
+            "name": target,
+            "process_model": process_model,
+            "recommended_persistence": recommended_persistence,
+        },
         "app_relative_path": app_relative_path,
         "namel3ss_version": get_version(),
+        "config_summary": safe_config,
         "persistence_target": safe_config.get("persistence", {}).get("target"),
         "recommended_persistence": recommended_persistence,
         "lockfile_digest": lock_digest,
@@ -86,6 +94,7 @@ def build_metadata(
         "program_summary": program_summary,
         "source_fingerprints": fingerprints,
         "artifacts": artifacts,
+        "entry_instructions": entry_instructions,
     }
 
 
@@ -94,6 +103,25 @@ def write_manifest(build_path: Path, manifest: dict) -> str:
     payload = manifest if isinstance(manifest, dict) else {}
     write_json(path, payload)
     return MANIFEST_FILENAME
+
+
+def build_entry_instructions(target: str, build_id: str) -> dict:
+    instructions = {
+        "run": f"n3 run --target {target} --build {build_id}",
+        "stop": "Stop the process with Ctrl+C.",
+    }
+    if target == "service":
+        instructions["start"] = "n3 start --target service"
+        instructions["health"] = "GET http://127.0.0.1:8787/health"
+    if target == "edge":
+        instructions["note"] = "Edge target runs as a simulator."
+    return instructions
+
+
+def write_entry_instructions(build_path: Path, instructions: dict) -> str:
+    path = build_path / ENTRY_FILENAME
+    write_json(path, instructions if isinstance(instructions, dict) else {})
+    return ENTRY_FILENAME
 
 
 def write_schema_snapshot(build_path: Path, snapshot: dict) -> str:
@@ -150,14 +178,14 @@ def write_service_bundle(build_path: Path, build_id: str) -> None:
     (bundle_root / "README.txt").write_text(instructions.strip() + "\n", encoding="utf-8")
 
 
-def write_edge_stub(build_path: Path) -> None:
+def write_edge_stub(build_path: Path, build_id: str) -> None:
     stub_root = build_path / "edge"
     stub_root.mkdir(parents=True, exist_ok=True)
     note = "\n".join(
         [
-            "Edge simulator bundle (stub)",
-            "This alpha release records the build inputs but does not generate a runnable edge package yet.",
-            "Next steps: run `n3 run --target edge` to simulate the target locally.",
+            "Edge simulator bundle",
+            "This build records the inputs but does not generate a runnable edge package yet.",
+            f"Run: n3 run --target edge --build {build_id}",
         ]
     )
     (stub_root / "README.txt").write_text(note.strip() + "\n", encoding="utf-8")
@@ -199,13 +227,16 @@ def _runtime_web_root() -> Path:
 
 __all__ = [
     "BUILD_META_FILENAME",
+    "ENTRY_FILENAME",
     "MANIFEST_FILENAME",
     "STUDIO_WEB_ASSETS",
     "UI_DIRNAME",
     "WEB_DIRNAME",
+    "build_entry_instructions",
     "build_metadata",
     "prepare_build_dir",
     "write_edge_stub",
+    "write_entry_instructions",
     "write_manifest",
     "write_program_bundle",
     "write_schema_snapshot",

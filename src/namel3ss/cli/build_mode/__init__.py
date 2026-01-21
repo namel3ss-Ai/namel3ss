@@ -53,6 +53,7 @@ def run_build_command(args: list[str]) -> int:
     write_json(build_path / "program_summary.json", program_summary)
     write_json(build_path / "config.json", safe_config)
     write_json(build_path / "lock_snapshot.json", lock_snapshot)
+    entry_instructions = artifacts.build_entry_instructions(target.name, build_id)
     artifacts_map = {
         "program": "program",
         "config": "config.json",
@@ -65,6 +66,7 @@ def run_build_command(args: list[str]) -> int:
     artifacts_map["schema_snapshot"] = artifacts.write_schema_snapshot(build_path, schema_snapshot)
     artifacts_map["ui"] = artifacts.write_ui_contract(build_path, program_ir, manifest)
     artifacts_map["web"] = artifacts.write_web_bundle(build_path)
+    artifacts_map["entry_instructions"] = artifacts.write_entry_instructions(build_path, entry_instructions)
     report_payload, report_text = reports.build_report(
         build_id=build_id,
         target=target.name,
@@ -86,6 +88,7 @@ def run_build_command(args: list[str]) -> int:
         recommended_persistence=target.persistence_default,
         app_relative_path=app_relative_path,
         artifacts=artifacts_map,
+        entry_instructions=entry_instructions,
     )
     write_json(build_path / BUILD_META_FILENAME, metadata)
     write_json(
@@ -95,8 +98,8 @@ def run_build_command(args: list[str]) -> int:
     if target.name == "service":
         artifacts.write_service_bundle(build_path, build_id)
     if target.name == "edge":
-        artifacts.write_edge_stub(build_path)
-    print(f"Build ready: {build_path.as_posix()}")
+        artifacts.write_edge_stub(build_path, build_id)
+    print(f"Build ready: {_relative_path(project_root, build_path)}")
     print(f"Target: {target.name} • Build ID: {build_id}")
     return 0
 

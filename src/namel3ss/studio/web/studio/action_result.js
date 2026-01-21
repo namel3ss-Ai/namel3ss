@@ -19,7 +19,7 @@
         }
       })
       .catch(() => {});
-    net.fetchJson("/api/trace")
+    net.fetchJson("/api/traces")
       .then((payload) => {
         const spans = payload && Array.isArray(payload.spans) ? payload.spans : [];
         if (state && typeof state.setCachedSpans === "function") {

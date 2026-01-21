@@ -76,6 +76,36 @@ def test_packs_add_from_registry(tmp_path: Path, capsys, monkeypatch) -> None:
     assert not unexpected
 
 
+def test_registry_list_output_is_stable(tmp_path: Path, capsys, monkeypatch) -> None:
+    _write_app(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    bundle_service = FIXTURES_ROOT / "sample.nocode-0.1.0.n3pack.zip"
+    assert cli_main(["registry", "add", str(bundle_service), "--json"]) == 0
+    capsys.readouterr()
+    bundle_local = FIXTURES_ROOT / "sample.local-0.1.0.n3pack.zip"
+    assert cli_main(["registry", "add", str(bundle_local), "--json"]) == 0
+    capsys.readouterr()
+
+    assert cli_main(["registry", "list", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["count"] == 2
+    assert [pack["pack_id"] for pack in payload["packs"]] == ["sample.local", "sample.nocode"]
+
+
+def test_blocked_pack_emits_guidance(tmp_path: Path, capsys, monkeypatch) -> None:
+    _write_app(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    bundle_local = FIXTURES_ROOT / "sample.local-0.1.0.n3pack.zip"
+    assert cli_main(["registry", "add", str(bundle_local), "--json"]) == 0
+    capsys.readouterr()
+
+    rc = cli_main(["packs", "add", "sample.local"])
+    assert rc == 1
+    captured = capsys.readouterr()
+    text = (captured.out + captured.err).lower()
+    assert "blocked by policy" in text
+
+
 def _add_trusted_key(app_root: Path, key_text: str) -> None:
     key_file = app_root / "trusted.key"
     key_file.write_text(key_text, encoding="utf-8")

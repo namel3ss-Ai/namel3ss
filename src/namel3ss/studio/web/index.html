@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/studio_ui.css">
   <link rel="stylesheet" href="/studio_panels.css">
+  <link rel="stylesheet" href="/studio_deploy.css">
   <link rel="stylesheet" href="/theme_tokens.css">
 </head>
 <body class="studio-root">
@@ -121,6 +122,12 @@
       <section class="canvas-mode" data-mode="setup" aria-labelledby="dock-setup">
         <div id="setup" class="canvas-panel"></div>
       </section>
+      <section class="canvas-mode" data-mode="registry" aria-labelledby="dock-registry">
+        <div id="registry" class="canvas-panel"></div>
+      </section>
+      <section class="canvas-mode" data-mode="deploy" aria-labelledby="dock-deploy">
+        <div id="deploy" class="canvas-panel"></div>
+      </section>
       <section class="canvas-mode" data-mode="graph" aria-labelledby="dock-graph">
         <div class="graph-layout canvas-panel">
           <div class="graph-wrap">
@@ -146,6 +153,8 @@
       <button class="tab" data-tab="memory" id="dock-memory" data-testid="studio-dock-item-memory">Memory</button>
       <button class="tab" data-tab="agents" id="dock-agents" data-testid="studio-dock-item-agents">Agents</button>
       <button class="tab" data-tab="setup" id="dock-setup" data-testid="studio-dock-item-setup">Setup</button>
+      <button class="tab" data-tab="registry" id="dock-registry" data-testid="studio-dock-item-registry">Registry</button>
+      <button class="tab" data-tab="deploy" id="dock-deploy" data-testid="studio-dock-item-deploy">Deploy</button>
       <button class="tab" data-tab="graph" id="dock-graph" data-testid="studio-dock-item-graph">Graph</button>
     </div>
   </footer>
@@ -194,6 +203,8 @@
   <script src="/studio/agents/memory_packs.js"></script>
   <script src="/studio/agents/index.js"></script>
   <script src="/studio/setup.js"></script>
+  <script src="/studio/deploy.js"></script>
+  <script src="/studio/registry.js"></script>
   <script src="/studio/why.js"></script>
   <script src="/studio/preview.js"></script>
   <script src="/studio/data.js"></script>

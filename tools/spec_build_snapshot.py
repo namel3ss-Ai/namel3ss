@@ -29,7 +29,7 @@ def _write_snapshot(app_path: Path, target: str) -> None:
     if not lock_path.exists():
         raise SystemExit(f"Missing lockfile: {lock_path}")
     digest = _lockfile_digest(lock_path)
-    build_root = app_path.parent / "build" / target
+    build_root = app_path.parent / ".namel3ss" / "build" / target
     _write_json(build_root / "latest.json", {"build_id": "spec"})
     _write_json(
         build_root / "spec" / "build.json",

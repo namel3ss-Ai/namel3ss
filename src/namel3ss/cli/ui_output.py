@@ -21,7 +21,7 @@ Quality
 
 Ship
   n3 build [file.ai]              # build deployable bundle (alias: pack <file.ai>)
-  n3 pack add <name>              # capability packs (contract)
+  n3 pack add <name[@version]>    # capability packs (contract)
   n3 clean                        # remove runtime artifacts
 
 Advanced

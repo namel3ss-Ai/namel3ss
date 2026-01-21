@@ -41,10 +41,13 @@ Local packs still require signing unless trust policy explicitly allows unsigned
 
 ## Registry and install
 - Packs can be installed by name from a registry index.
+- Registry entries include intent text, capabilities, risk, signatures, and trust status.
 - `n3 pack add <pack_name>` installs from the default registry.
+- `n3 pack add <pack_name>@<version>` installs a specific version.
 - `n3 pack add <pack_name> --registry <alias-or-url>` targets a specific registry.
 - `n3 pack add <pack_name> --offline` uses local cache only.
 - Local bundle installs remain supported by path.
+- `n3 registry list | search | info` inspects available packs and versions.
 
 ## Sandboxing
 - Pack tool execution is scoped to a runtime directory under `.namel3ss/`.

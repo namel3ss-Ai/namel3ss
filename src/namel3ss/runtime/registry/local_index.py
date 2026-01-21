@@ -8,6 +8,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.registry.entry import RegistryEntry
 from namel3ss.runtime.registry.layout import registry_compact_path, registry_index_path
+from namel3ss.utils.path_display import display_path_hint
 
 
 def append_registry_entry(app_root: Path, entry: RegistryEntry) -> Path:
@@ -99,9 +100,10 @@ def _sort_key(entry: dict[str, object]) -> tuple[str, str, str]:
 
 
 def _invalid_registry_message(path: Path, details: str) -> str:
+    safe_path = display_path_hint(path)
     return build_guidance_message(
         what="Registry index is invalid.",
-        why=f"{path.as_posix()} could not be parsed: {details}.",
+        why=f"{safe_path} could not be parsed: {details}.",
         fix="Rebuild the registry index.",
         example="n3 registry build",
     )

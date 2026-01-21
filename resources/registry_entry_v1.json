@@ -8,7 +8,10 @@
     "pack_name",
     "pack_version",
     "pack_digest",
+    "intent_text",
+    "risk",
     "verified_by",
+    "signature",
     "tools",
     "intent_tags",
     "intent_phrases",
@@ -38,12 +41,29 @@
       "type": "string",
       "minLength": 1
     },
+    "intent_text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "risk": {
+      "type": "string",
+      "enum": ["low", "medium", "high"]
+    },
     "signer_id": {
       "type": ["string", "null"]
     },
     "verified_by": {
       "type": "array",
       "items": { "type": "string" }
+    },
+    "signature": {
+      "type": "object",
+      "required": ["status", "algorithm"],
+      "additionalProperties": false,
+      "properties": {
+        "status": { "type": "string", "enum": ["verified", "unverified", "unsigned", "invalid"] },
+        "algorithm": { "type": ["string", "null"] }
+      }
     },
     "tools": {
       "type": "array",

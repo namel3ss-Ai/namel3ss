@@ -50,6 +50,14 @@
       root.agents.refreshAgents();
       return;
     }
+    if (tabName === "registry" && root.registry && typeof root.registry.renderRegistry === "function") {
+      root.registry.renderRegistry();
+      return;
+    }
+    if (tabName === "deploy" && root.deploy && typeof root.deploy.renderDeploy === "function") {
+      root.deploy.renderDeploy();
+      return;
+    }
     if (tabName === "why" && typeof window.refreshWhyPanel === "function") {
       window.refreshWhyPanel();
       return;
