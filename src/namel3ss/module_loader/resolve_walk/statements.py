@@ -95,6 +95,15 @@ def resolve_statements(
                 _resolve_expr(stmt.schedule_expr)
         elif isinstance(stmt, ast.AdvanceTime):
             _resolve_expr(stmt.amount)
+        elif isinstance(stmt, ast.LogStmt):
+            _resolve_expr(stmt.message)
+            if stmt.fields is not None:
+                _resolve_expr(stmt.fields)
+        elif isinstance(stmt, ast.MetricStmt):
+            if stmt.value is not None:
+                _resolve_expr(stmt.value)
+            if stmt.labels is not None:
+                _resolve_expr(stmt.labels)
         elif isinstance(stmt, ast.Save):
             stmt.record_name = resolve_name(
                 stmt.record_name,

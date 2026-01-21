@@ -14,6 +14,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
 from namel3ss.runtime.executor import execute_program_flow
 from namel3ss.runtime.backend.upload_handler import handle_upload, handle_upload_list
+from namel3ss.runtime.observability_api import get_logs_payload, get_metrics_payload, get_trace_payload
 from namel3ss.ui.actions.dispatch import dispatch_ui_action
 from namel3ss.ui.export.contract import build_ui_contract_payload
 from namel3ss.ui.external.detect import resolve_external_ui_root
@@ -96,6 +97,18 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
             return
         if normalized == "/api/uploads":
             response, status = self._handle_upload_list()
+            self._respond_json(response, status=status, sort_keys=True)
+            return
+        if normalized == "/api/logs":
+            response, status = self._handle_observability(get_logs_payload)
+            self._respond_json(response, status=status, sort_keys=True)
+            return
+        if normalized == "/api/trace":
+            response, status = self._handle_observability(get_trace_payload)
+            self._respond_json(response, status=status, sort_keys=True)
+            return
+        if normalized == "/api/metrics":
+            response, status = self._handle_observability(get_metrics_payload)
             self._respond_json(response, status=status, sort_keys=True)
             return
         self.send_error(404)
@@ -203,6 +216,14 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         except Exception as err:  # pragma: no cover - defensive
             payload = build_error_payload(str(err), kind="internal")
             return payload, 500
+
+    def _handle_observability(self, builder) -> tuple[dict, int]:
+        program_ir = self._program()
+        if program_ir is None:
+            return build_error_payload("Program not loaded", kind="engine"), 500
+        payload = builder(getattr(program_ir, "project_root", None), getattr(program_ir, "app_path", None))
+        status = 200 if payload.get("ok", True) else 400
+        return payload, status
 
     def _handle_static(self, path: str) -> bool:
         ui_root = getattr(self.server, "external_ui_root", None)  # type: ignore[attr-defined]

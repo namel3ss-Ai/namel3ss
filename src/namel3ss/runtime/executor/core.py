@@ -35,6 +35,7 @@ from namel3ss.errors.runtime.api import build_runtime_error
 from namel3ss.errors.runtime.model import RuntimeWhere
 from namel3ss.runtime.boundary import attach_project_root, attach_secret_values, boundary_from_error, mark_boundary
 from namel3ss.security import activate_security_wall, build_security_wall
+from namel3ss.observability.context import ObservabilityContext
 
 
 class Executor:
@@ -62,6 +63,7 @@ class Executor:
         project_root: str | None = None,
         app_path: str | None = None,
         flow_action_id: str | None = None,
+        observability: ObservabilityContext | None = None,
     ) -> None:
         resolved_config = config or load_config()
         default_ai_provider = ai_provider or MockProvider()
@@ -77,6 +79,11 @@ class Executor:
         resolved_identity = identity if identity is not None else resolve_identity(resolved_config, identity_schema)
         ai_profiles = ai_profiles or {}
         secrets_map = _build_secrets_map(ai_profiles, resolved_config, app_path)
+        obs = observability or ObservabilityContext.from_config(
+            project_root=project_root,
+            app_path=app_path,
+            config=resolved_config,
+        )
         self.ctx = ExecutionContext(
             flow=flow,
             schemas=schemas or {},
@@ -103,6 +110,7 @@ class Executor:
             runtime_theme=runtime_theme,
             project_root=project_root,
             app_path=app_path,
+            observability=obs,
             record_changes=[],
             execution_steps=[],
             execution_step_counter=0,
@@ -348,6 +356,10 @@ def _statement_kind(stmt: object) -> str | None:
         return "return"
     if isinstance(stmt, ir.ThemeChange):
         return "theme"
+    if isinstance(stmt, ir.LogStmt):
+        return "log"
+    if isinstance(stmt, ir.MetricStmt):
+        return "metric"
     if isinstance(stmt, ir.EnqueueJob):
         return "enqueue_job"
     if isinstance(stmt, ir.AdvanceTime):

@@ -11,6 +11,9 @@
     if (typeof window.renderData !== "function") missing.push("data");
     if (!root.menu || typeof root.menu.setupMenu !== "function") missing.push("menu");
     if (typeof window.renderTraces !== "function") missing.push("traces");
+    if (typeof window.renderTracing !== "function") missing.push("tracing");
+    if (typeof window.renderLogs !== "function") missing.push("logs");
+    if (typeof window.renderMetrics !== "function") missing.push("metrics");
     if (typeof window.renderExplain !== "function") missing.push("explain");
     if (typeof window.renderErrors !== "function") missing.push("errors");
     if (!root.formulas || typeof root.formulas.setupFormulas !== "function") missing.push("formulas");

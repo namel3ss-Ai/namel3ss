@@ -33,6 +33,18 @@ The App Runtime server that `n3 run` starts exposes a single browser protocol. T
 - Returns `{"ok": true, "uploads": [...]}` with deterministic ordering.
 - Upload entries include logical name, size, checksum, and scoped stored path.
 
+### GET /api/logs
+- Returns `{"ok": true, "count": <number>, "logs": [...]}` with deterministic ordering.
+- Logs are structured events with stable ids, levels, messages, and optional fields.
+
+### GET /api/trace
+- Returns `{"ok": true, "count": <number>, "spans": [...]}` with deterministic ordering.
+- Spans include stable ids, names, parent relationships, status, and step ranges.
+
+### GET /api/metrics
+- Returns `{"ok": true, "counters": [...], "timings": [...]}` with deterministic ordering.
+- Counters and timings include stable labels and step-based timing data.
+
 ### GET /api/health
 - Returns `{"ok": true, "status": "ready", "mode": "<run|dev|preview>"}` with no timestamps.
 
@@ -40,6 +52,7 @@ The App Runtime server that `n3 run` starts exposes a single browser protocol. T
 - Ports start at 7340 and increment deterministically when occupied.
 - Revisions derive from source content hashing; identical sources yield identical revisions.
 - JSON serialization is canonical and ordered; no timestamps, host paths, or random ids appear in payloads.
+- Secrets are redacted and host paths are scrubbed in observability payloads.
 - Runtime artifacts remain under `.namel3ss/` and are ignored by git; running the server must not dirty the repo.
 
 ## UI shell

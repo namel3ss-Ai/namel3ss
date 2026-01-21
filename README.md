@@ -325,6 +325,7 @@ Expect breaking changes between alpha revisions, but grammar, execution phases, 
 - [UI DSL spec](docs/ui-dsl.md)
 
 ### Explainability
+- [Observability](docs/observability.md)
 - [Execution how](docs/execution-how.md)
 - [Run outcome](docs/flow-what.md)
 - [Tools with](docs/tools-with.md)

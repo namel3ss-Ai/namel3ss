@@ -10,6 +10,7 @@ from namel3ss.runtime.ai.trace import AITrace
 from namel3ss.runtime.memory.api import MemoryManager
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.schema.records import RecordSchema
+from namel3ss.observability.context import ObservabilityContext
 
 
 @dataclass
@@ -72,6 +73,7 @@ class ExecutionContext:
     runtime_theme: str | None
     project_root: str | None = None
     app_path: str | None = None
+    observability: ObservabilityContext | None = None
     record_changes: list[dict] = field(default_factory=list)
     execution_steps: list[dict] = field(default_factory=list)
     execution_step_counter: int = 0

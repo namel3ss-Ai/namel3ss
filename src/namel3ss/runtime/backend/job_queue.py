@@ -59,23 +59,43 @@ def enqueue_job(
         due_time = current_logical_time(ctx)
     if order is None:
         order = next_job_order(ctx)
-    ctx.job_queue.append(
-        {
-            "name": job_name,
-            "payload": payload,
-            "due_time": int(due_time),
-            "order": int(order),
-        }
-    )
-    reason_text = f" ({reason})" if reason else ""
-    record_step(
-        ctx,
-        kind="job_enqueued",
-        what=f"job '{job_name}' enqueued{reason_text}",
-        line=line,
-        column=column,
-    )
-    studio_effect_adapter.record_job_enqueued(ctx, job_name=job_name, payload=payload)
+    obs = getattr(ctx, "observability", None)
+    span_id = None
+    if obs:
+        details = {"job": job_name, "due_time": int(due_time), "order": int(order)}
+        if reason:
+            details["reason"] = reason
+        span_id = obs.start_span(
+            ctx,
+            name=f"job:enqueue:{job_name}",
+            kind="job_enqueue",
+            details=details,
+        )
+    try:
+        ctx.job_queue.append(
+            {
+                "name": job_name,
+                "payload": payload,
+                "due_time": int(due_time),
+                "order": int(order),
+            }
+        )
+        reason_text = f" ({reason})" if reason else ""
+        record_step(
+            ctx,
+            kind="job_enqueued",
+            what=f"job '{job_name}' enqueued{reason_text}",
+            line=line,
+            column=column,
+        )
+        studio_effect_adapter.record_job_enqueued(ctx, job_name=job_name, payload=payload)
+    except Exception:
+        if span_id:
+            obs.end_span(ctx, span_id, status="error")
+        raise
+    else:
+        if span_id:
+            obs.end_span(ctx, span_id, status="ok")
 
 
 def run_job_queue(ctx) -> None:
@@ -119,6 +139,17 @@ def _run_job(ctx, job: ir.JobDecl, payload: object) -> None:
         line=job.line,
         column=job.column,
     )
+    span_id = None
+    obs = getattr(ctx, "observability", None)
+    if obs:
+        span_id = obs.start_span(
+            ctx,
+            name=f"job:{job.name}",
+            kind="job",
+            details={"job": job.name},
+            timing_name="job",
+            timing_labels={"job": job.name},
+        )
     studio_effect_adapter.record_job_started(ctx, job_name=job.name, payload=payload if payload is not None else {})
     status = "ok"
     output = None
@@ -133,6 +164,8 @@ def _run_job(ctx, job: ir.JobDecl, payload: object) -> None:
         status = "error"
         raise
     finally:
+        if span_id:
+            obs.end_span(ctx, span_id, status=status)
         if status == "ok":
             output = ctx.last_value
         studio_effect_adapter.record_job_finished(ctx, job_name=job.name, output=output, status=status)

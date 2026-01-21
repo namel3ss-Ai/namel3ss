@@ -170,6 +170,16 @@ def _statements_use_secrets(statements: list[ir.Statement]) -> bool:
         if isinstance(stmt, ir.AdvanceTime):
             if _expression_uses_secrets(stmt.amount):
                 return True
+        if isinstance(stmt, ir.LogStmt):
+            if _expression_uses_secrets(stmt.message):
+                return True
+            if stmt.fields is not None and _expression_uses_secrets(stmt.fields):
+                return True
+        if isinstance(stmt, ir.MetricStmt):
+            if stmt.value is not None and _expression_uses_secrets(stmt.value):
+                return True
+            if stmt.labels is not None and _expression_uses_secrets(stmt.labels):
+                return True
     return False
 
 

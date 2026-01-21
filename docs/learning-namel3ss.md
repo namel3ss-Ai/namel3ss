@@ -38,7 +38,7 @@ Studio is a viewer and interactor. It shows the UI manifest, available actions, 
 - [Backend Capabilities](language/backend-capabilities.md): built-in HTTP, scheduling, uploads, secrets/auth helpers, jobs, and file I/O with explicit capability gates.
 - [No dependencies](language/no-dependencies.md): install `namel3ss` and run apps without managing pip/npm for each project; packs extend capabilities.
 - [Capability packs](language/capability-packs.md): explicit pack declarations, permissions, and inspection for local and installed packs.
-- [Browser Protocol](runtime/browser-protocol.md): `/api/ui`, `/api/state`, `/api/action`, and `/api/health` are stable and deterministic.
+- [Browser Protocol](runtime/browser-protocol.md): `/api/ui`, `/api/state`, `/api/action`, `/api/logs`, `/api/trace`, `/api/metrics`, and `/api/health` are stable and deterministic.
 
 ### Explainable execution
 Every run emits deterministic artifacts that answer specific questions:
@@ -51,6 +51,7 @@ Every run emits deterministic artifacts that answer specific questions:
 Explainability is based on recorded facts, never on AI chain-of-thought.
 Use `n3 status` for the last run summary, `n3 explain` for failures, and
 `n3 clean` to remove runtime artifacts.
+Studio also surfaces Logs, Tracing, and Metrics for each run; see Observability.
 
 ### What namel3ss deliberately does not do
 - No CSS or styling DSL (UI is semantic only).
@@ -68,6 +69,7 @@ Use `n3 status` for the last run summary, `n3 explain` for failures, and
 - [Backend Capabilities](language/backend-capabilities.md)
 - [UI DSL](ui-dsl.md)
 - [Studio](studio.md)
+- [Observability](observability.md)
 - [Stability](stability.md)
 - [Providers](providers.md)
 - [Reserved words and safe naming](language/reserved-words.md)

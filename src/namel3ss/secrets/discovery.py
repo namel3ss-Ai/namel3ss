@@ -167,6 +167,18 @@ def _secret_names_from_statement(stmt: ir.Statement) -> set[str]:
         return names
     if isinstance(stmt, ir.AdvanceTime):
         return _secret_names_from_expr(stmt.amount)
+    if isinstance(stmt, ir.LogStmt):
+        names = _secret_names_from_expr(stmt.message)
+        if stmt.fields is not None:
+            names.update(_secret_names_from_expr(stmt.fields))
+        return names
+    if isinstance(stmt, ir.MetricStmt):
+        names: set[str] = set()
+        if stmt.value is not None:
+            names.update(_secret_names_from_expr(stmt.value))
+        if stmt.labels is not None:
+            names.update(_secret_names_from_expr(stmt.labels))
+        return names
     return set()
 
 

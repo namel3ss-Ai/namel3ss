@@ -21,6 +21,7 @@ from namel3ss.observe import actor_summary, record_event, summarize_value
 from namel3ss.secrets import collect_secret_values
 from namel3ss.compatibility import validate_spec_version
 import time
+from namel3ss.observability.context import ObservabilityContext
 
 
 def execute_flow(
@@ -33,6 +34,7 @@ def execute_flow(
     tools: Optional[Dict[str, ir.ToolDecl]] = None,
     functions: Optional[Dict[str, ir.FunctionDecl]] = None,
     identity: Optional[Dict[str, object]] = None,
+    observability: ObservabilityContext | None = None,
 ) -> ExecutionResult:
     return Executor(
         flow,
@@ -46,6 +48,7 @@ def execute_flow(
         store=resolve_store(None),
         project_root=None,
         identity=identity,
+        observability=observability,
     ).run()
 
 
@@ -64,6 +67,7 @@ def execute_program_flow(
     config: AppConfig | None = None,
     identity: dict | None = None,
     action_id: str | None = None,
+    observability: ObservabilityContext | None = None,
 ) -> ExecutionResult:
     validate_spec_version(program)
     flow = next((f for f in program.flows if f.name == flow_name), None)
@@ -93,6 +97,14 @@ def execute_program_flow(
     resolved_root = project_root if isinstance(project_root, (str, type(None))) else str(project_root)
     secret_values = collect_secret_values(resolved_config)
     start_time = time.time()
+    owns_observability = observability is None
+    obs = observability or ObservabilityContext.from_config(
+        project_root=resolved_root,
+        app_path=getattr(program, "app_path", None),
+        config=resolved_config,
+    )
+    if owns_observability:
+        obs.start_session()
     executor = Executor(
         flow,
         schemas=schemas,
@@ -116,6 +128,7 @@ def execute_program_flow(
         project_root=resolved_root,
         app_path=getattr(program, "app_path", None),
         flow_action_id=action_id,
+        observability=obs,
     )
     module_traces = getattr(program, "module_traces", None)
     if module_traces:
@@ -124,6 +137,21 @@ def execute_program_flow(
     status = "ok"
     result: ExecutionResult | None = None
     error: Exception | None = None
+    span_id = None
+    if owns_observability:
+        span_kind = "action" if action_id else "flow"
+        span_name = f"action:{action_id}" if action_id else f"flow:{flow_name}"
+        timing_labels = {"action": action_id} if action_id else {"flow": flow_name}
+        if action_id:
+            timing_labels["flow"] = flow_name
+        span_id = obs.start_span(
+            executor.ctx,
+            name=span_name,
+            kind=span_kind,
+            details={"flow": flow_name, "action_id": action_id},
+            timing_name=span_kind,
+            timing_labels=timing_labels,
+        )
     try:
         result = executor.run()
     except Exception as err:
@@ -143,6 +171,10 @@ def execute_program_flow(
                 secret_values=secret_values,
             )
     finally:
+        if span_id:
+            obs.end_span(executor.ctx, span_id, status=status)
+        if owns_observability:
+            obs.flush()
         if resolved_root:
             record_event(
                 Path(resolved_root),

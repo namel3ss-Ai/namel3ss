@@ -13,8 +13,10 @@ from namel3ss.ir.model.statements import (
     ForEach,
     If,
     Let,
+    LogStmt,
     Match,
     MatchCase,
+    MetricStmt,
     ParallelBlock,
     ParallelTask,
     Repeat,
@@ -200,6 +202,24 @@ def _lower_statement(stmt: ast.Statement, agents) -> IRStatement:
     if isinstance(stmt, ast.AdvanceTime):
         return AdvanceTime(
             amount=_lower_expression(stmt.amount),
+            line=stmt.line,
+            column=stmt.column,
+        )
+    if isinstance(stmt, ast.LogStmt):
+        return LogStmt(
+            level=stmt.level,
+            message=_lower_expression(stmt.message),
+            fields=_lower_expression(stmt.fields) if stmt.fields else None,
+            line=stmt.line,
+            column=stmt.column,
+        )
+    if isinstance(stmt, ast.MetricStmt):
+        return MetricStmt(
+            kind=stmt.kind,
+            name=stmt.name,
+            operation=stmt.operation,
+            value=_lower_expression(stmt.value) if stmt.value else None,
+            labels=_lower_expression(stmt.labels) if stmt.labels else None,
             line=stmt.line,
             column=stmt.column,
         )

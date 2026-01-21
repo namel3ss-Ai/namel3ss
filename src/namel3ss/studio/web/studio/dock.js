@@ -18,6 +18,18 @@
       window.renderTraces();
       return;
     }
+    if (tabName === "tracing" && typeof window.renderTracing === "function") {
+      window.renderTracing();
+      return;
+    }
+    if (tabName === "logs" && typeof window.renderLogs === "function") {
+      window.renderLogs();
+      return;
+    }
+    if (tabName === "metrics" && typeof window.renderMetrics === "function") {
+      window.renderMetrics();
+      return;
+    }
     if (tabName === "explain" && typeof window.renderExplain === "function") {
       window.renderExplain();
       return;

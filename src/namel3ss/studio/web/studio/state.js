@@ -6,6 +6,9 @@
   let cachedData = null;
   let cachedSummary = null;
   let cachedTraces = [];
+  let cachedSpans = [];
+  let cachedLogs = [];
+  let cachedMetrics = null;
   let cachedDiagnostics = null;
   let cachedLastRunError = null;
   let cachedFormulas = null;
@@ -49,6 +52,27 @@
   function setCachedTraces(value) {
     cachedTraces = Array.isArray(value) ? value : cachedTraces;
     return cachedTraces;
+  }
+  function getCachedSpans() {
+    return cachedSpans;
+  }
+  function setCachedSpans(value) {
+    cachedSpans = Array.isArray(value) ? value : cachedSpans;
+    return cachedSpans;
+  }
+  function getCachedLogs() {
+    return cachedLogs;
+  }
+  function setCachedLogs(value) {
+    cachedLogs = Array.isArray(value) ? value : cachedLogs;
+    return cachedLogs;
+  }
+  function getCachedMetrics() {
+    return cachedMetrics;
+  }
+  function setCachedMetrics(value) {
+    cachedMetrics = value || null;
+    return cachedMetrics;
   }
   function getCachedDiagnostics() {
     return cachedDiagnostics;
@@ -133,6 +157,12 @@
   state.setCachedSummary = setCachedSummary;
   state.getCachedTraces = getCachedTraces;
   state.setCachedTraces = setCachedTraces;
+  state.getCachedSpans = getCachedSpans;
+  state.setCachedSpans = setCachedSpans;
+  state.getCachedLogs = getCachedLogs;
+  state.setCachedLogs = setCachedLogs;
+  state.getCachedMetrics = getCachedMetrics;
+  state.setCachedMetrics = setCachedMetrics;
   state.getCachedDiagnostics = getCachedDiagnostics;
   state.setCachedDiagnostics = setCachedDiagnostics;
   state.getCachedLastRunError = getCachedLastRunError;

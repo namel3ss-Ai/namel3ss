@@ -3,8 +3,10 @@ from __future__ import annotations
 import io
 from typing import Iterable
 
+from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.observability.context import ObservabilityContext
 from namel3ss.runtime.backend.studio_effect_adapter_uploads import (
     record_upload_received,
     record_upload_stored,
@@ -21,30 +23,62 @@ def handle_upload(
     upload_name: str | None,
 ) -> dict:
     _require_uploads_capability(ctx)
+    obs, owns_obs = _resolve_observability(ctx)
+    span_id = None
+    span_status = "ok"
     normalized = {key.lower(): value for key, value in headers.items()}
     content_type = normalized.get("content-type", "").strip()
     is_chunked = "chunked" in normalized.get("transfer-encoding", "").lower()
-    if content_type.startswith("multipart/form-data"):
-        boundary = _multipart_boundary(content_type)
-        body = _read_body(rfile, content_length, is_chunked=is_chunked)
-        filename, part_type, data = _parse_multipart(body, boundary)
-        name = filename or upload_name or "upload"
-        stream = io.BytesIO(data)
-        metadata = store_upload(
-            ctx,
-            filename=name,
-            content_type=part_type,
-            stream=stream,
-        )
-    else:
-        name = upload_name or _header_filename(normalized) or "upload"
-        stream = _iter_body(rfile, content_length, is_chunked=is_chunked)
-        metadata = store_upload(
-            ctx,
-            filename=name,
-            content_type=content_type,
-            stream=stream,
-        )
+    if obs and owns_obs:
+        obs.start_session()
+    try:
+        if content_type.startswith("multipart/form-data"):
+            boundary = _multipart_boundary(content_type)
+            body = _read_body(rfile, content_length, is_chunked=is_chunked)
+            filename, part_type, data = _parse_multipart(body, boundary)
+            name = filename or upload_name or "upload"
+            if obs and span_id is None:
+                span_id = obs.start_span(
+                    None,
+                    name=f"upload:{name}",
+                    kind="upload",
+                    details={"name": name},
+                    timing_name="upload",
+                    timing_labels={"name": name},
+                )
+            stream = io.BytesIO(data)
+            metadata = store_upload(
+                ctx,
+                filename=name,
+                content_type=part_type,
+                stream=stream,
+            )
+        else:
+            name = upload_name or _header_filename(normalized) or "upload"
+            if obs and span_id is None:
+                span_id = obs.start_span(
+                    None,
+                    name=f"upload:{name}",
+                    kind="upload",
+                    details={"name": name},
+                    timing_name="upload",
+                    timing_labels={"name": name},
+                )
+            stream = _iter_body(rfile, content_length, is_chunked=is_chunked)
+            metadata = store_upload(
+                ctx,
+                filename=name,
+                content_type=content_type,
+                stream=stream,
+            )
+    except Exception:
+        span_status = "error"
+        raise
+    finally:
+        if span_id:
+            obs.end_span(None, span_id, status=span_status)
+        if obs and owns_obs:
+            obs.flush()
     traces: list[dict] = []
     record_upload_received(
         traces,
@@ -61,6 +95,25 @@ def handle_upload_list(ctx) -> dict:
     _require_uploads_capability(ctx)
     uploads = list_uploads(ctx)
     return {"ok": True, "uploads": uploads}
+
+
+def _resolve_observability(ctx) -> tuple[ObservabilityContext | None, bool]:
+    obs = getattr(ctx, "observability", None)
+    if obs is not None:
+        return obs, False
+    app_path = getattr(ctx, "app_path", None)
+    project_root = getattr(ctx, "project_root", None)
+    config = None
+    try:
+        config = load_config(app_path=app_path, root=project_root)
+    except Exception:
+        config = None
+    obs = ObservabilityContext.from_config(
+        project_root=project_root,
+        app_path=app_path,
+        config=config,
+    )
+    return obs, True
 
 
 def _multipart_boundary(content_type: str) -> bytes:

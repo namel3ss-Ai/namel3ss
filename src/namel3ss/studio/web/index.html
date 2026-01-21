@@ -97,6 +97,21 @@
           <div id="traces"></div>
         </div>
       </section>
+      <section class="canvas-mode" data-mode="tracing" aria-labelledby="dock-tracing">
+        <div class="canvas-panel">
+          <div id="tracing" class="panel-stack"></div>
+        </div>
+      </section>
+      <section class="canvas-mode" data-mode="logs" aria-labelledby="dock-logs">
+        <div class="canvas-panel">
+          <div id="logs" class="panel-stack"></div>
+        </div>
+      </section>
+      <section class="canvas-mode" data-mode="metrics" aria-labelledby="dock-metrics">
+        <div class="canvas-panel">
+          <div id="metrics" class="panel-stack"></div>
+        </div>
+      </section>
       <section class="canvas-mode" data-mode="memory" aria-labelledby="dock-memory">
         <div id="memory" class="canvas-panel"></div>
       </section>
@@ -125,6 +140,9 @@
       <button class="tab" data-tab="formulas" id="dock-formulas" data-testid="studio-dock-item-formulas">Formulas</button>
       <button class="tab" data-tab="explain" id="dock-explain" data-testid="studio-dock-item-explain">Explain</button>
       <button class="tab" data-tab="traces" id="dock-traces" data-testid="studio-dock-item-traces">Traces</button>
+      <button class="tab" data-tab="tracing" id="dock-tracing" data-testid="studio-dock-item-tracing">Tracing</button>
+      <button class="tab" data-tab="logs" id="dock-logs" data-testid="studio-dock-item-logs">Logs</button>
+      <button class="tab" data-tab="metrics" id="dock-metrics" data-testid="studio-dock-item-metrics">Metrics</button>
       <button class="tab" data-tab="memory" id="dock-memory" data-testid="studio-dock-item-memory">Memory</button>
       <button class="tab" data-tab="agents" id="dock-agents" data-testid="studio-dock-item-agents">Agents</button>
       <button class="tab" data-tab="setup" id="dock-setup" data-testid="studio-dock-item-setup">Setup</button>
@@ -163,6 +181,9 @@
   <script src="/studio/refresh.js"></script>
   <script src="/studio/secret_keys.js"></script>
   <script src="/studio/traces.js"></script>
+  <script src="/studio/tracing.js"></script>
+  <script src="/studio/logs.js"></script>
+  <script src="/studio/metrics.js"></script>
   <script src="/studio/errors.js"></script>
   <script src="/studio/formulas.js"></script>
   <script src="/studio/explain.js"></script>

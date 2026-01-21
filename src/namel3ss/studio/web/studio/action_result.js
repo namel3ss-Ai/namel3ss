@@ -1,7 +1,50 @@
 (() => {
   const root = window.N3Studio || (window.N3Studio = {});
   const state = root.state;
+  const net = root.net;
   const actionResult = root.actionResult || (root.actionResult = {});
+
+  function refreshObservability() {
+    if (!net || typeof net.fetchJson !== "function") return;
+    net.fetchJson("/api/logs")
+      .then((payload) => {
+        const entries = payload && Array.isArray(payload.logs) ? payload.logs : [];
+        if (state && typeof state.setCachedLogs === "function") {
+          state.setCachedLogs(entries);
+        }
+        if (typeof window.renderLogs === "function") {
+          window.renderLogs(entries);
+        } else if (root.logs && typeof root.logs.renderLogs === "function") {
+          root.logs.renderLogs(entries);
+        }
+      })
+      .catch(() => {});
+    net.fetchJson("/api/trace")
+      .then((payload) => {
+        const spans = payload && Array.isArray(payload.spans) ? payload.spans : [];
+        if (state && typeof state.setCachedSpans === "function") {
+          state.setCachedSpans(spans);
+        }
+        if (typeof window.renderTracing === "function") {
+          window.renderTracing(spans);
+        } else if (root.tracing && typeof root.tracing.renderTracing === "function") {
+          root.tracing.renderTracing(spans);
+        }
+      })
+      .catch(() => {});
+    net.fetchJson("/api/metrics")
+      .then((payload) => {
+        if (state && typeof state.setCachedMetrics === "function") {
+          state.setCachedMetrics(payload);
+        }
+        if (typeof window.renderMetrics === "function") {
+          window.renderMetrics(payload);
+        } else if (root.metrics && typeof root.metrics.renderMetrics === "function") {
+          root.metrics.renderMetrics(payload);
+        }
+      })
+      .catch(() => {});
+  }
 
   function applyActionResult(result) {
     const hasTraces = result && Array.isArray(result.traces);
@@ -43,6 +86,7 @@
         state.setCachedLastRunError(null);
       }
     }
+    refreshObservability();
   }
 
   actionResult.applyActionResult = applyActionResult;

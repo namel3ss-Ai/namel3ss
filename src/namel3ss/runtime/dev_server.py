@@ -23,6 +23,7 @@ from namel3ss.runtime.preferences.factory import app_pref_key, preference_store_
 from namel3ss.runtime.ui.actions import handle_action
 from namel3ss.runtime.storage.factory import resolve_store
 from namel3ss.runtime.backend.upload_handler import handle_upload, handle_upload_list
+from namel3ss.runtime.observability_api import get_logs_payload, get_metrics_payload, get_trace_payload
 from namel3ss.secrets import set_audit_root, set_engine_target
 from namel3ss.studio.session import SessionState
 from namel3ss.determinism import canonical_json_dumps
@@ -79,6 +80,21 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
         if path == "/api/uploads":
             response, status = self._handle_upload_list()
             self._respond_json(response, status=status)
+            return
+        if path == "/api/logs":
+            payload = self._observability_payload(get_logs_payload)
+            status = 200 if payload.get("ok", True) else 400
+            self._respond_json(payload, status=status)
+            return
+        if path == "/api/trace":
+            payload = self._observability_payload(get_trace_payload)
+            status = 200 if payload.get("ok", True) else 400
+            self._respond_json(payload, status=status)
+            return
+        if path == "/api/metrics":
+            payload = self._observability_payload(get_metrics_payload)
+            status = 200 if payload.get("ok", True) else 400
+            self._respond_json(payload, status=status)
             return
         if path == "/api/dev/status":
             payload = self._state().status_payload()
@@ -175,6 +191,14 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
             if self._mode() == "dev":
                 payload["overlay"] = build_dev_overlay_payload(payload, debug=self._state().debug)
             return payload, 500
+
+    def _observability_payload(self, builder) -> dict:
+        state = self._state()
+        state._refresh_if_needed()
+        program = state.program
+        if program is None:
+            return build_error_payload("Program not loaded.", kind="engine")
+        return builder(getattr(program, "project_root", None), getattr(program, "app_path", None))
 
     def _handle_static(self, path: str) -> bool:
         file_path, content_type = _resolve_runtime_file(path, self._mode())

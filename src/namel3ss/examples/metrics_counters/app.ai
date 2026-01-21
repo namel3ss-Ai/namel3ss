@@ -1,0 +1,17 @@
+spec is "1.0"
+
+flow "count requests" requires true:
+  metric counter "requests" increment
+  metric counter "requests" add 2 with map:
+    "route" is "/api/orders"
+    "source" is "demo"
+  metric counter "requests" set 10 with map:
+    "route" is "/api/orders"
+  return "ok"
+
+page "home":
+  purpose is "Single-flow example of counter metrics."
+  title is "Metrics Counters"
+  text is "Run the flow to update counters."
+  button "Update counters":
+    calls flow "count requests"

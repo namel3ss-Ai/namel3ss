@@ -13,6 +13,7 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
 from namel3ss.runtime.dev_server import BrowserAppState
 from namel3ss.runtime.backend.upload_handler import handle_upload, handle_upload_list
+from namel3ss.runtime.observability_api import get_logs_payload, get_metrics_payload, get_trace_payload
 from namel3ss.ui.external.serve import resolve_external_ui_file
 from namel3ss.utils.json_tools import dumps as json_dumps
 from namel3ss.version import get_version
@@ -41,6 +42,18 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
         if path == "/api/uploads":
             response, status = self._handle_upload_list()
             self._respond_json(response, status=status)
+            return
+        if path == "/api/logs":
+            payload, status = self._handle_observability(get_logs_payload)
+            self._respond_json(payload, status=status, sort_keys=True)
+            return
+        if path == "/api/trace":
+            payload, status = self._handle_observability(get_trace_payload)
+            self._respond_json(payload, status=status, sort_keys=True)
+            return
+        if path == "/api/metrics":
+            payload, status = self._handle_observability(get_metrics_payload)
+            self._respond_json(payload, status=status, sort_keys=True)
             return
         if path.startswith("/api/"):
             self.send_error(404)
@@ -82,8 +95,8 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             "build_id": getattr(self.server, "build_id", None),  # type: ignore[attr-defined]
         }
 
-    def _respond_json(self, payload: dict, status: int = 200) -> None:
-        data = json_dumps(payload).encode("utf-8")
+    def _respond_json(self, payload: dict, status: int = 200, *, sort_keys: bool = False) -> None:
+        data = json_dumps(payload, sort_keys=sort_keys).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(data)))
@@ -168,6 +181,14 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
         except Exception as err:  # pragma: no cover - defensive guard rail
             payload = build_error_payload(str(err), kind="internal")
             return payload, 500
+
+    def _handle_observability(self, builder) -> tuple[dict, int]:
+        program = getattr(self._state(), "program", None)
+        if program is None:
+            return build_error_payload("Program not loaded.", kind="engine"), 500
+        payload = builder(getattr(program, "project_root", None), getattr(program, "app_path", None))
+        status = 200 if payload.get("ok", True) else 400
+        return payload, status
 
     def _handle_static(self, path: str) -> bool:
         web_root = getattr(self.server, "web_root", None)  # type: ignore[attr-defined]

@@ -138,3 +138,19 @@ class EnqueueJob(Statement):
 @dataclass
 class AdvanceTime(Statement):
     amount: Expression
+
+
+@dataclass
+class LogStmt(Statement):
+    level: str
+    message: Expression
+    fields: Expression | None = None
+
+
+@dataclass
+class MetricStmt(Statement):
+    kind: str
+    name: str
+    operation: str
+    value: Expression | None = None
+    labels: Expression | None = None

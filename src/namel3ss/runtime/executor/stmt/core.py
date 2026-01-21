@@ -34,8 +34,10 @@ from namel3ss.runtime.executor.stmt.records import (
     execute_update,
 )
 from namel3ss.runtime.backend.job_queue import enqueue_job
+from namel3ss.runtime.backend.logical_clock import require_non_negative_int
 from namel3ss.runtime.backend.scheduler import advance_time, schedule_job
 from namel3ss.ui.settings import UI_ALLOWED_VALUES
+from namel3ss.utils.numbers import is_number
 
 
 def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
@@ -95,6 +97,12 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
         return
     if isinstance(stmt, ir.ThemeChange):
         _execute_theme_change(ctx, stmt)
+        return
+    if isinstance(stmt, ir.LogStmt):
+        _execute_log(ctx, stmt)
+        return
+    if isinstance(stmt, ir.MetricStmt):
+        _execute_metric(ctx, stmt)
         return
     if isinstance(stmt, ir.EnqueueJob):
         _execute_enqueue_job(ctx, stmt)
@@ -258,7 +266,66 @@ def _execute_enqueue_job(ctx: ExecutionContext, stmt: ir.EnqueueJob) -> None:
 def _execute_advance_time(ctx: ExecutionContext, stmt: ir.AdvanceTime) -> None:
     value = evaluate_expression(ctx, stmt.amount)
     advance_time(ctx, value, line=stmt.line, column=stmt.column)
+
+
+def _execute_log(ctx: ExecutionContext, stmt: ir.LogStmt) -> None:
+    message = evaluate_expression(ctx, stmt.message)
+    fields = evaluate_expression(ctx, stmt.fields) if stmt.fields is not None else None
+    if fields is not None and not isinstance(fields, dict):
+        raise Namel3ssError("Log fields must be an object", line=stmt.line, column=stmt.column)
+    record_step(
+        ctx,
+        kind="statement_log",
+        what=f"log {stmt.level}",
+        line=stmt.line,
+        column=stmt.column,
+    )
+    if ctx.observability:
+        ctx.observability.record_log(level=stmt.level, message=message, fields=fields)
+    ctx.last_value = message
+
+
+def _execute_metric(ctx: ExecutionContext, stmt: ir.MetricStmt) -> None:
+    value = evaluate_expression(ctx, stmt.value) if stmt.value is not None else None
+    labels = evaluate_expression(ctx, stmt.labels) if stmt.labels is not None else None
+    if labels is not None and not isinstance(labels, dict):
+        raise Namel3ssError("Metric labels must be an object", line=stmt.line, column=stmt.column)
+    record_step(
+        ctx,
+        kind="statement_metric",
+        what=f"metric {stmt.kind} {stmt.operation}",
+        line=stmt.line,
+        column=stmt.column,
+    )
+    if not ctx.observability:
+        ctx.last_value = value
+        return
+    if stmt.kind == "counter":
+        if stmt.operation == "increment":
+            delta = 1 if value is None else value
+            _require_metric_number(delta, stmt)
+            ctx.observability.metrics.increment(stmt.name, value=delta, labels=labels)
+        elif stmt.operation == "add":
+            _require_metric_number(value, stmt)
+            ctx.observability.metrics.add(stmt.name, value=value, labels=labels)
+        elif stmt.operation == "set":
+            _require_metric_number(value, stmt)
+            ctx.observability.metrics.set(stmt.name, value=value, labels=labels)
+        else:
+            raise Namel3ssError("Unknown counter metric operation", line=stmt.line, column=stmt.column)
+    elif stmt.kind == "timing":
+        if stmt.operation != "record":
+            raise Namel3ssError("Unknown timing metric operation", line=stmt.line, column=stmt.column)
+        duration = require_non_negative_int(value, line=stmt.line, column=stmt.column)
+        ctx.observability.metrics.record_timing(stmt.name, duration=duration, labels=labels)
+    else:
+        raise Namel3ssError("Unknown metric kind", line=stmt.line, column=stmt.column)
     ctx.last_value = value
+
+
+def _require_metric_number(value: object, stmt: ir.MetricStmt) -> None:
+    if not is_number(value):
+        raise Namel3ssError("Metric value must be a number", line=stmt.line, column=stmt.column)
 
 
 def _calc_assignment_info(ctx: ExecutionContext, line: int | None) -> dict[str, int] | None:

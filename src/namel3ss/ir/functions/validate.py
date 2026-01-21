@@ -76,6 +76,15 @@ def _validate_function_body(stmts: list[ir.Statement]) -> None:
                 line=stmt.line,
                 column=stmt.column,
             )
+        if isinstance(stmt, ir.LogStmt):
+            _validate_expression(stmt.message)
+            if stmt.fields is not None:
+                _validate_expression(stmt.fields)
+        elif isinstance(stmt, ir.MetricStmt):
+            if stmt.value is not None:
+                _validate_expression(stmt.value)
+            if stmt.labels is not None:
+                _validate_expression(stmt.labels)
         if isinstance(stmt, ir.Let):
             _validate_expression(stmt.expression)
         elif isinstance(stmt, ir.Return):
@@ -227,6 +236,15 @@ def _collect_calls(stmts: list[ir.Statement]) -> set[str]:
         elif isinstance(stmt, ir.TryCatch):
             calls.update(_collect_calls(stmt.try_body))
             calls.update(_collect_calls(stmt.catch_body))
+        elif isinstance(stmt, ir.LogStmt):
+            calls.update(_collect_calls_from_expr(stmt.message))
+            if stmt.fields is not None:
+                calls.update(_collect_calls_from_expr(stmt.fields))
+        elif isinstance(stmt, ir.MetricStmt):
+            if stmt.value is not None:
+                calls.update(_collect_calls_from_expr(stmt.value))
+            if stmt.labels is not None:
+                calls.update(_collect_calls_from_expr(stmt.labels))
     return calls
 
 

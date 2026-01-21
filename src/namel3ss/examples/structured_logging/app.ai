@@ -1,0 +1,17 @@
+spec is "1.0"
+
+flow "emit logs" requires true:
+  log info "Checkout started" with map:
+    "cart_id" is "cart-001"
+    "channel" is "web"
+  log warn "Low inventory" with map:
+    "sku" is "sku-42"
+  log error "Payment declined"
+  return "ok"
+
+page "home":
+  purpose is "Single-flow example of structured logging."
+  title is "Structured Logging"
+  text is "Run the flow to emit log events."
+  button "Emit logs":
+    calls flow "emit logs"

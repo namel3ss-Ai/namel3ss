@@ -668,3 +668,188 @@
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
 }
+
+.log-row,
+.metric-section,
+.span-row {
+  border: 1px solid #eee;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.log-row {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.log-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.log-level {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #f2f2f2;
+  color: #333;
+}
+
+.log-level-debug .log-level {
+  background: #f3f3f3;
+  color: #666;
+}
+
+.log-level-info .log-level {
+  background: #eef5ff;
+  color: #1f4a7a;
+}
+
+.log-level-warn .log-level {
+  background: #fff2db;
+  color: #8a4a00;
+}
+
+.log-level-error .log-level {
+  background: #ffecec;
+  color: #a01111;
+}
+
+.log-message {
+  font-weight: 600;
+  color: #222;
+}
+
+.log-meta {
+  margin-left: auto;
+  font-size: 11px;
+  color: #666;
+}
+
+.log-fields {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f7f7f7;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.metric-section {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.metric-section-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #555;
+}
+
+.metric-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 6px 0;
+  border-top: 1px dashed #eee;
+  font-size: 12px;
+}
+
+.metric-row:first-of-type {
+  border-top: none;
+}
+
+.metric-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-name {
+  font-weight: 600;
+  color: #222;
+}
+
+.metric-labels {
+  font-size: 11px;
+  color: #666;
+}
+
+.metric-value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 11px;
+  color: #333;
+}
+
+.metric-empty {
+  font-size: 12px;
+  color: #666;
+}
+
+.span-row {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.span-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.span-name {
+  font-weight: 600;
+  color: #222;
+}
+
+.span-kind {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #666;
+}
+
+.span-meta {
+  font-size: 11px;
+  color: #666;
+}
+
+.span-status {
+  margin-left: auto;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #555;
+}
+
+.span-status-error .span-status {
+  color: #a01111;
+}
+
+.span-details {
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #f7f7f7;
+  font-size: 12px;
+}
+
+.span-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #333;
+}

@@ -22,6 +22,7 @@ from namel3ss.runtime.records.state_paths import set_state_record
 from namel3ss.runtime.run_pipeline import build_flow_payload, finalize_run_payload
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.storage.factory import resolve_store
+from namel3ss.observability.context import ObservabilityContext
 from namel3ss.secrets import collect_secret_values
 from namel3ss.traces.schema import TraceEventType
 from namel3ss.ui.manifest import build_manifest
@@ -88,6 +89,9 @@ def handle_action(
 
     action = actions[action_id]
     action_type = action.get("type")
+    obs = None
+    span_id = None
+    span_status = "ok"
     try:
         if action_type == "call_flow":
             response, action_error = _handle_call_flow(
@@ -114,23 +118,46 @@ def handle_action(
             if action_error:
                 _record_engine_error(project_root, action_id, actor, action_error, secret_values)
         elif action_type == "submit_form":
-            response = _handle_submit_form(
-                program_ir,
-                action,
-                action_id,
-                payload or {},
-                working_state,
-                store,
-                manifest,
-                runtime_theme,
+            obs = ObservabilityContext.from_config(
+                project_root=project_root,
+                app_path=getattr(program_ir, "app_path", None),
                 config=resolved_config,
-                identity=identity,
-                secret_values=secret_values,
-                source=source,
             )
+            obs.start_session()
+            span_id = obs.start_span(
+                None,
+                name=f"action:{action_id}",
+                kind="action",
+                details={"action_id": action_id, "type": "submit_form"},
+                timing_name="action",
+                timing_labels={"action": action_id, "type": "submit_form"},
+            )
+            try:
+                response = _handle_submit_form(
+                    program_ir,
+                    action,
+                    action_id,
+                    payload or {},
+                    working_state,
+                    store,
+                    manifest,
+                    runtime_theme,
+                    config=resolved_config,
+                    identity=identity,
+                    secret_values=secret_values,
+                    source=source,
+                )
+            except Exception:
+                span_status = "error"
+                raise
+            finally:
+                if span_id:
+                    obs.end_span(None, span_id, status=span_status)
+                obs.flush()
         else:
             raise Namel3ssError(f"Unsupported action type '{action_type}'")
     except Exception as err:
+        span_status = "error"
         action_error = err
         if project_root:
             _record_engine_error(project_root, action_id, actor, err, secret_values)

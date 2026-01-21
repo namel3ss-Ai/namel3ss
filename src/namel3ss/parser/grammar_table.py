@@ -101,7 +101,9 @@ def statement_rules() -> tuple[StatementRule, ...]:
     from namel3ss.parser.stmt.foreach import parse_for_each
     from namel3ss.parser.stmt.if_stmt import parse_if
     from namel3ss.parser.stmt.let import parse_let
+    from namel3ss.parser.stmt.log import parse_log
     from namel3ss.parser.stmt.match import parse_match
+    from namel3ss.parser.stmt.metric import parse_metric
     from namel3ss.parser.stmt.parallel import parse_parallel
     from namel3ss.parser.stmt.repeat import parse_repeat
     from namel3ss.parser.stmt.return_stmt import parse_return
@@ -153,6 +155,8 @@ def statement_rules() -> tuple[StatementRule, ...]:
         StatementRule("in_parallel", "IN", parse_in_parallel),
         StatementRule("clear", "IDENT", parse_clear, token_value="clear"),
         StatementRule("notice", "IDENT", parse_notice, token_value="notice"),
+        StatementRule("log", "IDENT", parse_log, token_value="log"),
+        StatementRule("metric", "IDENT", parse_metric, token_value="metric"),
         StatementRule("require_latest", "REQUIRE", parse_require_latest),
         StatementRule(
             "record_final_output",

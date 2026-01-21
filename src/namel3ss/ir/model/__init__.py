@@ -34,6 +34,8 @@ from namel3ss.ir.model.statements import (
     TryCatch,
     EnqueueJob,
     AdvanceTime,
+    LogStmt,
+    MetricStmt,
 )
 from namel3ss.ir.model.expressions import (
     Assignable,
@@ -145,6 +147,8 @@ __all__ = [
     "ThemeChange",
     "EnqueueJob",
     "AdvanceTime",
+    "LogStmt",
+    "MetricStmt",
     "TryCatch",
     "Find",
     "UpdateField",

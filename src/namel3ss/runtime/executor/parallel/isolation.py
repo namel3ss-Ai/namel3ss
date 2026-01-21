@@ -115,6 +115,15 @@ def _scan_statement_expressions(ctx, stmt: ir.Statement) -> None:
             _scan_expression(ctx, update.expression)
     elif isinstance(stmt, ir.Delete):
         _scan_expression(ctx, stmt.predicate)
+    elif isinstance(stmt, ir.LogStmt):
+        _scan_expression(ctx, stmt.message)
+        if stmt.fields is not None:
+            _scan_expression(ctx, stmt.fields)
+    elif isinstance(stmt, ir.MetricStmt):
+        if stmt.value is not None:
+            _scan_expression(ctx, stmt.value)
+        if stmt.labels is not None:
+            _scan_expression(ctx, stmt.labels)
 
 
 def _scan_expression(ctx, expr: ir.Expression) -> None:

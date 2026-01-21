@@ -44,36 +44,56 @@ def execute_file_tool(
     root = _file_root(ctx)
     scoped_path = _resolve_scoped_path(root, rel_path, line=line, column=column)
     display_path = f"{_scope_name(ctx.project_root, ctx.app_path)}/{rel_path}"
-    trace_event = studio_effect_adapter.record_file_operation(
-        ctx,
-        tool_name=tool.name,
-        operation=operation,
-        path=display_path,
-        content=content if operation == "write" else None,
-    )
+    obs = getattr(ctx, "observability", None)
+    span_id = None
+    if obs:
+        span_id = obs.start_span(
+            ctx,
+            name=f"file:{tool.name}",
+            kind="file",
+            details={"tool": tool.name, "operation": operation},
+            timing_name="capability",
+            timing_labels={"capability": "file", "tool": tool.name},
+        )
+    span_status = "ok"
     try:
-        if operation == "read":
-            text = _read_file(scoped_path, line=line, column=column)
-            output = _build_output(tool, content=text, bytes_len=len(text.encode("utf-8")))
-            studio_effect_adapter.record_file_result(trace_event, content=text, ok=True)
-        else:
-            bytes_len = _write_file(scoped_path, content or "")
-            output = _build_output(tool, content=None, bytes_len=bytes_len)
-            studio_effect_adapter.record_file_result(trace_event, ok=True)
-    except Exception as err:
-        studio_effect_adapter.record_file_error(trace_event, message=str(err))
+        trace_event = studio_effect_adapter.record_file_operation(
+            ctx,
+            tool_name=tool.name,
+            operation=operation,
+            path=display_path,
+            content=content if operation == "write" else None,
+        )
+        try:
+            if operation == "read":
+                text = _read_file(scoped_path, line=line, column=column)
+                output = _build_output(tool, content=text, bytes_len=len(text.encode("utf-8")))
+                studio_effect_adapter.record_file_result(trace_event, content=text, ok=True)
+            else:
+                bytes_len = _write_file(scoped_path, content or "")
+                output = _build_output(tool, content=None, bytes_len=bytes_len)
+                studio_effect_adapter.record_file_result(trace_event, ok=True)
+        except Exception as err:
+            span_status = "error"
+            studio_effect_adapter.record_file_error(trace_event, message=str(err))
+            raise
+        validate_tool_fields(
+            fields=tool.output_fields,
+            payload=output,
+            tool_name=tool.name,
+            phase="output",
+            line=line,
+            column=column,
+            type_mode="tool",
+            expect_object=True,
+        )
+        return output
+    except Exception:
+        span_status = "error"
         raise
-    validate_tool_fields(
-        fields=tool.output_fields,
-        payload=output,
-        tool_name=tool.name,
-        phase="output",
-        line=line,
-        column=column,
-        type_mode="tool",
-        expect_object=True,
-    )
-    return output
+    finally:
+        if span_id:
+            obs.end_span(ctx, span_id, status=span_status)
 
 
 def _file_root(ctx) -> Path:

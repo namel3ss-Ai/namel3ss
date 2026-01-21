@@ -80,6 +80,9 @@ def _execute_node_tool(
     is_foreign = declared_as == "foreign"
     type_mode = "foreign" if is_foreign else "tool"
     secret_values = collect_secret_values(ctx.config)
+    obs = getattr(ctx, "observability", None)
+    span_id = None
+    span_status = "ok"
     trace_event = {
         "type": "tool_call",
         "tool": tool.name,
@@ -125,6 +128,20 @@ def _execute_node_tool(
         pack_id = resolved.pack_id
         pack_name = resolved.pack_name
         pack_version = resolved.pack_version
+        if obs and resolved_source in {"builtin_pack", "installed_pack", "local_pack"}:
+            details = {"tool": tool.name, "source": resolved_source}
+            if pack_id:
+                details["pack_id"] = pack_id
+            if pack_name:
+                details["pack_name"] = pack_name
+            span_id = obs.start_span(
+                ctx,
+                name=f"pack:{pack_id or tool.name}",
+                kind="pack",
+                details=details,
+                timing_name="pack",
+                timing_labels={"pack": pack_id or tool.name, "tool": tool.name},
+            )
         entry = binding.entry
         validate_node_tool_entry(
             entry,
@@ -290,6 +307,7 @@ def _execute_node_tool(
             expect_object=not is_foreign,
         )
     except Exception as err:
+        span_status = "error"
         error_type, error_message = _trace_error_details(err, secret_values)
         duration_ms = int((time.monotonic() - start_time) * 1000)
         trace_event.update(
@@ -337,6 +355,9 @@ def _execute_node_tool(
             line=line,
             column=column,
         ) from err
+    finally:
+        if span_id:
+            obs.end_span(ctx, span_id, status=span_status)
     duration_ms = int((time.monotonic() - start_time) * 1000)
     trace_event.update(
         {

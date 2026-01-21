@@ -46,49 +46,69 @@ def execute_http_tool(
     send_headers, trace_headers, secret_names = _resolve_headers(headers)
     if secret_names:
         _require_secrets_capability(ctx, line=line, column=column)
-    trace_event = studio_effect_adapter.record_http_request(
-        ctx,
-        tool_name=tool.name,
-        method=method,
-        url=url,
-        headers=trace_headers,
-        body=body,
-    )
+    obs = getattr(ctx, "observability", None)
+    span_id = None
+    if obs:
+        span_id = obs.start_span(
+            ctx,
+            name=f"http:{tool.name}",
+            kind="http",
+            details={"tool": tool.name, "method": method},
+            timing_name="capability",
+            timing_labels={"capability": "http", "tool": tool.name},
+        )
+    span_status = "ok"
     try:
-        req = request.Request(url, method=method, headers=_header_dict(send_headers), data=None)
-        with safe_urlopen(req, timeout=timeout_seconds) as resp:
-            status = int(getattr(resp, "status", None) or resp.getcode())
-            raw = resp.read()
-            body_text = raw.decode("utf-8", errors="replace")
-            response_headers = _sorted_headers(resp.headers.items())
-    except Exception as err:
-        studio_effect_adapter.record_http_error(trace_event, message=str(err))
+        trace_event = studio_effect_adapter.record_http_request(
+            ctx,
+            tool_name=tool.name,
+            method=method,
+            url=url,
+            headers=trace_headers,
+            body=body,
+        )
+        try:
+            req = request.Request(url, method=method, headers=_header_dict(send_headers), data=None)
+            with safe_urlopen(req, timeout=timeout_seconds) as resp:
+                status = int(getattr(resp, "status", None) or resp.getcode())
+                raw = resp.read()
+                body_text = raw.decode("utf-8", errors="replace")
+                response_headers = _sorted_headers(resp.headers.items())
+        except Exception as err:
+            span_status = "error"
+            studio_effect_adapter.record_http_error(trace_event, message=str(err))
+            raise
+        output = _build_output(
+            tool,
+            status=status,
+            headers=response_headers,
+            body=body_text,
+            line=line,
+            column=column,
+        )
+        studio_effect_adapter.record_http_response(
+            trace_event,
+            status=status,
+            headers=response_headers,
+            body=body_text,
+        )
+        validate_tool_fields(
+            fields=tool.output_fields,
+            payload=output,
+            tool_name=tool.name,
+            phase="output",
+            line=line,
+            column=column,
+            type_mode="tool",
+            expect_object=True,
+        )
+        return output
+    except Exception:
+        span_status = "error"
         raise
-    output = _build_output(
-        tool,
-        status=status,
-        headers=response_headers,
-        body=body_text,
-        line=line,
-        column=column,
-    )
-    studio_effect_adapter.record_http_response(
-        trace_event,
-        status=status,
-        headers=response_headers,
-        body=body_text,
-    )
-    validate_tool_fields(
-        fields=tool.output_fields,
-        payload=output,
-        tool_name=tool.name,
-        phase="output",
-        line=line,
-        column=column,
-        type_mode="tool",
-        expect_object=True,
-    )
-    return output
+    finally:
+        if span_id:
+            obs.end_span(ctx, span_id, status=span_status)
 
 
 def _build_output(
