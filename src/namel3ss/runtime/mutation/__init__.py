@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from namel3ss.runtime.mutation.policy import (
     MutationDecision,
     append_mutation_policy_warnings,
@@ -23,4 +21,5 @@ __all__ = [
     "page_has_form",
     "requires_mentions_mutation",
     "statements_mutate",
+    "steps_mutate",
 ]
