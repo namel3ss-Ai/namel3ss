@@ -10,6 +10,9 @@ from namel3ss.runtime.tools.runners.base import ToolRunnerRequest, ToolRunnerRes
 from namel3ss.runtime.tools.runners.node.protocol import PROTOCOL_VERSION, run_node_subprocess
 
 
+DEFAULT_NODE_TOOL_TIMEOUT_SECONDS = 30
+
+
 class NodeRunner:
     name = "node"
 
@@ -57,4 +60,4 @@ def _resolve_node_path() -> Path:
     )
 
 
-__all__ = ["NodeRunner"]
+__all__ = ["DEFAULT_NODE_TOOL_TIMEOUT_SECONDS", "NodeRunner"]

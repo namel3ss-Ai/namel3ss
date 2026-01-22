@@ -73,14 +73,7 @@ def run_node_subprocess(
             )
         ) from err
     except subprocess.TimeoutExpired as err:
-        raise Namel3ssError(
-            build_guidance_message(
-                what="Node tool execution timed out.",
-                why=f"Tool exceeded {timeout_seconds}s timeout.",
-                fix="Increase timeout_seconds or optimize the tool.",
-                example="timeout_seconds is 20",
-            )
-        ) from err
+        raise Namel3ssError(_timeout_guidance(timeout_seconds)) from err
     if result.returncode != 0 and not result.stdout:
         secret_values = collect_secret_values()
         stderr = redact_text(result.stderr or "", secret_values)
@@ -135,6 +128,15 @@ def run_node_subprocess(
 
 def _shim_path() -> Path:
     return Path(__file__).resolve().parent / "shim" / "index.js"
+
+
+def _timeout_guidance(timeout_seconds: int) -> str:
+    return build_guidance_message(
+        what="Node tool execution timed out.",
+        why=f"Tool exceeded {timeout_seconds}s timeout.",
+        fix="Increase timeout_seconds or optimize the tool.",
+        example="timeout_seconds is 20",
+    )
 
 
 def _build_env(app_root: Path, *, extra_paths: list[Path] | None) -> dict[str, str]:

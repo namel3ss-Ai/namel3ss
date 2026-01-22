@@ -22,6 +22,7 @@ from namel3ss.runtime.tools.entry_validation import validate_node_tool_entry
 from namel3ss.runtime.tools.foreign_workspace import foreign_workspace_dir
 from namel3ss.runtime.tools.resolution import resolve_tool_binding
 from namel3ss.runtime.tools.runners.base import ToolRunnerRequest
+from namel3ss.runtime.tools.runners.node.runner import DEFAULT_NODE_TOOL_TIMEOUT_SECONDS
 from namel3ss.runtime.tools.runners.registry import get_runner
 from namel3ss.runtime.tools.schema_validate import validate_tool_fields
 from namel3ss.runtime.tools.python_runtime import (
@@ -29,7 +30,6 @@ from namel3ss.runtime.tools.python_runtime import (
     _pack_root_from_paths,
     _preflight_capabilities,
     _resolve_project_root,
-    _resolve_timeout_seconds,
     _trace_error_details,
 )
 from namel3ss.secrets import collect_secret_values, redact_text
@@ -94,7 +94,7 @@ def _execute_node_tool(
     if tool.purity != "pure":
         trace_event["purity"] = tool.purity
     start_time = time.monotonic()
-    timeout_seconds = _resolve_timeout_seconds(ctx, tool, line=line, column=column)
+    timeout_seconds = _resolve_node_timeout_seconds(ctx, tool, line=line, column=column)
     resolved_source = "binding"
     trace_event["resolved_source"] = resolved_source
     pack_id = None
@@ -395,6 +395,18 @@ def _capability_context(
         filesystem_root=filesystem_root,
         filesystem_read_roots=filesystem_read_roots,
     )
+
+
+def _resolve_node_timeout_seconds(
+    ctx: ExecutionContext,
+    tool: ir.ToolDecl,
+    *,
+    line: int | None,
+    column: int | None,
+) -> int:
+    if tool.timeout_seconds is not None:
+        return tool.timeout_seconds
+    return DEFAULT_NODE_TOOL_TIMEOUT_SECONDS
 
 
 def _apply_pack_jobs(ctx: ExecutionContext, runtime_root: Path, *, line: int | None, column: int | None) -> None:
