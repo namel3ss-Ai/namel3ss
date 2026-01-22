@@ -94,7 +94,11 @@ def test_health_pack_collisions(tmp_path: Path) -> None:
     )
     project = load_project(app_path)
     report = analyze_tool_health(project)
-    assert "collision tool" in report.pack_collisions
+    assert report.pack_collisions == ["collision tool"]
+    providers = report.pack_tools.get("collision tool", [])
+    provider_ids = [provider.pack_id for provider in providers]
+    assert provider_ids == sorted(provider_ids)
+    assert provider_ids == sorted([pack_a, pack_b])
     assert any(issue.code == "packs.collision" for issue in report.issues)
 
 

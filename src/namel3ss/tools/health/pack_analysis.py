@@ -5,7 +5,9 @@ from namel3ss.runtime.packs.layout import pack_manifest_path
 from namel3ss.tools.health.model import PackSummary, PackToolSummary, ToolIssue
 
 
-def collect_pack_inventory(pack_registry, config) -> tuple[dict[str, list[PackToolSummary]], list[PackSummary], list[ToolIssue], list[str]]:
+def collect_pack_inventory(
+    pack_registry, config
+) -> tuple[dict[str, list[PackToolSummary]], list[PackSummary], list[ToolIssue], list[str]]:
     pack_tools: dict[str, list[PackToolSummary]] = {}
     pack_summaries: list[PackSummary] = []
     issues: list[ToolIssue] = []
@@ -48,7 +50,7 @@ def collect_pack_inventory(pack_registry, config) -> tuple[dict[str, list[PackTo
                 )
             )
     for tool_name, providers in pack_registry.tools.items():
-        pack_tools[tool_name] = [
+        summaries = [
             PackToolSummary(
                 tool_name=tool_name,
                 pack_id=item.pack_id,
@@ -61,12 +63,14 @@ def collect_pack_inventory(pack_registry, config) -> tuple[dict[str, list[PackTo
             )
             for item in providers
         ]
-    pack_collisions = _pack_collisions(pack_registry, config)
+        pack_tools[tool_name] = sorted(summaries, key=_pack_tool_sort_key)
+    pack_collisions = _pack_collisions(pack_tools)
     for tool_name in pack_collisions:
+        providers = pack_tools.get(tool_name, [])
         issues.append(
             ToolIssue(
                 code="packs.collision",
-                message=_pack_collision_message(tool_name, pack_registry),
+                message=_pack_collision_message(tool_name, providers),
                 severity="error",
                 tool_name=tool_name,
             )
@@ -97,18 +101,13 @@ def active_pack_tool_names(pack_tools: dict[str, list[PackToolSummary]], allowed
     return active
 
 
-def _pack_collisions(pack_registry, config) -> list[str]:
-    collisions: list[str] = []
-    pinned = config.tool_packs.pinned_tools if config.tool_packs else {}
-    for tool_name, providers in pack_registry.collisions.items():
-        active = [item for item in providers if item.source == "builtin_pack" or (item.verified and item.enabled)]
-        if len(active) <= 1:
-            continue
-        pin = pinned.get(tool_name)
-        if pin and any(item.pack_id == pin for item in active):
-            continue
-        collisions.append(tool_name)
-    return sorted(set(collisions))
+def _pack_collisions(pack_tools: dict[str, list[PackToolSummary]]) -> list[str]:
+    collisions = [tool_name for tool_name, providers in pack_tools.items() if len(providers) > 1]
+    return sorted(collisions)
+
+
+def _pack_tool_sort_key(item: PackToolSummary) -> tuple[str, str, str, str]:
+    return (item.pack_id, item.pack_version, item.pack_name, item.source)
 
 
 def _pack_unverified_message(pack_id: str, enabled: bool) -> str:
@@ -127,8 +126,8 @@ def _pack_unverified_message(pack_id: str, enabled: bool) -> str:
     )
 
 
-def _pack_collision_message(tool_name: str, pack_registry) -> str:
-    pack_ids = ", ".join(sorted({item.pack_id for item in pack_registry.collisions.get(tool_name, [])}))
+def _pack_collision_message(tool_name: str, providers: list[PackToolSummary]) -> str:
+    pack_ids = ", ".join(sorted({item.pack_id for item in providers}))
     return build_guidance_message(
         what=f'Tool "{tool_name}" is provided by multiple packs.',
         why=f"Conflicting packs: {pack_ids}.",
