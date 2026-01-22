@@ -1,31 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-
-from namel3ss.pkg.versions import Semver, parse_semver
-
-
-@dataclass(frozen=True)
-class PackVersion:
-    raw: str
-    kind: str
-    semver: Semver | None
-
-
-@dataclass(frozen=True)
-class VersionComparison:
-    status: str
-    reason: str | None
-
-
-def parse_pack_version(text: str) -> PackVersion:
-    raw = str(text or "").strip()
-    if raw == "stable":
-        return PackVersion(raw=raw, kind="stable", semver=None)
-    try:
-        return PackVersion(raw=raw, kind="semver", semver=parse_semver(raw))
-    except Exception:
-        return PackVersion(raw=raw, kind="other", semver=None)
+from namel3ss.runtime.registry.pack_version.model import VersionComparison
+from namel3ss.runtime.registry.pack_version.parse import parse_pack_version
 
 
 def version_sort_key(value: str | None) -> tuple[int, tuple[int, int, int], str]:
@@ -57,4 +33,4 @@ def compare_versions(installed: str | None, candidate: str | None) -> VersionCom
     return VersionComparison(status="downgrade", reason=None)
 
 
-__all__ = ["PackVersion", "VersionComparison", "compare_versions", "parse_pack_version", "version_sort_key"]
+__all__ = ["compare_versions", "version_sort_key"]
