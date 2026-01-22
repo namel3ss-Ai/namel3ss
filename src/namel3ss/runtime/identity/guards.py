@@ -115,6 +115,8 @@ def _requires_auth_message(subject: str, expr: ir.Expression, ctx: object) -> tu
 
 
 def _record_auth_check(ctx: object, subject: str, *, outcome: str, reason: str | None = None) -> None:
+    if outcome == "allowed":
+        return
     traces = getattr(ctx, "traces", None)
     if not isinstance(traces, list):
         return

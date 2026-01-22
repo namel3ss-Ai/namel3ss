@@ -37,7 +37,7 @@ def record_pack_policy(
     allowed: bool,
     policy_source: str | None,
 ) -> None:
-    if not policy_source:
+    if not policy_source or allowed:
         return
     reason = "policy_denied" if not allowed else "policy_allowed"
     _record_pack_check(
