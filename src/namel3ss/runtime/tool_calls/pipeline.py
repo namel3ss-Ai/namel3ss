@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import time
 from typing import Callable, Dict, List
 
 from namel3ss.errors.base import Namel3ssError
@@ -108,7 +107,7 @@ def run_ai_tool_pipeline(
                 )
             )
             raise Namel3ssError("AI exceeded maximum tool calls")
-        tool_start = time.monotonic()
+        duration_ms = 0
         canonical_events.append(
             build_tool_call_proposed(
                 call_id=call_id,
@@ -138,7 +137,6 @@ def run_ai_tool_pipeline(
                 policy=policy,
             )
         except Namel3ssError as err:
-            duration_ms = int((time.monotonic() - tool_start) * 1000)
             reason = _blocked_reason(err)
             canonical_events.append(
                 build_tool_call_blocked(
@@ -231,7 +229,6 @@ def run_ai_tool_pipeline(
                 tool_name=request.tool_name,
             )
         )
-        duration_ms = int((time.monotonic() - tool_start) * 1000)
         if err is not None:
             canonical_events.append(
                 build_tool_call_finished(

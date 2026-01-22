@@ -119,3 +119,30 @@ def test_tool_call_blocked_reason_is_stable(monkeypatch):
     events = trace.canonical_events
     blocked = next(event for event in events if event.get("type") == "tool_call_blocked")
     assert blocked["reason"] == "unknown_tool"
+
+
+def test_tool_call_duration_is_deterministic(monkeypatch):
+    program = lower_ir_program(SOURCE.format(provider="openai"))
+
+    def _run_once():
+        adapter = FakeAdapter()
+        monkeypatch.setattr("namel3ss.runtime.executor.ai_runner.get_provider", lambda *_args, **_kwargs: object())
+        monkeypatch.setattr(
+            "namel3ss.runtime.tool_calls.provider_iface.get_provider_adapter",
+            lambda *_args, adapter=adapter, **_kwargs: adapter,
+        )
+        executor = Executor(
+            program.flows[0],
+            schemas={schema.name: schema for schema in program.records},
+            ai_profiles=program.ais,
+            tools=program.tools,
+        )
+        result = executor.run()
+        events = _normalized_tool_events(result.traces[0].canonical_events)
+        finished = next(event for event in events if event.get("type") == "tool_call_finished")
+        assert finished["duration_ms"] == 0
+        return events
+
+    first = _run_once()
+    second = _run_once()
+    assert first == second
