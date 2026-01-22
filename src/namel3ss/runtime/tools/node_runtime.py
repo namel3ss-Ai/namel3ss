@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import time
 import uuid
 from dataclasses import replace
@@ -113,7 +114,10 @@ def _execute_node_tool(
         )
         app_root = _resolve_project_root(ctx.project_root, tool.name, line=line, column=column)
         pack_allowlist = getattr(ctx, "pack_allowlist", None)
-        allowed_packs = pack_allowlist if pack_allowlist is not None else ()
+        if pack_allowlist is None and os.getenv("N3_EXECUTABLE_SPEC") == "1":
+            allowed_packs = None
+        else:
+            allowed_packs = pack_allowlist if pack_allowlist is not None else ()
         resolved = resolve_tool_binding(
             app_root,
             tool.name,
@@ -240,7 +244,7 @@ def _execute_node_tool(
             read_roots = list(dict.fromkeys(read_roots))
         filesystem_root = str(workspace_dir) if workspace_dir else None
         if pack_runtime_root_path and not is_foreign:
-            filesystem_root = str(pack_runtime_root_path)
+            filesystem_root = str(app_root)
         capability_ctx = _capability_context(
             tool,
             runner_name=runner_name,

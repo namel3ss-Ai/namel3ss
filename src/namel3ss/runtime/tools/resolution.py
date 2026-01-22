@@ -54,6 +54,14 @@ def resolve_tool_binding(
     allowlist_result = apply_pack_allowlist(tool_name, pack_candidates, allowlist, line=line, column=column)
     pack_candidates = allowlist_result.candidates
     blocked_pack_ids = allowlist_result.blocked_pack_ids
+    pinned = config.tool_packs.pinned_tools.get(tool_name) if config.tool_packs else None
+    if pinned is None and len(pack_candidates) > 1:
+        raise Namel3ssError(
+            _pack_collision_message(tool_name, pack_candidates),
+            line=line,
+            column=column,
+            details={"tool_reason": "pack_collision"},
+        )
     active_candidates = []
     for item in pack_candidates:
         if item.source == "builtin_pack":
@@ -92,6 +100,13 @@ def resolve_tool_binding(
             return ResolvedToolBinding(binding=binding, source="binding")
     if binding_error is not None:
         raise binding_error
+    if blocked_pack_ids and pinned is None and len(blocked_pack_ids) > 1:
+        raise Namel3ssError(
+            _pack_collision_message_for_ids(tool_name, blocked_pack_ids),
+            line=line,
+            column=column,
+            details={"tool_reason": "pack_collision", "pack_ids": list(blocked_pack_ids)},
+        )
     if blocked_pack_ids:
         raise Namel3ssError(
             pack_not_declared_message(tool_name, blocked_pack_ids),
@@ -227,6 +242,17 @@ def _pack_collision_message(tool_name: str, candidates: list) -> str:
         why=f"Conflicting packs: {packs}.",
         fix="Disable one pack or pin the tool to a specific pack.",
         example=f'pinned_tools = {{ "{tool_name}" = "{candidates[0].pack_id}" }}',
+    )
+
+
+def _pack_collision_message_for_ids(tool_name: str, pack_ids: list[str] | tuple[str, ...]) -> str:
+    packs = ", ".join(sorted({item for item in pack_ids if item}))
+    example_pack = sorted({item for item in pack_ids if item})[0] if packs else "pack.id"
+    return build_guidance_message(
+        what=f'Tool "{tool_name}" is provided by multiple packs.',
+        why=f"Conflicting packs: {packs}.",
+        fix="Disable one pack or pin the tool to a specific pack.",
+        example=f'pinned_tools = {{ "{tool_name}" = "{example_pack}" }}',
     )
 
 

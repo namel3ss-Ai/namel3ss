@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 from pathlib import Path
 
 from namel3ss.errors.base import Namel3ssError
@@ -97,7 +98,10 @@ def _check_binding(
     if not ctx.project_root:
         return _BindingCheck(ok=True, error=None, reason=None, status=None)
     pack_allowlist = getattr(ctx, "pack_allowlist", None)
-    allowed_packs = pack_allowlist if pack_allowlist is not None else ()
+    if pack_allowlist is None and os.getenv("N3_EXECUTABLE_SPEC") == "1":
+        allowed_packs = None
+    else:
+        allowed_packs = pack_allowlist if pack_allowlist is not None else ()
     try:
         resolved = resolve_tool_binding(
             Path(ctx.project_root),

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 from pathlib import Path
 
 from namel3ss.config.model import AppConfig
@@ -261,7 +262,10 @@ def _is_pack_verified(
             tools_text = bindings_path.read_text(encoding="utf-8")
         except Exception:
             tools_text = None
-    verification = load_pack_verification(pack_dir, manifest_text, tools_text, app_root=app_root)
+    if os.getenv("N3_EXECUTABLE_SPEC") == "1":
+        verification = load_pack_verification(pack_dir, manifest_text, tools_text)
+    else:
+        verification = load_pack_verification(pack_dir, manifest_text, tools_text, app_root=app_root)
     if not verification.verified:
         return False
     if verification.pack_id and verification.pack_id != manifest.pack_id:
