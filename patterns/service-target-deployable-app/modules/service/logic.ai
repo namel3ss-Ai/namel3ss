@@ -7,5 +7,5 @@ record "Job":
 flow "queue_job": requires identity.role is "operator"
   set state.job.name is "Deploy"
   set state.job.status is "queued"
-  create "Job" with state.job as job
+  create "Job" with state.job as job_record
   return "queued"
