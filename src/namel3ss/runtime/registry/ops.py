@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import os
+import shutil
 import zipfile
 
 from namel3ss.config.model import AppConfig
@@ -29,19 +30,21 @@ from namel3ss.runtime.registry.resolver import resolve_registry_entries
 
 
 def add_bundle_to_registry(app_root: Path, bundle_path: Path) -> RegistryEntry:
-    source_uri = _source_uri(bundle_path, base_root=app_root)
     result = build_registry_entry_from_bundle(
         bundle_path,
         app_root=app_root,
         source_kind="local_file",
-        source_uri=source_uri,
+        source_uri=_source_uri(bundle_path, base_root=app_root),
     )
+    stored_path = _store_registry_bundle(app_root, bundle_path, result.entry)
     entry_dict = result.entry.to_dict()
-    errors = validate_registry_entry(entry_dict)
+    entry_dict["source"] = {"kind": "local_file", "uri": _source_uri(stored_path, base_root=app_root)}
+    entry = RegistryEntry(**entry_dict)
+    errors = validate_registry_entry(entry.to_dict())
     if errors:
         raise Namel3ssError(_invalid_entry_message(errors))
-    append_registry_entry(app_root, result.entry)
-    return result.entry
+    append_registry_entry(app_root, entry)
+    return entry
 
 
 def build_registry_index(app_root: Path, config: AppConfig) -> Path:
@@ -187,6 +190,28 @@ def _resolve_bundle_path(
             raise Namel3ssError(_offline_bundle_message(pack_id))
         return fetch_registry_bundle(uri, digest, cache_path=cache_path)
     raise Namel3ssError(_invalid_source_message(pack_id))
+
+
+def _store_registry_bundle(app_root: Path, bundle_path: Path, entry: RegistryEntry) -> Path:
+    cache_root = registry_cache_path(app_root)
+    cache_root.mkdir(parents=True, exist_ok=True)
+    filename = _registry_bundle_filename(entry)
+    stored_path = cache_root / filename
+    if stored_path.exists() and stored_path.stat().st_size > 0:
+        return stored_path
+    temp_path = stored_path.with_suffix(stored_path.suffix + ".tmp")
+    if temp_path.exists():
+        temp_path.unlink()
+    shutil.copyfile(bundle_path, temp_path)
+    if temp_path.stat().st_size <= 0:
+        raise Namel3ssError(_missing_bundle_message(temp_path))
+    temp_path.replace(stored_path)
+    return stored_path
+
+
+def _registry_bundle_filename(entry: RegistryEntry) -> str:
+    digest = entry.pack_digest.replace(":", "-")
+    return f"{entry.pack_id}-{entry.pack_version}-{digest}.n3pack.zip"
 
 def _missing_pack_message(pack_id: str) -> str:
     return build_guidance_message(
