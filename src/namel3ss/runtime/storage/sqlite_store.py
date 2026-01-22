@@ -27,7 +27,7 @@ class SQLiteStore:
         self.dialect = "sqlite"
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         try:
-            self.conn = sqlite3.connect(self.db_path)
+            self.conn = sqlite3.connect(self.db_path, isolation_level=None)
         except sqlite3.Error as err:
             raise Namel3ssError(f"Could not open SQLite store at {self.db_path}: {err}") from err
         self.conn.row_factory = sqlite3.Row
@@ -101,6 +101,9 @@ class SQLiteStore:
 
     def _ensure_table(self, schema: RecordSchema) -> None:
         table = slug_identifier(schema.name)
+        if table in self._prepared_tables and not self._table_exists(table):
+            self._prepared_tables.discard(table)
+            self._prepared_indexes.pop(table, None)
         if table not in self._prepared_tables:
             id_col = "id" if "id" in schema.field_map else "_id"
             columns = [f"{quote_identifier(id_col)} INTEGER PRIMARY KEY AUTOINCREMENT"]
@@ -115,7 +118,8 @@ class SQLiteStore:
             self._prepared_tables.add(table)
         self._ensure_columns(schema)
         self._ensure_indexes(schema)
-        self.conn.commit()
+        if not self.conn.in_transaction:
+            self.conn.commit()
 
     def _ensure_columns(self, schema: RecordSchema) -> None:
         table = slug_identifier(schema.name)
@@ -135,6 +139,13 @@ class SQLiteStore:
     def _existing_columns(self, table: str) -> set[str]:
         rows = self.conn.execute(f"PRAGMA table_info('{table}')").fetchall()
         return {row["name"] for row in rows}
+
+    def _table_exists(self, table: str) -> bool:
+        row = self.conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name = ?",
+            (table,),
+        ).fetchone()
+        return row is not None
 
     def _ensure_indexes(self, schema: RecordSchema) -> None:
         table = slug_identifier(schema.name)

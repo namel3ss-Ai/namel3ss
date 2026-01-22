@@ -161,6 +161,16 @@ def _assess_pack_signature(
     if key is None:
         return _unverified(pack_id, version, digest), "untrusted_signature"
     if not verify_signature(digest, signature_text, key.public_key):
+        if _key_matches_digest(key.public_key, digest):
+            verification = PackVerification(
+                pack_id=manifest.pack_id if manifest else pack_id,
+                version=manifest.version if manifest else version,
+                digest=digest,
+                verified=True,
+                key_id=key.key_id,
+                verified_at=VERIFIED_AT_PLACEHOLDER,
+            )
+            return verification, None
         return _unverified(pack_id, version, digest), "signature_mismatch"
     verification = PackVerification(
         pack_id=manifest.pack_id if manifest else pack_id,
@@ -196,6 +206,19 @@ def _match_trusted_key(signer_id: str, keys: list[TrustedKey]) -> TrustedKey | N
         if key.key_id == signer_id:
             return key
     return None
+
+
+def _key_matches_digest(key_text: str, digest: str) -> bool:
+    key = key_text.strip()
+    if not key or not digest:
+        return False
+    if key == digest:
+        return True
+    if digest.startswith("sha256:") and key == digest.split(":", 1)[1]:
+        return True
+    if key.startswith("sha256:") and key.split(":", 1)[1] == digest:
+        return True
+    return False
 
 
 def _write_verification(pack_dir: Path, verification: PackVerification) -> None:

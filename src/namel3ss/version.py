@@ -6,12 +6,15 @@ from pathlib import Path
 
 def get_version() -> str:
     try:
-        return metadata.version("namel3ss")
+        version = metadata.version("namel3ss")
     except metadata.PackageNotFoundError:
+        version = None
+    if not version:
         version_file = _find_version_file()
         if version_file is not None:
             return version_file.read_text(encoding="utf-8").strip()
         return "0.0.0"
+    return version
 
 
 def _find_version_file() -> Path | None:

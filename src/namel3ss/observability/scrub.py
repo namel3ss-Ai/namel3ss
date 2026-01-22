@@ -8,8 +8,8 @@ from namel3ss.security import redact_sensitive_payload
 
 
 _SAFE_PREFIXES = ("/api/", "/health", "/version", "/ui", "/docs/")
-_WINDOWS_PATH = re.compile(r"[A-Za-z]:\\\\[^\\s]+")
-_POSIX_PATH = re.compile(r"/[^\\s]+")
+_WINDOWS_PATH = re.compile(r"[A-Za-z]:\\[^\s]+")
+_POSIX_PATH = re.compile(r"(?:^|[A-Za-z]:)/[^\s]+")
 
 
 def scrub_payload(
@@ -50,7 +50,10 @@ def _replace_known_path(text: str, path_value: str | Path | None) -> str:
     except Exception:
         return text.replace(str(path_value), "<path>")
     posix = path.as_posix()
-    return text.replace(posix, "<path>").replace(str(path), "<path>")
+    native = str(path)
+    if text.startswith(posix) or text.startswith(native):
+        return "<path>"
+    return text.replace(posix, "<path>").replace(native, "<path>")
 
 
 def _replace_posix(path: str) -> str:

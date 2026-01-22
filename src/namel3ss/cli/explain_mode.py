@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 
 from namel3ss.cli.app_path import resolve_app_path
-from namel3ss.cli.proofs import load_active_proof, read_proof
+from namel3ss.cli.proofs import load_active_proof, load_proof_state, proof_dir, read_proof
 from namel3ss.cli.promotion_state import load_state
 from namel3ss.cli.why_mode import build_why_lines, build_why_payload
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.module_loader import load_project
+from namel3ss.proofs import build_engine_proof
 from namel3ss.runtime.capabilities.report import collect_tool_reports
 from namel3ss.utils.json_tools import dumps_pretty
 
@@ -88,9 +90,24 @@ def _parse_args(args: list[str]) -> _ExplainParams:
 
 def build_explain_payload(app_path) -> dict:
     project_root = app_path.parent
-    active = load_active_proof(project_root)
+    active = _hydrate_active_proof(project_root, load_active_proof(project_root))
     proof_id = active.get("proof_id") if isinstance(active, dict) else None
     proof = read_proof(project_root, proof_id) if proof_id else {}
+    if not proof_id:
+        target = active.get("target") if isinstance(active, dict) else None
+        if not target:
+            promotion = load_state(project_root)
+            target = (promotion.get("active") or {}).get("target")
+        target = target or "local"
+        try:
+            proof_id, proof = build_engine_proof(app_path, target=target)
+        except Exception:
+            proof_id, proof = None, {}
+        if proof_id and isinstance(active, dict):
+            active.setdefault("proof_id", proof_id)
+            active.setdefault("target", target)
+            if isinstance(proof, dict):
+                active.setdefault("build_id", (proof.get("build") or {}).get("build_id"))
     return _assemble_explain_payload(app_path, active, proof)
 
 
@@ -123,6 +140,31 @@ def _assemble_explain_payload(app_path, active: dict, proof: dict) -> dict:
         "pages": len(project.program.pages),
         "records": len(project.program.records),
     }
+
+
+def _hydrate_active_proof(project_root: Path, active: dict | None) -> dict:
+    normalized = active if isinstance(active, dict) else {}
+    state = load_proof_state(project_root)
+    state_active = state.get("active") if isinstance(state, dict) else {}
+    if isinstance(state_active, dict):
+        for key in ("proof_id", "target", "build_id"):
+            if not normalized.get(key) and state_active.get(key):
+                normalized[key] = state_active.get(key)
+    if not normalized.get("proof_id"):
+        latest = _latest_proof_id(project_root)
+        if latest:
+            normalized["proof_id"] = latest
+    return normalized
+
+
+def _latest_proof_id(project_root: Path) -> str | None:
+    root = proof_dir(project_root)
+    if not root.exists():
+        return None
+    proofs = sorted(root.glob("proof-*.json"))
+    if not proofs:
+        return None
+    return proofs[-1].stem
 
 
 def _summarize_capsules(proof: dict) -> list[dict]:

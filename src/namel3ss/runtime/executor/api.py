@@ -138,7 +138,8 @@ def execute_program_flow(
     if module_traces:
         executor.ctx.traces.extend(copy.deepcopy(module_traces))
     auth_traces = getattr(auth_context, "traces", None)
-    if isinstance(auth_traces, list) and auth_traces:
+    auth_source = getattr(auth_context, "source", None)
+    if isinstance(auth_traces, list) and auth_traces and auth_source and auth_source != "none":
         executor.ctx.traces.extend(copy.deepcopy(auth_traces))
     actor = actor_summary(executor.ctx.identity)
     status = "ok"

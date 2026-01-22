@@ -81,6 +81,7 @@ See `docs/trust-and-governance.md` for enforcement details.
 
 ## Browser protocol
 - [Browser Protocol](docs/runtime/browser-protocol.md): single app runtime server with `/api/ui`, `/api/state`, `/api/action`, `/api/session`, `/api/login`, `/api/logout`, `/api/data/status`, `/api/migrations/status`, `/api/migrations/plan`, `/api/upload`, `/api/uploads`, and `/api/health` using deterministic ordering and payloads.
+- Windows path: `docs\runtime\browser-protocol.md`
 
 ## Authentication and identity
 - [Authentication](docs/authentication.md): identity model, sessions, tokens, roles, permissions, and redaction.
@@ -102,6 +103,7 @@ See `docs/trust-and-governance.md` for enforcement details.
 - [No dependencies](docs/language/no-dependencies.md): installing `namel3ss` is sufficient to run apps; packs extend capabilities instead of imports.
 - [Capability packs](docs/language/capability-packs.md): explicit pack declarations, permissions, and inspection for local and installed packs.
 - [Observability](docs/observability.md): deterministic logs, traces, and metrics with redaction by default.
+Windows paths: `docs\language\application-runtime.md`, `docs\language\application-data-model.md`, `docs\language\backend-capabilities.md`, `docs\language\no-dependencies.md`, `docs\language\capability-packs.md`.
 
 ## Installation
 

@@ -4,8 +4,8 @@ spec is "1.0"
 # Single-flow example that creates one record.
 
 record "Greeting":
-  field "message" is text must be present
-
+  fields:
+    message is text must be present
 flow "seed_greeting" requires true
   create "Greeting"
     message is "hello from namel3ss"

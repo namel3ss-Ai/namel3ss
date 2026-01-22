@@ -136,7 +136,7 @@ def run_new(args: list[str]) -> int:
 
     demo_settings = _resolve_demo_settings() if template.is_demo else None
     try:
-        shutil.copytree(template_dir, target_dir)
+        _copy_scaffold_tree(template_dir, target_dir)
         tokens = _build_tokens(project_name, template)
         _prepare_readme(target_dir, tokens)
         formatted_source = _prepare_app_file(target_dir, tokens, template, demo_settings)
@@ -217,6 +217,21 @@ def _prepare_readme(target_dir: Path, tokens: dict[str, str]) -> None:
     _rewrite_with_tokens(readme_path, tokens)
 
 
+def _copy_scaffold_tree(source_dir: Path, target_dir: Path) -> None:
+    target_dir.mkdir(parents=True, exist_ok=False)
+    for root, dirs, files in os.walk(source_dir):
+        dirs.sort()
+        files.sort()
+        root_path = Path(root)
+        rel_root = root_path.relative_to(source_dir)
+        dest_root = target_dir / rel_root
+        dest_root.mkdir(parents=True, exist_ok=True)
+        for filename in files:
+            src_path = root_path / filename
+            dest_path = dest_root / filename
+            shutil.copy2(src_path, dest_path)
+
+
 def _prepare_app_file(
     target_dir: Path,
     tokens: dict[str, str],
@@ -291,8 +306,9 @@ def _write_demo_env_example(target_dir: Path) -> None:
         "OPENAI_API_KEY=",
         "NAMEL3SS_OPENAI_API_KEY=",
         "",
-        "# Optional",
-        "N3_DEMO_MODEL=gpt-4o-mini",
+        "# Demo overrides (optional)",
+        "N3_DEMO_PROVIDER=",
+        "N3_DEMO_MODEL=",
         "",
     ]
     env_path.write_text("\n".join(lines), encoding="utf-8")

@@ -10,6 +10,7 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.artifact_contract import ArtifactContract
 from namel3ss.runtime.preferences.factory import preference_store_for_app, app_pref_key
 from namel3ss.runtime.run_pipeline import build_flow_payload, finalize_run_payload
+from namel3ss.runtime.auth import resolve_auth_context
 from namel3ss.secrets import collect_secret_values
 
 
@@ -28,6 +29,13 @@ def run_flow(
         app_path=app_path,
         root=getattr(program_ir, "project_root", None),
     )
+    auth_context = resolve_auth_context(
+        None,
+        config=config,
+        identity_schema=getattr(program_ir, "identity", None),
+        store=None,
+    )
+    identity = getattr(auth_context, "identity", None)
     secret_values = collect_secret_values(config)
     outcome = build_flow_payload(
         program_ir,
@@ -39,6 +47,8 @@ def run_flow(
         preference_store=pref_store,
         preference_key=app_pref_key(app_path),
         config=config,
+        identity=identity,
+        auth_context=auth_context,
         source=source_text,
         project_root=getattr(program_ir, "project_root", None),
     )

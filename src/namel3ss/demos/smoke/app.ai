@@ -15,10 +15,10 @@ record "Click":
   fields:
     message is text must be present
 
-flow "add_click" requires has_permission("click.create")
-  create "Click"
+flow "add_click" requires has_permission("click.create"):
+  set state.pending_click with:
     message is "clicked"
-  log info "Click stored"
+  create "Click" with state.pending_click as click
   metric counter "clicks" increment
 
 page "home":

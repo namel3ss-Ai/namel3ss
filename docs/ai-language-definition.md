@@ -34,3 +34,4 @@ Execution steps explain what happened and why.
 - [No dependencies](language/no-dependencies.md)
 - [Capability packs](language/capability-packs.md)
 - [Browser Protocol](runtime/browser-protocol.md)
+Windows paths: `language\application-runtime.md`, `language\application-data-model.md`, `language\backend-capabilities.md`, `language\no-dependencies.md`, `language\capability-packs.md`.

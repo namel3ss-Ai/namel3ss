@@ -4,8 +4,9 @@ spec is "1.0"
 # read-only contract app for release readiness gates.
 
 identity "Operator":
-  field "email" is text must be present
-  field "role" is text must be present
+  fields:
+    email is text must be present
+    role is text must be present
 
 ui:
   theme is "light"
@@ -30,13 +31,15 @@ team of agents
     role is "Reviewer"
 
 record "ReleasePlan":
-  field "name" is text must be present
-  field "plan" is text must be present
-  field "status" is text must be present
+  fields:
+    name is text must be present
+    plan is text must be present
+    status is text must be present
 
 record "ReviewNote":
-  field "plan_title" is text must be present
-  field "risk" is text must be present
+  fields:
+    plan_title is text must be present
+    risk is text must be present
 
 flow "seed_release": requires identity.role is "operator"
   set state.plan with:

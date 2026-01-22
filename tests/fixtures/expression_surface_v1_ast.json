@@ -74,26 +74,26 @@
             "items": [
               {
                 "type": "Literal",
-                "line": 5,
-                "column": 5,
+                "line": 4,
+                "column": 24,
                 "value": "1"
               },
               {
                 "type": "Literal",
-                "line": 6,
-                "column": 5,
+                "line": 4,
+                "column": 27,
                 "value": "2"
               },
               {
                 "type": "Literal",
-                "line": 7,
-                "column": 5,
+                "line": 4,
+                "column": 30,
                 "value": "3"
               },
               {
                 "type": "Literal",
-                "line": 8,
-                "column": 5,
+                "line": 4,
+                "column": 33,
                 "value": "10"
               }
             ]
@@ -102,23 +102,23 @@
         },
         {
           "type": "Let",
-          "line": 9,
+          "line": 5,
           "column": 3,
           "name": "appended",
           "expression": {
             "type": "ListOpExpr",
-            "line": 9,
+            "line": 5,
             "column": 19,
             "kind": "append",
             "target": {
               "type": "VarReference",
-              "line": 9,
+              "line": 5,
               "column": 31,
               "name": "numbers"
             },
             "value": {
               "type": "Literal",
-              "line": 9,
+              "line": 5,
               "column": 44,
               "value": "12"
             },
@@ -128,17 +128,17 @@
         },
         {
           "type": "Let",
-          "line": 10,
+          "line": 6,
           "column": 3,
           "name": "size",
           "expression": {
             "type": "ListOpExpr",
-            "line": 10,
+            "line": 6,
             "column": 15,
             "kind": "length",
             "target": {
               "type": "VarReference",
-              "line": 10,
+              "line": 6,
               "column": 30,
               "name": "appended"
             },
@@ -149,24 +149,24 @@
         },
         {
           "type": "Let",
-          "line": 11,
+          "line": 7,
           "column": 3,
           "name": "first",
           "expression": {
             "type": "ListOpExpr",
-            "line": 11,
+            "line": 7,
             "column": 16,
             "kind": "get",
             "target": {
               "type": "VarReference",
-              "line": 11,
+              "line": 7,
               "column": 25,
               "name": "appended"
             },
             "value": null,
             "index": {
               "type": "Literal",
-              "line": 11,
+              "line": 7,
               "column": 37,
               "value": "0"
             }
@@ -175,34 +175,34 @@
         },
         {
           "type": "Let",
-          "line": 13,
+          "line": 9,
           "column": 5,
           "name": "doubled",
           "expression": {
             "type": "ListMapExpr",
-            "line": 13,
+            "line": 9,
             "column": 15,
             "target": {
               "type": "VarReference",
-              "line": 13,
+              "line": 9,
               "column": 19,
               "name": "numbers"
             },
             "var_name": "n",
             "body": {
               "type": "BinaryOp",
-              "line": 14,
+              "line": 10,
               "column": 9,
               "op": "*",
               "left": {
                 "type": "VarReference",
-                "line": 14,
+                "line": 10,
                 "column": 7,
                 "name": "n"
               },
               "right": {
                 "type": "Literal",
-                "line": 14,
+                "line": 10,
                 "column": 11,
                 "value": "2"
               }
@@ -212,34 +212,34 @@
         },
         {
           "type": "Let",
-          "line": 15,
+          "line": 11,
           "column": 5,
           "name": "big",
           "expression": {
             "type": "ListFilterExpr",
-            "line": 15,
+            "line": 11,
             "column": 11,
             "target": {
               "type": "VarReference",
-              "line": 15,
+              "line": 11,
               "column": 18,
               "name": "doubled"
             },
             "var_name": "x",
             "predicate": {
               "type": "Comparison",
-              "line": 16,
+              "line": 12,
               "column": 9,
               "kind": "gt",
               "left": {
                 "type": "VarReference",
-                "line": 16,
+                "line": 12,
                 "column": 7,
                 "name": "x"
               },
               "right": {
                 "type": "Literal",
-                "line": 16,
+                "line": 12,
                 "column": 25,
                 "value": "5"
               }
@@ -249,11 +249,11 @@
         },
         {
           "type": "Set",
-          "line": 17,
+          "line": 13,
           "column": 5,
           "target": {
             "type": "StatePath",
-            "line": 17,
+            "line": 13,
             "column": 5,
             "path": [
               "total"
@@ -261,11 +261,11 @@
           },
           "expression": {
             "type": "ListReduceExpr",
-            "line": 17,
+            "line": 13,
             "column": 19,
             "target": {
               "type": "VarReference",
-              "line": 17,
+              "line": 13,
               "column": 26,
               "name": "big"
             },
@@ -273,24 +273,24 @@
             "item_name": "v",
             "start": {
               "type": "Literal",
-              "line": 17,
+              "line": 13,
               "column": 67,
               "value": "0"
             },
             "body": {
               "type": "BinaryOp",
-              "line": 18,
+              "line": 14,
               "column": 9,
               "op": "+",
               "left": {
                 "type": "VarReference",
-                "line": 18,
+                "line": 14,
                 "column": 7,
                 "name": "s"
               },
               "right": {
                 "type": "VarReference",
-                "line": 18,
+                "line": 14,
                 "column": 11,
                 "name": "v"
               }
@@ -299,17 +299,17 @@
         },
         {
           "type": "Let",
-          "line": 19,
+          "line": 15,
           "column": 5,
           "name": "avg",
           "expression": {
             "type": "ListOpExpr",
-            "line": 19,
+            "line": 15,
             "column": 11,
             "kind": "mean",
             "target": {
               "type": "VarReference",
-              "line": 19,
+              "line": 15,
               "column": 16,
               "name": "big"
             },
@@ -320,17 +320,17 @@
         },
         {
           "type": "Let",
-          "line": 20,
+          "line": 16,
           "column": 5,
           "name": "sum_all",
           "expression": {
             "type": "ListOpExpr",
-            "line": 20,
+            "line": 16,
             "column": 15,
             "kind": "sum",
             "target": {
               "type": "VarReference",
-              "line": 20,
+              "line": 16,
               "column": 19,
               "name": "numbers"
             },
@@ -341,17 +341,17 @@
         },
         {
           "type": "Let",
-          "line": 21,
+          "line": 17,
           "column": 5,
           "name": "min_val",
           "expression": {
             "type": "ListOpExpr",
-            "line": 21,
+            "line": 17,
             "column": 15,
             "kind": "min",
             "target": {
               "type": "VarReference",
-              "line": 21,
+              "line": 17,
               "column": 19,
               "name": "numbers"
             },
@@ -362,17 +362,17 @@
         },
         {
           "type": "Let",
-          "line": 22,
+          "line": 18,
           "column": 5,
           "name": "max_val",
           "expression": {
             "type": "ListOpExpr",
-            "line": 22,
+            "line": 18,
             "column": 15,
             "kind": "max",
             "target": {
               "type": "VarReference",
-              "line": 22,
+              "line": 18,
               "column": 19,
               "name": "numbers"
             },
@@ -383,17 +383,17 @@
         },
         {
           "type": "Let",
-          "line": 23,
+          "line": 19,
           "column": 5,
           "name": "median_val",
           "expression": {
             "type": "ListOpExpr",
-            "line": 23,
+            "line": 19,
             "column": 18,
             "kind": "median",
             "target": {
               "type": "VarReference",
-              "line": 23,
+              "line": 19,
               "column": 25,
               "name": "numbers"
             },
@@ -404,28 +404,28 @@
         },
         {
           "type": "Let",
-          "line": 24,
+          "line": 20,
           "column": 5,
           "name": "pow",
           "expression": {
             "type": "UnaryOp",
-            "line": 24,
+            "line": 20,
             "column": 11,
             "op": "-",
             "operand": {
               "type": "BinaryOp",
-              "line": 24,
+              "line": 20,
               "column": 14,
               "op": "**",
               "left": {
                 "type": "Literal",
-                "line": 24,
+                "line": 20,
                 "column": 12,
                 "value": "2"
               },
               "right": {
                 "type": "Literal",
-                "line": 24,
+                "line": 20,
                 "column": 17,
                 "value": "2"
               }
@@ -435,29 +435,29 @@
         },
         {
           "type": "Let",
-          "line": 25,
+          "line": 21,
           "column": 5,
           "name": "pow_paren",
           "expression": {
             "type": "BinaryOp",
-            "line": 25,
+            "line": 21,
             "column": 22,
             "op": "**",
             "left": {
               "type": "UnaryOp",
-              "line": 25,
+              "line": 21,
               "column": 18,
               "op": "-",
               "operand": {
                 "type": "Literal",
-                "line": 25,
+                "line": 21,
                 "column": 19,
                 "value": "2"
               }
             },
             "right": {
               "type": "Literal",
-              "line": 25,
+              "line": 21,
               "column": 25,
               "value": "2"
             }
@@ -466,34 +466,34 @@
         },
         {
           "type": "Let",
-          "line": 26,
+          "line": 22,
           "column": 5,
           "name": "pow_chain",
           "expression": {
             "type": "BinaryOp",
-            "line": 26,
+            "line": 22,
             "column": 19,
             "op": "**",
             "left": {
               "type": "Literal",
-              "line": 26,
+              "line": 22,
               "column": 17,
               "value": "2"
             },
             "right": {
               "type": "BinaryOp",
-              "line": 26,
+              "line": 22,
               "column": 24,
               "op": "**",
               "left": {
                 "type": "Literal",
-                "line": 26,
+                "line": 22,
                 "column": 22,
                 "value": "3"
               },
               "right": {
                 "type": "Literal",
-                "line": 26,
+                "line": 22,
                 "column": 27,
                 "value": "2"
               }
@@ -503,34 +503,34 @@
         },
         {
           "type": "Let",
-          "line": 27,
+          "line": 23,
           "column": 5,
           "name": "combo",
           "expression": {
             "type": "BinaryOp",
-            "line": 27,
+            "line": 23,
             "column": 15,
             "op": "*",
             "left": {
               "type": "Literal",
-              "line": 27,
+              "line": 23,
               "column": 13,
               "value": "2"
             },
             "right": {
               "type": "BinaryOp",
-              "line": 27,
+              "line": 23,
               "column": 19,
               "op": "**",
               "left": {
                 "type": "Literal",
-                "line": 27,
+                "line": 23,
                 "column": 17,
                 "value": "3"
               },
               "right": {
                 "type": "Literal",
-                "line": 27,
+                "line": 23,
                 "column": 22,
                 "value": "2"
               }
@@ -540,23 +540,23 @@
         },
         {
           "type": "Let",
-          "line": 28,
+          "line": 24,
           "column": 5,
           "name": "mod_val",
           "expression": {
             "type": "BinaryOp",
-            "line": 28,
+            "line": 24,
             "column": 18,
             "op": "%",
             "left": {
               "type": "Literal",
-              "line": 28,
+              "line": 24,
               "column": 15,
               "value": "10"
             },
             "right": {
               "type": "Literal",
-              "line": 28,
+              "line": 24,
               "column": 20,
               "value": "4"
             }
@@ -565,23 +565,23 @@
         },
         {
           "type": "Let",
-          "line": 29,
+          "line": 25,
           "column": 5,
           "name": "div_val",
           "expression": {
             "type": "BinaryOp",
-            "line": 29,
+            "line": 25,
             "column": 18,
             "op": "/",
             "left": {
               "type": "Literal",
-              "line": 29,
+              "line": 25,
               "column": 15,
               "value": "10"
             },
             "right": {
               "type": "Literal",
-              "line": 29,
+              "line": 25,
               "column": 20,
               "value": "4"
             }
@@ -590,17 +590,17 @@
         },
         {
           "type": "Let",
-          "line": 30,
+          "line": 26,
           "column": 5,
           "name": "gt_ok",
           "expression": {
             "type": "Comparison",
-            "line": 30,
+            "line": 26,
             "column": 25,
             "kind": "gt",
             "left": {
               "type": "StatePath",
-              "line": 30,
+              "line": 26,
               "column": 13,
               "path": [
                 "total"
@@ -608,7 +608,7 @@
             },
             "right": {
               "type": "Literal",
-              "line": 30,
+              "line": 26,
               "column": 41,
               "value": "0"
             }
@@ -617,17 +617,17 @@
         },
         {
           "type": "Let",
-          "line": 31,
+          "line": 27,
           "column": 5,
           "name": "lt_ok",
           "expression": {
             "type": "Comparison",
-            "line": 31,
+            "line": 27,
             "column": 25,
             "kind": "lt",
             "left": {
               "type": "StatePath",
-              "line": 31,
+              "line": 27,
               "column": 13,
               "path": [
                 "total"
@@ -635,7 +635,7 @@
             },
             "right": {
               "type": "Literal",
-              "line": 31,
+              "line": 27,
               "column": 38,
               "value": "100"
             }
@@ -644,17 +644,17 @@
         },
         {
           "type": "Let",
-          "line": 32,
+          "line": 28,
           "column": 5,
           "name": "gte_ok",
           "expression": {
             "type": "Comparison",
-            "line": 32,
+            "line": 28,
             "column": 26,
             "kind": "gte",
             "left": {
               "type": "StatePath",
-              "line": 32,
+              "line": 28,
               "column": 14,
               "path": [
                 "total"
@@ -662,7 +662,7 @@
             },
             "right": {
               "type": "Literal",
-              "line": 32,
+              "line": 28,
               "column": 38,
               "value": "26"
             }
@@ -671,17 +671,17 @@
         },
         {
           "type": "Let",
-          "line": 33,
+          "line": 29,
           "column": 5,
           "name": "lte_ok",
           "expression": {
             "type": "Comparison",
-            "line": 33,
+            "line": 29,
             "column": 26,
             "kind": "lte",
             "left": {
               "type": "StatePath",
-              "line": 33,
+              "line": 29,
               "column": 14,
               "path": [
                 "total"
@@ -689,7 +689,7 @@
             },
             "right": {
               "type": "Literal",
-              "line": 33,
+              "line": 29,
               "column": 37,
               "value": "26"
             }
@@ -698,27 +698,27 @@
         },
         {
           "type": "Let",
-          "line": 34,
+          "line": 30,
           "column": 5,
           "name": "between_ok",
           "expression": {
             "type": "BinaryOp",
-            "line": 34,
+            "line": 30,
             "column": 51,
             "op": "and",
             "left": {
               "type": "BinaryOp",
-              "line": 34,
+              "line": 30,
               "column": 43,
               "op": "and",
               "left": {
                 "type": "Comparison",
-                "line": 34,
+                "line": 30,
                 "column": 30,
                 "kind": "gte",
                 "left": {
                   "type": "StatePath",
-                  "line": 34,
+                  "line": 30,
                   "column": 18,
                   "path": [
                     "total"
@@ -726,19 +726,19 @@
                 },
                 "right": {
                   "type": "Literal",
-                  "line": 34,
+                  "line": 30,
                   "column": 41,
                   "value": "0"
                 }
               },
               "right": {
                 "type": "Comparison",
-                "line": 34,
+                "line": 30,
                 "column": 30,
                 "kind": "lte",
                 "left": {
                   "type": "StatePath",
-                  "line": 34,
+                  "line": 30,
                   "column": 18,
                   "path": [
                     "total"
@@ -746,7 +746,7 @@
                 },
                 "right": {
                   "type": "Literal",
-                  "line": 34,
+                  "line": 30,
                   "column": 47,
                   "value": "100"
                 }
@@ -754,18 +754,18 @@
             },
             "right": {
               "type": "Comparison",
-              "line": 34,
+              "line": 30,
               "column": 59,
               "kind": "gt",
               "left": {
                 "type": "VarReference",
-                "line": 34,
+                "line": 30,
                 "column": 55,
                 "name": "avg"
               },
               "right": {
                 "type": "Literal",
-                "line": 34,
+                "line": 30,
                 "column": 75,
                 "value": "0"
               }
@@ -775,22 +775,22 @@
         },
         {
           "type": "Let",
-          "line": 35,
+          "line": 31,
           "column": 5,
           "name": "strict_ok",
           "expression": {
             "type": "BinaryOp",
-            "line": 35,
+            "line": 31,
             "column": 51,
             "op": "and",
             "left": {
               "type": "Comparison",
-              "line": 35,
+              "line": 31,
               "column": 29,
               "kind": "gt",
               "left": {
                 "type": "StatePath",
-                "line": 35,
+                "line": 31,
                 "column": 17,
                 "path": [
                   "total"
@@ -798,19 +798,19 @@
               },
               "right": {
                 "type": "Literal",
-                "line": 35,
+                "line": 31,
                 "column": 49,
                 "value": "0"
               }
             },
             "right": {
               "type": "Comparison",
-              "line": 35,
+              "line": 31,
               "column": 29,
               "kind": "lt",
               "left": {
                 "type": "StatePath",
-                "line": 35,
+                "line": 31,
                 "column": 17,
                 "path": [
                   "total"
@@ -818,7 +818,7 @@
               },
               "right": {
                 "type": "Literal",
-                "line": 35,
+                "line": 31,
                 "column": 55,
                 "value": "30"
               }
@@ -828,27 +828,27 @@
         },
         {
           "type": "Let",
-          "line": 36,
+          "line": 32,
           "column": 5,
           "name": "not_between",
           "expression": {
             "type": "UnaryOp",
-            "line": 36,
+            "line": 32,
             "column": 19,
             "op": "not",
             "operand": {
               "type": "BinaryOp",
-              "line": 36,
+              "line": 32,
               "column": 48,
               "op": "and",
               "left": {
                 "type": "Comparison",
-                "line": 36,
+                "line": 32,
                 "column": 35,
                 "kind": "gte",
                 "left": {
                   "type": "StatePath",
-                  "line": 36,
+                  "line": 32,
                   "column": 23,
                   "path": [
                     "total"
@@ -856,19 +856,19 @@
                 },
                 "right": {
                   "type": "Literal",
-                  "line": 36,
+                  "line": 32,
                   "column": 46,
                   "value": "0"
                 }
               },
               "right": {
                 "type": "Comparison",
-                "line": 36,
+                "line": 32,
                 "column": 35,
                 "kind": "lte",
                 "left": {
                   "type": "StatePath",
-                  "line": 36,
+                  "line": 32,
                   "column": 23,
                   "path": [
                     "total"
@@ -876,7 +876,7 @@
                 },
                 "right": {
                   "type": "Literal",
-                  "line": 36,
+                  "line": 32,
                   "column": 52,
                   "value": "100"
                 }
@@ -887,13 +887,81 @@
         },
         {
           "type": "Return",
-          "line": 37,
+          "line": 33,
           "column": 3,
           "expression": {
             "type": "MapExpr",
-            "line": 37,
+            "line": 33,
             "column": 10,
             "entries": [
+              {
+                "type": "MapEntry",
+                "line": 34,
+                "column": 5,
+                "key": {
+                  "type": "Literal",
+                  "line": 34,
+                  "column": 5,
+                  "value": "size"
+                },
+                "value": {
+                  "type": "VarReference",
+                  "line": 34,
+                  "column": 15,
+                  "name": "size"
+                }
+              },
+              {
+                "type": "MapEntry",
+                "line": 35,
+                "column": 5,
+                "key": {
+                  "type": "Literal",
+                  "line": 35,
+                  "column": 5,
+                  "value": "first"
+                },
+                "value": {
+                  "type": "VarReference",
+                  "line": 35,
+                  "column": 16,
+                  "name": "first"
+                }
+              },
+              {
+                "type": "MapEntry",
+                "line": 36,
+                "column": 5,
+                "key": {
+                  "type": "Literal",
+                  "line": 36,
+                  "column": 5,
+                  "value": "doubled"
+                },
+                "value": {
+                  "type": "VarReference",
+                  "line": 36,
+                  "column": 18,
+                  "name": "doubled"
+                }
+              },
+              {
+                "type": "MapEntry",
+                "line": 37,
+                "column": 5,
+                "key": {
+                  "type": "Literal",
+                  "line": 37,
+                  "column": 5,
+                  "value": "big"
+                },
+                "value": {
+                  "type": "VarReference",
+                  "line": 37,
+                  "column": 14,
+                  "name": "big"
+                }
+              },
               {
                 "type": "MapEntry",
                 "line": 38,
@@ -902,13 +970,15 @@
                   "type": "Literal",
                   "line": 38,
                   "column": 5,
-                  "value": "size"
+                  "value": "total"
                 },
                 "value": {
-                  "type": "VarReference",
+                  "type": "StatePath",
                   "line": 38,
-                  "column": 15,
-                  "name": "size"
+                  "column": 16,
+                  "path": [
+                    "total"
+                  ]
                 }
               },
               {
@@ -919,13 +989,13 @@
                   "type": "Literal",
                   "line": 39,
                   "column": 5,
-                  "value": "first"
+                  "value": "avg"
                 },
                 "value": {
                   "type": "VarReference",
                   "line": 39,
-                  "column": 16,
-                  "name": "first"
+                  "column": 14,
+                  "name": "avg"
                 }
               },
               {
@@ -936,13 +1006,13 @@
                   "type": "Literal",
                   "line": 40,
                   "column": 5,
-                  "value": "doubled"
+                  "value": "sum_all"
                 },
                 "value": {
                   "type": "VarReference",
                   "line": 40,
                   "column": 18,
-                  "name": "doubled"
+                  "name": "sum_all"
                 }
               },
               {
@@ -953,13 +1023,13 @@
                   "type": "Literal",
                   "line": 41,
                   "column": 5,
-                  "value": "big"
+                  "value": "min_val"
                 },
                 "value": {
                   "type": "VarReference",
                   "line": 41,
-                  "column": 14,
-                  "name": "big"
+                  "column": 18,
+                  "name": "min_val"
                 }
               },
               {
@@ -970,15 +1040,13 @@
                   "type": "Literal",
                   "line": 42,
                   "column": 5,
-                  "value": "total"
+                  "value": "max_val"
                 },
                 "value": {
-                  "type": "StatePath",
+                  "type": "VarReference",
                   "line": 42,
-                  "column": 16,
-                  "path": [
-                    "total"
-                  ]
+                  "column": 18,
+                  "name": "max_val"
                 }
               },
               {
@@ -989,13 +1057,13 @@
                   "type": "Literal",
                   "line": 43,
                   "column": 5,
-                  "value": "avg"
+                  "value": "median_val"
                 },
                 "value": {
                   "type": "VarReference",
                   "line": 43,
-                  "column": 14,
-                  "name": "avg"
+                  "column": 21,
+                  "name": "median_val"
                 }
               },
               {
@@ -1006,13 +1074,13 @@
                   "type": "Literal",
                   "line": 44,
                   "column": 5,
-                  "value": "sum_all"
+                  "value": "pow"
                 },
                 "value": {
                   "type": "VarReference",
                   "line": 44,
-                  "column": 18,
-                  "name": "sum_all"
+                  "column": 14,
+                  "name": "pow"
                 }
               },
               {
@@ -1023,13 +1091,13 @@
                   "type": "Literal",
                   "line": 45,
                   "column": 5,
-                  "value": "min_val"
+                  "value": "pow_paren"
                 },
                 "value": {
                   "type": "VarReference",
                   "line": 45,
-                  "column": 18,
-                  "name": "min_val"
+                  "column": 20,
+                  "name": "pow_paren"
                 }
               },
               {
@@ -1040,13 +1108,13 @@
                   "type": "Literal",
                   "line": 46,
                   "column": 5,
-                  "value": "max_val"
+                  "value": "pow_chain"
                 },
                 "value": {
                   "type": "VarReference",
                   "line": 46,
-                  "column": 18,
-                  "name": "max_val"
+                  "column": 20,
+                  "name": "pow_chain"
                 }
               },
               {
@@ -1057,13 +1125,13 @@
                   "type": "Literal",
                   "line": 47,
                   "column": 5,
-                  "value": "median_val"
+                  "value": "combo"
                 },
                 "value": {
                   "type": "VarReference",
                   "line": 47,
-                  "column": 21,
-                  "name": "median_val"
+                  "column": 16,
+                  "name": "combo"
                 }
               },
               {
@@ -1074,13 +1142,13 @@
                   "type": "Literal",
                   "line": 48,
                   "column": 5,
-                  "value": "pow"
+                  "value": "mod_val"
                 },
                 "value": {
                   "type": "VarReference",
                   "line": 48,
-                  "column": 14,
-                  "name": "pow"
+                  "column": 18,
+                  "name": "mod_val"
                 }
               },
               {
@@ -1091,13 +1159,13 @@
                   "type": "Literal",
                   "line": 49,
                   "column": 5,
-                  "value": "pow_paren"
+                  "value": "div_val"
                 },
                 "value": {
                   "type": "VarReference",
                   "line": 49,
-                  "column": 20,
-                  "name": "pow_paren"
+                  "column": 18,
+                  "name": "div_val"
                 }
               },
               {
@@ -1108,13 +1176,13 @@
                   "type": "Literal",
                   "line": 50,
                   "column": 5,
-                  "value": "pow_chain"
+                  "value": "gt_ok"
                 },
                 "value": {
                   "type": "VarReference",
                   "line": 50,
-                  "column": 20,
-                  "name": "pow_chain"
+                  "column": 16,
+                  "name": "gt_ok"
                 }
               },
               {
@@ -1125,13 +1193,13 @@
                   "type": "Literal",
                   "line": 51,
                   "column": 5,
-                  "value": "combo"
+                  "value": "lt_ok"
                 },
                 "value": {
                   "type": "VarReference",
                   "line": 51,
                   "column": 16,
-                  "name": "combo"
+                  "name": "lt_ok"
                 }
               },
               {
@@ -1142,13 +1210,13 @@
                   "type": "Literal",
                   "line": 52,
                   "column": 5,
-                  "value": "mod_val"
+                  "value": "gte_ok"
                 },
                 "value": {
                   "type": "VarReference",
                   "line": 52,
-                  "column": 18,
-                  "name": "mod_val"
+                  "column": 17,
+                  "name": "gte_ok"
                 }
               },
               {
@@ -1159,13 +1227,13 @@
                   "type": "Literal",
                   "line": 53,
                   "column": 5,
-                  "value": "div_val"
+                  "value": "lte_ok"
                 },
                 "value": {
                   "type": "VarReference",
                   "line": 53,
-                  "column": 18,
-                  "name": "div_val"
+                  "column": 17,
+                  "name": "lte_ok"
                 }
               },
               {
@@ -1176,13 +1244,13 @@
                   "type": "Literal",
                   "line": 54,
                   "column": 5,
-                  "value": "gt_ok"
+                  "value": "between_ok"
                 },
                 "value": {
                   "type": "VarReference",
                   "line": 54,
-                  "column": 16,
-                  "name": "gt_ok"
+                  "column": 21,
+                  "name": "between_ok"
                 }
               },
               {
@@ -1193,13 +1261,13 @@
                   "type": "Literal",
                   "line": 55,
                   "column": 5,
-                  "value": "lt_ok"
+                  "value": "strict_ok"
                 },
                 "value": {
                   "type": "VarReference",
                   "line": 55,
-                  "column": 16,
-                  "name": "lt_ok"
+                  "column": 20,
+                  "name": "strict_ok"
                 }
               },
               {
@@ -1210,79 +1278,11 @@
                   "type": "Literal",
                   "line": 56,
                   "column": 5,
-                  "value": "gte_ok"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 56,
-                  "column": 17,
-                  "name": "gte_ok"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 57,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 57,
-                  "column": 5,
-                  "value": "lte_ok"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 57,
-                  "column": 17,
-                  "name": "lte_ok"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 58,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 58,
-                  "column": 5,
-                  "value": "between_ok"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 58,
-                  "column": 21,
-                  "name": "between_ok"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 59,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 59,
-                  "column": 5,
-                  "value": "strict_ok"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 59,
-                  "column": 20,
-                  "name": "strict_ok"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 60,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 60,
-                  "column": 5,
                   "value": "not_between"
                 },
                 "value": {
                   "type": "VarReference",
-                  "line": 60,
+                  "line": 56,
                   "column": 22,
                   "name": "not_between"
                 }

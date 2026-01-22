@@ -261,12 +261,12 @@ class Executor:
                 }
             )
             details = {"error_id": pack.error.error_id}
-            if (
-                isinstance(exc, Namel3ssError)
-                and isinstance(exc.details, dict)
-                and exc.details.get("error_id")
-            ):
-                details["cause"] = exc.details
+            if isinstance(exc, Namel3ssError) and isinstance(exc.details, dict):
+                for key in ("category", "reason_code"):
+                    if key in exc.details:
+                        details[key] = exc.details[key]
+                if exc.details.get("error_id"):
+                    details["cause"] = exc.details
             raise Namel3ssError(
                 message,
                 line=where.line,

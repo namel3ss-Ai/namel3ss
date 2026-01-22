@@ -1,283 +1,12 @@
 {
-  "agent_team": null,
-  "agents": [],
-  "ais": [],
-  "app_theme": "light",
-  "app_theme_column": null,
-  "app_theme_line": null,
-  "capabilities": [],
-  "capsule": null,
-  "column": null,
-  "flows": [
-    {
-      "audited": false,
-      "body": [
-        {
-          "column": 3,
-          "constant": false,
-          "expression": {
-            "column": 16,
-            "line": 4,
-            "type": "Literal",
-            "value": "2"
-          },
-          "line": 4,
-          "name": "total",
-          "type": "Let"
-        },
-        {
-          "column": 3,
-          "condition": {
-            "column": 12,
-            "kind": "gt",
-            "left": {
-              "column": 6,
-              "line": 5,
-              "name": "total",
-              "type": "VarReference"
-            },
-            "line": 5,
-            "right": {
-              "column": 28,
-              "line": 5,
-              "type": "Literal",
-              "value": "1"
-            },
-            "type": "Comparison"
-          },
-          "else_body": [
-            {
-              "column": 5,
-              "expression": {
-                "column": 24,
-                "line": 8,
-                "type": "Literal",
-                "value": "small"
-              },
-              "line": 8,
-              "target": {
-                "column": 9,
-                "line": 8,
-                "path": [
-                  "label"
-                ],
-                "type": "StatePath"
-              },
-              "type": "Set"
-            }
-          ],
-          "line": 5,
-          "then_body": [
-            {
-              "column": 5,
-              "expression": {
-                "column": 24,
-                "line": 6,
-                "type": "Literal",
-                "value": "big"
-              },
-              "line": 6,
-              "target": {
-                "column": 9,
-                "line": 6,
-                "path": [
-                  "label"
-                ],
-                "type": "StatePath"
-              },
-              "type": "Set"
-            }
-          ],
-          "type": "If"
-        },
-        {
-          "body": [
-            {
-              "column": 5,
-              "constant": false,
-              "expression": {
-                "column": 14,
-                "line": 10,
-                "type": "Literal",
-                "value": "1"
-              },
-              "line": 10,
-              "name": "x",
-              "type": "Let"
-            }
-          ],
-          "column": 3,
-          "count": {
-            "column": 16,
-            "line": 9,
-            "type": "Literal",
-            "value": "2"
-          },
-          "line": 9,
-          "type": "Repeat"
-        },
-        {
-          "body": [
-            {
-              "column": 5,
-              "expression": {
-                "column": 23,
-                "line": 12,
-                "name": "item",
-                "type": "VarReference"
-              },
-              "line": 12,
-              "target": {
-                "column": 9,
-                "line": 12,
-                "path": [
-                  "last"
-                ],
-                "type": "StatePath"
-              },
-              "type": "Set"
-            }
-          ],
-          "column": 3,
-          "iterable": {
-            "column": 20,
-            "line": 11,
-            "path": [
-              "items"
-            ],
-            "type": "StatePath"
-          },
-          "line": 11,
-          "name": "item",
-          "type": "ForEach"
-        },
-        {
-          "cases": [
-            {
-              "body": [
-                {
-                  "column": 9,
-                  "expression": {
-                    "column": 29,
-                    "line": 16,
-                    "type": "Literal",
-                    "value": "one"
-                  },
-                  "line": 16,
-                  "target": {
-                    "column": 13,
-                    "line": 16,
-                    "path": [
-                      "status"
-                    ],
-                    "type": "StatePath"
-                  },
-                  "type": "Set"
-                }
-              ],
-              "column": 12,
-              "line": 15,
-              "pattern": {
-                "column": 12,
-                "line": 15,
-                "type": "Literal",
-                "value": "1"
-              },
-              "type": "MatchCase"
-            },
-            {
-              "body": [
-                {
-                  "column": 9,
-                  "expression": {
-                    "column": 29,
-                    "line": 18,
-                    "type": "Literal",
-                    "value": "two"
-                  },
-                  "line": 18,
-                  "target": {
-                    "column": 13,
-                    "line": 18,
-                    "path": [
-                      "status"
-                    ],
-                    "type": "StatePath"
-                  },
-                  "type": "Set"
-                }
-              ],
-              "column": 12,
-              "line": 17,
-              "pattern": {
-                "column": 12,
-                "line": 17,
-                "type": "Literal",
-                "value": "2"
-              },
-              "type": "MatchCase"
-            }
-          ],
-          "column": 3,
-          "expression": {
-            "column": 9,
-            "line": 13,
-            "path": [
-              "last"
-            ],
-            "type": "StatePath"
-          },
-          "line": 13,
-          "otherwise": [
-            {
-              "column": 9,
-              "expression": {
-                "column": 29,
-                "line": 20,
-                "type": "Literal",
-                "value": "other"
-              },
-              "line": 20,
-              "target": {
-                "column": 13,
-                "line": 20,
-                "path": [
-                  "status"
-                ],
-                "type": "StatePath"
-              },
-              "type": "Set"
-            }
-          ],
-          "type": "Match"
-        },
-        {
-          "column": 3,
-          "expression": {
-            "column": 10,
-            "line": 21,
-            "path": [
-              "status"
-            ],
-            "type": "StatePath"
-          },
-          "line": 21,
-          "type": "Return"
-        }
-      ],
-      "column": 1,
-      "line": 3,
-      "name": "control",
-      "requires": null,
-      "type": "Flow"
-    }
-  ],
-  "identity": null,
-  "jobs": [],
+  "type": "Program",
   "line": null,
-  "pages": [],
-  "records": [],
+  "column": null,
   "spec_version": "1.0",
+  "app_theme": "light",
+  "app_theme_line": null,
+  "app_theme_column": null,
+  "theme_tokens": {},
   "theme_preference": {
     "allow_override": [
       false,
@@ -290,12 +19,6 @@
       null
     ]
   },
-  "theme_tokens": {},
-  "tools": [],
-  "type": "Program",
-  "ui_column": null,
-  "ui_line": null,
-  "ui_packs": [],
   "ui_settings": {
     "accent_color": [
       "blue",
@@ -328,5 +51,282 @@
       null
     ]
   },
-  "uses": []
+  "ui_line": null,
+  "ui_column": null,
+  "capabilities": [],
+  "records": [],
+  "flows": [
+    {
+      "type": "Flow",
+      "line": 3,
+      "column": 1,
+      "name": "control",
+      "body": [
+        {
+          "type": "Let",
+          "line": 4,
+          "column": 3,
+          "name": "total",
+          "expression": {
+            "type": "Literal",
+            "line": 4,
+            "column": 16,
+            "value": "2"
+          },
+          "constant": false
+        },
+        {
+          "type": "If",
+          "line": 5,
+          "column": 3,
+          "condition": {
+            "type": "Comparison",
+            "line": 5,
+            "column": 12,
+            "kind": "gt",
+            "left": {
+              "type": "VarReference",
+              "line": 5,
+              "column": 6,
+              "name": "total"
+            },
+            "right": {
+              "type": "Literal",
+              "line": 5,
+              "column": 28,
+              "value": "1"
+            }
+          },
+          "then_body": [
+            {
+              "type": "Set",
+              "line": 6,
+              "column": 5,
+              "target": {
+                "type": "StatePath",
+                "line": 6,
+                "column": 9,
+                "path": [
+                  "label"
+                ]
+              },
+              "expression": {
+                "type": "Literal",
+                "line": 6,
+                "column": 24,
+                "value": "big"
+              }
+            }
+          ],
+          "else_body": [
+            {
+              "type": "Set",
+              "line": 8,
+              "column": 5,
+              "target": {
+                "type": "StatePath",
+                "line": 8,
+                "column": 9,
+                "path": [
+                  "label"
+                ]
+              },
+              "expression": {
+                "type": "Literal",
+                "line": 8,
+                "column": 24,
+                "value": "small"
+              }
+            }
+          ]
+        },
+        {
+          "type": "Repeat",
+          "line": 9,
+          "column": 3,
+          "count": {
+            "type": "Literal",
+            "line": 9,
+            "column": 16,
+            "value": "2"
+          },
+          "body": [
+            {
+              "type": "Let",
+              "line": 10,
+              "column": 5,
+              "name": "x",
+              "expression": {
+                "type": "Literal",
+                "line": 10,
+                "column": 14,
+                "value": "1"
+              },
+              "constant": false
+            }
+          ]
+        },
+        {
+          "type": "ForEach",
+          "line": 11,
+          "column": 3,
+          "name": "item",
+          "iterable": {
+            "type": "StatePath",
+            "line": 11,
+            "column": 20,
+            "path": [
+              "items"
+            ]
+          },
+          "body": [
+            {
+              "type": "Set",
+              "line": 12,
+              "column": 5,
+              "target": {
+                "type": "StatePath",
+                "line": 12,
+                "column": 9,
+                "path": [
+                  "last"
+                ]
+              },
+              "expression": {
+                "type": "VarReference",
+                "line": 12,
+                "column": 23,
+                "name": "item"
+              }
+            }
+          ]
+        },
+        {
+          "type": "Match",
+          "line": 13,
+          "column": 3,
+          "expression": {
+            "type": "StatePath",
+            "line": 13,
+            "column": 9,
+            "path": [
+              "last"
+            ]
+          },
+          "cases": [
+            {
+              "type": "MatchCase",
+              "line": 15,
+              "column": 12,
+              "pattern": {
+                "type": "Literal",
+                "line": 15,
+                "column": 12,
+                "value": "1"
+              },
+              "body": [
+                {
+                  "type": "Set",
+                  "line": 16,
+                  "column": 9,
+                  "target": {
+                    "type": "StatePath",
+                    "line": 16,
+                    "column": 13,
+                    "path": [
+                      "status"
+                    ]
+                  },
+                  "expression": {
+                    "type": "Literal",
+                    "line": 16,
+                    "column": 29,
+                    "value": "one"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "MatchCase",
+              "line": 17,
+              "column": 12,
+              "pattern": {
+                "type": "Literal",
+                "line": 17,
+                "column": 12,
+                "value": "2"
+              },
+              "body": [
+                {
+                  "type": "Set",
+                  "line": 18,
+                  "column": 9,
+                  "target": {
+                    "type": "StatePath",
+                    "line": 18,
+                    "column": 13,
+                    "path": [
+                      "status"
+                    ]
+                  },
+                  "expression": {
+                    "type": "Literal",
+                    "line": 18,
+                    "column": 29,
+                    "value": "two"
+                  }
+                }
+              ]
+            }
+          ],
+          "otherwise": [
+            {
+              "type": "Set",
+              "line": 20,
+              "column": 9,
+              "target": {
+                "type": "StatePath",
+                "line": 20,
+                "column": 13,
+                "path": [
+                  "status"
+                ]
+              },
+              "expression": {
+                "type": "Literal",
+                "line": 20,
+                "column": 29,
+                "value": "other"
+              }
+            }
+          ]
+        },
+        {
+          "type": "Return",
+          "line": 21,
+          "column": 3,
+          "expression": {
+            "type": "StatePath",
+            "line": 21,
+            "column": 10,
+            "path": [
+              "status"
+            ]
+          }
+        }
+      ],
+      "requires": null,
+      "audited": false
+    }
+  ],
+  "jobs": [],
+  "pages": [],
+  "ais": [],
+  "tools": [],
+  "agents": [],
+  "ui_packs": [],
+  "uses": [],
+  "capsule": null,
+  "agent_team": null,
+  "identity": null
 }

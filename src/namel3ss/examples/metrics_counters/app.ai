@@ -5,7 +5,7 @@ flow "count requests" requires true:
   metric counter "requests" add 2 with map:
     "route" is "/api/orders"
     "source" is "demo"
-  metric counter "requests" set 10 with map:
+  metric counter "requests" add 10 with map:
     "route" is "/api/orders"
   return "ok"
 

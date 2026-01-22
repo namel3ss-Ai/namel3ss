@@ -41,6 +41,7 @@ Studio is a viewer and interactor. It shows the UI manifest, available actions, 
 - [Authentication](authentication.md): identity model, sessions, tokens, and redaction rules.
 - [Data](data.md): backends, migrations, promotion safety, and snapshots.
 - [Browser Protocol](runtime/browser-protocol.md): `/api/ui`, `/api/state`, `/api/action`, `/api/session`, `/api/login`, `/api/logout`, `/api/data/status`, `/api/migrations/status`, `/api/migrations/plan`, `/api/logs`, `/api/traces`, `/api/metrics`, and `/api/health` are stable and deterministic.
+Windows paths: `language\application-runtime.md`, `language\application-data-model.md`, `language\backend-capabilities.md`, `language\no-dependencies.md`, `language\capability-packs.md`.
 
 ### Explainable execution
 Every run emits deterministic artifacts that answer specific questions:

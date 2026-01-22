@@ -1,11 +1,7 @@
 spec is "1.0"
 
 flow "surface":
-  let numbers is list:
-    1
-    2
-    3
-    10
+  let numbers is list: 1, 2, 3, 10
   let appended is list append numbers with 12
   let size is list length of appended
   let first is list get appended at 0

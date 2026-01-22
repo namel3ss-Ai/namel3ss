@@ -5,7 +5,12 @@ import os
 from pathlib import Path
 
 from namel3ss.config.model import AppConfig
-from namel3ss.runtime.packs.layout import pack_bindings_path, pack_manifest_path, packs_root
+from namel3ss.runtime.packs.layout import (
+    pack_bindings_path,
+    pack_manifest_path,
+    pack_verification_path,
+    packs_root,
+)
 from namel3ss.runtime.packs.manifest import PackManifest
 from namel3ss.runtime.packs.pack_loader import load_local_pack_items
 from namel3ss.runtime.packs.pack_manifest import PackContents, load_pack_contents
@@ -262,7 +267,8 @@ def _is_pack_verified(
             tools_text = bindings_path.read_text(encoding="utf-8")
         except Exception:
             tools_text = None
-    if os.getenv("N3_EXECUTABLE_SPEC") == "1":
+    verification_path = pack_verification_path(pack_dir)
+    if os.getenv("N3_EXECUTABLE_SPEC") == "1" or verification_path.exists():
         verification = load_pack_verification(pack_dir, manifest_text, tools_text)
     else:
         verification = load_pack_verification(pack_dir, manifest_text, tools_text, app_root=app_root)

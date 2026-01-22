@@ -108,11 +108,16 @@ class _EdgeBackend:
 
 
 def _ensure_default_backends() -> None:
-    if _BACKENDS:
-        return
-    register_backend(_MemoryBackend())
-    register_backend(_EdgeBackend())
-    from namel3ss.runtime.data import postgres_backend, sqlite_backend, mysql_backend  # noqa: F401
+    if "memory" not in _BACKENDS:
+        register_backend(_MemoryBackend())
+    if "edge" not in _BACKENDS:
+        register_backend(_EdgeBackend())
+    if "postgres" not in _BACKENDS:
+        from namel3ss.runtime.data import postgres_backend  # noqa: F401
+    if "sqlite" not in _BACKENDS:
+        from namel3ss.runtime.data import sqlite_backend  # noqa: F401
+    if "mysql" not in _BACKENDS:
+        from namel3ss.runtime.data import mysql_backend  # noqa: F401
 
 
 __all__ = [

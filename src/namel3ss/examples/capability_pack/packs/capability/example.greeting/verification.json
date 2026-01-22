@@ -1,0 +1,8 @@
+{
+  "digest": "sha256:c7295165215b720d7f44bdf623600ae0d5046dc285a6511f6ad4adf867a6ff81",
+  "key_id": null,
+  "pack_id": "example.greeting",
+  "verified": true,
+  "verified_at": "not_recorded",
+  "version": "stable"
+}

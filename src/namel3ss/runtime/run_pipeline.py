@@ -6,10 +6,12 @@ from pathlib import Path
 from typing import Iterable
 
 from namel3ss.config.model import AppConfig
+from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
 from namel3ss.ir import nodes as ir
 from namel3ss.production_contract import apply_trace_hash, build_run_payload
+from namel3ss.runtime.auth import resolve_auth_context
 from namel3ss.runtime.executor import execute_program_flow
 from namel3ss.runtime.memory.api import MemoryManager
 from namel3ss.runtime.storage.base import Storage
@@ -44,6 +46,23 @@ def build_flow_payload(
     state_value = state if isinstance(state, dict) else {}
     input_value = input if isinstance(input, dict) else {}
     root = project_root if project_root is not None else getattr(program, "project_root", None)
+    resolved_config = config
+    resolved_auth = auth_context
+    resolved_identity = identity
+    if resolved_auth is None:
+        if resolved_config is None:
+            resolved_config = load_config(
+                app_path=getattr(program, "app_path", None),
+                root=getattr(program, "project_root", None),
+            )
+        resolved_auth = resolve_auth_context(
+            None,
+            config=resolved_config,
+            identity_schema=getattr(program, "identity", None),
+            store=store,
+        )
+    if resolved_identity is None and resolved_auth is not None:
+        resolved_identity = getattr(resolved_auth, "identity", None)
     try:
         result = execute_program_flow(
             program,
@@ -55,9 +74,9 @@ def build_flow_payload(
             runtime_theme=runtime_theme,
             preference_store=preference_store,
             preference_key=preference_key,
-            config=config,
-            identity=identity,
-            auth_context=auth_context,
+            config=resolved_config,
+            identity=resolved_identity,
+            auth_context=resolved_auth,
             action_id=action_id,
         )
     except Exception as err:

@@ -15,8 +15,22 @@ def parse_flow(parser) -> ast.Flow:
     requires_expr, audited = _parse_flow_header_flags(parser, requires_expr, audited, flow_tok)
     if parser._match("COLON"):
         requires_expr, audited = _parse_flow_header_flags(parser, requires_expr, audited, flow_tok)
-        parser._expect("NEWLINE", "Expected newline after flow header")
-        parser._expect("INDENT", "Expected indented block for flow body")
+        if not parser._match("NEWLINE"):
+            if parser._current().type not in {"DEDENT", "EOF"}:
+                parser._expect("NEWLINE", "Expected newline after flow header")
+        if not parser._match("INDENT"):
+            while parser._match("NEWLINE"):
+                pass
+            return ast.Flow(
+                name=name_tok.value,
+                body=[],
+                requires=requires_expr,
+                audited=audited,
+                declarative=False,
+                steps=None,
+                line=flow_tok.line,
+                column=flow_tok.column,
+            )
         body = parse_statements(parser, until={"DEDENT"})
         parser._expect("DEDENT", "Expected block end")
         while parser._match("NEWLINE"):

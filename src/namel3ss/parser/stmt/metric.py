@@ -40,7 +40,7 @@ def parse_metric(parser) -> ast.MetricStmt:
     parser._advance()
     name = parse_reference_name(parser, context="metric")
     op_tok = parser._current()
-    if op_tok.type != "IDENT":
+    if op_tok.type not in {"IDENT", "RECORD", "SET"}:
         raise Namel3ssError(
             build_guidance_message(
                 what="Metric statement is missing an operation.",

@@ -1,8 +1,9 @@
 spec is "1.0"
 
 record "Contact":
-  field "id" is text must be present
-  field "email" is text must be present
+  fields:
+    id is text must be present
+    email is text must be present
 
 flow "seed_contact":
   set state.contact with:

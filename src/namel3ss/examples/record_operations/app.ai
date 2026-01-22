@@ -1,9 +1,10 @@
 spec is "1.0"
 
 record "Task":
-  field "id" is number must be present
-  field "title" is text must be present
-  field "done" is boolean
+  fields:
+    id is number must be present
+    title is text must be present
+    done is boolean
 
 flow "apply_changes" requires true:
   set state.task with:

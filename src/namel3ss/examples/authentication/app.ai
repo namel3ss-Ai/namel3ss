@@ -8,7 +8,7 @@ identity "user":
     trust_level is text
   trust_level is one of "guest", "member", "admin"
 
-flow "protected_report" requires has_permission("reports.view")
+flow "protected_report" requires has_permission("reports.view"):
   return map:
     "message" is "Access granted."
 

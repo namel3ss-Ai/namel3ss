@@ -12,13 +12,13 @@ ai "assistant":
   system_prompt is "DEMO_SYSTEM_PROMPT"
 
 record "Prompt":
-  field "message" is text must be present
-
+  fields:
+    message is text must be present
 record "Answer":
-  field "prompt" is text must be present
-  field "reply" is text must be present
-  field "why" is text must be present
-
+  fields:
+    prompt is text must be present
+    reply is text must be present
+    why is text must be present
 flow "ask_ai": requires true
   ask ai "assistant" with input: input.message as reply
   set state.prompt with:

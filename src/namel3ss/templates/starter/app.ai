@@ -7,9 +7,9 @@ ui:
   theme is "light"
 
 record "Note":
-  field "summary" is text must be present
-  field "details" is text
-
+  fields:
+    summary is text must be present
+    details is text
 # A deterministic flow that creates a starter record.
 flow "seed_note" requires true
   create "Note"
