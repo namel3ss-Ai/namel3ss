@@ -41,6 +41,12 @@
           "page": "Customers",
           "page_slug": "customers",
           "record": "Customer",
+          "spacing": {
+            "field_gap": "m",
+            "group_gap": "l",
+            "section_gap": "xl",
+            "help_gap": "s"
+          },
           "type": "form"
         },
         {
@@ -63,6 +69,12 @@
           "page_slug": "customers",
           "record": "Customer",
           "rows": [],
+          "spacing": {
+            "header_gap": "m",
+            "row_gap": "s",
+            "cell_gap": "s",
+            "row_actions_gap": "s"
+          },
           "type": "table"
         }
       ],
