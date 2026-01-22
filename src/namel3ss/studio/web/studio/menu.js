@@ -28,6 +28,9 @@
     if (action === "reset" && root.run.runResetAction) root.run.runResetAction();
     if (action === "replay" && root.run.replayLastAction) root.run.replayLastAction();
     if (action === "export" && root.run.exportTraces) root.run.exportTraces();
+    if (action === "catalog" && root.dock && typeof root.dock.setActiveTab === "function") {
+      root.dock.setActiveTab("registry");
+    }
   }
 
   function setupMenu() {
