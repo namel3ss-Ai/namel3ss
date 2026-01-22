@@ -1,3 +1,7 @@
+Usage:
+  n3 <command> [file.ai]
+  python -m namel3ss <command> [file.ai]
+
 namel3ss is an AI-native programming language. Every valid .ai file is an application. Studio is optional (inspector only; browser renders the app).
 
 Start
@@ -14,7 +18,7 @@ Quality
 
 Ship
   n3 build [file.ai]              # build deployable bundle (alias: pack <file.ai>)
-  n3 pack add <name>              # capability packs (contract)
+  n3 pack add <name[@version]>    # capability packs (contract)
   n3 clean                        # remove runtime artifacts
 
 Advanced

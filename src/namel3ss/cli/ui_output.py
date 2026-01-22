@@ -5,7 +5,11 @@ from namel3ss.traces.plain import format_plain
 from namel3ss.version import get_version
 
 def print_usage() -> None:
-    usage = """namel3ss is an AI-native programming language. Every valid .ai file is an application. Studio is optional (inspector only; browser renders the app).
+    usage = """Usage:
+  n3 <command> [file.ai]
+  python -m namel3ss <command> [file.ai]
+
+namel3ss is an AI-native programming language. Every valid .ai file is an application. Studio is optional (inspector only; browser renders the app).
 
 Start
   n3 new <template> <name>        # scaffold a project
