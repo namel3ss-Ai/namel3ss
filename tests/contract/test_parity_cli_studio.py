@@ -243,7 +243,10 @@ def test_static_manifest_foreign_parity(tmp_path: Path) -> None:
     app_file.write_text(FOREIGN_SOURCE, encoding="utf-8")
     program, _ = load_program(app_file.as_posix())
     config = load_config(app_path=app_file)
-    helper_manifest = build_static_manifest(program, config=config, state={}, store=None, warnings=[])
+    warnings: list = []
+    helper_manifest = build_static_manifest(program, config=config, state={}, store=None, warnings=warnings)
+    if warnings:
+        helper_manifest["warnings"] = [warning.to_dict() for warning in warnings]
     studio_manifest = get_ui_payload(FOREIGN_SOURCE, SessionState(), app_path=app_file.as_posix())
 
     assert helper_manifest == studio_manifest

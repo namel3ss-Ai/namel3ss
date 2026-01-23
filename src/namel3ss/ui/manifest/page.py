@@ -27,7 +27,11 @@ from namel3ss.ui.manifest.actions import _wire_overlay_actions
 from namel3ss.ui.manifest.canonical import _slugify
 from namel3ss.ui.manifest.elements import _build_children
 from namel3ss.ui.manifest.state_defaults import StateContext, StateDefaults
-from namel3ss.ui.manifest.validation import append_layout_warnings
+from namel3ss.ui.manifest.validation import (
+    append_copy_warnings,
+    append_layout_warnings,
+    append_story_icon_warnings,
+)
 from namel3ss.ui.spacing import apply_spacing_to_pages
 from namel3ss.ui.settings import UI_ALLOWED_VALUES, UI_DEFAULTS, normalize_ui_settings
 from namel3ss.validation import ValidationMode
@@ -141,6 +145,8 @@ def build_manifest(
             manifest_state_defaults_pages[page_slug] = defaults_snapshot
     apply_spacing_to_pages(pages, ui_settings.get("density", UI_DEFAULTS["density"]))
     append_layout_warnings(pages, warnings)
+    append_copy_warnings(pages, warnings)
+    append_story_icon_warnings(pages, warnings)
     persistence = _resolve_persistence(store)
     if actions:
         actions = {action_id: actions[action_id] for action_id in sorted(actions)}

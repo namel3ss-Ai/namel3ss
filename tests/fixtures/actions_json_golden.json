@@ -23,6 +23,26 @@
       "line": 9,
       "message": "Page \"home\" has a form without requires.",
       "path": null
+    },
+    {
+      "category": "copy",
+      "code": "copy.missing_intro_text",
+      "column": 3,
+      "enforced_at": null,
+      "fix": "Add a short text block before the first data-heavy element.",
+      "line": 12,
+      "message": "Page \"home\" has data-heavy content without intro text.",
+      "path": "page.home.form_item.1"
+    },
+    {
+      "category": "copy",
+      "code": "copy.missing_page_title",
+      "column": null,
+      "enforced_at": null,
+      "fix": "Add a title item near the top of the page.",
+      "line": null,
+      "message": "Page \"home\" has no title.",
+      "path": "page.home"
     }
   ]
 }

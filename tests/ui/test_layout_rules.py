@@ -80,6 +80,7 @@ flow "launch":
   return "ok"
 
 page "home":
+  title is "Overview"
   section "Overview":
     card "Summary":
       text is "Ready"

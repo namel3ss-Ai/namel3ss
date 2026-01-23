@@ -20,6 +20,8 @@ flow "send":
   return "ok"
 
 page "home":
+  title is "Chat"
+  text is "Welcome."
   chat:
     messages from is state.chat.messages
     composer calls flow "send"

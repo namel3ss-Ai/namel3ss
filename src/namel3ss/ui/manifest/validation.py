@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Iterable
 
+from namel3ss.ui.copy_rules import collect_copy_findings
+from namel3ss.ui.icon_rules import collect_icon_findings
 from namel3ss.ui.layout_rules import (
     LayoutFinding,
     LayoutLocation,
@@ -21,6 +23,7 @@ from namel3ss.ui.layout_rules import (
     rule_ungrouped_data_heavy,
     rule_unlabeled_container,
 )
+from namel3ss.ui.story_tone_rules import collect_story_tone_findings
 from namel3ss.validation import add_warning
 
 
@@ -40,6 +43,84 @@ def append_layout_warnings(pages: list[dict], warnings: list | None) -> None:
             line=location.line,
             column=location.column,
             category="layout",
+        )
+
+
+def append_copy_warnings(pages: list[dict], warnings: list | None) -> None:
+    if warnings is None:
+        return
+    findings = collect_copy_findings(pages)
+    for finding in sorted(findings, key=lambda entry: entry.sort_key()):
+        location = finding.location
+        path = location.path or _page_path(location.page_slug)
+        add_warning(
+            warnings,
+            code=finding.code,
+            message=finding.message,
+            fix=finding.fix,
+            path=path,
+            line=location.line,
+            column=location.column,
+            category="copy",
+        )
+
+
+def append_story_icon_warnings(pages: list[dict], warnings: list | None) -> None:
+    if warnings is None:
+        return
+    findings = list(collect_story_tone_findings(pages))
+    findings.extend(collect_icon_findings(pages))
+    for finding in sorted(findings, key=_story_icon_sort_key):
+        location = finding.location
+        path = location.path or _page_path(location.page_slug)
+        category = "story" if finding.code.startswith("story.") else "icon"
+        add_warning(
+            warnings,
+            code=finding.code,
+            message=finding.message,
+            fix=finding.fix,
+            path=path,
+            line=location.line,
+            column=location.column,
+            category=category,
+        )
+
+
+def append_story_tone_warnings(pages: list[dict], warnings: list | None) -> None:
+    if warnings is None:
+        return
+    findings = collect_story_tone_findings(pages)
+    for finding in sorted(findings, key=lambda entry: entry.sort_key()):
+        location = finding.location
+        path = location.path or _page_path(location.page_slug)
+        add_warning(
+            warnings,
+            code=finding.code,
+            message=finding.message,
+            fix=finding.fix,
+            path=path,
+            line=location.line,
+            column=location.column,
+            category="story",
+        )
+
+
+def append_icon_warnings(pages: list[dict], warnings: list | None) -> None:
+    if warnings is None:
+        return
+    findings = collect_icon_findings(pages)
+    for finding in sorted(findings, key=lambda entry: entry.sort_key()):
+        location = finding.location
+        path = location.path or _page_path(location.page_slug)
+        add_warning(
+            warnings,
+            code=finding.code,
+            message=finding.message,
+            fix=finding.fix,
+            path=path,
+            line=location.line,
+            column=location.column,
+            category="icon",
         )
 
 
@@ -149,6 +230,22 @@ def _page_path(page_slug: str) -> str:
     return f"page.{page_slug}"
 
 
+def _story_icon_sort_key(finding: object) -> tuple[str, str, int, int, str]:
+    code = getattr(finding, "code", "")
+    location = getattr(finding, "location", None)
+    path = getattr(location, "path", None) if location else None
+    line = getattr(location, "line", None) if location else None
+    column = getattr(location, "column", None) if location else None
+    message = getattr(finding, "message", "")
+    return (
+        code,
+        path or "",
+        line or 0,
+        column or 0,
+        message,
+    )
+
+
 def _element_location(page_name: str, page_slug: str, element: dict) -> LayoutLocation:
     return LayoutLocation(
         page=page_name,
@@ -238,4 +335,11 @@ def _pick_location(locations: list[LayoutLocation]) -> LayoutLocation:
     return sorted(locations, key=lambda entry: entry.sort_key())[0]
 
 
-__all__ = ["append_layout_warnings", "collect_layout_findings"]
+__all__ = [
+    "append_copy_warnings",
+    "append_icon_warnings",
+    "append_layout_warnings",
+    "append_story_icon_warnings",
+    "append_story_tone_warnings",
+    "collect_layout_findings",
+]
