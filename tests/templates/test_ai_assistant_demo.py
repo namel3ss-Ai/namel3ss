@@ -10,16 +10,11 @@ def _template_root() -> Path:
     return Path(__file__).resolve().parents[2] / "src" / "namel3ss" / "templates"
 
 
-def test_demo_runs_in_mock_mode(monkeypatch):
-    app_path = _template_root() / "demo" / "app.ai"
+def test_template_flow_runs_in_memory_store():
+    app_path = _template_root() / "operations_dashboard" / "app.ai"
     program, _ = load_program(str(app_path))
     store = MemoryStore()
-    monkeypatch.delenv("NAMEL3SS_OPENAI_API_KEY", raising=False)
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    monkeypatch.setattr("namel3ss.secrets.discovery.load_dotenv_for_path", lambda _: {})
-    monkeypatch.setattr("namel3ss.config.dotenv.load_dotenv_for_path", lambda _: {})
-    result = execute_program_flow(program, "ask_ai", store=store, input={"message": "hello"}, config=AppConfig())
-    assert isinstance(result.last_value, str)
-    assert result.last_value.startswith("[mock-model]")
-    schema = next(schema for schema in program.records if schema.name == "Answer")
+    result = execute_program_flow(program, "create_sample_incident", store=store, input={}, config=AppConfig())
+    assert result is not None
+    schema = next(schema for schema in program.records if schema.name == "Incident")
     assert store.list_records(schema)

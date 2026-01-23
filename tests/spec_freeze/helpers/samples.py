@@ -5,8 +5,8 @@ from typing import Iterable
 
 
 SAMPLES = [
-    ("starter_template", Path("src/namel3ss/templates/starter/app.ai")),
-    ("demo_template", Path("src/namel3ss/templates/demo/app.ai")),
+    ("starter_template", Path("tests/fixtures/templates/starter_template.ai")),
+    ("demo_template", Path("tests/fixtures/templates/demo_template.ai")),
     ("control_flow", Path("tests/spec_freeze/fixtures/control_flow.ai")),
 ]
 

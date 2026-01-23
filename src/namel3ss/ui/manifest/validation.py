@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Iterable
 
+from namel3ss.ui.consistency_rules import collect_consistency_findings
 from namel3ss.ui.copy_rules import collect_copy_findings
 from namel3ss.ui.icon_rules import collect_icon_findings
 from namel3ss.ui.layout_rules import (
@@ -121,6 +122,25 @@ def append_icon_warnings(pages: list[dict], warnings: list | None) -> None:
             line=location.line,
             column=location.column,
             category="icon",
+        )
+
+
+def append_consistency_warnings(pages: list[dict], warnings: list | None) -> None:
+    if warnings is None:
+        return
+    findings = collect_consistency_findings(pages)
+    for finding in sorted(findings, key=lambda entry: entry.sort_key()):
+        location = finding.location
+        path = location.path or _page_path(location.page_slug)
+        add_warning(
+            warnings,
+            code=finding.code,
+            message=finding.message,
+            fix=finding.fix,
+            path=path,
+            line=location.line,
+            column=location.column,
+            category="consistency",
         )
 
 
@@ -336,6 +356,7 @@ def _pick_location(locations: list[LayoutLocation]) -> LayoutLocation:
 
 
 __all__ = [
+    "append_consistency_warnings",
     "append_copy_warnings",
     "append_icon_warnings",
     "append_layout_warnings",

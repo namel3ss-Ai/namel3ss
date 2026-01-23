@@ -5,7 +5,7 @@ from typing import Iterable
 
 
 RUNTIME_SAMPLES = [
-    ("starter_seed_note", Path("src/namel3ss/templates/starter/app.ai"), "seed_note"),
+    ("starter_seed_note", Path("tests/fixtures/templates/starter_template.ai"), "seed_note"),
     ("runtime_control", Path("tests/spec_freeze/fixtures/runtime_control.ai"), "control"),
     ("runtime_theme", Path("tests/spec_freeze/fixtures/runtime_theme.ai"), "theme_demo"),
 ]

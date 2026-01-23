@@ -72,7 +72,7 @@ def analyze_files(files: list[Path], *, analyzed_path: str = "multiple") -> Read
                 what="No .ai files found to analyze.",
                 why="Readability needs at least one .ai file.",
                 fix="Pass a .ai file or a folder containing .ai files.",
-                example="n3 readability src/namel3ss/templates/demo/app.ai",
+                example="n3 readability src/namel3ss/templates/operations_dashboard/app.ai",
             )
         )
     sorted_files = sorted({path.resolve() for path in files}, key=lambda p: p.as_posix())
@@ -183,7 +183,7 @@ def _collect_ai_files(path: Path) -> list[Path]:
                 what=f"No .ai files found under {path.as_posix()}",
                 why="The folder does not contain any .ai sources.",
                 fix="Point to a folder with .ai files or pass a file directly.",
-                example="n3 readability src/namel3ss/templates/demo/app.ai",
+                example="n3 readability src/namel3ss/templates/operations_dashboard/app.ai",
             )
         )
     return files

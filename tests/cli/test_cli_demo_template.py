@@ -15,10 +15,10 @@ def _run(args: list[str], cwd: Path) -> int:
         os.chdir(prev)
 
 
-def test_demo_template_smoke(tmp_path: Path) -> None:
-    rc = _run(["new", "demo", "demo_app"], tmp_path)
+def test_template_smoke(tmp_path: Path) -> None:
+    rc = _run(["new", "operations_dashboard", "ops_app"], tmp_path)
     assert rc == 0
-    app_dir = tmp_path / "demo_app"
+    app_dir = tmp_path / "ops_app"
     app_path = app_dir / "app.ai"
     assert app_path.exists()
     assert _run([str(app_path), "check"], tmp_path) == 0

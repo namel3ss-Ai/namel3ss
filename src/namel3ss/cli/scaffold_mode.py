@@ -39,18 +39,24 @@ _VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
 TEMPLATES: tuple[ScaffoldSpec, ...] = (
     ScaffoldSpec(
         kind="template",
-        name="starter",
-        directory="starter",
-        description="minimal app with one record, one flow, and one page.",
+        name="operations_dashboard",
+        directory="operations_dashboard",
+        description="Incident-focused ops workspace with a calm dashboard layout.",
         version="0.1.0",
     ),
     ScaffoldSpec(
         kind="template",
-        name="demo",
-        directory="demo",
-        description="demo app with records and mock ai for explainable outputs.",
+        name="onboarding",
+        directory="onboarding",
+        description="Structured onboarding checklist with guided milestones.",
         version="0.1.0",
-        is_demo=True,
+    ),
+    ScaffoldSpec(
+        kind="template",
+        name="support_inbox",
+        directory="support_inbox",
+        description="Support intake and reply flow with an inbox view.",
+        version="0.1.0",
     ),
 )
 
@@ -165,20 +171,24 @@ def run_new(args: list[str]) -> int:
 
 
 def render_templates_list() -> str:
-    longest = max(len(t.name) for t in TEMPLATES)
+    longest = max(len(_display_name(t)) for t in TEMPLATES)
     lines = ["Available templates:"]
     for template in TEMPLATES:
-        padded = template.name.ljust(longest)
-        lines.append(f"  {padded} v{template.version} - {template.description}")
+        padded = _display_name(template).ljust(longest)
+        lines.append(f"  {padded} - {template.description}")
     if EXAMPLES:
-        longest_example = max(len(e.name) for e in EXAMPLES)
+        longest_example = max(len(_display_name(e)) for e in EXAMPLES)
         lines.append("")
         lines.append("Examples (read-only):")
         for example in EXAMPLES:
-            padded = example.name.ljust(longest_example)
-            lines.append(f"  {padded} v{example.version} - {example.description}")
+            padded = _display_name(example).ljust(longest_example)
+            lines.append(f"  {padded} - {example.description}")
         lines.append("  Scaffold: n3 new example <name>")
     return "\n".join(lines)
+
+
+def _display_name(spec: ScaffoldSpec) -> str:
+    return spec.name.replace("-", " ").replace("_", " ").title()
 
 
 def _templates_root() -> Path:

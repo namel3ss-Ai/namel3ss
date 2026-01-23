@@ -76,18 +76,21 @@ def run_verify_dx(
 
 def _run_flagship_templates(templates_root: Path) -> dict[str, _RunRecord]:
     runs: dict[str, _RunRecord] = {}
-    demo_path = templates_root / "demo" / "app.ai"
-    starter_path = templates_root / "starter" / "app.ai"
-
-    runs["demo"] = _run_demo(demo_path)
-    runs["starter"] = _run_starter(starter_path)
+    templates = [
+        ("operations_dashboard", "operations_dashboard", "create_sample_incident"),
+        ("onboarding", "onboarding", "add_sample_task"),
+        ("support_inbox", "support_inbox", "create_sample_ticket"),
+    ]
+    for key, folder, flow_name in templates:
+        runs[key] = _run_template_flow(templates_root / folder / "app.ai", flow_name)
+    runs["ai_contract"] = _run_ai_contract()
     runs["openai_failure"] = _run_openai_probe(_openai_failure("sk-test-secret"))
     runs["coercion"] = _run_type_coercion()
     runs["coercion_strict"] = _run_type_coercion(strict=True)
     return runs
 
 
-def _run_demo(app_path: Path) -> _RunRecord:
+def _run_template_flow(app_path: Path, flow_name: str) -> _RunRecord:
     if not app_path.exists():
         return _RunRecord(None, None, None, error=f"Missing template: {app_path}")
     config = AppConfig()
@@ -97,9 +100,9 @@ def _run_demo(app_path: Path) -> _RunRecord:
             store = MemoryStore()
             result = execute_program_flow(
                 project.program,
-                "ask_ai",
+                flow_name,
                 store=store,
-                input={"message": "hello"},
+                input={},
                 config=config,
             )
             return _RunRecord(result=result, store=store, program=project.program)
@@ -107,16 +110,21 @@ def _run_demo(app_path: Path) -> _RunRecord:
         return _RunRecord(None, None, None, error=str(err))
 
 
-def _run_starter(app_path: Path) -> _RunRecord:
-    if not app_path.exists():
-        return _RunRecord(None, None, None, error=f"Missing template: {app_path}")
+def _run_ai_contract() -> _RunRecord:
+    source = 'spec is "1.0"\n\nai "assistant":\n  provider is "mock"\n  model is "mock-model"\n  system_prompt is "DX AI contract"\n\nrecord "Answer":\n  fields:\n    reply is text must be present\n    why is text must be present\n\nflow "ask_ai": requires true\n  ask ai "assistant" with input: input.message as reply\n  set state.answer with:\n    reply is reply\n    why is "ai boundary: provider=mock, model=mock-model"\n  create "Answer" with state.answer as answer\n  return reply\n'
     config = AppConfig()
     try:
         with _isolated_secret_env({}), _suppress_dotenv():
-            project = load_project(app_path)
+            program = lower_program(parse(source))
             store = MemoryStore()
-            result = execute_program_flow(project.program, "seed_note", store=store, config=config)
-            return _RunRecord(result=result, store=store, program=project.program)
+            result = execute_program_flow(
+                program,
+                "ask_ai",
+                store=store,
+                input={"message": "hello"},
+                config=config,
+            )
+            return _RunRecord(result=result, store=store, program=program)
     except Exception as err:
         return _RunRecord(None, None, None, error=str(err))
 
@@ -180,11 +188,13 @@ flow "probe": requires true
 
 def _check_template_zero_setup(runs: dict[str, _RunRecord]) -> dict:
     failures: list[str] = []
-    demo = runs.get("demo")
-    starter = runs.get("starter")
-
-    _assert_run_ok(demo, "demo", failures)
-    _assert_run_ok(starter, "starter", failures)
+    templates = {
+        "operations_dashboard": "operations dashboard",
+        "onboarding": "onboarding",
+        "support_inbox": "support inbox",
+    }
+    for key, label in templates.items():
+        _assert_run_ok(runs.get(key), label, failures)
 
     if failures:
         return _check("fail", "Template zero-setup checks failed.", {"failures": failures})
@@ -246,25 +256,25 @@ def _check_secret_leaks(runs: dict[str, _RunRecord]) -> dict:
 
 def _check_type_contract(runs: dict[str, _RunRecord]) -> dict:
     failures: list[str] = []
-    demo = runs.get("demo")
+    ai_contract = runs.get("ai_contract")
     coercion = runs.get("coercion")
     strict = runs.get("coercion_strict")
 
-    if demo and demo.result:
-        if not isinstance(demo.result.last_value, str):
-            failures.append("demo ask_ai did not return text")
-        answers = _record_rows(demo, "Answer")
+    if ai_contract and ai_contract.result:
+        if not isinstance(ai_contract.result.last_value, str):
+            failures.append("ai contract ask_ai did not return text")
+        answers = _record_rows(ai_contract, "Answer")
         if not answers:
-            failures.append("demo did not create Answer records")
+            failures.append("ai contract did not create Answer records")
         else:
             reply = answers[-1].get("reply")
             why = answers[-1].get("why")
             if not isinstance(reply, str) or not reply.strip():
-                failures.append("Answer.reply missing or not text in demo")
+                failures.append("Answer.reply missing or not text in ai contract")
             if not isinstance(why, str) or not why.strip():
-                failures.append("Answer.why missing or not text in demo")
+                failures.append("Answer.why missing or not text in ai contract")
     else:
-        failures.append("missing demo run for ai contract")
+        failures.append("missing ai contract run for ai boundary")
 
     if coercion and coercion.result and coercion.store and coercion.program:
         note_text = _record_field_value(coercion, "Note", "text")

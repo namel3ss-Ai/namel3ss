@@ -98,10 +98,10 @@ def test_upgrade_simulation_requires_migration_then_runs():
 
 def test_packaging_assets_present():
     templates = templates_root()
-    assert (templates / "starter" / "app.ai").exists()
-    assert (templates / "demo" / "app.ai").exists()
-    assert (templates / "starter" / "media" / "welcome.svg").exists()
-    assert (templates / "demo" / "media" / "welcome.svg").exists()
+    for name in ("operations_dashboard", "onboarding", "support_inbox"):
+        assert (templates / name / "app.ai").exists()
+        assert (templates / name / "expected_ui.json").exists()
+        assert (templates / name / "README.md").exists()
 
     examples = examples_root()
     assert (examples / "hello_flow" / "app.ai").exists()

@@ -5,8 +5,8 @@ def test_quickstart_scaffold_contract() -> None:
     text = Path("docs/quickstart.md").read_text(encoding="utf-8")
     required = [
         "Scaffolded app structure",
-        "template version comment",
-        "media/",
+        "expected_ui.json",
+        ".gitignore",
         "Examples (read-only)",
         "n3 new example",
     ]

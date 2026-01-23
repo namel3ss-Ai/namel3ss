@@ -1,7 +1,7 @@
 # Learning namel3ss
 Build AI-native applications you can explain
 
-This book is a single, progressive path through the current namel3ss release. It teaches the language, runtime model, and toolchain without requiring you to read the full /docs tree. All examples use the current .ai syntax and CLI behavior.
+This book is a single, progressive path through namel3ss. It teaches the language, runtime model, and toolchain without requiring you to read the full /docs tree. All examples use the `.ai` syntax and CLI behavior.
 
 If something fails to run, start with `n3 doctor`.
 
@@ -14,7 +14,7 @@ namel3ss is an English-first, AI-native programming language. A single `.ai` fil
 A `.ai` file is a declarative program plus a deterministic execution model. Top-level blocks declare what the app is, not how a framework should build it.
 
 Common top-level blocks:
-- `spec is "1.0"` (declares the language contract version)
+- `spec is "1.0"` (declares the language contract)
 - `capabilities` (enable built-in backend capabilities)
 - `record "Name"` (data schema)
 - `flow "name"` (logic)
@@ -30,6 +30,28 @@ Common top-level blocks:
 - `n3 app.ai studio` opens the Studio UI to run actions, inspect state, and read traces.
 
 Studio is a viewer and interactor. It shows the UI manifest, available actions, current state, and traces produced by runs.
+
+### UI system
+UI is semantic and deterministic. You describe intent; the runtime renders it.
+
+Key ideas:
+- Pages are structured documents with titles, intro text, and grouped sections.
+- Records power tables, lists, forms, charts, and views.
+- Flows power actions; the UI never runs logic on its own.
+- Presets and density control spacing and rhythm at the app level.
+
+Warnings surface in `manifest.warnings` via `/api/ui` and in action payloads via `/api/actions`.
+
+Start here:
+- [UI System](ui-system.md)
+- [UI Quality](ui-quality.md)
+- [Layout](ui-layout.md)
+- [Copy](ui-copy.md)
+- [Icons and Tones](ui-icons-and-tones.md)
+- [Consistency](ui-consistency.md)
+- [Templates](templates.md)
+- [UI DSL](ui-dsl.md)
+- [UI See](ui-see.md)
 
 ### Language Contracts
 - [Application runtime](language/application-runtime.md): every valid `.ai` program is an application; the browser renders it, Studio inspects it.
@@ -83,14 +105,14 @@ Studio also surfaces Logs, Tracing, and Metrics for each run; see Observability.
 ### 1) Scaffold a project
 ```bash
 n3 doctor
-n3 new starter my_app
+n3 new operations_dashboard my_app
 cd my_app
 ```
 
-If you want the demo path, start with the demo template:
+If you want a checklist-focused path, start with onboarding:
 ```bash
-n3 new demo demo
-cd demo
+n3 new onboarding onboarding_app
+cd onboarding_app
 ```
 
 ### 2) Run it
@@ -142,7 +164,7 @@ title is "Customer Dashboard"
 #### References
 - [Quickstart](quickstart.md)
 - [First 5 minutes](first-5-minutes.md)
-- Templates: starter and demo (`n3 new starter`, `n3 new demo`)
+- Templates: operations_dashboard, onboarding, support_inbox (`n3 new operations_dashboard`, `n3 new onboarding`, `n3 new support_inbox`)
 - Demos: browser-ready apps in `src/namel3ss/demos` (copy, then `n3 check` and `n3 run`)
 - Examples: single-file references in `src/namel3ss/examples` (or scaffold with `n3 new example <name>`)
 - [UI DSL](ui-dsl.md)
@@ -409,7 +431,7 @@ use module "modules/common.ai" as common
 - [Authentication](authentication.md)
 - [Modules](modules.md)
 - [Modules and tests](modules-and-tests.md)
-- Templates: starter and demo (`n3 new starter`, `n3 new demo`)
+- Templates: operations_dashboard, onboarding, support_inbox (`n3 new operations_dashboard`, `n3 new onboarding`, `n3 new support_inbox`)
 
 ## Part IV - AI and Tools
 
@@ -525,7 +547,7 @@ Official packs live under `packs/official/` and are signed; local packs require 
 - [Tool packs](tool-packs.md)
 - [Capabilities](capabilities.md)
 - [Tools explainability](tools-with.md)
-- Templates: starter and demo (`n3 new starter`, `n3 new demo`)
+- Templates: operations_dashboard, onboarding, support_inbox (`n3 new operations_dashboard`, `n3 new onboarding`, `n3 new support_inbox`)
 
 ## Part V - Memory (Conceptual First)
 
@@ -635,7 +657,7 @@ n3 fix
 Packages are reusable capsules installed under `packages/`. Use `n3 pkg` to add and install, and import with `use "name" as alias`.
 
 ### Tool packs and registry
-Tool packs bundle reusable tools with explicit capabilities. Packs are installed locally, verified, and enabled. The registry is an intent index for discovery, not a package store. Use `n3 registry list | search | info` to review intent, capabilities, risk, and trust status. Install a specific pack version with `n3 pack add name@version`. Studio includes a Registry panel for the same data.
+Tool packs bundle reusable tools with explicit capabilities. Packs are installed locally, verified, and enabled. The registry is an intent index for discovery, not a package store. Use `n3 registry list | search | info` to review intent, capabilities, risk, and trust status. Install a specific pack reference with `n3 pack add name@ref`. Studio includes a Registry panel for the same data.
 
 ### Targets and promotion
 Targets describe how an app runs:
@@ -685,4 +707,3 @@ Core contracts are frozen. The parser, IR, and trace schemas are locked by tests
 - [AI language definition](ai-language-definition.md)
 - [Providers](providers.md)
 - [UI DSL](ui-dsl.md)
-- [Roadmap](roadmap.md)

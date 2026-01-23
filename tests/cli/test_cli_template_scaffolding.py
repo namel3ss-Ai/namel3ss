@@ -6,8 +6,9 @@ from pathlib import Path
 from namel3ss.cli.main import main as cli_main
 
 TEMPLATES = [
-    ("starter", "starter_app"),
-    ("demo", "demo_app"),
+    ("operations_dashboard", "ops_app"),
+    ("onboarding", "onboarding_app"),
+    ("support_inbox", "support_app"),
 ]
 
 

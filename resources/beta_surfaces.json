@@ -73,11 +73,27 @@
       ]
     },
     {
-      "id": "template.demo",
-      "version": "demo",
+      "id": "template.operations_dashboard",
+      "version": "operations_dashboard",
       "artifacts": [
-        "src/namel3ss/templates/demo/app.ai",
-        "src/namel3ss/templates/demo/manifest/ui.json"
+        "src/namel3ss/templates/operations_dashboard/app.ai",
+        "src/namel3ss/templates/operations_dashboard/expected_ui.json"
+      ]
+    },
+    {
+      "id": "template.onboarding",
+      "version": "onboarding",
+      "artifacts": [
+        "src/namel3ss/templates/onboarding/app.ai",
+        "src/namel3ss/templates/onboarding/expected_ui.json"
+      ]
+    },
+    {
+      "id": "template.support_inbox",
+      "version": "support_inbox",
+      "artifacts": [
+        "src/namel3ss/templates/support_inbox/app.ai",
+        "src/namel3ss/templates/support_inbox/expected_ui.json"
       ]
     }
   ]

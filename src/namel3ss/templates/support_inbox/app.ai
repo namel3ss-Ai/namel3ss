@@ -1,0 +1,64 @@
+spec is "1.0"
+
+ui:
+  theme is "light"
+
+record "Ticket":
+  fields:
+    subject is text must be present
+    customer is text must be present
+    status is text
+    priority is text
+    received_on is text
+record "Reply":
+  fields:
+    ticket_subject is text must be present
+    channel is text
+    response is text must be present
+flow "create_sample_ticket" requires true
+  create "Ticket"
+    subject is "Unable to reset password"
+    customer is "Avery Jordan"
+    status is "New"
+    priority is "High"
+    received_on is "2024-01-02"
+
+page "inbox":
+  purpose is "Triage and reply to customer requests with a clear queue."
+  title is "Support Inbox"
+  text is "Prioritize incoming requests and respond with a steady cadence."
+
+  section "Queue and response":
+    row:
+      column:
+        card "Inbox queue":
+          table is "Ticket":
+            columns:
+              include subject
+              include customer
+              include status
+              include priority
+            sort:
+              by is priority
+              order is "asc"
+            pagination:
+              page_size is 10
+      column:
+        compose drafts:
+          number:
+            count of "Reply" as "draft replies"
+          text is "Capture reply notes before sending."
+
+  section "Quick guidance":
+    card "Reply rhythm":
+      story "Response cadence":
+        step "Acknowledge quickly":
+          text is "Send a brief acknowledgement within the first hour."
+        step "Resolve with clarity":
+          tone is "success"
+          icon is check
+          text is "Summarize the outcome and confirm next steps."
+    card "Queue actions":
+      text is "Create a sample ticket to preview the inbox layout."
+      button "Create sample ticket":
+        calls flow "create_sample_ticket"

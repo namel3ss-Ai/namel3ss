@@ -7,4 +7,4 @@
 - Multi-agent workflows with explicit merge policies and deterministic tool-call traces.
 - Internal tools that capture inputs via forms and fan out to flows or record saves.
 
-Start with `n3 new starter` or `n3 new demo` and run `n3 doctor` if setup fails. Keep payloads in the canonical `{"values": {...}}` shape for scripts, even though flat objects are auto-wrapped.
+Start with `n3 new operations_dashboard`, `n3 new onboarding`, or `n3 new support_inbox` and run `n3 doctor` if setup fails. Keep payloads in the canonical `{"values": {...}}` shape for scripts, even though flat objects are auto-wrapped.

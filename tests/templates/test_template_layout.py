@@ -2,6 +2,7 @@ from pathlib import Path
 
 
 TEMPLATE_ROOT = Path("src/namel3ss/templates")
+EXPECTED_TEMPLATES = {"operations_dashboard", "onboarding", "support_inbox"}
 ROOT_AI_ALLOWLIST: set[str] = set()
 
 
@@ -19,12 +20,14 @@ def _template_dirs() -> list[Path]:
 def test_templates_have_required_layout() -> None:
     templates = _template_dirs()
     assert templates
+    assert {template.name for template in templates} == EXPECTED_TEMPLATES
+    assert not (TEMPLATE_ROOT / "starter").exists()
+    assert not (TEMPLATE_ROOT / "demo").exists()
     for template in templates:
         assert (template / "app.ai").exists()
         assert (template / "README.md").exists()
-        manifest_dir = template / "manifest"
-        assert manifest_dir.exists()
-        assert (manifest_dir / "ui.json").exists()
+        assert (template / "expected_ui.json").exists()
+        assert (template / ".gitignore").exists()
 
 
 def test_root_ai_files_are_whitelisted() -> None:

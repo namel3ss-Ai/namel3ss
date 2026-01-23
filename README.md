@@ -1,7 +1,6 @@
 # namel3ss
 Designed to be understood
 
-![status: alpha](https://img.shields.io/badge/status-alpha-blue)
 ![license: MIT](https://img.shields.io/badge/license-MIT-green)
 ![tests](https://github.com/namel3ss-Ai/namel3ss/actions/workflows/ci.yml/badge.svg)
 
@@ -45,7 +44,7 @@ namel3ss is built around a few non-negotiable ideas:
   Every run follows a clear, stable path.
 
 - **Frozen grammar and semantics**  
-  The language grammar is stable and phase-aware (STATIC vs RUNTIME) with identical rules enforced by CLI and Studio.
+  The language grammar is stable; STATIC and RUNTIME rules are identical in CLI and Studio.
 
 - **Explicit AI boundary**  
   AI is never implicit. Every AI call is visible and traced.
@@ -60,7 +59,7 @@ namel3ss is built around a few non-negotiable ideas:
   UI, data, logic, tools, and AI live together, so intent stays clear.
 
 - **Frozen UI surface**  
-  The UI DSL is frozen for v0.1.x; changes are additive and documented.
+  The UI DSL is frozen; changes are additive and documented.
 
 These are not features.  
 They are guarantees.
@@ -76,7 +75,7 @@ namel3ss provides the following guarantees, enforced by code, tests, and governa
 - Governed memory with explicit writes and recall
 - Contract-stable CLI, grammar, and explain outputs
 
-These guarantees are enforced and frozen for the v0.1.x series.
+These guarantees are enforced and frozen by tests and governance.
 See `docs/trust-and-governance.md` for enforcement details.
 
 ## Browser protocol
@@ -143,8 +142,8 @@ python -m namel3ss --help
 ```bash
 python -m pip install -U namel3ss
 n3 --help
-n3 new demo
-cd demo
+n3 new operations_dashboard ops_app
+cd ops_app
 n3 run
 ```
 
@@ -190,26 +189,24 @@ Common PATH locations:
 - Windows: `C:\Users\<User>\AppData\Local\Programs\Python\PythonXY\Scripts` or `%APPDATA%\Python\PythonXY\Scripts`
 - macOS/Linux: `~/.local/bin`
 
-On first run, the browser opens the demo template with:
+On first run, the browser opens the app you scaffolded with:
 
-- prompt + answer records
-- mock ai by default
-- why/explain fields stored alongside answers
+- record-backed UI
+- deterministic actions
+- explicit AI boundaries when declared
 
-## About the demo template
+## Templates
 
-the demo template is the reference experience for namel3ss.
+The template library is a small, curated set of starter apps:
 
-it is intentionally minimal.
+- Operations Dashboard
+- Onboarding
+- Support Inbox
 
-it exists to demonstrate:
-
-- explicit ai boundaries over records
-- deterministic execution and traceable decisions
-- explainable "why" fields captured in data
+See `docs/templates.md` for what each template demonstrates and how to run it.
 
 Grammar and compatibility:
-- Grammar and semantics are frozen and phase-aware; see `docs/language/grammar_contract.md`.
+- Grammar and semantics are frozen and consistent across STATIC and RUNTIME rules; see `docs/language/grammar_contract.md`.
 - Backward-compatibility policy is defined in `docs/language/backward_compatibility.md`.
 - Changes that affect grammar or semantics require an RFC (`docs/language/rfc_process.md`).
 - CI enforces grammar contract tests and STATIC build checks for templates/examples to prevent drift.
@@ -233,7 +230,7 @@ Grammar and compatibility:
 - `n3 eval` runs deterministic evaluation suites and emits stable JSON/TXT reports.
 - Eval results are wired into release gates to prevent regressions.
 
-## Beta lock surfaces
+## Contract surfaces
 - Agent explain payloads, tool-call lifecycle events, merge lifecycle events, memory pack events, and CLI outputs are contract-stable and enforced by tests.
 
 ## Expressions
@@ -275,7 +272,7 @@ flow "demo":
 
 ## Quickstart (non-demo)
 ```bash
-n3 new starter my_app
+n3 new operations_dashboard my_app
 cd my_app
 n3 app.ai
 ```
@@ -312,10 +309,6 @@ namel3ss is for:
 namel3ss is not trying to replace Python or JavaScript.  
 It is exploring what comes next.
 
-## Status
-namel3ss is in alpha (v0.1.0a9). It is suitable for learning and experimentation, not production.  
-Expect breaking changes between alpha revisions, but grammar, execution phases, and explain surfaces are intentionally stabilized within each v0.1.x release.
-
 ## Start here (learning path)
 - [Quickstart](docs/quickstart.md)
 - [First 5 minutes](docs/first-5-minutes.md)
@@ -327,11 +320,19 @@ Expect breaking changes between alpha revisions, but grammar, execution phases, 
 - [Quickstart](docs/quickstart.md)
 - [First 5 minutes](docs/first-5-minutes.md)
 - [What you can build today](docs/what-you-can-build-today.md)
-- Templates: starter and demo (`n3 new starter`, `n3 new demo`)
+- [Templates](docs/templates.md): operations_dashboard, onboarding, support_inbox
 - [Documentation directory](docs/)
 
 ### UI
+- [UI System](docs/ui-system.md)
+- [UI Quality](docs/ui-quality.md)
+- [Layout](docs/ui-layout.md)
+- [Copy](docs/ui-copy.md)
+- [Icons and Tones](docs/ui-icons-and-tones.md)
+- [Consistency](docs/ui-consistency.md)
+- [Templates](docs/templates.md)
 - [UI DSL spec](docs/ui-dsl.md)
+- [UI See](docs/ui-see.md)
 
 ### Explainability
 - [Observability](docs/observability.md)
@@ -361,7 +362,6 @@ Expect breaking changes between alpha revisions, but grammar, execution phases, 
 - [Packaging and deployment](docs/deployment.md)
 - [Quick deployment guide](docs/quick-deployment-guide.md) - Docker and systemd deployment
 - [Production deployment guide](docs/production-deployment.md) - Comprehensive production setup
-- [Production readiness roadmap](docs/production-readiness-roadmap.md) - Path to v1.0
 - [Targets and promotion](docs/targets-and-promotion.md)
 
 ### Trust, memory & governance
@@ -373,10 +373,8 @@ Expect breaking changes between alpha revisions, but grammar, execution phases, 
 
 ### Stability & limitations
 - [Stability](docs/stability.md)
-- [Expression surface v1](docs/expression-surface.md)
+- [Expression surface](docs/expression-surface.md)
 - [Spec freeze](docs/spec-freeze.md)
-- [Canonical version map](resources/spec_versions.json)
-- [Beta checklist](docs/beta-checklist.md)
 - [Known limitations](resources/limitations.md)
 - [Changelog](CHANGELOG.md)
 

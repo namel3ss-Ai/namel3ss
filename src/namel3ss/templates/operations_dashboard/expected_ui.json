@@ -1,0 +1,423 @@
+{
+  "actions": {
+    "page.dashboard.button.create_sample_incident": {
+      "flow": "create_sample_incident",
+      "id": "page.dashboard.button.create_sample_incident",
+      "type": "call_flow"
+    }
+  },
+  "pages": [
+    {
+      "elements": [
+        {
+          "column": 3,
+          "element_id": "page.dashboard.title.0",
+          "index": 0,
+          "line": 25,
+          "page": "dashboard",
+          "page_slug": "dashboard",
+          "type": "title",
+          "value": "Operations Dashboard"
+        },
+        {
+          "column": 3,
+          "element_id": "page.dashboard.text.1",
+          "index": 1,
+          "line": 26,
+          "page": "dashboard",
+          "page_slug": "dashboard",
+          "type": "text",
+          "value": "Track live incidents and keep the response plan in sync."
+        },
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "children": [
+                        {
+                          "column": 11,
+                          "element_id": "page.dashboard.number.2.0.0.0.0",
+                          "entries": [
+                            {
+                              "id": "page.dashboard.number.2.0.0.0.0.entry.0",
+                              "kind": "count",
+                              "label": "open incidents",
+                              "record": "Incident"
+                            }
+                          ],
+                          "index": 0,
+                          "line": 32,
+                          "page": "dashboard",
+                          "page_slug": "dashboard",
+                          "type": "number"
+                        },
+                        {
+                          "column": 11,
+                          "element_id": "page.dashboard.text.2.0.0.0.1",
+                          "index": 1,
+                          "line": 34,
+                          "page": "dashboard",
+                          "page_slug": "dashboard",
+                          "type": "text",
+                          "value": "Active incidents in the current queue."
+                        }
+                      ],
+                      "column": 9,
+                      "element_id": "page.dashboard.compose.2.0.0.0",
+                      "index": 0,
+                      "line": 31,
+                      "name": "overview",
+                      "page": "dashboard",
+                      "page_slug": "dashboard",
+                      "slug": "overview",
+                      "spacing": {
+                        "gap": "m",
+                        "padding": "m"
+                      },
+                      "type": "compose"
+                    }
+                  ],
+                  "column": 7,
+                  "element_id": "page.dashboard.column.2.0.0",
+                  "index": 0,
+                  "line": 30,
+                  "page": "dashboard",
+                  "page_slug": "dashboard",
+                  "spacing": {
+                    "gap": "m"
+                  },
+                  "type": "column"
+                },
+                {
+                  "children": [
+                    {
+                      "children": [
+                        {
+                          "children": [
+                            {
+                              "id": "page.dashboard.story.2.0.1.0.0.step.assess_impact",
+                              "index": 0,
+                              "next": {
+                                "target": "page.dashboard.story.2.0.1.0.0.step.escalate_quickly",
+                                "title": "Escalate quickly"
+                              },
+                              "text": "Confirm severity and customer impact.",
+                              "title": "Assess impact",
+                              "type": "story_step"
+                            },
+                            {
+                              "icon": "warning",
+                              "id": "page.dashboard.story.2.0.1.0.0.step.escalate_quickly",
+                              "index": 1,
+                              "text": "Escalate high-severity incidents immediately.",
+                              "title": "Escalate quickly",
+                              "tone": "caution",
+                              "type": "story_step"
+                            }
+                          ],
+                          "column": 11,
+                          "element_id": "page.dashboard.story.2.0.1.0.0",
+                          "id": "page.dashboard.story.2.0.1.0.0",
+                          "index": 0,
+                          "line": 37,
+                          "page": "dashboard",
+                          "page_slug": "dashboard",
+                          "slug": "escalation_checklist",
+                          "steps": [
+                            {
+                              "id": "page.dashboard.story.2.0.1.0.0.step.assess_impact",
+                              "index": 0,
+                              "next": {
+                                "target": "page.dashboard.story.2.0.1.0.0.step.escalate_quickly",
+                                "title": "Escalate quickly"
+                              },
+                              "text": "Confirm severity and customer impact.",
+                              "title": "Assess impact",
+                              "type": "story_step"
+                            },
+                            {
+                              "icon": "warning",
+                              "id": "page.dashboard.story.2.0.1.0.0.step.escalate_quickly",
+                              "index": 1,
+                              "text": "Escalate high-severity incidents immediately.",
+                              "title": "Escalate quickly",
+                              "tone": "caution",
+                              "type": "story_step"
+                            }
+                          ],
+                          "title": "Escalation checklist",
+                          "type": "story"
+                        }
+                      ],
+                      "column": 9,
+                      "element_id": "page.dashboard.card.2.0.1.0",
+                      "index": 0,
+                      "label": "Escalation guide",
+                      "line": 36,
+                      "page": "dashboard",
+                      "page_slug": "dashboard",
+                      "spacing": {
+                        "actions_gap": "s",
+                        "gap": "m",
+                        "padding": "m",
+                        "stat_gap": "s",
+                        "title_gap": "s"
+                      },
+                      "type": "card"
+                    }
+                  ],
+                  "column": 7,
+                  "element_id": "page.dashboard.column.2.0.1",
+                  "index": 1,
+                  "line": 35,
+                  "page": "dashboard",
+                  "page_slug": "dashboard",
+                  "spacing": {
+                    "gap": "m"
+                  },
+                  "type": "column"
+                }
+              ],
+              "column": 5,
+              "element_id": "page.dashboard.row.2.0",
+              "index": 0,
+              "line": 29,
+              "page": "dashboard",
+              "page_slug": "dashboard",
+              "spacing": {
+                "gap": "m"
+              },
+              "type": "row"
+            }
+          ],
+          "column": 3,
+          "element_id": "page.dashboard.section.2",
+          "index": 2,
+          "label": "Status overview",
+          "line": 28,
+          "page": "dashboard",
+          "page_slug": "dashboard",
+          "spacing": {
+            "gap": "l",
+            "padding": "m",
+            "title_gap": "s"
+          },
+          "type": "section"
+        },
+        {
+          "children": [
+            {
+              "column": 5,
+              "element_id": "page.dashboard.text.3.0",
+              "index": 0,
+              "line": 46,
+              "page": "dashboard",
+              "page_slug": "dashboard",
+              "type": "text",
+              "value": "Review status and add a new incident when needed."
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "children": [
+                        {
+                          "column": 11,
+                          "columns": [
+                            {
+                              "name": "summary",
+                              "type": "text"
+                            },
+                            {
+                              "name": "severity",
+                              "type": "text"
+                            },
+                            {
+                              "name": "status",
+                              "type": "text"
+                            },
+                            {
+                              "name": "owner",
+                              "type": "text"
+                            }
+                          ],
+                          "columns_configured": true,
+                          "element_id": "page.dashboard.table.3.1.0.0.0",
+                          "id": "page.dashboard.table.incident",
+                          "index": 0,
+                          "line": 50,
+                          "page": "dashboard",
+                          "page_slug": "dashboard",
+                          "pagination": {
+                            "page_size": 8
+                          },
+                          "record": "Incident",
+                          "rows": [],
+                          "sort": {
+                            "by": "summary",
+                            "order": "asc"
+                          },
+                          "spacing": {
+                            "cell_gap": "s",
+                            "header_gap": "m",
+                            "row_actions_gap": "s",
+                            "row_gap": "s"
+                          },
+                          "type": "table"
+                        }
+                      ],
+                      "column": 9,
+                      "element_id": "page.dashboard.card.3.1.0.0",
+                      "index": 0,
+                      "label": "Incident list",
+                      "line": 49,
+                      "page": "dashboard",
+                      "page_slug": "dashboard",
+                      "spacing": {
+                        "actions_gap": "s",
+                        "gap": "m",
+                        "padding": "m",
+                        "stat_gap": "s",
+                        "title_gap": "s"
+                      },
+                      "type": "card"
+                    }
+                  ],
+                  "column": 7,
+                  "element_id": "page.dashboard.column.3.1.0",
+                  "index": 0,
+                  "line": 48,
+                  "page": "dashboard",
+                  "page_slug": "dashboard",
+                  "spacing": {
+                    "gap": "m"
+                  },
+                  "type": "column"
+                },
+                {
+                  "children": [
+                    {
+                      "children": [
+                        {
+                          "column": 11,
+                          "element_id": "page.dashboard.text.3.1.1.0.0",
+                          "index": 0,
+                          "line": 63,
+                          "page": "dashboard",
+                          "page_slug": "dashboard",
+                          "type": "text",
+                          "value": "Create a sample incident to preview the table layout."
+                        },
+                        {
+                          "action": {
+                            "flow": "create_sample_incident",
+                            "type": "call_flow"
+                          },
+                          "action_id": "page.dashboard.button.create_sample_incident",
+                          "column": 11,
+                          "element_id": "page.dashboard.button_item.3.1.1.0.1",
+                          "id": "page.dashboard.button.create_sample_incident",
+                          "index": 1,
+                          "label": "Create sample incident",
+                          "line": 64,
+                          "page": "dashboard",
+                          "page_slug": "dashboard",
+                          "type": "button"
+                        }
+                      ],
+                      "column": 9,
+                      "element_id": "page.dashboard.card.3.1.1.0",
+                      "index": 0,
+                      "label": "New incident",
+                      "line": 62,
+                      "page": "dashboard",
+                      "page_slug": "dashboard",
+                      "spacing": {
+                        "actions_gap": "s",
+                        "gap": "m",
+                        "padding": "m",
+                        "stat_gap": "s",
+                        "title_gap": "s"
+                      },
+                      "type": "card"
+                    }
+                  ],
+                  "column": 7,
+                  "element_id": "page.dashboard.column.3.1.1",
+                  "index": 1,
+                  "line": 61,
+                  "page": "dashboard",
+                  "page_slug": "dashboard",
+                  "spacing": {
+                    "gap": "m"
+                  },
+                  "type": "column"
+                }
+              ],
+              "column": 5,
+              "element_id": "page.dashboard.row.3.1",
+              "index": 1,
+              "line": 47,
+              "page": "dashboard",
+              "page_slug": "dashboard",
+              "spacing": {
+                "gap": "m"
+              },
+              "type": "row"
+            }
+          ],
+          "column": 3,
+          "element_id": "page.dashboard.section.3",
+          "index": 3,
+          "label": "Incident workspace",
+          "line": 45,
+          "page": "dashboard",
+          "page_slug": "dashboard",
+          "spacing": {
+            "gap": "l",
+            "padding": "m",
+            "title_gap": "s"
+          },
+          "type": "section"
+        }
+      ],
+      "name": "dashboard",
+      "purpose": "Monitor incidents and keep the response loop tight.",
+      "slug": "dashboard"
+    }
+  ],
+  "theme": {
+    "current": "light",
+    "effective": "light",
+    "persisted_current": null,
+    "preference": {
+      "allow_override": false,
+      "persist": "none"
+    },
+    "runtime_supported": false,
+    "schema_version": "1",
+    "setting": "light",
+    "source": "app",
+    "tokens": {}
+  },
+  "ui": {
+    "persistence": {
+      "enabled": false,
+      "kind": "memory",
+      "path": null,
+      "schema_version": null
+    },
+    "settings": {
+      "accent_color": "blue",
+      "density": "comfortable",
+      "motion": "subtle",
+      "shape": "rounded",
+      "surface": "flat",
+      "theme": "light"
+    }
+  }
+}

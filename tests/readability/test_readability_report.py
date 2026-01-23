@@ -9,8 +9,8 @@ from namel3ss.readability.analyze import analyze_files, render_json, render_text
 
 def _resolve_reference_paths() -> list[Path]:
     references = [
-        Path("src/namel3ss/templates/starter/app.ai"),
-        Path("src/namel3ss/templates/demo/app.ai"),
+        Path("src/namel3ss/templates/operations_dashboard/app.ai"),
+        Path("src/namel3ss/templates/onboarding/app.ai"),
     ]
     resolved: list[Path] = []
     for path in references:
@@ -22,11 +22,11 @@ def _resolve_reference_paths() -> list[Path]:
 
 
 def test_readability_json_is_deterministic_and_sorted() -> None:
-    target = Path("src/namel3ss/templates/demo/app.ai")
-    report_one = analyze_files([target], analyzed_path="demo_template")
+    target = Path("src/namel3ss/templates/operations_dashboard/app.ai")
+    report_one = analyze_files([target], analyzed_path="operations_dashboard_template")
     json_one = render_json(report_one)
     text_one = render_text(report_one)
-    report_two = analyze_files([target], analyzed_path="demo_template")
+    report_two = analyze_files([target], analyzed_path="operations_dashboard_template")
     json_two = render_json(report_two)
     text_two = render_text(report_two)
     assert json_one == json_two
@@ -80,8 +80,8 @@ def test_readability_report_includes_reference_targets() -> None:
 
 
 def test_readability_text_contains_headings() -> None:
-    target = Path("src/namel3ss/templates/demo/app.ai")
-    report = analyze_files([target], analyzed_path="demo_template")
+    target = Path("src/namel3ss/templates/operations_dashboard/app.ai")
+    report = analyze_files([target], analyzed_path="operations_dashboard_template")
     text = render_text(report)
     assert "Top offenders" in text
     assert "Roadmap mapping" in text

@@ -29,6 +29,7 @@ from namel3ss.ui.manifest.elements import _build_children
 from namel3ss.ui.manifest.state_defaults import StateContext, StateDefaults
 from namel3ss.ui.manifest.validation import (
     append_copy_warnings,
+    append_consistency_warnings,
     append_layout_warnings,
     append_story_icon_warnings,
 )
@@ -147,6 +148,7 @@ def build_manifest(
     append_layout_warnings(pages, warnings)
     append_copy_warnings(pages, warnings)
     append_story_icon_warnings(pages, warnings)
+    append_consistency_warnings(pages, warnings)
     persistence = _resolve_persistence(store)
     if actions:
         actions = {action_id: actions[action_id] for action_id in sorted(actions)}

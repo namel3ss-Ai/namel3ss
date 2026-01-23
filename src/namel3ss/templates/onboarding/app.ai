@@ -1,0 +1,49 @@
+spec is "1.0"
+
+ui:
+  theme is "light"
+
+record "OnboardingTask":
+  fields:
+    task is text must be present
+    owner is text
+    due_on is text
+    status is text
+flow "add_sample_task" requires true
+  create "OnboardingTask"
+    task is "Provision accounts"
+    owner is "IT"
+    due_on is "2024-01-03"
+    status is "Not started"
+
+page "onboarding":
+  purpose is "Guide new hires through a calm, clear checklist."
+  title is "Onboarding"
+  text is "Give every new hire a clear path with visible ownership."
+
+  section "Day one focus":
+    row:
+      column:
+        card "Checklist":
+          list is "OnboardingTask":
+            variant is "two_line"
+            item:
+              primary is task
+              secondary is owner
+              meta is status
+            empty_text is "No tasks yet."
+      column:
+        compose intake:
+          text is "Add a starter task to shape the checklist."
+          button "Add sample task":
+            calls flow "add_sample_task"
+
+  section "Milestone guidance":
+    card "What good looks like":
+      story "First week":
+        step "Introduce the team":
+          text is "Schedule brief introductions and set expectations."
+        step "Confirm access":
+          tone is "informative"
+          icon is info
+          text is "Verify accounts and hardware by end of day one."

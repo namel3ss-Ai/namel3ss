@@ -1,0 +1,65 @@
+spec is "1.0"
+
+ui:
+  theme is "light"
+
+record "Incident":
+  fields:
+    summary is text must be present
+    severity is text must be present
+    status is text must be present
+    owner is text
+    opened_on is text
+    notes is text
+flow "create_sample_incident" requires true
+  create "Incident"
+    summary is "Payment gateway latency"
+    severity is "High"
+    status is "Investigating"
+    owner is "Operations"
+    opened_on is "2024-01-01"
+    notes is "Investigating elevated latency reports."
+
+page "dashboard":
+  purpose is "Monitor incidents and keep the response loop tight."
+  title is "Operations Dashboard"
+  text is "Track live incidents and keep the response plan in sync."
+
+  section "Status overview":
+    row:
+      column:
+        compose overview:
+          number:
+            count of "Incident" as "open incidents"
+          text is "Active incidents in the current queue."
+      column:
+        card "Escalation guide":
+          story "Escalation checklist":
+            step "Assess impact":
+              text is "Confirm severity and customer impact."
+            step "Escalate quickly":
+              tone is "caution"
+              icon is warning
+              text is "Escalate high-severity incidents immediately."
+
+  section "Incident workspace":
+    text is "Review status and add a new incident when needed."
+    row:
+      column:
+        card "Incident list":
+          table is "Incident":
+            columns:
+              include summary
+              include severity
+              include status
+              include owner
+            sort:
+              by is summary
+              order is "asc"
+            pagination:
+              page_size is 8
+      column:
+        card "New incident":
+          text is "Create a sample incident to preview the table layout."
+          button "Create sample incident":
+            calls flow "create_sample_incident"

@@ -8,32 +8,33 @@ Run any `.ai` app with the file-first CLI.
 
 ## Create a project
 
-- Scaffold: `n3 new <template> [project_name]` (templates: `starter`, `demo`)
-- Example: `n3 new starter my_app` then `cd my_app`
-- Recommended first win: `n3 new demo demo` then `cd demo`
+- Scaffold: `n3 new <template> [project_name]` (templates: `operations_dashboard`, `onboarding`, `support_inbox`)
+- Example: `n3 new onboarding my_app` then `cd my_app`
+- Recommended first win: `n3 new operations_dashboard ops_app` then `cd ops_app`
 - The app file lives at `app.ai`; commands below assume you are in the project directory.
 - Multi file apps use module files like `modules/inventory.ai`.
 
 ## Scaffolded app structure
 
-- `app.ai` — the app source (includes a template version comment).
-- `media/` — locked media folder with sample images.
-- `README.md` — quick run steps and template notes.
-- `.namel3ss/` — runtime artifacts (created after you run).
+- `app.ai` - the app source.
+- `expected_ui.json` - deterministic UI snapshot for consistency checks.
+- `README.md` - quick run steps and template notes.
+- `.gitignore` - ignores runtime artifacts and local secrets.
+- `.namel3ss/` - runtime artifacts (created after you run).
 
 Built-in icons are referenced by name only; no icon assets are copied into the app.
 
-## Demo first win
+## First run
 
 ```bash
-n3 new demo demo
-cd demo
+n3 new operations_dashboard ops_app
+cd ops_app
 n3 run
 ```
 
 In the browser:
-- Use the chat composer to ask a question.
-- Review the Answer table for the reply and why fields.
+- Select "Create sample incident" to seed the queue.
+- Review the incident list and escalation checklist.
 
 ## Core commands
 
@@ -42,8 +43,8 @@ In the browser:
 - Actions list: `n3 app.ai actions`
 - Studio (local viewer/interactor): `n3 app.ai studio`
 - Run default flow (when only one flow): `n3 app.ai`
-- Run specific flow (starter template): `n3 app.ai flow "seed_note"`
-- Run an action (starter template): `n3 app.ai page.home.form.note '{"values":{"summary":"hello","details":"first note"}}'`
+- Run specific flow (template): `n3 app.ai flow "create_sample_incident"`
+- Run an action (template): `n3 app.ai page.dashboard.button.create_sample_incident '{}'`
 - Run with expression explain traces: `n3 run app.ai --explain`
 - Run tests: `n3 test`
 - Why mode: `n3 why` or `n3 explain --why`
@@ -62,7 +63,7 @@ In the browser:
 - Scaffold a pattern: `n3 pattern new admin-dashboard my_admin`
 - Search packages: `n3 pkg search auth`
 - Package info: `n3 pkg info auth-basic`
-- Add a package: `n3 pkg add github:owner/repo@v0.1.0`
+- Add a package: `n3 pkg add github:owner/repo@<tag>`
 - Install packages: `n3 pkg install`
 - Scaffold a package: `n3 new pkg my_capsule`
 - Adoption kit: `n3 kit --format md`
@@ -110,8 +111,9 @@ Memory proof harness (dev):
 
 Bundled templates you can scaffold immediately:
 
-- Starter: `n3 new starter my_app`
-- Demo: `n3 new demo demo`
+- Operations Dashboard: `n3 new operations_dashboard ops_app`
+- Onboarding: `n3 new onboarding onboarding_app`
+- Support Inbox: `n3 new support_inbox support_app`
 
 ## Examples (read-only)
 
@@ -140,7 +142,7 @@ Bundled examples live inside the distribution and are not copied unless you ask.
 
 ## Next steps
 - Read [First 5 minutes](first-5-minutes.md) for a guided win.
-- Run the demo template after your first project.
+- Try another template after your first project.
 - See [What you can build today](what-you-can-build-today.md) to understand supported use cases.
 - Learn expressions and conditionals in [Expressions & Conditionals](expressions-and-conditionals.md).
 - Learn Capsules + tests in [Modules and Tests](modules-and-tests.md).
