@@ -21,7 +21,7 @@ def test_release_version_and_template(monkeypatch, tmp_path):
     version_text = version_path.read_text(encoding="utf-8").strip()
     pyproject_text = pyproject_path.read_text(encoding="utf-8")
     assert version_text
-    assert version_text == "0.1.0a9"
+    assert version_text == "0.1.0a10"
     assert _pyproject_version(pyproject_text) == version_text
     def _raise(_name: str) -> str:
         raise metadata.PackageNotFoundError

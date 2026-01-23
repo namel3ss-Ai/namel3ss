@@ -19,7 +19,7 @@
   "build_id": "local-473371d94c19",
   "lockfile_digest": "eace60f110c5557498329db02fb252da7f95598dd3246d174053dac13c3b35c4",
   "lockfile_status": "present",
-  "namel3ss_version": "0.1.0a9",
+  "namel3ss_version": "0.1.0a10",
   "persistence_target": "sqlite",
   "process_model": "dev",
   "program_summary": {
