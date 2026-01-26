@@ -5,7 +5,7 @@ from typing import List
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
-from namel3ss.lexer.tokens import KEYWORDS, Token
+from namel3ss.lexer.tokens import ESCAPED_IDENTIFIER, KEYWORDS, Token
 
 
 class Lexer:
@@ -142,7 +142,7 @@ class Lexer:
                 continue
             if ch == "`":
                 value, consumed = self._read_escaped_identifier(text[i:], line_no, column)
-                tokens.append(Token("IDENT", value, line_no, column, escaped=True))
+                tokens.append(Token(ESCAPED_IDENTIFIER, value, line_no, column, escaped=True))
                 i += consumed
                 column += consumed
                 continue

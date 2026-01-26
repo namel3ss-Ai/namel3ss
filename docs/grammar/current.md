@@ -5,7 +5,7 @@ Derived from source files under `src/namel3ss/lexer` and `src/namel3ss/parser`.
 
 ## Lexer Summary
 - Identifiers: `[A-Za-z_][A-Za-z0-9_]*`; if the text matches a reserved word, it is emitted as that keyword token (not `IDENT`).
-- Escaped identifiers: `` `name` ``; backtick-escaped identifiers are emitted as `IDENT` even if they match reserved words.
+- Escaped identifiers: `` `name` ``; backtick-escaped identifiers are emitted as `IDENT_ESCAPED` with the unescaped text value.
 - Strings: double-quoted only (`"..."`), no escape handling; unterminated strings are a lexer error.
 - Numbers: digits with optional fractional part; minus is its own token (unary minus is handled by the parser).
 - Comments: whole-line comments only; a line whose first non-space character is `#` is skipped.

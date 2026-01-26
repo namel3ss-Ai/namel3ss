@@ -5,6 +5,8 @@ from typing import Optional
 
 from namel3ss.lang.keywords import KEYWORDS
 
+ESCAPED_IDENTIFIER = "IDENT_ESCAPED"
+
 
 @dataclass(frozen=True)
 class Token:

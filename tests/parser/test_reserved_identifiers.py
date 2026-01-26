@@ -4,6 +4,7 @@ import pytest
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.parser.core import parse
+from namel3ss.parser.diagnostics import reserved_identifier_message
 
 
 def test_reserved_keyword_as_identifier_has_guidance():
@@ -15,8 +16,5 @@ def test_reserved_keyword_as_identifier_has_guidance():
     assert isinstance(err.details, dict)
     assert err.details.get("error_id") == "parse.reserved_identifier"
     assert err.details.get("keyword") == "title"
-    message = str(err).lower()
-    assert "reserved" in message
-    assert "title" in message
-    assert "escaped form" in message
-    assert "`title`" in str(err)
+    expected = reserved_identifier_message("title")
+    assert err.message == expected
