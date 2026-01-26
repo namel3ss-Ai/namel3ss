@@ -5,6 +5,7 @@ Derived from source files under `src/namel3ss/lexer` and `src/namel3ss/parser`.
 
 ## Lexer Summary
 - Identifiers: `[A-Za-z_][A-Za-z0-9_]*`; if the text matches a reserved word, it is emitted as that keyword token (not `IDENT`).
+- Escaped identifiers: `` `name` ``; backtick-escaped identifiers are emitted as `IDENT` even if they match reserved words.
 - Strings: double-quoted only (`"..."`), no escape handling; unterminated strings are a lexer error.
 - Numbers: digits with optional fractional part; minus is its own token (unary minus is handled by the parser).
 - Comments: whole-line comments only; a line whose first non-space character is `#` is skipped.
@@ -145,7 +146,7 @@ Expressions (`src/namel3ss/parser/grammar_table.py` and `src/namel3ss/parser/exp
 
 Reference names (`src/namel3ss/parser/core/helpers.py`):
 - Record/field/flow/tool names are either strings or dot-qualified identifiers.
-- Dot-qualified reference names require `IDENT` segments, so reserved words must be quoted.
+- Dot-qualified reference names require `IDENT` segments; reserved words must be quoted or escaped with backticks.
 - Dot-qualified attribute access and state paths use `read_attr_name`, which accepts keyword tokens as segments.
 
 ## Parse Acceptance Snippets

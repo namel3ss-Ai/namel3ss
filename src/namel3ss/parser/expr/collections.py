@@ -4,6 +4,7 @@ from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.lang.keywords import is_keyword
+from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
 
 def looks_like_list_expression(parser) -> bool:
@@ -348,12 +349,23 @@ def _parse_map_literal(parser, line: int, column: int) -> ast.MapExpr:
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
-        key_tok = parser._expect("STRING", "Expected map key string")
+        key_tok = parser._current()
+        if key_tok.type == "STRING":
+            parser._advance()
+            key_value = key_tok.value
+        elif key_tok.type == "IDENT":
+            parser._advance()
+            key_value = str(key_tok.value)
+        elif isinstance(key_tok.value, str) and is_keyword(key_tok.value):
+            guidance, details = reserved_identifier_diagnostic(key_tok.value)
+            raise Namel3ssError(guidance, line=key_tok.line, column=key_tok.column, details=details)
+        else:
+            raise Namel3ssError("Expected map key", line=key_tok.line, column=key_tok.column)
         parser._expect("IS", "Expected 'is' after map key")
         value_expr = parser._parse_expression()
         entries.append(
             ast.MapEntry(
-                key=ast.Literal(value=key_tok.value, line=key_tok.line, column=key_tok.column),
+                key=ast.Literal(value=key_value, line=key_tok.line, column=key_tok.column),
                 value=value_expr,
                 line=key_tok.line,
                 column=key_tok.column,
@@ -439,29 +451,13 @@ def _read_binding_name(parser, *, op_name: str) -> str:
     name_tok = parser._current()
     if name_tok.type != "IDENT":
         if isinstance(name_tok.value, str) and is_keyword(name_tok.value):
-            raise Namel3ssError(
-                build_guidance_message(
-                    what=f"'{name_tok.value}' is a reserved keyword.",
-                    why="List transform item names must be identifiers that are not keywords.",
-                    fix="Choose a different name.",
-                    example=f"let result is {op_name} numbers with item as value:\\n  value",
-                ),
-                line=name_tok.line,
-                column=name_tok.column,
-            )
+            guidance, details = reserved_identifier_diagnostic(name_tok.value)
+            raise Namel3ssError(guidance, line=name_tok.line, column=name_tok.column, details=details)
         raise Namel3ssError("Expected identifier after 'as'", line=name_tok.line, column=name_tok.column)
     parser._advance()
-    if is_keyword(name_tok.value):
-        raise Namel3ssError(
-            build_guidance_message(
-                what=f"'{name_tok.value}' is a reserved keyword.",
-                why="List transform item names must be identifiers that are not keywords.",
-                fix="Choose a different name.",
-                example=f"let result is {op_name} numbers with item as value:\\n  value",
-            ),
-            line=name_tok.line,
-            column=name_tok.column,
-        )
+    if is_keyword(name_tok.value) and not getattr(name_tok, "escaped", False):
+        guidance, details = reserved_identifier_diagnostic(name_tok.value)
+        raise Namel3ssError(guidance, line=name_tok.line, column=name_tok.column, details=details)
     return name_tok.value
 
 

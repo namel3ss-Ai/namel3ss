@@ -20,6 +20,8 @@ def _to_data(value: Any, *, field_name: str | None = None) -> Any:
             field_value = getattr(value, field.name)
             if field.name == "functions" and not field_value:
                 continue
+            if field.name == "name_escaped" and not field_value:
+                continue
             if field.name == "merge" and field_value is None:
                 continue
             if field.name == "state_defaults" and field_value is None:

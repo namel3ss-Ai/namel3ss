@@ -67,6 +67,7 @@ def _lower_latest_let(stmt: ast.Let, expr: sugar.LatestRecordExpr) -> list[ast.S
                 column=column,
             ),
             constant=stmt.constant,
+            name_escaped=getattr(stmt, "name_escaped", False),
             line=line,
             column=column,
         ),
@@ -76,6 +77,7 @@ def _lower_latest_let(stmt: ast.Let, expr: sugar.LatestRecordExpr) -> list[ast.S
             name=stmt.name,
             expression=ast.Literal(value=None, line=line, column=column),
             constant=stmt.constant,
+            name_escaped=getattr(stmt, "name_escaped", False),
             line=line,
             column=column,
         )

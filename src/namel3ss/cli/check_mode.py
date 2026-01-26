@@ -23,10 +23,10 @@ def run_check(path: str, allow_legacy_type_aliases: bool = True) -> int:
         details = err.details if isinstance(getattr(err, "details", None), dict) else {}
         if details.get("error_id") == "parse.reserved_identifier":
             keyword = details.get("keyword") or "this word"
-            suggested = f"ticket_{keyword}"
+            escaped = f"`{keyword}`"
             hint = (
-                f"Hint: '{keyword}' is reserved. Rename it (for example, '{suggested}') "
-                "or run `n3 reserved` to list reserved words."
+                f"Hint: '{keyword}' is reserved. Use {escaped} or choose a different name. "
+                "Run `n3 reserved` to list reserved words."
             )
             err_text = "\n".join([err_text, hint])
         sections.append(f"Parse: FAIL\n{err_text}")

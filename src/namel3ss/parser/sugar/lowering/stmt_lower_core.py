@@ -77,6 +77,7 @@ def _lower_statement(stmt: ast.Statement) -> list[ast.Statement]:
                 name=stmt.name,
                 expression=_lower_expression(stmt.expression),
                 constant=stmt.constant,
+                name_escaped=getattr(stmt, "name_escaped", False),
                 line=stmt.line,
                 column=stmt.column,
             )

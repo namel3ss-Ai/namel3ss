@@ -291,7 +291,10 @@ def _token_length(tok: Token) -> int:
         return 4 if tok.value else 5
     if tok.value is None:
         return 1
-    return len(str(tok.value))
+    length = len(str(tok.value))
+    if getattr(tok, "escaped", False):
+        return length + 2
+    return length
 
 
 def _peek(tokens: List[TokenSpan], index: int) -> Optional[TokenSpan]:

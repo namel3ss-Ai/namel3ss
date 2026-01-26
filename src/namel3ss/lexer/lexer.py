@@ -140,6 +140,12 @@ class Lexer:
                 i += 1
                 column += 1
                 continue
+            if ch == "`":
+                value, consumed = self._read_escaped_identifier(text[i:], line_no, column)
+                tokens.append(Token("IDENT", value, line_no, column, escaped=True))
+                i += consumed
+                column += consumed
+                continue
             if ch == '"':
                 value, consumed = self._read_string(text[i:], line_no, column)
                 tokens.append(Token("STRING", value, line_no, column))
@@ -205,10 +211,44 @@ class Lexer:
         return "".join(chars), i
 
     @staticmethod
+    def _read_escaped_identifier(text: str, line: int, column: int) -> tuple[str, int]:
+        assert text[0] == "`"
+        end = text.find("`", 1)
+        if end == -1:
+            raise Namel3ssError("Unterminated escaped identifier", line=line, column=column)
+        value = text[1:end]
+        if value == "":
+            raise Namel3ssError("Escaped identifier cannot be empty", line=line, column=column)
+        if not _is_identifier_text(value):
+            raise Namel3ssError(
+                build_guidance_message(
+                    what="Escaped identifier contains invalid characters.",
+                    why="Escaped identifiers use the same characters as normal identifiers.",
+                    fix="Use letters, numbers, or underscores inside the backticks.",
+                    example='let `title` is "..."',
+                ),
+                line=line,
+                column=column,
+            )
+        return value, end + 1
+
+    @staticmethod
     def _keyword_value(token_type: str, raw: str):
         if token_type == "BOOLEAN":
             return raw.lower() == "true"
         return raw
+
+
+def _is_identifier_text(value: str) -> bool:
+    if not value:
+        return False
+    first = value[0]
+    if not (first.isalpha() or first == "_"):
+        return False
+    for ch in value[1:]:
+        if not (ch.isalnum() or ch == "_"):
+            return False
+    return True
 
 
 def _unsupported_character_message(ch: str) -> str:

@@ -4,6 +4,8 @@ from typing import List
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.lang.keywords import is_keyword
+from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
 
 def parse_form_block(parser) -> tuple[List[ast.FormGroup] | None, List[ast.FormFieldConfig] | None]:
@@ -158,6 +160,9 @@ def _parse_form_field_name(parser) -> str:
     if tok.type in {"STRING", "IDENT"}:
         parser._advance()
         return str(tok.value)
+    if isinstance(tok.value, str) and is_keyword(tok.value):
+        guidance, details = reserved_identifier_diagnostic(tok.value)
+        raise Namel3ssError(guidance, line=tok.line, column=tok.column, details=details)
     raise Namel3ssError("Expected field name", line=tok.line, column=tok.column)
 
 

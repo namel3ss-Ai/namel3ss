@@ -12,6 +12,7 @@ class Token:
     value: Optional[object]
     line: int
     column: int
+    escaped: bool = False
 
     def __repr__(self) -> str:  # pragma: no cover - debug helper
         return f"Token({self.type}, {self.value}, {self.line}:{self.column})"

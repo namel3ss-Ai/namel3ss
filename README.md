@@ -163,6 +163,10 @@ First-run defaults:
 Reserved identifiers:
 - Avoid using reserved words (e.g., title, text, type, page, form, table) as variable names.
 - Prefer prefixed names like `ticket_title` or `item_type`.
+- If you need a reserved word, escape it with backticks:
+  ```text
+  let `title` is "Welcome"
+  ```
 - See `docs/language/reserved-words.md` or run `n3 reserved`.
 
 ## Troubleshooting

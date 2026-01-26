@@ -11,7 +11,7 @@ def test_check_reports_reserved_identifier_hint(tmp_path, capsys):
     assert exit_code == 1
     out = captured.out
     assert "Parse: FAIL" in out
-    assert "reserved keyword" in out.lower()
+    assert "reserved" in out.lower()
     assert "title" in out
     assert "Hint: 'title' is reserved" in out
-    assert "ticket_title" in out
+    assert "`title`" in out

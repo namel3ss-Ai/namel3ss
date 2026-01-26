@@ -80,5 +80,7 @@ flow "demo":
 """
     with pytest.raises(Namel3ssError) as excinfo:
         parse_program(source)
-    assert "keyword" in str(excinfo.value).lower()
+    message = str(excinfo.value)
+    assert "reserved" in message.lower()
+    assert "`if`" in message
     assert excinfo.value.line == 4

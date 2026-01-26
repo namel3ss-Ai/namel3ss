@@ -5,9 +5,11 @@ from typing import List
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.lang.keywords import is_keyword
 from namel3ss.lang.types import canonicalize_type_name
 from namel3ss.parser.decl.constraints import parse_field_constraint
 from namel3ss.parser.decl.record import type_from_token
+from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
 
 def parse_identity(parser) -> ast.IdentityDecl:
@@ -125,6 +127,9 @@ def _parse_identity_field(
     name_tok = parser._current()
     allow_quoted = not allow_field_keyword
     if name_tok.type not in _FIELD_NAME_TOKENS and not (allow_quoted and name_tok.type == "STRING"):
+        if isinstance(name_tok.value, str) and is_keyword(name_tok.value):
+            guidance, details = reserved_identifier_diagnostic(name_tok.value)
+            raise Namel3ssError(guidance, line=name_tok.line, column=name_tok.column, details=details)
         if use_guidance:
             raise Namel3ssError(
                 build_guidance_message(

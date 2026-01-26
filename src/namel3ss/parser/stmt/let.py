@@ -16,7 +16,14 @@ def parse_let(parser) -> ast.Let | list[ast.Let]:
     constant = False
     if parser._match("CONSTANT"):
         constant = True
-    return ast.Let(name=name_tok.value, expression=expr, constant=constant, line=let_tok.line, column=let_tok.column)
+    return ast.Let(
+        name=name_tok.value,
+        expression=expr,
+        constant=constant,
+        name_escaped=getattr(name_tok, "escaped", False),
+        line=let_tok.line,
+        column=let_tok.column,
+    )
 
 
 def _parse_let_block(parser, let_tok) -> list[ast.Let]:
@@ -100,7 +107,14 @@ def _parse_let_entry(parser, seen: set[str], *, inline_mode: bool) -> ast.Let:
             column=name_tok.column,
         )
     seen.add(name_tok.value)
-    return ast.Let(name=name_tok.value, expression=expr, constant=constant, line=name_tok.line, column=name_tok.column)
+    return ast.Let(
+        name=name_tok.value,
+        expression=expr,
+        constant=constant,
+        name_escaped=getattr(name_tok, "escaped", False),
+        line=name_tok.line,
+        column=name_tok.column,
+    )
 
 
 def _parse_let_expression(parser) -> ast.Expression:

@@ -7,17 +7,15 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.lang.keywords import is_keyword
 from namel3ss.parser.core.helpers import parse_reference_name
 from namel3ss.parser.decl.page_actions import parse_ui_action_body
+from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
 
 def parse_compose_item(parser, tok, parse_block) -> ast.ComposeItem:
     parser._advance()
     name_tok = parser._expect("IDENT", "Expected compose name")
-    if is_keyword(name_tok.value):
-        raise Namel3ssError(
-            f"Compose name '{name_tok.value}' is reserved",
-            line=name_tok.line,
-            column=name_tok.column,
-        )
+    if is_keyword(name_tok.value) and not getattr(name_tok, "escaped", False):
+        guidance, details = reserved_identifier_diagnostic(name_tok.value)
+        raise Namel3ssError(guidance, line=name_tok.line, column=name_tok.column, details=details)
     parser._expect("COLON", "Expected ':' after compose name")
     children = parse_block(parser, columns_only=False, allow_tabs=False, allow_overlays=False)
     return ast.ComposeItem(name=name_tok.value, children=children, line=tok.line, column=tok.column)

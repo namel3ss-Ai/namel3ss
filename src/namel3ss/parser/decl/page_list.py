@@ -4,8 +4,10 @@ from typing import List
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.lang.keywords import is_keyword
 from namel3ss.parser.core.helpers import parse_reference_name
 from namel3ss.parser.decl.page_actions import parse_ui_action_body
+from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
 
 def parse_list_block(parser):
@@ -263,6 +265,9 @@ def _parse_list_field_name(parser) -> str:
     if tok.type in {"STRING", "IDENT"}:
         parser._advance()
         return str(tok.value)
+    if isinstance(tok.value, str) and is_keyword(tok.value):
+        guidance, details = reserved_identifier_diagnostic(tok.value)
+        raise Namel3ssError(guidance, line=tok.line, column=tok.column, details=details)
     raise Namel3ssError("Expected field name", line=tok.line, column=tok.column)
 
 

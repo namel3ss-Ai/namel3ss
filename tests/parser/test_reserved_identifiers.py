@@ -16,7 +16,7 @@ def test_reserved_keyword_as_identifier_has_guidance():
     assert err.details.get("error_id") == "parse.reserved_identifier"
     assert err.details.get("keyword") == "title"
     message = str(err).lower()
-    assert "reserved keyword" in message
+    assert "reserved" in message
     assert "title" in message
-    assert "rename the identifier" in message
-    assert "ticket_title" in message or "title_value" in message
+    assert "escaped form" in message
+    assert "`title`" in str(err)

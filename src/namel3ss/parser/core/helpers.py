@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.lang.keywords import is_keyword
+from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
 
 def parse_reference_name(parser, *, context: str) -> str:
@@ -15,6 +17,9 @@ def parse_reference_name(parser, *, context: str) -> str:
         while parser._match("DOT"):
             next_tok = parser._current()
             if next_tok.type != "IDENT":
+                if isinstance(next_tok.value, str) and is_keyword(next_tok.value):
+                    guidance, details = reserved_identifier_diagnostic(next_tok.value)
+                    raise Namel3ssError(guidance, line=next_tok.line, column=next_tok.column, details=details)
                 raise Namel3ssError(
                     build_guidance_message(
                         what="Qualified name is incomplete.",
@@ -28,6 +33,9 @@ def parse_reference_name(parser, *, context: str) -> str:
             parser._advance()
             parts.append(next_tok.value)
         return ".".join(parts)
+    if isinstance(tok.value, str) and is_keyword(tok.value):
+        guidance, details = reserved_identifier_diagnostic(tok.value)
+        raise Namel3ssError(guidance, line=tok.line, column=tok.column, details=details)
     raise Namel3ssError(
         build_guidance_message(
             what=f"Expected {context} name.",

@@ -385,7 +385,7 @@
     const code = (entry && entry.code) || (details && details.error_id) || "";
     const keyword = (details && details.keyword) || "";
     const reservedHint = code === "parse.reserved_identifier"
-      ? `Rename '${keyword || "this name"}' (for example, 'ticket_${keyword || "name"}'). See also: run \`n3 reserved\`.`
+      ? `Use \`${keyword || "name"}\` or choose a different name. See also: run \`n3 reserved\`.`
       : "";
     const fixText = [fix, parsed.example, reservedHint].filter(Boolean).join("\n");
     const stepsTitle = document.createElement("div");

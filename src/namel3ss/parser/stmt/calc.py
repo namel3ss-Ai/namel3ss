@@ -5,6 +5,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.lang.keywords import is_keyword
 from namel3ss.parser.expr.calls import looks_like_tool_call, parse_tool_call_expr
+from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
 
 def parse_calc(parser) -> list[ast.Statement]:
@@ -48,7 +49,7 @@ def parse_calc(parser) -> list[ast.Statement]:
 
 
 def _parse_calc_line(parser, seen: set[str]) -> ast.Statement:
-    target, target_tok = _read_calc_target(parser)
+    target, target_tok, target_escaped = _read_calc_target(parser)
     if isinstance(target, str):
         if target in seen:
             raise Namel3ssError(
@@ -95,14 +96,21 @@ def _parse_calc_line(parser, seen: set[str]) -> ast.Statement:
         parser._match("NEWLINE")
     if isinstance(target, ast.StatePath):
         return ast.Set(target=target, expression=expr, line=target_tok.line, column=target_tok.column)
-    return ast.Let(name=target, expression=expr, constant=False, line=target_tok.line, column=target_tok.column)
+    return ast.Let(
+        name=target,
+        expression=expr,
+        constant=False,
+        name_escaped=target_escaped,
+        line=target_tok.line,
+        column=target_tok.column,
+    )
 
 
-def _read_calc_target(parser) -> tuple[str | ast.StatePath, object]:
+def _read_calc_target(parser) -> tuple[str | ast.StatePath, object, bool]:
     tok = parser._current()
     if tok.type == "STATE":
         path = parser._parse_state_path()
-        return path, tok
+        return path, tok, False
     if tok.type == "IDENT":
         next_tok = parser.tokens[parser.position + 1] if parser.position + 1 < len(parser.tokens) else None
         if next_tok and next_tok.type == "DOT":
@@ -117,7 +125,7 @@ def _read_calc_target(parser) -> tuple[str | ast.StatePath, object]:
                 column=tok.column,
             )
         parser._advance()
-        return tok.value, tok
+        return tok.value, tok, bool(getattr(tok, "escaped", False))
     if tok.type == "INPUT":
         raise Namel3ssError(
             build_guidance_message(
@@ -130,16 +138,8 @@ def _read_calc_target(parser) -> tuple[str | ast.StatePath, object]:
             column=tok.column,
         )
     if isinstance(tok.value, str) and is_keyword(tok.value):
-        raise Namel3ssError(
-            build_guidance_message(
-                what=f"'{tok.value}' is a reserved keyword.",
-                why="Calc assignments require keyword-safe identifiers.",
-                fix="Choose a different name.",
-                example="calc:\n  total = 10",
-            ),
-            line=tok.line,
-            column=tok.column,
-        )
+        guidance, details = reserved_identifier_diagnostic(tok.value)
+        raise Namel3ssError(guidance, line=tok.line, column=tok.column, details=details)
     if tok.type == "IDENT" or tok.type == "DOT":
         raise Namel3ssError(
             build_guidance_message(

@@ -17,6 +17,7 @@ class Let(Statement):
     name: str
     expression: Expression
     constant: bool = False
+    name_escaped: bool = False
 
 
 @dataclass

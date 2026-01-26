@@ -179,7 +179,7 @@ def _lint_reserved_identifiers(ast_program) -> list[Finding]:
                 for case in stmt.cases:
                     walk_statements(case.body)
             if stmt.__class__.__name__ == "Let":
-                if stmt.name in reserved:
+                if stmt.name in reserved and not getattr(stmt, "name_escaped", False):
                     findings.append(
                         Finding(
                             code="names.reserved_identifier",

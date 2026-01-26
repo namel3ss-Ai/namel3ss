@@ -4,6 +4,12 @@ Some words are part of the language and UI DSL and cannot be reused as variable 
 
 Reserved words keep the grammar clear, align with the UI DSL, and protect deterministic execution.
 
+If you need a reserved word as an identifier, escape it with backticks:
+```text
+let `title` is "Welcome"
+let `flow` is "checkout"
+```
+
 To avoid collisions, prefix names with your domain context, for example:
 - `ticket_title`
 - `article_title`
