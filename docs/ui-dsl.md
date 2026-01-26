@@ -19,6 +19,7 @@ This is the authoritative description of the UI DSL. It is semantic and explicit
 - `tool "name":`
 - `ui_pack "name":`
 Rule: use `keyword "name"`; never `keyword is "name"`.
+- Reserved words may only be used as identifiers when escaped with backticks (for example `title`).
 
 ## 3) Allowed UI elements
 Structural:
