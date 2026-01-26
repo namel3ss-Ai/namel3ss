@@ -52,6 +52,7 @@ Start here:
 - [Templates](templates.md)
 - [UI DSL](ui-dsl.md)
 - [UI See](ui-see.md)
+- [Reserved words and escaping](language/reserved-words.md)
 
 ### Language Contracts
 - [Application runtime](language/application-runtime.md): every valid `.ai` program is an application; the browser renders it, Studio inspects it.

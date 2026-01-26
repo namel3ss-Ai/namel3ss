@@ -1,23 +1,19 @@
 # Reserved words in namel3ss
 
-Some words are part of the language and UI DSL and cannot be reused as variable names.
+- Reserved words are part of the language and UI DSL and cannot be reused as variable names.
+- They keep the grammar clear, align with the UI DSL, and protect deterministic execution.
 
-Reserved words keep the grammar clear, align with the UI DSL, and protect deterministic execution.
+## Escaping
+- Escape a reserved word by wrapping it in backticks when it must be an identifier.
+- Otherwise, choose a non-reserved name with domain context.
 
-If you need a reserved word as an identifier, escape it with backticks:
+Example (unescaped fails, escaped works):
 ```text
+let title is "Welcome"
 let `title` is "Welcome"
-let `flow` is "checkout"
 ```
-
-To avoid collisions, prefix names with your domain context, for example:
-- `ticket_title`
-- `article_title`
-- `item_type`
 
 To see the canonical list:
 ```bash
 n3 reserved
 ```
-
-Common collisions to avoid: `title`, `text`, `type`, `page`, `form`, `table`.
