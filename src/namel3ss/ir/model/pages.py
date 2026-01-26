@@ -74,6 +74,13 @@ class TextItem(PageItem):
 
 
 @dataclass
+class UploadItem(PageItem):
+    name: str
+    accept: list[str]
+    multiple: bool
+
+
+@dataclass
 class FormItem(PageItem):
     record_name: str
     groups: List["FormGroup"] | None = None

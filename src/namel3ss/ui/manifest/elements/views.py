@@ -86,6 +86,26 @@ def build_view_item(
     return _attach_origin(element, item), {}
 
 
+def build_upload_item(
+    item: ir.UploadItem,
+    *,
+    page_name: str,
+    page_slug: str,
+    path: List[int],
+) -> tuple[dict, Dict[str, dict]]:
+    index = path[-1] if path else 0
+    element_id = _element_id(page_slug, "upload", path)
+    base = _base_element(element_id, page_name, page_slug, index, item)
+    element = {
+        "type": "upload",
+        "name": item.name,
+        "accept": list(item.accept or []),
+        "multiple": bool(item.multiple),
+        **base,
+    }
+    return _attach_origin(element, item), {}
+
+
 def build_form_item(
     item: ir.FormItem,
     record_map: Dict[str, schema.RecordSchema],
@@ -376,5 +396,6 @@ __all__ = [
     "build_list_item",
     "build_table_item",
     "build_tabs_item",
+    "build_upload_item",
     "build_view_item",
 ]

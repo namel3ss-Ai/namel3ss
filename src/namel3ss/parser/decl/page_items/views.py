@@ -4,12 +4,14 @@ from typing import List
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.lang.keywords import is_keyword
 from namel3ss.parser.core.helpers import parse_reference_name
 from namel3ss.parser.decl.page_chat import parse_chat_block
 from namel3ss.parser.decl.page_chart import parse_chart_block, parse_chart_header
 from namel3ss.parser.decl.page_form import parse_form_block
 from namel3ss.parser.decl.page_list import parse_list_block
 from namel3ss.parser.decl.page_table import parse_table_block
+from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
 
 def parse_view_item(parser, tok) -> ast.ViewItem:
@@ -33,6 +35,68 @@ def parse_text_item(parser, tok) -> ast.TextItem:
     parser._expect("IS", "Expected 'is' after 'text'")
     value_tok = parser._expect("STRING", "Expected text string")
     return ast.TextItem(value=value_tok.value, line=tok.line, column=tok.column)
+
+
+def parse_upload_item(parser, tok) -> ast.UploadItem:
+    parser._advance()
+    name_tok = parser._expect("IDENT", "Expected upload name")
+    if is_keyword(name_tok.value) and not getattr(name_tok, "escaped", False):
+        guidance, details = reserved_identifier_diagnostic(name_tok.value)
+        raise Namel3ssError(guidance, line=name_tok.line, column=name_tok.column, details=details)
+    accept = None
+    multiple = None
+    if parser._match("COLON"):
+        parser._expect("NEWLINE", "Expected newline after upload header")
+        parser._expect("INDENT", "Expected indented upload block")
+        while parser._current().type != "DEDENT":
+            if parser._match("NEWLINE"):
+                continue
+            entry_tok = parser._current()
+            if entry_tok.type == "IDENT" and entry_tok.value == "accept":
+                if accept is not None:
+                    raise Namel3ssError("Accept is declared more than once", line=entry_tok.line, column=entry_tok.column)
+                parser._advance()
+                parser._expect("IS", "Expected 'is' after accept")
+                accept = _parse_upload_accept_list(parser)
+                if parser._match("NEWLINE"):
+                    continue
+                continue
+            if entry_tok.type == "IDENT" and entry_tok.value == "multiple":
+                if multiple is not None:
+                    raise Namel3ssError("Multiple is declared more than once", line=entry_tok.line, column=entry_tok.column)
+                parser._advance()
+                parser._expect("IS", "Expected 'is' after multiple")
+                bool_tok = parser._expect("BOOLEAN", "Multiple must be true or false")
+                multiple = bool(bool_tok.value)
+                if parser._match("NEWLINE"):
+                    continue
+                continue
+            raise Namel3ssError(
+                f"Unknown upload setting '{entry_tok.value}'",
+                line=entry_tok.line,
+                column=entry_tok.column,
+            )
+        parser._expect("DEDENT", "Expected end of upload block")
+    return ast.UploadItem(name=name_tok.value, accept=accept, multiple=multiple, line=tok.line, column=tok.column)
+
+
+def _parse_upload_accept_list(parser) -> list[str]:
+    values: list[str] = []
+    while True:
+        tok = parser._current()
+        if tok.type not in {"STRING", "IDENT"}:
+            raise Namel3ssError("Accept must be a list of non-empty strings", line=tok.line, column=tok.column)
+        parser._advance()
+        value = str(tok.value).strip()
+        if not value:
+            raise Namel3ssError("Accept entries cannot be empty", line=tok.line, column=tok.column)
+        values.append(value)
+        if not parser._match("COMMA"):
+            break
+    if not values:
+        tok = parser._current()
+        raise Namel3ssError("Accept must be a list of non-empty strings", line=tok.line, column=tok.column)
+    return values
 
 
 def parse_form_item(parser, tok) -> ast.FormItem:
@@ -206,6 +270,7 @@ __all__ = [
     "parse_tabs_item",
     "parse_text_item",
     "parse_title_item",
+    "parse_upload_item",
     "parse_use_ui_pack_item",
     "parse_view_item",
 ]

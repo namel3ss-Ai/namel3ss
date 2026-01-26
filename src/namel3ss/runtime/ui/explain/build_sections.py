@@ -239,6 +239,19 @@ def _card_reasons(element: dict) -> list[str]:
     return reasons
 
 
+def _upload_reasons(element: dict) -> list[str]:
+    reasons: list[str] = ["request only (no upload behavior)"]
+    accept = element.get("accept")
+    if isinstance(accept, list) and accept:
+        joined = _join_limited([str(entry) for entry in accept])
+        if joined:
+            reasons.append(f"accepts: {joined}")
+    multiple = element.get("multiple")
+    if isinstance(multiple, bool):
+        reasons.append(f"multiple: {str(multiple).lower()}")
+    return reasons
+
+
 __all__ = [
     "_card_reasons",
     "_chart_reasons",
@@ -249,4 +262,5 @@ __all__ = [
     "_overlay_reasons",
     "_table_reasons",
     "_tabs_reasons",
+    "_upload_reasons",
 ]

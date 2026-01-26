@@ -50,6 +50,7 @@ Data/UI bindings:
 - `thinking when is state.<path>` UI-only indicator bound to state.
 - `citations from is state.<path>` display-only citations list from state.
 - `memory from is state.<path> [lane is "my"|"team"|"system"]` display-only memory list from state.
+- `upload <name>` declares an upload request (intent-only). Optional `accept` list and `multiple` flag.
 - `button "Label":` `calls flow "flow_name"` creates `call_flow` action.
 - `link "Label" to page "PageName"` navigates to a named page; emits an `open_page` action.
 - `use ui_pack "pack_name" fragment "fragment_name"` static expansion of a pack fragment.
@@ -97,6 +98,14 @@ UI packs:
 - The ui manifest can be explained with `n3 see`.
 - Output is deterministic, bounded, and lists pages, elements, bindings, and action availability.
 - Pack origin metadata is included when elements are expanded from a `ui_pack`.
+
+## 4.2) Upload requests
+- `upload <name>` declares intent to request a file from the user.
+- Uploads are request-only; no upload occurs until runtime bindings are provided.
+- Optional block fields:
+  - `accept is "pdf", "png", "jpg"` (list of non-empty strings)
+  - `multiple is true|false` (defaults to false)
+- Manifests include the request with deterministic fields: `type`, `name`, `accept`, `multiple`.
 
 ## 5) Core UI primitives
 - `page "<title>":` container with optional `purpose is "<string>"` metadata (page-only; deterministic id generation). Duplicate page titles are rejected.

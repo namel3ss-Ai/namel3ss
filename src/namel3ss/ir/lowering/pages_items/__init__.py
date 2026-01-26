@@ -73,6 +73,8 @@ def _lower_page_item(
         return actions_mod.lower_title_item(item, attach_origin=_attach_origin)
     if isinstance(item, ast.TextItem):
         return actions_mod.lower_text_item(item, attach_origin=_attach_origin)
+    if isinstance(item, ast.UploadItem):
+        return views_mod.lower_upload_item(item, attach_origin=_attach_origin)
     if isinstance(item, ast.FormItem):
         return views_mod.lower_form_item(
             item,

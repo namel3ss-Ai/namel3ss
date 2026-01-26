@@ -20,6 +20,7 @@ from namel3ss.ir.model.pages import (
     TabItem,
     TabsItem,
     TableItem,
+    UploadItem,
     ViewItem,
 )
 from namel3ss.schema import records as schema
@@ -62,6 +63,25 @@ def lower_form_item(
             record_name=item.record_name,
             groups=groups,
             fields=fields,
+            line=item.line,
+            column=item.column,
+        ),
+        item,
+    )
+
+
+def lower_upload_item(
+    item: ast.UploadItem,
+    *,
+    attach_origin,
+) -> UploadItem:
+    accept = [entry.strip() for entry in (item.accept or []) if entry.strip()]
+    multiple = bool(item.multiple) if item.multiple is not None else False
+    return attach_origin(
+        UploadItem(
+            name=item.name,
+            accept=accept,
+            multiple=multiple,
             line=item.line,
             column=item.column,
         ),
@@ -217,5 +237,6 @@ __all__ = [
     "lower_list_item",
     "lower_table_item",
     "lower_tabs_item",
+    "lower_upload_item",
     "lower_view_item",
 ]

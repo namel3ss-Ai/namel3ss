@@ -122,6 +122,13 @@ def _page_item_to_manifest(
         return actions_mod.build_title_item(item, page_name=page_name, page_slug=page_slug, path=path)
     if isinstance(item, ir.TextItem):
         return actions_mod.build_text_item(item, page_name=page_name, page_slug=page_slug, path=path)
+    if isinstance(item, ir.UploadItem):
+        return views_mod.build_upload_item(
+            item,
+            page_name=page_name,
+            page_slug=page_slug,
+            path=path,
+        )
     if isinstance(item, ir.FormItem):
         return views_mod.build_form_item(
             item,

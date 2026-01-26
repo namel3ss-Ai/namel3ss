@@ -26,6 +26,7 @@ def _lower_page(
         page_name=page.name,
     )
     overlays = _collect_overlays(expanded_items)
+    _validate_upload_names(expanded_items)
     compose_names: set[str] = set()
     items = [
         _lower_page_item(item, record_map, flow_names, page.name, page_names, overlays, compose_names)
@@ -70,6 +71,46 @@ def _register_overlay(
             column=getattr(dup, "column", None),
         )
     seen[label] = item
+
+
+def _validate_upload_names(items: list[ast.PageItem]) -> None:
+    seen: dict[str, ast.UploadItem] = {}
+    for item in _walk_page_items(items):
+        if not isinstance(item, ast.UploadItem):
+            continue
+        if item.name in seen:
+            raise Namel3ssError(
+                f"Upload name '{item.name}' is duplicated",
+                line=item.line,
+                column=item.column,
+            )
+        seen[item.name] = item
+
+
+def _walk_page_items(items: list[ast.PageItem]) -> list[ast.PageItem]:
+    collected: list[ast.PageItem] = []
+    for item in items:
+        collected.append(item)
+        if isinstance(item, ast.TabsItem):
+            for tab in item.tabs:
+                collected.extend(_walk_page_items(tab.children))
+            continue
+        if isinstance(
+            item,
+            (
+                ast.CardGroupItem,
+                ast.CardItem,
+                ast.ChatItem,
+                ast.ColumnItem,
+                ast.ComposeItem,
+                ast.DrawerItem,
+                ast.ModalItem,
+                ast.RowItem,
+                ast.SectionItem,
+            ),
+        ):
+            collected.extend(_walk_page_items(item.children))
+    return collected
 
 
 __all__ = ["_lower_page"]

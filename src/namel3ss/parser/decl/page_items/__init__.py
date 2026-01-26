@@ -49,6 +49,8 @@ def parse_page_item(parser, *, allow_tabs: bool = False, allow_overlays: bool = 
         return views_mod.parse_title_item(parser, tok)
     if tok.type == "TEXT":
         return views_mod.parse_text_item(parser, tok)
+    if tok.type == "IDENT" and tok.value == "upload":
+        return views_mod.parse_upload_item(parser, tok)
     if tok.type == "FORM":
         return views_mod.parse_form_item(parser, tok)
     if tok.type == "TABLE":

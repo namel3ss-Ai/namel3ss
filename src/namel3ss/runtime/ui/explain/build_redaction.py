@@ -18,6 +18,8 @@ def _element_label(kind: str, element: dict) -> str | None:
         return element.get("alt") or element.get("media_name") or element.get("src")
     if kind == "chart":
         return element.get("explain") or element.get("record") or element.get("source")
+    if kind == "upload":
+        return element.get("name")
     return None
 
 

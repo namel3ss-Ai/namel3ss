@@ -18,6 +18,7 @@ from .build_sections import (
     _overlay_reasons,
     _table_reasons,
     _tabs_reasons,
+    _upload_reasons,
 )
 from .model import UIActionState, UIElementState, UIExplainPack
 from .normalize import build_plain_text, write_last_ui
@@ -171,6 +172,8 @@ def _element_state(
         reasons.extend(_overlay_reasons(element))
     if kind == "card":
         reasons.extend(_card_reasons(element))
+    if kind == "upload":
+        reasons.extend(_upload_reasons(element))
     return UIElementState(
         id=element_id,
         kind=kind,
