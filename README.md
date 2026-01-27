@@ -106,28 +106,17 @@ Windows paths: `docs\language\application-runtime.md`, `docs\language\applicatio
 
 ## Installation
 
-The recommended way to install `n3` is with `pipx`, which keeps it isolated and globally available:
+Supported paths:
+- Install from source (development)
+- Docker (local) for an isolated runtime
 
+See `docs/install-and-run.md` for full instructions.
+
+Quick check (Docker (local)):
 ```bash
-pipx install namel3ss
+docker build -t namel3ss:local .
+docker run --rm namel3ss:local n3 --help
 ```
-
-Or via pip:
-
-```bash
-python -m pip install -U namel3ss
-```
-
-### Docker (Official)
-
-Use Docker for a fixed, deterministic runtime image (CI/deploy); use pipx/pip for local dev and quick CLI access.
-Ensure the Docker daemon is running.
-```bash
-docker compose up --build
-```
-Open http://localhost:8080 (app/app.ai is included by default).
-Change the host port by setting `N3_PORT` in `.env` (see `.env.example`).
-Linux: if `.namel3ss/` permissions fail, set `UID` and `GID` in `.env` to match your user.
 
 ### Release invariants
 - VERSION is metadata.
@@ -135,35 +124,9 @@ Linux: if `.namel3ss/` permissions fail, set `UID` and `GID` in `.env` to match 
 - Publish is gated by guards.
 - Canonical release sequence: VERSION bump → tests → tag → PyPI publish → docker image → release notes.
 
-### Verify installation
-
-```bash
-n3 --version
-n3 --help
-```
-
 ### Bundled samples
 - Demos: full browser apps in `src/namel3ss/demos` (copy, then `n3 check` and `n3 run`)
 - Examples: single-file references in `src/namel3ss/examples` or scaffold with `n3 new example <name>`
-
-### Windows users
-If `n3` is not found, your Python `Scripts/` folder may not be in your PATH.
-You can always use the fallback command:
-
-```bash
-python -m namel3ss --help
-```
-
-## Try it in 60 seconds
-
-```bash
-python -m pip install -U namel3ss
-n3 --help
-n3 new operations_dashboard ops_app
-cd ops_app
-n3 run
-```
-
 ### What happens when you run `n3 check`
 - Runs STATIC validation only: grammar, structure, schema, and manifest build.
 - Does not require identity/env vars or runtime state; runtime-only rules become warnings.
@@ -179,36 +142,6 @@ First-run defaults:
 
 Reserved identifiers:
 - Avoid reserved words; escape with backticks when needed; see [Reserved words](docs/language/reserved-words.md) or run `n3 reserved`.
-
-## Troubleshooting
-
-If `n3` is not recognized:
-
-1. Check installation:
-   ```bash
-   python -m pip show namel3ss
-   ```
-
-2. Check location:
-   ```bash
-   where n3   # Windows
-   which n3   # macOS/Linux
-   ```
-
-3. Fallback command:
-   ```bash
-   python -m namel3ss --help
-   ```
-
-Common PATH locations:
-- Windows: `C:\Users\<User>\AppData\Local\Programs\Python\PythonXY\Scripts` or `%APPDATA%\Python\PythonXY\Scripts`
-- macOS/Linux: `~/.local/bin`
-
-On first run, the browser opens the app you scaffolded with:
-
-- record-backed UI
-- deterministic actions
-- explicit AI boundaries when declared
 
 ## Templates
 
