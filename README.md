@@ -8,6 +8,16 @@ Deterministic execution with explicit AI boundaries and governed runtime.
 
 ---
 
+## Start here
+
+- [Quickstart](docs/quickstart.md)
+- [First 5 minutes](docs/first-5-minutes.md)
+- [What you can build today](docs/what-you-can-build-today.md)
+- [Stability](docs/stability.md)
+- [Limitations](resources/limitations.md)
+
+Try it in 60 seconds: [docs/quickstart.md](docs/quickstart.md).
+
 ## Get started
 
 ### Develop from source
@@ -53,6 +63,10 @@ Docker quick check:
 docker build -t namel3ss:local .
 docker run --rm namel3ss:local n3 --help
 ```
+
+## Browser Protocol
+
+Browser Protocol is defined in [docs/runtime/browser-protocol.md](docs/runtime/browser-protocol.md).
 
 ## Docker & CI guarantees
 
@@ -101,6 +115,19 @@ Runtime guarantees:
 - Safe cleanup of runtime artifacts
 
 See [docs/trust-and-governance.md](docs/trust-and-governance.md).
+
+## Language Contracts
+
+Language Contracts are defined here:
+- [docs/language/application-runtime.md](docs/language/application-runtime.md)
+- [docs/language/application-data-model.md](docs/language/application-data-model.md)
+- [docs/language/backend-capabilities.md](docs/language/backend-capabilities.md)
+- [docs/language/no-dependencies.md](docs/language/no-dependencies.md)
+- [docs/language/capability-packs.md](docs/language/capability-packs.md)
+
+## Reserved identifiers
+
+If you must use reserved identifiers, escape them with backticks and use `n3 reserved` to list them. The reserved words list is in [docs/language/reserved-words.md](docs/language/reserved-words.md).
 
 ## Documentation index
 
