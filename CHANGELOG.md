@@ -2,6 +2,22 @@
 
 No breaking changes without an explicit changelog entry.
 
+## v0.1.0a11
+### Added
+- Docker Compose improvements: configurable port, user mapping, and CI docker-build job.
+- Added `.env.example` with configuration options.
+- Added sample `app/app.ai` for Docker.
+- Added `data/` directory for runtime artifacts.
+
+### Changed
+- Simplified README Docker section with `docker compose` instructions.
+
+### Fixed
+
+### Deprecated
+
+### Removed
+
 ## v0.1.0a10
 ### Added
 
