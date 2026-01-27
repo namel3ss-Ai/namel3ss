@@ -2,10 +2,11 @@ services:
   namel3ss:
     build: .
     image: namel3ss:local
+    user: "${UID:-10001}:${GID:-10001}"
     working_dir: /workspace
     command: ["n3", "app.ai", "studio", "--host", "0.0.0.0", "--port", "8080"]
     ports:
-      - "8080:8080"
+      - "${N3_PORT:-8080}:8080"
     environment:
       N3_PERSIST_TARGET: sqlite
       N3_DB_PATH: .namel3ss/data.db

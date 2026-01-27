@@ -97,6 +97,19 @@ jobs:
       - name: Repo clean check
         run: python -m namel3ss.beta_lock.repo_clean
 
+  docker-build:
+    name: docker-build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Docker version
+        run: docker --version
+
+      - name: Build image
+        run: docker build -t namel3ss:ci .
+
   cli-install-gate:
     name: cli-install-gate
     runs-on: ${{ matrix.os }}

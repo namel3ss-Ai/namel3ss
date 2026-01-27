@@ -1,0 +1,5 @@
+spec is "1.0"
+
+page "Home":
+  title is "namel3ss"
+  text is "namel3ss is running in Docker."
