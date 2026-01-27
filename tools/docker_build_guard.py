@@ -34,6 +34,13 @@ class Violation:
     command: str
 
 
+@dataclass(frozen=True)
+class PipInstallInstruction:
+    line: int
+    command: str
+    has_local: bool
+
+
 def iter_instructions(path: Path) -> Iterable[tuple[int, str]]:
     buffer: list[str] = []
     start_line: int | None = None
@@ -88,12 +95,14 @@ def is_local_install_token(token: str) -> bool:
     return False
 
 
-def scan_dockerfile(path: Path) -> tuple[list[Violation], bool]:
+def scan_dockerfile(path: Path) -> tuple[list[Violation], bool, list[PipInstallInstruction]]:
     violations: list[Violation] = []
     local_install_found = False
+    pip_instructions: list[PipInstallInstruction] = []
     for line_no, instruction in iter_instructions(path):
         for arg_string in iter_pip_install_args(instruction):
             tokens = split_args(arg_string)
+            has_local = False
             idx = 0
             while idx < len(tokens):
                 token = tokens[idx]
@@ -105,10 +114,12 @@ def scan_dockerfile(path: Path) -> tuple[list[Violation], bool]:
                     continue
                 if is_local_install_token(token):
                     local_install_found = True
+                    has_local = True
                 if is_disallowed_token(token):
                     violations.append(Violation(line=line_no, token=token, command=instruction))
                 idx += 1
-    return violations, local_install_found
+            pip_instructions.append(PipInstallInstruction(line=line_no, command=instruction, has_local=has_local))
+    return violations, local_install_found, pip_instructions
 
 
 def main() -> int:
@@ -118,7 +129,7 @@ def main() -> int:
         print("Dockerfile not found; docker build guard skipped.")
         return 0
 
-    violations, local_install_found = scan_dockerfile(dockerfile)
+    violations, local_install_found, pip_instructions = scan_dockerfile(dockerfile)
     if violations:
         print("Docker build guard failed: Dockerfile pins namel3ss in a pip install.", file=sys.stderr)
         for violation in violations:
@@ -137,7 +148,17 @@ def main() -> int:
             "Docker build guard failed: Dockerfile must install namel3ss from the local source tree.",
             file=sys.stderr,
         )
-        print("Fix: add a pip install of the local repository (pip install .).", file=sys.stderr)
+        if pip_instructions:
+            for instruction in pip_instructions:
+                if instruction.has_local:
+                    continue
+                print(
+                    f"- Dockerfile:{instruction.line} has no local install in `{instruction.command}`",
+                    file=sys.stderr,
+                )
+        else:
+            print("- Dockerfile:1 has no pip install commands.", file=sys.stderr)
+        print("Fix: add `RUN python -m pip install --no-cache-dir .`.", file=sys.stderr)
         return 1
 
     print("Docker build guard ok.")

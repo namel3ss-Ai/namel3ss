@@ -34,11 +34,10 @@ python -m namel3ss.beta_lock.repo_clean
 ```
 
 ## Release invariants
-- Canonical order: VERSION bump → tests (CI) → tag (vX.Y.Z) → PyPI publish → Docker image → release notes.
-- VERSION is the source of truth for release artifacts; tags must match VERSION (optional leading `v`).
-- Docker images install from the local source tree; VERSION bumps alone never affect docker builds.
-- PyPI is only used during publish; Docker builds never depend on PyPI availability.
-- Each release emits a manifest artifact with version, commit, tag, PyPI hashes, and docker tag.
+- VERSION is metadata.
+- Docker builds do not depend on PyPI.
+- Publish is gated by guards.
+- Canonical release sequence: VERSION bump → tests → tag → PyPI publish → docker image → release notes.
 
 ## Guarantees
 - Deterministic outputs for identical inputs.

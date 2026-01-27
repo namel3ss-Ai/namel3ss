@@ -51,6 +51,9 @@ jobs:
       - name: Build dist
         run: python -m build
 
+      - name: Wheel install check
+        run: python tools/wheel_install_check.py --dist-dir dist
+
       - name: Upload dist artifacts
         uses: actions/upload-artifact@v4
         with:
