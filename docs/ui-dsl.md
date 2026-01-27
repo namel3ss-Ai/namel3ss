@@ -102,6 +102,9 @@ UI packs:
 ## 4.2) Upload requests
 - `upload <name>` declares intent to request a file from the user.
 - Uploads are request-only; no upload occurs until runtime bindings are provided.
+- When a file is selected, the client posts bytes to `/api/upload` and uses the returned metadata to update state.
+- Runtime records selections under `state.uploads.<name>` as a list of `{id, name, size, type, checksum}` (id is checksum).
+- Upload selection is metadata-only; ingestion runs only when explicitly triggered.
 - Optional block fields:
   - `accept is "pdf", "png", "jpg"` (list of non-empty strings)
   - `multiple is true|false` (defaults to false)

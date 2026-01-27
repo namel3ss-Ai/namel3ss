@@ -52,6 +52,8 @@ Start here:
 - [Templates](templates.md)
 - [UI DSL](ui-dsl.md)
 - [Upload requests](ui-dsl.md#upload-requests)
+- [Ingestion](runtime/ingestion.md)
+- [Retrieval](runtime/retrieval.md)
 - [UI See](ui-see.md)
 - [Reserved words and escaping](language/reserved-words.md)
 

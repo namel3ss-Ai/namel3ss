@@ -1,9 +1,7 @@
 from __future__ import annotations
-
 from pathlib import Path
 from typing import Dict, Optional
 import time
-
 from namel3ss.compatibility import validate_spec_version
 from namel3ss.config.loader import load_config
 from namel3ss.config.model import AppConfig
@@ -12,11 +10,8 @@ from namel3ss.errors.payload import build_error_from_exception, build_error_payl
 from namel3ss.ir import nodes as ir
 from namel3ss.observe import actor_summary, record_event, summarize_value
 from namel3ss.production_contract import build_run_payload
-from namel3ss.runtime.flow.ids import flow_step_id
 from namel3ss.runtime.identity.context import resolve_identity
-from namel3ss.runtime.identity.guards import GuardContext
 from namel3ss.runtime.memory.api import MemoryManager
-from namel3ss.runtime.mutation_policy import evaluate_mutation_policy_for_rule
 from namel3ss.runtime.records.service import save_record_with_errors
 from namel3ss.runtime.records.state_paths import set_state_record
 from namel3ss.runtime.run_pipeline import build_flow_payload, finalize_run_payload
@@ -24,16 +19,14 @@ from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.storage.factory import resolve_store
 from namel3ss.observability.context import ObservabilityContext
 from namel3ss.secrets import collect_secret_values
-from namel3ss.traces.schema import TraceEventType
 from namel3ss.ui.manifest import build_manifest
-
-from namel3ss.runtime.ui.actions.model import (
-    form_flow_name,
-    page_decl_for_name,
-    page_name_for_slug,
-    page_slug_from_action,
-    page_subject,
-)
+from namel3ss.runtime.ui.actions.form_policy import enforce_form_policy, submit_form_trace
+from namel3ss.runtime.ui.actions.ingestion_review import handle_ingestion_review_action
+from namel3ss.runtime.ui.actions.ingestion_run import handle_ingestion_run_action
+from namel3ss.runtime.ui.actions.ingestion_skip import handle_ingestion_skip_action
+from namel3ss.runtime.ui.actions.retrieval_run import handle_retrieval_run_action
+from namel3ss.runtime.ui.actions.upload_select import handle_upload_select_action
+from namel3ss.runtime.ui.actions.upload_replace import handle_upload_replace_action
 from namel3ss.runtime.ui.actions.validate import (
     action_payload_message,
     ensure_json_serializable,
@@ -41,6 +34,13 @@ from namel3ss.runtime.ui.actions.validate import (
     unknown_action_message,
 )
 
+_SIMPLE_ACTIONS = {
+    "ingestion_run": handle_ingestion_run_action,
+    "ingestion_review": handle_ingestion_review_action,
+    "ingestion_skip": handle_ingestion_skip_action,
+    "retrieval_run": handle_retrieval_run_action,
+    "upload_replace": handle_upload_replace_action,
+}
 
 def handle_action(
     program_ir: ir.Program,
@@ -65,7 +65,6 @@ def handle_action(
     if payload is not None and not isinstance(payload, dict):
         raise Namel3ssError(action_payload_message())
     validate_spec_version(program_ir)
-
     action_error: Exception | None = None
     resolved_config = config or load_config(
         app_path=getattr(program_ir, "app_path", None),
@@ -158,6 +157,34 @@ def handle_action(
                 if span_id:
                     obs.end_span(None, span_id, status=span_status)
                 obs.flush()
+        elif action_type == "upload_select":
+            response = handle_upload_select_action(
+                program_ir,
+                action=action,
+                action_id=action_id,
+                payload=payload or {},
+                state=working_state,
+                store=store,
+                runtime_theme=runtime_theme,
+                config=resolved_config,
+                identity=identity,
+                auth_context=auth_context,
+                secret_values=secret_values,
+            )
+        elif action_type in _SIMPLE_ACTIONS:
+            response = _handle_simple_action(
+                _SIMPLE_ACTIONS[action_type],
+                program_ir,
+                action_id=action_id,
+                payload=payload or {},
+                state=working_state,
+                store=store,
+                runtime_theme=runtime_theme,
+                config=resolved_config,
+                identity=identity,
+                auth_context=auth_context,
+                secret_values=secret_values,
+            )
         else:
             raise Namel3ssError(f"Unsupported action type '{action_type}'")
     except Exception as err:
@@ -191,6 +218,32 @@ def handle_action(
             )
     return response
 
+def _handle_simple_action(
+    handler,
+    program_ir: ir.Program,
+    *,
+    action_id: str,
+    payload: dict,
+    state: dict,
+    store: Storage,
+    runtime_theme: Optional[str],
+    config: AppConfig | None,
+    identity: dict | None,
+    auth_context: object | None,
+    secret_values: list[str] | None,
+) -> dict:
+    return handler(
+        program_ir,
+        action_id=action_id,
+        payload=payload,
+        state=state,
+        store=store,
+        runtime_theme=runtime_theme,
+        config=config,
+        identity=identity,
+        auth_context=auth_context,
+        secret_values=secret_values,
+    )
 
 def _record_engine_error(
     project_root: str | Path | None,
@@ -304,8 +357,8 @@ def _handle_submit_form(
     if not isinstance(record, str):
         raise Namel3ssError("Invalid record reference in form action")
     values = payload["values"]
-    trace = _submit_form_trace(record, values)
-    policy_trace, decision = _enforce_form_policy(
+    trace = submit_form_trace(record, values)
+    policy_trace, decision = enforce_form_policy(
         program_ir,
         manifest,
         action_id,
@@ -404,63 +457,4 @@ def _handle_submit_form(
     ensure_json_serializable(response)
     response = finalize_run_payload(response, secret_values)
     return response
-
-
-def _submit_form_trace(record: str, values: dict) -> dict:
-    fields = sorted({str(key) for key in values.keys()})
-    return {"type": "submit_form", "record": record, "ok": True, "fields": fields}
-
-
-def _enforce_form_policy(
-    program_ir: ir.Program,
-    manifest: dict,
-    action_id: str,
-    record: str,
-    payload: dict,
-    state: dict,
-    identity: dict | None,
-    auth_context: object | None,
-) -> tuple[dict, object]:
-    page_slug = page_slug_from_action(action_id)
-    page_name = page_name_for_slug(manifest, page_slug)
-    page_decl = page_decl_for_name(program_ir, page_name)
-    subject = page_subject(page_name, page_slug)
-    flow_name = form_flow_name(page_slug, record)
-    step_id = flow_step_id(flow_name, "save", 1)
-    ctx = GuardContext(
-        locals={"input": payload, "mutation": {"action": "save", "record": record}},
-        state=state,
-        identity=identity or {},
-        auth_context=auth_context,
-    )
-    decision = evaluate_mutation_policy_for_rule(
-        ctx,
-        action="save",
-        record=record,
-        subject=subject,
-        requires_expr=getattr(page_decl, "requires", None) if page_decl else None,
-        audited=False,
-    )
-    if decision.allowed:
-        entry = {
-            "type": TraceEventType.MUTATION_ALLOWED,
-            "flow_name": flow_name,
-            "step_id": step_id,
-            "record": record,
-            "action": "save",
-        }
-        return entry, decision
-    entry = {
-        "type": TraceEventType.MUTATION_BLOCKED,
-        "flow_name": flow_name,
-        "step_id": step_id,
-        "record": record,
-        "action": "save",
-        "reason_code": decision.reason_code,
-        "message": decision.message,
-        "fix_hint": decision.fix_hint,
-    }
-    return entry, decision
-
-
 __all__ = ["handle_action"]

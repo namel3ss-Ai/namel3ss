@@ -1,0 +1,7 @@
+spec is "1.0"
+
+capabilities:
+  uploads
+
+page "Ingestion":
+  upload receipt

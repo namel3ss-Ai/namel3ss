@@ -87,6 +87,19 @@ def _build_actions(manifest: dict, flow_requires: dict[str, object], identity: d
         requires_text = format_requires(requires_expr)
         evaluated = evaluate_requires(requires_expr, identity, state)
         status, reason_list = action_status(requires_text, evaluated)
+        reasons = list(reason_list)
+        if action_type == "upload_select":
+            reasons.append("upload selected (metadata only)")
+        if action_type == "ingestion_run":
+            reasons.append("ingestion run (quality gate recorded)")
+        if action_type == "ingestion_review":
+            reasons.append("ingestion review (read-only reports)")
+        if action_type == "ingestion_skip":
+            reasons.append("ingestion skip (explicit exclusion)")
+        if action_type == "retrieval_run":
+            reasons.append("retrieval run (quality-aware ordering)")
+        if action_type == "upload_replace":
+            reasons.append("upload replace (placeholder)")
         items.append(
             UIActionState(
                 id=action_id,
@@ -95,7 +108,7 @@ def _build_actions(manifest: dict, flow_requires: dict[str, object], identity: d
                 flow=flow,
                 record=record,
                 requires=requires_text,
-                reasons=reason_list,
+                reasons=reasons,
             )
         )
     return items

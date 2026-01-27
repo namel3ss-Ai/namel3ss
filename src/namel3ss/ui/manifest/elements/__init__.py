@@ -128,6 +128,7 @@ def _page_item_to_manifest(
             page_name=page_name,
             page_slug=page_slug,
             path=path,
+            taken_actions=taken_actions,
         )
     if isinstance(item, ir.FormItem):
         return views_mod.build_form_item(

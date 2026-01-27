@@ -17,6 +17,30 @@ def _link_action_id(page_slug: str, label: str) -> str:
     return f"page.{page_slug}.link.{_slugify(label)}"
 
 
+def _upload_action_id(page_slug: str, name: str) -> str:
+    return f"page.{page_slug}.upload.{_slugify(name)}"
+
+
+def _ingestion_action_id(page_slug: str, name: str) -> str:
+    return f"page.{page_slug}.upload.{_slugify(name)}.ingestion"
+
+
+def _retrieval_action_id() -> str:
+    return "app.retrieval"
+
+
+def _ingestion_review_action_id() -> str:
+    return "app.ingestion.review"
+
+
+def _ingestion_skip_action_id() -> str:
+    return "app.ingestion.skip"
+
+
+def _upload_replace_action_id() -> str:
+    return "app.upload.replace"
+
+
 def _allocate_action_id(base_id: str, element_id: str, taken: set[str]) -> str:
     if base_id not in taken:
         return base_id
@@ -69,4 +93,16 @@ def _walk_elements(elements: list[dict]) -> list[dict]:
     return collected
 
 
-__all__ = ["_button_action_id", "_form_action_id", "_link_action_id", "_wire_overlay_actions", "_allocate_action_id"]
+__all__ = [
+    "_button_action_id",
+    "_form_action_id",
+    "_link_action_id",
+    "_upload_action_id",
+    "_ingestion_action_id",
+    "_retrieval_action_id",
+    "_ingestion_review_action_id",
+    "_ingestion_skip_action_id",
+    "_upload_replace_action_id",
+    "_wire_overlay_actions",
+    "_allocate_action_id",
+]

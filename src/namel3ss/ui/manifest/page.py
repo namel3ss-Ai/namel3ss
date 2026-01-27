@@ -23,7 +23,14 @@ from namel3ss.schema.evolution import (
     append_schema_evolution_warnings,
     enforce_runtime_schema_compatibility,
 )
-from namel3ss.ui.manifest.actions import _wire_overlay_actions
+from namel3ss.ui.manifest.actions import (
+    _allocate_action_id,
+    _ingestion_review_action_id,
+    _ingestion_skip_action_id,
+    _retrieval_action_id,
+    _upload_replace_action_id,
+    _wire_overlay_actions,
+)
 from namel3ss.ui.manifest.canonical import _slugify
 from namel3ss.ui.manifest.elements import _build_children
 from namel3ss.ui.manifest.state_defaults import StateContext, StateDefaults
@@ -149,6 +156,11 @@ def build_manifest(
     append_copy_warnings(pages, warnings)
     append_story_icon_warnings(pages, warnings)
     append_consistency_warnings(pages, warnings)
+    if "uploads" in (getattr(program, "capabilities", ()) or ()):
+        _add_system_action(actions, taken_actions, _retrieval_action_id(), "retrieval_run")
+        _add_system_action(actions, taken_actions, _ingestion_review_action_id(), "ingestion_review")
+        _add_system_action(actions, taken_actions, _ingestion_skip_action_id(), "ingestion_skip")
+        _add_system_action(actions, taken_actions, _upload_replace_action_id(), "upload_replace")
     persistence = _resolve_persistence(store)
     if actions:
         actions = {action_id: actions[action_id] for action_id in sorted(actions)}
@@ -200,6 +212,14 @@ def _resolve_persistence(store: Storage | None) -> dict:
             "schema_version": meta.get("schema_version"),
         }
     return asdict(default_meta)
+
+
+def _add_system_action(actions: Dict[str, dict], taken_actions: set[str], base_id: str, action_type: str) -> None:
+    action_id = _allocate_action_id(base_id, f"system.{action_type}", taken_actions)
+    if action_id in actions:
+        return
+    actions[action_id] = {"id": action_id, "type": action_type}
+    taken_actions.add(action_id)
 
 
 __all__ = ["build_manifest", "_build_children", "_wire_overlay_actions", "_slugify"]

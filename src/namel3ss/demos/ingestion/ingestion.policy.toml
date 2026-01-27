@@ -1,0 +1,11 @@
+[ingestion]
+run = true
+review = ["ingestion.review"]
+override = ["ingestion.override"]
+skip = ["ingestion.skip"]
+
+[retrieval]
+include_warn = ["retrieval.include_warn"]
+
+[upload]
+replace = ["upload.replace"]

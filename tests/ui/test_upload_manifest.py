@@ -22,6 +22,28 @@ page "home":
     assert upload["multiple"] is False
 
 
+def test_upload_manifest_includes_action():
+    source = '''
+spec is "1.0"
+
+page "home":
+  upload receipt
+'''.lstrip()
+    manifest = build_manifest(lower_ir_program(source), state={}, store=None)
+    upload = manifest["pages"][0]["elements"][0]
+    action_id = upload.get("action_id")
+    assert action_id
+    assert upload.get("id") == action_id
+    action = manifest["actions"][action_id]
+    assert action["type"] == "upload_select"
+    assert action["name"] == "receipt"
+    assert action["multiple"] is False
+    ingestion_actions = [
+        entry for entry in manifest["actions"].values() if entry.get("type") == "ingestion_run"
+    ]
+    assert ingestion_actions
+
+
 def test_upload_manifest_accept_and_multiple():
     source = '''
 spec is "1.0"

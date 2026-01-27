@@ -7,7 +7,7 @@ from namel3ss.ir.lowering.page_list import _default_list_primary, _list_id_field
 from namel3ss.runtime.records.service import build_record_scope
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.schema import records as schema
-from namel3ss.ui.manifest.actions import _allocate_action_id, _form_action_id
+from namel3ss.ui.manifest.actions import _allocate_action_id, _form_action_id, _ingestion_action_id, _upload_action_id
 from namel3ss.ui.manifest.canonical import _element_id
 from namel3ss.ui.manifest.origin import _attach_origin
 from namel3ss.ui.manifest_chart import _build_chart_element
@@ -92,18 +92,36 @@ def build_upload_item(
     page_name: str,
     page_slug: str,
     path: List[int],
+    taken_actions: set[str],
 ) -> tuple[dict, Dict[str, dict]]:
     index = path[-1] if path else 0
     element_id = _element_id(page_slug, "upload", path)
+    base_action_id = _upload_action_id(page_slug, item.name)
+    action_id = _allocate_action_id(base_action_id, element_id, taken_actions)
+    ingestion_base = _ingestion_action_id(page_slug, item.name)
+    ingestion_action_id = _allocate_action_id(ingestion_base, element_id, taken_actions)
     base = _base_element(element_id, page_name, page_slug, index, item)
+    multiple = bool(item.multiple)
     element = {
         "type": "upload",
         "name": item.name,
         "accept": list(item.accept or []),
-        "multiple": bool(item.multiple),
+        "multiple": multiple,
+        "id": action_id,
+        "action_id": action_id,
         **base,
     }
-    return _attach_origin(element, item), {}
+    action_entry = {
+        "id": action_id,
+        "type": "upload_select",
+        "name": item.name,
+        "multiple": multiple,
+    }
+    ingestion_entry = {
+        "id": ingestion_action_id,
+        "type": "ingestion_run",
+    }
+    return _attach_origin(element, item), {action_id: action_entry, ingestion_action_id: ingestion_entry}
 
 
 def build_form_item(
