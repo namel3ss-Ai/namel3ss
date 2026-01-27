@@ -41,6 +41,7 @@ def handle_retrieval_run_action(
     policy = load_ingestion_policy(
         project_root=getattr(program_ir, "project_root", None),
         app_path=getattr(program_ir, "app_path", None),
+        policy_decl=getattr(program_ir, "policy", None),
     )
     decision = evaluate_ingestion_policy(policy, ACTION_RETRIEVAL_INCLUDE_WARN, identity)
     result = run_retrieval(

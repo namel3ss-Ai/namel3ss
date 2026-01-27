@@ -29,3 +29,5 @@ Results include:
 Blocked content is always excluded, even if it is the only match. Warned content is excluded unless `retrieval.include_warn` is allowed by policy.
 
 Retrieval reflects the latest ingestion report; re-running ingestion or skipping an upload immediately updates what can be returned.
+
+Warned retrieval permissions can be declared in the `policy` block of `app.ai` (legacy `ingestion.policy.toml` is still supported).

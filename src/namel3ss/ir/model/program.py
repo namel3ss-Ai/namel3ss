@@ -10,6 +10,7 @@ from namel3ss.ir.model.expressions import Expression
 from namel3ss.ir.model.ai import AIDecl
 from namel3ss.ir.model.agents import AgentDecl, AgentTeam
 from namel3ss.ir.model.jobs import JobDecl
+from namel3ss.ir.model.policy import PolicyDecl
 from namel3ss.ir.model.tools import ToolDecl
 from namel3ss.ir.functions.model import FunctionDecl
 from namel3ss.schema import records as schema
@@ -45,6 +46,7 @@ class Program(Node):
     ais: Dict[str, AIDecl]
     tools: Dict[str, ToolDecl]
     agents: Dict[str, AgentDecl]
+    policy: PolicyDecl | None = None
     agent_team: AgentTeam | None = None
     identity: "IdentitySchema | None" = None
     state_defaults: dict | None = None

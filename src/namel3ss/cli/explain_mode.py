@@ -13,6 +13,7 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.module_loader import load_project
 from namel3ss.proofs import build_engine_proof
 from namel3ss.runtime.capabilities.report import collect_tool_reports
+from namel3ss.ingestion.policy_inspection import inspect_ingestion_policy
 from namel3ss.utils.json_tools import dumps_pretty
 
 
@@ -128,6 +129,11 @@ def _assemble_explain_payload(app_path, active: dict, proof: dict) -> dict:
         or {"target": config.persistence.target, "descriptor": None},
         "access_rules": proof.get("identity", {}).get("requires", {}),
         "tenant_scoping": proof.get("identity", {}).get("tenant_scoping", {}),
+        "policy": inspect_ingestion_policy(
+            getattr(project.program, "project_root", None),
+            getattr(project.program, "app_path", None),
+            policy_decl=getattr(project.program, "policy", None),
+        ),
         "capsules": _summarize_capsules(proof),
         "governance": proof.get("governance") or _load_governance(project_root),
         "tools": collect_tool_reports(

@@ -18,8 +18,29 @@ This is the authoritative description of the UI DSL. It is semantic and explicit
 - `ai "name":`
 - `tool "name":`
 - `ui_pack "name":`
+- `policy`
 Rule: use `keyword "name"`; never `keyword is "name"`.
 - Reserved words may only be used as identifiers when escaped with backticks (for example `title`).
+
+## 2.1) Policy declarations
+Policy is a declarative, top-level block in `app.ai` that controls ingestion/review/retrieval actions. Order is irrelevant and no expressions are allowed.
+
+Example:
+```
+policy
+  allow ingestion.run
+  allow ingestion.review
+  require ingestion.override with ingestion.override
+  require ingestion.skip with ingestion.skip
+  require retrieval.include_warn with retrieval.include_warn
+  require upload.replace with upload.replace
+```
+
+Rules:
+- Each policy action may appear only once.
+- `allow` and `deny` take only the action name.
+- `require` must include a `with` list of one or more permission names.
+- Allowed actions: `ingestion.run`, `ingestion.review`, `ingestion.override`, `ingestion.skip`, `retrieval.include_warn`, `upload.replace`.
 
 ## 3) Allowed UI elements
 Structural:

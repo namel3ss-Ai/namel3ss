@@ -6,37 +6,24 @@ from pathlib import Path
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.ir.model.policy import PolicyDecl as PolicyDeclIR, PolicyRule as PolicyRuleIR
+from namel3ss.lang.policy import (
+    ACTION_INGESTION_OVERRIDE,
+    ACTION_INGESTION_REVIEW,
+    ACTION_INGESTION_RUN,
+    ACTION_INGESTION_SKIP,
+    ACTION_RETRIEVAL_INCLUDE_WARN,
+    ACTION_UPLOAD_REPLACE,
+    POLICY_ACTION_LABELS,
+    POLICY_ACTION_TABLE,
+    POLICY_SECTION_KEYS,
+)
 from namel3ss.runtime.auth.permission_helpers import normalize_permissions, normalize_roles
 from namel3ss.runtime.auth.trace_events import authorization_check_event
 from namel3ss.runtime.persistence_paths import resolve_project_root
 
 
 POLICY_FILENAME = "ingestion.policy.toml"
-
-ACTION_INGESTION_RUN = "ingestion.run"
-ACTION_INGESTION_REVIEW = "ingestion.review"
-ACTION_INGESTION_OVERRIDE = "ingestion.override"
-ACTION_INGESTION_SKIP = "ingestion.skip"
-ACTION_RETRIEVAL_INCLUDE_WARN = "retrieval.include_warn"
-ACTION_UPLOAD_REPLACE = "upload.replace"
-
-_ACTION_TABLE = {
-    ACTION_INGESTION_RUN: ("ingestion", "run"),
-    ACTION_INGESTION_REVIEW: ("ingestion", "review"),
-    ACTION_INGESTION_OVERRIDE: ("ingestion", "override"),
-    ACTION_INGESTION_SKIP: ("ingestion", "skip"),
-    ACTION_RETRIEVAL_INCLUDE_WARN: ("retrieval", "include_warn"),
-    ACTION_UPLOAD_REPLACE: ("upload", "replace"),
-}
-
-_ACTION_LABELS = {
-    ACTION_INGESTION_RUN: "Ingestion run",
-    ACTION_INGESTION_REVIEW: "Ingestion review",
-    ACTION_INGESTION_OVERRIDE: "Ingestion override",
-    ACTION_INGESTION_SKIP: "Ingestion skip",
-    ACTION_RETRIEVAL_INCLUDE_WARN: "Warn retrieval",
-    ACTION_UPLOAD_REPLACE: "Upload replace",
-}
 
 
 def _normalize_permission_list(values: list[str] | tuple[str, ...]) -> tuple[str, ...]:
@@ -93,32 +80,27 @@ DEFAULT_RULES = {
     ACTION_UPLOAD_REPLACE: PolicyRule.require([ACTION_UPLOAD_REPLACE]),
 }
 
-_SECTION_KEYS = {
-    "ingestion": {
-        "run": ACTION_INGESTION_RUN,
-        "review": ACTION_INGESTION_REVIEW,
-        "override": ACTION_INGESTION_OVERRIDE,
-        "skip": ACTION_INGESTION_SKIP,
-    },
-    "retrieval": {
-        "include_warn": ACTION_RETRIEVAL_INCLUDE_WARN,
-    },
-    "upload": {
-        "replace": ACTION_UPLOAD_REPLACE,
-    },
-}
 
 
-def load_ingestion_policy(project_root: str | Path | None, app_path: str | Path | None) -> IngestionPolicy:
+def load_ingestion_policy(
+    project_root: str | Path | None,
+    app_path: str | Path | None,
+    *,
+    policy_decl: PolicyDeclIR | None = None,
+) -> IngestionPolicy:
     root = resolve_project_root(project_root, app_path)
-    if root is None:
-        return IngestionPolicy(rules=dict(DEFAULT_RULES), source="default")
-    path = root / POLICY_FILENAME
-    if not path.exists():
-        return IngestionPolicy(rules=dict(DEFAULT_RULES), source="default")
-    data = _parse_policy_toml(path)
-    rules = _rules_from_data(data)
-    return IngestionPolicy(rules=rules, source=_policy_source(path, root))
+    rules = dict(DEFAULT_RULES)
+    source = "default"
+    if root is not None:
+        path = root / POLICY_FILENAME
+        if path.exists():
+            data = _parse_policy_toml(path)
+            rules = _rules_from_data(data)
+            source = _policy_source(path, root)
+    if policy_decl is not None:
+        rules = _apply_policy_decl(rules, policy_decl)
+        source = _policy_decl_source(app_path)
+    return IngestionPolicy(rules=rules, source=source)
 
 
 def evaluate_ingestion_policy(
@@ -180,30 +162,31 @@ def policy_trace(action: str, decision: PolicyDecision) -> dict:
 
 
 def policy_error(action: str, decision: PolicyDecision, *, mode: str | None = None) -> Namel3ssError:
-    label = _ACTION_LABELS.get(action, action)
+    label = POLICY_ACTION_LABELS.get(action, action)
     if mode:
         label = f"{label} ({mode})"
+    target, example_kind = _policy_fix_target(decision.source)
     if decision.reason == "permission_missing" and decision.required_permissions:
         required = ", ".join(decision.required_permissions)
         message = build_guidance_message(
             what=f"{label} is not permitted.",
             why=f"Policy requires permission {required}.",
-            fix=f"Provide an identity with {required} or allow {action} in {POLICY_FILENAME}.",
-            example=_policy_example(action, permissions=decision.required_permissions),
+            fix=f"Provide an identity with {required} or allow {action} in {target}.",
+            example=_policy_example(action, permissions=decision.required_permissions, kind=example_kind),
         )
     elif decision.reason == "policy_missing":
         message = build_guidance_message(
             what=f"{label} is not permitted.",
             why="Policy does not define this action.",
-            fix=f"Add a rule for {action} in {POLICY_FILENAME}.",
-            example=_policy_example(action, allow=True),
+            fix=f"Add a rule for {action} in {target}.",
+            example=_policy_example(action, allow=True, kind=example_kind),
         )
     else:
         message = build_guidance_message(
             what=f"{label} is not permitted.",
             why="Policy denies this action.",
-            fix=f"Allow {action} in {POLICY_FILENAME}.",
-            example=_policy_example(action, allow=True),
+            fix=f"Allow {action} in {target}.",
+            example=_policy_example(action, allow=True, kind=example_kind),
         )
     details = {
         "category": "policy",
@@ -220,8 +203,20 @@ def _policy_example(
     *,
     allow: bool | None = None,
     permissions: tuple[str, ...] | None = None,
+    kind: str = "toml",
 ) -> str:
-    section, key = _ACTION_TABLE.get(action, ("ingestion", "run"))
+    if kind == "block":
+        return _policy_example_block(action, allow=allow, permissions=permissions)
+    return _policy_example_toml(action, allow=allow, permissions=permissions)
+
+
+def _policy_example_toml(
+    action: str,
+    *,
+    allow: bool | None = None,
+    permissions: tuple[str, ...] | None = None,
+) -> str:
+    section, key = POLICY_ACTION_TABLE.get(action, ("ingestion", "run"))
     if permissions:
         value = json.dumps(list(permissions))
     elif allow is True:
@@ -229,6 +224,28 @@ def _policy_example(
     else:
         value = "false"
     return f"[{section}]\n{key} = {value}"
+
+
+def _policy_example_block(
+    action: str,
+    *,
+    allow: bool | None = None,
+    permissions: tuple[str, ...] | None = None,
+) -> str:
+    if permissions:
+        joined = ", ".join(permissions)
+        return f"policy\n  require {action} with {joined}"
+    if allow is True:
+        return f"policy\n  allow {action}"
+    return f"policy\n  deny {action}"
+
+
+def _policy_fix_target(source: str | None) -> tuple[str, str]:
+    if source and source.endswith(POLICY_FILENAME):
+        return source, "toml"
+    if source and source.endswith(".ai"):
+        return f"the policy block in {source}", "block"
+    return "the policy block", "block"
 
 
 def _policy_source(path: Path, root: Path) -> str:
@@ -239,14 +256,38 @@ def _policy_source(path: Path, root: Path) -> str:
         return path.name or "policy"
 
 
+def _policy_decl_source(app_path: str | Path | None) -> str:
+    if not app_path:
+        return "policy"
+    try:
+        return Path(app_path).name or "policy"
+    except Exception:
+        return "policy"
+
+
+def _apply_policy_decl(rules: dict[str, PolicyRule], policy_decl: PolicyDeclIR) -> dict[str, PolicyRule]:
+    updated = dict(rules)
+    for rule in policy_decl.rules:
+        updated[rule.action] = _rule_from_decl(rule)
+    return updated
+
+
+def _rule_from_decl(rule: PolicyRuleIR) -> PolicyRule:
+    if rule.mode == "allow":
+        return PolicyRule.allow()
+    if rule.mode == "deny":
+        return PolicyRule.deny()
+    return PolicyRule.require(rule.permissions)
+
+
 def _rules_from_data(data: dict) -> dict[str, PolicyRule]:
     rules = dict(DEFAULT_RULES)
     if not isinstance(data, dict):
         return rules
-    unknown_sections = [key for key in data.keys() if key not in _SECTION_KEYS]
+    unknown_sections = [key for key in data.keys() if key not in POLICY_SECTION_KEYS]
     if unknown_sections:
         raise Namel3ssError(_unknown_section_message(unknown_sections[0]))
-    for section, action_map in _SECTION_KEYS.items():
+    for section, action_map in POLICY_SECTION_KEYS.items():
         section_data = data.get(section)
         if section_data is None:
             continue

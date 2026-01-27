@@ -127,7 +127,7 @@ enqueue
 ## Grammar Surfaces
 
 Top-level declarations (`src/namel3ss/parser/grammar_table.py`):
-- `spec`, `define` (function), `use`, `capsule`, `identity`, `app`, `capabilities`, `packs`, `foreign`, `tool`,
+- `spec`, `define` (function), `use`, `capsule`, `identity`, `app`, `capabilities`, `policy`, `packs`, `foreign`, `tool`,
   `agent`, `team of agents`, `ai`, `record`, `flow`, `job`, `page`, `ui`, `ui_pack`.
 
 Statements (`src/namel3ss/parser/grammar_table.py`):

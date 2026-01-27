@@ -31,6 +31,7 @@ def lower_program(program: ast.Program) -> ast.Program:
         uses=list(program.uses),
         capsule=program.capsule,
         identity=_lower_identity(program.identity) if program.identity else None,
+        policy=_lower_policy(program.policy) if program.policy else None,
         line=program.line,
         column=program.column,
     )
@@ -196,6 +197,24 @@ def _lower_identity(identity: ast.IdentityDecl) -> ast.IdentityDecl:
         trust_levels=identity.trust_levels,
         line=identity.line,
         column=identity.column,
+    )
+
+
+def _lower_policy(policy: ast.PolicyDecl) -> ast.PolicyDecl:
+    return ast.PolicyDecl(
+        rules=[_lower_policy_rule(rule) for rule in policy.rules],
+        line=policy.line,
+        column=policy.column,
+    )
+
+
+def _lower_policy_rule(rule: ast.PolicyRuleDecl) -> ast.PolicyRuleDecl:
+    return ast.PolicyRuleDecl(
+        action=rule.action,
+        mode=rule.mode,
+        permissions=list(rule.permissions),
+        line=rule.line,
+        column=rule.column,
     )
 
 

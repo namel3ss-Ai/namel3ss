@@ -3,5 +3,12 @@ spec is "1.0"
 capabilities:
   uploads
 
+policy
+  allow ingestion.run
+  require ingestion.review with ingestion.review
+
+flow "status":
+  return "ready"
+
 page "Ingestion":
   upload receipt

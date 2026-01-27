@@ -57,6 +57,7 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
     from namel3ss.parser.decl.capsule import parse_capsule_decl
     from namel3ss.parser.decl.capabilities import parse_capabilities
     from namel3ss.parser.decl.packs import parse_packs
+    from namel3ss.parser.decl.policy import parse_policy_decl
     from namel3ss.parser.decl.flow import parse_flow
     from namel3ss.parser.decl.job import parse_job
     from namel3ss.parser.decl.foreign import parse_foreign_decl
@@ -78,6 +79,7 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
         TopLevelRule("identity", "IDENT", parse_identity, token_value="identity"),
         TopLevelRule("app", "APP", parse_app),
         TopLevelRule("capabilities", "CAPABILITIES", parse_capabilities),
+        TopLevelRule("policy", "IDENT", parse_policy_decl, token_value="policy"),
         TopLevelRule("packs", "IDENT", parse_packs, token_value="packs"),
         TopLevelRule("foreign", "IDENT", parse_foreign_decl, token_value="foreign"),
         TopLevelRule("tool", "TOOL", parse_tool),

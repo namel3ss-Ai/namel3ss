@@ -24,6 +24,8 @@ def _to_data(value: Any, *, field_name: str | None = None) -> Any:
                 continue
             if field.name == "state_defaults" and field_value is None:
                 continue
+            if field.name == "policy" and field_value is None:
+                continue
             if field.name == "steps" and not field_value:
                 continue
             if field.name == "declarative" and not field_value:

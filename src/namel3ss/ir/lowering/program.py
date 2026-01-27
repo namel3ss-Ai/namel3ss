@@ -9,6 +9,7 @@ from namel3ss.ir.lowering.agents import _lower_agent_team, _lower_agents
 from namel3ss.ir.lowering.ai import _lower_ai_decls
 from namel3ss.ir.lowering.flow import lower_flow
 from namel3ss.ir.lowering.jobs import lower_jobs
+from namel3ss.ir.lowering.policy import lower_policy
 from namel3ss.flow_contract import validate_declarative_flows, validate_flow_names
 from namel3ss.ir.functions.lowering import lower_functions
 from namel3ss.ir.lowering.identity import _lower_identity
@@ -105,6 +106,7 @@ def lower_program(program: ast.Program) -> Program:
         ais=ai_map,
         tools=tool_map,
         agents=agent_map,
+        policy=lower_policy(getattr(program, "policy", None)),
         agent_team=agent_team,
         identity=identity_schema,
         state_defaults=getattr(program, "state_defaults", None),

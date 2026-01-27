@@ -106,3 +106,61 @@ page "home":
     outcomes = {entry.get("subject"): entry.get("outcome") for entry in traces}
     assert outcomes.get("policy:ingestion.run") == "allowed"
     assert outcomes.get("policy:ingestion.override") == "denied"
+
+
+def test_declared_policy_denies_ingestion_review_without_permission(tmp_path: Path) -> None:
+    source = '''
+spec is "1.0"
+
+capabilities:
+  uploads
+
+policy
+  require ingestion.review with ingestion.review
+
+page "home":
+  upload receipt
+'''.lstrip()
+    app_path = tmp_path / "app.ai"
+    app_path.write_text(source, encoding="utf-8")
+    program = lower_ir_program(source)
+    program.app_path = app_path.as_posix()
+    program.project_root = str(tmp_path)
+    review_action = _action_id(program, "ingestion_review")
+    response = handle_action(
+        program,
+        action_id=review_action,
+        payload={},
+        state={},
+        store=MemoryStore(),
+        identity={},
+    )
+    assert response.get("ok") is False
+    assert response.get("kind") == "policy"
+
+
+def test_policy_defaults_apply_without_block(tmp_path: Path) -> None:
+    source = '''
+spec is "1.0"
+
+capabilities:
+  uploads
+
+page "home":
+  upload receipt
+'''.lstrip()
+    app_path = tmp_path / "app.ai"
+    app_path.write_text(source, encoding="utf-8")
+    program = lower_ir_program(source)
+    program.app_path = app_path.as_posix()
+    program.project_root = str(tmp_path)
+    review_action = _action_id(program, "ingestion_review")
+    response = handle_action(
+        program,
+        action_id=review_action,
+        payload={},
+        state={},
+        store=MemoryStore(),
+        identity={},
+    )
+    assert response.get("ok") is True

@@ -21,6 +21,7 @@ def run_retrieval(
     secret_values: list[str] | None = None,
     identity: dict | None = None,
     policy_decision: PolicyDecision | None = None,
+    policy_decl: object | None = None,
 ) -> dict:
     if not isinstance(state, dict):
         raise Namel3ssError(_state_type_message())
@@ -64,6 +65,7 @@ def run_retrieval(
         project_root=project_root,
         app_path=app_path,
         identity=identity,
+        policy_decl=policy_decl,
     )
     warn_allowed = bool(decision.allowed)
     excluded_warn = 0
@@ -138,8 +140,9 @@ def _resolve_warn_policy(
     project_root: str | None,
     app_path: str | None,
     identity: dict | None,
+    policy_decl: object | None,
 ) -> PolicyDecision:
-    policy = load_ingestion_policy(project_root, app_path)
+    policy = load_ingestion_policy(project_root, app_path, policy_decl=policy_decl)
     return evaluate_ingestion_policy(policy, ACTION_RETRIEVAL_INCLUDE_WARN, identity)
 
 

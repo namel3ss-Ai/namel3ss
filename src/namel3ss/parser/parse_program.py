@@ -19,6 +19,7 @@ def parse_program(parser) -> ast.Program:
     ui_line = None
     ui_column = None
     capabilities: list[str] = []
+    policy: ast.PolicyDecl | None = None
     packs: list[str] = []
     packs_declared = False
     records: List[ast.RecordDecl] = []
@@ -147,6 +148,20 @@ def parse_program(parser) -> ast.Program:
             )
         if rule.name == "app":
             app_theme, app_line, app_column, theme_tokens, theme_preference = rule.parse(parser)
+            continue
+        if rule.name == "policy":
+            if policy is not None:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Policy is already declared.",
+                        why="The policy block is global and must appear only once.",
+                        fix="Remove duplicate policy blocks and keep a single block in app.ai.",
+                        example="policy\n  allow ingestion.run",
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            policy = rule.parse(parser)
             continue
         if rule.name == "capabilities":
             if capabilities:
@@ -278,6 +293,7 @@ def parse_program(parser) -> ast.Program:
         uses=uses,
         capsule=capsule,
         identity=identity,
+        policy=policy,
         line=None,
         column=None,
     )

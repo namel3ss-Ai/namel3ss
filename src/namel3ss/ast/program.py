@@ -8,6 +8,7 @@ from namel3ss.ast.jobs import JobDecl
 from namel3ss.ast.modules import CapsuleDecl, UseDecl
 from namel3ss.ast.expressions import Expression
 from namel3ss.ast.identity import IdentityDecl
+from namel3ss.ast.policy import PolicyDecl
 from namel3ss.ast.ui_packs import UIPackDecl
 if TYPE_CHECKING:  # pragma: no cover - typing-only
     from namel3ss.ast.flow_steps import FlowStep
@@ -46,6 +47,7 @@ class Program(Node):
     ui_packs: List[UIPackDecl]
     uses: List[UseDecl]
     capsule: Optional[CapsuleDecl]
+    policy: PolicyDecl | None = None
     agent_team: "AgentTeamDecl | None" = None
     identity: Optional[IdentityDecl] = None
     state_defaults: dict | None = None

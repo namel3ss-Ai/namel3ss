@@ -96,6 +96,7 @@ from namel3ss.ast.pages import (
     TextItem,
     TitleItem,
 )
+from namel3ss.ast.policy import PolicyDecl, PolicyRuleDecl
 from namel3ss.ast.ui_packs import UIPackDecl, UIPackFragment
 from namel3ss.ast.program import Flow, Program
 from namel3ss.ast.identity import IdentityDecl
@@ -263,4 +264,6 @@ __all__ = [
     "UseDecl",
     "CapsuleExport",
     "CapsuleDecl",
+    "PolicyDecl",
+    "PolicyRuleDecl",
 ]

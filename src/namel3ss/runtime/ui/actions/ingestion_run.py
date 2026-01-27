@@ -44,6 +44,7 @@ def handle_ingestion_run_action(
     policy = load_ingestion_policy(
         project_root=getattr(program_ir, "project_root", None),
         app_path=getattr(program_ir, "app_path", None),
+        policy_decl=getattr(program_ir, "policy", None),
     )
     decision = evaluate_ingestion_policy(policy, ACTION_INGESTION_RUN, identity)
     traces = [policy_trace(ACTION_INGESTION_RUN, decision)]

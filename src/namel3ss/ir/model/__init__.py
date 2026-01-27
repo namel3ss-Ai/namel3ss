@@ -1,5 +1,6 @@
 from namel3ss.ir.model.base import Expression, Node, Statement
 from namel3ss.ir.model.program import Flow, Program
+from namel3ss.ir.model.policy import PolicyDecl, PolicyRule
 from namel3ss.ir.model.jobs import JobDecl
 from namel3ss.ir.model.flow_steps import (
     FlowCallForeign,
@@ -130,6 +131,8 @@ __all__ = [
     "Statement",
     "Flow",
     "Program",
+    "PolicyDecl",
+    "PolicyRule",
     "JobDecl",
     "FlowCallForeign",
     "ForEach",

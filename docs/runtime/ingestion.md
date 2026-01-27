@@ -64,26 +64,22 @@ Ingestion reports are inspectable and read-only until a user takes an explicit a
 No ingestion retries or overrides happen automatically. Indexing only changes when an explicit action is executed.
 
 ## Policy and permissions
-Ingestion actions are gated by a deterministic policy file stored next to the app:
+Ingestion actions are gated by a declarative policy block in `app.ai`:
 
 ```
-ingestion.policy.toml
+policy
+  allow ingestion.run
+  allow ingestion.review
+  require ingestion.override with ingestion.override
+  require ingestion.skip with ingestion.skip
+  require retrieval.include_warn with retrieval.include_warn
+  require upload.replace with upload.replace
 ```
 
-Policy values are booleans or permission lists. Example:
+Rules are `allow`, `deny`, or `require` (with explicit permission names). Order is irrelevant and no expressions are allowed.
 
-```
-[ingestion]
-run = true
-review = true
-override = ["ingestion.override"]
-skip = ["ingestion.skip"]
+If the policy block is omitted, defaults apply: `ingestion_run` and `ingestion_review` are allowed, while overrides, skips, warned retrieval, and upload replacement require explicit permissions. Denied actions return a policy error and perform no state changes.
 
-[retrieval]
-include_warn = ["retrieval.include_warn"]
+Blocked content is never retrievable, regardless of policy.
 
-[upload]
-replace = ["upload.replace"]
-```
-
-Default policy allows `ingestion_run` and `ingestion_review`. It requires explicit permissions for overrides, skips, warned retrieval, and upload replacement. Denied actions return a policy error and perform no state changes.
+The legacy `ingestion.policy.toml` file is still supported; app policy overrides it only for actions explicitly declared in the policy block.

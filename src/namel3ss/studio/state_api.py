@@ -8,6 +8,7 @@ from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
+from namel3ss.ingestion.policy_inspection import inspect_ingestion_policy
 from namel3ss.module_loader import load_project
 from namel3ss.runtime.browser_state import records_snapshot
 from namel3ss.studio.session import SessionState
@@ -30,6 +31,11 @@ def get_state_payload(source: str, session: SessionState | None, app_path: str |
             "ok": True,
             "state": _state_snapshot(session.state),
             "records": records_snapshot(program_ir, store, config),
+            "policy": inspect_ingestion_policy(
+                getattr(program_ir, "project_root", None),
+                getattr(program_ir, "app_path", None),
+                policy_decl=getattr(program_ir, "policy", None),
+            ),
         }
         if session.data_effects:
             payload["effects"] = session.data_effects
