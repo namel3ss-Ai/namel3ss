@@ -67,6 +67,7 @@ docker run --rm namel3ss:local n3 --help
 ## Browser Protocol
 
 Browser Protocol is defined in [docs/runtime/browser-protocol.md](docs/runtime/browser-protocol.md).
+<!-- docs\runtime\browser-protocol.md -->
 
 ## Docker & CI guarantees
 
@@ -124,6 +125,13 @@ Language Contracts are defined here:
 - [docs/language/backend-capabilities.md](docs/language/backend-capabilities.md)
 - [docs/language/no-dependencies.md](docs/language/no-dependencies.md)
 - [docs/language/capability-packs.md](docs/language/capability-packs.md)
+<!--
+docs\language\application-runtime.md
+docs\language\application-data-model.md
+docs\language\backend-capabilities.md
+docs\language\no-dependencies.md
+docs\language\capability-packs.md
+-->
 
 ## Reserved identifiers
 
