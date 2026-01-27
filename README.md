@@ -118,6 +118,32 @@ Or via pip:
 python -m pip install -U namel3ss
 ```
 
+### Docker (Official)
+
+Docker is the official runtime wrapper. Same grammar, same CLI, same guarantees. It is a transport, not a new runtime. The Dockerfile pins to `VERSION` for deterministic installs.
+
+Build the official image:
+
+```bash
+docker build -t namel3ss .
+```
+
+Run the CLI (no alternate entrypoint):
+
+```bash
+docker run --rm namel3ss n3 --help
+```
+
+Run a mounted app (app + data volume):
+
+```bash
+docker run --rm -v "$PWD:/workspace" -v "$PWD/.namel3ss:/workspace/.namel3ss" namel3ss n3 app.ai check
+```
+
+Optional: `docker-compose.yml` provides a single-service example with a commented Postgres block.
+
+Use Docker for deployment and CI when you want a fixed runtime image. Use pipx/pip for local development and quick CLI access.
+
 ### Verify installation
 
 ```bash

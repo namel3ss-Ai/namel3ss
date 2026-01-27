@@ -1,0 +1,28 @@
+services:
+  namel3ss:
+    build: .
+    image: namel3ss:local
+    working_dir: /workspace
+    command: ["n3", "app.ai", "studio", "--host", "0.0.0.0", "--port", "8080"]
+    ports:
+      - "8080:8080"
+    environment:
+      N3_PERSIST_TARGET: sqlite
+      N3_DB_PATH: .namel3ss/data.db
+      # N3_DATABASE_URL: postgres://namel3ss:${POSTGRES_PASSWORD}@db:5432/namel3ss
+      # OPENAI_API_KEY: ${OPENAI_API_KEY}
+    volumes:
+      - ./app:/workspace
+      - ./data:/workspace/.namel3ss
+
+  # db:
+  #   image: postgres:16-alpine
+  #   environment:
+  #     POSTGRES_DB: namel3ss
+  #     POSTGRES_USER: namel3ss
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+
+# volumes:
+#   postgres_data:
