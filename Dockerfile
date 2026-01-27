@@ -3,11 +3,19 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# Install the language runtime via pip (pinned to VERSION).
+# Keep VERSION available as build metadata (do not use it to pin PyPI installs).
 COPY VERSION /tmp/VERSION
-RUN python -m pip install --no-cache-dir "namel3ss==$(cat /tmp/VERSION)"
 
-# Copy only the icon registry into a temporary build context.
+# Install the runtime from the local source tree for CI-safe builds.
+WORKDIR /tmp/namel3ss-src
+COPY pyproject.toml README.md LICENSE MANIFEST.in CHANGELOG.md VERSION /tmp/namel3ss-src/
+COPY src /tmp/namel3ss-src/src
+COPY resources /tmp/namel3ss-src/resources
+RUN python -m pip install --no-cache-dir . \
+    && rm -rf /tmp/namel3ss-src
+WORKDIR /
+
+# Copy the icon registry into a temporary build context.
 COPY resources/icons /tmp/namel3ss-icons
 
 # Install icons deterministically into the runtime-resolved location.

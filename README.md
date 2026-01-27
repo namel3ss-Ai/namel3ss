@@ -128,6 +128,7 @@ docker compose up --build
 Open http://localhost:8080 (app/app.ai is included by default).
 Change the host port by setting `N3_PORT` in `.env` (see `.env.example`).
 Linux: if `.namel3ss/` permissions fail, set `UID` and `GID` in `.env` to match your user.
+Note: Docker builds install `namel3ss` from the local source tree. Bumping `VERSION` alone must not break `docker build` (publishing to PyPI is separate).
 
 ### Verify installation
 

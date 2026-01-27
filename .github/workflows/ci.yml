@@ -91,6 +91,9 @@ jobs:
       - name: Enforce single responsibility
         run: python tools/responsibility_check.py
 
+      - name: Docker build guard
+        run: python tools/docker_build_guard.py
+
       - name: Report largest source files
         run: python tools/top_files.py
 

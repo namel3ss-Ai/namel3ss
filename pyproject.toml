@@ -48,6 +48,7 @@ mysql = [
 [tool.setuptools]
 package-dir = {"" = "src"}
 include-package-data = true
+py-modules = ["namel3ss_safeio"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
