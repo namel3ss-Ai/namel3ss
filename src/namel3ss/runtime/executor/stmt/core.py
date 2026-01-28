@@ -36,6 +36,7 @@ from namel3ss.runtime.executor.stmt.records import (
 from namel3ss.runtime.backend.job_queue import enqueue_job
 from namel3ss.runtime.backend.logical_clock import require_non_negative_int
 from namel3ss.runtime.backend.scheduler import advance_time, schedule_job
+from namel3ss.runtime.purity import require_effect_allowed
 from namel3ss.ui.settings import UI_ALLOWED_VALUES
 from namel3ss.utils.numbers import is_number
 
@@ -147,6 +148,8 @@ def _execute_set(ctx: ExecutionContext, stmt: ir.Set) -> None:
         raise Namel3ssError("Parallel tasks cannot change state", line=stmt.line, column=stmt.column)
     if getattr(ctx, "call_stack", []) and isinstance(stmt.target, ir.StatePath):
         raise Namel3ssError("Functions cannot change state", line=stmt.line, column=stmt.column)
+    if isinstance(stmt.target, ir.StatePath):
+        require_effect_allowed(ctx, effect="write state", line=stmt.line, column=stmt.column)
     calc_info = _calc_assignment_info(ctx, stmt.line)
     collector = ExpressionExplainCollector() if calc_info else None
     value = evaluate_expression(ctx, stmt.expression, collector)
@@ -244,6 +247,7 @@ def _execute_theme_change(ctx: ExecutionContext, stmt: ir.ThemeChange) -> None:
 
 
 def _execute_enqueue_job(ctx: ExecutionContext, stmt: ir.EnqueueJob) -> None:
+    require_effect_allowed(ctx, effect=f'enqueue job "{stmt.job_name}"', line=stmt.line, column=stmt.column)
     payload = {}
     if stmt.input_expr is not None:
         payload = evaluate_expression(ctx, stmt.input_expr)
@@ -264,6 +268,7 @@ def _execute_enqueue_job(ctx: ExecutionContext, stmt: ir.EnqueueJob) -> None:
 
 
 def _execute_advance_time(ctx: ExecutionContext, stmt: ir.AdvanceTime) -> None:
+    require_effect_allowed(ctx, effect="advance time", line=stmt.line, column=stmt.column)
     value = evaluate_expression(ctx, stmt.amount)
     advance_time(ctx, value, line=stmt.line, column=stmt.column)
 

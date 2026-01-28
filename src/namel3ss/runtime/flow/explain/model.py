@@ -9,16 +9,20 @@ class FlowIntent:
     purpose: str
     requires: str | None = None
     audited: bool = False
+    purity: str | None = None
     expected_effects: list[str] = field(default_factory=list)
 
     def as_dict(self) -> dict:
-        return {
+        payload = {
             "flow_name": self.flow_name,
             "purpose": self.purpose,
             "requires": self.requires,
             "audited": self.audited,
             "expected_effects": list(self.expected_effects),
         }
+        if self.purity:
+            payload["purity"] = self.purity
+        return payload
 
     @staticmethod
     def from_dict(payload: dict) -> "FlowIntent":
@@ -27,6 +31,7 @@ class FlowIntent:
             purpose=str(payload.get("purpose") or ""),
             requires=payload.get("requires"),
             audited=bool(payload.get("audited", False)),
+            purity=payload.get("purity"),
             expected_effects=[str(item) for item in payload.get("expected_effects") or []],
         )
 

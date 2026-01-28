@@ -1,0 +1,13 @@
+spec is "1.0"
+
+contract flow "pure_tool":
+  input:
+    text is text
+  output:
+    result is text
+
+flow "pure_tool": purity is "pure"
+  let output is summarize:
+    text is input.text
+  return map:
+    "result" is output

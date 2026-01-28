@@ -18,6 +18,8 @@ def _to_data(value: Any, *, field_name: str | None = None) -> Any:
         data = {"type": value.__class__.__name__}
         for field in fields(value):
             field_value = getattr(value, field.name)
+            if field.name == "purity" and field_value == "effectful":
+                continue
             if field.name == "contracts" and not field_value:
                 continue
             if field.name == "functions" and not field_value:

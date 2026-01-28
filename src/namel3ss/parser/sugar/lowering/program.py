@@ -47,6 +47,7 @@ def _lower_flow(flow: ast.Flow) -> ast.Flow:
         body=_lower_statements(flow.body),
         requires=_lower_expression(flow.requires) if flow.requires else None,
         audited=flow.audited,
+        purity=getattr(flow, "purity", "effectful"),
         steps=_lower_flow_steps(getattr(flow, "steps", None)),
         declarative=bool(getattr(flow, "declarative", False)),
         line=flow.line,

@@ -22,6 +22,7 @@ def lower_flow(flow: ast.Flow, agents: dict[str, AgentDecl]) -> Flow:
         body=ir_body,
         requires=_lower_expression(flow.requires) if flow.requires else None,
         audited=bool(flow.audited),
+        purity=getattr(flow, "purity", "effectful"),
         steps=lower_flow_steps(getattr(flow, "steps", None)),
         declarative=declarative,
         line=flow.line,

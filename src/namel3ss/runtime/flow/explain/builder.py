@@ -5,6 +5,7 @@ from pathlib import Path
 
 from namel3ss.cli.app_loader import load_program
 from namel3ss.runtime.execution.normalize import SKIP_KINDS, format_expression, summarize_value
+from namel3ss.purity import is_pure
 from .effects import (
     expected_effects_from_memory,
     expected_effects_from_steps,
@@ -89,7 +90,7 @@ def _build_intent(
     memory_last: dict | None,
 ) -> FlowIntent:
     purpose = _purpose_text(flow_name, tool_entries)
-    requires, audited = _flow_policy(app_path, flow_name)
+    requires, audited, purity = _flow_policy(app_path, flow_name)
     expected: list[str] = []
     expected.extend(expected_effects_from_steps(steps))
     expected.extend(expected_effects_from_tools(tool_entries))
@@ -100,6 +101,7 @@ def _build_intent(
         purpose=purpose,
         requires=requires,
         audited=audited,
+        purity=purity,
         expected_effects=expected,
     )
 
@@ -181,21 +183,22 @@ def _purpose_text(flow_name: str, tool_entries: list[dict]) -> str:
     return "run the flow"
 
 
-def _flow_policy(app_path: str | None, flow_name: str) -> tuple[str | None, bool]:
+def _flow_policy(app_path: str | None, flow_name: str) -> tuple[str | None, bool, str | None]:
     if not app_path or flow_name == "unknown":
-        return None, False
+        return None, False, None
     try:
         program, _sources = load_program(app_path)
     except Exception:
-        return None, False
+        return None, False, None
     for flow in getattr(program, "flows", []):
         if getattr(flow, "name", None) != flow_name:
             continue
         requires_expr = getattr(flow, "requires", None)
         requires_text = format_expression(requires_expr) if requires_expr else None
         audited = bool(getattr(flow, "audited", False))
-        return requires_text, audited
-    return None, False
+        purity = getattr(flow, "purity", None)
+        return requires_text, audited, (purity if is_pure(purity) else None)
+    return None, False, None
 
 
 def _execution_steps(execution_last: dict | None) -> list[dict]:

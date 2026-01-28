@@ -1,0 +1,20 @@
+spec is "1.0"
+
+contract flow "pure_inner":
+  input:
+    value is text
+  output:
+    result is text
+
+flow "pure_inner": purity is "pure"
+  return map:
+    "result" is input.value
+
+flow "outer":
+  let out is call flow "pure_inner":
+    input:
+      value is "hello"
+    output:
+      result
+  return map:
+    "result" is map get out key "result"

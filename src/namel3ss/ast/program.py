@@ -21,6 +21,7 @@ class Flow(Node):
     body: List["Statement"]
     requires: Optional[Expression] = None
     audited: bool = False
+    purity: str = "effectful"
     steps: List["FlowStep"] | None = None
     declarative: bool = False
 

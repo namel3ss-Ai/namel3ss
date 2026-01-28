@@ -44,6 +44,8 @@ def build_plain_text(pack: dict) -> str:
     if intent.get("requires"):
         lines.append(f"intent.requires: {intent.get('requires')}")
     lines.append(f"intent.audited: {intent.get('audited')}")
+    if intent.get("purity"):
+        lines.append(f"intent.purity: {intent.get('purity')}")
     expected = intent.get("expected_effects") or []
     if expected:
         lines.append(f"intent.expected_effects: {stable_join([str(item) for item in expected])}")

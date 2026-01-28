@@ -16,6 +16,7 @@ from namel3ss.flow_contract import (
     validate_flow_names,
     validate_flow_contracts,
     validate_flow_composition,
+    validate_flow_purity,
 )
 from namel3ss.ir.functions.lowering import lower_functions
 from namel3ss.ir.lowering.identity import _lower_identity
@@ -86,6 +87,7 @@ def lower_program(program: ast.Program) -> Program:
     flow_names = validate_flow_names(flow_irs)
     validate_flow_contracts(flow_irs, flow_contracts)
     validate_flow_composition(flow_irs, flow_contracts, pipeline_contracts())
+    validate_flow_purity(flow_irs, flow_contracts)
     validate_declarative_flows(flow_irs, record_map, tool_map, mode=ValidationMode.RUNTIME, warnings=None)
     capabilities = _normalize_capabilities(getattr(program, "capabilities", []) or [])
     _require_capabilities(capabilities, tool_map, job_irs)

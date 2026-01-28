@@ -5,6 +5,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.parser.stmt.common import parse_statements
 from namel3ss.parser.decl.flow_steps import parse_flow_steps
+from namel3ss.purity import EFFECTFUL_VALUE, normalize_purity
 
 
 def parse_flow(parser) -> ast.Flow:
@@ -12,9 +13,18 @@ def parse_flow(parser) -> ast.Flow:
     name_tok = parser._expect("STRING", "Expected flow name string")
     requires_expr = None
     audited = False
-    requires_expr, audited = _parse_flow_header_flags(parser, requires_expr, audited, flow_tok)
+    purity = EFFECTFUL_VALUE
+    purity_set = False
+    requires_expr, audited, purity, purity_set = _parse_flow_header_flags(parser, requires_expr, audited, purity, purity_set, flow_tok)
     if parser._match("COLON"):
-        requires_expr, audited = _parse_flow_header_flags(parser, requires_expr, audited, flow_tok)
+        requires_expr, audited, purity, purity_set = _parse_flow_header_flags(
+            parser,
+            requires_expr,
+            audited,
+            purity,
+            purity_set,
+            flow_tok,
+        )
         if not parser._match("NEWLINE"):
             if parser._current().type not in {"DEDENT", "EOF"}:
                 parser._expect("NEWLINE", "Expected newline after flow header")
@@ -26,6 +36,7 @@ def parse_flow(parser) -> ast.Flow:
                 body=[],
                 requires=requires_expr,
                 audited=audited,
+                purity=purity,
                 declarative=False,
                 steps=None,
                 line=flow_tok.line,
@@ -40,6 +51,7 @@ def parse_flow(parser) -> ast.Flow:
             body=body,
             requires=requires_expr,
             audited=audited,
+            purity=purity,
             declarative=False,
             steps=None,
             line=flow_tok.line,
@@ -56,6 +68,7 @@ def parse_flow(parser) -> ast.Flow:
         body=[],
         requires=requires_expr,
         audited=audited,
+        purity=purity,
         declarative=True,
         steps=steps,
         line=flow_tok.line,
@@ -71,7 +84,7 @@ def _match_ident_value(parser, value: str) -> bool:
     return False
 
 
-def _parse_flow_header_flags(parser, requires_expr, audited, flow_tok):
+def _parse_flow_header_flags(parser, requires_expr, audited, purity, purity_set, flow_tok):
     while True:
         if _match_ident_value(parser, "requires"):
             if requires_expr is not None:
@@ -101,8 +114,33 @@ def _parse_flow_header_flags(parser, requires_expr, audited, flow_tok):
                 )
             audited = True
             continue
+        if parser._current().type == "PURITY" or _match_ident_value(parser, "purity"):
+            if purity_set:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Flow declares purity more than once.",
+                        why="Each flow may only declare purity once.",
+                        fix="Keep a single purity declaration on the flow header.",
+                        example='flow "sum": purity is "pure"',
+                    ),
+                    line=flow_tok.line,
+                    column=flow_tok.column,
+                )
+            if parser._current().type == "PURITY":
+                parser._advance()
+            parser._expect("IS", "Expected 'is' after purity")
+            value_tok = parser._current()
+            if not isinstance(value_tok.value, str):
+                raise Namel3ssError("Expected purity string", line=value_tok.line, column=value_tok.column)
+            parser._advance()
+            try:
+                purity = normalize_purity(value_tok.value)
+            except ValueError as exc:
+                raise Namel3ssError(str(exc), line=value_tok.line, column=value_tok.column) from exc
+            purity_set = True
+            continue
         break
-    return requires_expr, audited
+    return requires_expr, audited, purity, purity_set
 
 
 __all__ = ["parse_flow"]

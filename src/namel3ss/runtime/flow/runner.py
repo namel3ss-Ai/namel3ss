@@ -10,7 +10,9 @@ from namel3ss.runtime.tools.executor import execute_tool_call
 from namel3ss.runtime.flow.gates import evaluate_requires
 from namel3ss.runtime.flow.ids import flow_id, flow_step_id
 from namel3ss.runtime.values.coerce import require_type
+from namel3ss.runtime.purity import require_effect_allowed
 from namel3ss.traces.schema import TraceEventType
+from namel3ss.purity import is_pure
 
 
 def run_declarative_flow(ctx: ExecutionContext) -> None:
@@ -73,6 +75,7 @@ def run_declarative_flow(ctx: ExecutionContext) -> None:
             continue
         if isinstance(step, ir.FlowCallForeign):
             args = _resolve_call_foreign_args(step, ctx)
+            require_effect_allowed(ctx, effect=f'call foreign "{step.foreign_name}"', line=step.line, column=step.column)
             execute_tool_call(ctx, step.foreign_name, args, line=step.line, column=step.column)
             _record_flow_step(
                 ctx,
@@ -163,6 +166,9 @@ def _record_flow_start(ctx: ExecutionContext, flow_id_value: str, flow_name: str
         "flow_id": flow_id_value,
         "flow_name": flow_name,
     }
+    purity = getattr(getattr(ctx, "flow", None), "purity", None)
+    if is_pure(purity):
+        entry["purity"] = purity
     flow_call_id = getattr(ctx, "flow_call_id", None)
     if flow_call_id:
         entry["flow_call_id"] = flow_call_id

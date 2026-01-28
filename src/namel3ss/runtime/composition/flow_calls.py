@@ -12,6 +12,7 @@ from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.runtime.values.coerce import require_type
 from namel3ss.secrets import collect_secret_values
 from namel3ss.traces.schema import TraceEventType
+from namel3ss.purity import is_pure, pure_effect_message
 
 
 def execute_flow_call(
@@ -23,13 +24,27 @@ def execute_flow_call(
     if getattr(ctx, "call_stack", []):
         raise Namel3ssError("Functions cannot call flows", line=expr.line, column=expr.column)
     flow = _lookup_flow(ctx, expr.flow_name, line=expr.line, column=expr.column)
+    caller_flow_obj = getattr(ctx, "flow", None)
+    caller_flow = getattr(caller_flow_obj, "name", None)
+    caller_purity = getattr(caller_flow_obj, "purity", None)
+    callee_purity = getattr(flow, "purity", None)
+    if is_pure(caller_purity) and not is_pure(callee_purity):
+        raise Namel3ssError(
+            pure_effect_message(
+                f'call effectful flow "{flow.name}"',
+                flow_name=caller_flow,
+            ),
+            line=expr.line,
+            column=expr.column,
+        )
     contract = _lookup_flow_contract(ctx, expr.flow_name, line=expr.line, column=expr.column)
     args_by_name = _evaluate_call_args(ctx, expr.arguments, evaluate_expression, collector)
     input_payload = _build_input_payload(contract.signature, args_by_name, expr)
     contract_inputs = [param.name for param in contract.signature.inputs]
     contract_outputs = [param.name for param in contract.signature.outputs or []]
     flow_call_id = _next_flow_call_id(ctx)
-    caller_flow = getattr(getattr(ctx, "flow", None), "name", None)
+    caller_purity_value = caller_purity if is_pure(caller_purity) else None
+    callee_purity_value = callee_purity if is_pure(callee_purity) else None
 
     _record_flow_call_started(
         ctx,
@@ -39,6 +54,8 @@ def execute_flow_call(
         expr,
         contract_inputs,
         contract_outputs,
+        caller_purity=caller_purity_value,
+        callee_purity=callee_purity_value,
     )
     record_step(
         ctx,
@@ -49,6 +66,8 @@ def execute_flow_call(
             "callee_flow": flow.name,
             "contract_inputs": contract_inputs,
             "contract_outputs": contract_outputs,
+            **({"caller_purity": caller_purity_value} if caller_purity_value else {}),
+            **({"callee_purity": callee_purity_value} if callee_purity_value else {}),
         },
         line=expr.line,
         column=expr.column,
@@ -74,6 +93,8 @@ def execute_flow_call(
             error=exc,
             contract_inputs=contract_inputs,
             contract_outputs=contract_outputs,
+            caller_purity=caller_purity_value,
+            callee_purity=callee_purity_value,
         )
         record_step(
             ctx,
@@ -85,6 +106,8 @@ def execute_flow_call(
                 "callee_flow": flow.name,
                 "contract_inputs": contract_inputs,
                 "contract_outputs": contract_outputs,
+                **({"caller_purity": caller_purity_value} if caller_purity_value else {}),
+                **({"callee_purity": callee_purity_value} if callee_purity_value else {}),
             },
             line=expr.line,
             column=expr.column,
@@ -115,6 +138,8 @@ def execute_flow_call(
         error=None,
         contract_inputs=contract_inputs,
         contract_outputs=contract_outputs,
+        caller_purity=caller_purity_value,
+        callee_purity=callee_purity_value,
     )
     record_step(
         ctx,
@@ -125,6 +150,8 @@ def execute_flow_call(
             "callee_flow": flow.name,
             "contract_inputs": contract_inputs,
             "contract_outputs": contract_outputs,
+            **({"caller_purity": caller_purity_value} if caller_purity_value else {}),
+            **({"callee_purity": callee_purity_value} if callee_purity_value else {}),
         },
         line=expr.line,
         column=expr.column,
@@ -329,6 +356,9 @@ def _record_flow_call_started(
     expr: ir.CallFlowExpr,
     contract_inputs: list[str],
     contract_outputs: list[str],
+    *,
+    caller_purity: str | None,
+    callee_purity: str | None,
 ) -> None:
     ctx.traces.append(
         {
@@ -340,6 +370,8 @@ def _record_flow_call_started(
             "outputs": list(expr.outputs),
             "contract_inputs": list(contract_inputs),
             "contract_outputs": list(contract_outputs),
+            **({"caller_purity": caller_purity} if caller_purity else {}),
+            **({"callee_purity": callee_purity} if callee_purity else {}),
         }
     )
 
@@ -354,6 +386,8 @@ def _record_flow_call_finished(
     error: Exception | None,
     contract_inputs: list[str],
     contract_outputs: list[str],
+    caller_purity: str | None,
+    callee_purity: str | None,
 ) -> None:
     event = {
         "type": TraceEventType.FLOW_CALL_FINISHED,
@@ -363,6 +397,8 @@ def _record_flow_call_finished(
         "status": status,
         "contract_inputs": list(contract_inputs),
         "contract_outputs": list(contract_outputs),
+        **({"caller_purity": caller_purity} if caller_purity else {}),
+        **({"callee_purity": callee_purity} if callee_purity else {}),
     }
     if error is not None:
         event["error_message"] = str(error)

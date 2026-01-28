@@ -36,6 +36,7 @@ from namel3ss.errors.runtime.model import RuntimeWhere
 from namel3ss.runtime.boundary import attach_project_root, attach_secret_values, boundary_from_error, mark_boundary
 from namel3ss.security import activate_security_wall, build_security_wall
 from namel3ss.observability.context import ObservabilityContext
+from namel3ss.purity import is_pure
 
 
 class Executor:
@@ -150,10 +151,12 @@ class Executor:
             return self._run_internal()
 
     def _run_internal(self) -> ExecutionResult:
+        purity = getattr(self.ctx.flow, "purity", None)
         record_step(
             self.ctx,
             kind="flow_start",
             what=f'flow "{self.ctx.flow.name}" started',
+            data={"purity": purity} if is_pure(purity) else None,
             line=self.ctx.flow.line,
             column=self.ctx.flow.column,
         )

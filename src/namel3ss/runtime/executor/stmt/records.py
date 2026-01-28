@@ -7,6 +7,7 @@ from namel3ss.runtime.executor.records_ops import handle_create, handle_delete, 
 from namel3ss.runtime.flow.ids import flow_step_id
 from namel3ss.runtime.mutation_policy import evaluate_mutation_policy
 from namel3ss.runtime.records.ordering import normalize_record_id, sorted_record_ids
+from namel3ss.runtime.purity import require_effect_allowed
 from namel3ss.traces.schema import TraceEventType
 
 
@@ -45,6 +46,7 @@ def _run_record_write(ctx, stmt: ir.Statement, handler, *, kind: str, verb: str,
     if getattr(ctx, "call_stack", []):
         raise Namel3ssError("Functions cannot write records", line=stmt.line, column=stmt.column)
     action = _mutation_action(stmt)
+    require_effect_allowed(ctx, effect=f"{action} records", line=getattr(stmt, "line", None), column=getattr(stmt, "column", None))
     decision = evaluate_mutation_policy(
         ctx,
         action=action,

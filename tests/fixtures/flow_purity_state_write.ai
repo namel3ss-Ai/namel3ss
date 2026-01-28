@@ -1,0 +1,12 @@
+spec is "1.0"
+
+contract flow "pure_state":
+  input:
+    value is text
+  output:
+    result is text
+
+flow "pure_state": purity is "pure"
+  set state.value is "oops"
+  return map:
+    "result" is input.value

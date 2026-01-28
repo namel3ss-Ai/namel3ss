@@ -37,6 +37,9 @@ def _intent_lines(intent: dict) -> list[str]:
         lines.append(_line(f"requires: {requires}"))
     audited = "yes" if intent.get("audited") else "no"
     lines.append(_line(f"audited: {audited}"))
+    purity = intent.get("purity")
+    if purity:
+        lines.append(_line(f"purity: {purity}"))
     expected = intent.get("expected_effects") or []
     if expected:
         lines.append(_line(f"expected effects: {stable_join([str(item) for item in expected])}"))

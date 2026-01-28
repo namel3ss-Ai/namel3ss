@@ -1,0 +1,28 @@
+spec is "1.0"
+
+contract flow "effectful":
+  input:
+    value is text
+  output:
+    result is text
+
+contract flow "pure_caller":
+  input:
+    value is text
+  output:
+    result is text
+
+flow "effectful":
+  let value is input.value
+  set state.value is value
+  return map:
+    "result" is value
+
+flow "pure_caller": purity is "pure"
+  let out is call flow "effectful":
+    input:
+      value is input.value
+    output:
+      result
+  return map:
+    "result" is map get out key "result"

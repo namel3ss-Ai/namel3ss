@@ -22,6 +22,7 @@ from namel3ss.runtime.secrets_store import SecretValue, resolve_secret_value
 from namel3ss.runtime.tools.executor import execute_tool_call
 from namel3ss.runtime.values.coerce import require_type
 from namel3ss.runtime.values.types import type_name_for_value
+from namel3ss.runtime.purity import require_effect_allowed
 
 
 def evaluate_expression(
@@ -91,6 +92,7 @@ def evaluate_expression(
                 line=expr.line,
                 column=expr.column,
             )
+        require_effect_allowed(ctx, effect=f'call tool "{expr.tool_name}"', line=expr.line, column=expr.column)
         record_step(
             ctx,
             kind="tool_call",
@@ -153,6 +155,7 @@ def evaluate_expression(
     if isinstance(expr, ir.CallFlowExpr):
         return execute_flow_call(ctx, expr, evaluate_expression, collector)
     if isinstance(expr, ir.CallPipelineExpr):
+        require_effect_allowed(ctx, effect=f'call pipeline "{expr.pipeline_name}"', line=expr.line, column=expr.column)
         return execute_pipeline_call(ctx, expr, evaluate_expression, collector)
 
     raise Namel3ssError(f"Unsupported expression type: {type(expr)}", line=expr.line, column=expr.column)
@@ -184,6 +187,7 @@ def _evaluate_builtin_call(
 ) -> object:
     name = expr.name
     if name == "secret":
+        require_effect_allowed(ctx, effect="call secret", line=expr.line, column=expr.column)
         _require_capability(ctx, "secrets", line=expr.line, column=expr.column)
         _require_arg_count(expr, 1)
         value = evaluate_expression(ctx, expr.arguments[0], collector)
@@ -205,12 +209,14 @@ def _evaluate_builtin_call(
             secret_value=secret_value,
         )
     if name == "auth_bearer":
+        require_effect_allowed(ctx, effect="call auth_bearer", line=expr.line, column=expr.column)
         _require_capability(ctx, "http", line=expr.line, column=expr.column)
         _require_capability(ctx, "secrets", line=expr.line, column=expr.column)
         _require_arg_count(expr, 1)
         token = evaluate_expression(ctx, expr.arguments[0], collector)
         return auth_bearer(token)
     if name == "auth_basic":
+        require_effect_allowed(ctx, effect="call auth_basic", line=expr.line, column=expr.column)
         _require_capability(ctx, "http", line=expr.line, column=expr.column)
         _require_capability(ctx, "secrets", line=expr.line, column=expr.column)
         _require_arg_count(expr, 2)
@@ -218,6 +224,7 @@ def _evaluate_builtin_call(
         password = evaluate_expression(ctx, expr.arguments[1], collector)
         return auth_basic(user, password)
     if name == "auth_header":
+        require_effect_allowed(ctx, effect="call auth_header", line=expr.line, column=expr.column)
         _require_capability(ctx, "http", line=expr.line, column=expr.column)
         _require_capability(ctx, "secrets", line=expr.line, column=expr.column)
         _require_arg_count(expr, 2)
