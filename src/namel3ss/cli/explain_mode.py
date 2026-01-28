@@ -16,6 +16,7 @@ from namel3ss.module_loader import load_project
 from namel3ss.proofs import build_engine_proof
 from namel3ss.runtime.capabilities.report import collect_tool_reports
 from namel3ss.runtime.audit import build_audit_report, build_decision_model, render_audit
+from namel3ss.runtime.composition.explain import build_composition_explain_bundle
 from namel3ss.ingestion.policy_inspection import inspect_ingestion_policy
 from namel3ss.secrets import collect_secret_values
 from namel3ss.utils.json_tools import dumps_pretty
@@ -227,10 +228,16 @@ def _assemble_explain_payload(app_path, active: dict, proof: dict) -> dict:
     project_root = app_path.parent
     config = load_config(app_path=app_path, root=project_root)
     project = load_project(app_path)
+    secret_values = collect_secret_values(config)
     promotion = load_state(project_root)
     target = active.get("target") if isinstance(active, dict) else None
     if not target:
         target = (promotion.get("active") or {}).get("target")
+    composition = build_composition_explain_bundle(
+        project_root,
+        app_path=app_path,
+        secret_values=secret_values,
+    )
     return {
         "schema_version": 1,
         "engine_target": target or "none",
@@ -247,6 +254,7 @@ def _assemble_explain_payload(app_path, active: dict, proof: dict) -> dict:
         ),
         "capsules": _summarize_capsules(proof),
         "governance": proof.get("governance") or _load_governance(project_root),
+        "composition": composition,
         "tools": collect_tool_reports(
             project_root,
             config,

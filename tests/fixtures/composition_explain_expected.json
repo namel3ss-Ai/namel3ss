@@ -1,0 +1,141 @@
+{
+  "api_version": "composition",
+  "call_tree": {
+    "calls": [
+      {
+        "callee": "alpha",
+        "caller": "demo",
+        "contract_inputs": ["x"],
+        "contract_outputs": ["result"],
+        "id": "flow_call:0001",
+        "inputs": ["x"],
+        "kind": "flow",
+        "outputs": ["result"],
+        "parent_id": "flow:demo",
+        "status": "ok"
+      },
+      {
+        "callee": "beta",
+        "caller": "demo",
+        "contract_inputs": ["y"],
+        "contract_outputs": ["result"],
+        "id": "flow_call:0002",
+        "inputs": ["y"],
+        "kind": "flow",
+        "outputs": ["result"],
+        "parent_id": "flow:demo",
+        "status": "ok"
+      },
+      {
+        "id": "pipeline:retrieval:0001",
+        "kind": "pipeline",
+        "parent_id": "flow:demo",
+        "pipeline": "retrieval",
+        "status": "ok"
+      }
+    ],
+    "root": {
+      "id": "flow:demo",
+      "kind": "flow",
+      "name": "demo"
+    },
+    "total": 3,
+    "truncated": false
+  },
+  "flow_name": "demo",
+  "ok": true,
+  "orchestration": {
+    "runs": [
+      {
+        "branch_total": 2,
+        "branches": [
+          {
+            "branch_id": "branch:demo:1:alpha:1",
+            "branch_name": "alpha",
+            "call_kind": "flow",
+            "call_target": "alpha",
+            "status": "ok"
+          },
+          {
+            "branch_id": "branch:demo:1:beta:2",
+            "branch_name": "beta",
+            "call_kind": "flow",
+            "call_target": "beta",
+            "error_message": "failed",
+            "status": "error"
+          }
+        ],
+        "branches_truncated": false,
+        "merge": {
+          "branches": [
+            {
+              "error_message": null,
+              "error_type": "",
+              "name": "alpha",
+              "status": "ok",
+              "summary": "text length 1"
+            },
+            {
+              "error_message": "failed",
+              "error_type": "Namel3ssError",
+              "name": "beta",
+              "status": "error",
+              "summary": ""
+            }
+          ],
+          "branches_total": 2,
+          "branches_truncated": false,
+          "failed": ["beta"],
+          "merge_id": "merge:demo:1",
+          "policy": "first_ok",
+          "reason": "selected alpha",
+          "selected": "alpha",
+          "status": "ok"
+        },
+        "orchestration_id": "demo:1"
+      }
+    ],
+    "runs_truncated": false,
+    "total_runs": 1
+  },
+  "pipelines": {
+    "runs": [
+      {
+        "pipeline": "retrieval",
+        "run_id": "pipeline:retrieval:0001",
+        "status": "ok",
+        "step_total": 2,
+        "steps": [
+          {
+            "checksum": "abc123",
+            "ordinal": 1,
+            "status": "ok",
+            "step_id": "pipeline:retrieval:accept:1",
+            "step_kind": "accept",
+            "summary": {
+              "limit": 3,
+              "query": "invoice"
+            }
+          },
+          {
+            "checksum": "def456",
+            "ordinal": 2,
+            "status": "ok",
+            "step_id": "pipeline:retrieval:select:2",
+            "step_kind": "select",
+            "summary": {
+              "excluded_blocked": 0,
+              "excluded_warn": 0,
+              "warn_allowed": false
+            }
+          }
+        ],
+        "steps_truncated": false
+      }
+    ],
+    "runs_truncated": false,
+    "steps_truncated": false,
+    "total_runs": 1,
+    "total_steps": 2
+  }
+}

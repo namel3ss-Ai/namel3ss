@@ -1,0 +1,136 @@
+{
+  "ok": true,
+  "flow_name": "demo",
+  "traces": [
+    {
+      "type": "flow_call_started",
+      "flow_call_id": "flow_call:0001",
+      "caller_flow": "demo",
+      "callee_flow": "alpha",
+      "inputs": ["x"],
+      "outputs": ["result"],
+      "contract_inputs": ["x"],
+      "contract_outputs": ["result"]
+    },
+    {
+      "type": "flow_call_finished",
+      "flow_call_id": "flow_call:0001",
+      "caller_flow": "demo",
+      "callee_flow": "alpha",
+      "status": "ok"
+    },
+    {
+      "type": "flow_call_started",
+      "flow_call_id": "flow_call:0002",
+      "caller_flow": "demo",
+      "callee_flow": "beta",
+      "inputs": ["y"],
+      "outputs": ["result"],
+      "contract_inputs": ["y"],
+      "contract_outputs": ["result"]
+    },
+    {
+      "type": "flow_call_finished",
+      "flow_call_id": "flow_call:0002",
+      "caller_flow": "demo",
+      "callee_flow": "beta",
+      "status": "ok"
+    },
+    {
+      "type": "pipeline_started",
+      "pipeline": "retrieval",
+      "steps": [
+        {"step_id": "pipeline:retrieval:accept:1", "step_kind": "accept", "ordinal": 1},
+        {"step_id": "pipeline:retrieval:select:2", "step_kind": "select", "ordinal": 2}
+      ]
+    },
+    {
+      "type": "pipeline_step",
+      "pipeline": "retrieval",
+      "step_id": "pipeline:retrieval:accept:1",
+      "step_kind": "accept",
+      "status": "ok",
+      "summary": {"query": "invoice", "limit": 3},
+      "checksum": "abc123",
+      "ordinal": 1
+    },
+    {
+      "type": "pipeline_step",
+      "pipeline": "retrieval",
+      "step_id": "pipeline:retrieval:select:2",
+      "step_kind": "select",
+      "status": "ok",
+      "summary": {"excluded_blocked": 0, "excluded_warn": 0, "warn_allowed": false},
+      "checksum": "def456",
+      "ordinal": 2
+    },
+    {
+      "type": "pipeline_finished",
+      "pipeline": "retrieval",
+      "status": "ok"
+    },
+    {
+      "type": "orchestration_branch_started",
+      "branch_name": "alpha",
+      "branch_id": "branch:demo:1:alpha:1",
+      "call_kind": "flow",
+      "call_target": "alpha",
+      "title": "Orchestration branch started",
+      "lines": ["Branch alpha started."]
+    },
+    {
+      "type": "orchestration_branch_finished",
+      "branch_name": "alpha",
+      "branch_id": "branch:demo:1:alpha:1",
+      "status": "ok",
+      "title": "Orchestration branch finished",
+      "lines": ["Branch alpha finished."]
+    },
+    {
+      "type": "orchestration_branch_started",
+      "branch_name": "beta",
+      "branch_id": "branch:demo:1:beta:2",
+      "call_kind": "flow",
+      "call_target": "beta",
+      "title": "Orchestration branch started",
+      "lines": ["Branch beta started."]
+    },
+    {
+      "type": "orchestration_branch_finished",
+      "branch_name": "beta",
+      "branch_id": "branch:demo:1:beta:2",
+      "status": "error",
+      "error_message": "failed",
+      "title": "Orchestration branch finished",
+      "lines": ["Branch beta failed."]
+    },
+    {
+      "type": "orchestration_merge_started",
+      "merge_id": "merge:demo:1",
+      "policy": "first_ok",
+      "title": "Orchestration merge started",
+      "lines": ["Policy is first_ok."]
+    },
+    {
+      "type": "orchestration_merge_finished",
+      "merge_id": "merge:demo:1",
+      "policy": "first_ok",
+      "status": "ok",
+      "selected": "alpha",
+      "decision": {
+        "policy": "first_ok",
+        "status": "ok",
+        "selected": "alpha",
+        "failed": ["beta"],
+        "precedence": null,
+        "reason": "selected alpha",
+        "branches": [
+          {"name": "alpha", "status": "ok", "summary": "text length 1"},
+          {"name": "beta", "status": "error", "error_type": "Namel3ssError", "error_message": "failed"}
+        ]
+      },
+      "title": "Orchestration merge finished",
+      "lines": ["Selected alpha."]
+    }
+  ]
+}

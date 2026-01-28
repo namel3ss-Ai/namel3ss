@@ -1,0 +1,24 @@
+{
+  "ok": false,
+  "flow_name": "demo",
+  "traces": [
+    {
+      "type": "flow_call_started",
+      "flow_call_id": "flow_call:9999",
+      "caller_flow": "demo",
+      "callee_flow": "alpha",
+      "inputs": ["x"],
+      "outputs": ["result"],
+      "contract_inputs": ["x"],
+      "contract_outputs": ["result"]
+    },
+    {
+      "type": "flow_call_finished",
+      "flow_call_id": "flow_call:9999",
+      "caller_flow": "demo",
+      "callee_flow": "alpha",
+      "status": "error",
+      "error_message": "Failed at /Users/alice/project/app.ai with TOPSECRET"
+    }
+  ]
+}
