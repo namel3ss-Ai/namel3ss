@@ -98,7 +98,7 @@ def test_upgrade_simulation_requires_migration_then_runs():
 
 def test_packaging_assets_present():
     templates = templates_root()
-    for name in ("operations_dashboard", "onboarding", "support_inbox"):
+    for name in ("operations_dashboard", "onboarding", "composition", "support_inbox"):
         assert (templates / name / "app.ai").exists()
         assert (templates / name / "expected_ui.json").exists()
         assert (templates / name / "README.md").exists()

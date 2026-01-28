@@ -126,7 +126,7 @@ def test_new_lists_templates(capsys):
     assert code == 0
     out = captured.out
     assert "Available templates" in out
-    for name in ["Operations Dashboard", "Onboarding", "Support Inbox"]:
+    for name in ["Operations Dashboard", "Onboarding", "Composition", "Support Inbox"]:
         assert name in out
     assert "Examples (read-only)" in out
     assert "Hello Flow" in out

@@ -53,6 +53,13 @@ TEMPLATES: tuple[ScaffoldSpec, ...] = (
     ),
     ScaffoldSpec(
         kind="template",
+        name="composition",
+        directory="composition",
+        description="Composition workspace with contracts, pipelines, and orchestration.",
+        version="0.1.0",
+    ),
+    ScaffoldSpec(
+        kind="template",
         name="support_inbox",
         directory="support_inbox",
         description="Support intake and reply flow with an inbox view.",

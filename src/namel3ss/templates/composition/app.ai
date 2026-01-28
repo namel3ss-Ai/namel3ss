@@ -1,0 +1,175 @@
+spec is "1.0"
+
+capabilities:
+  uploads
+
+record "IngestionReport":
+  fields:
+    upload_id is text must be present
+    report is json must be present
+
+record "RetrievalReport":
+  fields:
+    query is text must be present
+    report is json must be present
+
+contract flow "normalize_query":
+  input:
+    query is text
+  output:
+    normalized is text
+
+contract flow "ingest_upload":
+  input:
+    upload_id is text
+  output:
+    report is json
+    ingestion is json
+    index is json
+
+contract flow "retrieve_primary":
+  input:
+    query is text
+  output:
+    report is json
+
+contract flow "retrieve_secondary":
+  input:
+    query is text
+  output:
+    report is json
+
+flow "normalize_query": purity is "pure"
+  return map:
+    "normalized" is input.query
+
+flow "ingest_upload": requires true
+  let out is call pipeline "ingestion":
+    input:
+      upload_id is input.upload_id
+    output:
+      report
+      ingestion
+      index
+  return map:
+    "report" is map get out key "report"
+    "ingestion" is map get out key "ingestion"
+    "index" is map get out key "index"
+
+flow "retrieve_primary": requires true
+  let normalized is call flow "normalize_query":
+    input:
+      query is input.query
+    output:
+      normalized
+  let out is call pipeline "retrieval":
+    input:
+      query is map get normalized key "normalized"
+      limit is 6
+    output:
+      report
+  return map:
+    "report" is map get out key "report"
+
+flow "retrieve_secondary": requires true
+  let normalized is call flow "normalize_query":
+    input:
+      query is input.query
+    output:
+      normalized
+  let out is call pipeline "retrieval":
+    input:
+      query is map get normalized key "normalized"
+      limit is 12
+    output:
+      report
+  return map:
+    "report" is map get out key "report"
+
+flow "run_ingestion": requires true
+  try:
+    let uploads is state.uploads.intake
+    let count is list length of uploads
+    if count is greater than 0:
+      let last_index is count - 1
+      let recent_upload is list get uploads at last_index
+      let upload_id is map get recent_upload key "id"
+      let out is call flow "ingest_upload":
+        input:
+          upload_id is upload_id
+        output:
+          report
+          ingestion
+          index
+      create "IngestionReport" with map:
+        "upload_id" is upload_id
+        "report" is map get out key "report"
+      as ingestion_report
+      return map:
+        "status" is "ingested"
+    return map:
+      "status" is "no_upload"
+  with catch err:
+    return map:
+      "status" is "no_upload"
+
+flow "run_retrieval": requires true
+  if input.message is null:
+    return map:
+      "status" is "missing_query"
+  let query_text is input.message
+  orchestration:
+    branch "primary":
+      call flow "retrieve_primary":
+        input:
+          query is query_text
+        output:
+          report
+    branch "secondary":
+      call flow "retrieve_secondary":
+        input:
+          query is query_text
+        output:
+          report
+  merge:
+    policy is "prefer"
+    precedence is list: "primary", "secondary"
+  as merged
+  create "RetrievalReport" with map:
+    "query" is query_text
+    "report" is map get merged key "report"
+  as retrieval_report
+  return map:
+    "status" is "retrieved"
+
+page "composition":
+  purpose is "Compose ingestion, retrieval, and orchestration with explicit contracts."
+  title is "Composition Workspace"
+  text is "Run deterministic pipelines and merges with explicit boundaries."
+
+  section "Composition boundaries":
+    compose boundaries:
+      text is "Pure flow: normalize_query."
+      text is "Effectful flows: ingest_upload, retrieve_primary, retrieve_secondary."
+      text is "Orchestration: run_retrieval merges branches with a prefer policy."
+
+  section "Ingestion":
+    text is "Upload a file, then run ingestion."
+    upload intake
+    button "Run ingestion":
+      calls flow "run_ingestion"
+    table is "IngestionReport":
+      columns:
+        include upload_id
+      pagination:
+        page_size is 5
+
+  section "Retrieval":
+    text is "Submit a query, then run retrieval."
+    chat:
+      composer calls flow "run_retrieval"
+    table is "RetrievalReport":
+      columns:
+        include query
+      pagination:
+        page_size is 5

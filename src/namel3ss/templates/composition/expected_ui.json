@@ -1,0 +1,323 @@
+{
+  "actions": {
+    "app.ingestion.review": {
+      "id": "app.ingestion.review",
+      "type": "ingestion_review"
+    },
+    "app.ingestion.skip": {
+      "id": "app.ingestion.skip",
+      "type": "ingestion_skip"
+    },
+    "app.retrieval": {
+      "id": "app.retrieval",
+      "type": "retrieval_run"
+    },
+    "app.upload.replace": {
+      "id": "app.upload.replace",
+      "type": "upload_replace"
+    },
+    "page.composition.button.run_ingestion": {
+      "flow": "run_ingestion",
+      "id": "page.composition.button.run_ingestion",
+      "type": "call_flow"
+    },
+    "page.composition.composer.4.1.0.composer": {
+      "flow": "run_retrieval",
+      "id": "page.composition.composer.4.1.0.composer",
+      "type": "call_flow"
+    },
+    "page.composition.upload.intake": {
+      "id": "page.composition.upload.intake",
+      "multiple": false,
+      "name": "intake",
+      "type": "upload_select"
+    },
+    "page.composition.upload.intake.ingestion": {
+      "id": "page.composition.upload.intake.ingestion",
+      "type": "ingestion_run"
+    }
+  },
+  "pages": [
+    {
+      "elements": [
+        {
+          "column": 3,
+          "element_id": "page.composition.title.0",
+          "index": 0,
+          "line": 147,
+          "page": "composition",
+          "page_slug": "composition",
+          "type": "title",
+          "value": "Composition Workspace"
+        },
+        {
+          "column": 3,
+          "element_id": "page.composition.text.1",
+          "index": 1,
+          "line": 148,
+          "page": "composition",
+          "page_slug": "composition",
+          "type": "text",
+          "value": "Run deterministic pipelines and merges with explicit boundaries."
+        },
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "column": 7,
+                  "element_id": "page.composition.text.2.0.0",
+                  "index": 0,
+                  "line": 152,
+                  "page": "composition",
+                  "page_slug": "composition",
+                  "type": "text",
+                  "value": "Pure flow: normalize_query."
+                },
+                {
+                  "column": 7,
+                  "element_id": "page.composition.text.2.0.1",
+                  "index": 1,
+                  "line": 153,
+                  "page": "composition",
+                  "page_slug": "composition",
+                  "type": "text",
+                  "value": "Effectful flows: ingest_upload, retrieve_primary, retrieve_secondary."
+                },
+                {
+                  "column": 7,
+                  "element_id": "page.composition.text.2.0.2",
+                  "index": 2,
+                  "line": 154,
+                  "page": "composition",
+                  "page_slug": "composition",
+                  "type": "text",
+                  "value": "Orchestration: run_retrieval merges branches with a prefer policy."
+                }
+              ],
+              "column": 5,
+              "element_id": "page.composition.compose.2.0",
+              "index": 0,
+              "line": 151,
+              "name": "boundaries",
+              "page": "composition",
+              "page_slug": "composition",
+              "slug": "boundaries",
+              "spacing": {
+                "gap": "m",
+                "padding": "m"
+              },
+              "type": "compose"
+            }
+          ],
+          "column": 3,
+          "element_id": "page.composition.section.2",
+          "index": 2,
+          "label": "Composition boundaries",
+          "line": 150,
+          "page": "composition",
+          "page_slug": "composition",
+          "spacing": {
+            "gap": "l",
+            "padding": "m",
+            "title_gap": "s"
+          },
+          "type": "section"
+        },
+        {
+          "children": [
+            {
+              "column": 5,
+              "element_id": "page.composition.text.3.0",
+              "index": 0,
+              "line": 157,
+              "page": "composition",
+              "page_slug": "composition",
+              "type": "text",
+              "value": "Upload a file, then run ingestion."
+            },
+            {
+              "accept": [],
+              "action_id": "page.composition.upload.intake",
+              "column": 5,
+              "element_id": "page.composition.upload.3.1",
+              "id": "page.composition.upload.intake",
+              "index": 1,
+              "line": 158,
+              "multiple": false,
+              "name": "intake",
+              "page": "composition",
+              "page_slug": "composition",
+              "type": "upload"
+            },
+            {
+              "action": {
+                "flow": "run_ingestion",
+                "type": "call_flow"
+              },
+              "action_id": "page.composition.button.run_ingestion",
+              "column": 5,
+              "element_id": "page.composition.button_item.3.2",
+              "id": "page.composition.button.run_ingestion",
+              "index": 2,
+              "label": "Run ingestion",
+              "line": 159,
+              "page": "composition",
+              "page_slug": "composition",
+              "type": "button"
+            },
+            {
+              "column": 5,
+              "columns": [
+                {
+                  "name": "upload_id",
+                  "type": "text"
+                }
+              ],
+              "columns_configured": true,
+              "element_id": "page.composition.table.3.3",
+              "id": "page.composition.table.ingestionreport",
+              "index": 3,
+              "line": 161,
+              "page": "composition",
+              "page_slug": "composition",
+              "pagination": {
+                "page_size": 5
+              },
+              "record": "IngestionReport",
+              "rows": [],
+              "spacing": {
+                "cell_gap": "s",
+                "header_gap": "m",
+                "row_actions_gap": "s",
+                "row_gap": "s"
+              },
+              "type": "table"
+            }
+          ],
+          "column": 3,
+          "element_id": "page.composition.section.3",
+          "index": 3,
+          "label": "Ingestion",
+          "line": 156,
+          "page": "composition",
+          "page_slug": "composition",
+          "spacing": {
+            "gap": "l",
+            "padding": "m",
+            "title_gap": "s"
+          },
+          "type": "section"
+        },
+        {
+          "children": [
+            {
+              "column": 5,
+              "element_id": "page.composition.text.4.0",
+              "index": 0,
+              "line": 168,
+              "page": "composition",
+              "page_slug": "composition",
+              "type": "text",
+              "value": "Submit a query, then run retrieval."
+            },
+            {
+              "children": [
+                {
+                  "action": {
+                    "flow": "run_retrieval",
+                    "type": "call_flow"
+                  },
+                  "action_id": "page.composition.composer.4.1.0.composer",
+                  "column": 7,
+                  "element_id": "page.composition.composer.4.1.0",
+                  "flow": "run_retrieval",
+                  "id": "page.composition.composer.4.1.0.composer",
+                  "index": 0,
+                  "line": 170,
+                  "page": "composition",
+                  "page_slug": "composition",
+                  "spacing": {
+                    "action_gap": "s",
+                    "input_gap": "s"
+                  },
+                  "type": "composer"
+                }
+              ],
+              "column": 5,
+              "element_id": "page.composition.chat.4.1",
+              "index": 1,
+              "line": 169,
+              "page": "composition",
+              "page_slug": "composition",
+              "spacing": {
+                "composer_gap": "m",
+                "message_gap": "m",
+                "section_gap": "m"
+              },
+              "type": "chat"
+            },
+            {
+              "column": 5,
+              "columns": [
+                {
+                  "name": "query",
+                  "type": "text"
+                }
+              ],
+              "columns_configured": true,
+              "element_id": "page.composition.table.4.2",
+              "id": "page.composition.table.retrievalreport",
+              "index": 2,
+              "line": 171,
+              "page": "composition",
+              "page_slug": "composition",
+              "pagination": {
+                "page_size": 5
+              },
+              "record": "RetrievalReport",
+              "rows": [],
+              "spacing": {
+                "cell_gap": "s",
+                "header_gap": "m",
+                "row_actions_gap": "s",
+                "row_gap": "s"
+              },
+              "type": "table"
+            }
+          ],
+          "column": 3,
+          "element_id": "page.composition.section.4",
+          "index": 4,
+          "label": "Retrieval",
+          "line": 167,
+          "page": "composition",
+          "page_slug": "composition",
+          "spacing": {
+            "gap": "l",
+            "padding": "m",
+            "title_gap": "s"
+          },
+          "type": "section"
+        }
+      ],
+      "name": "composition",
+      "purpose": "Compose ingestion, retrieval, and orchestration with explicit contracts.",
+      "slug": "composition"
+    }
+  ],
+  "theme": {
+    "current": "light",
+    "effective": "light",
+    "persisted_current": null,
+    "preference": {
+      "allow_override": false,
+      "persist": "none"
+    },
+    "runtime_supported": false,
+    "schema_version": "1",
+    "setting": "light",
+    "source": "app",
+    "tokens": {}
+  }
+}

@@ -2,7 +2,7 @@ from pathlib import Path
 
 
 TEMPLATE_ROOT = Path("src/namel3ss/templates")
-EXPECTED_TEMPLATES = {"operations_dashboard", "onboarding", "support_inbox"}
+EXPECTED_TEMPLATES = {"composition", "operations_dashboard", "onboarding", "support_inbox"}
 ROOT_AI_ALLOWLIST: set[str] = set()
 
 

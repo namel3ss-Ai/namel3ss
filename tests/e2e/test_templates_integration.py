@@ -13,6 +13,7 @@ TEMPLATES_DIR = Path(__file__).parents[2] / "src" / "namel3ss" / "templates"
 TEMPLATE_APPS = [
     TEMPLATES_DIR / "operations_dashboard" / "app.ai",
     TEMPLATES_DIR / "onboarding" / "app.ai",
+    TEMPLATES_DIR / "composition" / "app.ai",
     TEMPLATES_DIR / "support_inbox" / "app.ai",
 ]
 
