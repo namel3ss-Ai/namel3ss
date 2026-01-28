@@ -61,6 +61,26 @@ class BuiltinCallExpr(Expression):
 
 
 @dataclass
+class CallArg(Node):
+    name: str
+    value: Expression
+
+
+@dataclass
+class CallFlowExpr(Expression):
+    flow_name: str
+    arguments: List[CallArg]
+    outputs: List[str]
+
+
+@dataclass
+class CallPipelineExpr(Expression):
+    pipeline_name: str
+    arguments: List[CallArg]
+    outputs: List[str]
+
+
+@dataclass
 class ToolCallArg(Node):
     name: str
     value: Expression

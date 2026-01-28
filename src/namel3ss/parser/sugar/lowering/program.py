@@ -20,6 +20,7 @@ def lower_program(program: ast.Program) -> ast.Program:
         capabilities=list(getattr(program, "capabilities", []) or []),
         records=[_lower_record(record) for record in program.records],
         functions=[_lower_function(func) for func in getattr(program, "functions", [])],
+        contracts=[_lower_contract(contract) for contract in getattr(program, "contracts", [])],
         flows=[_lower_flow(flow) for flow in program.flows],
         jobs=[_lower_job(job) for job in getattr(program, "jobs", [])],
         pages=[_lower_page(page) for page in program.pages],
@@ -70,6 +71,16 @@ def _lower_function(func: ast.FunctionDecl) -> ast.FunctionDecl:
         body=_lower_statements(func.body),
         line=func.line,
         column=func.column,
+    )
+
+
+def _lower_contract(contract: ast.ContractDecl) -> ast.ContractDecl:
+    return ast.ContractDecl(
+        kind=contract.kind,
+        name=contract.name,
+        signature=contract.signature,
+        line=contract.line,
+        column=contract.column,
     )
 
 

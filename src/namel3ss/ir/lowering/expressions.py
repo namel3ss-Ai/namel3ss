@@ -6,6 +6,9 @@ from namel3ss.ir.model.expressions import (
     AttrAccess,
     BinaryOp,
     BuiltinCallExpr,
+    CallArg,
+    CallFlowExpr,
+    CallPipelineExpr,
     Comparison,
     ListExpr,
     ListFilterExpr,
@@ -154,6 +157,30 @@ def _lower_expression(expr: ast.Expression | None):
         return CallFunctionExpr(
             function_name=expr.function_name,
             arguments=args,
+            line=expr.line,
+            column=expr.column,
+        )
+    if isinstance(expr, ast.CallFlowExpr):
+        args = [
+            CallArg(name=arg.name, value=_lower_expression(arg.value), line=arg.line, column=arg.column)
+            for arg in expr.arguments
+        ]
+        return CallFlowExpr(
+            flow_name=expr.flow_name,
+            arguments=args,
+            outputs=list(expr.outputs),
+            line=expr.line,
+            column=expr.column,
+        )
+    if isinstance(expr, ast.CallPipelineExpr):
+        args = [
+            CallArg(name=arg.name, value=_lower_expression(arg.value), line=arg.line, column=arg.column)
+            for arg in expr.arguments
+        ]
+        return CallPipelineExpr(
+            pipeline_name=expr.pipeline_name,
+            arguments=args,
+            outputs=list(expr.outputs),
             line=expr.line,
             column=expr.column,
         )

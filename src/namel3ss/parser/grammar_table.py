@@ -61,6 +61,7 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
     from namel3ss.parser.decl.flow import parse_flow
     from namel3ss.parser.decl.job import parse_job
     from namel3ss.parser.decl.foreign import parse_foreign_decl
+    from namel3ss.parser.decl.contract import parse_contract_decl
     from namel3ss.parser.decl.function import parse_function_decl
     from namel3ss.parser.decl.identity import parse_identity
     from namel3ss.parser.decl.page import parse_page
@@ -73,6 +74,7 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
 
     return (
         TopLevelRule("spec", "SPEC", parse_spec_decl),
+        TopLevelRule("contract", "IDENT", parse_contract_decl, token_value="contract"),
         TopLevelRule("function", "IDENT", parse_function_decl, token_value="define"),
         TopLevelRule("use", "IDENT", parse_use_decl, token_value="use"),
         TopLevelRule("capsule", "IDENT", parse_capsule_decl, token_value="capsule"),
@@ -198,7 +200,7 @@ def statement_rules() -> tuple[StatementRule, ...]:
 
 
 def expression_rules() -> tuple[ExpressionRule, ...]:
-    from namel3ss.parser.expr.calls import parse_ask_expression, parse_call_function_expr
+    from namel3ss.parser.expr.calls import parse_ask_expression, parse_call_expr
     from namel3ss.parser.expr.literals import (
         parse_boolean_literal,
         parse_null_literal,
@@ -220,7 +222,7 @@ def expression_rules() -> tuple[ExpressionRule, ...]:
         ExpressionRule("input", "INPUT", parse_reference_expr),
         ExpressionRule("state", "STATE", parse_state_path),
         ExpressionRule("grouped", "LPAREN", parse_grouped_expression),
-        ExpressionRule("call", "CALL", parse_call_function_expr),
+        ExpressionRule("call", "CALL", parse_call_expr),
         ExpressionRule("ask", "ASK", parse_ask_expression),
     )
 

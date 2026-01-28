@@ -136,6 +136,10 @@ def _scan_expression(ctx, expr: ir.Expression) -> None:
         for arg in expr.arguments:
             _scan_expression(ctx, arg.value)
         return
+    if isinstance(expr, ir.CallFlowExpr):
+        raise Namel3ssError("Parallel tasks cannot call flows", line=expr.line, column=expr.column)
+    if isinstance(expr, ir.CallPipelineExpr):
+        raise Namel3ssError("Parallel tasks cannot call pipelines", line=expr.line, column=expr.column)
     if isinstance(expr, ir.UnaryOp):
         _scan_expression(ctx, expr.operand)
         return

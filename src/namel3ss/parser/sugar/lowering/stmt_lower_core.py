@@ -206,7 +206,14 @@ def _lower_statement(stmt: ast.Statement) -> list[ast.Statement]:
             )
             for task in stmt.tasks
         ]
-        return [ast.ParallelBlock(tasks=tasks, line=stmt.line, column=stmt.column)]
+        merge = None
+        if stmt.merge is not None:
+            merge = ast.ParallelMergePolicy(
+                policy=stmt.merge.policy,
+                line=stmt.merge.line,
+                column=stmt.merge.column,
+            )
+        return [ast.ParallelBlock(tasks=tasks, merge=merge, line=stmt.line, column=stmt.column)]
     if isinstance(stmt, ast.Repeat):
         return [
             ast.Repeat(

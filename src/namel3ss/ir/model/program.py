@@ -11,6 +11,7 @@ from namel3ss.ir.model.ai import AIDecl
 from namel3ss.ir.model.agents import AgentDecl, AgentTeam
 from namel3ss.ir.model.jobs import JobDecl
 from namel3ss.ir.model.policy import PolicyDecl
+from namel3ss.ir.model.contracts import ContractDecl
 from namel3ss.ir.model.tools import ToolDecl
 from namel3ss.ir.functions.model import FunctionDecl
 from namel3ss.schema import records as schema
@@ -40,6 +41,7 @@ class Program(Node):
     capabilities: tuple[str, ...]
     records: List[schema.RecordSchema]
     functions: Dict[str, FunctionDecl]
+    flow_contracts: Dict[str, ContractDecl]
     flows: List[Flow]
     jobs: List[JobDecl]
     pages: List[Page]

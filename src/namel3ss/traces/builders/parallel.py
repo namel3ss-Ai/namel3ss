@@ -23,13 +23,18 @@ def build_parallel_task_finished(*, task_name: str, status: str, title: str, lin
     }
 
 
-def build_parallel_merged(*, title: str, lines: list[str]) -> dict:
-    return {
+def build_parallel_merged(*, title: str, lines: list[str], policy: str | None = None, conflicts: list[str] | None = None) -> dict:
+    event = {
         "type": TraceEventType.PARALLEL_MERGED,
         "trace_version": TRACE_VERSION,
         "title": title,
         "lines": list(lines),
     }
+    if policy:
+        event["policy"] = policy
+    if conflicts:
+        event["conflicts"] = list(conflicts)
+    return event
 
 
 __all__ = [

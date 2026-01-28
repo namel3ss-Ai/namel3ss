@@ -39,8 +39,14 @@ class ParallelTask(Node):
 
 
 @dataclass
+class ParallelMergePolicy(Node):
+    policy: str
+
+
+@dataclass
 class ParallelBlock(Statement):
     tasks: List[ParallelTask]
+    merge: ParallelMergePolicy | None = None
 
 
 @dataclass

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import List
 
 from namel3ss.ast import nodes as ast
+from namel3ss.ast.calls import CallArg, CallFlowExpr, CallPipelineExpr
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.parser.decl.tool import _old_tool_syntax_message
@@ -76,10 +77,27 @@ def parse_old_tool_call(parser):
     raise Namel3ssError(_old_tool_syntax_message(), line=tok.line, column=tok.column)
 
 
+def parse_call_expr(parser):
+    call_tok = parser._advance()
+    if _match_word(parser, "function"):
+        return _parse_call_function_after_call(parser, call_tok)
+    if parser._current().type == "FLOW" or _match_word(parser, "flow"):
+        if parser._current().type == "FLOW":
+            parser._advance()
+        return _parse_call_flow(parser, call_tok)
+    if _match_word(parser, "pipeline"):
+        return _parse_call_pipeline(parser, call_tok)
+    raise Namel3ssError(_old_tool_syntax_message(), line=call_tok.line, column=call_tok.column)
+
+
 def parse_call_function_expr(parser) -> ast.CallFunctionExpr:
     call_tok = parser._advance()
     if not _match_word(parser, "function"):
         raise Namel3ssError(_old_tool_syntax_message(), line=call_tok.line, column=call_tok.column)
+    return _parse_call_function_after_call(parser, call_tok)
+
+
+def _parse_call_function_after_call(parser, call_tok) -> ast.CallFunctionExpr:
     name_tok = parser._expect("STRING", "Expected function name string")
     parser._expect("COLON", "Expected ':' after function name")
     parser._expect("NEWLINE", "Expected newline after function call")
@@ -123,6 +141,132 @@ def parse_call_function_expr(parser) -> ast.CallFunctionExpr:
         line=call_tok.line,
         column=call_tok.column,
     )
+
+
+def _parse_call_flow(parser, call_tok) -> CallFlowExpr:
+    return _parse_call_contract(parser, call_tok, kind="flow")
+
+
+def _parse_call_pipeline(parser, call_tok) -> CallPipelineExpr:
+    return _parse_call_contract(parser, call_tok, kind="pipeline")
+
+
+def _parse_call_contract(parser, call_tok, *, kind: str):
+    label = "flow" if kind == "flow" else "pipeline"
+    name_tok = parser._expect("STRING", f"Expected {label} name string")
+    parser._expect("COLON", f"Expected ':' after {label} name")
+    parser._expect("NEWLINE", f"Expected newline after {label} call")
+    parser._expect("INDENT", f"Expected indented {label} call block")
+
+    _require_section(parser, "input", label=label)
+    arguments = _parse_call_args(parser, section_name="input")
+    _require_section(parser, "output", label=label)
+    outputs = _parse_call_outputs(parser)
+
+    parser._expect("DEDENT", f"Expected end of {label} call")
+    while parser._match("NEWLINE"):
+        pass
+    if kind == "flow":
+        return CallFlowExpr(
+            flow_name=name_tok.value,
+            arguments=arguments,
+            outputs=outputs,
+            line=call_tok.line,
+            column=call_tok.column,
+        )
+    return CallPipelineExpr(
+        pipeline_name=name_tok.value,
+        arguments=arguments,
+        outputs=outputs,
+        line=call_tok.line,
+        column=call_tok.column,
+    )
+
+
+def _require_section(parser, name: str, *, label: str) -> None:
+    tok = parser._current()
+    if tok.type in {"IDENT", "INPUT"} and tok.value == name:
+        return
+    raise Namel3ssError(f"Expected {label} {name} block", line=tok.line, column=tok.column)
+
+
+def _parse_call_args(parser, *, section_name: str) -> List[CallArg]:
+    parser._advance()
+    parser._expect("COLON", f"Expected ':' after {section_name}")
+    parser._expect("NEWLINE", f"Expected newline after {section_name}")
+    if not parser._match("INDENT"):
+        return []
+    arguments: List[CallArg] = []
+    seen = set()
+    while parser._current().type != "DEDENT":
+        if parser._match("NEWLINE"):
+            continue
+        arg_name, arg_line, arg_column = _read_phrase_until(parser, stop_type="IS", context=f"{section_name} field")
+        parser._expect("IS", f"Expected 'is' after {section_name} field name")
+        value_expr = parser._parse_expression()
+        if arg_name in seen:
+            raise Namel3ssError(
+                f"Duplicate {section_name} field '{arg_name}'",
+                line=arg_line,
+                column=arg_column,
+            )
+        seen.add(arg_name)
+        arguments.append(
+            CallArg(
+                name=arg_name,
+                value=value_expr,
+                line=arg_line,
+                column=arg_column,
+            )
+        )
+        parser._match("NEWLINE")
+    parser._expect("DEDENT", f"Expected end of {section_name} block")
+    while parser._match("NEWLINE"):
+        pass
+    return arguments
+
+
+def _parse_call_outputs(parser) -> List[str]:
+    parser._advance()
+    parser._expect("COLON", "Expected ':' after output")
+    parser._expect("NEWLINE", "Expected newline after output")
+    if not parser._match("INDENT"):
+        return []
+    outputs: List[str] = []
+    seen = set()
+    while parser._current().type != "DEDENT":
+        if parser._match("NEWLINE"):
+            continue
+        name, line, column = _read_phrase_line(parser, context="output field")
+        if name in seen:
+            raise Namel3ssError(
+                f"Duplicate output field '{name}'",
+                line=line,
+                column=column,
+            )
+        seen.add(name)
+        outputs.append(name)
+        parser._match("NEWLINE")
+    parser._expect("DEDENT", "Expected end of output block")
+    while parser._match("NEWLINE"):
+        pass
+    return outputs
+
+
+def _read_phrase_line(parser, *, context: str) -> tuple[str, int, int]:
+    tokens = []
+    while True:
+        tok = parser._current()
+        if tok.type in {"NEWLINE", "DEDENT"}:
+            break
+        if tok.type in {"COLON", "COMMA", "LPAREN", "RPAREN", "LBRACKET", "RBRACKET", "PLUS", "MINUS", "STAR", "POWER", "SLASH"}:
+            raise Namel3ssError(f"Expected {context}", line=tok.line, column=tok.column)
+        tokens.append(tok)
+        parser._advance()
+    if not tokens:
+        tok = parser._current()
+        raise Namel3ssError(f"Expected {context}", line=tok.line, column=tok.column)
+    return _phrase_text(tokens), tokens[0].line, tokens[0].column
 
 
 def parse_ask_expression(parser):
@@ -190,6 +334,7 @@ def _match_word(parser, value: str) -> bool:
 __all__ = [
     "looks_like_tool_call",
     "parse_ask_expression",
+    "parse_call_expr",
     "parse_call_function_expr",
     "parse_old_tool_call",
     "parse_tool_call_expr",

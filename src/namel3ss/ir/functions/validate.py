@@ -121,6 +121,42 @@ def _validate_expression(expr: ir.Expression) -> None:
             line=expr.line,
             column=expr.column,
         )
+    if isinstance(expr, ir.StatePath):
+        raise Namel3ssError(
+            "Functions cannot read state",
+            line=expr.line,
+            column=expr.column,
+        )
+    if isinstance(expr, ir.BuiltinCallExpr):
+        raise Namel3ssError(
+            "Functions cannot call builtins",
+            line=expr.line,
+            column=expr.column,
+        )
+    if isinstance(expr, ir.CallFlowExpr):
+        raise Namel3ssError(
+            "Functions cannot call flows",
+            line=expr.line,
+            column=expr.column,
+        )
+    if isinstance(expr, ir.CallPipelineExpr):
+        raise Namel3ssError(
+            "Functions cannot call pipelines",
+            line=expr.line,
+            column=expr.column,
+        )
+    if isinstance(expr, ir.VarReference) and expr.name == "identity":
+        raise Namel3ssError(
+            "Functions cannot access identity",
+            line=expr.line,
+            column=expr.column,
+        )
+    if isinstance(expr, ir.AttrAccess) and expr.base == "identity":
+        raise Namel3ssError(
+            "Functions cannot access identity",
+            line=expr.line,
+            column=expr.column,
+        )
     if isinstance(expr, ir.CallFunctionExpr):
         for arg in expr.arguments:
             _validate_expression(arg.value)

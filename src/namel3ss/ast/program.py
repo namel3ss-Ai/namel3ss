@@ -12,6 +12,7 @@ from namel3ss.ast.policy import PolicyDecl
 from namel3ss.ast.ui_packs import UIPackDecl
 if TYPE_CHECKING:  # pragma: no cover - typing-only
     from namel3ss.ast.flow_steps import FlowStep
+    from namel3ss.ast.contracts import ContractDecl
 
 
 @dataclass
@@ -38,6 +39,7 @@ class Program(Node):
     capabilities: List[str]
     records: List["RecordDecl"]
     functions: List["FunctionDecl"]
+    contracts: List["ContractDecl"]
     flows: List[Flow]
     jobs: List[JobDecl]
     pages: List["PageDecl"]

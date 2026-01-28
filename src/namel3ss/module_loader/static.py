@@ -98,6 +98,7 @@ def _merge_programs(
         capabilities=list(getattr(app_ast, "capabilities", []) or []),
         records=combined_records,
         functions=combined_functions,
+        contracts=list(getattr(app_ast, "contracts", []) or []),
         flows=combined_flows,
         jobs=combined_jobs,
         pages=combined_pages,

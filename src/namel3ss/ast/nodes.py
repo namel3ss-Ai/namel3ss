@@ -6,6 +6,8 @@ from typing import List, Optional, Union
 from namel3ss.ast.agents import AgentDecl, AgentTeamDecl, AgentTeamMember
 from namel3ss.ast.ai import AIDecl, AIMemory
 from namel3ss.ast.base import Node
+from namel3ss.ast.calls import CallArg, CallFlowExpr, CallPipelineExpr
+from namel3ss.ast.contracts import ContractDecl
 from namel3ss.ast.expressions import (
     Assignable,
     AttrAccess,
@@ -114,6 +116,7 @@ from namel3ss.ast.statements import (
     MatchCase,
     MetricStmt,
     AgentMergePolicy,
+    ParallelMergePolicy,
     ThemeChange,
     ParallelAgentEntry,
     ParallelBlock,
@@ -139,6 +142,7 @@ __all__ = [
     "Flow",
     "Program",
     "JobDecl",
+    "ContractDecl",
     "FlowStep",
     "FlowCallForeign",
     "FlowInput",
@@ -158,6 +162,7 @@ __all__ = [
     "ParallelAgentEntry",
     "RunAgentsParallelStmt",
     "AgentMergePolicy",
+    "ParallelMergePolicy",
     "ParallelTask",
     "ParallelBlock",
     "ThemeChange",
@@ -196,8 +201,11 @@ __all__ = [
     "BuiltinCallExpr",
     "ToolCallArg",
     "ToolCallExpr",
+    "CallArg",
     "FunctionCallArg",
     "CallFunctionExpr",
+    "CallFlowExpr",
+    "CallPipelineExpr",
     "Assignable",
     "FunctionParam",
     "FunctionSignature",

@@ -29,11 +29,15 @@ def build_parallel_task_finished_event(result: ParallelTaskResult, *, status: st
 
 
 def build_parallel_merged_event(merge: ParallelMergeResult) -> dict:
-    lines = [_sanitize(line) for line in merge.lines]
-    return build_parallel_merged(
+    lines = [_sanitize(f"Merge policy is {merge.policy}.")]
+    lines.extend(_sanitize(line) for line in merge.lines)
+    event = build_parallel_merged(
         title="Parallel merged",
         lines=lines,
+        policy=merge.policy,
+        conflicts=list(merge.conflicts),
     )
+    return event
 
 
 def _task_finished_lines(result: ParallelTaskResult, *, status: str, error: Exception | None) -> list[str]:

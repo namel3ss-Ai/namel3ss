@@ -22,6 +22,8 @@ class ParallelMergeResult:
     constants: set[str]
     values: list[object]
     lines: list[str]
+    policy: str
+    conflicts: list[str]
 
 
 def merge_task_results(
@@ -29,11 +31,17 @@ def merge_task_results(
     base_locals: dict[str, object],
     base_constants: set[str],
     results: list[ParallelTaskResult],
+    policy: str | None = None,
 ) -> ParallelMergeResult:
+    resolved_policy = policy or "conflict"
+    if resolved_policy not in {"conflict", "precedence", "override"}:
+        raise Namel3ssError(f"Unknown parallel merge policy '{resolved_policy}'.")
     merged_locals = dict(base_locals)
     merged_constants = set(base_constants)
     values: list[object] = []
     lines: list[str] = []
+    conflict_lines: list[str] = []
+    conflicts: list[str] = []
     updated: dict[str, str] = {}
 
     for result in results:
@@ -42,11 +50,17 @@ def merge_task_results(
             names = sorted(result.locals_update.keys())
             for name in names:
                 if name in updated:
-                    raise Namel3ssError(
-                        f"Parallel tasks cannot write the same local: {name}",
-                        line=result.line,
-                        column=result.column,
-                    )
+                    if resolved_policy == "conflict":
+                        raise Namel3ssError(
+                            f"Parallel tasks cannot write the same local: {name}",
+                            line=result.line,
+                            column=result.column,
+                        )
+                    conflicts.append(name)
+                    if resolved_policy == "precedence":
+                        conflict_lines.append(f"Conflict on {name} kept from {updated[name]}.")
+                        continue
+                    conflict_lines.append(f"Conflict on {name} overridden by {result.name}.")
                 updated[name] = result.name
                 merged_locals[name] = result.locals_update[name]
             line = f"Task {result.name} updated locals {', '.join(names)}."
@@ -59,11 +73,15 @@ def merge_task_results(
 
     if not results:
         lines.append("No parallel tasks merged.")
+    if conflict_lines:
+        lines.extend(conflict_lines)
     return ParallelMergeResult(
         locals=merged_locals,
         constants=merged_constants,
         values=values,
         lines=lines,
+        policy=resolved_policy,
+        conflicts=sorted(set(conflicts)),
     )
 
 

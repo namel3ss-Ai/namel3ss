@@ -28,6 +28,7 @@ def parse_program(parser) -> ast.Program:
     pages: List[ast.PageDecl] = []
     ui_packs: List[ast.UIPackDecl] = []
     functions: List[ast.FunctionDecl] = []
+    contracts: List[ast.ContractDecl] = []
     ais: List[ast.AIDecl] = []
     tools: List[ast.ToolDecl] = []
     agents: List[ast.AgentDecl] = []
@@ -84,6 +85,20 @@ def parse_program(parser) -> ast.Program:
                     column=tok.column,
                 )
             functions.append(rule.parse(parser))
+            continue
+        if rule.name == "contract":
+            if parser.allow_capsule:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Contract declarations are not allowed in capsule.ai.",
+                        why="Capsule files only contain use statements and the capsule exports block.",
+                        fix="Move contract declarations into app.ai.",
+                        example='contract flow "demo":',
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            contracts.append(rule.parse(parser))
             continue
         if rule.name == "capsule":
             if not parser.allow_capsule:
@@ -282,6 +297,7 @@ def parse_program(parser) -> ast.Program:
         capabilities=capabilities,
         records=records,
         functions=functions,
+        contracts=contracts,
         flows=flows,
         jobs=jobs,
         pages=pages,

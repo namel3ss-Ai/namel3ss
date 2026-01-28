@@ -1,5 +1,6 @@
 from namel3ss.ir.model.base import Expression, Node, Statement
 from namel3ss.ir.model.program import Flow, Program
+from namel3ss.ir.model.contracts import ContractDecl
 from namel3ss.ir.model.policy import PolicyDecl, PolicyRule
 from namel3ss.ir.model.jobs import JobDecl
 from namel3ss.ir.model.flow_steps import (
@@ -23,6 +24,7 @@ from namel3ss.ir.model.statements import (
     Match,
     MatchCase,
     ParallelBlock,
+    ParallelMergePolicy,
     ParallelTask,
     Repeat,
     RepeatWhile,
@@ -43,6 +45,9 @@ from namel3ss.ir.model.expressions import (
     AttrAccess,
     BinaryOp,
     BuiltinCallExpr,
+    CallArg,
+    CallFlowExpr,
+    CallPipelineExpr,
     Comparison,
     ListExpr,
     ListFilterExpr,
@@ -131,6 +136,7 @@ __all__ = [
     "Statement",
     "Flow",
     "Program",
+    "ContractDecl",
     "PolicyDecl",
     "PolicyRule",
     "JobDecl",
@@ -142,6 +148,7 @@ __all__ = [
     "MatchCase",
     "ParallelTask",
     "ParallelBlock",
+    "ParallelMergePolicy",
     "Repeat",
     "RepeatWhile",
     "Return",
@@ -174,6 +181,9 @@ __all__ = [
     "ToolCallArg",
     "ToolCallExpr",
     "BuiltinCallExpr",
+    "CallArg",
+    "CallFlowExpr",
+    "CallPipelineExpr",
     "FunctionCallArg",
     "CallFunctionExpr",
     "UnaryOp",

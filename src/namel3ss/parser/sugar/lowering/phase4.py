@@ -163,6 +163,14 @@ def _collect_from_expression(expr: ast.Expression | None, used: set[str]) -> Non
         for arg in expr.arguments:
             _collect_from_expression(arg.value, used)
         return
+    if isinstance(expr, ast.CallFlowExpr):
+        for arg in expr.arguments:
+            _collect_from_expression(arg.value, used)
+        return
+    if isinstance(expr, ast.CallPipelineExpr):
+        for arg in expr.arguments:
+            _collect_from_expression(arg.value, used)
+        return
     if isinstance(expr, ast.ListExpr):
         for item in expr.items:
             _collect_from_expression(item, used)

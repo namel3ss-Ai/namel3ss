@@ -53,6 +53,15 @@ def validate_module_program(program: ast.Program, *, path: Path) -> None:
                 example='flow "run":',
             )
         )
+    if getattr(program, "contracts", None):
+        raise Namel3ssError(
+            build_guidance_message(
+                what="Contracts are not allowed in modules.",
+                why="Contracts belong in app.ai alongside flow declarations.",
+                fix="Move the contract block to app.ai.",
+                example='contract flow "demo":',
+            )
+        )
     if program.ais or program.agents:
         raise Namel3ssError(
             build_guidance_message(

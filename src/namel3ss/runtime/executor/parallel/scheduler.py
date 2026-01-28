@@ -56,7 +56,8 @@ def execute_parallel_block(ctx, stmt: ir.ParallelBlock, execute_statement) -> No
         if error is not None:
             raise error
 
-    merge = _merge_results(ctx, base_locals, base_constants, results)
+    merge_policy = getattr(stmt, "merge", None)
+    merge = _merge_results(ctx, base_locals, base_constants, results, policy=merge_policy)
     ctx.traces.append(build_parallel_merged_event(merge))
     record_step(
         ctx,
@@ -72,8 +73,15 @@ def _merge_results(
     base_locals: dict[str, object],
     base_constants: set[str],
     results: list[ParallelTaskResult],
+    *,
+    policy: ir.ParallelMergePolicy | None,
 ) -> ParallelMergeResult:
-    merge = merge_task_results(base_locals=base_locals, base_constants=base_constants, results=results)
+    merge = merge_task_results(
+        base_locals=base_locals,
+        base_constants=base_constants,
+        results=results,
+        policy=getattr(policy, "policy", None),
+    )
     ctx.locals = merge.locals
     ctx.constants = merge.constants
     ctx.last_value = list(merge.values)

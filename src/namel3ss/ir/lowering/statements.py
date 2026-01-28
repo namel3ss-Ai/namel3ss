@@ -18,6 +18,7 @@ from namel3ss.ir.model.statements import (
     MatchCase,
     MetricStmt,
     ParallelBlock,
+    ParallelMergePolicy,
     ParallelTask,
     Repeat,
     RepeatWhile,
@@ -63,6 +64,13 @@ def _lower_statement(stmt: ast.Statement, agents) -> IRStatement:
             column=stmt.column,
         )
     if isinstance(stmt, ast.ParallelBlock):
+        merge = None
+        if stmt.merge is not None:
+            merge = ParallelMergePolicy(
+                policy=stmt.merge.policy,
+                line=stmt.merge.line,
+                column=stmt.merge.column,
+            )
         return ParallelBlock(
             tasks=[
                 ParallelTask(
@@ -73,6 +81,7 @@ def _lower_statement(stmt: ast.Statement, agents) -> IRStatement:
                 )
                 for task in stmt.tasks
             ],
+            merge=merge,
             line=stmt.line,
             column=stmt.column,
         )
