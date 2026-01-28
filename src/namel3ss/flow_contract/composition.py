@@ -155,17 +155,6 @@ def _validate_call_fields(
             line=line,
             column=column,
         )
-    if contract_fields and not call_names:
-        raise Namel3ssError(
-            build_guidance_message(
-                what=f"{kind.title()} call is missing {label}s.",
-                why=f"The {kind} contract requires explicit {label}s.",
-                fix=f"Declare the {label} block with the required fields.",
-                example=f"{label}:",
-            ),
-            line=line,
-            column=column,
-        )
     order = {field.name: idx for idx, field in enumerate(contract_fields)}
     indices: list[int] = []
     for name in call_names:

@@ -1,0 +1,21 @@
+spec is "1.0"
+
+contract flow "inner":
+  input:
+    name is text
+  output:
+    result is text
+
+flow "inner":
+  return map:
+    "result" is "ok"
+
+flow "outer":
+  let result is call flow "inner":
+    input:
+      name is "ok"
+      extra is "nope"
+    output:
+      result
+  return map:
+    "result" is map get result key "result"

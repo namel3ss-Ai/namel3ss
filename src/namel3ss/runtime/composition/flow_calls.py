@@ -26,15 +26,30 @@ def execute_flow_call(
     contract = _lookup_flow_contract(ctx, expr.flow_name, line=expr.line, column=expr.column)
     args_by_name = _evaluate_call_args(ctx, expr.arguments, evaluate_expression, collector)
     input_payload = _build_input_payload(contract.signature, args_by_name, expr)
+    contract_inputs = [param.name for param in contract.signature.inputs]
+    contract_outputs = [param.name for param in contract.signature.outputs or []]
     flow_call_id = _next_flow_call_id(ctx)
     caller_flow = getattr(getattr(ctx, "flow", None), "name", None)
 
-    _record_flow_call_started(ctx, flow_call_id, caller_flow, flow.name, expr)
+    _record_flow_call_started(
+        ctx,
+        flow_call_id,
+        caller_flow,
+        flow.name,
+        expr,
+        contract_inputs,
+        contract_outputs,
+    )
     record_step(
         ctx,
         kind="flow_call_start",
         what=f'call flow "{flow.name}"',
-        data={"flow_call_id": flow_call_id, "callee_flow": flow.name},
+        data={
+            "flow_call_id": flow_call_id,
+            "callee_flow": flow.name,
+            "contract_inputs": contract_inputs,
+            "contract_outputs": contract_outputs,
+        },
         line=expr.line,
         column=expr.column,
     )
@@ -50,13 +65,27 @@ def execute_flow_call(
         output_map = _validate_flow_output(contract.signature, result_value, expr)
         selected = _select_outputs(output_map, expr.outputs, expr)
     except Exception as exc:
-        _record_flow_call_finished(ctx, flow_call_id, caller_flow, flow.name, status="error", error=exc)
+        _record_flow_call_finished(
+            ctx,
+            flow_call_id,
+            caller_flow,
+            flow.name,
+            status="error",
+            error=exc,
+            contract_inputs=contract_inputs,
+            contract_outputs=contract_outputs,
+        )
         record_step(
             ctx,
             kind="flow_call_error",
             what=f'call flow "{flow.name}" failed',
             because=str(exc),
-            data={"flow_call_id": flow_call_id, "callee_flow": flow.name},
+            data={
+                "flow_call_id": flow_call_id,
+                "callee_flow": flow.name,
+                "contract_inputs": contract_inputs,
+                "contract_outputs": contract_outputs,
+            },
             line=expr.line,
             column=expr.column,
         )
@@ -77,12 +106,26 @@ def execute_flow_call(
             secret_values=collect_secret_values(ctx.config),
         )
 
-    _record_flow_call_finished(ctx, flow_call_id, caller_flow, flow.name, status="ok", error=None)
+    _record_flow_call_finished(
+        ctx,
+        flow_call_id,
+        caller_flow,
+        flow.name,
+        status="ok",
+        error=None,
+        contract_inputs=contract_inputs,
+        contract_outputs=contract_outputs,
+    )
     record_step(
         ctx,
         kind="flow_call_end",
         what=f'call flow "{flow.name}" finished',
-        data={"flow_call_id": flow_call_id, "callee_flow": flow.name},
+        data={
+            "flow_call_id": flow_call_id,
+            "callee_flow": flow.name,
+            "contract_inputs": contract_inputs,
+            "contract_outputs": contract_outputs,
+        },
         line=expr.line,
         column=expr.column,
     )
@@ -284,6 +327,8 @@ def _record_flow_call_started(
     caller_flow: str | None,
     callee_flow: str,
     expr: ir.CallFlowExpr,
+    contract_inputs: list[str],
+    contract_outputs: list[str],
 ) -> None:
     ctx.traces.append(
         {
@@ -293,6 +338,8 @@ def _record_flow_call_started(
             "callee_flow": callee_flow,
             "inputs": [arg.name for arg in expr.arguments],
             "outputs": list(expr.outputs),
+            "contract_inputs": list(contract_inputs),
+            "contract_outputs": list(contract_outputs),
         }
     )
 
@@ -305,6 +352,8 @@ def _record_flow_call_finished(
     *,
     status: str,
     error: Exception | None,
+    contract_inputs: list[str],
+    contract_outputs: list[str],
 ) -> None:
     event = {
         "type": TraceEventType.FLOW_CALL_FINISHED,
@@ -312,6 +361,8 @@ def _record_flow_call_finished(
         "caller_flow": caller_flow,
         "callee_flow": callee_flow,
         "status": status,
+        "contract_inputs": list(contract_inputs),
+        "contract_outputs": list(contract_outputs),
     }
     if error is not None:
         event["error_message"] = str(error)
