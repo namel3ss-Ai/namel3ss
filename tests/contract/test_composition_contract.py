@@ -14,4 +14,4 @@ def test_flow_recursion_is_rejected_deterministically() -> None:
     source = FIXTURE_PATH.read_text(encoding="utf-8")
     with pytest.raises(Namel3ssError) as excinfo:
         lower_ir_program(source)
-    assert str(excinfo.value) == "[line 15, col 1] Flow recursion is not allowed"
+    assert str(excinfo.value) == "[line 25, col 15] Flow call cycle detected: alpha -> beta -> alpha"

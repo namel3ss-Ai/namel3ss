@@ -1,0 +1,46 @@
+spec is "1.0"
+
+contract flow "alpha":
+  input:
+    value is text
+  output:
+    result is text
+
+contract flow "beta":
+  input:
+    value is text
+  output:
+    result is text
+
+contract flow "gamma":
+  input:
+    value is text
+  output:
+    result is text
+
+flow "alpha":
+  let next is call flow "beta":
+    input:
+      value is "hello"
+    output:
+      result
+  return map:
+    "result" is map get next key "result"
+
+flow "beta":
+  let next is call flow "gamma":
+    input:
+      value is "hello"
+    output:
+      result
+  return map:
+    "result" is map get next key "result"
+
+flow "gamma":
+  let next is call flow "alpha":
+    input:
+      value is "hello"
+    output:
+      result
+  return map:
+    "result" is map get next key "result"

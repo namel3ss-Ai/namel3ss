@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import difflib
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
@@ -238,9 +239,12 @@ def _lookup_flow(ctx: ExecutionContext, flow_name: str, *, line: int | None, col
     flow = ctx.flow_map.get(flow_name)
     if flow is not None:
         return flow
+    flow_names = list(ctx.flow_map.keys())
+    suggestion = difflib.get_close_matches(flow_name, flow_names, n=1, cutoff=0.6)
+    hint = f' Did you mean "{suggestion[0]}"?' if suggestion else ""
     raise Namel3ssError(
         build_guidance_message(
-            what=f'Unknown flow "{flow_name}".',
+            what=f'Unknown flow "{flow_name}".{hint}',
             why="Flow calls must reference declared flows.",
             fix="Update the call to an existing flow.",
             example=f'flow "{flow_name}":\n  return "ok"',

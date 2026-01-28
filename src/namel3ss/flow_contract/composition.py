@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import difflib
+
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
+
+FlowCallEdge = tuple[str, int | None, int | None]
 
 
 def validate_flow_contracts(
@@ -30,16 +34,17 @@ def validate_flow_composition(
     flow_contracts: dict[str, ir.ContractDecl],
     pipeline_contracts: dict[str, ir.ContractDecl],
 ) -> None:
+    flow_names = [flow.name for flow in flows]
     flow_map = {flow.name: flow for flow in flows}
-    call_graph = {flow.name: set() for flow in flows}
+    call_graph: dict[str, list[FlowCallEdge]] = {flow.name: [] for flow in flows}
 
     for flow in flows:
         flow_calls: list[ir.CallFlowExpr] = []
         pipeline_calls: list[ir.CallPipelineExpr] = []
         _collect_calls(flow.body, flow_calls, pipeline_calls)
         for call in flow_calls:
-            _validate_flow_call(call, flow_contracts, flow_map)
-            call_graph[flow.name].add(call.flow_name)
+            _validate_flow_call(call, flow_contracts, flow_map, flow_names)
+            call_graph[flow.name].append((call.flow_name, call.line, call.column))
         for call in pipeline_calls:
             _validate_pipeline_call(call, pipeline_contracts)
 
@@ -50,13 +55,16 @@ def _validate_flow_call(
     call: ir.CallFlowExpr,
     flow_contracts: dict[str, ir.ContractDecl],
     flow_map: dict[str, ir.Flow],
+    flow_names: list[str],
 ) -> None:
     flow_name = call.flow_name
     flow = flow_map.get(flow_name)
     if flow is None:
+        suggestion = _suggest_flow_name(flow_name, flow_names)
+        hint = f' Did you mean "{suggestion}"?' if suggestion else ""
         raise Namel3ssError(
             build_guidance_message(
-                what=f'Unknown flow "{flow_name}".',
+                what=f'Unknown flow "{flow_name}".{hint}',
                 why="Flow calls must reference declared flows.",
                 fix="Update the call to an existing flow.",
                 example=f'flow "{flow_name}":\\n  return "ok"',
@@ -338,29 +346,55 @@ def _collect_calls_from_expr(
         return
 
 
-def _validate_call_graph(call_graph: dict[str, set[str]], flows: list[ir.Flow]) -> None:
+def _validate_call_graph(call_graph: dict[str, list[FlowCallEdge]], flows: list[ir.Flow]) -> None:
+    flow_order = [flow.name for flow in flows]
     flow_lookup = {flow.name: flow for flow in flows}
-    visiting: set[str] = set()
+    visiting: list[str] = []
+    visiting_set: set[str] = set()
     visited: set[str] = set()
 
     def visit(name: str) -> None:
-        if name in visiting:
-            raise Namel3ssError(
-                "Flow recursion is not allowed",
-                line=flow_lookup[name].line,
-                column=flow_lookup[name].column,
-            )
-        if name in visited:
-            return
-        visiting.add(name)
-        for target in call_graph.get(name, set()):
-            if target in flow_lookup:
+        visiting.append(name)
+        visiting_set.add(name)
+        for target, line, column in call_graph.get(name, []):
+            if target not in flow_lookup:
+                continue
+            if target in visiting_set:
+                cycle = _format_cycle(_cycle_path(visiting, target))
+                error_line = line if line is not None else flow_lookup[name].line
+                error_column = column if column is not None else flow_lookup[name].column
+                raise Namel3ssError(
+                    f"Flow call cycle detected: {cycle}",
+                    line=error_line,
+                    column=error_column,
+                )
+            if target not in visited:
                 visit(target)
-        visiting.remove(name)
+        visiting_set.remove(name)
+        visiting.pop()
         visited.add(name)
 
-    for name in call_graph:
-        visit(name)
+    for name in flow_order:
+        if name not in visited:
+            visit(name)
+
+
+def _cycle_path(stack: list[str], target: str) -> list[str]:
+    if target not in stack:
+        return [target, target]
+    start = stack.index(target)
+    return stack[start:] + [target]
+
+
+def _format_cycle(path: list[str]) -> str:
+    return " -> ".join(path)
+
+
+def _suggest_flow_name(name: str, flow_names: list[str]) -> str | None:
+    if not flow_names:
+        return None
+    matches = difflib.get_close_matches(name, flow_names, n=1, cutoff=0.6)
+    return matches[0] if matches else None
 
 
 __all__ = ["validate_flow_composition", "validate_flow_contracts"]

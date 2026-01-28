@@ -1,0 +1,14 @@
+spec is "1.0"
+
+flow "alpha":
+  return map:
+    "result" is "ok"
+
+flow "demo":
+  let result is call flow "alhpa":
+    input:
+      value is "hello"
+    output:
+      result
+  return map:
+    "result" is map get result key "result"
