@@ -9,7 +9,7 @@ from tests.compute_core.helpers.samples import sample_sources
 from tests.spec_freeze.helpers.ir_dump import dump_ir
 
 
-IR_GOLDEN_DIR = Path("tests/golden/compute_core/ir")
+IR_GOLDEN_DIR = Path("tests/fixtures/compute_core/ir")
 
 
 def test_ir_golden_compute_core() -> None:

@@ -4,7 +4,7 @@ from namel3ss.cli.main import main
 
 
 def _expected_help() -> str:
-    return (Path("tests") / "golden" / "cli" / "help.txt").read_text(encoding="utf-8")
+    return (Path("tests") / "fixtures" / "cli" / "help.txt").read_text(encoding="utf-8")
 
 
 def test_help_command(tmp_path, capsys):

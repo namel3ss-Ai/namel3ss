@@ -158,13 +158,15 @@ def run_declarative_flow(ctx: ExecutionContext) -> None:
 
 
 def _record_flow_start(ctx: ExecutionContext, flow_id_value: str, flow_name: str) -> None:
-    ctx.traces.append(
-        {
-            "type": TraceEventType.FLOW_START,
-            "flow_id": flow_id_value,
-            "flow_name": flow_name,
-        }
-    )
+    entry = {
+        "type": TraceEventType.FLOW_START,
+        "flow_id": flow_id_value,
+        "flow_name": flow_name,
+    }
+    flow_call_id = getattr(ctx, "flow_call_id", None)
+    if flow_call_id:
+        entry["flow_call_id"] = flow_call_id
+    ctx.traces.append(entry)
 
 
 def _record_flow_step(
@@ -198,6 +200,9 @@ def _record_flow_step(
         entry["changes"] = changes
     if fields is not None:
         entry["fields"] = list(fields)
+    flow_call_id = getattr(ctx, "flow_call_id", None)
+    if flow_call_id:
+        entry["flow_call_id"] = flow_call_id
     ctx.traces.append(entry)
 
 

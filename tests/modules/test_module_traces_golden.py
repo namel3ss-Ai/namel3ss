@@ -46,7 +46,7 @@ def test_module_trace_goldens(tmp_path: Path) -> None:
         if isinstance(trace, dict) and trace.get("type") in {"module_loaded", "module_merged", "module_overrides"}
     ]
     by_type = {event["type"]: event for event in events}
-    golden_dir = Path("tests/golden/module_traces/traces")
+    golden_dir = Path("tests/fixtures/module_traces/traces")
     for event_type in ("module_loaded", "module_merged", "module_overrides"):
         expected = json.loads((golden_dir / f"{event_type}.json").read_text(encoding="utf-8"))
         assert by_type[event_type] == expected

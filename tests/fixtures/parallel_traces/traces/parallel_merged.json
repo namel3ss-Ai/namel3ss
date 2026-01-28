@@ -3,7 +3,9 @@
   "trace_version": "2024-10-01",
   "title": "Parallel merged",
   "lines": [
+    "Merge policy is conflict.",
     "Task alpha updated locals alpha.",
     "Task beta updated locals beta."
-  ]
+  ],
+  "policy": "conflict"
 }

@@ -10,7 +10,7 @@ from tests.conftest import run_flow
 from tests.spec_freeze.helpers.runtime_dump import dump_runtime
 
 
-RUNTIME_GOLDEN_DIR = Path("tests/golden/compute_core/runtime")
+RUNTIME_GOLDEN_DIR = Path("tests/fixtures/compute_core/runtime")
 FLOW_NAMES = {"compute_core": "core_demo"}
 
 

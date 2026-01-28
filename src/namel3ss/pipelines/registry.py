@@ -28,7 +28,11 @@ def _PIPELINE_CONTRACTS() -> dict[str, ContractDecl]:
                     _field("ingestion", "json", required=True),
                     _field("index", "json", required=True),
                 ],
+                line=None,
+                column=None,
             ),
+            line=None,
+            column=None,
         ),
         "retrieval": ContractDecl(
             kind="pipeline",
@@ -43,7 +47,11 @@ def _PIPELINE_CONTRACTS() -> dict[str, ContractDecl]:
                 outputs=[
                     _field("report", "json", required=True),
                 ],
+                line=None,
+                column=None,
             ),
+            line=None,
+            column=None,
         ),
     }
 

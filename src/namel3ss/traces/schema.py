@@ -82,6 +82,8 @@ class TraceEventType:
     AGENT_MERGE_SUMMARY = "agent_merge_summary"
     MERGE_APPLIED = "merge_applied"
     EXPRESSION_EXPLAIN = "expression_explain"
+    FLOW_CALL_STARTED = "flow_call_started"
+    FLOW_CALL_FINISHED = "flow_call_finished"
     FLOW_START = "flow_start"
     FLOW_STEP = "flow_step"
     MUTATION_ALLOWED = "mutation_allowed"

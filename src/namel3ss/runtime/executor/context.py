@@ -71,6 +71,10 @@ class ExecutionContext:
     config: AppConfig
     provider_cache: Dict[str, AIProvider]
     runtime_theme: str | None
+    flow_map: Dict[str, ir.Flow] = field(default_factory=dict)
+    flow_contracts: Dict[str, ir.ContractDecl] = field(default_factory=dict)
+    pipeline_contracts: Dict[str, ir.ContractDecl] = field(default_factory=dict)
+    policy: ir.PolicyDecl | None = None
     auth_context: object | None = None
     project_root: str | None = None
     app_path: str | None = None
@@ -81,11 +85,14 @@ class ExecutionContext:
     pending_tool_traces: list[dict] = field(default_factory=list)
     tool_call_source: str | None = None
     call_stack: list[CallFrame] = field(default_factory=list)
+    flow_stack: list[str] = field(default_factory=list)
     parallel_mode: bool = False
     parallel_task: str | None = None
     last_ai_provider: str | None = None
     calc_assignment_index: dict[int, dict[str, int]] = field(default_factory=dict)
     flow_action_id: str | None = None
+    flow_call_id: str | None = None
+    flow_call_counter: int = 0
     job_queue: list[dict] = field(default_factory=list)
     job_trigger_state: dict[str, bool] = field(default_factory=dict)
     scheduled_jobs: list[dict] = field(default_factory=list)

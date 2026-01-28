@@ -198,6 +198,25 @@ Parallel started events include type, title, and lines with task names in order.
 Parallel task finished events include type, task_name, status, title, and lines.
 Parallel merged events include type, title, and lines with merge summary.
 
+### Flow call events
+Flow call events describe composed flow invocations.
+
+#### flow_call_started
+- type flow_call_started
+- flow_call_id
+- caller_flow
+- callee_flow
+- inputs (ordered list)
+- outputs (ordered list)
+
+#### flow_call_finished
+- type flow_call_finished
+- flow_call_id
+- caller_flow
+- callee_flow
+- status ok or error
+- error_message (optional)
+
 ## Capability check traces v1
 Every denied capability check must include:
 - type capability_check

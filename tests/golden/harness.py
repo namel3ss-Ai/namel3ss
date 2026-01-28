@@ -21,8 +21,9 @@ from namel3ss.runtime.tools.bindings_yaml import ToolBinding
 from tests.spec_freeze.helpers.ir_dump import dump_ir
 
 ROOT = Path(__file__).resolve().parent
-APPS_DIR = ROOT / "apps"
-SNAPSHOTS_DIR = ROOT / "snapshots"
+FIXTURES_DIR = ROOT.parent / "fixtures"
+APPS_DIR = FIXTURES_DIR / "golden_apps"
+SNAPSHOTS_DIR = FIXTURES_DIR / "golden_snapshots"
 MANIFEST_PATH = APPS_DIR / "manifest.json"
 
 
@@ -102,12 +103,20 @@ def run_golden_app(app: GoldenApp, workdir: Path) -> dict[str, object]:
         return _run_flow(app, app_root, app_file, source_text)
 
 
-def write_snapshots(app_id: str, snapshot: dict[str, object], *, update: bool) -> None:
-    paths = _snapshot_paths(app_id)
+def write_snapshots(
+    app_id: str,
+    snapshot: dict[str, object],
+    *,
+    update: bool,
+    output_root: Path | None = None,
+) -> None:
+    if update and output_root is None:
+        raise AssertionError("Snapshot output root is required when updating snapshots.")
+    paths = _snapshot_paths(app_id, root=output_root if update else None)
     _assert_snapshot(paths["ir"], snapshot["ir"], update=update)
     _assert_snapshot(paths["run"], snapshot["run"], update=update)
     _assert_snapshot(paths["traces"], snapshot["traces"], update=update)
-    _assert_hashes_snapshot(app_id, snapshot, update=update)
+    _assert_hashes_snapshot(paths, snapshot, update=update)
 
 
 def _run_flow(app: GoldenApp, app_root: Path, app_file: Path, source_text: str) -> dict[str, object]:
@@ -206,8 +215,8 @@ def _build_bindings(raw: dict[str, dict[str, object]]) -> dict[str, ToolBinding]
     return bindings
 
 
-def _snapshot_paths(app_id: str) -> dict[str, Path]:
-    base = SNAPSHOTS_DIR / app_id
+def _snapshot_paths(app_id: str, *, root: Path | None = None) -> dict[str, Path]:
+    base = (root / app_id) if root is not None else (SNAPSHOTS_DIR / app_id)
     return {
         "ir": base / "ir.json",
         "run": base / "run.json",
@@ -230,8 +239,7 @@ def _assert_snapshot(path: Path, payload: object, *, update: bool) -> None:
         raise AssertionError(f"snapshot mismatch for {path}")
 
 
-def _assert_hashes_snapshot(app_id: str, snapshot: dict[str, object], *, update: bool) -> None:
-    paths = _snapshot_paths(app_id)
+def _assert_hashes_snapshot(paths: dict[str, Path], snapshot: dict[str, object], *, update: bool) -> None:
     path = paths["hashes"]
     hashes = snapshot.get("hashes") if isinstance(snapshot, dict) else None
     if update:

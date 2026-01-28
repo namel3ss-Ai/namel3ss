@@ -7,6 +7,7 @@ from typing import Iterable
 from namel3ss.ir import nodes as ir
 from namel3ss.traces.schema import TRACE_VERSION, TraceEventType
 from namel3ss.utils.numbers import decimal_is_int, decimal_to_str
+from namel3ss.runtime.execution.format_contract_calls import format_contract_call
 
 EXPLAIN_SAMPLE_LIMIT = 20
 
@@ -227,6 +228,10 @@ def _format_expr(
         return _format_builtin_call(expr), _PREC_PRIMARY
     if isinstance(expr, ir.CallFunctionExpr):
         return _format_function_call(expr), _PREC_PRIMARY
+    if isinstance(expr, ir.CallFlowExpr):
+        return (format_contract_call(kind="flow", name=expr.flow_name, arguments=expr.arguments, outputs=expr.outputs, formatter=format_expression_canonical), _PREC_PRIMARY)
+    if isinstance(expr, ir.CallPipelineExpr):
+        return (format_contract_call(kind="pipeline", name=expr.pipeline_name, arguments=expr.arguments, outputs=expr.outputs, formatter=format_expression_canonical), _PREC_PRIMARY)
     if isinstance(expr, ir.ListExpr):
         return _format_list_literal(expr), _PREC_PRIMARY
     if isinstance(expr, ir.MapExpr):

@@ -22,6 +22,7 @@ from namel3ss.secrets import collect_secret_values
 from namel3ss.compatibility import validate_spec_version
 import time
 from namel3ss.observability.context import ObservabilityContext
+from namel3ss.pipelines.registry import pipeline_contracts
 
 
 def execute_flow(
@@ -46,6 +47,7 @@ def execute_flow(
         ai_profiles=ai_profiles,
         tools=tools,
         functions=functions,
+        pipeline_contracts=pipeline_contracts(),
         store=resolve_store(None),
         project_root=None,
         identity=identity,
@@ -119,6 +121,9 @@ def execute_program_flow(
         agents=program.agents,
         tools=program.tools,
         functions=program.functions,
+        flows={flow.name: flow for flow in program.flows},
+        flow_contracts=getattr(program, "flow_contracts", {}) or {},
+        pipeline_contracts=pipeline_contracts(),
         jobs={job.name: job for job in getattr(program, "jobs", [])},
         job_order=[job.name for job in getattr(program, "jobs", [])],
         capabilities=getattr(program, "capabilities", ()),
@@ -126,6 +131,7 @@ def execute_program_flow(
         memory_manager=memory_manager,
         runtime_theme=resolution.setting_used.value,
         config=resolved_config,
+        policy=getattr(program, "policy", None),
         identity_schema=getattr(program, "identity", None),
         identity=identity,
         auth_context=auth_context,

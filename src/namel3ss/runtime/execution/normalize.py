@@ -70,6 +70,10 @@ def format_expression(expr: ir.Expression) -> str:
         return f"call tool {expr.tool_name}"
     if isinstance(expr, ir.CallFunctionExpr):
         return f"call function {expr.function_name}"
+    if isinstance(expr, ir.CallFlowExpr):
+        return f"call flow {expr.flow_name}"
+    if isinstance(expr, ir.CallPipelineExpr):
+        return f"call pipeline {expr.pipeline_name}"
     if isinstance(expr, ir.ListExpr):
         return f"list with {len(expr.items)} items"
     if isinstance(expr, ir.MapExpr):

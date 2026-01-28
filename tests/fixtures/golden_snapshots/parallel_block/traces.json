@@ -39,10 +39,12 @@
   {
     "canonical_events": [],
     "lines": [
+      "Merge policy is conflict.",
       "Task alpha updated locals alpha.",
       "Task beta updated locals beta."
     ],
     "memory_events": [],
+    "policy": "conflict",
     "title": "Parallel merged",
     "trace_version": "2024-10-01",
     "type": "parallel_merged"

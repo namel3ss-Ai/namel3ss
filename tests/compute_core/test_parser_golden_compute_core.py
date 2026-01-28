@@ -8,7 +8,7 @@ from tests.compute_core.helpers.samples import sample_sources
 from tests.spec_freeze.helpers.ast_dump import dump_ast
 
 
-PARSER_GOLDEN_DIR = Path("tests/golden/compute_core/parser")
+PARSER_GOLDEN_DIR = Path("tests/fixtures/compute_core/parser")
 
 
 def test_parser_golden_compute_core() -> None:

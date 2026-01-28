@@ -40,15 +40,38 @@ REQUIRED_TAGS = {
 
 def test_golden_snapshots(tmp_path) -> None:
     update = os.getenv("UPDATE_SNAPSHOTS") == "1"
+    output_root = tmp_path / "snapshots" if update else None
     apps = load_manifest()
     for app in apps:
         snapshot = run_golden_app(app, tmp_path / app.app_id)
         try:
-            write_snapshots(app.app_id, snapshot, update=update)
+            write_snapshots(app.app_id, snapshot, update=update, output_root=output_root)
         except AssertionError:
             if os.getenv("CI") == "true" and app.app_id == "tool_basic":
                 _print_tool_basic_diff(snapshot, tmp_path / app.app_id)
             raise
+
+
+def test_snapshot_updates_use_tmp_path(tmp_path) -> None:
+    app_id = "snapshot_output_scope"
+    snapshot = {
+        "ir": {"ok": True},
+        "run": {"ok": True, "traces": []},
+        "traces": [],
+        "hashes": {
+            "trace_hash": "trace",
+            "run_payload_hash": "run",
+            "contract_trace_hash": "contract",
+        },
+    }
+    output_root = tmp_path / "snapshots"
+    write_snapshots(app_id, snapshot, update=True, output_root=output_root)
+    expected_dir = output_root / app_id
+    assert (expected_dir / "ir.json").exists()
+    assert (expected_dir / "run.json").exists()
+    assert (expected_dir / "traces.json").exists()
+    assert (expected_dir / "hashes.json").exists()
+    assert not (SNAPSHOTS_DIR / app_id).exists()
 
 
 def test_golden_coverage_guard() -> None:

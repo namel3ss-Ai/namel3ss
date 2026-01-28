@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+import os
+import tempfile
 import subprocess
 import sys
 
@@ -19,7 +21,9 @@ def test_compileall_does_not_dirty_repo() -> None:
         "-x",
         r".*namel3ss/runtime/build.*",
     )
-    result = subprocess.run(cmd, cwd=root, capture_output=True, text=True)
+    env = dict(os.environ)
+    env["PYTHONPYCACHEPREFIX"] = str(Path(tempfile.gettempdir()) / "namel3ss_pycache")
+    result = subprocess.run(cmd, cwd=root, capture_output=True, text=True, env=env)
     assert result.returncode == 0, result.stderr or result.stdout
     dirty = set(repo_dirty_entries(root))
     new_entries = sorted(dirty - baseline)

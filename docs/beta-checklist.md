@@ -278,6 +278,13 @@ for pattern in patterns/*/app.ai; do
 done
 ```
 
+On Windows, set `PYTHONDONTWRITEBYTECODE=1` before running the compile check:
+
+```text
+PowerShell: $env:PYTHONDONTWRITEBYTECODE=1; python -m compileall src -q
+cmd: set PYTHONDONTWRITEBYTECODE=1 && python -m compileall src -q
+```
+
 ---
 
 ## Beta Release Criteria Summary

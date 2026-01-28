@@ -6,6 +6,8 @@ from namel3ss.ir import nodes as ir
 from namel3ss.runtime.executor.context import CallFrame, ExecutionContext
 from namel3ss.runtime.execution.explain import ExpressionExplainCollector
 from namel3ss.runtime.execution.recorder import record_step
+from namel3ss.runtime.composition.flow_calls import execute_flow_call
+from namel3ss.runtime.composition.pipeline_calls import execute_pipeline_call
 from namel3ss.runtime.executor.expr.lists import (
     eval_list_filter_expr,
     eval_list_map_expr,
@@ -148,6 +150,10 @@ def evaluate_expression(
         return eval_map_op_expr(ctx, expr, collector, evaluate_expression)
     if isinstance(expr, ir.CallFunctionExpr):
         return _call_function(ctx, expr, collector)
+    if isinstance(expr, ir.CallFlowExpr):
+        return execute_flow_call(ctx, expr, evaluate_expression, collector)
+    if isinstance(expr, ir.CallPipelineExpr):
+        return execute_pipeline_call(ctx, expr, evaluate_expression, collector)
 
     raise Namel3ssError(f"Unsupported expression type: {type(expr)}", line=expr.line, column=expr.column)
 
