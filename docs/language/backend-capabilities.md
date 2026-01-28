@@ -40,6 +40,8 @@ Rules:
 - Output fields are explicit and deterministic. `headers` output is a JSON list of `{ name, value }` pairs sorted by name then value.
 - `json` output is available only when the response body is valid JSON.
 
+Built-in HTTP support is intentionally read-only (`GET`). Write methods introduce side effects and additional risk. `POST` / `PUT` / `DELETE` should be implemented via explicitly governed packs, not implicitly added. This keeps HTTP capabilities deterministic and inspectable.
+
 Studio shows the request definition (method, url, headers) and a response summary.
 
 ## Background jobs

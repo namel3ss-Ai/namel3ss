@@ -22,6 +22,7 @@ from namel3ss.runtime.executor.stmt.control_flow import (
     execute_for_each,
     execute_if,
     execute_match,
+    execute_orchestration,
     execute_parallel,
     execute_repeat,
     execute_repeat_while,
@@ -80,6 +81,9 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
         return
     if isinstance(stmt, ir.ParallelBlock):
         execute_parallel(ctx, stmt, execute_statement)
+        return
+    if isinstance(stmt, ir.OrchestrationBlock):
+        execute_orchestration(ctx, stmt, evaluate_expression)
         return
     if isinstance(stmt, ir.Save):
         execute_save(ctx, stmt)

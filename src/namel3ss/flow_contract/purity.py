@@ -3,6 +3,7 @@ from __future__ import annotations
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
+from namel3ss.pipelines.registry import pipeline_purity
 from namel3ss.purity import is_pure, pure_effect_message
 
 
@@ -95,6 +96,10 @@ def _scan_statement(flow: ir.Flow, flow_map: dict[str, ir.Flow], stmt: ir.Statem
         for task in stmt.tasks:
             _scan_statements(flow, flow_map, task.body)
         return
+    if isinstance(stmt, ir.OrchestrationBlock):
+        for branch in stmt.branches:
+            _scan_expression(flow, flow_map, branch.call_expr)
+        return
     if isinstance(stmt, ir.AskAIStmt):
         _raise_effect(flow, f'call ai "{stmt.ai_name}"', line=stmt.line, column=stmt.column)
     if isinstance(stmt, ir.RunAgentStmt):
@@ -140,7 +145,16 @@ def _scan_expression(flow: ir.Flow, flow_map: dict[str, ir.Flow], expr: ir.Expre
             _scan_expression(flow, flow_map, arg.value)
         return
     if isinstance(expr, ir.CallPipelineExpr):
-        _raise_effect(flow, f'call pipeline "{expr.pipeline_name}"', line=expr.line, column=expr.column)
+        if not is_pure(pipeline_purity(expr.pipeline_name)):
+            _raise_effect(
+                flow,
+                f'call effectful pipeline "{expr.pipeline_name}"',
+                line=expr.line,
+                column=expr.column,
+            )
+        for arg in expr.arguments:
+            _scan_expression(flow, flow_map, arg.value)
+        return
     if isinstance(expr, ir.ToolCallExpr):
         _raise_effect(flow, f'call tool "{expr.tool_name}"', line=expr.line, column=expr.column)
     if isinstance(expr, ir.BuiltinCallExpr):

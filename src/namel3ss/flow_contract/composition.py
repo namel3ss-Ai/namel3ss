@@ -235,6 +235,9 @@ def _collect_calls(
         elif isinstance(stmt, ir.ParallelBlock):
             for task in stmt.tasks:
                 _collect_calls(task.body, flow_calls, pipeline_calls)
+        elif isinstance(stmt, ir.OrchestrationBlock):
+            for branch in stmt.branches:
+                _collect_calls_from_expr(branch.call_expr, flow_calls, pipeline_calls)
         elif isinstance(stmt, ir.LogStmt):
             _collect_calls_from_expr(stmt.message, flow_calls, pipeline_calls)
             if stmt.fields is not None:

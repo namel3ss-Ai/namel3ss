@@ -64,6 +64,15 @@ Local packs still require signing unless trust policy explicitly allows unsigned
 - Run `n3 packs sign` with a maintainer key, then verify with `n3 packs verify`.
 - Submit changes to `packs/official/<pack_id>/` with manifest, bindings, capabilities, intent, and README.
 
+## Common Patterns and Pitfalls
+Recommended pattern:
+- Extend an existing official pack by adding a tool entry to `pack.yaml`, declaring permissions in `capabilities.yaml`, and documenting intent in `intent.md`.
+
+Anti-patterns:
+- Registering tools via Python runtime code or side effects.
+- Introducing external Python dependencies inside packs.
+- Creating overlapping packs instead of extending an existing one.
+
 ## Execution and inspection
 - Tool calls record pack metadata (pack id, name, version).
 - Capability checks include pack permission grants and denials.

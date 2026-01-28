@@ -64,6 +64,12 @@ def _validate_function_body(stmts: list[ir.Statement]) -> None:
                 line=stmt.line,
                 column=stmt.column,
             )
+        if isinstance(stmt, ir.OrchestrationBlock):
+            raise Namel3ssError(
+                "Functions cannot use orchestration blocks",
+                line=stmt.line,
+                column=stmt.column,
+            )
         if isinstance(stmt, ir.Set) and isinstance(stmt.target, ir.StatePath):
             raise Namel3ssError(
                 "Functions cannot change state",

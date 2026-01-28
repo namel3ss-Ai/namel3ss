@@ -1,0 +1,14 @@
+spec is "1.0"
+
+capabilities:
+  uploads
+
+flow "ingest_only":
+  let result is call pipeline "ingestion":
+    input:
+      upload_id is input.upload_id
+    output:
+      report
+      ingestion
+      index
+  return result

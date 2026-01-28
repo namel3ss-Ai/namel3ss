@@ -7,6 +7,7 @@ from namel3ss.runtime.execution.normalize import format_expression, summarize_va
 from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
 from namel3ss.runtime.executor.parallel.scheduler import execute_parallel_block
+from namel3ss.runtime.executor.orchestration.scheduler import execute_orchestration_block
 from namel3ss.utils.numbers import decimal_is_int, is_number, to_decimal
 
 
@@ -287,6 +288,10 @@ def execute_parallel(ctx, stmt: ir.ParallelBlock, execute_statement) -> None:
     execute_parallel_block(ctx, stmt, execute_statement)
 
 
+def execute_orchestration(ctx, stmt: ir.OrchestrationBlock, evaluate_expression) -> None:
+    execute_orchestration_block(ctx, stmt, evaluate_expression)
+
+
 def _condition_type_message(value: object) -> str:
     kind = _value_kind(value)
     return build_guidance_message(
@@ -321,6 +326,7 @@ __all__ = [
     "execute_for_each",
     "execute_if",
     "execute_match",
+    "execute_orchestration",
     "execute_parallel",
     "execute_repeat",
     "execute_repeat_while",

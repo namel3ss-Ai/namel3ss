@@ -1,0 +1,117 @@
+spec is "1.0"
+
+contract flow "ok_alpha":
+  input:
+  output:
+    result is text
+
+contract flow "ok_beta":
+  input:
+  output:
+    result is text
+
+contract flow "fail":
+  input:
+  output:
+    result is text
+
+flow "ok_alpha":
+  return map:
+    "result" is "alpha"
+
+flow "ok_beta":
+  return map:
+    "result" is "beta"
+
+flow "fail":
+  let value is map get map:
+    "ok" is "ok"
+  key "missing"
+  return map:
+    "result" is value
+
+flow "first_ok_flow":
+  orchestration:
+    branch "fail":
+      call flow "fail":
+        input:
+        output:
+          result
+    branch "alpha":
+      call flow "ok_alpha":
+        input:
+        output:
+          result
+  merge:
+    policy is "first_ok"
+  as out
+  return map get out key "result"
+
+flow "all_ok_flow":
+  orchestration:
+    branch "beta":
+      call flow "ok_beta":
+        input:
+        output:
+          result
+    branch "alpha":
+      call flow "ok_alpha":
+        input:
+        output:
+          result
+  merge:
+    policy is "all_ok"
+  as out
+  return out
+
+flow "collect_flow":
+  orchestration:
+    branch "fail":
+      call flow "fail":
+        input:
+        output:
+          result
+    branch "beta":
+      call flow "ok_beta":
+        input:
+        output:
+          result
+  merge:
+    policy is "collect"
+  as out
+  return out
+
+flow "prefer_flow":
+  orchestration:
+    branch "alpha":
+      call flow "ok_alpha":
+        input:
+        output:
+          result
+    branch "beta":
+      call flow "ok_beta":
+        input:
+        output:
+          result
+  merge:
+    policy is "prefer"
+    precedence is list: "beta", "alpha"
+  as out
+  return map get out key "result"
+
+flow "strict_flow":
+  orchestration:
+    branch "alpha":
+      call flow "ok_alpha":
+        input:
+        output:
+          result
+    branch "fail":
+      call flow "fail":
+        input:
+        output:
+          result
+  merge:
+    policy is "strict"
+  as out
+  return out

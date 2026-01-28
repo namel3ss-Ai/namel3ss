@@ -383,6 +383,8 @@ def _statement_kind(stmt: object) -> str | None:
         return "run_agents_parallel"
     if isinstance(stmt, ir.ParallelBlock):
         return "parallel"
+    if isinstance(stmt, ir.OrchestrationBlock):
+        return "orchestration"
     return None
 
 

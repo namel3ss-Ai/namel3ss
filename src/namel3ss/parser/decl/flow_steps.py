@@ -23,6 +23,7 @@ _IMPERATIVE_HINTS = {
     "ASK": "ask",
     "RUN": "run",
     "PARALLEL": "parallel",
+    "ORCHESTRATION": "orchestration",
     "FIND": "find",
     "SAVE": "save",
 }

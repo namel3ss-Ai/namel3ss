@@ -23,6 +23,8 @@ from namel3ss.runtime.tools.executor import execute_tool_call
 from namel3ss.runtime.values.coerce import require_type
 from namel3ss.runtime.values.types import type_name_for_value
 from namel3ss.runtime.purity import require_effect_allowed
+from namel3ss.pipelines.registry import pipeline_purity
+from namel3ss.purity import is_pure
 
 
 def evaluate_expression(
@@ -155,7 +157,13 @@ def evaluate_expression(
     if isinstance(expr, ir.CallFlowExpr):
         return execute_flow_call(ctx, expr, evaluate_expression, collector)
     if isinstance(expr, ir.CallPipelineExpr):
-        require_effect_allowed(ctx, effect=f'call pipeline "{expr.pipeline_name}"', line=expr.line, column=expr.column)
+        if not is_pure(pipeline_purity(expr.pipeline_name)):
+            require_effect_allowed(
+                ctx,
+                effect=f'call effectful pipeline "{expr.pipeline_name}"',
+                line=expr.line,
+                column=expr.column,
+            )
         return execute_pipeline_call(ctx, expr, evaluate_expression, collector)
 
     raise Namel3ssError(f"Unsupported expression type: {type(expr)}", line=expr.line, column=expr.column)

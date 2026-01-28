@@ -31,6 +31,17 @@ Clarity beats cleverness. Every change should make the language easier to unders
 
 ---
 
+## Contributing to Official Capability Packs
+
+- Official packs live under `packs/official/`.
+- Packs are integrated via `pack.yaml`, `capabilities.yaml`, `intent.md`, and signing (where applicable).
+- Tools must not be registered via Python runtime hooks or side effects.
+- Official packs must not introduce third-party dependencies (standard library only).
+- Prefer extending existing official packs instead of creating overlapping ones. Example: extend `packs/official/http` rather than introducing a new HTTP/web pack.
+- Write-enabled capabilities (POST / PUT / DELETE) introduce side effects, require stronger governance, and should live in a separate, explicitly governed pack; do not add them casually to existing read-only packs.
+
+---
+
 ## Expectations for Every Change
 
 - Keep behavior stable unless a change is explicitly required. Preserve public imports and facades.  

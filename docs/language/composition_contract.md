@@ -37,6 +37,7 @@
   - `flow_call_started` with `flow_call_id`, `caller_flow`, `callee_flow`, inputs, and outputs.
   - `flow_call_finished` with `flow_call_id`, `caller_flow`, `callee_flow`, and status.
 - Pipeline calls emit execution steps: `pipeline_call_start`, `pipeline_call_end`, and `pipeline_call_error`.
+- Pipeline calls emit pipeline trace events: `pipeline_started`, `pipeline_step`, and `pipeline_finished` with deterministic step ids and checksums.
 - Pipeline calls also emit pipeline-specific traces (for example ingestion and retrieval events).
 - Explain surfaces must reflect the same call order and identifiers as traces.
 

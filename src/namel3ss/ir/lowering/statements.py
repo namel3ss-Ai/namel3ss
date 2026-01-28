@@ -20,6 +20,9 @@ from namel3ss.ir.model.statements import (
     ParallelBlock,
     ParallelMergePolicy,
     ParallelTask,
+    OrchestrationBlock,
+    OrchestrationBranch,
+    OrchestrationMergePolicy,
     Repeat,
     RepeatWhile,
     Return,
@@ -82,6 +85,28 @@ def _lower_statement(stmt: ast.Statement, agents) -> IRStatement:
                 for task in stmt.tasks
             ],
             merge=merge,
+            line=stmt.line,
+            column=stmt.column,
+        )
+    if isinstance(stmt, ast.OrchestrationBlock):
+        merge = OrchestrationMergePolicy(
+            policy=stmt.merge.policy,
+            precedence=list(stmt.merge.precedence) if stmt.merge.precedence else None,
+            line=stmt.merge.line,
+            column=stmt.merge.column,
+        )
+        return OrchestrationBlock(
+            branches=[
+                OrchestrationBranch(
+                    name=branch.name,
+                    call_expr=_lower_expression(branch.call_expr),
+                    line=branch.line,
+                    column=branch.column,
+                )
+                for branch in stmt.branches
+            ],
+            merge=merge,
+            target=stmt.target,
             line=stmt.line,
             column=stmt.column,
         )

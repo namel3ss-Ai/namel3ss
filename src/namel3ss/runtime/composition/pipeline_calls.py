@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
-from namel3ss.ingestion.api import run_ingestion
 from namel3ss.ingestion.policy import (
     ACTION_INGESTION_OVERRIDE,
     ACTION_INGESTION_RUN,
@@ -13,11 +12,12 @@ from namel3ss.ingestion.policy import (
     policy_trace,
 )
 from namel3ss.ir import nodes as ir
-from namel3ss.retrieval.api import run_retrieval
+from namel3ss.pipelines.model import PipelineStepResult, pipeline_step_id
+from namel3ss.pipelines.registry import pipeline_definitions
+from namel3ss.pipelines.runner import run_pipeline
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.runtime.values.coerce import require_type
-from namel3ss.secrets import collect_secret_values
 from namel3ss.traces.schema import TraceEventType
 
 
@@ -42,10 +42,15 @@ def execute_pipeline_call(
         column=expr.column,
     )
     try:
-        output_map = _run_pipeline(ctx, expr.pipeline_name, input_payload, expr)
+        definition = pipeline_definitions().get(expr.pipeline_name)
+        if definition is not None:
+            _record_pipeline_started(ctx, expr.pipeline_name, definition)
+        output_map, steps = _run_pipeline(ctx, expr.pipeline_name, input_payload, expr)
         output_map = _validate_pipeline_output(contract.signature, output_map, expr)
+        _record_pipeline_steps(ctx, expr.pipeline_name, steps, expr)
         selected = _select_outputs(output_map, expr.outputs, expr)
     except Exception as exc:
+        _record_pipeline_finished(ctx, expr.pipeline_name, status="error", error=exc)
         record_step(
             ctx,
             kind="pipeline_call_error",
@@ -56,6 +61,7 @@ def execute_pipeline_call(
             column=expr.column,
         )
         raise
+    _record_pipeline_finished(ctx, expr.pipeline_name, status="ok", error=None)
     record_step(
         ctx,
         kind="pipeline_call_end",
@@ -67,7 +73,12 @@ def execute_pipeline_call(
     return selected
 
 
-def _run_pipeline(ctx: ExecutionContext, name: str, payload: dict, expr: ir.CallPipelineExpr) -> dict:
+def _run_pipeline(
+    ctx: ExecutionContext,
+    name: str,
+    payload: dict,
+    expr: ir.CallPipelineExpr,
+) -> tuple[dict, list[PipelineStepResult]]:
     if name == "ingestion":
         return _run_ingestion(ctx, payload, expr)
     if name == "retrieval":
@@ -84,7 +95,7 @@ def _run_pipeline(ctx: ExecutionContext, name: str, payload: dict, expr: ir.Call
     )
 
 
-def _run_ingestion(ctx: ExecutionContext, payload: dict, expr: ir.CallPipelineExpr) -> dict:
+def _run_ingestion(ctx: ExecutionContext, payload: dict, expr: ir.CallPipelineExpr) -> tuple[dict, list[PipelineStepResult]]:
     _require_uploads_capability(ctx, expr)
     policy = load_ingestion_policy(
         project_root=ctx.project_root,
@@ -105,27 +116,16 @@ def _run_ingestion(ctx: ExecutionContext, payload: dict, expr: ir.CallPipelineEx
             raise policy_error(ACTION_INGESTION_OVERRIDE, override, mode=mode_text)
 
     _apply_ingestion_overrides(ctx.state, payload)
-    secret_values = collect_secret_values(ctx.config)
-    result = run_ingestion(
-        upload_id=str(payload.get("upload_id") or ""),
-        mode=str(payload.get("mode")) if isinstance(payload.get("mode"), str) else None,
-        state=ctx.state,
-        project_root=ctx.project_root,
-        app_path=ctx.app_path,
-        secret_values=secret_values,
-    )
-    report = result.get("report") if isinstance(result, dict) else None
+    result = run_pipeline(ctx, name="ingestion", payload=payload)
+    output = result.output
+    report = output.get("report") if isinstance(output, dict) else None
     if not isinstance(report, dict):
         raise Namel3ssError("Ingestion report is missing.", line=expr.line, column=expr.column)
     ctx.traces.extend(_ingestion_traces(report))
-    return {
-        "report": report,
-        "ingestion": ctx.state.get("ingestion"),
-        "index": ctx.state.get("index"),
-    }
+    return output, result.steps
 
 
-def _run_retrieval(ctx: ExecutionContext, payload: dict, expr: ir.CallPipelineExpr) -> dict:
+def _run_retrieval(ctx: ExecutionContext, payload: dict, expr: ir.CallPipelineExpr) -> tuple[dict, list[PipelineStepResult]]:
     _require_uploads_capability(ctx, expr)
     policy = load_ingestion_policy(
         project_root=ctx.project_root,
@@ -135,31 +135,19 @@ def _run_retrieval(ctx: ExecutionContext, payload: dict, expr: ir.CallPipelineEx
     decision = evaluate_ingestion_policy(policy, ACTION_RETRIEVAL_INCLUDE_WARN, ctx.identity)
     ctx.traces.append(policy_trace(ACTION_RETRIEVAL_INCLUDE_WARN, decision))
 
-    secret_values = collect_secret_values(ctx.config)
-    state_view = _retrieval_state_view(ctx.state, payload)
-    result = run_retrieval(
-        query=payload.get("query"),
-        limit=payload.get("limit"),
-        state=state_view,
-        project_root=ctx.project_root,
-        app_path=ctx.app_path,
-        secret_values=secret_values,
-        identity=ctx.identity,
-        policy_decision=decision,
-    )
-    ctx.traces.extend(_retrieval_traces(result))
-    return {"report": result}
-
-
-def _retrieval_state_view(state: dict, payload: dict) -> dict:
-    if "ingestion" not in payload and "index" not in payload:
-        return state
-    view = dict(state)
-    if "ingestion" in payload:
-        view["ingestion"] = payload.get("ingestion")
-    if "index" in payload:
-        view["index"] = payload.get("index")
-    return view
+    result = run_pipeline(ctx, name="retrieval", payload=payload)
+    output = result.output
+    report = output.get("report") if isinstance(output, dict) else None
+    if isinstance(report, dict):
+        report = dict(report)
+        report["warn_policy"] = {
+            "action": ACTION_RETRIEVAL_INCLUDE_WARN,
+            "decision": "allowed" if decision.allowed else "denied",
+            "reason": decision.reason,
+        }
+        output["report"] = report
+    ctx.traces.extend(_retrieval_traces(report if isinstance(report, dict) else {}))
+    return output, result.steps
 
 
 def _apply_ingestion_overrides(state: dict, payload: dict) -> None:
@@ -167,6 +155,77 @@ def _apply_ingestion_overrides(state: dict, payload: dict) -> None:
         state["ingestion"] = payload.get("ingestion")
     if "index" in payload:
         state["index"] = payload.get("index")
+
+
+def _record_pipeline_started(ctx: ExecutionContext, pipeline_name: str, definition) -> None:
+    ctx.traces.append(
+        {
+            "type": TraceEventType.PIPELINE_STARTED,
+            "pipeline": pipeline_name,
+            "steps": [
+                {
+                    "step_id": pipeline_step_id(pipeline_name, step.kind, ordinal),
+                    "step_kind": step.kind,
+                    "ordinal": ordinal,
+                }
+                for ordinal, step in enumerate(definition.steps, start=1)
+            ],
+        }
+    )
+
+
+def _record_pipeline_steps(
+    ctx: ExecutionContext,
+    pipeline_name: str,
+    steps: list[PipelineStepResult],
+    expr: ir.CallPipelineExpr,
+) -> None:
+    for step in steps:
+        ctx.traces.append(
+            {
+                "type": TraceEventType.PIPELINE_STEP,
+                "pipeline": pipeline_name,
+                "step_id": step.step_id,
+                "step_kind": step.kind,
+                "status": step.status,
+                "summary": step.summary,
+                "checksum": step.checksum,
+                "ordinal": step.ordinal,
+            }
+        )
+        record_step(
+            ctx,
+            kind="pipeline_step",
+            what=f'pipeline "{pipeline_name}" {step.kind}',
+            data={
+                "pipeline": pipeline_name,
+                "step_id": step.step_id,
+                "step_kind": step.kind,
+                "status": step.status,
+                "summary": step.summary,
+                "checksum": step.checksum,
+                "step_ordinal": step.ordinal,
+            },
+            line=expr.line,
+            column=expr.column,
+        )
+
+
+def _record_pipeline_finished(
+    ctx: ExecutionContext,
+    pipeline_name: str,
+    *,
+    status: str,
+    error: Exception | None,
+) -> None:
+    event = {
+        "type": TraceEventType.PIPELINE_FINISHED,
+        "pipeline": pipeline_name,
+        "status": status,
+    }
+    if error is not None:
+        event["error_message"] = str(error)
+    ctx.traces.append(event)
 
 
 def _evaluate_call_args(ctx: ExecutionContext, arguments: list[ir.CallArg], evaluate_expression, collector=None) -> dict[str, object]:

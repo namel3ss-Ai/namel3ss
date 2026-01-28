@@ -1,0 +1,21 @@
+spec is "1.0"
+
+capabilities:
+  uploads
+
+contract flow "pure_pipeline":
+  input:
+    upload_id is text
+  output:
+    report is json
+
+flow "pure_pipeline": purity is "pure"
+  let out is call pipeline "ingestion":
+    input:
+      upload_id is input.upload_id
+    output:
+      report
+      ingestion
+      index
+  return map:
+    "report" is map get out key "report"

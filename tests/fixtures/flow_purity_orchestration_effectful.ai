@@ -1,0 +1,28 @@
+spec is "1.0"
+
+contract flow "effectful":
+  input:
+  output:
+    result is text
+
+contract flow "pure_orchestration":
+  input:
+  output:
+    result is text
+
+flow "effectful":
+  set state.value is "hello"
+  return map:
+    "result" is "ok"
+
+flow "pure_orchestration": purity is "pure"
+  orchestration:
+    branch "bad":
+      call flow "effectful":
+        input:
+        output:
+          result
+  merge:
+    policy is "first_ok"
+  as out
+  return map get out key "result"

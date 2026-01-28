@@ -1,0 +1,14 @@
+spec is "1.0"
+
+capabilities:
+  uploads
+
+flow "retrieve_only":
+  let result is call pipeline "retrieval":
+    input:
+      query is input.query
+      ingestion is input.ingestion
+      index is input.index
+    output:
+      report
+  return result

@@ -50,6 +50,25 @@ class ParallelBlock(Statement):
 
 
 @dataclass
+class OrchestrationBranch(Node):
+    name: str
+    call_expr: Expression
+
+
+@dataclass
+class OrchestrationMergePolicy(Node):
+    policy: str
+    precedence: List[str] | None = None
+
+
+@dataclass
+class OrchestrationBlock(Statement):
+    branches: List[OrchestrationBranch]
+    merge: OrchestrationMergePolicy
+    target: str
+
+
+@dataclass
 class Repeat(Statement):
     count: Expression
     body: List[Statement]

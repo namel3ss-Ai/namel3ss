@@ -194,6 +194,7 @@ UI packs:
   - No timestamps or random ids in explain traces.
 - Not supported:
   - Branching, loops, expressions/functions, or hidden side effects.
+  - Orchestration (fan-out/fan-in), merge policies, or flow/pipeline calls.
 - Triggering from UI:
   - `button "Label":` use either `calls flow "<name>"` (existing) or `runs "<name>"` (alias) to bind to a flow.
   - Unknown flow references error with fix hints; runtime surfaces disabled affordance if requirements are unmet.

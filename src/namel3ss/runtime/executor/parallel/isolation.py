@@ -30,6 +30,8 @@ def ensure_agent_call_allowed(ctx, agent_name: str, *, line: int | None, column:
 def _validate_statement(ctx, stmt: ir.Statement) -> None:
     if isinstance(stmt, ir.ParallelBlock):
         raise Namel3ssError("Nested parallel blocks are not allowed", line=stmt.line, column=stmt.column)
+    if isinstance(stmt, ir.OrchestrationBlock):
+        raise Namel3ssError("Parallel tasks cannot use orchestration blocks", line=stmt.line, column=stmt.column)
     if isinstance(stmt, ir.Set) and isinstance(stmt.target, ir.StatePath):
         raise Namel3ssError("Parallel tasks cannot change state", line=stmt.line, column=stmt.column)
     if isinstance(stmt, (ir.Save, ir.Create, ir.Update, ir.Delete)):
