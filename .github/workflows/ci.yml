@@ -156,44 +156,82 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          mkdir -p .namel3ss/ci
+          test -d .namel3ss/ci
           python -m compileall src -q
           python tools/line_limit_check.py
           python -m pip install -e .
           python -m namel3ss --help > .namel3ss/ci/namel3ss_help.txt
-          python -m pytest -q tests/test_cli_install.py > .namel3ss/ci/pytest_cli_install_gate.log 2>&1 || {
-            cat .namel3ss/ci/pytest_cli_install_gate.log
+          : > .namel3ss/ci/pytest_cli_install_gate.log
+          if python -m pytest -q tests/test_cli_install.py > .namel3ss/ci/pytest_cli_install_gate.log 2>&1; then
+            rm -f .namel3ss/ci/pytest_cli_install_gate.log
+          else
+            if test -f .namel3ss/ci/pytest_cli_install_gate.log; then
+              cat .namel3ss/ci/pytest_cli_install_gate.log
+            else
+              echo "missing pytest_cli_install_gate.log"
+            fi
             exit 1
-          }
-          rm -f .namel3ss/ci/pytest_cli_install_gate.log
-          python -m pytest -q > .namel3ss/ci/pytest_cli_install_gate.log 2>&1 || {
-            cat .namel3ss/ci/pytest_cli_install_gate.log
+          fi
+          : > .namel3ss/ci/pytest_cli_install_gate.log
+          if python -m pytest -q > .namel3ss/ci/pytest_cli_install_gate.log 2>&1; then
+            rm -f .namel3ss/ci/pytest_cli_install_gate.log
+          else
+            if test -f .namel3ss/ci/pytest_cli_install_gate.log; then
+              cat .namel3ss/ci/pytest_cli_install_gate.log
+            else
+              echo "missing pytest_cli_install_gate.log"
+            fi
             exit 1
-          }
-          rm -f .namel3ss/ci/pytest_cli_install_gate.log
+          fi
 
       - name: CLI install gate (Windows)
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
+          New-Item -ItemType Directory -Force -Path .namel3ss/ci | Out-Null
+          if (-not (Test-Path -Path .namel3ss/ci -PathType Container)) {
+            throw "missing .namel3ss/ci"
+          }
           python -m compileall src -q
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
           python tools/line_limit_check.py
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
           python -m pip install -e .
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
           python -m namel3ss --help | Out-File -FilePath .namel3ss/ci/namel3ss_help.txt -Encoding utf8
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
           $pytestOutput = & python -m pytest -q tests/test_cli_install.py 2>&1
           if ($LASTEXITCODE -ne 0) {
+            New-Item -ItemType Directory -Force -Path .namel3ss/ci | Out-Null
             $pytestOutput | Out-File -FilePath .namel3ss/ci/pytest_cli_install_gate.log -Encoding utf8
-            $pytestOutput | Write-Output
+            if (Test-Path -Path .namel3ss/ci/pytest_cli_install_gate.log) {
+              Get-Content -Path .namel3ss/ci/pytest_cli_install_gate.log
+            } else {
+              $pytestOutput | Write-Output
+              Write-Output "missing pytest_cli_install_gate.log"
+            }
             exit $LASTEXITCODE
           }
           $pytestOutput = & python -m pytest -q 2>&1
           if ($LASTEXITCODE -ne 0) {
+            New-Item -ItemType Directory -Force -Path .namel3ss/ci | Out-Null
             $pytestOutput | Out-File -FilePath .namel3ss/ci/pytest_cli_install_gate.log -Encoding utf8
-            $pytestOutput | Write-Output
+            if (Test-Path -Path .namel3ss/ci/pytest_cli_install_gate.log) {
+              Get-Content -Path .namel3ss/ci/pytest_cli_install_gate.log
+            } else {
+              $pytestOutput | Write-Output
+              Write-Output "missing pytest_cli_install_gate.log"
+            }
             exit $LASTEXITCODE
           }
 
