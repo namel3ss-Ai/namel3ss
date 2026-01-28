@@ -15,9 +15,9 @@ n3 run app.ai
 n3 explain app.ai --json | jq '.policy'
 ```
 
-4) Create a file with repeated lines and upload it (this should warn):
+4) Create a short file and upload it (this should block at the quality gate):
 ```
-printf "repeat line with enough words\nrepeat line with enough words\nrepeat line with enough words\nunique line one\nunique line two\n" > sample.txt
+printf "too short\n" > sample.txt
 curl -F "file=@./sample.txt" "http://127.0.0.1:7340/api/upload?name=sample.txt"
 ```
 
@@ -31,9 +31,9 @@ n3 actions app.ai --json | jq '.actions[] | select(.type=="ingestion_run" or .ty
 n3 app.ai <action_id> '{"upload_id":"<checksum>"}'
 ```
 
-7) Review the ingestion report (expected to be denied by policy):
+7) Review the ingestion report (expected to be denied by policy), and capture the JSON payload:
 ```
-n3 app.ai <review_action_id> '{"upload_id":"<checksum>"}'
+n3 app.ai <review_action_id> '{"upload_id":"<checksum>"}' --json > audit-input.json
 ```
 Expected denial (example):
 ```
@@ -45,7 +45,7 @@ Ingestion review is not permitted. Policy requires permission ingestion.review.
 n3 app.ai <action_id> '{"upload_id":"<checksum>","mode":"ocr"}'
 ```
 
-9) Verify retrieval excludes warned content unless policy allows it:
+9) Explain the full decision chain (upload → ingestion → policy → retrieval):
 ```
-n3 app.ai <retrieval_action_id> '{"query":"repeat"}'
+n3 explain --audit --input audit-input.json --query "short"
 ```

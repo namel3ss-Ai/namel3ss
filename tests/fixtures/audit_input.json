@@ -1,0 +1,112 @@
+{
+  "state": {
+    "index": {
+      "chunks": [
+        {
+          "order": 1,
+          "text": "Invoice for customer",
+          "upload_id": "u_warn"
+        },
+        {
+          "order": 1,
+          "text": "Invoice blocked content",
+          "upload_id": "u_block"
+        }
+      ]
+    },
+    "ingestion": {
+      "u_block": {
+        "detected": {
+          "type": "text"
+        },
+        "method_used": "skip",
+        "reasons": [
+          "skipped",
+          "text_too_short"
+        ],
+        "signals": {
+          "text_chars": 10
+        },
+        "status": "block",
+        "upload_id": "u_block"
+      },
+      "u_warn": {
+        "detected": {
+          "type": "text"
+        },
+        "method_used": "primary",
+        "reasons": [
+          "repeated_lines"
+        ],
+        "signals": {
+          "text_chars": 120
+        },
+        "status": "warn",
+        "upload_id": "u_warn"
+      }
+    },
+    "uploads": {
+      "receipt": [
+        {
+          "checksum": "u_block",
+          "id": "u_block",
+          "name": "/Users/example/receipt.txt",
+          "size": 12,
+          "type": "text/plain"
+        },
+        {
+          "checksum": "u_warn",
+          "id": "u_warn",
+          "name": "warn.txt",
+          "size": 120,
+          "type": "text/plain"
+        }
+      ]
+    }
+  },
+  "traces": [
+    {
+      "canonical_events": [],
+      "memory_events": [],
+      "outcome": "denied",
+      "reason": "permission_missing",
+      "subject": "policy:ingestion.review",
+      "title": "Authorization Check",
+      "type": "authorization_check"
+    },
+    {
+      "canonical_events": [],
+      "memory_events": [],
+      "outcome": "denied",
+      "reason": "permission_missing",
+      "subject": "policy:retrieval.include_warn",
+      "title": "Authorization Check",
+      "type": "authorization_check"
+    },
+    {
+      "canonical_events": [],
+      "count": 2,
+      "memory_events": [],
+      "title": "Ingestion Reviewed",
+      "type": "ingestion_reviewed"
+    },
+    {
+      "canonical_events": [],
+      "memory_events": [],
+      "reasons": [
+        "skipped"
+      ],
+      "status": "block",
+      "title": "Ingestion Skipped",
+      "type": "ingestion_skipped",
+      "upload_id": "u_block"
+    },
+    {
+      "canonical_events": [],
+      "memory_events": [],
+      "title": "Upload Replace Requested",
+      "type": "upload_replace_requested",
+      "upload_id": "u_warn"
+    }
+  ]
+}

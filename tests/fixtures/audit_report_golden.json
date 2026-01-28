@@ -1,0 +1,437 @@
+{
+  "decisions": [
+    {
+      "category": "upload",
+      "id": "upload:receipt:u_block",
+      "inputs": {
+        "checksum": "u_block",
+        "name": "<path>",
+        "size": 12,
+        "type": "text/plain",
+        "upload_name": "receipt"
+      },
+      "outcome": {
+        "selected": true
+      },
+      "rules": [
+        "metadata recorded"
+      ],
+      "subject": "u_block"
+    },
+    {
+      "category": "upload",
+      "id": "upload:receipt:u_warn",
+      "inputs": {
+        "checksum": "u_warn",
+        "name": "warn.txt",
+        "size": 120,
+        "type": "text/plain",
+        "upload_name": "receipt"
+      },
+      "outcome": {
+        "selected": true
+      },
+      "rules": [
+        "metadata recorded"
+      ],
+      "subject": "u_warn"
+    },
+    {
+      "category": "ingestion",
+      "id": "ingestion:u_block",
+      "inputs": {
+        "detected": {
+          "type": "text"
+        },
+        "method_used": "skip",
+        "signals": {
+          "text_chars": 10
+        },
+        "upload_id": "u_block"
+      },
+      "outcome": {
+        "status": "block"
+      },
+      "rules": [
+        "quality gate",
+        "skipped",
+        "text_too_short"
+      ],
+      "subject": "u_block"
+    },
+    {
+      "category": "ingestion",
+      "id": "ingestion:u_warn",
+      "inputs": {
+        "detected": {
+          "type": "text"
+        },
+        "method_used": "primary",
+        "signals": {
+          "text_chars": 120
+        },
+        "upload_id": "u_warn"
+      },
+      "outcome": {
+        "status": "warn"
+      },
+      "rules": [
+        "quality gate",
+        "repeated_lines"
+      ],
+      "subject": "u_warn"
+    },
+    {
+      "category": "review",
+      "id": "review:ingestion_review:1",
+      "inputs": {},
+      "outcome": {
+        "count": 2,
+        "status": "run"
+      },
+      "rules": [
+        "review requested"
+      ],
+      "subject": null
+    },
+    {
+      "category": "review",
+      "id": "review:ingestion_skip:u_block",
+      "inputs": {
+        "upload_id": "u_block"
+      },
+      "outcome": {
+        "quality": "block",
+        "status": "skipped"
+      },
+      "rules": [
+        "skipped"
+      ],
+      "subject": "u_block"
+    },
+    {
+      "category": "review",
+      "id": "review:upload_replace:u_warn",
+      "inputs": {
+        "upload_id": "u_warn"
+      },
+      "outcome": {
+        "status": "requested"
+      },
+      "rules": [
+        "replacement requested"
+      ],
+      "subject": "u_warn"
+    },
+    {
+      "category": "policy",
+      "id": "policy:ingestion.run",
+      "inputs": {
+        "action": "ingestion.run"
+      },
+      "outcome": {
+        "decision": "allowed",
+        "reason": null,
+        "required_permissions": [],
+        "source": "policy"
+      },
+      "rules": [
+        {
+          "action": "ingestion.run",
+          "effect": "allow",
+          "mode": "allow",
+          "source": "default"
+        }
+      ],
+      "subject": "ingestion.run"
+    },
+    {
+      "category": "policy",
+      "id": "policy:ingestion.override",
+      "inputs": {
+        "action": "ingestion.override"
+      },
+      "outcome": {
+        "decision": "denied",
+        "reason": "permission_missing",
+        "required_permissions": [
+          "ingestion.override"
+        ],
+        "source": "policy"
+      },
+      "rules": [
+        {
+          "action": "ingestion.override",
+          "effect": "allow",
+          "mode": "require",
+          "requires": [
+            "ingestion.override"
+          ],
+          "source": "default"
+        }
+      ],
+      "subject": "ingestion.override"
+    },
+    {
+      "category": "policy",
+      "id": "policy:ingestion.review",
+      "inputs": {
+        "action": "ingestion.review"
+      },
+      "outcome": {
+        "decision": "denied",
+        "reason": "permission_missing",
+        "required_permissions": [],
+        "source": "trace"
+      },
+      "rules": [
+        {
+          "action": "ingestion.review",
+          "effect": "allow",
+          "mode": "allow",
+          "source": "default"
+        }
+      ],
+      "subject": "ingestion.review"
+    },
+    {
+      "category": "policy",
+      "id": "policy:ingestion.skip",
+      "inputs": {
+        "action": "ingestion.skip"
+      },
+      "outcome": {
+        "decision": "denied",
+        "reason": "permission_missing",
+        "required_permissions": [
+          "ingestion.skip"
+        ],
+        "source": "policy"
+      },
+      "rules": [
+        {
+          "action": "ingestion.skip",
+          "effect": "allow",
+          "mode": "require",
+          "requires": [
+            "ingestion.skip"
+          ],
+          "source": "default"
+        }
+      ],
+      "subject": "ingestion.skip"
+    },
+    {
+      "category": "policy",
+      "id": "policy:retrieval.include_warn",
+      "inputs": {
+        "action": "retrieval.include_warn"
+      },
+      "outcome": {
+        "decision": "denied",
+        "reason": "permission_missing",
+        "required_permissions": [
+          "retrieval.include_warn"
+        ],
+        "source": "trace"
+      },
+      "rules": [
+        {
+          "action": "retrieval.include_warn",
+          "effect": "allow",
+          "mode": "require",
+          "requires": [
+            "retrieval.include_warn"
+          ],
+          "source": "default"
+        }
+      ],
+      "subject": "retrieval.include_warn"
+    },
+    {
+      "category": "policy",
+      "id": "policy:upload.replace",
+      "inputs": {
+        "action": "upload.replace"
+      },
+      "outcome": {
+        "decision": "denied",
+        "reason": "permission_missing",
+        "required_permissions": [
+          "upload.replace"
+        ],
+        "source": "policy"
+      },
+      "rules": [
+        {
+          "action": "upload.replace",
+          "effect": "allow",
+          "mode": "require",
+          "requires": [
+            "upload.replace"
+          ],
+          "source": "default"
+        }
+      ],
+      "subject": "upload.replace"
+    },
+    {
+      "category": "retrieval",
+      "id": "retrieval:query",
+      "inputs": {
+        "query": "invoice"
+      },
+      "outcome": {
+        "decisions": [
+          {
+            "decision": "exclude",
+            "matched": true,
+            "quality": "block",
+            "reason": "blocked",
+            "reasons": [
+              "skipped",
+              "text_too_short"
+            ],
+            "upload_id": "u_block"
+          },
+          {
+            "decision": "exclude",
+            "matched": true,
+            "quality": "warn",
+            "reason": "policy_denied",
+            "reasons": [
+              "repeated_lines"
+            ],
+            "upload_id": "u_warn"
+          }
+        ],
+        "excluded_blocked": 1,
+        "excluded_warn": 1,
+        "included_warn": false,
+        "preferred_quality": "pass",
+        "query": "invoice",
+        "results": [],
+        "warn_policy": {
+          "action": "retrieval.include_warn",
+          "decision": "denied",
+          "reason": "permission_missing",
+          "required_permissions": [
+            "retrieval.include_warn"
+          ],
+          "source": "trace"
+        }
+      },
+      "rules": [
+        "blocked uploads are excluded",
+        "pass results are preferred",
+        "warn results require policy allow",
+        {
+          "warn_policy": {
+            "action": "retrieval.include_warn",
+            "effect": "allow",
+            "mode": "require",
+            "requires": [
+              "retrieval.include_warn"
+            ],
+            "source": "default"
+          }
+        }
+      ],
+      "subject": "invoice"
+    }
+  ],
+  "inputs": {
+    "identity": {
+      "permissions": [],
+      "roles": [
+        "reviewer"
+      ],
+      "subject": "user-***REDACTED***",
+      "trust_level": null
+    },
+    "state": {
+      "index_chunks": 2,
+      "ingestion_reports": 2,
+      "uploads": 2
+    },
+    "subject": {
+      "query": "invoice"
+    }
+  },
+  "outcomes": {
+    "ingestion": {
+      "counts": {
+        "block": 1,
+        "pass": 0,
+        "warn": 1
+      }
+    },
+    "policy_denials": [
+      "ingestion.override",
+      "ingestion.review",
+      "ingestion.skip",
+      "retrieval.include_warn",
+      "upload.replace"
+    ],
+    "retrieval": {
+      "excluded_blocked": 1,
+      "excluded_warn": 1,
+      "included_warn": false,
+      "preferred_quality": "pass",
+      "results": 0
+    }
+  },
+  "policies": {
+    "declared": [],
+    "effective": [
+      {
+        "action": "ingestion.override",
+        "effect": "allow",
+        "mode": "require",
+        "requires": [
+          "ingestion.override"
+        ],
+        "source": "default"
+      },
+      {
+        "action": "ingestion.review",
+        "effect": "allow",
+        "mode": "allow",
+        "source": "default"
+      },
+      {
+        "action": "ingestion.run",
+        "effect": "allow",
+        "mode": "allow",
+        "source": "default"
+      },
+      {
+        "action": "ingestion.skip",
+        "effect": "allow",
+        "mode": "require",
+        "requires": [
+          "ingestion.skip"
+        ],
+        "source": "default"
+      },
+      {
+        "action": "retrieval.include_warn",
+        "effect": "allow",
+        "mode": "require",
+        "requires": [
+          "retrieval.include_warn"
+        ],
+        "source": "default"
+      },
+      {
+        "action": "upload.replace",
+        "effect": "allow",
+        "mode": "require",
+        "requires": [
+          "upload.replace"
+        ],
+        "source": "default"
+      }
+    ]
+  }
+}

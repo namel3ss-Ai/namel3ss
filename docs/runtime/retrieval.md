@@ -31,3 +31,12 @@ Blocked content is always excluded, even if it is the only match. Warned content
 Retrieval reflects the latest ingestion report; re-running ingestion or skipping an upload immediately updates what can be returned.
 
 Warned retrieval permissions can be declared in the `policy` block of `app.ai` (legacy `ingestion.policy.toml` is still supported).
+
+## Explain audit
+Audit explain shows why each upload was included or excluded for a given query, including policy involvement:
+
+```
+n3 explain --audit --input .namel3ss/run/last.json --query "invoice"
+```
+
+Blocked uploads are always excluded and appear in the audit report with explicit reasons.

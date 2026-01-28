@@ -83,3 +83,12 @@ If the policy block is omitted, defaults apply: `ingestion_run` and `ingestion_r
 Blocked content is never retrievable, regardless of policy.
 
 The legacy `ingestion.policy.toml` file is still supported; app policy overrides it only for actions explicitly declared in the policy block.
+
+## Explain audit
+Use audit explain to reconstruct upload selection, the quality gate, review actions, and policy decisions without reading code:
+
+```
+n3 explain --audit --input .namel3ss/run/last.json --upload <checksum>
+```
+
+Audit output is deterministic, ordered, and redacted. It does not allow silent indexing or hidden overrides.

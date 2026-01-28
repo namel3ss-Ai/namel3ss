@@ -1,6 +1,6 @@
 # Trust & Governance
 
-namel3ss treats production as a provable, explainable, governable state. This phase adds engine proofs, verification gates, secrets-as-capabilities, observability exports, and explainability.
+namel3ss treats production as a provable, explainable, governable state. This section covers engine proofs, verification gates, secrets-as-capabilities, observability exports, and explainability.
 
 **Engine**: the system that runs a namel3ss app and enforces its rules.
 
@@ -77,8 +77,24 @@ n3 explain --json
 
 ---
 
+## Explain (audit)
+Explain end-to-end decisions across uploads, ingestion, review actions, policy checks, and retrieval.
+```bash
+n3 explain --audit --json
+```
+
+Audit reports are deterministic and redacted. Each report is ordered and includes:
+- Inputs
+- Decisions
+- Policies
+- Outcomes
+
+No silent indexing, hidden overrides, or implicit policy bypasses are permitted in audit output.
+
+---
+
 ## Notes
 - Proofs and verify output are deterministic; runtime artifacts are canonicalized without timestamps or call ids.
 - Secrets are never stored in proofs, logs, or trace exports.
 - `.namel3ss` is read via the CLI (`n3 status`, `n3 explain`, `n3 clean`) and remains safe to delete when needed.
-- Edge target remains a stub in this alpha; verify and explain will flag limitations clearly.
+- Edge target remains a stub; verify and explain flag limitations clearly.
