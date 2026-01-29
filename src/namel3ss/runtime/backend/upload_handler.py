@@ -7,10 +7,17 @@ from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.observability.context import ObservabilityContext
-from namel3ss.runtime.backend.studio_effect_adapter_uploads import (
-    record_upload_received,
-    record_upload_stored,
+from namel3ss.runtime.backend.upload_contract import (
+    DEFAULT_CONTENT_TYPE,
+    UPLOAD_ERROR_CAPABILITY,
+    UPLOAD_ERROR_BOUNDARY,
+    UPLOAD_ERROR_CHUNK,
+    UPLOAD_ERROR_FILE,
+    UPLOAD_ERROR_LENGTH,
+    clean_upload_filename,
+    upload_error_details,
 )
+from namel3ss.runtime.backend.upload_recorder import UploadRecorder
 from namel3ss.runtime.backend.upload_store import list_uploads, store_upload
 
 
@@ -21,22 +28,26 @@ def handle_upload(
     rfile,
     content_length: int | None,
     upload_name: str | None,
+    recorder: UploadRecorder | None = None,
 ) -> dict:
-    _require_uploads_capability(ctx)
     obs, owns_obs = _resolve_observability(ctx)
     span_id = None
     span_status = "ok"
     normalized = {key.lower(): value for key, value in headers.items()}
     content_type = normalized.get("content-type", "").strip()
     is_chunked = "chunked" in normalized.get("transfer-encoding", "").lower()
+    recorder = recorder or UploadRecorder()
     if obs and owns_obs:
         obs.start_session()
     try:
+        _require_uploads_capability(ctx)
         if content_type.startswith("multipart/form-data"):
             boundary = _multipart_boundary(content_type)
             body = _read_body(rfile, content_length, is_chunked=is_chunked)
             filename, part_type, data = _parse_multipart(body, boundary)
-            name = filename or upload_name or "upload"
+            name = clean_upload_filename(filename or upload_name or "upload")
+            recorder.set_total_bytes(len(data))
+            recorder.accept(name=name, content_type=part_type or DEFAULT_CONTENT_TYPE)
             if obs and span_id is None:
                 span_id = obs.start_span(
                     None,
@@ -52,9 +63,13 @@ def handle_upload(
                 filename=name,
                 content_type=part_type,
                 stream=stream,
+                progress=recorder.advance,
             )
         else:
-            name = upload_name or _header_filename(normalized) or "upload"
+            name = clean_upload_filename(upload_name or _header_filename(normalized) or "upload")
+            if not is_chunked:
+                recorder.set_total_bytes(content_length)
+            recorder.accept(name=name, content_type=content_type or DEFAULT_CONTENT_TYPE)
             if obs and span_id is None:
                 span_id = obs.start_span(
                     None,
@@ -70,25 +85,20 @@ def handle_upload(
                 filename=name,
                 content_type=content_type,
                 stream=stream,
+                progress=recorder.advance,
             )
-    except Exception:
+        recorder.record_success(metadata)
+    except Exception as err:
         span_status = "error"
+        recorder.record_error(err, project_root=getattr(ctx, "project_root", None))
         raise
     finally:
         if span_id:
             obs.end_span(None, span_id, status=span_status)
         if obs and owns_obs:
             obs.flush()
-    traces: list[dict] = []
-    record_upload_received(
-        traces,
-        name=metadata["name"],
-        content_type=metadata["content_type"],
-        bytes_len=metadata["bytes"],
-        checksum=metadata["checksum"],
-    )
-    record_upload_stored(traces, name=metadata["name"], stored_path=metadata["stored_path"])
-    return {"ok": True, "upload": metadata, "traces": traces}
+    upload_payload = recorder.build_upload_payload(metadata)
+    return {"ok": True, "upload": upload_payload, "traces": recorder.traces}
 
 
 def handle_upload_list(ctx) -> dict:
@@ -130,7 +140,8 @@ def _multipart_boundary(content_type: str) -> bytes:
             why="Multipart data needs a boundary marker to separate parts.",
             fix="Send a multipart/form-data request with a boundary.",
             example="Content-Type: multipart/form-data; boundary=...",
-        )
+        ),
+        details=upload_error_details(UPLOAD_ERROR_BOUNDARY),
     )
 
 
@@ -139,7 +150,10 @@ def _read_body(rfile, content_length: int | None, *, is_chunked: bool) -> bytes:
         chunks = list(_iter_chunked(rfile))
         return b"".join(chunks)
     if content_length is None:
-        raise Namel3ssError("Upload is missing Content-Length.")
+        raise Namel3ssError(
+            "Upload is missing Content-Length.",
+            details=upload_error_details(UPLOAD_ERROR_LENGTH),
+        )
     if content_length <= 0:
         return b""
     return rfile.read(content_length)
@@ -149,7 +163,10 @@ def _iter_body(rfile, content_length: int | None, *, is_chunked: bool) -> Iterab
     if is_chunked:
         return _iter_chunked(rfile)
     if content_length is None:
-        raise Namel3ssError("Upload is missing Content-Length.")
+        raise Namel3ssError(
+            "Upload is missing Content-Length.",
+            details=upload_error_details(UPLOAD_ERROR_LENGTH),
+        )
     return _iter_length(rfile, content_length)
 
 
@@ -172,7 +189,10 @@ def _iter_chunked(rfile) -> Iterable[bytes]:
             size_text = line.strip().split(b";", 1)[0]
             size = int(size_text, 16)
         except Exception as exc:
-            raise Namel3ssError("Invalid chunked upload encoding.") from exc
+            raise Namel3ssError(
+                "Invalid chunked upload encoding.",
+                details=upload_error_details(UPLOAD_ERROR_CHUNK),
+            ) from exc
         if size == 0:
             _consume_trailer(rfile)
             break
@@ -211,7 +231,10 @@ def _parse_multipart(body: bytes, boundary: bytes) -> tuple[str | None, str | No
             continue
         content_type = headers.get("content-type")
         return filename, content_type, data
-    raise Namel3ssError("Multipart upload did not include a file.")
+    raise Namel3ssError(
+        "Multipart upload did not include a file.",
+        details=upload_error_details(UPLOAD_ERROR_FILE),
+    )
 
 
 def _parse_headers(text: str) -> dict[str, str]:
@@ -250,7 +273,8 @@ def _require_uploads_capability(ctx) -> None:
             why="Uploads are deny-by-default and must be explicitly allowed.",
             fix="Add 'uploads' to the capabilities block in app.ai.",
             example="capabilities:\n  uploads",
-        )
+        ),
+        details=upload_error_details(UPLOAD_ERROR_CAPABILITY, category="capability"),
     )
 
 

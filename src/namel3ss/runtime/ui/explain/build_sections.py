@@ -240,7 +240,7 @@ def _card_reasons(element: dict) -> list[str]:
 
 
 def _upload_reasons(element: dict) -> list[str]:
-    reasons: list[str] = ["request only (no upload behavior)"]
+    reasons: list[str] = ["upload contract: progress, preview, state, error"]
     accept = element.get("accept")
     if isinstance(accept, list) and accept:
         joined = _join_limited([str(entry) for entry in accept])

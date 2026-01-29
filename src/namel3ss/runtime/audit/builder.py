@@ -66,6 +66,7 @@ def build_decision_model(
 
     decisions: list[DecisionStep] = []
     decisions.extend(_upload_decisions(state_value, upload_id))
+    decisions.extend(_upload_trace_decisions(trace_items, upload_id))
     decisions.extend(_ingestion_decisions(state_value, upload_id))
     decisions.extend(_review_decisions(state_value, trace_items, upload_id))
 
@@ -164,6 +165,18 @@ def _upload_decisions(state: dict, upload_id: str | None) -> list[DecisionStep]:
                 "type": entry.get("type"),
                 "checksum": checksum,
             }
+            preview = entry.get("preview")
+            if isinstance(preview, dict):
+                inputs["preview"] = preview
+            progress = entry.get("progress")
+            if isinstance(progress, dict):
+                inputs["progress"] = progress
+            state_value = entry.get("state")
+            if isinstance(state_value, str):
+                inputs["state"] = state_value
+            error = entry.get("error")
+            if isinstance(error, dict):
+                inputs["error"] = error
             steps.append(
                 DecisionStep(
                     id=step_id,
@@ -175,6 +188,100 @@ def _upload_decisions(state: dict, upload_id: str | None) -> list[DecisionStep]:
                 )
             )
     return steps
+
+
+_UPLOAD_TRACE_TYPES = {
+    "upload_state",
+    "upload_progress",
+    "upload_preview",
+    "upload_error",
+    "upload_received",
+    "upload_stored",
+}
+
+
+def _upload_trace_decisions(traces: list[dict], upload_id: str | None) -> list[DecisionStep]:
+    steps: list[DecisionStep] = []
+    for idx, trace in enumerate(traces, start=1):
+        event_type = trace.get("type")
+        if event_type not in _UPLOAD_TRACE_TYPES:
+            continue
+        subject = _trace_upload_id(trace)
+        if upload_id:
+            if subject is None or subject != upload_id:
+                continue
+        step_id = f"upload:event:{idx}:{event_type}"
+        inputs = _upload_trace_inputs(trace)
+        outcome = _upload_trace_outcome(trace)
+        steps.append(
+            DecisionStep(
+                id=step_id,
+                category="upload",
+                subject=subject,
+                inputs=inputs,
+                rules=[event_type],
+                outcome=outcome,
+            )
+        )
+    return steps
+
+
+def _trace_upload_id(trace: dict) -> str | None:
+    for key in ("upload_id", "checksum"):
+        value = trace.get(key)
+        if isinstance(value, str) and value:
+            return value
+    preview = trace.get("preview")
+    if isinstance(preview, dict):
+        value = preview.get("checksum")
+        if isinstance(value, str) and value:
+            return value
+    return None
+
+
+def _upload_trace_inputs(trace: dict) -> dict:
+    inputs: dict[str, object] = {}
+    for key in (
+        "name",
+        "content_type",
+        "bytes",
+        "checksum",
+        "stored_path",
+        "state",
+        "bytes_received",
+        "total_bytes",
+        "percent_complete",
+    ):
+        if key in trace:
+            inputs[key] = trace.get(key)
+    preview = trace.get("preview")
+    if isinstance(preview, dict):
+        inputs["preview"] = preview
+    error = trace.get("error")
+    if isinstance(error, dict):
+        inputs["error"] = error
+    return inputs
+
+
+def _upload_trace_outcome(trace: dict) -> dict:
+    event_type = trace.get("type")
+    if event_type == "upload_state":
+        state = trace.get("state")
+        return {"state": state} if state else {}
+    if event_type == "upload_progress":
+        progress = trace.get("percent_complete")
+        return {"progress": progress} if progress is not None else {}
+    if event_type == "upload_preview":
+        return {"preview": True}
+    if event_type == "upload_error":
+        error = trace.get("error")
+        code = error.get("code") if isinstance(error, dict) else None
+        return {"error": code} if isinstance(code, str) and code else {}
+    if event_type == "upload_received":
+        return {"received": True}
+    if event_type == "upload_stored":
+        return {"stored": True}
+    return {}
 
 
 def _upload_sort_key(entry: object) -> tuple[str, str]:

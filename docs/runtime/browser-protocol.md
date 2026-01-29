@@ -54,11 +54,16 @@ The App Runtime server that `n3 run` starts exposes a single browser protocol. T
 ### POST /api/upload
 - Accepts multipart form data or chunked upload bodies.
 - Stores uploads under the scoped runtime store and returns deterministic metadata.
-- Response includes `ok`, `upload`, and `traces` (upload received and stored).
+- Response includes `ok`, `upload`, and `traces` (state, progress, preview, received, stored).
+- `upload` includes `state`, `progress`, and `preview` metadata:
+  - `state`: `accepted`, `receiving`, `validated`, `rejected`, `stored`
+  - `progress`: `bytes_received`, `total_bytes`, `percent_complete`
+  - `preview`: `filename`, `content_type`, `size`, `checksum`, plus `page_count` or `item_count` when available
+- Errors return `ok: false` with `upload.state: rejected` and `upload.error` including `code`, `reason`, and `recovery_actions`.
 
 ### GET /api/uploads
 - Returns `{"ok": true, "uploads": [...]}` with deterministic ordering.
-- Upload entries include logical name, size, checksum, and scoped stored path.
+- Upload entries include logical name, size, checksum, scoped stored path, plus `state`, `progress`, and `preview` metadata.
 
 ### GET /api/logs
 - Returns `{"ok": true, "count": <number>, "logs": [...]}` with deterministic ordering.

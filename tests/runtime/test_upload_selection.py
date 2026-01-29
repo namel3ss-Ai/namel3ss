@@ -65,15 +65,14 @@ page "home":
     )
 
     uploads = response["state"]["uploads"]["receipt"]
-    assert uploads == [
-        {
-            "id": metadata["checksum"],
-            "name": metadata["name"],
-            "size": metadata["bytes"],
-            "type": metadata["content_type"],
-            "checksum": metadata["checksum"],
-        }
-    ]
+    entry = uploads[0]
+    assert entry["id"] == metadata["checksum"]
+    assert entry["name"] == metadata["name"]
+    assert entry["size"] == metadata["bytes"]
+    assert entry["type"] == metadata["content_type"]
+    assert entry["checksum"] == metadata["checksum"]
+    assert entry["state"] == "stored"
+    assert entry["preview"]["checksum"] == metadata["checksum"]
 
 
 def test_upload_selection_multiple_appends(tmp_path: Path) -> None:
@@ -138,15 +137,14 @@ page "home":
     )
 
     uploads = response["state"]["uploads"]["receipt"]
-    assert uploads == [
-        {
-            "id": second["checksum"],
-            "name": second["name"],
-            "size": second["bytes"],
-            "type": second["content_type"],
-            "checksum": second["checksum"],
-        }
-    ]
+    entry = uploads[0]
+    assert entry["id"] == second["checksum"]
+    assert entry["name"] == second["name"]
+    assert entry["size"] == second["bytes"]
+    assert entry["type"] == second["content_type"]
+    assert entry["checksum"] == second["checksum"]
+    assert entry["state"] == "stored"
+    assert entry["preview"]["checksum"] == second["checksum"]
 
 
 def test_upload_selection_requires_metadata() -> None:
