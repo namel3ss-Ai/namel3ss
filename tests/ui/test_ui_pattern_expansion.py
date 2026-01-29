@@ -43,6 +43,50 @@ def test_ui_pattern_missing_required_argument():
     assert "required for pattern 'empty state'" in str(exc.value).lower()
 
 
+def test_ui_pattern_unknown_argument():
+    source = '''page "home":
+  use pattern "Empty State":
+    heading is "Hi"
+    guidance is "There"
+    extra is "Nope"
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "pattern argument 'extra' is not declared" in str(exc.value).lower()
+
+
+def test_ui_pattern_state_argument_disallowed():
+    source = '''page "home":
+  use pattern "Empty State":
+    heading is state.ready
+    guidance is "Hi"
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "pattern arguments must be literal values" in str(exc.value).lower()
+
+
+def test_ui_pattern_rejects_non_ui_declarations():
+    source = '''pattern "Bad":
+  flow "run_flow":
+    return "ok"
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "unexpected item 'flow'" in str(exc.value).lower()
+
+
+def test_ui_pattern_rejects_state_parameter_type():
+    source = '''pattern "Bad":
+  parameters:
+    flag is state
+  text is "Hi"
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "unsupported parameter type" in str(exc.value).lower()
+
+
 def test_ui_pattern_visibility_combined_errors():
     source = '''pattern "Gate":
   text is "Hi" visibility is state.ready
@@ -98,3 +142,14 @@ def test_ui_pattern_origin_does_not_include_host_paths(tmp_path: Path):
     assert raw not in payload
     assert raw.replace("\\", "\\\\") not in payload
     assert tmp_path.as_posix() not in payload
+
+
+def test_ui_pattern_origin_includes_parameters():
+    program = lower_ir_program(FIXTURE_APP.read_text(encoding="utf-8"))
+    manifest = build_manifest(program, state={}, store=None)
+    elements = manifest["pages"][0]["elements"]
+    status_block = elements[0]
+    origin = status_block.get("origin") or {}
+    params = origin.get("parameters") or {}
+    assert params.get("heading") == "Ready"
+    assert params.get("guidance") == "Waiting"

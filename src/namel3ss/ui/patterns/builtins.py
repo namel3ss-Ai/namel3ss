@@ -13,6 +13,7 @@ def builtin_patterns() -> list[PatternDefinition]:
         _empty_state_pattern(),
         _error_state_pattern(),
         _results_layout_pattern(),
+        _status_banner_pattern(),
     ]
 
 
@@ -60,17 +61,32 @@ def _results_layout_pattern() -> PatternDefinition:
     params = [
         _param("record_name", "record"),
         _param("layout", "text", optional=True, default="table"),
-        _param("results_visibility", "state", optional=True),
+        _param("filters_title", "text", optional=True),
+        _param("filters_guidance", "text", optional=True),
         _param("empty_title", "text", optional=True),
         _param("empty_guidance", "text", optional=True),
         _param("empty_action_label", "text", optional=True),
         _param("empty_action_flow", "text", optional=True),
-        _param("empty_visibility", "state", optional=True),
     ]
     return PatternDefinition(
         name="Results Layout",
         parameters=params,
         builder=_results_layout_builder,
+    )
+
+
+def _status_banner_pattern() -> PatternDefinition:
+    params = [
+        _param("tone", "text"),
+        _param("heading", "text"),
+        _param("message", "text", optional=True),
+        _param("action_label", "text", optional=True),
+        _param("action_flow", "text", optional=True),
+    ]
+    return PatternDefinition(
+        name="Status Banner",
+        parameters=params,
+        builder=_status_banner_builder,
     )
 
 
@@ -133,7 +149,8 @@ def _results_layout_builder(values: dict[str, object], invocation_path: List[int
     layout = _require_text(values, "layout").lower()
     if layout not in {"table", "list"}:
         raise Namel3ssError("Results Layout layout must be 'table' or 'list'")
-    results_visibility = _optional_state(values, "results_visibility")
+    filters_title = _optional_text(values, "filters_title")
+    filters_guidance = _optional_text(values, "filters_guidance")
     if layout == "list":
         items: list[ast.PageItem] = [
             ast.ListItem(
@@ -143,7 +160,7 @@ def _results_layout_builder(values: dict[str, object], invocation_path: List[int
                 empty_text=None,
                 selection=None,
                 actions=None,
-                visibility=results_visibility,
+                visibility=None,
                 line=None,
                 column=None,
             )
@@ -158,19 +175,28 @@ def _results_layout_builder(values: dict[str, object], invocation_path: List[int
                 pagination=None,
                 selection=None,
                 row_actions=None,
-                visibility=results_visibility,
+                visibility=None,
                 line=None,
                 column=None,
             )
         ]
+    if filters_title is not None or filters_guidance is not None:
+        if filters_title is None:
+            raise Namel3ssError("Results Layout filters require filters_title")
+        filter_children: list[ast.PageItem] = []
+        if filters_guidance:
+            filter_children.append(ast.TextItem(value=filters_guidance, visibility=None, line=None, column=None))
+        items.insert(
+            0,
+            ast.SectionItem(label=filters_title, children=filter_children, visibility=None, line=None, column=None),
+        )
     empty_title = _optional_text(values, "empty_title")
     empty_guidance = _optional_text(values, "empty_guidance")
     empty_action_label = _optional_text(values, "empty_action_label")
     empty_action_flow = _optional_text(values, "empty_action_flow")
-    empty_visibility = _optional_state(values, "empty_visibility")
     empty_requested = any(
         value is not None
-        for value in (empty_title, empty_guidance, empty_action_label, empty_action_flow, empty_visibility)
+        for value in (empty_title, empty_guidance, empty_action_label, empty_action_flow)
     )
     if empty_requested:
         if empty_title is None or empty_guidance is None:
@@ -188,12 +214,34 @@ def _results_layout_builder(values: dict[str, object], invocation_path: List[int
             ast.UsePatternItem(
                 pattern_name="Empty State",
                 arguments=args,
-                visibility=empty_visibility,
+                visibility=None,
                 line=None,
                 column=None,
             )
         )
     return items
+
+
+def _status_banner_builder(values: dict[str, object], invocation_path: List[int]) -> list[ast.PageItem]:
+    tone = _require_text(values, "tone").lower()
+    if tone not in {"success", "caution", "critical"}:
+        raise Namel3ssError("Status Banner tone must be 'success', 'caution', or 'critical'")
+    heading = _require_text(values, "heading")
+    message = _optional_text(values, "message")
+    action_label = _optional_text(values, "action_label")
+    action_flow = _optional_text(values, "action_flow")
+    if (action_label is None) != (action_flow is None):
+        raise Namel3ssError("Status Banner action requires both action_label and action_flow")
+    children: list[ast.PageItem] = [
+        ast.TitleItem(value=heading, visibility=None, line=None, column=None),
+    ]
+    if message is not None:
+        children.append(ast.TextItem(value=message, visibility=None, line=None, column=None))
+    if action_label is not None and action_flow is not None:
+        children.append(
+            ast.ButtonItem(label=action_label, flow_name=action_flow, visibility=None, line=None, column=None)
+        )
+    return [ast.SectionItem(label=_status_label(tone), children=children, visibility=None, line=None, column=None)]
 
 
 def _compose_name(prefix: str, intent: str, invocation_path: List[int]) -> str:
@@ -238,14 +286,9 @@ def _optional_text(values: dict[str, object], name: str) -> str | None:
         raise Namel3ssError(f"{name} must be text")
     return value
 
-
-def _optional_state(values: dict[str, object], name: str) -> ast.StatePath | None:
-    value = values.get(name)
-    if value is None:
-        return None
-    if not isinstance(value, ast.StatePath):
-        raise Namel3ssError(f"{name} must be a state path")
-    return value
+def _status_label(tone: str) -> str:
+    labels = {"success": "Success", "caution": "Caution", "critical": "Critical"}
+    return labels.get(tone, tone.title())
 
 
 __all__ = ["builtin_patterns"]

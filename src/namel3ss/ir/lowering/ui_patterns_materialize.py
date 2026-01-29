@@ -8,6 +8,7 @@ from namel3ss.ir.lowering.ui_patterns_values import (
     qualify_name,
     resolve_boolean_optional,
     resolve_number_optional,
+    resolve_page,
     resolve_record,
     resolve_record_optional,
     resolve_state,
@@ -120,7 +121,7 @@ def materialize_item(
         return working
     if isinstance(working, ast.LinkItem):
         label = resolve_text(working.label, param_values=param_values, param_defs=param_defs)
-        target = resolve_text(working.page_name, param_values=param_values, param_defs=param_defs)
+        target = resolve_page(working.page_name, param_values=param_values, param_defs=param_defs)
         if label is None or target is None:
             return None
         working.label = label

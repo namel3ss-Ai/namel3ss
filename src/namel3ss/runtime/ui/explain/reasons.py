@@ -3,6 +3,7 @@ from __future__ import annotations
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.execution.normalize import format_expression
+from namel3ss.runtime.ui.explain.normalize import stable_truncate
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
 from namel3ss.runtime.identity.guards import build_guard_context
 
@@ -35,13 +36,36 @@ def declared_in_pattern(origin: dict) -> str | None:
     pattern = origin.get("pattern")
     invocation = origin.get("invocation")
     element = origin.get("element")
+    params_text = _format_pattern_params(origin)
+    params_suffix = f" params {params_text}" if params_text else ""
     if not pattern:
         return None
     if invocation and element:
-        return f'from pattern "{pattern}" invocation "{invocation}" element "{element}"'
+        return f'from pattern "{pattern}" invocation "{invocation}" element "{element}"{params_suffix}'
     if invocation:
-        return f'from pattern "{pattern}" invocation "{invocation}"'
-    return f'from pattern "{pattern}"'
+        return f'from pattern "{pattern}" invocation "{invocation}"{params_suffix}'
+    return f'from pattern "{pattern}"{params_suffix}'
+
+
+def _format_pattern_params(origin: dict) -> str | None:
+    params = origin.get("parameters")
+    if not isinstance(params, dict) or not params:
+        return None
+    parts: list[str] = []
+    for key in sorted(params.keys()):
+        parts.append(f"{key}={_format_pattern_param_value(params[key])}")
+    return ", ".join(parts)
+
+
+def _format_pattern_param_value(value: object) -> str:
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)):
+        return str(value)
+    text = stable_truncate(str(value))
+    return f"\"{text}\""
 
 
 def format_requires(expr: ir.Expression | None) -> str | None:

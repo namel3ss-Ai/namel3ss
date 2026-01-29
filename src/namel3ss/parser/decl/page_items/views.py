@@ -370,8 +370,6 @@ def _parse_pattern_argument_value(parser, *, allow_pattern_params: bool) -> obje
     if tok.type == "BOOLEAN":
         parser._advance()
         return bool(tok.value)
-    if tok.type == "STATE":
-        return _parse_state_path_value(parser, allow_pattern_params=False)
     raise Namel3ssError("Pattern arguments must be literal values", line=tok.line, column=tok.column)
 
 

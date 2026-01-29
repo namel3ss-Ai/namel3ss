@@ -16,7 +16,7 @@ n3 see
 - Elements per page with labels and bindings (forms, tables, lists, charts, chat, overlays, tabs).
 - Actions and whether they are available (flow calls and UI-only open/close/selection).
 - Requires guards when present.
-- Pack origin metadata when elements come from `ui_pack` expansion.
+- Pack and pattern origin metadata when elements come from `ui_pack` or pattern expansion (including pattern parameters).
 
 ## Bounds
 - Output is deterministic and bounded.

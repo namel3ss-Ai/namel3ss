@@ -19,6 +19,7 @@ from namel3ss.ui.patterns.model import PatternDefinition
 class PatternContext:
     name: str
     invocation_id: str
+    parameters: dict[str, object]
 
 
 def expand_pattern_items(
@@ -184,6 +185,7 @@ def _expand_use_pattern(
         line=item.line,
         column=item.column,
     )
+    parameters = _pattern_parameters(pattern, values)
     visibility = resolve_visibility(item.visibility, param_values=param_values, param_defs=param_defs)
     base_items = pattern.builder(values, invocation_path) if pattern.builder else list(pattern.items or [])
     next_origin = _merge_origin(base_origin, getattr(item, "origin", None))
@@ -199,7 +201,7 @@ def _expand_use_pattern(
         record_names=record_names,
         context_module=context_module,
         page_path_prefix=invocation_path,
-        pattern_context=PatternContext(pattern.name, invocation_id),
+        pattern_context=PatternContext(pattern.name, invocation_id, parameters),
         pattern_path_prefix=[],
         base_origin=next_origin,
         param_values=values,
@@ -421,10 +423,47 @@ def _attach_pattern_origin(
             "pattern": context.name,
             "invocation": context.invocation_id,
             "element": _format_element_path(element_path),
+            "parameters": context.parameters,
         }
     )
     setattr(item, "origin", origin)
     return item
+
+
+def _pattern_parameters(pattern: PatternDefinition, values: dict[str, object]) -> dict[str, object]:
+    ordered: dict[str, object] = {}
+    for param in pattern.parameters:
+        ordered[param.name] = _sanitize_param_value(values.get(param.name))
+    return ordered
+
+
+def _sanitize_param_value(value: object) -> object:
+    if value is None:
+        return None
+    if isinstance(value, (bool, int, float)):
+        return value
+    if isinstance(value, ast.StatePath):
+        return _truncate_text(f"state.{'.'.join(value.path)}")
+    if isinstance(value, str):
+        return _truncate_text(value)
+    return _truncate_text(str(value))
+
+
+def _truncate_text(value: str, limit: int = 80) -> str:
+    cleaned = " ".join(str(value).split())
+    if _looks_like_path(cleaned):
+        return "<redacted>"
+    if len(cleaned) <= limit:
+        return cleaned
+    return f"{cleaned[: max(0, limit - 3)]}..."
+
+
+def _looks_like_path(value: str) -> bool:
+    if value.startswith(("/", "\\", "~")):
+        return True
+    if len(value) >= 3 and value[1] == ":" and value[0].isalpha() and value[2] in {"/", "\\"}:
+        return True
+    return False
 
 
 def _ensure_no_top_level_visibility(items: list[ast.PageItem], source: ast.PageItem) -> None:

@@ -97,7 +97,7 @@ UI packs:
 UI patterns:
 - `pattern` declares reusable UI items with optional parameters.
 - Patterns contain UI items only (no flows, tools, or records).
-- `use pattern` is static expansion; origin metadata includes pattern name, invocation, and element mapping.
+- `use pattern` is static expansion; origin metadata includes pattern name, invocation, element mapping, and parameter values.
 - Patterns are deterministic and additive; no runtime composition or branching.
 
 ## 3.3) Patterns
@@ -129,17 +129,18 @@ page "home":
 ```
 
 Rules:
-- Parameters are declared in a `parameters:` block and must be one of `text`, `number`, `boolean`, `record`, or `state`.
+- Parameters are declared in a `parameters:` block and must be one of `text`, `number`, `boolean`, `record`, or `page`.
 - Defaults are literal values only; optional parameters may be omitted.
 - Inside patterns, reference parameters as `param.<name>`.
-- Pattern arguments are literal values or state paths only; no expressions.
+- Pattern arguments are literal values only (text/number/boolean or record/page identifiers); no expressions or state paths.
 - Expansion is static and deterministic; UI manifests record pattern origin metadata.
 
 Built-in patterns:
 - `Loading State` (params: `intent` text, `message` text)
 - `Empty State` (params: `heading` text, `guidance` text, optional `action_label`/`action_flow`)
 - `Error State` (params: `heading` text, `message` text, optional `action_label`/`action_flow`)
-- `Results Layout` (params: `record_name` record, optional `layout` text, optional `results_visibility` state, optional empty-state params `empty_title`, `empty_guidance`, `empty_action_label`, `empty_action_flow`, `empty_visibility`)
+- `Results Layout` (params: `record_name` record, optional `layout` text, optional `filters_title`/`filters_guidance`, optional empty-state params `empty_title`, `empty_guidance`, `empty_action_label`, `empty_action_flow`)
+- `Status Banner` (params: `tone` text, `heading` text, optional `message` text, optional `action_label`/`action_flow`)
 
 ## 3.1) Media
 - Media assets live in a locked `media/` folder at the app root (next to app.ai).

@@ -120,9 +120,9 @@ def _parse_param_kind(parser) -> str:
     if tok.type == "RECORD":
         parser._advance()
         return "record"
-    if tok.type == "STATE":
+    if tok.type == "PAGE":
         parser._advance()
-        return "state"
+        return "page"
     raise Namel3ssError("Unsupported parameter type", line=tok.line, column=tok.column)
 
 
@@ -137,19 +137,15 @@ def _parse_param_value(parser) -> object:
     if tok.type == "BOOLEAN":
         parser._advance()
         return bool(tok.value)
-    if tok.type == "STATE":
-        return parser._parse_state_path()
     raise Namel3ssError("Expected parameter default value", line=tok.line, column=tok.column)
 
 
 def _validate_param_value(kind: str, value: object, *, line: int | None, column: int | None) -> None:
-    if kind in {"text", "record"} and isinstance(value, str):
+    if kind in {"text", "record", "page"} and isinstance(value, str):
         return
     if kind == "number" and isinstance(value, (int, float)):
         return
     if kind == "boolean" and isinstance(value, bool):
-        return
-    if kind == "state" and isinstance(value, ast.StatePath):
         return
     raise Namel3ssError(
         f"Default value does not match {kind} parameter type",

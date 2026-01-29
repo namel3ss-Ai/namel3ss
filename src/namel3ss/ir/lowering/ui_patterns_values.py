@@ -109,6 +109,32 @@ def resolve_record_optional(
     return resolve_record(value, param_values=param_values, param_defs=param_defs)
 
 
+def resolve_page(
+    value: str | ast.PatternParamRef | None,
+    *,
+    param_values: dict[str, object] | None,
+    param_defs: dict[str, ast.PatternParam] | None,
+) -> str | None:
+    if value is None:
+        return None
+    resolved = resolve_param_ref(value, expected_kinds={"page", "text"}, param_values=param_values, param_defs=param_defs)
+    if resolved is None:
+        return None
+    if not isinstance(resolved, str):
+        raise Namel3ssError("Expected page name", line=getattr(value, "line", None), column=getattr(value, "column", None))
+    return resolved
+
+
+def resolve_page_optional(
+    value: str | ast.PatternParamRef | None,
+    *,
+    param_values: dict[str, object] | None,
+    param_defs: dict[str, ast.PatternParam] | None,
+) -> str | None:
+    if value is None:
+        return None
+    return resolve_page(value, param_values=param_values, param_defs=param_defs)
+
 def resolve_state(
     value: ast.StatePath | ast.PatternParamRef | None,
     *,
@@ -236,14 +262,12 @@ def resolve_pattern_params(
 
 
 def value_matches_kind(value: object, kind: str) -> bool:
-    if kind in {"text", "record"}:
+    if kind in {"text", "record", "page"}:
         return isinstance(value, str)
     if kind == "number":
         return isinstance(value, (int, float)) and not isinstance(value, bool)
     if kind == "boolean":
         return isinstance(value, bool)
-    if kind == "state":
-        return isinstance(value, ast.StatePath)
     return False
 
 
@@ -262,6 +286,8 @@ __all__ = [
     "resolve_number_optional",
     "resolve_param_ref",
     "resolve_pattern_params",
+    "resolve_page",
+    "resolve_page_optional",
     "resolve_record",
     "resolve_record_optional",
     "resolve_state",

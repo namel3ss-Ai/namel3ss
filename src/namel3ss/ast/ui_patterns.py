@@ -10,7 +10,7 @@ from namel3ss.ast.pages import PageItem
 @dataclass
 class PatternParam(Node):
     name: str
-    kind: str  # text | number | boolean | record | state
+    kind: str  # text | number | boolean | record | page
     optional: bool = False
     default: object | None = None
 

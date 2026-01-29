@@ -23,7 +23,7 @@
           "label": "",
           "reasons": [
             "declared in page \"home\"",
-            "from pattern \"Status Block\" invocation \"page:home:pattern:0\" element \"0\""
+            "from pattern \"Status Block\" invocation \"page:home:pattern:0\" element \"0\" params guidance=\"Waiting\", heading=\"Ready\""
           ],
           "visible": true
         },
@@ -35,7 +35,7 @@
           "label": "Ready",
           "reasons": [
             "declared in page \"home\"",
-            "from pattern \"Status Block\" invocation \"page:home:pattern:0\" element \"0.0\""
+            "from pattern \"Status Block\" invocation \"page:home:pattern:0\" element \"0.0\" params guidance=\"Waiting\", heading=\"Ready\""
           ],
           "visible": true
         },
@@ -47,7 +47,7 @@
           "label": "Waiting",
           "reasons": [
             "declared in page \"home\"",
-            "from pattern \"Status Block\" invocation \"page:home:pattern:0\" element \"0.1\""
+            "from pattern \"Status Block\" invocation \"page:home:pattern:0\" element \"0.1\" params guidance=\"Waiting\", heading=\"Ready\""
           ],
           "visible": true
         },
@@ -56,10 +56,10 @@
           "enabled": null,
           "id": "page:home:item:4:section",
           "kind": "section",
-          "label": "",
+          "label": "Success",
           "reasons": [
             "declared in page \"home\"",
-            "from pattern \"Empty State\" invocation \"page:home:pattern:1\" element \"0\""
+            "from pattern \"Status Banner\" invocation \"page:home:pattern:1\" element \"0\" params action_flow=null, action_label=null, heading=\"Saved\", message=\"Everything is up to date\", tone=\"success\""
           ],
           "visible": true
         },
@@ -68,10 +68,10 @@
           "enabled": null,
           "id": "page:home:item:5:title",
           "kind": "title",
-          "label": "No results",
+          "label": "Saved",
           "reasons": [
             "declared in page \"home\"",
-            "from pattern \"Empty State\" invocation \"page:home:pattern:1\" element \"0.0\""
+            "from pattern \"Status Banner\" invocation \"page:home:pattern:1\" element \"0.0\" params action_flow=null, action_label=null, heading=\"Saved\", message=\"Everything is up to date\", tone=\"success\""
           ],
           "visible": true
         },
@@ -80,22 +80,58 @@
           "enabled": null,
           "id": "page:home:item:6:text",
           "kind": "text",
+          "label": "Everything is up to date",
+          "reasons": [
+            "declared in page \"home\"",
+            "from pattern \"Status Banner\" invocation \"page:home:pattern:1\" element \"0.1\" params action_flow=null, action_label=null, heading=\"Saved\", message=\"Everything is up to date\", tone=\"success\""
+          ],
+          "visible": true
+        },
+        {
+          "bound_to": null,
+          "enabled": null,
+          "id": "page:home:item:7:section",
+          "kind": "section",
+          "label": "",
+          "reasons": [
+            "declared in page \"home\"",
+            "from pattern \"Empty State\" invocation \"page:home:pattern:2\" element \"0\" params action_flow=\"retry\", action_label=\"Retry\", guidance=\"Try again\", heading=\"No results\""
+          ],
+          "visible": true
+        },
+        {
+          "bound_to": null,
+          "enabled": null,
+          "id": "page:home:item:8:title",
+          "kind": "title",
+          "label": "No results",
+          "reasons": [
+            "declared in page \"home\"",
+            "from pattern \"Empty State\" invocation \"page:home:pattern:2\" element \"0.0\" params action_flow=\"retry\", action_label=\"Retry\", guidance=\"Try again\", heading=\"No results\""
+          ],
+          "visible": true
+        },
+        {
+          "bound_to": null,
+          "enabled": null,
+          "id": "page:home:item:9:text",
+          "kind": "text",
           "label": "Try again",
           "reasons": [
             "declared in page \"home\"",
-            "from pattern \"Empty State\" invocation \"page:home:pattern:1\" element \"0.1\""
+            "from pattern \"Empty State\" invocation \"page:home:pattern:2\" element \"0.1\" params action_flow=\"retry\", action_label=\"Retry\", guidance=\"Try again\", heading=\"No results\""
           ],
           "visible": true
         },
         {
           "bound_to": null,
           "enabled": true,
-          "id": "page:home:item:7:button",
+          "id": "page:home:item:10:button",
           "kind": "button",
           "label": "Retry",
           "reasons": [
             "declared in page \"home\"",
-            "from pattern \"Empty State\" invocation \"page:home:pattern:1\" element \"0.2\"",
+            "from pattern \"Empty State\" invocation \"page:home:pattern:2\" element \"0.2\" params action_flow=\"retry\", action_label=\"Retry\", guidance=\"Try again\", heading=\"No results\"",
             "action \"page.home.button.retry\" is available"
           ],
           "visible": true
@@ -103,48 +139,48 @@
         {
           "bound_to": "record:Result",
           "enabled": null,
-          "id": "page:home:item:8:table",
+          "id": "page:home:item:11:table",
           "kind": "table",
           "label": null,
           "reasons": [
             "declared in page \"home\"",
-            "from pattern \"Results Layout\" invocation \"page:home:pattern:2\" element \"0\""
+            "from pattern \"Results Layout\" invocation \"page:home:pattern:3\" element \"0\" params empty_action_flow=null, empty_action_label=null, empty_guidance=\"Check back later\", empty_title=\"Nothing here\", filters_guidance=null, filters_title=null, layout=\"table\", record_name=\"Result\""
           ],
           "visible": true
         },
         {
           "bound_to": null,
           "enabled": null,
-          "id": "page:home:item:9:section",
+          "id": "page:home:item:12:section",
           "kind": "section",
           "label": "",
           "reasons": [
             "declared in page \"home\"",
-            "from pattern \"Empty State\" invocation \"page:home:pattern:2.1\" element \"0\""
+            "from pattern \"Empty State\" invocation \"page:home:pattern:3.1\" element \"0\" params action_flow=null, action_label=null, guidance=\"Check back later\", heading=\"Nothing here\""
           ],
           "visible": true
         },
         {
           "bound_to": null,
           "enabled": null,
-          "id": "page:home:item:10:title",
+          "id": "page:home:item:13:title",
           "kind": "title",
           "label": "Nothing here",
           "reasons": [
             "declared in page \"home\"",
-            "from pattern \"Empty State\" invocation \"page:home:pattern:2.1\" element \"0.0\""
+            "from pattern \"Empty State\" invocation \"page:home:pattern:3.1\" element \"0.0\" params action_flow=null, action_label=null, guidance=\"Check back later\", heading=\"Nothing here\""
           ],
           "visible": true
         },
         {
           "bound_to": null,
           "enabled": null,
-          "id": "page:home:item:11:text",
+          "id": "page:home:item:14:text",
           "kind": "text",
           "label": "Check back later",
           "reasons": [
             "declared in page \"home\"",
-            "from pattern \"Empty State\" invocation \"page:home:pattern:2.1\" element \"0.1\""
+            "from pattern \"Empty State\" invocation \"page:home:pattern:3.1\" element \"0.1\" params action_flow=null, action_label=null, guidance=\"Check back later\", heading=\"Nothing here\""
           ],
           "visible": true
         }
@@ -152,6 +188,6 @@
       "name": "home"
     }
   ],
-  "summary": "UI: 1 pages, 11 elements, 1 actions.",
+  "summary": "UI: 1 pages, 14 elements, 1 actions.",
   "what_not": []
 }
