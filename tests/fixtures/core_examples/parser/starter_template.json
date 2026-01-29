@@ -1,12 +1,299 @@
 {
-  "type": "Program",
-  "line": null,
-  "column": null,
-  "spec_version": "1.0",
+  "agent_team": null,
+  "agents": [],
+  "ais": [],
   "app_theme": "light",
-  "app_theme_line": null,
   "app_theme_column": null,
-  "theme_tokens": {},
+  "app_theme_line": null,
+  "capabilities": [],
+  "capsule": null,
+  "column": null,
+  "flows": [
+    {
+      "audited": false,
+      "body": [],
+      "column": 1,
+      "declarative": true,
+      "line": 14,
+      "name": "seed_note",
+      "requires": {
+        "column": 27,
+        "line": 14,
+        "type": "Literal",
+        "value": true
+      },
+      "steps": [
+        {
+          "column": 3,
+          "fields": [
+            {
+              "column": 5,
+              "line": 16,
+              "name": "summary",
+              "type": "FlowField",
+              "value": {
+                "column": 16,
+                "line": 16,
+                "type": "Literal",
+                "value": "hello"
+              }
+            },
+            {
+              "column": 5,
+              "line": 17,
+              "name": "details",
+              "type": "FlowField",
+              "value": {
+                "column": 16,
+                "line": 17,
+                "type": "Literal",
+                "value": "this note is created by a flow"
+              }
+            }
+          ],
+          "line": 15,
+          "record_name": "Note",
+          "type": "FlowCreate"
+        }
+      ],
+      "type": "Flow"
+    }
+  ],
+  "identity": null,
+  "jobs": [],
+  "line": null,
+  "pages": [
+    {
+      "column": 1,
+      "items": [
+        {
+          "column": 3,
+          "line": 21,
+          "type": "TitleItem",
+          "value": "{{PROJECT_NAME}}",
+          "visibility": null
+        },
+        {
+          "column": 3,
+          "line": 22,
+          "type": "TextItem",
+          "value": "starter app for namel3ss.",
+          "visibility": null
+        },
+        {
+          "alt": null,
+          "column": 3,
+          "line": 23,
+          "role": "hero",
+          "src": "welcome",
+          "type": "ImageItem",
+          "visibility": null
+        },
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "column": 7,
+                  "entries": [
+                    {
+                      "column": 9,
+                      "kind": "count",
+                      "label": "notes",
+                      "line": 28,
+                      "record_name": "Note",
+                      "type": "NumberEntry",
+                      "value": null
+                    }
+                  ],
+                  "line": 27,
+                  "type": "NumberItem",
+                  "visibility": null
+                },
+                {
+                  "column": 7,
+                  "line": 29,
+                  "record_name": "Note",
+                  "type": "ViewItem",
+                  "visibility": null
+                }
+              ],
+              "column": 5,
+              "line": 26,
+              "name": "overview",
+              "type": "ComposeItem",
+              "visibility": null
+            },
+            {
+              "actions": null,
+              "children": [
+                {
+                  "column": 7,
+                  "fields": null,
+                  "groups": null,
+                  "line": 31,
+                  "record_name": "Note",
+                  "type": "FormItem",
+                  "visibility": null
+                }
+              ],
+              "column": 5,
+              "label": "add note",
+              "line": 30,
+              "stat": null,
+              "type": "CardItem",
+              "visibility": null
+            },
+            {
+              "actions": null,
+              "children": [
+                {
+                  "column": 7,
+                  "columns": null,
+                  "empty_text": null,
+                  "line": 33,
+                  "pagination": null,
+                  "record_name": "Note",
+                  "row_actions": null,
+                  "selection": null,
+                  "sort": null,
+                  "type": "TableItem",
+                  "visibility": null
+                }
+              ],
+              "column": 5,
+              "label": "saved notes",
+              "line": 32,
+              "stat": null,
+              "type": "CardItem",
+              "visibility": null
+            }
+          ],
+          "column": 3,
+          "label": "notes",
+          "line": 25,
+          "type": "SectionItem",
+          "visibility": null
+        },
+        {
+          "column": 3,
+          "line": 34,
+          "steps": [
+            {
+              "column": 5,
+              "icon": "add",
+              "image": null,
+              "image_role": null,
+              "line": 35,
+              "next": "Review notes",
+              "requires": null,
+              "text": "Use the form or button to add a note.",
+              "title": "Create a note",
+              "tone": null,
+              "type": "StoryStep"
+            },
+            {
+              "column": 5,
+              "icon": null,
+              "image": "welcome",
+              "image_role": "illustration",
+              "line": 39,
+              "next": null,
+              "requires": null,
+              "text": "See saved notes in the view and table.",
+              "title": "Review notes",
+              "tone": null,
+              "type": "StoryStep"
+            }
+          ],
+          "title": "Getting started",
+          "type": "StoryItem",
+          "visibility": null
+        },
+        {
+          "actions": null,
+          "children": [
+            {
+              "column": 5,
+              "line": 44,
+              "type": "TextItem",
+              "value": "use the button to add a deterministic note.",
+              "visibility": null
+            },
+            {
+              "column": 5,
+              "flow_name": "seed_note",
+              "label": "add sample note",
+              "line": 45,
+              "type": "ButtonItem",
+              "visibility": null
+            }
+          ],
+          "column": 3,
+          "label": "flow",
+          "line": 43,
+          "stat": null,
+          "type": "CardItem",
+          "visibility": null
+        }
+      ],
+      "line": 19,
+      "name": "home",
+      "purpose": "Capture notes and show the UI primitives together.",
+      "requires": {
+        "column": 23,
+        "line": 19,
+        "type": "Literal",
+        "value": true
+      },
+      "type": "PageDecl"
+    }
+  ],
+  "records": [
+    {
+      "column": 1,
+      "fields": [
+        {
+          "column": 5,
+          "constraint": {
+            "column": 26,
+            "expression": null,
+            "expression_high": null,
+            "kind": "present",
+            "line": 11,
+            "pattern": null,
+            "type": "FieldConstraint"
+          },
+          "line": 11,
+          "name": "summary",
+          "raw_type_name": null,
+          "type": "FieldDecl",
+          "type_column": 16,
+          "type_line": 11,
+          "type_name": "text",
+          "type_was_alias": false
+        },
+        {
+          "column": 5,
+          "constraint": null,
+          "line": 12,
+          "name": "details",
+          "raw_type_name": null,
+          "type": "FieldDecl",
+          "type_column": 16,
+          "type_line": 12,
+          "type_name": "text",
+          "type_was_alias": false
+        }
+      ],
+      "line": 9,
+      "name": "Note",
+      "tenant_key": null,
+      "ttl_hours": null,
+      "type": "RecordDecl"
+    }
+  ],
+  "spec_version": "1.0",
   "theme_preference": {
     "allow_override": [
       false,
@@ -19,6 +306,12 @@
       null
     ]
   },
+  "theme_tokens": {},
+  "tools": [],
+  "type": "Program",
+  "ui_column": 1,
+  "ui_line": 6,
+  "ui_packs": [],
   "ui_settings": {
     "accent_color": [
       "blue",
@@ -51,283 +344,5 @@
       12
     ]
   },
-  "ui_line": 6,
-  "ui_column": 1,
-  "capabilities": [],
-  "records": [
-    {
-      "type": "RecordDecl",
-      "line": 9,
-      "column": 1,
-      "name": "Note",
-      "fields": [
-        {
-          "type": "FieldDecl",
-          "line": 11,
-          "column": 5,
-          "name": "summary",
-          "type_name": "text",
-          "constraint": {
-            "type": "FieldConstraint",
-            "line": 11,
-            "column": 26,
-            "kind": "present",
-            "expression": null,
-            "expression_high": null,
-            "pattern": null
-          },
-          "type_was_alias": false,
-          "raw_type_name": null,
-          "type_line": 11,
-          "type_column": 16
-        },
-        {
-          "type": "FieldDecl",
-          "line": 12,
-          "column": 5,
-          "name": "details",
-          "type_name": "text",
-          "constraint": null,
-          "type_was_alias": false,
-          "raw_type_name": null,
-          "type_line": 12,
-          "type_column": 16
-        }
-      ],
-      "tenant_key": null,
-      "ttl_hours": null
-    }
-  ],
-  "flows": [
-    {
-      "type": "Flow",
-      "line": 14,
-      "column": 1,
-      "name": "seed_note",
-      "body": [],
-      "requires": {
-        "type": "Literal",
-        "line": 14,
-        "column": 27,
-        "value": true
-      },
-      "audited": false,
-      "steps": [
-        {
-          "type": "FlowCreate",
-          "line": 15,
-          "column": 3,
-          "record_name": "Note",
-          "fields": [
-            {
-              "type": "FlowField",
-              "line": 16,
-              "column": 5,
-              "name": "summary",
-              "value": {
-                "type": "Literal",
-                "line": 16,
-                "column": 16,
-                "value": "hello"
-              }
-            },
-            {
-              "type": "FlowField",
-              "line": 17,
-              "column": 5,
-              "name": "details",
-              "value": {
-                "type": "Literal",
-                "line": 17,
-                "column": 16,
-                "value": "this note is created by a flow"
-              }
-            }
-          ]
-        }
-      ],
-      "declarative": true
-    }
-  ],
-  "jobs": [],
-  "pages": [
-    {
-      "type": "PageDecl",
-      "line": 19,
-      "column": 1,
-      "name": "home",
-      "items": [
-        {
-          "type": "TitleItem",
-          "line": 21,
-          "column": 3,
-          "value": "{{PROJECT_NAME}}"
-        },
-        {
-          "type": "TextItem",
-          "line": 22,
-          "column": 3,
-          "value": "starter app for namel3ss."
-        },
-        {
-          "type": "ImageItem",
-          "line": 23,
-          "column": 3,
-          "src": "welcome",
-          "alt": null,
-          "role": "hero"
-        },
-        {
-          "type": "SectionItem",
-          "line": 25,
-          "column": 3,
-          "label": "notes",
-          "children": [
-            {
-              "type": "ComposeItem",
-              "line": 26,
-              "column": 5,
-              "name": "overview",
-              "children": [
-                {
-                  "type": "NumberItem",
-                  "line": 27,
-                  "column": 7,
-                  "entries": [
-                    {
-                      "type": "NumberEntry",
-                      "line": 28,
-                      "column": 9,
-                      "kind": "count",
-                      "value": null,
-                      "record_name": "Note",
-                      "label": "notes"
-                    }
-                  ]
-                },
-                {
-                  "type": "ViewItem",
-                  "line": 29,
-                  "column": 7,
-                  "record_name": "Note"
-                }
-              ]
-            },
-            {
-              "type": "CardItem",
-              "line": 30,
-              "column": 5,
-              "label": "add note",
-              "children": [
-                {
-                  "type": "FormItem",
-                  "line": 31,
-                  "column": 7,
-                  "record_name": "Note",
-                  "groups": null,
-                  "fields": null
-                }
-              ],
-              "stat": null,
-              "actions": null
-            },
-            {
-              "type": "CardItem",
-              "line": 32,
-              "column": 5,
-              "label": "saved notes",
-              "children": [
-                {
-                  "type": "TableItem",
-                  "line": 33,
-                  "column": 7,
-                  "record_name": "Note",
-                  "columns": null,
-                  "empty_text": null,
-                  "sort": null,
-                  "pagination": null,
-                  "selection": null,
-                  "row_actions": null
-                }
-              ],
-              "stat": null,
-              "actions": null
-            }
-          ]
-        },
-        {
-          "type": "StoryItem",
-          "line": 34,
-          "column": 3,
-          "title": "Getting started",
-          "steps": [
-            {
-              "type": "StoryStep",
-              "line": 35,
-              "column": 5,
-              "title": "Create a note",
-              "text": "Use the form or button to add a note.",
-              "icon": "add",
-              "image": null,
-              "image_role": null,
-              "tone": null,
-              "requires": null,
-              "next": "Review notes"
-            },
-            {
-              "type": "StoryStep",
-              "line": 39,
-              "column": 5,
-              "title": "Review notes",
-              "text": "See saved notes in the view and table.",
-              "icon": null,
-              "image": "welcome",
-              "image_role": "illustration",
-              "tone": null,
-              "requires": null,
-              "next": null
-            }
-          ]
-        },
-        {
-          "type": "CardItem",
-          "line": 43,
-          "column": 3,
-          "label": "flow",
-          "children": [
-            {
-              "type": "TextItem",
-              "line": 44,
-              "column": 5,
-              "value": "use the button to add a deterministic note."
-            },
-            {
-              "type": "ButtonItem",
-              "line": 45,
-              "column": 5,
-              "label": "add sample note",
-              "flow_name": "seed_note"
-            }
-          ],
-          "stat": null,
-          "actions": null
-        }
-      ],
-      "requires": {
-        "type": "Literal",
-        "line": 19,
-        "column": 23,
-        "value": true
-      },
-      "purpose": "Capture notes and show the UI primitives together."
-    }
-  ],
-  "ais": [],
-  "tools": [],
-  "agents": [],
-  "ui_packs": [],
-  "uses": [],
-  "capsule": null,
-  "agent_team": null,
-  "identity": null
+  "uses": []
 }

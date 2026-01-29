@@ -5,6 +5,7 @@ from typing import List
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.parser.core.helpers import parse_reference_name
+from namel3ss.parser.decl.page_common import _parse_visibility_clause
 
 _ALLOWED_MEMORY_LANES = {"my", "team", "system"}
 
@@ -48,8 +49,9 @@ def _parse_messages(parser) -> ast.ChatMessagesItem:
     parser._advance()
     parser._expect("IS", "Expected 'is' after messages from")
     source = parser._parse_state_path()
+    visibility = _parse_visibility_clause(parser)
     parser._match("NEWLINE")
-    return ast.ChatMessagesItem(source=source, line=tok.line, column=tok.column)
+    return ast.ChatMessagesItem(source=source, visibility=visibility, line=tok.line, column=tok.column)
 
 
 def _parse_composer(parser) -> ast.ChatComposerItem:
@@ -57,8 +59,9 @@ def _parse_composer(parser) -> ast.ChatComposerItem:
     parser._expect("CALLS", "Expected 'calls' after composer")
     parser._expect("FLOW", "Expected 'flow' keyword after composer calls")
     flow_name = parse_reference_name(parser, context="flow")
+    visibility = _parse_visibility_clause(parser)
     parser._match("NEWLINE")
-    return ast.ChatComposerItem(flow_name=flow_name, line=tok.line, column=tok.column)
+    return ast.ChatComposerItem(flow_name=flow_name, visibility=visibility, line=tok.line, column=tok.column)
 
 
 def _parse_thinking(parser) -> ast.ChatThinkingItem:
@@ -66,8 +69,9 @@ def _parse_thinking(parser) -> ast.ChatThinkingItem:
     parser._expect("WHEN", "Expected 'when' after thinking")
     parser._expect("IS", "Expected 'is' after thinking when")
     when = parser._parse_state_path()
+    visibility = _parse_visibility_clause(parser)
     parser._match("NEWLINE")
-    return ast.ChatThinkingItem(when=when, line=tok.line, column=tok.column)
+    return ast.ChatThinkingItem(when=when, visibility=visibility, line=tok.line, column=tok.column)
 
 
 def _parse_citations(parser) -> ast.ChatCitationsItem:
@@ -78,8 +82,9 @@ def _parse_citations(parser) -> ast.ChatCitationsItem:
     parser._advance()
     parser._expect("IS", "Expected 'is' after citations from")
     source = parser._parse_state_path()
+    visibility = _parse_visibility_clause(parser)
     parser._match("NEWLINE")
-    return ast.ChatCitationsItem(source=source, line=tok.line, column=tok.column)
+    return ast.ChatCitationsItem(source=source, visibility=visibility, line=tok.line, column=tok.column)
 
 
 def _parse_memory(parser) -> ast.ChatMemoryItem:
@@ -101,8 +106,9 @@ def _parse_memory(parser) -> ast.ChatMemoryItem:
         lane = str(value_tok.value).lower()
         if lane not in _ALLOWED_MEMORY_LANES:
             raise Namel3ssError("Lane must be 'my', 'team', or 'system'", line=value_tok.line, column=value_tok.column)
+    visibility = _parse_visibility_clause(parser)
     parser._match("NEWLINE")
-    return ast.ChatMemoryItem(source=source, lane=lane, line=tok.line, column=tok.column)
+    return ast.ChatMemoryItem(source=source, lane=lane, visibility=visibility, line=tok.line, column=tok.column)
 
 
 __all__ = ["parse_chat_block"]

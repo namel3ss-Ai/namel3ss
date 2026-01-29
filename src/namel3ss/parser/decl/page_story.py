@@ -6,6 +6,7 @@ Story parsing is isolated here to keep the shared page_items module small and fo
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.parser.decl.page_common import _parse_visibility_clause
 from namel3ss.parser.decl.page_media import parse_image_role_block
 
 _ALLOWED_STEP_FIELDS = ("text", "icon", "image", "tone", "requires", "next")
@@ -15,6 +16,7 @@ def parse_story_block(parser) -> ast.StoryItem:
     story_tok = parser._current()
     parser._advance()
     title_tok = parser._expect("STRING", "Expected story title string")
+    visibility = _parse_visibility_clause(parser)
     parser._expect("COLON", "Expected ':' after story title")
     parser._expect("NEWLINE", "Expected newline after story header")
     parser._expect("INDENT", "Expected indented story body")
@@ -42,7 +44,7 @@ def parse_story_block(parser) -> ast.StoryItem:
     parser._expect("DEDENT", "Expected end of story block")
     if not steps:
         raise Namel3ssError("Story has no steps", line=story_tok.line, column=story_tok.column)
-    return ast.StoryItem(title=title_tok.value, steps=steps, line=story_tok.line, column=story_tok.column)
+    return ast.StoryItem(title=title_tok.value, steps=steps, visibility=visibility, line=story_tok.line, column=story_tok.column)
 
 
 def _parse_step_block(parser) -> ast.StoryStep:

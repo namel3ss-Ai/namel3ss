@@ -70,6 +70,32 @@ def action_reason_line(action_id: str, status: str, requires_text: str | None, e
     return f'action "{action_id}" availability is unknown'
 
 
+def visibility_reasons(visibility: dict | None, visible: bool) -> list[str]:
+    if visibility is None:
+        return [] if visible else ["hidden because parent visibility is false"]
+    reasons: list[str] = []
+    predicate = visibility.get("predicate") if isinstance(visibility, dict) else None
+    state_paths = visibility.get("state_paths") if isinstance(visibility, dict) else None
+    result = visibility.get("result") if isinstance(visibility, dict) else None
+    if predicate:
+        reasons.append(f"visibility predicate {predicate}")
+    if state_paths:
+        joined = ", ".join(str(path) for path in state_paths)
+        reasons.append(f"visibility paths {joined}")
+    if isinstance(result, bool):
+        result_text = "true" if result else "false"
+        reasons.append(f"visibility result {result_text}")
+    if visible:
+        if isinstance(result, bool):
+            reasons.append("visible because visibility result is true")
+    else:
+        if result is False:
+            reasons.append("hidden because visibility result is false")
+        else:
+            reasons.append("hidden because parent visibility is false")
+    return reasons
+
+
 __all__ = [
     "ACTION_AVAILABLE",
     "ACTION_NOT_AVAILABLE",
@@ -80,4 +106,5 @@ __all__ = [
     "declared_in_page",
     "evaluate_requires",
     "format_requires",
+    "visibility_reasons",
 ]

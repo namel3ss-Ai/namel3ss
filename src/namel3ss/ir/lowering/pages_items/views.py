@@ -178,7 +178,7 @@ def lower_chat_item(
     *,
     attach_origin,
 ) -> ChatItem:
-    return attach_origin(_lower_chat_item(item, flow_names, page_name), item)
+    return attach_origin(_lower_chat_item(item, flow_names, page_name, attach_origin=attach_origin), item)
 
 
 def lower_tabs_item(

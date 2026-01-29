@@ -61,4 +61,28 @@ def _reject_list_transforms(expr: ast.Expression | None) -> None:
         return
 
 
-__all__ = ["_match_ident_value", "_reject_list_transforms"]
+def _parse_visibility_clause(parser) -> ast.StatePath | None:
+    tok = parser._current()
+    if tok.type != "IDENT" or tok.value != "visibility":
+        return None
+    parser._advance()
+    parser._expect("IS", "Expected 'is' after visibility")
+    try:
+        path = parser._parse_state_path()
+    except Namel3ssError as err:
+        raise Namel3ssError(
+            "Visibility requires state.<path>.",
+            line=err.line,
+            column=err.column,
+        )
+    if parser._current().type not in {"NEWLINE", "COLON", "DEDENT"}:
+        extra = parser._current()
+        raise Namel3ssError(
+            "Visibility only supports a state path.",
+            line=extra.line,
+            column=extra.column,
+        )
+    return path
+
+
+__all__ = ["_match_ident_value", "_reject_list_transforms", "_parse_visibility_clause"]

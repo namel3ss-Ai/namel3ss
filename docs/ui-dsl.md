@@ -106,6 +106,22 @@ UI packs:
   - `n3 build` -> error + suggestions
   - runtime -> placeholder intent with `fix_hint`
 
+## 3.2) Visibility
+- Optional `visibility is state.<path>` may be appended to any page item or `tab` header.
+- Visibility predicates are read-only state paths only (no expressions, operators, or function calls).
+- Paths must include at least one segment after `state.`.
+- Evaluation is deterministic: a path is visible only when the state value exists and is truthy.
+- Elements with `visibility` still appear in the manifest with `visible: true|false`; hidden elements do not emit actions.
+- UI explain output includes the predicate, referenced state paths, evaluated result, and the visibility reason.
+
+Example:
+```
+page "home":
+  title is "Results" visibility is state.results.ready
+  section "Results" visibility is state.results.present:
+    table is "Result"
+```
+
 ## 4) Data binding & actions
 - Forms bind to records; payload is `{values: {...}}`.
 - Buttons call flows by name; links navigate to pages; actions are deterministic (`call_flow`, `submit_form`, `open_page`).

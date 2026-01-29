@@ -38,20 +38,23 @@
           "column": 3,
           "line": 7,
           "type": "TitleItem",
-          "value": "Restricted"
+          "value": "Restricted",
+          "visibility": null
         },
         {
           "column": 3,
           "line": 8,
           "type": "TextItem",
-          "value": "Admins only"
+          "value": "Admins only",
+          "visibility": null
         },
         {
           "column": 3,
           "flow_name": "demo",
           "label": "Run",
           "line": 9,
-          "type": "ButtonItem"
+          "type": "ButtonItem",
+          "visibility": null
         }
       ],
       "line": 6,

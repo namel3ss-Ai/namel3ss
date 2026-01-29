@@ -21,10 +21,19 @@ def render_see(pack: dict) -> str:
         lines.append("")
         lines.append(f"On page \"{page.get('name')}\"")
         elements = page.get("elements") or []
-        if not elements:
+        visible_elements = [el for el in elements if el.get("visible", True) is not False]
+        hidden_elements = [el for el in elements if el.get("visible", True) is False]
+        if not visible_elements and not hidden_elements:
             lines.extend(stable_bullets(["No elements were recorded."]))
             continue
-        lines.extend(_render_elements(elements))
+        if not visible_elements:
+            lines.extend(stable_bullets(["No visible elements were recorded."]))
+        else:
+            lines.extend(_render_elements(visible_elements))
+        if hidden_elements:
+            lines.append("")
+            lines.append(f"Hidden on page \"{page.get('name')}\"")
+            lines.extend(_render_elements(hidden_elements))
 
     lines.append("")
     lines.append("Actions")
@@ -45,7 +54,8 @@ def render_see(pack: dict) -> str:
 def _page_summary(page: dict) -> str:
     name = page.get("name") or ""
     elements = page.get("elements") or []
-    return f"{name} ({len(elements)} items)"
+    visible_count = len([el for el in elements if el.get("visible", True) is not False])
+    return f"{name} ({visible_count} items)"
 
 
 def _render_elements(elements: list[dict]) -> list[str]:

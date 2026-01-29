@@ -82,6 +82,7 @@ let renderUI = (manifest) => {
   }
   function renderChildren(container, children, pageName) {
     (children || []).forEach((child) => {
+      if (child && child.visible === false) return;
       const node = renderElement(child, pageName);
       container.appendChild(node);
     });
@@ -237,7 +238,7 @@ let renderUI = (manifest) => {
       return group;
     }
     if (el.type === "tabs") {
-      const tabs = Array.isArray(el.children) ? el.children : [];
+      const tabs = Array.isArray(el.children) ? el.children.filter((tab) => tab && tab.visible !== false) : [];
       const wrapper = document.createElement("div");
       wrapper.className = "ui-tabs";
       if (!tabs.length) {
@@ -516,6 +517,7 @@ let renderUI = (manifest) => {
     const overlayItems = [];
     const mainItems = [];
     (page.elements || []).forEach((el) => {
+      if (el && el.visible === false) return;
       if (el.type === "modal" || el.type === "drawer") {
         overlayItems.push(el);
       } else {

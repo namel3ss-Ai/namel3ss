@@ -7,6 +7,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.lang.keywords import is_keyword
 from namel3ss.parser.core.helpers import parse_reference_name
 from namel3ss.parser.decl.page_actions import parse_ui_action_body
+from namel3ss.parser.decl.page_common import _parse_visibility_clause
 from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
 
@@ -16,9 +17,10 @@ def parse_compose_item(parser, tok, parse_block) -> ast.ComposeItem:
     if is_keyword(name_tok.value) and not getattr(name_tok, "escaped", False):
         guidance, details = reserved_identifier_diagnostic(name_tok.value)
         raise Namel3ssError(guidance, line=name_tok.line, column=name_tok.column, details=details)
+    visibility = _parse_visibility_clause(parser)
     parser._expect("COLON", "Expected ':' after compose name")
     children = parse_block(parser, columns_only=False, allow_tabs=False, allow_overlays=False)
-    return ast.ComposeItem(name=name_tok.value, children=children, line=tok.line, column=tok.column)
+    return ast.ComposeItem(name=name_tok.value, children=children, visibility=visibility, line=tok.line, column=tok.column)
 
 
 def parse_modal_item(parser, tok, parse_block, *, allow_overlays: bool) -> ast.ModalItem:
@@ -26,9 +28,10 @@ def parse_modal_item(parser, tok, parse_block, *, allow_overlays: bool) -> ast.M
         raise Namel3ssError("Modals may only appear at the page root", line=tok.line, column=tok.column)
     parser._advance()
     label_tok = parser._expect("STRING", "Expected modal label string")
+    visibility = _parse_visibility_clause(parser)
     parser._expect("COLON", "Expected ':' after modal label")
     children = parse_block(parser, columns_only=False, allow_tabs=False, allow_overlays=False)
-    return ast.ModalItem(label=label_tok.value, children=children, line=tok.line, column=tok.column)
+    return ast.ModalItem(label=label_tok.value, children=children, visibility=visibility, line=tok.line, column=tok.column)
 
 
 def parse_drawer_item(parser, tok, parse_block, *, allow_overlays: bool) -> ast.DrawerItem:
@@ -36,9 +39,10 @@ def parse_drawer_item(parser, tok, parse_block, *, allow_overlays: bool) -> ast.
         raise Namel3ssError("Drawers may only appear at the page root", line=tok.line, column=tok.column)
     parser._advance()
     label_tok = parser._expect("STRING", "Expected drawer label string")
+    visibility = _parse_visibility_clause(parser)
     parser._expect("COLON", "Expected ':' after drawer label")
     children = parse_block(parser, columns_only=False, allow_tabs=False, allow_overlays=False)
-    return ast.DrawerItem(label=label_tok.value, children=children, line=tok.line, column=tok.column)
+    return ast.DrawerItem(label=label_tok.value, children=children, visibility=visibility, line=tok.line, column=tok.column)
 
 
 def parse_button_item(parser, tok) -> ast.ButtonItem:
@@ -50,6 +54,7 @@ def parse_button_item(parser, tok) -> ast.ButtonItem:
             line=tok.line,
             column=tok.column,
         )
+    visibility = _parse_visibility_clause(parser)
     parser._expect("COLON", "Expected ':' after button label")
     parser._expect("NEWLINE", "Expected newline after button header")
     parser._expect("INDENT", "Expected indented button body")
@@ -81,7 +86,7 @@ def parse_button_item(parser, tok) -> ast.ButtonItem:
             line=tok.line,
             column=tok.column,
         )
-    return ast.ButtonItem(label=label_tok.value, flow_name=flow_name, line=tok.line, column=tok.column)
+    return ast.ButtonItem(label=label_tok.value, flow_name=flow_name, visibility=visibility, line=tok.line, column=tok.column)
 
 
 def parse_link_item(parser, tok) -> ast.LinkItem:
@@ -93,7 +98,8 @@ def parse_link_item(parser, tok) -> ast.LinkItem:
         raise Namel3ssError("Expected 'page' after 'to'", line=page_tok.line, column=page_tok.column)
     parser._advance()
     name_tok = parser._expect("STRING", "Expected page name string")
-    return ast.LinkItem(label=label_tok.value, page_name=name_tok.value, line=tok.line, column=tok.column)
+    visibility = _parse_visibility_clause(parser)
+    return ast.LinkItem(label=label_tok.value, page_name=name_tok.value, visibility=visibility, line=tok.line, column=tok.column)
 
 
 def parse_section_item(parser, tok, parse_block) -> ast.SectionItem:
@@ -101,11 +107,13 @@ def parse_section_item(parser, tok, parse_block) -> ast.SectionItem:
     label_tok = parser._current() if parser._current().type == "STRING" else None
     if label_tok:
         parser._advance()
+    visibility = _parse_visibility_clause(parser)
     parser._expect("COLON", "Expected ':' after section")
     children = parse_block(parser, columns_only=False, allow_tabs=False, allow_overlays=False)
     return ast.SectionItem(
         label=label_tok.value if label_tok else None,
         children=children,
+        visibility=visibility,
         line=tok.line,
         column=tok.column,
     )
@@ -113,9 +121,10 @@ def parse_section_item(parser, tok, parse_block) -> ast.SectionItem:
 
 def parse_card_group_item(parser, tok, parse_page_item) -> ast.CardGroupItem:
     parser._advance()
+    visibility = _parse_visibility_clause(parser)
     parser._expect("COLON", "Expected ':' after card_group")
     children = _parse_card_group_block(parser, parse_page_item)
-    return ast.CardGroupItem(children=children, line=tok.line, column=tok.column)
+    return ast.CardGroupItem(children=children, visibility=visibility, line=tok.line, column=tok.column)
 
 
 def parse_card_item(parser, tok, parse_page_item) -> ast.CardItem:
@@ -123,6 +132,7 @@ def parse_card_item(parser, tok, parse_page_item) -> ast.CardItem:
     label_tok = parser._current() if parser._current().type == "STRING" else None
     if label_tok:
         parser._advance()
+    visibility = _parse_visibility_clause(parser)
     parser._expect("COLON", "Expected ':' after card")
     children, stat, actions = _parse_card_block(parser, parse_page_item)
     return ast.CardItem(
@@ -130,6 +140,7 @@ def parse_card_item(parser, tok, parse_page_item) -> ast.CardItem:
         children=children,
         stat=stat,
         actions=actions,
+        visibility=visibility,
         line=tok.line,
         column=tok.column,
     )
@@ -137,21 +148,24 @@ def parse_card_item(parser, tok, parse_page_item) -> ast.CardItem:
 
 def parse_row_item(parser, tok, parse_block) -> ast.RowItem:
     parser._advance()
+    visibility = _parse_visibility_clause(parser)
     parser._expect("COLON", "Expected ':' after row")
     children = parse_block(parser, columns_only=True, allow_tabs=False, allow_overlays=False)
-    return ast.RowItem(children=children, line=tok.line, column=tok.column)
+    return ast.RowItem(children=children, visibility=visibility, line=tok.line, column=tok.column)
 
 
 def parse_column_item(parser, tok, parse_block) -> ast.ColumnItem:
     parser._advance()
+    visibility = _parse_visibility_clause(parser)
     parser._expect("COLON", "Expected ':' after column")
     children = parse_block(parser, columns_only=False, allow_tabs=False, allow_overlays=False)
-    return ast.ColumnItem(children=children, line=tok.line, column=tok.column)
+    return ast.ColumnItem(children=children, visibility=visibility, line=tok.line, column=tok.column)
 
 
 def parse_divider_item(parser, tok) -> ast.DividerItem:
     parser._advance()
-    return ast.DividerItem(line=tok.line, column=tok.column)
+    visibility = _parse_visibility_clause(parser)
+    return ast.DividerItem(visibility=visibility, line=tok.line, column=tok.column)
 
 
 def _parse_card_group_block(parser, parse_page_item) -> List[ast.PageItem]:

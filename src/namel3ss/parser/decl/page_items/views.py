@@ -8,6 +8,7 @@ from namel3ss.lang.keywords import is_keyword
 from namel3ss.parser.core.helpers import parse_reference_name
 from namel3ss.parser.decl.page_chat import parse_chat_block
 from namel3ss.parser.decl.page_chart import parse_chart_block, parse_chart_header
+from namel3ss.parser.decl.page_common import _parse_visibility_clause
 from namel3ss.parser.decl.page_form import parse_form_block
 from namel3ss.parser.decl.page_list import parse_list_block
 from namel3ss.parser.decl.page_table import parse_table_block
@@ -20,21 +21,24 @@ def parse_view_item(parser, tok) -> ast.ViewItem:
     if of_tok.value != "of":
         raise Namel3ssError("Expected 'of' after view", line=of_tok.line, column=of_tok.column)
     record_name = parse_reference_name(parser, context="record")
-    return ast.ViewItem(record_name=record_name, line=tok.line, column=tok.column)
+    visibility = _parse_visibility_clause(parser)
+    return ast.ViewItem(record_name=record_name, visibility=visibility, line=tok.line, column=tok.column)
 
 
 def parse_title_item(parser, tok) -> ast.TitleItem:
     parser._advance()
     parser._expect("IS", "Expected 'is' after 'title'")
     value_tok = parser._expect("STRING", "Expected title string")
-    return ast.TitleItem(value=value_tok.value, line=tok.line, column=tok.column)
+    visibility = _parse_visibility_clause(parser)
+    return ast.TitleItem(value=value_tok.value, visibility=visibility, line=tok.line, column=tok.column)
 
 
 def parse_text_item(parser, tok) -> ast.TextItem:
     parser._advance()
     parser._expect("IS", "Expected 'is' after 'text'")
     value_tok = parser._expect("STRING", "Expected text string")
-    return ast.TextItem(value=value_tok.value, line=tok.line, column=tok.column)
+    visibility = _parse_visibility_clause(parser)
+    return ast.TextItem(value=value_tok.value, visibility=visibility, line=tok.line, column=tok.column)
 
 
 def parse_upload_item(parser, tok) -> ast.UploadItem:
@@ -43,6 +47,7 @@ def parse_upload_item(parser, tok) -> ast.UploadItem:
     if is_keyword(name_tok.value) and not getattr(name_tok, "escaped", False):
         guidance, details = reserved_identifier_diagnostic(name_tok.value)
         raise Namel3ssError(guidance, line=name_tok.line, column=name_tok.column, details=details)
+    visibility = _parse_visibility_clause(parser)
     accept = None
     multiple = None
     if parser._match("COLON"):
@@ -77,7 +82,7 @@ def parse_upload_item(parser, tok) -> ast.UploadItem:
                 column=entry_tok.column,
             )
         parser._expect("DEDENT", "Expected end of upload block")
-    return ast.UploadItem(name=name_tok.value, accept=accept, multiple=multiple, line=tok.line, column=tok.column)
+    return ast.UploadItem(name=name_tok.value, accept=accept, multiple=multiple, visibility=visibility, line=tok.line, column=tok.column)
 
 
 def _parse_upload_accept_list(parser) -> list[str]:
@@ -103,22 +108,25 @@ def parse_form_item(parser, tok) -> ast.FormItem:
     parser._advance()
     parser._expect("IS", "Expected 'is' after 'form'")
     record_name = parse_reference_name(parser, context="record")
+    visibility = _parse_visibility_clause(parser)
     if parser._match("COLON"):
         groups, fields = parse_form_block(parser)
         return ast.FormItem(
             record_name=record_name,
             groups=groups,
             fields=fields,
+            visibility=visibility,
             line=tok.line,
             column=tok.column,
         )
-    return ast.FormItem(record_name=record_name, line=tok.line, column=tok.column)
+    return ast.FormItem(record_name=record_name, visibility=visibility, line=tok.line, column=tok.column)
 
 
 def parse_table_item(parser, tok) -> ast.TableItem:
     parser._advance()
     parser._expect("IS", "Expected 'is' after 'table'")
     record_name = parse_reference_name(parser, context="record")
+    visibility = _parse_visibility_clause(parser)
     if parser._match("COLON"):
         columns, empty_text, sort, pagination, selection, row_actions = parse_table_block(parser)
         return ast.TableItem(
@@ -129,16 +137,18 @@ def parse_table_item(parser, tok) -> ast.TableItem:
             pagination=pagination,
             selection=selection,
             row_actions=row_actions,
+            visibility=visibility,
             line=tok.line,
             column=tok.column,
         )
-    return ast.TableItem(record_name=record_name, line=tok.line, column=tok.column)
+    return ast.TableItem(record_name=record_name, visibility=visibility, line=tok.line, column=tok.column)
 
 
 def parse_list_item(parser, tok) -> ast.ListItem:
     parser._advance()
     parser._expect("IS", "Expected 'is' after 'list'")
     record_name = parse_reference_name(parser, context="record")
+    visibility = _parse_visibility_clause(parser)
     if parser._match("COLON"):
         variant, item, empty_text, selection, actions = parse_list_block(parser)
         return ast.ListItem(
@@ -148,10 +158,11 @@ def parse_list_item(parser, tok) -> ast.ListItem:
             empty_text=empty_text,
             selection=selection,
             actions=actions,
+            visibility=visibility,
             line=tok.line,
             column=tok.column,
         )
-    return ast.ListItem(record_name=record_name, line=tok.line, column=tok.column)
+    return ast.ListItem(record_name=record_name, visibility=visibility, line=tok.line, column=tok.column)
 
 
 def parse_chart_item(parser, tok) -> ast.ChartItem:
@@ -161,6 +172,7 @@ def parse_chart_item(parser, tok) -> ast.ChartItem:
     x = None
     y = None
     explain = None
+    visibility = _parse_visibility_clause(parser)
     if parser._match("COLON"):
         chart_type, x, y, explain = parse_chart_block(parser)
     return ast.ChartItem(
@@ -170,6 +182,7 @@ def parse_chart_item(parser, tok) -> ast.ChartItem:
         x=x,
         y=y,
         explain=explain,
+        visibility=visibility,
         line=tok.line,
         column=tok.column,
     )
@@ -187,9 +200,11 @@ def parse_use_ui_pack_item(parser, tok) -> ast.UseUIPackItem:
         raise Namel3ssError("Expected fragment name for ui_pack use", line=frag_tok.line, column=frag_tok.column)
     parser._advance()
     name_tok = parser._expect("STRING", "Expected fragment name string")
+    visibility = _parse_visibility_clause(parser)
     return ast.UseUIPackItem(
         pack_name=pack_tok.value,
         fragment_name=name_tok.value,
+        visibility=visibility,
         line=tok.line,
         column=tok.column,
     )
@@ -197,16 +212,18 @@ def parse_use_ui_pack_item(parser, tok) -> ast.UseUIPackItem:
 
 def parse_chat_item(parser, tok) -> ast.ChatItem:
     parser._advance()
+    visibility = _parse_visibility_clause(parser)
     parser._expect("COLON", "Expected ':' after chat")
     children = parse_chat_block(parser)
-    return ast.ChatItem(children=children, line=tok.line, column=tok.column)
+    return ast.ChatItem(children=children, visibility=visibility, line=tok.line, column=tok.column)
 
 
 def parse_tabs_item(parser, tok, parse_block) -> ast.TabsItem:
     parser._advance()
+    visibility = _parse_visibility_clause(parser)
     parser._expect("COLON", "Expected ':' after tabs")
     tabs, default_label = _parse_tabs_block(parser, parse_block)
-    return ast.TabsItem(tabs=tabs, default=default_label, line=tok.line, column=tok.column)
+    return ast.TabsItem(tabs=tabs, default=default_label, visibility=visibility, line=tok.line, column=tok.column)
 
 
 def _parse_tabs_block(parser, parse_block) -> tuple[List[ast.TabItem], str | None]:
@@ -243,9 +260,10 @@ def _parse_tabs_block(parser, parse_block) -> tuple[List[ast.TabItem], str | Non
                     column=label_tok.column,
                 )
             seen_labels.add(label_tok.value)
+            visibility = _parse_visibility_clause(parser)
             parser._expect("COLON", "Expected ':' after tab label")
             children = parse_block(parser, columns_only=False, allow_tabs=False)
-            tabs.append(ast.TabItem(label=label_tok.value, children=children, line=tok.line, column=tok.column))
+            tabs.append(ast.TabItem(label=label_tok.value, children=children, visibility=visibility, line=tok.line, column=tok.column))
             continue
         raise Namel3ssError("Tabs may only contain tab entries", line=tok.line, column=tok.column)
     parser._expect("DEDENT", "Expected end of tabs body")

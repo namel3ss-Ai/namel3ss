@@ -194,13 +194,15 @@
           "column": 3,
           "line": 36,
           "type": "TitleItem",
-          "value": "{{PROJECT_NAME}}"
+          "value": "{{PROJECT_NAME}}",
+          "visibility": null
         },
         {
           "column": 3,
           "line": 37,
           "type": "TextItem",
-          "value": "ask the assistant and see why it answered."
+          "value": "ask the assistant and see why it answered.",
+          "visibility": null
         },
         {
           "alt": "",
@@ -208,7 +210,8 @@
           "line": 38,
           "role": "iconic",
           "src": "welcome",
-          "type": "ImageItem"
+          "type": "ImageItem",
+          "visibility": null
         },
         {
           "children": [
@@ -216,12 +219,14 @@
               "column": 5,
               "flow_name": "ask_ai",
               "line": 41,
-              "type": "ChatComposerItem"
+              "type": "ChatComposerItem",
+              "visibility": null
             }
           ],
           "column": 3,
           "line": 40,
-          "type": "ChatItem"
+          "type": "ChatItem",
+          "visibility": null
         },
         {
           "children": [
@@ -239,19 +244,22 @@
                 }
               ],
               "line": 43,
-              "type": "NumberItem"
+              "type": "NumberItem",
+              "visibility": null
             },
             {
               "column": 5,
               "line": 45,
               "record_name": "Answer",
-              "type": "ViewItem"
+              "type": "ViewItem",
+              "visibility": null
             }
           ],
           "column": 3,
           "line": 42,
           "name": "summary",
-          "type": "ComposeItem"
+          "type": "ComposeItem",
+          "visibility": null
         },
         {
           "children": [
@@ -259,7 +267,8 @@
               "column": 5,
               "line": 47,
               "type": "TextItem",
-              "value": "answers include a why field in the table below."
+              "value": "answers include a why field in the table below.",
+              "visibility": null
             },
             {
               "actions": null,
@@ -274,14 +283,16 @@
                   "row_actions": null,
                   "selection": null,
                   "sort": null,
-                  "type": "TableItem"
+                  "type": "TableItem",
+                  "visibility": null
                 }
               ],
               "column": 5,
               "label": "prompts",
               "line": 48,
               "stat": null,
-              "type": "CardItem"
+              "type": "CardItem",
+              "visibility": null
             },
             {
               "actions": null,
@@ -296,20 +307,23 @@
                   "row_actions": null,
                   "selection": null,
                   "sort": null,
-                  "type": "TableItem"
+                  "type": "TableItem",
+                  "visibility": null
                 }
               ],
               "column": 5,
               "label": "answers",
               "line": 50,
               "stat": null,
-              "type": "CardItem"
+              "type": "CardItem",
+              "visibility": null
             }
           ],
           "column": 3,
           "label": "records",
           "line": 46,
-          "type": "SectionItem"
+          "type": "SectionItem",
+          "visibility": null
         },
         {
           "column": 3,
@@ -343,7 +357,8 @@
             }
           ],
           "title": "How it works",
-          "type": "StoryItem"
+          "type": "StoryItem",
+          "visibility": null
         }
       ],
       "line": 34,

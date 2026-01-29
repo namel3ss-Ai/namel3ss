@@ -31,6 +31,7 @@ from .reasons import (
     declared_in_page,
     evaluate_requires,
     format_requires,
+    visibility_reasons,
 )
 from .render_plain import render_see
 
@@ -148,6 +149,8 @@ def _element_state(
     origin_reason = declared_in_pack(element.get("origin"))
     if origin_reason:
         reasons.append(origin_reason)
+    visible = element.get("visible", True) is not False
+    reasons.extend(visibility_reasons(element.get("visibility"), visible))
     enabled: bool | None = None
 
     action_id = element.get("action_id") or element.get("id")
@@ -191,7 +194,7 @@ def _element_state(
         id=element_id,
         kind=kind,
         label=label,
-        visible=True,
+        visible=visible,
         enabled=enabled,
         bound_to=bound_to,
         fix_hint=fix_hint,

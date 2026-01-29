@@ -3,6 +3,9 @@ from __future__ import annotations
 import difflib
 
 from namel3ss.ast import nodes as ast
+from namel3ss.errors.base import Namel3ssError
+from namel3ss.ir.lowering.expressions import _lower_expression
+from namel3ss.ir.model.expressions import StatePath as IRStatePath
 from namel3ss.schema import records as schema
 
 from . import actions as actions_mod
@@ -16,7 +19,30 @@ def _attach_origin(target, source):
     origin = getattr(source, "origin", None)
     if origin is not None:
         setattr(target, "origin", origin)
+    visibility = _lower_visibility(source)
+    if visibility is not None:
+        setattr(target, "visibility", visibility)
     return target
+
+
+def _lower_visibility(source) -> IRStatePath | None:
+    visibility = getattr(source, "visibility", None)
+    if visibility is None:
+        return None
+    if not isinstance(visibility, ast.StatePath):
+        raise Namel3ssError(
+            "Visibility requires state.<path>.",
+            line=getattr(source, "line", None),
+            column=getattr(source, "column", None),
+        )
+    lowered = _lower_expression(visibility)
+    if not isinstance(lowered, IRStatePath):
+        raise Namel3ssError(
+            "Visibility requires state.<path>.",
+            line=getattr(source, "line", None),
+            column=getattr(source, "column", None),
+        )
+    return lowered
 
 
 def _unknown_record_message(name: str, record_map: dict[str, schema.RecordSchema]) -> str:

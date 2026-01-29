@@ -3,10 +3,12 @@ from __future__ import annotations
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.parser.core.helpers import parse_reference_name
+from namel3ss.parser.decl.page_common import _parse_visibility_clause
 
 
 def parse_number_item(parser, tok) -> ast.NumberItem:
     parser._advance()
+    visibility = _parse_visibility_clause(parser)
     parser._expect("COLON", "Expected ':' after number")
     entries: list[ast.NumberEntry] = []
     parser._expect("NEWLINE", "Expected newline after number")
@@ -55,7 +57,7 @@ def parse_number_item(parser, tok) -> ast.NumberItem:
     parser._expect("DEDENT", "Expected end of number block")
     if not entries:
         raise Namel3ssError("Number block has no entries", line=tok.line, column=tok.column)
-    return ast.NumberItem(entries=entries, line=tok.line, column=tok.column)
+    return ast.NumberItem(entries=entries, visibility=visibility, line=tok.line, column=tok.column)
 
 
 __all__ = ["parse_number_item"]

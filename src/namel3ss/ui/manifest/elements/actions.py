@@ -34,6 +34,7 @@ def build_compose_item(
     warnings: list | None,
     taken_actions: set[str],
     build_children,
+    parent_visible: bool,
 ) -> tuple[dict, Dict[str, dict]]:
     index = path[-1] if path else 0
     element_id = _element_id(page_slug, "compose", path)
@@ -52,6 +53,7 @@ def build_compose_item(
         media_mode,
         warnings,
         taken_actions,
+        parent_visible=parent_visible,
     )
     element = {"type": "compose", "name": item.name, "slug": _slugify(item.name), "children": children, **base}
     return _attach_origin(element, item), actions
@@ -162,6 +164,7 @@ def build_section_item(
     warnings: list | None,
     taken_actions: set[str],
     build_children,
+    parent_visible: bool,
 ) -> tuple[dict, Dict[str, dict]]:
     index = path[-1] if path else 0
     children, actions = build_children(
@@ -178,6 +181,7 @@ def build_section_item(
         media_mode,
         warnings,
         taken_actions,
+        parent_visible=parent_visible,
     )
     base = _base_element(_element_id(page_slug, "section", path), page_name, page_slug, index, item)
     element = {"type": "section", "label": item.label or "", "children": children, **base}
@@ -200,6 +204,7 @@ def build_card_group_item(
     warnings: list | None,
     taken_actions: set[str],
     build_children,
+    parent_visible: bool,
 ) -> tuple[dict, Dict[str, dict]]:
     index = path[-1] if path else 0
     children, actions = build_children(
@@ -216,6 +221,7 @@ def build_card_group_item(
         media_mode,
         warnings,
         taken_actions,
+        parent_visible=parent_visible,
     )
     base = _base_element(_element_id(page_slug, "card_group", path), page_name, page_slug, index, item)
     element = {"type": "card_group", "children": children, **base}
@@ -238,6 +244,7 @@ def build_card_item(
     warnings: list | None,
     taken_actions: set[str],
     build_children,
+    parent_visible: bool,
 ) -> tuple[dict, Dict[str, dict]]:
     index = path[-1] if path else 0
     element_id = _element_id(page_slug, "card", path)
@@ -255,6 +262,7 @@ def build_card_item(
         media_mode,
         warnings,
         taken_actions,
+        parent_visible=parent_visible,
     )
     base = _base_element(element_id, page_name, page_slug, index, item)
     element = {"type": "card", "label": item.label or "", "children": children, **base}
@@ -283,6 +291,7 @@ def build_row_item(
     warnings: list | None,
     taken_actions: set[str],
     build_children,
+    parent_visible: bool,
 ) -> tuple[dict, Dict[str, dict]]:
     index = path[-1] if path else 0
     children, actions = build_children(
@@ -299,6 +308,7 @@ def build_row_item(
         media_mode,
         warnings,
         taken_actions,
+        parent_visible=parent_visible,
     )
     base = _base_element(_element_id(page_slug, "row", path), page_name, page_slug, index, item)
     element = {"type": "row", "children": children, **base}
@@ -321,6 +331,7 @@ def build_column_item(
     warnings: list | None,
     taken_actions: set[str],
     build_children,
+    parent_visible: bool,
 ) -> tuple[dict, Dict[str, dict]]:
     index = path[-1] if path else 0
     children, actions = build_children(
@@ -337,6 +348,7 @@ def build_column_item(
         media_mode,
         warnings,
         taken_actions,
+        parent_visible=parent_visible,
     )
     base = _base_element(_element_id(page_slug, "column", path), page_name, page_slug, index, item)
     element = {"type": "column", "children": children, **base}
@@ -372,6 +384,7 @@ def build_modal_item(
     warnings: list | None,
     taken_actions: set[str],
     build_children,
+    parent_visible: bool,
 ) -> tuple[dict, Dict[str, dict]]:
     index = path[-1] if path else 0
     element_id = _element_id(page_slug, "modal", path)
@@ -389,6 +402,7 @@ def build_modal_item(
         media_mode,
         warnings,
         taken_actions,
+        parent_visible=parent_visible,
     )
     base = _base_element(element_id, page_name, page_slug, index, item)
     element = {
@@ -418,6 +432,7 @@ def build_drawer_item(
     warnings: list | None,
     taken_actions: set[str],
     build_children,
+    parent_visible: bool,
 ) -> tuple[dict, Dict[str, dict]]:
     index = path[-1] if path else 0
     element_id = _element_id(page_slug, "drawer", path)
@@ -435,6 +450,7 @@ def build_drawer_item(
         media_mode,
         warnings,
         taken_actions,
+        parent_visible=parent_visible,
     )
     base = _base_element(element_id, page_name, page_slug, index, item)
     element = {

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List
 
 from namel3ss.ast.base import Node
@@ -9,7 +9,7 @@ from namel3ss.ast.expressions import Expression, StatePath
 
 @dataclass
 class PageItem(Node):
-    pass
+    visibility: StatePath | None = field(default=None, kw_only=True)
 
 
 @dataclass
@@ -210,6 +210,7 @@ class ChatItem(PageItem):
 class TabItem(Node):
     label: str
     children: List["PageItem"]
+    visibility: StatePath | None = field(default=None, kw_only=True)
 
 
 @dataclass
