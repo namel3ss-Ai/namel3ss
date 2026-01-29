@@ -117,6 +117,18 @@ Runtime guarantees:
 
 See [docs/trust-and-governance.md](docs/trust-and-governance.md).
 
+## UX as a Contract
+
+UX behavior is deterministic and explainable through stable manifests and `n3 see` output.
+
+Guarantees:
+- Uploads (progress, preview metadata, async errors)
+- Conditional UI (state-gated visibility)
+- Reusable UI patterns (compile-time expansion)
+- Accessibility by default (roles, labels, keyboard, contrast)
+
+Detailed UX contracts: [docs/ui/overview.md](docs/ui/overview.md)
+
 ## Language Contracts
 
 Language Contracts are defined here:
@@ -161,6 +173,12 @@ UI & Studio:
 Governance & releases:
 - [Release readiness](docs/release-ready.md)
 - [Stability](docs/stability.md)
+
+## Discussions & Design Conversations
+
+GitHub Discussions is the canonical place for architectural and language design conversations. Use Discussions for design questions, trade-offs, and long-form proposals; use Issues for bugs and actionable feature requests.
+
+Reference discussion: [https://github.com/namel3ss-Ai/namel3ss/discussions/2](https://github.com/namel3ss-Ai/namel3ss/discussions/2)
 
 ## Contributing
 
