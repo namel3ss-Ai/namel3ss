@@ -1,0 +1,124 @@
+{
+  "actions": {
+    "page.home.button.run": {
+      "flow": "run_flow",
+      "id": "page.home.button.run",
+      "type": "call_flow"
+    }
+  },
+  "pages": [
+    {
+      "elements": [
+        {
+          "column": 3,
+          "element_id": "page.home.title.0",
+          "index": 0,
+          "line": 7,
+          "page": "home",
+          "page_slug": "home",
+          "type": "title",
+          "value": "Ready",
+          "visibility": {
+            "predicate": "state.ready",
+            "result": true,
+            "state_paths": [
+              "state.ready"
+            ]
+          },
+          "visible": true
+        },
+        {
+          "children": [
+            {
+              "column": 5,
+              "element_id": "page.home.text.1.0",
+              "index": 0,
+              "line": 9,
+              "page": "home",
+              "page_slug": "home",
+              "type": "text",
+              "value": "Inside"
+            }
+          ],
+          "column": 3,
+          "element_id": "page.home.section.1",
+          "index": 1,
+          "label": "Gate",
+          "line": 8,
+          "page": "home",
+          "page_slug": "home",
+          "spacing": {
+            "gap": "l",
+            "padding": "m",
+            "title_gap": "s"
+          },
+          "type": "section",
+          "visibility": {
+            "predicate": "state.ready",
+            "result": true,
+            "state_paths": [
+              "state.ready"
+            ]
+          },
+          "visible": true
+        },
+        {
+          "action": {
+            "flow": "run_flow",
+            "type": "call_flow"
+          },
+          "action_id": "page.home.button.run",
+          "column": 3,
+          "element_id": "page.home.button_item.2",
+          "id": "page.home.button.run",
+          "index": 2,
+          "label": "Run",
+          "line": 10,
+          "page": "home",
+          "page_slug": "home",
+          "type": "button",
+          "visibility": {
+            "predicate": "state.ready",
+            "result": true,
+            "state_paths": [
+              "state.ready"
+            ]
+          },
+          "visible": true
+        }
+      ],
+      "name": "home",
+      "slug": "home"
+    }
+  ],
+  "theme": {
+    "current": "light",
+    "effective": "light",
+    "persisted_current": null,
+    "preference": {
+      "allow_override": false,
+      "persist": "none"
+    },
+    "runtime_supported": false,
+    "schema_version": "1",
+    "setting": "light",
+    "source": "app",
+    "tokens": {}
+  },
+  "ui": {
+    "persistence": {
+      "enabled": false,
+      "kind": "memory",
+      "path": null,
+      "schema_version": null
+    },
+    "settings": {
+      "accent_color": "blue",
+      "density": "comfortable",
+      "motion": "subtle",
+      "shape": "rounded",
+      "surface": "flat",
+      "theme": "light"
+    }
+  }
+}

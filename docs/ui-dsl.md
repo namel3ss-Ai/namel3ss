@@ -156,7 +156,7 @@ Built-in patterns:
   - runtime -> placeholder intent with `fix_hint`
 
 ## 3.2) Visibility
-- Optional `visibility is state.<path>` may be appended to any page item or `tab` header.
+- Optional `visibility is state.<path>`, `when is state.<path>`, or `visible_when is state.<path>` may be appended to any page item or `tab` header.
 - Visibility predicates are read-only state paths only (no expressions, operators, or function calls).
 - Paths must include at least one segment after `state.`.
 - Evaluation is deterministic: a path is visible only when the state value exists and is truthy.
@@ -166,8 +166,8 @@ Built-in patterns:
 Example:
 ```
 page "home":
-  title is "Results" visibility is state.results.ready
-  section "Results" visibility is state.results.present:
+  title is "Results" when is state.results.ready
+  section "Results" visible_when is state.results.present:
     table is "Result"
 ```
 

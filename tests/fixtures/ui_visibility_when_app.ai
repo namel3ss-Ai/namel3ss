@@ -1,0 +1,11 @@
+spec is "1.0"
+
+flow "run_flow":
+  return "ok"
+
+page "home":
+  title is "Ready" visible_when is state.ready
+  section "Gate" when is state.ready:
+    text is "Inside"
+  button "Run" when is state.ready:
+    calls flow "run_flow"

@@ -63,10 +63,22 @@ def _reject_list_transforms(expr: ast.Expression | None) -> None:
 
 def _parse_visibility_clause(parser, *, allow_pattern_params: bool = False) -> ast.StatePath | ast.PatternParamRef | None:
     tok = parser._current()
-    if tok.type != "IDENT" or tok.value != "visibility":
+    clause = None
+    if tok.type == "IDENT" and tok.value == "visibility":
+        clause = "visibility"
+    elif tok.type == "WHEN":
+        clause = "when"
+    elif tok.type == "IDENT" and tok.value == "visible_when":
+        clause = "visible_when"
+    if clause is None:
         return None
     parser._advance()
-    parser._expect("IS", "Expected 'is' after visibility")
+    if clause == "visibility":
+        parser._expect("IS", "Expected 'is' after visibility")
+    elif clause == "when":
+        parser._expect("IS", "Expected 'is' after when")
+    else:
+        parser._expect("IS", "Expected 'is' after visible_when")
     if allow_pattern_params and _is_param_ref(parser):
         path = _parse_param_ref(parser)
     else:
