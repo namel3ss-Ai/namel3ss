@@ -63,6 +63,11 @@
           "visible": true
         },
         {
+          "accessibility": {
+            "label": "Run",
+            "role": "button",
+            "tab_order": 1
+          },
           "action": {
             "flow": "run_flow",
             "type": "call_flow"

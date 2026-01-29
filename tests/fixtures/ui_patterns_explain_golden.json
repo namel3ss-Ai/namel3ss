@@ -124,6 +124,11 @@
           "visible": true
         },
         {
+          "accessibility": {
+            "label": "Retry",
+            "role": "button",
+            "tab_order": 1
+          },
           "bound_to": null,
           "enabled": true,
           "id": "page:home:item:10:button",
@@ -137,6 +142,10 @@
           "visible": true
         },
         {
+          "accessibility": {
+            "label": "Result",
+            "role": "table"
+          },
           "bound_to": "record:Result",
           "enabled": null,
           "id": "page:home:item:11:table",

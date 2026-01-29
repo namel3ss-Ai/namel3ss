@@ -191,6 +191,11 @@
               "value": "Try again"
             },
             {
+              "accessibility": {
+                "label": "Retry",
+                "role": "button",
+                "tab_order": 1
+              },
               "action": {
                 "flow": "retry",
                 "type": "call_flow"
@@ -244,9 +249,14 @@
           "type": "section"
         },
         {
+          "accessibility": {
+            "label": "Result",
+            "role": "table"
+          },
           "column": null,
           "columns": [
             {
+              "label": "Name",
               "name": "name",
               "type": "text"
             }

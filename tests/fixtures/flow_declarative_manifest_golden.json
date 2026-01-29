@@ -10,6 +10,11 @@
     {
       "elements": [
         {
+          "accessibility": {
+            "label": "Add",
+            "role": "button",
+            "tab_order": 1
+          },
           "action": {
             "flow": "create_note",
             "type": "call_flow"

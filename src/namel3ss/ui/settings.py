@@ -33,6 +33,10 @@ UI_ALLOWED_VALUES: dict[str, tuple[str, ...]] = {
 STORY_TONES: tuple[str, ...] = ("informative", "success", "caution", "critical", "neutral")
 STORY_ICONS: tuple[str, ...] = icon_names()
 
+UI_CONTRAST_UNSAFE_PAIRS: set[tuple[str, str]] = {
+    ("white", "yellow"),
+}
+
 _KEY_ALIASES: dict[str, str] = {
     "accent color": "accent_color",
     "accent_color": "accent_color",
@@ -153,8 +157,53 @@ def _preset_values(preset: str) -> dict[str, str]:
     return resolve_ui_preset(preset)
 
 
+def validate_ui_contrast(theme: str, accent: str, raw: dict | None) -> None:
+    allowed_themes = set(UI_ALLOWED_VALUES.get("theme", ()))
+    allowed_accents = set(UI_ALLOWED_VALUES.get("accent_color", ()))
+    if theme not in allowed_themes or accent not in allowed_accents:
+        return
+    if (theme, accent) in _contrast_safe_pairs():
+        return
+    line, column = _ui_setting_location(raw, "accent_color")
+    if line is None and column is None:
+        line, column = _ui_setting_location(raw, "theme")
+    if line is None and column is None:
+        line, column = _ui_setting_location(raw, "preset")
+    raise Namel3ssError(
+        build_guidance_message(
+            what=f'UI theme "{theme}" with accent "{accent}" does not meet contrast requirements.',
+            why="Theme and accent combinations must meet the contrast contract.",
+            fix="Choose a supported theme and accent color pairing.",
+            example='ui:\n  theme is "light"\n  accent color is "blue"',
+        ),
+        line=line,
+        column=column,
+    )
+
+
+def _contrast_safe_pairs() -> set[tuple[str, str]]:
+    themes = UI_ALLOWED_VALUES.get("theme", ())
+    accents = UI_ALLOWED_VALUES.get("accent_color", ())
+    pairs = {(theme, accent) for theme in themes for accent in accents}
+    for pair in UI_CONTRAST_UNSAFE_PAIRS:
+        pairs.discard(pair)
+    return pairs
+
+
+def _ui_setting_location(raw: dict | None, key: str) -> tuple[int | None, int | None]:
+    if not isinstance(raw, dict):
+        return None, None
+    value = raw.get(key)
+    if isinstance(value, tuple):
+        line = value[1] if len(value) > 1 else None
+        column = value[2] if len(value) > 2 else None
+        return line, column
+    return None, None
+
+
 __all__ = [
     "UI_ALLOWED_VALUES",
+    "UI_CONTRAST_UNSAFE_PAIRS",
     "UI_DEFAULTS",
     "UI_FIELD_ORDER",
     "UI_OPTIONAL_FIELDS",
@@ -162,6 +211,7 @@ __all__ = [
     "closest_value",
     "default_ui_settings_with_meta",
     "normalize_ui_settings",
+    "validate_ui_contrast",
     "validate_ui_field",
     "validate_ui_value",
 ]

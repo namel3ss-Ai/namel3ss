@@ -58,6 +58,10 @@
           "visible": false
         },
         {
+          "accessibility": {
+            "label": "Run",
+            "role": "button"
+          },
           "action": {
             "flow": "run_flow",
             "type": "call_flow"

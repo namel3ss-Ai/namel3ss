@@ -146,6 +146,7 @@ def _element_state(
     label = _element_label(kind, element)
     bound_to = _bound_to(kind, element)
     fix_hint = _element_fix_hint(kind, element)
+    accessibility = element.get("accessibility") if isinstance(element, dict) else None
     reasons = [declared_in_page(page_name)]
     origin_reason = declared_in_pack(element.get("origin"))
     if origin_reason:
@@ -202,6 +203,7 @@ def _element_state(
         enabled=enabled,
         bound_to=bound_to,
         fix_hint=fix_hint,
+        accessibility=accessibility,
         reasons=reasons,
     )
 

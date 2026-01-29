@@ -48,6 +48,10 @@
           "visible": false
         },
         {
+          "accessibility": {
+            "label": "Run",
+            "role": "button"
+          },
           "bound_to": null,
           "enabled": null,
           "id": "page:home:item:4:button",

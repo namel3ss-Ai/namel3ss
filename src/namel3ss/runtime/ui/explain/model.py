@@ -27,6 +27,7 @@ class UIElementState:
     enabled: bool | None = None
     bound_to: str | None = None
     fix_hint: str | None = None
+    accessibility: dict | None = None
     reasons: list[str] = field(default_factory=list)
 
     def as_dict(self) -> dict:
@@ -40,6 +41,8 @@ class UIElementState:
         }
         if self.fix_hint:
             payload["fix_hint"] = self.fix_hint
+        if self.accessibility is not None:
+            payload["accessibility"] = self.accessibility
         payload["reasons"] = list(self.reasons)
         return payload
 
@@ -53,6 +56,7 @@ class UIElementState:
             enabled=payload.get("enabled"),
             bound_to=payload.get("bound_to"),
             fix_hint=payload.get("fix_hint"),
+            accessibility=payload.get("accessibility"),
             reasons=[str(item) for item in payload.get("reasons") or []],
         )
 
