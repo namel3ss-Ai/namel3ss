@@ -138,6 +138,11 @@
             },
             {
               "accept": [],
+              "accessibility": {
+                "label": "intake",
+                "role": "button",
+                "tab_order": 1
+              },
               "action_id": "page.composition.upload.intake",
               "column": 5,
               "element_id": "page.composition.upload.3.1",
@@ -151,6 +156,11 @@
               "type": "upload"
             },
             {
+              "accessibility": {
+                "label": "Run ingestion",
+                "role": "button",
+                "tab_order": 2
+              },
               "action": {
                 "flow": "run_ingestion",
                 "type": "call_flow"
@@ -167,9 +177,14 @@
               "type": "button"
             },
             {
+              "accessibility": {
+                "label": "Ingestion Report",
+                "role": "table"
+              },
               "column": 5,
               "columns": [
                 {
+                  "label": "Upload ID",
                   "name": "upload_id",
                   "type": "text"
                 }
@@ -224,6 +239,11 @@
             {
               "children": [
                 {
+                  "accessibility": {
+                    "label": "run_retrieval",
+                    "role": "textbox",
+                    "tab_order": 3
+                  },
                   "action": {
                     "flow": "run_retrieval",
                     "type": "call_flow"
@@ -258,9 +278,14 @@
               "type": "chat"
             },
             {
+              "accessibility": {
+                "label": "Retrieval Report",
+                "role": "table"
+              },
               "column": 5,
               "columns": [
                 {
+                  "label": "Query",
                   "name": "query",
                   "type": "text"
                 }

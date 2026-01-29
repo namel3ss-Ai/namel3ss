@@ -8,10 +8,17 @@ from pathlib import Path
 from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.backend.file_store import _file_root, _scope_name
+from namel3ss.runtime.backend.upload_contract import (
+    DEFAULT_CONTENT_TYPE,
+    UPLOAD_ERROR_STREAM,
+    UPLOAD_STATE_STORED,
+    UploadPreviewCounter,
+    build_progress,
+    build_upload_preview,
+    clean_upload_filename,
+    upload_error_details,
+)
 from namel3ss.utils.slugify import slugify_text
-
-
-DEFAULT_CONTENT_TYPE = "application/octet-stream"
 
 
 def store_upload(
@@ -20,15 +27,17 @@ def store_upload(
     filename: str | None,
     content_type: str | None,
     stream: io.BufferedReader | list[bytes] | tuple[bytes, ...] | object,
+    progress=None,
 ) -> dict:
     uploads_root = _uploads_root(ctx)
     uploads_root.mkdir(parents=True, exist_ok=True)
-    original_name = _clean_filename(filename)
+    original_name = clean_upload_filename(filename)
     base, ext = _split_filename(original_name)
     safe_base = slugify_text(base) or "upload"
     temp_name = f".pending-{safe_base}{ext}"
     temp_path = uploads_root / temp_name
-    size, checksum = _write_stream(temp_path, stream)
+    preview_counter = UploadPreviewCounter.for_upload(filename=original_name, content_type=content_type)
+    size, checksum = _write_stream(temp_path, stream, progress=progress, preview=preview_counter)
     final_name = f"{safe_base}-{checksum[:12]}{ext}"
     final_path = uploads_root / final_name
     if temp_path != final_path:
@@ -43,6 +52,7 @@ def store_upload(
         "checksum": checksum,
         "stored_path": stored_path,
     }
+    metadata["preview"] = build_upload_preview(metadata, preview_counter.snapshot())
     _update_index(uploads_root, metadata)
     return metadata
 
@@ -58,7 +68,21 @@ def list_uploads(ctx) -> list[dict]:
         return []
     if not isinstance(raw, list):
         return []
-    return [item for item in raw if isinstance(item, dict)]
+    entries = [item for item in raw if isinstance(item, dict)]
+    normalized: list[dict] = []
+    for entry in entries:
+        item = dict(entry)
+        preview = item.get("preview")
+        if not isinstance(preview, dict):
+            item["preview"] = build_upload_preview(item, {})
+        if not isinstance(item.get("state"), str):
+            item["state"] = UPLOAD_STATE_STORED
+        if not isinstance(item.get("progress"), dict):
+            size = item.get("bytes")
+            progress_value = build_progress(size if isinstance(size, int) else 0, size if isinstance(size, int) else None)
+            item["progress"] = progress_value
+        normalized.append(item)
+    return normalized
 
 
 def _uploads_root(ctx) -> Path:
@@ -66,7 +90,7 @@ def _uploads_root(ctx) -> Path:
     return root / "uploads"
 
 
-def _write_stream(path: Path, stream: object) -> tuple[int, str]:
+def _write_stream(path: Path, stream: object, *, progress=None, preview: UploadPreviewCounter | None = None) -> tuple[int, str]:
     hasher = hashlib.sha256()
     size = 0
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -78,18 +102,32 @@ def _write_stream(path: Path, stream: object) -> tuple[int, str]:
                 if not chunk:
                     break
                 if not isinstance(chunk, (bytes, bytearray)):
-                    raise Namel3ssError("Upload stream returned non-bytes data.")
+                    raise Namel3ssError(
+                        "Upload stream returned non-bytes data.",
+                        details=upload_error_details(UPLOAD_ERROR_STREAM),
+                    )
                 data = bytes(chunk)
                 hasher.update(data)
                 size += len(data)
+                if progress is not None:
+                    progress(len(data))
+                if preview is not None:
+                    preview.consume(data)
                 handle.write(data)
         else:
             for chunk in stream if stream is not None else []:
                 if not isinstance(chunk, (bytes, bytearray)):
-                    raise Namel3ssError("Upload stream returned non-bytes data.")
+                    raise Namel3ssError(
+                        "Upload stream returned non-bytes data.",
+                        details=upload_error_details(UPLOAD_ERROR_STREAM),
+                    )
                 data = bytes(chunk)
                 hasher.update(data)
                 size += len(data)
+                if progress is not None:
+                    progress(len(data))
+                if preview is not None:
+                    preview.consume(data)
                 handle.write(data)
     return size, hasher.hexdigest()
 
@@ -109,15 +147,6 @@ def _safe_suffix(value: str) -> bool:
         if not (ch.isalnum() or ch == "."):
             return False
     return True
-
-
-def _clean_filename(value: str | None) -> str:
-    raw = (value or "").strip()
-    if not raw:
-        return "upload"
-    normalized = raw.replace("\\", "/")
-    name = normalized.split("/")[-1].strip()
-    return name or "upload"
 
 
 def _update_index(root: Path, entry: dict) -> None:

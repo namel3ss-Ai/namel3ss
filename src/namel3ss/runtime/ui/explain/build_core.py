@@ -28,9 +28,11 @@ from .reasons import (
     action_reason_line,
     action_status,
     declared_in_pack,
+    declared_in_pattern,
     declared_in_page,
     evaluate_requires,
     format_requires,
+    visibility_reasons,
 )
 from .render_plain import render_see
 
@@ -144,10 +146,16 @@ def _element_state(
     label = _element_label(kind, element)
     bound_to = _bound_to(kind, element)
     fix_hint = _element_fix_hint(kind, element)
+    accessibility = element.get("accessibility") if isinstance(element, dict) else None
     reasons = [declared_in_page(page_name)]
     origin_reason = declared_in_pack(element.get("origin"))
     if origin_reason:
         reasons.append(origin_reason)
+    pattern_reason = declared_in_pattern(element.get("origin"))
+    if pattern_reason:
+        reasons.append(pattern_reason)
+    visible = element.get("visible", True) is not False
+    reasons.extend(visibility_reasons(element.get("visibility"), visible))
     enabled: bool | None = None
 
     action_id = element.get("action_id") or element.get("id")
@@ -191,10 +199,11 @@ def _element_state(
         id=element_id,
         kind=kind,
         label=label,
-        visible=True,
+        visible=visible,
         enabled=enabled,
         bound_to=bound_to,
         fix_hint=fix_hint,
+        accessibility=accessibility,
         reasons=reasons,
     )
 

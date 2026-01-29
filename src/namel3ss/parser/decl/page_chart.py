@@ -3,19 +3,19 @@ from __future__ import annotations
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.lang.keywords import is_keyword
-from namel3ss.parser.core.helpers import parse_reference_name
+from namel3ss.parser.decl.page_common import _parse_reference_name_value, _parse_state_path_value, _parse_string_value
 from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
 
-def parse_chart_header(parser) -> tuple[str | None, ast.StatePath | None]:
+def parse_chart_header(parser, *, allow_pattern_params: bool = False) -> tuple[str | None, ast.StatePath | ast.PatternParamRef | None]:
     if parser._match("IS"):
-        record_name = parse_reference_name(parser, context="record")
+        record_name = _parse_reference_name_value(parser, allow_pattern_params=allow_pattern_params, context="record")
         return record_name, None
     tok = parser._current()
     if tok.type == "IDENT" and tok.value == "from":
         parser._advance()
         parser._expect("IS", "Expected 'is' after chart from")
-        source = parser._parse_state_path()
+        source = _parse_state_path_value(parser, allow_pattern_params=allow_pattern_params)
         return None, source
     raise Namel3ssError(
         'Chart must use is "Record" or from is state.<path>',
@@ -24,7 +24,7 @@ def parse_chart_header(parser) -> tuple[str | None, ast.StatePath | None]:
     )
 
 
-def parse_chart_block(parser) -> tuple[str | None, str | None, str | None, str | None]:
+def parse_chart_block(parser, *, allow_pattern_params: bool = False) -> tuple[str | None, str | None, str | None, str | None]:
     parser._expect("NEWLINE", "Expected newline after chart header")
     parser._expect("INDENT", "Expected indented chart block")
     chart_type = None
@@ -71,8 +71,7 @@ def parse_chart_block(parser) -> tuple[str | None, str | None, str | None, str |
                 raise Namel3ssError("Chart explain is declared more than once", line=tok.line, column=tok.column)
             parser._advance()
             parser._expect("IS", "Expected 'is' after explain")
-            value_tok = parser._expect("STRING", "Expected explanation text")
-            explain = value_tok.value
+            explain = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="explain")
             if parser._match("NEWLINE"):
                 continue
             continue

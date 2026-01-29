@@ -38,6 +38,10 @@
                     {
                       "children": [
                         {
+                          "accessibility": {
+                            "label": "Onboarding Task",
+                            "role": "list"
+                          },
                           "column": 11,
                           "element_id": "page.onboarding.list.2.0.0.0.0",
                           "empty_text": "No tasks yet.",
@@ -105,6 +109,11 @@
                           "value": "Add a starter task to shape the checklist."
                         },
                         {
+                          "accessibility": {
+                            "label": "Add sample task",
+                            "role": "button",
+                            "tab_order": 1
+                          },
                           "action": {
                             "flow": "add_sample_task",
                             "type": "call_flow"

@@ -27,6 +27,7 @@ def parse_program(parser) -> ast.Program:
     jobs: List[ast.JobDecl] = []
     pages: List[ast.PageDecl] = []
     ui_packs: List[ast.UIPackDecl] = []
+    ui_patterns: List[ast.UIPatternDecl] = []
     functions: List[ast.FunctionDecl] = []
     contracts: List[ast.ContractDecl] = []
     ais: List[ast.AIDecl] = []
@@ -248,6 +249,9 @@ def parse_program(parser) -> ast.Program:
         if rule.name == "ui_pack":
             ui_packs.append(rule.parse(parser))
             continue
+        if rule.name == "ui_pattern":
+            ui_patterns.append(rule.parse(parser))
+            continue
         if rule.name == "ui":
             if ui_line is not None:
                 raise Namel3ssError(
@@ -302,6 +306,7 @@ def parse_program(parser) -> ast.Program:
         jobs=jobs,
         pages=pages,
         ui_packs=ui_packs,
+        ui_patterns=ui_patterns,
         ais=ais,
         tools=tools,
         agents=agents,

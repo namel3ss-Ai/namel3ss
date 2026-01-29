@@ -5,6 +5,7 @@ from typing import Dict, List
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.module_loader.types import ModuleExports
+from namel3ss.ui.patterns import builtin_patterns
 
 
 KIND_LABELS = {
@@ -17,7 +18,10 @@ KIND_LABELS = {
     "tool": "tool",
     "function": "function",
     "ui_pack": "ui pack",
+    "pattern": "pattern",
 }
+
+_BUILTIN_PATTERN_NAMES = {pattern.name for pattern in builtin_patterns()}
 
 
 def qualify(module_name: str | None, name: str) -> str:
@@ -67,6 +71,8 @@ def resolve_name(
         return qualify(target_module, rest)
     if raw in local_defs.get(kind, set()):
         return qualify(module_name, raw)
+    if kind == "pattern" and raw in _BUILTIN_PATTERN_NAMES:
+        return raw
     if _is_exported_elsewhere(raw, kind, exports_map):
         suggestions = _exporting_modules(raw, kind, exports_map)
         hint = _alias_hint(suggestions, alias_map, raw)

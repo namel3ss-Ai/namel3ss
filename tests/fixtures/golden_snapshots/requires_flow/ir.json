@@ -58,14 +58,16 @@
           "column": 3,
           "line": 7,
           "type": "TitleItem",
-          "value": "Requires"
+          "value": "Requires",
+          "visibility": null
         },
         {
           "column": 3,
           "flow_name": "admin_only",
           "label": "Run",
           "line": 8,
-          "type": "ButtonItem"
+          "type": "ButtonItem",
+          "visibility": null
         }
       ],
       "line": 6,

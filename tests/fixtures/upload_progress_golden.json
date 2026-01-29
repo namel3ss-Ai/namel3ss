@@ -1,0 +1,34 @@
+[
+  {
+    "type": "upload_progress",
+    "title": "Upload progress",
+    "name": "progress.bin",
+    "bytes_received": 65536,
+    "total_bytes": 200000,
+    "percent_complete": 32
+  },
+  {
+    "type": "upload_progress",
+    "title": "Upload progress",
+    "name": "progress.bin",
+    "bytes_received": 131072,
+    "total_bytes": 200000,
+    "percent_complete": 65
+  },
+  {
+    "type": "upload_progress",
+    "title": "Upload progress",
+    "name": "progress.bin",
+    "bytes_received": 196608,
+    "total_bytes": 200000,
+    "percent_complete": 98
+  },
+  {
+    "type": "upload_progress",
+    "title": "Upload progress",
+    "name": "progress.bin",
+    "bytes_received": 200000,
+    "total_bytes": 200000,
+    "percent_complete": 100
+  }
+]

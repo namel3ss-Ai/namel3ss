@@ -30,6 +30,11 @@
           "value": "Hello"
         },
         {
+          "accessibility": {
+            "label": "Run",
+            "role": "button",
+            "tab_order": 1
+          },
           "action": {
             "flow": "demo",
             "type": "call_flow"

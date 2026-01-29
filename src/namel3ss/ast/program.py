@@ -10,6 +10,7 @@ from namel3ss.ast.expressions import Expression
 from namel3ss.ast.identity import IdentityDecl
 from namel3ss.ast.policy import PolicyDecl
 from namel3ss.ast.ui_packs import UIPackDecl
+from namel3ss.ast.ui_patterns import UIPatternDecl
 if TYPE_CHECKING:  # pragma: no cover - typing-only
     from namel3ss.ast.flow_steps import FlowStep
     from namel3ss.ast.contracts import ContractDecl
@@ -48,6 +49,7 @@ class Program(Node):
     tools: List["ToolDecl"]
     agents: List["AgentDecl"]
     ui_packs: List[UIPackDecl]
+    ui_patterns: List[UIPatternDecl]
     uses: List[UseDecl]
     capsule: Optional[CapsuleDecl]
     policy: PolicyDecl | None = None

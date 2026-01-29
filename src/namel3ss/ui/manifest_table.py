@@ -5,6 +5,7 @@ from typing import Dict
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
 from namel3ss.schema import records as schema
+from namel3ss.ui.fields import label_from_identifier
 from namel3ss.utils.numbers import is_number, to_decimal
 from namel3ss.ui.manifest_overlay import _drawer_id, _modal_id
 
@@ -26,7 +27,7 @@ def _resolve_table_columns(
     directives: list[ir.TableColumnDirective] | None,
 ) -> list[dict]:
     if not directives:
-        return [{"name": f.name, "type": f.type_name} for f in record.fields]
+        return [{"name": f.name, "type": f.type_name, "label": label_from_identifier(f.name)} for f in record.fields]
     include = [d.name for d in directives if d.kind == "include"]
     exclude = {d.name for d in directives if d.kind == "exclude"}
     labels = {d.name: d.label for d in directives if d.kind == "label" and d.label}
@@ -39,7 +40,7 @@ def _resolve_table_columns(
         field = record.field_map.get(name)
         if field is None:
             continue
-        entry = {"name": field.name, "type": field.type_name}
+        entry = {"name": field.name, "type": field.type_name, "label": label_from_identifier(field.name)}
         label = labels.get(name)
         if label:
             entry["label"] = label

@@ -21,10 +21,19 @@ def render_see(pack: dict) -> str:
         lines.append("")
         lines.append(f"On page \"{page.get('name')}\"")
         elements = page.get("elements") or []
-        if not elements:
+        visible_elements = [el for el in elements if el.get("visible", True) is not False]
+        hidden_elements = [el for el in elements if el.get("visible", True) is False]
+        if not visible_elements and not hidden_elements:
             lines.extend(stable_bullets(["No elements were recorded."]))
             continue
-        lines.extend(_render_elements(elements))
+        if not visible_elements:
+            lines.extend(stable_bullets(["No visible elements were recorded."]))
+        else:
+            lines.extend(_render_elements(visible_elements))
+        if hidden_elements:
+            lines.append("")
+            lines.append(f"Hidden on page \"{page.get('name')}\"")
+            lines.extend(_render_elements(hidden_elements))
 
     lines.append("")
     lines.append("Actions")
@@ -45,7 +54,8 @@ def render_see(pack: dict) -> str:
 def _page_summary(page: dict) -> str:
     name = page.get("name") or ""
     elements = page.get("elements") or []
-    return f"{name} ({len(elements)} items)"
+    visible_count = len([el for el in elements if el.get("visible", True) is not False])
+    return f"{name} ({visible_count} items)"
 
 
 def _render_elements(elements: list[dict]) -> list[str]:
@@ -59,6 +69,23 @@ def _render_elements(elements: list[dict]) -> list[str]:
             lines.append(f"  - bound to: {stable_truncate(str(element.get('bound_to')))}")
         if element.get("fix_hint"):
             lines.append(f"  - fix_hint: {stable_truncate(str(element.get('fix_hint')))}")
+        accessibility = element.get("accessibility") or {}
+        if isinstance(accessibility, dict) and accessibility:
+            role = accessibility.get("role")
+            if role:
+                lines.append(f"  - role: {stable_truncate(str(role))}")
+            access_label = accessibility.get("label")
+            if access_label:
+                lines.append(f"  - accessibility label: \"{stable_truncate(str(access_label))}\"")
+            tab_order = accessibility.get("tab_order")
+            if tab_order is not None:
+                lines.append(f"  - tab order: {tab_order}")
+            focus = accessibility.get("focus")
+            if isinstance(focus, dict) and focus:
+                lines.append(f"  - focus: {stable_truncate(_format_kv(focus))}")
+            keyboard = accessibility.get("keyboard")
+            if isinstance(keyboard, dict) and keyboard:
+                lines.append(f"  - keyboard: {stable_truncate(_format_kv(keyboard))}")
         for reason in element.get("reasons") or []:
             lines.append(f"  - because: {stable_truncate(str(reason))}")
     return lines
@@ -70,6 +97,13 @@ def _element_header(element: dict) -> str:
     if label:
         return f"- {kind}: \"{stable_truncate(str(label))}\""
     return f"- {kind}"
+
+
+def _format_kv(payload: dict) -> str:
+    items = []
+    for key in sorted(payload.keys(), key=lambda item: str(item)):
+        items.append(f"{key}={payload.get(key)}")
+    return ", ".join(items)
 
 
 def _render_actions(actions: list[dict]) -> list[str]:

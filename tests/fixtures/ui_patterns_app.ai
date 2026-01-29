@@ -1,0 +1,34 @@
+spec is "1.0"
+
+record "Result":
+  fields:
+    name is text
+
+flow "retry":
+  return "ok"
+
+pattern "Status Block":
+  parameters:
+    heading is text
+    guidance is text optional
+  section:
+    title is param.heading
+    text is param.guidance
+
+page "home":
+  use pattern "Status Block":
+    heading is "Ready"
+    guidance is "Waiting"
+  use pattern "Status Banner":
+    tone is "success"
+    heading is "Saved"
+    message is "Everything is up to date"
+  use pattern "Empty State":
+    heading is "No results"
+    guidance is "Try again"
+    action_label is "Retry"
+    action_flow is "retry"
+  use pattern "Results Layout":
+    record_name is "Result"
+    empty_title is "Nothing here"
+    empty_guidance is "Check back later"

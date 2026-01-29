@@ -6,6 +6,7 @@ from namel3ss.ir.lowering.expressions import _lower_expression
 from namel3ss.ir.lowering.page_chart import _validate_chart_pairing
 from namel3ss.ir.lowering.pages_items import _lower_page_item
 from namel3ss.ir.lowering.ui_packs import expand_page_items
+from namel3ss.ir.lowering.ui_patterns import expand_pattern_items
 from namel3ss.ir.model.pages import Page
 from namel3ss.schema import records as schema
 
@@ -16,6 +17,7 @@ def _lower_page(
     flow_names: set[str],
     page_names: set[str],
     pack_index: dict[str, ast.UIPackDecl],
+    pattern_index: dict[str, object],
 ) -> Page:
     expanded_items = expand_page_items(
         page.items,
@@ -24,6 +26,19 @@ def _lower_page(
         allow_overlays=True,
         columns_only=False,
         page_name=page.name,
+    )
+    context_module = page.name.split(".", 1)[0] if "." in page.name else None
+    expanded_items = expand_pattern_items(
+        expanded_items,
+        pattern_index,
+        page_name=page.name,
+        allow_tabs=True,
+        allow_overlays=True,
+        columns_only=False,
+        flow_names=flow_names,
+        page_names=page_names,
+        record_names=set(record_map.keys()),
+        context_module=context_module,
     )
     overlays = _collect_overlays(expanded_items)
     _validate_upload_names(expanded_items)

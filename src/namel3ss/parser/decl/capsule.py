@@ -13,6 +13,7 @@ ALLOWED_EXPORT_KINDS = {
     "AI": "ai",
     "AGENT": "agent",
     "TOOL": "tool",
+    "PATTERN": "pattern",
 }
 
 
@@ -73,7 +74,7 @@ def parse_capsule_decl(parser) -> ast.CapsuleDecl:
                     raise Namel3ssError(
                         build_guidance_message(
                             what="Unsupported export entry in capsule.",
-                            why="Exports must be record, flow, job, page, ai, agent, tool, function, or ui_pack names.",
+                        why="Exports must be record, flow, job, page, ai, agent, tool, function, ui_pack, or pattern names.",
                             fix="List exported symbols with their type.",
                             example='exports:\n  record "Product"\n  flow "calc_total"',
                         ),

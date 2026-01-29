@@ -1,0 +1,33 @@
+spec is "1.0"
+
+record "Note":
+  fields:
+    title is text
+    count is number
+    done is boolean
+
+flow "run_flow":
+  return "ok"
+
+page "home":
+  title is "Accessibility"
+  button "Run":
+    calls flow "run_flow"
+  link "Next" to page "next"
+  upload files:
+    accept is "txt"
+  form is "Note"
+  table is "Note"
+  list is "Note"
+  tabs:
+    tab "Overview":
+      text is "Overview"
+    tab "Details":
+      text is "Details"
+  modal "Filters":
+    text is "Filter"
+  drawer "Options":
+    text is "Options"
+
+page "next":
+  text is "Next"

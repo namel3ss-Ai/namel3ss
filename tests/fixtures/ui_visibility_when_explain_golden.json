@@ -1,0 +1,75 @@
+{
+  "actions": [],
+  "api_version": "ui",
+  "ok": true,
+  "pages": [
+    {
+      "elements": [
+        {
+          "bound_to": null,
+          "enabled": null,
+          "id": "page:home:item:1:title",
+          "kind": "title",
+          "label": "Ready",
+          "reasons": [
+            "declared in page \"home\"",
+            "visibility predicate state.ready",
+            "visibility paths state.ready",
+            "visibility result false",
+            "hidden because visibility result is false"
+          ],
+          "visible": false
+        },
+        {
+          "bound_to": null,
+          "enabled": null,
+          "id": "page:home:item:2:section",
+          "kind": "section",
+          "label": "Gate",
+          "reasons": [
+            "declared in page \"home\"",
+            "visibility predicate state.ready",
+            "visibility paths state.ready",
+            "visibility result false",
+            "hidden because visibility result is false"
+          ],
+          "visible": false
+        },
+        {
+          "bound_to": null,
+          "enabled": null,
+          "id": "page:home:item:3:text",
+          "kind": "text",
+          "label": "Inside",
+          "reasons": [
+            "declared in page \"home\"",
+            "hidden because parent visibility is false"
+          ],
+          "visible": false
+        },
+        {
+          "accessibility": {
+            "label": "Run",
+            "role": "button"
+          },
+          "bound_to": null,
+          "enabled": null,
+          "id": "page:home:item:4:button",
+          "kind": "button",
+          "label": "Run",
+          "reasons": [
+            "declared in page \"home\"",
+            "visibility predicate state.ready",
+            "visibility paths state.ready",
+            "visibility result false",
+            "hidden because visibility result is false"
+          ],
+          "visible": false
+        }
+      ],
+      "name": "home"
+    }
+  ],
+  "summary": "UI: 1 pages, 4 elements, 0 actions.",
+  "what_not": []
+}

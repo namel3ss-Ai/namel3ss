@@ -20,6 +20,7 @@ from namel3ss.ui.manifest_list import (
     _list_item_mapping,
 )
 from namel3ss.ui.manifest.state_defaults import StateContext
+from namel3ss.ui.manifest.visibility import apply_visibility, evaluate_visibility
 from namel3ss.ui.manifest_table import (
     _apply_table_pagination,
     _apply_table_sort,
@@ -288,6 +289,7 @@ def build_chat_item(
     warnings: list | None,
     taken_actions: set[str],
     build_children,
+    parent_visible: bool,
 ) -> tuple[dict, Dict[str, dict]]:
     index = path[-1] if path else 0
     children, actions = build_children(
@@ -304,6 +306,7 @@ def build_chat_item(
         media_mode,
         warnings,
         taken_actions,
+        parent_visible=parent_visible,
     )
     element_id = _element_id(page_slug, "chat", path)
     base = _base_element(element_id, page_name, page_slug, index, item)
@@ -357,6 +360,7 @@ def build_tabs_item(
     warnings: list | None,
     taken_actions: set[str],
     build_children,
+    parent_visible: bool,
 ) -> tuple[dict, Dict[str, dict]]:
     index = path[-1] if path else 0
     element_id = _element_id(page_slug, "tabs", path)
@@ -365,6 +369,15 @@ def build_tabs_item(
     labels: list[str] = []
     for idx, tab in enumerate(item.tabs):
         labels.append(tab.label)
+        tab_predicate_visible, tab_visibility = evaluate_visibility(
+            getattr(tab, "visibility", None),
+            state_ctx,
+            mode,
+            warnings,
+            line=tab.line,
+            column=tab.column,
+        )
+        tab_visible = parent_visible and tab_predicate_visible
         children, actions = build_children(
             tab.children,
             record_map,
@@ -379,20 +392,20 @@ def build_tabs_item(
             media_mode,
             warnings,
             taken_actions,
+            parent_visible=tab_visible,
         )
         action_map.update(actions)
         tab_base = _base_element(_element_id(page_slug, "tab", path + [idx]), page_name, page_slug, idx, tab)
-        tabs.append(
-            _attach_origin(
-                {
-                    "type": "tab",
-                    "label": tab.label,
-                    "children": children,
-                    **tab_base,
-                },
-                tab,
-            )
+        tab_element = _attach_origin(
+            {
+                "type": "tab",
+                "label": tab.label,
+                "children": children,
+                **tab_base,
+            },
+            tab,
         )
+        tabs.append(apply_visibility(tab_element, tab_visible, tab_visibility))
     default_label = item.default or (labels[0] if labels else "")
     base = _base_element(element_id, page_name, page_slug, index, item)
     element = {

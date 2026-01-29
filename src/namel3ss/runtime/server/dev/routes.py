@@ -11,6 +11,7 @@ from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
 from namel3ss.runtime.backend.upload_handler import handle_upload, handle_upload_list
+from namel3ss.runtime.backend.upload_recorder import UploadRecorder, apply_upload_error_payload
 from namel3ss.runtime.data.data_routes import (
     build_data_status_payload,
     build_migrations_plan_payload,
@@ -204,6 +205,7 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
             project_root=getattr(program, "project_root", None),
             app_path=getattr(program, "app_path", None),
         )
+        recorder = UploadRecorder()
         try:
             response = handle_upload(
                 ctx,
@@ -211,6 +213,7 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
                 rfile=self.rfile,
                 content_length=content_length,
                 upload_name=upload_name,
+                recorder=recorder,
             )
             return response, 200
         except Namel3ssError as err:
@@ -221,6 +224,7 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
                 mode=self._mode(),
                 debug=self._state().debug,
             )
+            payload = apply_upload_error_payload(payload, recorder)
             return payload, 400
         except Exception as err:  # pragma: no cover - defensive guard
             payload = error_from_message(
@@ -229,6 +233,7 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
                 mode=self._mode(),
                 debug=self._state().debug,
             )
+            payload = apply_upload_error_payload(payload, recorder)
             return payload, 500
 
     def _handle_upload_list(self) -> tuple[dict, int]:

@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 from namel3ss.errors.base import Namel3ssError
-from namel3ss.parser.core.helpers import parse_reference_name
+from namel3ss.parser.decl.page_common import _parse_reference_name_value, _parse_string_value
 
 
-def parse_ui_action_body(parser, *, entry_label: str) -> tuple[str, str | None, str | None]:
+def parse_ui_action_body(parser, *, entry_label: str, allow_pattern_params: bool = False) -> tuple[str, str | None, str | None]:
     tok = parser._current()
     if tok.type == "CALLS":
         parser._advance()
         parser._expect("FLOW", f"Expected 'flow' keyword in {entry_label.lower()}")
-        flow_name = parse_reference_name(parser, context="flow")
+        flow_name = _parse_reference_name_value(parser, allow_pattern_params=allow_pattern_params, context="flow")
         return "call_flow", flow_name, None
     if tok.type == "IDENT" and tok.value in {"opens", "closes"}:
         op = tok.value
@@ -22,10 +22,14 @@ def parse_ui_action_body(parser, *, entry_label: str) -> tuple[str, str | None, 
                 column=target_tok.column,
             )
         parser._advance()
-        label_tok = parser._expect("STRING", f"Expected {target_tok.value} label string")
+        label_tok = _parse_string_value(
+            parser,
+            allow_pattern_params=allow_pattern_params,
+            context=f"{target_tok.value} label",
+        )
         verb = "open" if op == "opens" else "close"
         kind = f"{verb}_{target_tok.value}"
-        return kind, None, label_tok.value
+        return kind, None, label_tok
     raise Namel3ssError(
         f"{entry_label} must call a flow or open/close a modal/drawer",
         line=tok.line,

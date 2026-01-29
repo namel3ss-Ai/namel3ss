@@ -58,6 +58,14 @@ def build_plain_text(pack: dict) -> str:
                 lines.append(f"{prefix}.bound_to: {element.get('bound_to')}")
             if element.get("fix_hint"):
                 lines.append(f"{prefix}.fix_hint: {element.get('fix_hint')}")
+            accessibility = element.get("accessibility")
+            if isinstance(accessibility, dict) and accessibility:
+                if accessibility.get("role"):
+                    lines.append(f"{prefix}.accessibility.role: {accessibility.get('role')}")
+                if accessibility.get("label"):
+                    lines.append(f"{prefix}.accessibility.label: {accessibility.get('label')}")
+                if accessibility.get("tab_order") is not None:
+                    lines.append(f"{prefix}.accessibility.tab_order: {accessibility.get('tab_order')}")
             element_index += 1
 
     what_not = pack.get("what_not") or []

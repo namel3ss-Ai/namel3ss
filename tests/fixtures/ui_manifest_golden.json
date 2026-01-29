@@ -15,6 +15,11 @@
     {
       "elements": [
         {
+          "accessibility": {
+            "label": "Run",
+            "role": "button",
+            "tab_order": 1
+          },
           "action": {
             "flow": "demo",
             "type": "call_flow"
@@ -31,12 +36,22 @@
           "type": "button"
         },
         {
+          "accessibility": {
+            "label": "User",
+            "role": "form"
+          },
           "action_id": "page.home.form.user",
           "column": 3,
           "element_id": "page.home.form_item.1",
           "fields": [
             {
+              "accessibility": {
+                "label": "Name",
+                "role": "textbox",
+                "tab_order": 2
+              },
               "constraints": [],
+              "label": "Name",
               "name": "name",
               "type": "text"
             }
@@ -50,8 +65,8 @@
           "spacing": {
             "field_gap": "m",
             "group_gap": "l",
-            "section_gap": "xl",
-            "help_gap": "s"
+            "help_gap": "s",
+            "section_gap": "xl"
           },
           "type": "form"
         }

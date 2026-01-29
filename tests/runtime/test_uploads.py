@@ -52,6 +52,12 @@ def test_store_upload_scoped_and_indexed(tmp_path: Path) -> None:
     assert metadata["checksum"] == checksum
     assert metadata["stored_path"] == expected_path
     assert str(tmp_path) not in metadata["stored_path"]
+    preview = metadata.get("preview", {})
+    assert preview.get("filename") == "report.txt"
+    assert preview.get("content_type") == "text/plain"
+    assert preview.get("size") == len(payload)
+    assert preview.get("checksum") == checksum
+    assert preview.get("item_count") == 1
 
     target = tmp_path / ".namel3ss" / "files" / scope / "uploads" / expected_name
     assert target.exists()
@@ -88,9 +94,21 @@ def test_handle_upload_multipart(tmp_path: Path) -> None:
     assert upload["bytes"] == 11
     assert upload["checksum"] == checksum
     assert str(tmp_path) not in upload["stored_path"]
+    assert upload["state"] == "stored"
+    assert upload["progress"]["percent_complete"] == 100
+    assert upload["preview"]["filename"] == "hello.txt"
 
     traces = response["traces"]
-    assert [trace["type"] for trace in traces] == ["upload_received", "upload_stored"]
+    assert [trace["type"] for trace in traces] == [
+        "upload_state",
+        "upload_state",
+        "upload_progress",
+        "upload_state",
+        "upload_preview",
+        "upload_received",
+        "upload_stored",
+        "upload_state",
+    ]
 
 
 def test_handle_upload_chunked(tmp_path: Path) -> None:
@@ -110,6 +128,8 @@ def test_handle_upload_chunked(tmp_path: Path) -> None:
     assert upload["name"] == "chunked.bin"
     assert upload["bytes"] == len(payload)
     assert upload["checksum"] == checksum
+    assert upload["state"] == "stored"
+    assert upload["progress"]["percent_complete"] == 100
 
 
 def test_upload_list_is_sorted_and_scoped(tmp_path: Path) -> None:

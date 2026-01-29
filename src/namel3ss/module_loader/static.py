@@ -38,6 +38,7 @@ def _merge_programs(
     combined_jobs = list(getattr(app_ast, "jobs", []))
     combined_pages = list(app_ast.pages)
     combined_ui_packs = list(getattr(app_ast, "ui_packs", []))
+    combined_ui_patterns = list(getattr(app_ast, "ui_patterns", []))
     combined_ais = list(app_ast.ais)
     combined_tools = list(app_ast.tools)
     combined_agents = list(app_ast.agents)
@@ -84,6 +85,7 @@ def _merge_programs(
             combined_agents.extend(program.agents)
             combined_pages.extend(_exported_pages(program.pages, name, exports_map))
             combined_ui_packs.extend(_exported_ui_packs(getattr(program, "ui_packs", []), name, exports_map))
+            combined_ui_patterns.extend(_exported_ui_patterns(getattr(program, "ui_patterns", []), name, exports_map))
 
     combined = ast.Program(
         spec_version=app_ast.spec_version,
@@ -103,6 +105,7 @@ def _merge_programs(
         jobs=combined_jobs,
         pages=combined_pages,
         ui_packs=combined_ui_packs,
+        ui_patterns=combined_ui_patterns,
         ais=combined_ais,
         tools=combined_tools,
         agents=combined_agents,
@@ -140,6 +143,18 @@ def _exported_ui_packs(
         return []
     allowed = {qualify(module_name, name) for name in exported}
     return [pack for pack in packs if pack.name in allowed]
+
+
+def _exported_ui_patterns(
+    patterns: List[ast.UIPatternDecl],
+    module_name: str,
+    exports_map: Dict[str, ModuleExports],
+) -> List[ast.UIPatternDecl]:
+    exported = exports_map.get(module_name, ModuleExports()).by_kind.get("pattern", set())
+    if not exported:
+        return []
+    allowed = {qualify(module_name, name) for name in exported}
+    return [pattern for pattern in patterns if pattern.name in allowed]
 
 
 def _public_flow_names(

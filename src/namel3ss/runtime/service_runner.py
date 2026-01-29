@@ -14,6 +14,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
 from namel3ss.runtime.executor import execute_program_flow
 from namel3ss.runtime.backend.upload_handler import handle_upload, handle_upload_list
+from namel3ss.runtime.backend.upload_recorder import UploadRecorder, apply_upload_error_payload
 from namel3ss.runtime.observability_api import (
     get_logs_payload,
     get_metrics_payload,
@@ -200,6 +201,7 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
             project_root=getattr(program_ir, "project_root", None),
             app_path=getattr(program_ir, "app_path", None),
         )
+        recorder = UploadRecorder()
         try:
             response = handle_upload(
                 ctx,
@@ -207,13 +209,16 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
                 rfile=self.rfile,
                 content_length=content_length,
                 upload_name=upload_name,
+                recorder=recorder,
             )
             return response, 200
         except Namel3ssError as err:
             payload = build_error_from_exception(err, kind="engine")
+            payload = apply_upload_error_payload(payload, recorder)
             return payload, 400
         except Exception as err:  # pragma: no cover - defensive
             payload = build_error_payload(str(err), kind="internal")
+            payload = apply_upload_error_payload(payload, recorder)
             return payload, 500
 
     def _handle_upload_list(self) -> tuple[dict, int]:

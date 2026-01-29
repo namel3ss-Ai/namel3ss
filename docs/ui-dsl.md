@@ -18,6 +18,7 @@ This is the authoritative description of the UI DSL. It is semantic and explicit
 - `ai "name":`
 - `tool "name":`
 - `ui_pack "name":`
+- `pattern "name":`
 - `policy`
 Rule: use `keyword "name"`; never `keyword is "name"`.
 - Reserved words may only be used as identifiers when escaped with backticks (for example `title`).
@@ -75,6 +76,7 @@ Data/UI bindings:
 - `button "Label":` `calls flow "flow_name"` creates `call_flow` action.
 - `link "Label" to page "PageName"` navigates to a named page; emits an `open_page` action.
 - `use ui_pack "pack_name" fragment "fragment_name"` static expansion of a pack fragment.
+- `use pattern "pattern_name"` static expansion of a UI pattern.
 - Record/flow names may be module-qualified (for example `inv.Product`, `inv.seed_item`) when using Capsules.
 
 Nesting rules:
@@ -92,6 +94,54 @@ UI packs:
 - `use ui_pack` is static expansion; origin metadata is preserved in manifests.
 - Packs are static: no parameters, conditionals, or dynamic loading.
 
+UI patterns:
+- `pattern` declares reusable UI items with optional parameters.
+- Patterns contain UI items only (no flows, tools, or records).
+- `use pattern` is static expansion; origin metadata includes pattern name, invocation, element mapping, and parameter values.
+- Patterns are deterministic and additive; no runtime composition or branching.
+
+## 3.3) Patterns
+Patterns are a build-time reuse mechanism for UI items.
+
+Declaration:
+```
+pattern "Empty State":
+  parameters:
+    heading is text
+    guidance is text
+    action_label is text optional
+    action_flow is text optional
+  section:
+    title is param.heading
+    text is param.guidance
+    button param.action_label:
+      calls flow param.action_flow
+```
+
+Invocation:
+```
+page "home":
+  use pattern "Empty State":
+    heading is "No results"
+    guidance is "Try again"
+    action_label is "Retry"
+    action_flow is "retry_search"
+```
+
+Rules:
+- Parameters are declared in a `parameters:` block and must be one of `text`, `number`, `boolean`, `record`, or `page`.
+- Defaults are literal values only; optional parameters may be omitted.
+- Inside patterns, reference parameters as `param.<name>`.
+- Pattern arguments are literal values only (text/number/boolean or record/page identifiers); no expressions or state paths.
+- Expansion is static and deterministic; UI manifests record pattern origin metadata.
+
+Built-in patterns:
+- `Loading State` (params: `intent` text, `message` text)
+- `Empty State` (params: `heading` text, `guidance` text, optional `action_label`/`action_flow`)
+- `Error State` (params: `heading` text, `message` text, optional `action_label`/`action_flow`)
+- `Results Layout` (params: `record_name` record, optional `layout` text, optional `filters_title`/`filters_guidance`, optional empty-state params `empty_title`, `empty_guidance`, `empty_action_label`, `empty_action_flow`)
+- `Status Banner` (params: `tone` text, `heading` text, optional `message` text, optional `action_label`/`action_flow`)
+
 ## 3.1) Media
 - Media assets live in a locked `media/` folder at the app root (next to app.ai).
 - References use the base name only (no extensions, no paths).
@@ -105,6 +155,22 @@ UI packs:
   - `n3 check` -> warning + suggestions
   - `n3 build` -> error + suggestions
   - runtime -> placeholder intent with `fix_hint`
+
+## 3.2) Visibility
+- Optional `visibility is state.<path>`, `when is state.<path>`, or `visible_when is state.<path>` may be appended to any page item or `tab` header.
+- Visibility predicates are read-only state paths only (no expressions, operators, or function calls).
+- Paths must include at least one segment after `state.`.
+- Evaluation is deterministic: a path is visible only when the state value exists and is truthy.
+- Elements with `visibility` still appear in the manifest with `visible: true|false`; hidden elements do not emit actions.
+- UI explain output includes the predicate, referenced state paths, evaluated result, and the visibility reason.
+
+Example:
+```
+page "home":
+  title is "Results" when is state.results.ready
+  section "Results" visible_when is state.results.present:
+    table is "Result"
+```
 
 ## 4) Data binding & actions
 - Forms bind to records; payload is `{values: {...}}`.

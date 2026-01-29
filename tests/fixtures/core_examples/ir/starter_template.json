@@ -66,13 +66,15 @@
           "column": 3,
           "line": 21,
           "type": "TitleItem",
-          "value": "{{PROJECT_NAME}}"
+          "value": "{{PROJECT_NAME}}",
+          "visibility": null
         },
         {
           "column": 3,
           "line": 22,
           "type": "TextItem",
-          "value": "starter app for namel3ss."
+          "value": "starter app for namel3ss.",
+          "visibility": null
         },
         {
           "alt": "",
@@ -80,7 +82,8 @@
           "line": 23,
           "role": "hero",
           "src": "welcome",
-          "type": "ImageItem"
+          "type": "ImageItem",
+          "visibility": null
         },
         {
           "children": [
@@ -100,19 +103,22 @@
                     }
                   ],
                   "line": 27,
-                  "type": "NumberItem"
+                  "type": "NumberItem",
+                  "visibility": null
                 },
                 {
                   "column": 7,
                   "line": 29,
                   "record_name": "Note",
-                  "type": "ViewItem"
+                  "type": "ViewItem",
+                  "visibility": null
                 }
               ],
               "column": 5,
               "line": 26,
               "name": "overview",
-              "type": "ComposeItem"
+              "type": "ComposeItem",
+              "visibility": null
             },
             {
               "actions": null,
@@ -123,14 +129,16 @@
                   "groups": null,
                   "line": 31,
                   "record_name": "Note",
-                  "type": "FormItem"
+                  "type": "FormItem",
+                  "visibility": null
                 }
               ],
               "column": 5,
               "label": "add note",
               "line": 30,
               "stat": null,
-              "type": "CardItem"
+              "type": "CardItem",
+              "visibility": null
             },
             {
               "actions": null,
@@ -145,20 +153,23 @@
                   "row_actions": null,
                   "selection": null,
                   "sort": null,
-                  "type": "TableItem"
+                  "type": "TableItem",
+                  "visibility": null
                 }
               ],
               "column": 5,
               "label": "saved notes",
               "line": 32,
               "stat": null,
-              "type": "CardItem"
+              "type": "CardItem",
+              "visibility": null
             }
           ],
           "column": 3,
           "label": "notes",
           "line": 25,
-          "type": "SectionItem"
+          "type": "SectionItem",
+          "visibility": null
         },
         {
           "column": 3,
@@ -192,7 +203,8 @@
             }
           ],
           "title": "Getting started",
-          "type": "StoryItem"
+          "type": "StoryItem",
+          "visibility": null
         },
         {
           "actions": null,
@@ -201,21 +213,24 @@
               "column": 5,
               "line": 44,
               "type": "TextItem",
-              "value": "use the button to add a deterministic note."
+              "value": "use the button to add a deterministic note.",
+              "visibility": null
             },
             {
               "column": 5,
               "flow_name": "seed_note",
               "label": "add sample note",
               "line": 45,
-              "type": "ButtonItem"
+              "type": "ButtonItem",
+              "visibility": null
             }
           ],
           "column": 3,
           "label": "flow",
           "line": 43,
           "stat": null,
-          "type": "CardItem"
+          "type": "CardItem",
+          "visibility": null
         }
       ],
       "line": 19,

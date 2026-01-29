@@ -1,15 +1,18 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import List
+from dataclasses import dataclass, field
+from typing import List, TYPE_CHECKING
 
 from namel3ss.ast.base import Node
 from namel3ss.ast.expressions import Expression, StatePath
 
+if TYPE_CHECKING:  # pragma: no cover - typing-only
+    from namel3ss.ast.ui_patterns import PatternArgument
+
 
 @dataclass
 class PageItem(Node):
-    pass
+    visibility: StatePath | None = field(default=None, kw_only=True)
 
 
 @dataclass
@@ -176,6 +179,12 @@ class UseUIPackItem(PageItem):
 
 
 @dataclass
+class UsePatternItem(PageItem):
+    pattern_name: str
+    arguments: list["PatternArgument"] | None = None
+
+
+@dataclass
 class ChatMessagesItem(PageItem):
     source: StatePath
 
@@ -210,6 +219,7 @@ class ChatItem(PageItem):
 class TabItem(Node):
     label: str
     children: List["PageItem"]
+    visibility: StatePath | None = field(default=None, kw_only=True)
 
 
 @dataclass

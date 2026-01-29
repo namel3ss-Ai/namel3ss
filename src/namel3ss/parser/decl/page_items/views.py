@@ -5,44 +5,60 @@ from typing import List
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.lang.keywords import is_keyword
-from namel3ss.parser.core.helpers import parse_reference_name
 from namel3ss.parser.decl.page_chat import parse_chat_block
 from namel3ss.parser.decl.page_chart import parse_chart_block, parse_chart_header
+from namel3ss.parser.decl.page_common import (
+    _is_param_ref,
+    _parse_boolean_value,
+    _parse_param_ref,
+    _parse_reference_name_value,
+    _parse_state_path_value,
+    _parse_string_value,
+    _parse_visibility_clause,
+)
 from namel3ss.parser.decl.page_form import parse_form_block
 from namel3ss.parser.decl.page_list import parse_list_block
 from namel3ss.parser.decl.page_table import parse_table_block
 from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
 
-def parse_view_item(parser, tok) -> ast.ViewItem:
+def parse_view_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.ViewItem:
     parser._advance()
     of_tok = parser._expect("IDENT", "Expected 'of' after view")
     if of_tok.value != "of":
         raise Namel3ssError("Expected 'of' after view", line=of_tok.line, column=of_tok.column)
-    record_name = parse_reference_name(parser, context="record")
-    return ast.ViewItem(record_name=record_name, line=tok.line, column=tok.column)
+    record_name = _parse_reference_name_value(parser, allow_pattern_params=allow_pattern_params, context="record")
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    return ast.ViewItem(record_name=record_name, visibility=visibility, line=tok.line, column=tok.column)
 
 
-def parse_title_item(parser, tok) -> ast.TitleItem:
+def parse_title_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.TitleItem:
     parser._advance()
     parser._expect("IS", "Expected 'is' after 'title'")
-    value_tok = parser._expect("STRING", "Expected title string")
-    return ast.TitleItem(value=value_tok.value, line=tok.line, column=tok.column)
+    value = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="title")
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    return ast.TitleItem(value=value, visibility=visibility, line=tok.line, column=tok.column)
 
 
-def parse_text_item(parser, tok) -> ast.TextItem:
+def parse_text_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.TextItem:
     parser._advance()
     parser._expect("IS", "Expected 'is' after 'text'")
-    value_tok = parser._expect("STRING", "Expected text string")
-    return ast.TextItem(value=value_tok.value, line=tok.line, column=tok.column)
+    value = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="text")
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    return ast.TextItem(value=value, visibility=visibility, line=tok.line, column=tok.column)
 
 
-def parse_upload_item(parser, tok) -> ast.UploadItem:
+def parse_upload_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.UploadItem:
     parser._advance()
-    name_tok = parser._expect("IDENT", "Expected upload name")
-    if is_keyword(name_tok.value) and not getattr(name_tok, "escaped", False):
-        guidance, details = reserved_identifier_diagnostic(name_tok.value)
-        raise Namel3ssError(guidance, line=name_tok.line, column=name_tok.column, details=details)
+    if allow_pattern_params and _is_param_ref(parser):
+        name = _parse_param_ref(parser)
+    else:
+        name_tok = parser._expect("IDENT", "Expected upload name")
+        if is_keyword(name_tok.value) and not getattr(name_tok, "escaped", False):
+            guidance, details = reserved_identifier_diagnostic(name_tok.value)
+            raise Namel3ssError(guidance, line=name_tok.line, column=name_tok.column, details=details)
+        name = name_tok.value
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     accept = None
     multiple = None
     if parser._match("COLON"):
@@ -66,8 +82,14 @@ def parse_upload_item(parser, tok) -> ast.UploadItem:
                     raise Namel3ssError("Multiple is declared more than once", line=entry_tok.line, column=entry_tok.column)
                 parser._advance()
                 parser._expect("IS", "Expected 'is' after multiple")
-                bool_tok = parser._expect("BOOLEAN", "Multiple must be true or false")
-                multiple = bool(bool_tok.value)
+                try:
+                    multiple = _parse_boolean_value(parser, allow_pattern_params=allow_pattern_params)
+                except Namel3ssError as err:
+                    raise Namel3ssError(
+                        "Multiple must be true or false",
+                        line=err.line,
+                        column=err.column,
+                    ) from err
                 if parser._match("NEWLINE"):
                     continue
                 continue
@@ -77,7 +99,7 @@ def parse_upload_item(parser, tok) -> ast.UploadItem:
                 column=entry_tok.column,
             )
         parser._expect("DEDENT", "Expected end of upload block")
-    return ast.UploadItem(name=name_tok.value, accept=accept, multiple=multiple, line=tok.line, column=tok.column)
+    return ast.UploadItem(name=name, accept=accept, multiple=multiple, visibility=visibility, line=tok.line, column=tok.column)
 
 
 def _parse_upload_accept_list(parser) -> list[str]:
@@ -99,28 +121,34 @@ def _parse_upload_accept_list(parser) -> list[str]:
     return values
 
 
-def parse_form_item(parser, tok) -> ast.FormItem:
+def parse_form_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.FormItem:
     parser._advance()
     parser._expect("IS", "Expected 'is' after 'form'")
-    record_name = parse_reference_name(parser, context="record")
+    record_name = _parse_reference_name_value(parser, allow_pattern_params=allow_pattern_params, context="record")
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     if parser._match("COLON"):
-        groups, fields = parse_form_block(parser)
+        groups, fields = parse_form_block(parser, allow_pattern_params=allow_pattern_params)
         return ast.FormItem(
             record_name=record_name,
             groups=groups,
             fields=fields,
+            visibility=visibility,
             line=tok.line,
             column=tok.column,
         )
-    return ast.FormItem(record_name=record_name, line=tok.line, column=tok.column)
+    return ast.FormItem(record_name=record_name, visibility=visibility, line=tok.line, column=tok.column)
 
 
-def parse_table_item(parser, tok) -> ast.TableItem:
+def parse_table_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.TableItem:
     parser._advance()
     parser._expect("IS", "Expected 'is' after 'table'")
-    record_name = parse_reference_name(parser, context="record")
+    record_name = _parse_reference_name_value(parser, allow_pattern_params=allow_pattern_params, context="record")
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     if parser._match("COLON"):
-        columns, empty_text, sort, pagination, selection, row_actions = parse_table_block(parser)
+        columns, empty_text, sort, pagination, selection, row_actions = parse_table_block(
+            parser,
+            allow_pattern_params=allow_pattern_params,
+        )
         return ast.TableItem(
             record_name=record_name,
             columns=columns,
@@ -129,18 +157,23 @@ def parse_table_item(parser, tok) -> ast.TableItem:
             pagination=pagination,
             selection=selection,
             row_actions=row_actions,
+            visibility=visibility,
             line=tok.line,
             column=tok.column,
         )
-    return ast.TableItem(record_name=record_name, line=tok.line, column=tok.column)
+    return ast.TableItem(record_name=record_name, visibility=visibility, line=tok.line, column=tok.column)
 
 
-def parse_list_item(parser, tok) -> ast.ListItem:
+def parse_list_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.ListItem:
     parser._advance()
     parser._expect("IS", "Expected 'is' after 'list'")
-    record_name = parse_reference_name(parser, context="record")
+    record_name = _parse_reference_name_value(parser, allow_pattern_params=allow_pattern_params, context="record")
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     if parser._match("COLON"):
-        variant, item, empty_text, selection, actions = parse_list_block(parser)
+        variant, item, empty_text, selection, actions = parse_list_block(
+            parser,
+            allow_pattern_params=allow_pattern_params,
+        )
         return ast.ListItem(
             record_name=record_name,
             variant=variant,
@@ -148,21 +181,23 @@ def parse_list_item(parser, tok) -> ast.ListItem:
             empty_text=empty_text,
             selection=selection,
             actions=actions,
+            visibility=visibility,
             line=tok.line,
             column=tok.column,
         )
-    return ast.ListItem(record_name=record_name, line=tok.line, column=tok.column)
+    return ast.ListItem(record_name=record_name, visibility=visibility, line=tok.line, column=tok.column)
 
 
-def parse_chart_item(parser, tok) -> ast.ChartItem:
+def parse_chart_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.ChartItem:
     parser._advance()
-    record_name, source = parse_chart_header(parser)
+    record_name, source = parse_chart_header(parser, allow_pattern_params=allow_pattern_params)
     chart_type = None
     x = None
     y = None
     explain = None
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     if parser._match("COLON"):
-        chart_type, x, y, explain = parse_chart_block(parser)
+        chart_type, x, y, explain = parse_chart_block(parser, allow_pattern_params=allow_pattern_params)
     return ast.ChartItem(
         record_name=record_name,
         source=source,
@@ -170,46 +205,65 @@ def parse_chart_item(parser, tok) -> ast.ChartItem:
         x=x,
         y=y,
         explain=explain,
+        visibility=visibility,
         line=tok.line,
         column=tok.column,
     )
 
 
-def parse_use_ui_pack_item(parser, tok) -> ast.UseUIPackItem:
+def parse_use_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.PageItem:
     parser._advance()
     kind_tok = parser._current()
-    if kind_tok.type != "IDENT" or kind_tok.value != "ui_pack":
-        raise Namel3ssError("Pages only support 'use ui_pack'", line=kind_tok.line, column=kind_tok.column)
-    parser._advance()
-    pack_tok = parser._expect("STRING", "Expected ui_pack name string")
-    frag_tok = parser._current()
-    if frag_tok.type != "IDENT" or frag_tok.value != "fragment":
-        raise Namel3ssError("Expected fragment name for ui_pack use", line=frag_tok.line, column=frag_tok.column)
-    parser._advance()
-    name_tok = parser._expect("STRING", "Expected fragment name string")
-    return ast.UseUIPackItem(
-        pack_name=pack_tok.value,
-        fragment_name=name_tok.value,
-        line=tok.line,
-        column=tok.column,
-    )
+    if kind_tok.type == "IDENT" and kind_tok.value == "ui_pack":
+        parser._advance()
+        pack_tok = parser._expect("STRING", "Expected ui_pack name string")
+        frag_tok = parser._current()
+        if frag_tok.type != "IDENT" or frag_tok.value != "fragment":
+            raise Namel3ssError("Expected fragment name for ui_pack use", line=frag_tok.line, column=frag_tok.column)
+        parser._advance()
+        name_tok = parser._expect("STRING", "Expected fragment name string")
+        visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+        return ast.UseUIPackItem(
+            pack_name=pack_tok.value,
+            fragment_name=name_tok.value,
+            visibility=visibility,
+            line=tok.line,
+            column=tok.column,
+        )
+    if kind_tok.type in {"IDENT", "PATTERN"} and kind_tok.value == "pattern":
+        parser._advance()
+        pattern_tok = parser._expect("STRING", "Expected pattern name string")
+        visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+        arguments = None
+        if parser._match("COLON"):
+            arguments = _parse_pattern_arguments(parser, allow_pattern_params=allow_pattern_params)
+        return ast.UsePatternItem(
+            pattern_name=pattern_tok.value,
+            arguments=arguments,
+            visibility=visibility,
+            line=tok.line,
+            column=tok.column,
+        )
+    raise Namel3ssError("Pages only support 'use ui_pack' or 'use pattern'", line=kind_tok.line, column=kind_tok.column)
 
 
-def parse_chat_item(parser, tok) -> ast.ChatItem:
+def parse_chat_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.ChatItem:
     parser._advance()
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     parser._expect("COLON", "Expected ':' after chat")
-    children = parse_chat_block(parser)
-    return ast.ChatItem(children=children, line=tok.line, column=tok.column)
+    children = parse_chat_block(parser, allow_pattern_params=allow_pattern_params)
+    return ast.ChatItem(children=children, visibility=visibility, line=tok.line, column=tok.column)
 
 
-def parse_tabs_item(parser, tok, parse_block) -> ast.TabsItem:
+def parse_tabs_item(parser, tok, parse_block, *, allow_pattern_params: bool = False) -> ast.TabsItem:
     parser._advance()
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     parser._expect("COLON", "Expected ':' after tabs")
-    tabs, default_label = _parse_tabs_block(parser, parse_block)
-    return ast.TabsItem(tabs=tabs, default=default_label, line=tok.line, column=tok.column)
+    tabs, default_label = _parse_tabs_block(parser, parse_block, allow_pattern_params=allow_pattern_params)
+    return ast.TabsItem(tabs=tabs, default=default_label, visibility=visibility, line=tok.line, column=tok.column)
 
 
-def _parse_tabs_block(parser, parse_block) -> tuple[List[ast.TabItem], str | None]:
+def _parse_tabs_block(parser, parse_block, *, allow_pattern_params: bool) -> tuple[List[ast.TabItem], str | None]:
     parser._expect("NEWLINE", "Expected newline after tabs")
     parser._expect("INDENT", "Expected indented tabs body")
     tabs: List[ast.TabItem] = []
@@ -243,9 +297,18 @@ def _parse_tabs_block(parser, parse_block) -> tuple[List[ast.TabItem], str | Non
                     column=label_tok.column,
                 )
             seen_labels.add(label_tok.value)
+            visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
             parser._expect("COLON", "Expected ':' after tab label")
-            children = parse_block(parser, columns_only=False, allow_tabs=False)
-            tabs.append(ast.TabItem(label=label_tok.value, children=children, line=tok.line, column=tok.column))
+            children = parse_block(parser, columns_only=False, allow_tabs=False, allow_pattern_params=allow_pattern_params)
+            tabs.append(
+                ast.TabItem(
+                    label=label_tok.value,
+                    children=children,
+                    visibility=visibility,
+                    line=tok.line,
+                    column=tok.column,
+                )
+            )
             continue
         raise Namel3ssError("Tabs may only contain tab entries", line=tok.line, column=tok.column)
     parser._expect("DEDENT", "Expected end of tabs body")
@@ -261,6 +324,55 @@ def _parse_tabs_block(parser, parse_block) -> tuple[List[ast.TabItem], str | Non
     return tabs, default_label
 
 
+def _parse_pattern_arguments(parser, *, allow_pattern_params: bool) -> list[ast.PatternArgument]:
+    parser._expect("NEWLINE", "Expected newline after pattern invocation")
+    parser._expect("INDENT", "Expected indented pattern arguments")
+    arguments: list[ast.PatternArgument] = []
+    seen: set[str] = set()
+    while parser._current().type != "DEDENT":
+        if parser._match("NEWLINE"):
+            continue
+        name_tok = parser._current()
+        if name_tok.type != "IDENT":
+            raise Namel3ssError("Pattern arguments must start with a name", line=name_tok.line, column=name_tok.column)
+        if is_keyword(name_tok.value) and not getattr(name_tok, "escaped", False):
+            guidance, details = reserved_identifier_diagnostic(name_tok.value)
+            raise Namel3ssError(guidance, line=name_tok.line, column=name_tok.column, details=details)
+        parser._advance()
+        if name_tok.value in seen:
+            raise Namel3ssError(
+                f"Pattern argument '{name_tok.value}' is duplicated",
+                line=name_tok.line,
+                column=name_tok.column,
+            )
+        parser._expect("IS", "Expected 'is' after argument name")
+        value = _parse_pattern_argument_value(parser, allow_pattern_params=allow_pattern_params)
+        arguments.append(ast.PatternArgument(name=name_tok.value, value=value, line=name_tok.line, column=name_tok.column))
+        seen.add(name_tok.value)
+        parser._match("NEWLINE")
+    parser._expect("DEDENT", "Expected end of pattern arguments")
+    if not arguments:
+        tok = parser._current()
+        raise Namel3ssError("Pattern arguments block has no entries", line=tok.line, column=tok.column)
+    return arguments
+
+
+def _parse_pattern_argument_value(parser, *, allow_pattern_params: bool) -> object:
+    if allow_pattern_params and _is_param_ref(parser):
+        return _parse_param_ref(parser)
+    tok = parser._current()
+    if tok.type == "STRING":
+        parser._advance()
+        return tok.value
+    if tok.type == "NUMBER":
+        parser._advance()
+        return tok.value
+    if tok.type == "BOOLEAN":
+        parser._advance()
+        return bool(tok.value)
+    raise Namel3ssError("Pattern arguments must be literal values", line=tok.line, column=tok.column)
+
+
 __all__ = [
     "parse_chart_item",
     "parse_chat_item",
@@ -271,6 +383,6 @@ __all__ = [
     "parse_text_item",
     "parse_title_item",
     "parse_upload_item",
-    "parse_use_ui_pack_item",
+    "parse_use_item",
     "parse_view_item",
 ]

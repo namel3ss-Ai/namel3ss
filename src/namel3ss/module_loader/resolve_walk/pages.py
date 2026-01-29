@@ -17,6 +17,8 @@ def resolve_page_item(
     context_label: str,
 ) -> None:
     if isinstance(item, ast.FormItem):
+        if isinstance(item.record_name, ast.PatternParamRef):
+            return
         item.record_name = resolve_name(
             item.record_name,
             kind="record",
@@ -30,20 +32,21 @@ def resolve_page_item(
         )
         return
     if isinstance(item, ast.TableItem):
-        item.record_name = resolve_name(
-            item.record_name,
-            kind="record",
-            module_name=module_name,
-            alias_map=alias_map,
-            local_defs=local_defs,
-            exports_map=exports_map,
-            context_label=context_label,
-            line=item.line,
-            column=item.column,
-        )
+        if not isinstance(item.record_name, ast.PatternParamRef):
+            item.record_name = resolve_name(
+                item.record_name,
+                kind="record",
+                module_name=module_name,
+                alias_map=alias_map,
+                local_defs=local_defs,
+                exports_map=exports_map,
+                context_label=context_label,
+                line=item.line,
+                column=item.column,
+            )
         if item.row_actions:
             for action in item.row_actions:
-                if action.kind == "call_flow" and action.flow_name:
+                if action.kind == "call_flow" and action.flow_name and not isinstance(action.flow_name, ast.PatternParamRef):
                     action.flow_name = resolve_name(
                         action.flow_name,
                         kind="flow",
@@ -57,20 +60,21 @@ def resolve_page_item(
                     )
         return
     if isinstance(item, ast.ListItem):
-        item.record_name = resolve_name(
-            item.record_name,
-            kind="record",
-            module_name=module_name,
-            alias_map=alias_map,
-            local_defs=local_defs,
-            exports_map=exports_map,
-            context_label=context_label,
-            line=item.line,
-            column=item.column,
-        )
+        if not isinstance(item.record_name, ast.PatternParamRef):
+            item.record_name = resolve_name(
+                item.record_name,
+                kind="record",
+                module_name=module_name,
+                alias_map=alias_map,
+                local_defs=local_defs,
+                exports_map=exports_map,
+                context_label=context_label,
+                line=item.line,
+                column=item.column,
+            )
         if item.actions:
             for action in item.actions:
-                if action.kind == "call_flow" and action.flow_name:
+                if action.kind == "call_flow" and action.flow_name and not isinstance(action.flow_name, ast.PatternParamRef):
                     action.flow_name = resolve_name(
                         action.flow_name,
                         kind="flow",
@@ -84,6 +88,8 @@ def resolve_page_item(
                     )
         return
     if isinstance(item, ast.ChartItem) and item.record_name:
+        if isinstance(item.record_name, ast.PatternParamRef):
+            return
         item.record_name = resolve_name(
             item.record_name,
             kind="record",
@@ -109,7 +115,22 @@ def resolve_page_item(
             column=item.column,
         )
         return
+    if isinstance(item, ast.UsePatternItem):
+        item.pattern_name = resolve_name(
+            item.pattern_name,
+            kind="pattern",
+            module_name=module_name,
+            alias_map=alias_map,
+            local_defs=local_defs,
+            exports_map=exports_map,
+            context_label=context_label,
+            line=item.line,
+            column=item.column,
+        )
+        return
     if isinstance(item, ast.ButtonItem):
+        if isinstance(item.flow_name, ast.PatternParamRef):
+            return
         item.flow_name = resolve_name(
             item.flow_name,
             kind="flow",
@@ -123,6 +144,8 @@ def resolve_page_item(
         )
         return
     if isinstance(item, ast.LinkItem):
+        if isinstance(item.page_name, ast.PatternParamRef):
+            return
         item.page_name = resolve_name(
             item.page_name,
             kind="page",
@@ -138,6 +161,8 @@ def resolve_page_item(
     if isinstance(item, ast.ChatItem):
         for child in item.children:
             if isinstance(child, ast.ChatComposerItem):
+                if isinstance(child.flow_name, ast.PatternParamRef):
+                    continue
                 child.flow_name = resolve_name(
                     child.flow_name,
                     kind="flow",
@@ -153,7 +178,7 @@ def resolve_page_item(
     if isinstance(item, ast.CardItem):
         if item.actions:
             for action in item.actions:
-                if action.kind == "call_flow" and action.flow_name:
+                if action.kind == "call_flow" and action.flow_name and not isinstance(action.flow_name, ast.PatternParamRef):
                     action.flow_name = resolve_name(
                         action.flow_name,
                         kind="flow",

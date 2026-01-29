@@ -1,0 +1,440 @@
+{
+  "decisions": [
+    {
+      "category": "upload",
+      "id": "upload:receipt:u_ok",
+      "inputs": {
+        "checksum": "u_ok",
+        "name": "report.txt",
+        "preview": {
+          "checksum": "u_ok",
+          "content_type": "text/plain",
+          "filename": "report.txt",
+          "item_count": 2,
+          "size": 10
+        },
+        "progress": {
+          "bytes_received": 10,
+          "percent_complete": 100,
+          "total_bytes": 10
+        },
+        "size": 10,
+        "state": "stored",
+        "type": "text/plain",
+        "upload_name": "receipt"
+      },
+      "outcome": {
+        "selected": true
+      },
+      "rules": [
+        "metadata recorded"
+      ],
+      "subject": "u_ok"
+    },
+    {
+      "category": "upload",
+      "id": "upload:event:1:upload_state",
+      "inputs": {
+        "bytes_received": 0,
+        "name": "report.txt",
+        "percent_complete": 0,
+        "state": "accepted",
+        "total_bytes": 10
+      },
+      "outcome": {
+        "state": "accepted"
+      },
+      "rules": [
+        "upload_state"
+      ],
+      "subject": null
+    },
+    {
+      "category": "upload",
+      "id": "upload:event:2:upload_progress",
+      "inputs": {
+        "bytes_received": 10,
+        "name": "report.txt",
+        "percent_complete": 100,
+        "total_bytes": 10
+      },
+      "outcome": {
+        "progress": 100
+      },
+      "rules": [
+        "upload_progress"
+      ],
+      "subject": null
+    },
+    {
+      "category": "upload",
+      "id": "upload:event:3:upload_state",
+      "inputs": {
+        "bytes_received": 10,
+        "name": "report.txt",
+        "percent_complete": 100,
+        "state": "validated",
+        "total_bytes": 10
+      },
+      "outcome": {
+        "state": "validated"
+      },
+      "rules": [
+        "upload_state"
+      ],
+      "subject": null
+    },
+    {
+      "category": "upload",
+      "id": "upload:event:4:upload_preview",
+      "inputs": {
+        "name": "report.txt",
+        "preview": {
+          "checksum": "u_ok",
+          "content_type": "text/plain",
+          "filename": "report.txt",
+          "item_count": 2,
+          "size": 10
+        }
+      },
+      "outcome": {
+        "preview": true
+      },
+      "rules": [
+        "upload_preview"
+      ],
+      "subject": "u_ok"
+    },
+    {
+      "category": "upload",
+      "id": "upload:event:5:upload_received",
+      "inputs": {
+        "bytes": 10,
+        "checksum": "u_ok",
+        "content_type": "text/plain",
+        "name": "report.txt"
+      },
+      "outcome": {
+        "received": true
+      },
+      "rules": [
+        "upload_received"
+      ],
+      "subject": "u_ok"
+    },
+    {
+      "category": "upload",
+      "id": "upload:event:6:upload_stored",
+      "inputs": {
+        "name": "report.txt",
+        "stored_path": "app/uploads/report-u_ok.txt"
+      },
+      "outcome": {
+        "stored": true
+      },
+      "rules": [
+        "upload_stored"
+      ],
+      "subject": null
+    },
+    {
+      "category": "upload",
+      "id": "upload:event:7:upload_state",
+      "inputs": {
+        "bytes_received": 10,
+        "name": "report.txt",
+        "percent_complete": 100,
+        "state": "stored",
+        "total_bytes": 10
+      },
+      "outcome": {
+        "state": "stored"
+      },
+      "rules": [
+        "upload_state"
+      ],
+      "subject": null
+    },
+    {
+      "category": "upload",
+      "id": "upload:event:8:upload_error",
+      "inputs": {
+        "error": {
+          "code": "upload_chunk_error",
+          "reason": "Chunked upload failed.",
+          "recovery_actions": [
+            "retry",
+            "remove"
+          ]
+        },
+        "name": "bad.bin"
+      },
+      "outcome": {
+        "error": "upload_chunk_error"
+      },
+      "rules": [
+        "upload_error"
+      ],
+      "subject": null
+    },
+    {
+      "category": "upload",
+      "id": "upload:event:9:upload_state",
+      "inputs": {
+        "bytes_received": 0,
+        "error": {
+          "code": "upload_chunk_error",
+          "reason": "Chunked upload failed.",
+          "recovery_actions": [
+            "retry",
+            "remove"
+          ]
+        },
+        "name": "bad.bin",
+        "percent_complete": null,
+        "state": "rejected",
+        "total_bytes": null
+      },
+      "outcome": {
+        "state": "rejected"
+      },
+      "rules": [
+        "upload_state"
+      ],
+      "subject": null
+    },
+    {
+      "category": "policy",
+      "id": "policy:ingestion.run",
+      "inputs": {
+        "action": "ingestion.run"
+      },
+      "outcome": {
+        "decision": "allowed",
+        "reason": null,
+        "required_permissions": [],
+        "source": "policy"
+      },
+      "rules": [
+        {
+          "action": "ingestion.run",
+          "effect": "allow",
+          "mode": "allow",
+          "source": "default"
+        }
+      ],
+      "subject": "ingestion.run"
+    },
+    {
+      "category": "policy",
+      "id": "policy:ingestion.override",
+      "inputs": {
+        "action": "ingestion.override"
+      },
+      "outcome": {
+        "decision": "denied",
+        "reason": "permission_missing",
+        "required_permissions": [
+          "ingestion.override"
+        ],
+        "source": "policy"
+      },
+      "rules": [
+        {
+          "action": "ingestion.override",
+          "effect": "allow",
+          "mode": "require",
+          "requires": [
+            "ingestion.override"
+          ],
+          "source": "default"
+        }
+      ],
+      "subject": "ingestion.override"
+    },
+    {
+      "category": "policy",
+      "id": "policy:ingestion.review",
+      "inputs": {
+        "action": "ingestion.review"
+      },
+      "outcome": {
+        "decision": "allowed",
+        "reason": null,
+        "required_permissions": [],
+        "source": "policy"
+      },
+      "rules": [
+        {
+          "action": "ingestion.review",
+          "effect": "allow",
+          "mode": "allow",
+          "source": "default"
+        }
+      ],
+      "subject": "ingestion.review"
+    },
+    {
+      "category": "policy",
+      "id": "policy:ingestion.skip",
+      "inputs": {
+        "action": "ingestion.skip"
+      },
+      "outcome": {
+        "decision": "denied",
+        "reason": "permission_missing",
+        "required_permissions": [
+          "ingestion.skip"
+        ],
+        "source": "policy"
+      },
+      "rules": [
+        {
+          "action": "ingestion.skip",
+          "effect": "allow",
+          "mode": "require",
+          "requires": [
+            "ingestion.skip"
+          ],
+          "source": "default"
+        }
+      ],
+      "subject": "ingestion.skip"
+    },
+    {
+      "category": "policy",
+      "id": "policy:retrieval.include_warn",
+      "inputs": {
+        "action": "retrieval.include_warn"
+      },
+      "outcome": {
+        "decision": "denied",
+        "reason": "permission_missing",
+        "required_permissions": [
+          "retrieval.include_warn"
+        ],
+        "source": "policy"
+      },
+      "rules": [
+        {
+          "action": "retrieval.include_warn",
+          "effect": "allow",
+          "mode": "require",
+          "requires": [
+            "retrieval.include_warn"
+          ],
+          "source": "default"
+        }
+      ],
+      "subject": "retrieval.include_warn"
+    },
+    {
+      "category": "policy",
+      "id": "policy:upload.replace",
+      "inputs": {
+        "action": "upload.replace"
+      },
+      "outcome": {
+        "decision": "denied",
+        "reason": "permission_missing",
+        "required_permissions": [
+          "upload.replace"
+        ],
+        "source": "policy"
+      },
+      "rules": [
+        {
+          "action": "upload.replace",
+          "effect": "allow",
+          "mode": "require",
+          "requires": [
+            "upload.replace"
+          ],
+          "source": "default"
+        }
+      ],
+      "subject": "upload.replace"
+    }
+  ],
+  "inputs": {
+    "identity": {
+      "permissions": [],
+      "roles": [],
+      "subject": null,
+      "trust_level": null
+    },
+    "state": {
+      "index_chunks": 0,
+      "ingestion_reports": 0,
+      "uploads": 1
+    }
+  },
+  "outcomes": {
+    "ingestion": {
+      "counts": {
+        "block": 0,
+        "pass": 0,
+        "warn": 0
+      }
+    },
+    "policy_denials": [
+      "ingestion.override",
+      "ingestion.skip",
+      "retrieval.include_warn",
+      "upload.replace"
+    ]
+  },
+  "policies": {
+    "declared": [],
+    "effective": [
+      {
+        "action": "ingestion.override",
+        "effect": "allow",
+        "mode": "require",
+        "requires": [
+          "ingestion.override"
+        ],
+        "source": "default"
+      },
+      {
+        "action": "ingestion.review",
+        "effect": "allow",
+        "mode": "allow",
+        "source": "default"
+      },
+      {
+        "action": "ingestion.run",
+        "effect": "allow",
+        "mode": "allow",
+        "source": "default"
+      },
+      {
+        "action": "ingestion.skip",
+        "effect": "allow",
+        "mode": "require",
+        "requires": [
+          "ingestion.skip"
+        ],
+        "source": "default"
+      },
+      {
+        "action": "retrieval.include_warn",
+        "effect": "allow",
+        "mode": "require",
+        "requires": [
+          "retrieval.include_warn"
+        ],
+        "source": "default"
+      },
+      {
+        "action": "upload.replace",
+        "effect": "allow",
+        "mode": "require",
+        "requires": [
+          "upload.replace"
+        ],
+        "source": "default"
+      }
+    ]
+  }
+}

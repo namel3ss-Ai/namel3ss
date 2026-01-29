@@ -24,6 +24,7 @@ from namel3ss.ir.lowering.pages import _lower_page
 from namel3ss.ir.lowering.records import _lower_record
 from namel3ss.ir.lowering.tools import _lower_tools
 from namel3ss.ir.lowering.ui_packs import build_pack_index
+from namel3ss.ir.lowering.ui_patterns import build_pattern_index
 from namel3ss.ir.model.agents import RunAgentsParallelStmt
 from namel3ss.ir.model.program import Flow, Program
 from namel3ss.ir.model.pages import Page
@@ -93,8 +94,12 @@ def lower_program(program: ast.Program) -> Program:
     _require_capabilities(capabilities, tool_map, job_irs)
     pack_allowlist = _normalize_pack_allowlist(getattr(program, "pack_allowlist", None))
     pack_index = build_pack_index(getattr(program, "ui_packs", []))
+    pattern_index = build_pattern_index(getattr(program, "ui_patterns", []), pack_index)
     page_names = {page.name for page in program.pages}
-    pages = [_lower_page(page, record_map, flow_names, page_names, pack_index) for page in program.pages]
+    pages = [
+        _lower_page(page, record_map, flow_names, page_names, pack_index, pattern_index)
+        for page in program.pages
+    ]
     _ensure_unique_pages(pages)
     theme_runtime_supported = any(_flow_has_theme_change(flow) for flow in flow_irs)
     ui_settings = normalize_ui_settings(getattr(program, "ui_settings", None))

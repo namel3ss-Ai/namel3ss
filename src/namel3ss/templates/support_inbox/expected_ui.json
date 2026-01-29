@@ -38,21 +38,29 @@
                     {
                       "children": [
                         {
+                          "accessibility": {
+                            "label": "Ticket",
+                            "role": "table"
+                          },
                           "column": 11,
                           "columns": [
                             {
+                              "label": "Subject",
                               "name": "subject",
                               "type": "text"
                             },
                             {
+                              "label": "Customer",
                               "name": "customer",
                               "type": "text"
                             },
                             {
+                              "label": "Status",
                               "name": "status",
                               "type": "text"
                             },
                             {
+                              "label": "Priority",
                               "name": "priority",
                               "type": "text"
                             }
@@ -285,6 +293,11 @@
                   "value": "Create a sample ticket to preview the inbox layout."
                 },
                 {
+                  "accessibility": {
+                    "label": "Create sample ticket",
+                    "role": "button",
+                    "tab_order": 1
+                  },
                   "action": {
                     "flow": "create_sample_ticket",
                     "type": "call_flow"

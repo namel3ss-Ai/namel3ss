@@ -32,6 +32,7 @@ from namel3ss.ui.manifest.actions import (
     _wire_overlay_actions,
 )
 from namel3ss.ui.manifest.canonical import _slugify
+from namel3ss.ui.manifest.accessibility import apply_accessibility_contract
 from namel3ss.ui.manifest.elements import _build_children
 from namel3ss.ui.manifest.state_defaults import StateContext, StateDefaults
 from namel3ss.ui.manifest.validation import (
@@ -41,7 +42,7 @@ from namel3ss.ui.manifest.validation import (
     append_story_icon_warnings,
 )
 from namel3ss.ui.spacing import apply_spacing_to_pages
-from namel3ss.ui.settings import UI_ALLOWED_VALUES, UI_DEFAULTS, normalize_ui_settings
+from namel3ss.ui.settings import UI_ALLOWED_VALUES, UI_DEFAULTS, normalize_ui_settings, validate_ui_contrast
 from namel3ss.validation import ValidationMode
 
 
@@ -86,7 +87,8 @@ def build_manifest(
     actions: Dict[str, dict] = {}
     taken_actions: set[str] = set()
     state_base = deepcopy(state or {})
-    ui_settings = normalize_ui_settings(getattr(program, "ui_settings", None))
+    raw_ui_settings = getattr(program, "ui_settings", None)
+    ui_settings = normalize_ui_settings(raw_ui_settings)
     theme_setting = ui_settings.get("theme", getattr(program, "theme", UI_DEFAULTS["theme"]))
     allowed_themes = set(UI_ALLOWED_VALUES.get("theme", ()))
     theme_current = runtime_theme if runtime_theme in allowed_themes else theme_setting
@@ -152,6 +154,10 @@ def build_manifest(
         if defaults_snapshot:
             manifest_state_defaults_pages[page_slug] = defaults_snapshot
     apply_spacing_to_pages(pages, ui_settings.get("density", UI_DEFAULTS["density"]))
+    validate_ui_contrast(theme_setting, ui_settings.get("accent_color", ""), raw_ui_settings)
+    if theme_current != theme_setting:
+        validate_ui_contrast(theme_current, ui_settings.get("accent_color", ""), None)
+    apply_accessibility_contract(pages)
     append_layout_warnings(pages, warnings)
     append_copy_warnings(pages, warnings)
     append_story_icon_warnings(pages, warnings)

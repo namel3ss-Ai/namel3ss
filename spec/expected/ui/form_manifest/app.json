@@ -20,17 +20,33 @@
           "value": "Customers"
         },
         {
+          "accessibility": {
+            "label": "Customer",
+            "role": "form"
+          },
           "action_id": "page.customers.form.customer",
           "column": 3,
           "element_id": "page.customers.form_item.1",
           "fields": [
             {
+              "accessibility": {
+                "label": "Name",
+                "role": "textbox",
+                "tab_order": 1
+              },
               "constraints": [],
+              "label": "Name",
               "name": "name",
               "type": "text"
             },
             {
+              "accessibility": {
+                "label": "Age",
+                "role": "spinbutton",
+                "tab_order": 2
+              },
               "constraints": [],
+              "label": "Age",
               "name": "age",
               "type": "number"
             }
@@ -44,19 +60,25 @@
           "spacing": {
             "field_gap": "m",
             "group_gap": "l",
-            "section_gap": "xl",
-            "help_gap": "s"
+            "help_gap": "s",
+            "section_gap": "xl"
           },
           "type": "form"
         },
         {
+          "accessibility": {
+            "label": "Customer",
+            "role": "table"
+          },
           "column": 3,
           "columns": [
             {
+              "label": "Name",
               "name": "name",
               "type": "text"
             },
             {
+              "label": "Age",
               "name": "age",
               "type": "number"
             }
@@ -70,10 +92,10 @@
           "record": "Customer",
           "rows": [],
           "spacing": {
-            "header_gap": "m",
-            "row_gap": "s",
             "cell_gap": "s",
-            "row_actions_gap": "s"
+            "header_gap": "m",
+            "row_actions_gap": "s",
+            "row_gap": "s"
           },
           "type": "table"
         }

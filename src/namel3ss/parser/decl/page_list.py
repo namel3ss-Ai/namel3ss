@@ -5,12 +5,12 @@ from typing import List
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.lang.keywords import is_keyword
-from namel3ss.parser.core.helpers import parse_reference_name
 from namel3ss.parser.decl.page_actions import parse_ui_action_body
+from namel3ss.parser.decl.page_common import _parse_string_value
 from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
 
-def parse_list_block(parser):
+def parse_list_block(parser, *, allow_pattern_params: bool = False):
     parser._expect("NEWLINE", "Expected newline after list header")
     parser._expect("INDENT", "Expected indented list block")
     variant = None
@@ -56,15 +56,14 @@ def parse_list_block(parser):
             if empty_text is not None:
                 raise Namel3ssError("Empty state is declared more than once", line=tok.line, column=tok.column)
             parser._advance()
-            empty_text = _parse_empty_state_block(parser)
+            empty_text = _parse_empty_state_block(parser, allow_pattern_params=allow_pattern_params)
             continue
         if tok.type == "IDENT" and tok.value == "empty_text":
             if empty_text is not None:
                 raise Namel3ssError("Empty state is declared more than once", line=tok.line, column=tok.column)
             parser._advance()
             parser._expect("IS", "Expected 'is' after empty_text")
-            value_tok = parser._expect("STRING", "Expected empty state string")
-            empty_text = value_tok.value
+            empty_text = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="empty state")
             if parser._match("NEWLINE"):
                 continue
             continue
@@ -96,7 +95,7 @@ def parse_list_block(parser):
             if actions is not None:
                 raise Namel3ssError("Actions block is declared more than once", line=tok.line, column=tok.column)
             parser._advance()
-            actions = _parse_list_actions_block(parser)
+            actions = _parse_list_actions_block(parser, allow_pattern_params=allow_pattern_params)
             continue
         raise Namel3ssError(
             f"Unknown list setting '{tok.value}'",
@@ -175,7 +174,7 @@ def _parse_list_item_block(parser, line: int, column: int) -> ast.ListItemMappin
     )
 
 
-def _parse_empty_state_block(parser) -> str:
+def _parse_empty_state_block(parser, *, allow_pattern_params: bool = False) -> str:
     parser._expect("COLON", "Expected ':' after empty_state")
     parser._expect("NEWLINE", "Expected newline after empty_state")
     if not parser._match("INDENT"):
@@ -190,10 +189,10 @@ def _parse_empty_state_block(parser) -> str:
             raise Namel3ssError("Empty state only supports text", line=tok.line, column=tok.column)
         parser._advance()
         parser._expect("IS", "Expected 'is' after 'text'")
-        value_tok = parser._expect("STRING", "Expected empty state string")
+        value_tok = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="empty state")
         if text_value is not None:
             raise Namel3ssError("Empty state only supports one text entry", line=tok.line, column=tok.column)
-        text_value = value_tok.value
+        text_value = value_tok
         if parser._match("NEWLINE"):
             continue
     parser._expect("DEDENT", "Expected end of empty_state block")
@@ -203,7 +202,7 @@ def _parse_empty_state_block(parser) -> str:
     return text_value
 
 
-def _parse_list_actions_block(parser) -> List[ast.ListAction]:
+def _parse_list_actions_block(parser, *, allow_pattern_params: bool) -> List[ast.ListAction]:
     parser._expect("COLON", "Expected ':' after actions")
     parser._expect("NEWLINE", "Expected newline after actions")
     if not parser._match("INDENT"):
@@ -217,7 +216,7 @@ def _parse_list_actions_block(parser) -> List[ast.ListAction]:
         if tok.type != "IDENT" or tok.value != "action":
             raise Namel3ssError("Actions may only contain action entries", line=tok.line, column=tok.column)
         parser._advance()
-        label_tok = parser._expect("STRING", "Expected action label string")
+        label = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="action label")
         if parser._match("CALLS"):
             raise Namel3ssError(
                 'Actions must use a block. Use: action "Label": NEWLINE indent calls flow "demo"',
@@ -233,7 +232,11 @@ def _parse_list_actions_block(parser) -> List[ast.ListAction]:
         while parser._current().type != "DEDENT":
             if parser._match("NEWLINE"):
                 continue
-            kind, flow_name, target = parse_ui_action_body(parser, entry_label="Action")
+            kind, flow_name, target = parse_ui_action_body(
+                parser,
+                entry_label="Action",
+                allow_pattern_params=allow_pattern_params,
+            )
             if parser._match("NEWLINE"):
                 continue
             break
@@ -246,7 +249,7 @@ def _parse_list_actions_block(parser) -> List[ast.ListAction]:
             raise Namel3ssError("Action body must include a modal or drawer target", line=tok.line, column=tok.column)
         actions.append(
             ast.ListAction(
-                label=label_tok.value,
+                label=label,
                 flow_name=flow_name,
                 kind=kind,
                 target=target,

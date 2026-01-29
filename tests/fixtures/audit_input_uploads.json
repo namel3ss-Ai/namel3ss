@@ -1,0 +1,115 @@
+{
+  "state": {
+    "uploads": {
+      "receipt": [
+        {
+          "checksum": "u_ok",
+          "id": "u_ok",
+          "name": "report.txt",
+          "size": 10,
+          "type": "text/plain",
+          "preview": {
+            "filename": "report.txt",
+            "content_type": "text/plain",
+            "size": 10,
+            "checksum": "u_ok",
+            "item_count": 2
+          },
+          "progress": {
+            "bytes_received": 10,
+            "total_bytes": 10,
+            "percent_complete": 100
+          },
+          "state": "stored"
+        }
+      ]
+    }
+  },
+  "traces": [
+    {
+      "type": "upload_state",
+      "title": "Upload state",
+      "state": "accepted",
+      "name": "report.txt",
+      "bytes_received": 0,
+      "total_bytes": 10,
+      "percent_complete": 0
+    },
+    {
+      "type": "upload_progress",
+      "title": "Upload progress",
+      "name": "report.txt",
+      "bytes_received": 10,
+      "total_bytes": 10,
+      "percent_complete": 100
+    },
+    {
+      "type": "upload_state",
+      "title": "Upload state",
+      "state": "validated",
+      "name": "report.txt",
+      "bytes_received": 10,
+      "total_bytes": 10,
+      "percent_complete": 100
+    },
+    {
+      "type": "upload_preview",
+      "title": "Upload preview",
+      "name": "report.txt",
+      "preview": {
+        "filename": "report.txt",
+        "content_type": "text/plain",
+        "size": 10,
+        "checksum": "u_ok",
+        "item_count": 2
+      }
+    },
+    {
+      "type": "upload_received",
+      "title": "Upload received",
+      "name": "report.txt",
+      "content_type": "text/plain",
+      "bytes": 10,
+      "checksum": "u_ok"
+    },
+    {
+      "type": "upload_stored",
+      "title": "Upload stored",
+      "name": "report.txt",
+      "stored_path": "app/uploads/report-u_ok.txt"
+    },
+    {
+      "type": "upload_state",
+      "title": "Upload state",
+      "state": "stored",
+      "name": "report.txt",
+      "bytes_received": 10,
+      "total_bytes": 10,
+      "percent_complete": 100
+    },
+    {
+      "type": "upload_error",
+      "title": "Upload error",
+      "name": "bad.bin",
+      "error": {
+        "code": "upload_chunk_error",
+        "reason": "Chunked upload failed.",
+        "recovery_actions": ["retry", "remove"]
+      }
+    },
+    {
+      "type": "upload_state",
+      "title": "Upload state",
+      "state": "rejected",
+      "name": "bad.bin",
+      "bytes_received": 0,
+      "total_bytes": null,
+      "percent_complete": null,
+      "error": {
+        "code": "upload_chunk_error",
+        "reason": "Chunked upload failed.",
+        "recovery_actions": ["retry", "remove"]
+      }
+    }
+  ]
+}

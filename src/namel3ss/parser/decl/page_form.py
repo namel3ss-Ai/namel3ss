@@ -5,10 +5,15 @@ from typing import List
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.lang.keywords import is_keyword
+from namel3ss.parser.decl.page_common import _parse_boolean_value, _parse_string_value
 from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
 
-def parse_form_block(parser) -> tuple[List[ast.FormGroup] | None, List[ast.FormFieldConfig] | None]:
+def parse_form_block(
+    parser,
+    *,
+    allow_pattern_params: bool = False,
+) -> tuple[List[ast.FormGroup] | None, List[ast.FormFieldConfig] | None]:
     parser._expect("NEWLINE", "Expected newline after form header")
     parser._expect("INDENT", "Expected indented form block")
     groups: List[ast.FormGroup] | None = None
@@ -21,13 +26,13 @@ def parse_form_block(parser) -> tuple[List[ast.FormGroup] | None, List[ast.FormF
             if groups is not None:
                 raise Namel3ssError("Groups block is declared more than once", line=tok.line, column=tok.column)
             parser._advance()
-            groups = _parse_form_groups_block(parser)
+            groups = _parse_form_groups_block(parser, allow_pattern_params=allow_pattern_params)
             continue
         if tok.type == "IDENT" and tok.value == "fields":
             if fields is not None:
                 raise Namel3ssError("Fields block is declared more than once", line=tok.line, column=tok.column)
             parser._advance()
-            fields = _parse_form_fields_block(parser)
+            fields = _parse_form_fields_block(parser, allow_pattern_params=allow_pattern_params)
             continue
         raise Namel3ssError(
             f"Unknown form setting '{tok.value}'",
@@ -38,7 +43,7 @@ def parse_form_block(parser) -> tuple[List[ast.FormGroup] | None, List[ast.FormF
     return groups, fields
 
 
-def _parse_form_groups_block(parser) -> List[ast.FormGroup]:
+def _parse_form_groups_block(parser, *, allow_pattern_params: bool) -> List[ast.FormGroup]:
     parser._expect("COLON", "Expected ':' after groups")
     parser._expect("NEWLINE", "Expected newline after groups")
     if not parser._match("INDENT"):
@@ -52,11 +57,11 @@ def _parse_form_groups_block(parser) -> List[ast.FormGroup]:
         if tok.type != "IDENT" or tok.value != "group":
             raise Namel3ssError("Groups may only contain group entries", line=tok.line, column=tok.column)
         parser._advance()
-        label_tok = parser._expect("STRING", "Expected group label string")
+        label = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="group label")
         parser._expect("COLON", "Expected ':' after group label")
         parser._expect("NEWLINE", "Expected newline after group header")
         if not parser._match("INDENT"):
-            raise Namel3ssError("Group block has no fields", line=label_tok.line, column=label_tok.column)
+            raise Namel3ssError("Group block has no fields", line=tok.line, column=tok.column)
         fields: List[ast.FormFieldRef] = []
         while parser._current().type != "DEDENT":
             if parser._match("NEWLINE"):
@@ -71,15 +76,15 @@ def _parse_form_groups_block(parser) -> List[ast.FormGroup]:
                 continue
         parser._expect("DEDENT", "Expected end of group block")
         if not fields:
-            raise Namel3ssError("Group block has no fields", line=label_tok.line, column=label_tok.column)
-        groups.append(ast.FormGroup(label=label_tok.value, fields=fields, line=tok.line, column=tok.column))
+            raise Namel3ssError("Group block has no fields", line=tok.line, column=tok.column)
+        groups.append(ast.FormGroup(label=label, fields=fields, line=tok.line, column=tok.column))
     parser._expect("DEDENT", "Expected end of groups block")
     if not groups:
         raise Namel3ssError("Groups block has no entries", line=parser._current().line, column=parser._current().column)
     return groups
 
 
-def _parse_form_fields_block(parser) -> List[ast.FormFieldConfig]:
+def _parse_form_fields_block(parser, *, allow_pattern_params: bool) -> List[ast.FormFieldConfig]:
     parser._expect("COLON", "Expected ':' after fields")
     parser._expect("NEWLINE", "Expected newline after fields")
     if not parser._match("INDENT"):
@@ -117,8 +122,7 @@ def _parse_form_fields_block(parser) -> List[ast.FormFieldConfig]:
                     raise Namel3ssError("Help is declared more than once", line=entry_tok.line, column=entry_tok.column)
                 parser._advance()
                 parser._expect("IS", "Expected 'is' after help")
-                value_tok = parser._expect("STRING", "Expected help text string")
-                help_text = value_tok.value
+                help_text = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="help text")
                 if parser._match("NEWLINE"):
                     continue
                 continue
@@ -127,8 +131,14 @@ def _parse_form_fields_block(parser) -> List[ast.FormFieldConfig]:
                     raise Namel3ssError("Readonly is declared more than once", line=entry_tok.line, column=entry_tok.column)
                 parser._advance()
                 parser._expect("IS", "Expected 'is' after readonly")
-                bool_tok = parser._expect("BOOLEAN", "Readonly must be true or false")
-                readonly = bool(bool_tok.value)
+                try:
+                    readonly = _parse_boolean_value(parser, allow_pattern_params=allow_pattern_params)
+                except Namel3ssError as err:
+                    raise Namel3ssError(
+                        "Readonly must be true or false",
+                        line=err.line,
+                        column=err.column,
+                    ) from err
                 if parser._match("NEWLINE"):
                     continue
                 continue

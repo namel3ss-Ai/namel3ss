@@ -25,6 +25,7 @@ def lower_program(program: ast.Program) -> ast.Program:
         jobs=[_lower_job(job) for job in getattr(program, "jobs", [])],
         pages=[_lower_page(page) for page in program.pages],
         ui_packs=[_lower_ui_pack(pack) for pack in getattr(program, "ui_packs", [])],
+        ui_patterns=[_lower_ui_pattern(pattern) for pattern in getattr(program, "ui_patterns", [])],
         ais=list(program.ais),
         tools=list(program.tools),
         agents=list(program.agents),
@@ -116,6 +117,27 @@ def _lower_ui_pack(pack: ast.UIPackDecl) -> ast.UIPackDecl:
     )
 
 
+def _lower_ui_pattern(pattern: ast.UIPatternDecl) -> ast.UIPatternDecl:
+    params = [
+        ast.PatternParam(
+            name=param.name,
+            kind=param.kind,
+            optional=bool(getattr(param, "optional", False)),
+            default=getattr(param, "default", None),
+            line=param.line,
+            column=param.column,
+        )
+        for param in getattr(pattern, "parameters", [])
+    ]
+    return ast.UIPatternDecl(
+        name=pattern.name,
+        parameters=params,
+        items=[_lower_page_item(item) for item in pattern.items],
+        line=pattern.line,
+        column=pattern.column,
+    )
+
+
 def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
     if isinstance(item, ast.CardItem):
         children = [_lower_page_item(child) for child in item.children]
@@ -126,41 +148,65 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
             children=children,
             stat=stat,
             actions=actions,
+            visibility=getattr(item, "visibility", None),
             line=item.line,
             column=item.column,
         )
     if isinstance(item, ast.CardGroupItem):
         children = [_lower_page_item(child) for child in item.children]
-        return ast.CardGroupItem(children=children, line=item.line, column=item.column)
+        return ast.CardGroupItem(children=children, visibility=getattr(item, "visibility", None), line=item.line, column=item.column)
     if isinstance(item, ast.ComposeItem):
         children = [_lower_page_item(child) for child in item.children]
-        return ast.ComposeItem(name=item.name, children=children, line=item.line, column=item.column)
+        return ast.ComposeItem(name=item.name, children=children, visibility=getattr(item, "visibility", None), line=item.line, column=item.column)
     if isinstance(item, ast.RowItem):
         children = [_lower_page_item(child) for child in item.children]
-        return ast.RowItem(children=children, line=item.line, column=item.column)
+        return ast.RowItem(children=children, visibility=getattr(item, "visibility", None), line=item.line, column=item.column)
     if isinstance(item, ast.ColumnItem):
         children = [_lower_page_item(child) for child in item.children]
-        return ast.ColumnItem(children=children, line=item.line, column=item.column)
+        return ast.ColumnItem(children=children, visibility=getattr(item, "visibility", None), line=item.line, column=item.column)
     if isinstance(item, ast.SectionItem):
         children = [_lower_page_item(child) for child in item.children]
-        return ast.SectionItem(label=item.label, children=children, line=item.line, column=item.column)
+        return ast.SectionItem(label=item.label, children=children, visibility=getattr(item, "visibility", None), line=item.line, column=item.column)
     if isinstance(item, ast.TabsItem):
         tabs = [
-            ast.TabItem(label=tab.label, children=[_lower_page_item(child) for child in tab.children], line=tab.line, column=tab.column)
+            ast.TabItem(
+                label=tab.label,
+                children=[_lower_page_item(child) for child in tab.children],
+                visibility=getattr(tab, "visibility", None),
+                line=tab.line,
+                column=tab.column,
+            )
             for tab in item.tabs
         ]
-        return ast.TabsItem(tabs=tabs, default=item.default, line=item.line, column=item.column)
+        return ast.TabsItem(tabs=tabs, default=item.default, visibility=getattr(item, "visibility", None), line=item.line, column=item.column)
     if isinstance(item, ast.ChatItem):
-        return ast.ChatItem(children=[_lower_page_item(child) for child in item.children], line=item.line, column=item.column)
+        return ast.ChatItem(
+            children=[_lower_page_item(child) for child in item.children],
+            visibility=getattr(item, "visibility", None),
+            line=item.line,
+            column=item.column,
+        )
     if isinstance(item, ast.ModalItem):
-        return ast.ModalItem(label=item.label, children=[_lower_page_item(child) for child in item.children], line=item.line, column=item.column)
+        return ast.ModalItem(
+            label=item.label,
+            children=[_lower_page_item(child) for child in item.children],
+            visibility=getattr(item, "visibility", None),
+            line=item.line,
+            column=item.column,
+        )
     if isinstance(item, ast.DrawerItem):
-        return ast.DrawerItem(label=item.label, children=[_lower_page_item(child) for child in item.children], line=item.line, column=item.column)
+        return ast.DrawerItem(
+            label=item.label,
+            children=[_lower_page_item(child) for child in item.children],
+            visibility=getattr(item, "visibility", None),
+            line=item.line,
+            column=item.column,
+        )
     if isinstance(item, ast.NumberItem):
         entries = [ast.NumberEntry(kind=e.kind, value=e.value, record_name=e.record_name, label=e.label, line=e.line, column=e.column) for e in item.entries]
-        return ast.NumberItem(entries=entries, line=item.line, column=item.column)
+        return ast.NumberItem(entries=entries, visibility=getattr(item, "visibility", None), line=item.line, column=item.column)
     if isinstance(item, ast.ViewItem):
-        return ast.ViewItem(record_name=item.record_name, line=item.line, column=item.column)
+        return ast.ViewItem(record_name=item.record_name, visibility=getattr(item, "visibility", None), line=item.line, column=item.column)
     return item
 
 

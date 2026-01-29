@@ -59,13 +59,15 @@
           "column": 3,
           "line": 12,
           "type": "TitleItem",
-          "value": "Golden UI"
+          "value": "Golden UI",
+          "visibility": null
         },
         {
           "column": 3,
           "line": 13,
           "type": "TextItem",
-          "value": "Widgets"
+          "value": "Widgets",
+          "visibility": null
         },
         {
           "children": [
@@ -82,19 +84,22 @@
                           "groups": null,
                           "line": 18,
                           "record_name": "Note",
-                          "type": "FormItem"
+                          "type": "FormItem",
+                          "visibility": null
                         }
                       ],
                       "column": 9,
                       "label": "Entry",
                       "line": 17,
                       "stat": null,
-                      "type": "CardItem"
+                      "type": "CardItem",
+                      "visibility": null
                     }
                   ],
                   "column": 7,
                   "line": 16,
-                  "type": "ColumnItem"
+                  "type": "ColumnItem",
+                  "visibility": null
                 },
                 {
                   "children": [
@@ -111,30 +116,35 @@
                           "row_actions": null,
                           "selection": null,
                           "sort": null,
-                          "type": "TableItem"
+                          "type": "TableItem",
+                          "visibility": null
                         }
                       ],
                       "column": 9,
                       "label": "List",
                       "line": 20,
                       "stat": null,
-                      "type": "CardItem"
+                      "type": "CardItem",
+                      "visibility": null
                     }
                   ],
                   "column": 7,
                   "line": 19,
-                  "type": "ColumnItem"
+                  "type": "ColumnItem",
+                  "visibility": null
                 }
               ],
               "column": 5,
               "line": 15,
-              "type": "RowItem"
+              "type": "RowItem",
+              "visibility": null
             }
           ],
           "column": 3,
           "label": "Layout",
           "line": 14,
-          "type": "SectionItem"
+          "type": "SectionItem",
+          "visibility": null
         },
         {
           "actions": null,
@@ -144,14 +154,16 @@
               "flow_name": "demo",
               "label": "Run",
               "line": 23,
-              "type": "ButtonItem"
+              "type": "ButtonItem",
+              "visibility": null
             }
           ],
           "column": 3,
           "label": "Actions",
           "line": 22,
           "stat": null,
-          "type": "CardItem"
+          "type": "CardItem",
+          "visibility": null
         }
       ],
       "line": 11,
