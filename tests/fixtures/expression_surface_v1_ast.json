@@ -1,12 +1,1259 @@
 {
-  "type": "Program",
-  "line": null,
-  "column": null,
-  "spec_version": "1.0",
+  "agent_team": null,
+  "agents": [],
+  "ais": [],
   "app_theme": "light",
-  "app_theme_line": null,
   "app_theme_column": null,
-  "theme_tokens": {},
+  "app_theme_line": null,
+  "capabilities": [],
+  "capsule": null,
+  "column": null,
+  "flows": [
+    {
+      "audited": false,
+      "body": [
+        {
+          "column": 3,
+          "constant": false,
+          "expression": {
+            "column": 18,
+            "items": [
+              {
+                "column": 24,
+                "line": 4,
+                "type": "Literal",
+                "value": "1"
+              },
+              {
+                "column": 27,
+                "line": 4,
+                "type": "Literal",
+                "value": "2"
+              },
+              {
+                "column": 30,
+                "line": 4,
+                "type": "Literal",
+                "value": "3"
+              },
+              {
+                "column": 33,
+                "line": 4,
+                "type": "Literal",
+                "value": "10"
+              }
+            ],
+            "line": 4,
+            "type": "ListExpr"
+          },
+          "line": 4,
+          "name": "numbers",
+          "type": "Let"
+        },
+        {
+          "column": 3,
+          "constant": false,
+          "expression": {
+            "column": 19,
+            "index": null,
+            "kind": "append",
+            "line": 5,
+            "target": {
+              "column": 31,
+              "line": 5,
+              "name": "numbers",
+              "type": "VarReference"
+            },
+            "type": "ListOpExpr",
+            "value": {
+              "column": 44,
+              "line": 5,
+              "type": "Literal",
+              "value": "12"
+            }
+          },
+          "line": 5,
+          "name": "appended",
+          "type": "Let"
+        },
+        {
+          "column": 3,
+          "constant": false,
+          "expression": {
+            "column": 15,
+            "index": null,
+            "kind": "length",
+            "line": 6,
+            "target": {
+              "column": 30,
+              "line": 6,
+              "name": "appended",
+              "type": "VarReference"
+            },
+            "type": "ListOpExpr",
+            "value": null
+          },
+          "line": 6,
+          "name": "size",
+          "type": "Let"
+        },
+        {
+          "column": 3,
+          "constant": false,
+          "expression": {
+            "column": 16,
+            "index": {
+              "column": 37,
+              "line": 7,
+              "type": "Literal",
+              "value": "0"
+            },
+            "kind": "get",
+            "line": 7,
+            "target": {
+              "column": 25,
+              "line": 7,
+              "name": "appended",
+              "type": "VarReference"
+            },
+            "type": "ListOpExpr",
+            "value": null
+          },
+          "line": 7,
+          "name": "first",
+          "type": "Let"
+        },
+        {
+          "column": 5,
+          "constant": false,
+          "expression": {
+            "body": {
+              "column": 9,
+              "left": {
+                "column": 7,
+                "line": 10,
+                "name": "n",
+                "type": "VarReference"
+              },
+              "line": 10,
+              "op": "*",
+              "right": {
+                "column": 11,
+                "line": 10,
+                "type": "Literal",
+                "value": "2"
+              },
+              "type": "BinaryOp"
+            },
+            "column": 15,
+            "line": 9,
+            "target": {
+              "column": 19,
+              "line": 9,
+              "name": "numbers",
+              "type": "VarReference"
+            },
+            "type": "ListMapExpr",
+            "var_name": "n"
+          },
+          "line": 9,
+          "name": "doubled",
+          "type": "Let"
+        },
+        {
+          "column": 5,
+          "constant": false,
+          "expression": {
+            "column": 11,
+            "line": 11,
+            "predicate": {
+              "column": 9,
+              "kind": "gt",
+              "left": {
+                "column": 7,
+                "line": 12,
+                "name": "x",
+                "type": "VarReference"
+              },
+              "line": 12,
+              "right": {
+                "column": 25,
+                "line": 12,
+                "type": "Literal",
+                "value": "5"
+              },
+              "type": "Comparison"
+            },
+            "target": {
+              "column": 18,
+              "line": 11,
+              "name": "doubled",
+              "type": "VarReference"
+            },
+            "type": "ListFilterExpr",
+            "var_name": "x"
+          },
+          "line": 11,
+          "name": "big",
+          "type": "Let"
+        },
+        {
+          "column": 5,
+          "expression": {
+            "acc_name": "s",
+            "body": {
+              "column": 9,
+              "left": {
+                "column": 7,
+                "line": 14,
+                "name": "s",
+                "type": "VarReference"
+              },
+              "line": 14,
+              "op": "+",
+              "right": {
+                "column": 11,
+                "line": 14,
+                "name": "v",
+                "type": "VarReference"
+              },
+              "type": "BinaryOp"
+            },
+            "column": 19,
+            "item_name": "v",
+            "line": 13,
+            "start": {
+              "column": 67,
+              "line": 13,
+              "type": "Literal",
+              "value": "0"
+            },
+            "target": {
+              "column": 26,
+              "line": 13,
+              "name": "big",
+              "type": "VarReference"
+            },
+            "type": "ListReduceExpr"
+          },
+          "line": 13,
+          "target": {
+            "column": 5,
+            "line": 13,
+            "path": [
+              "total"
+            ],
+            "type": "StatePath"
+          },
+          "type": "Set"
+        },
+        {
+          "column": 5,
+          "constant": false,
+          "expression": {
+            "column": 11,
+            "index": null,
+            "kind": "mean",
+            "line": 15,
+            "target": {
+              "column": 16,
+              "line": 15,
+              "name": "big",
+              "type": "VarReference"
+            },
+            "type": "ListOpExpr",
+            "value": null
+          },
+          "line": 15,
+          "name": "avg",
+          "type": "Let"
+        },
+        {
+          "column": 5,
+          "constant": false,
+          "expression": {
+            "column": 15,
+            "index": null,
+            "kind": "sum",
+            "line": 16,
+            "target": {
+              "column": 19,
+              "line": 16,
+              "name": "numbers",
+              "type": "VarReference"
+            },
+            "type": "ListOpExpr",
+            "value": null
+          },
+          "line": 16,
+          "name": "sum_all",
+          "type": "Let"
+        },
+        {
+          "column": 5,
+          "constant": false,
+          "expression": {
+            "column": 15,
+            "index": null,
+            "kind": "min",
+            "line": 17,
+            "target": {
+              "column": 19,
+              "line": 17,
+              "name": "numbers",
+              "type": "VarReference"
+            },
+            "type": "ListOpExpr",
+            "value": null
+          },
+          "line": 17,
+          "name": "min_val",
+          "type": "Let"
+        },
+        {
+          "column": 5,
+          "constant": false,
+          "expression": {
+            "column": 15,
+            "index": null,
+            "kind": "max",
+            "line": 18,
+            "target": {
+              "column": 19,
+              "line": 18,
+              "name": "numbers",
+              "type": "VarReference"
+            },
+            "type": "ListOpExpr",
+            "value": null
+          },
+          "line": 18,
+          "name": "max_val",
+          "type": "Let"
+        },
+        {
+          "column": 5,
+          "constant": false,
+          "expression": {
+            "column": 18,
+            "index": null,
+            "kind": "median",
+            "line": 19,
+            "target": {
+              "column": 25,
+              "line": 19,
+              "name": "numbers",
+              "type": "VarReference"
+            },
+            "type": "ListOpExpr",
+            "value": null
+          },
+          "line": 19,
+          "name": "median_val",
+          "type": "Let"
+        },
+        {
+          "column": 5,
+          "constant": false,
+          "expression": {
+            "column": 11,
+            "line": 20,
+            "op": "-",
+            "operand": {
+              "column": 14,
+              "left": {
+                "column": 12,
+                "line": 20,
+                "type": "Literal",
+                "value": "2"
+              },
+              "line": 20,
+              "op": "**",
+              "right": {
+                "column": 17,
+                "line": 20,
+                "type": "Literal",
+                "value": "2"
+              },
+              "type": "BinaryOp"
+            },
+            "type": "UnaryOp"
+          },
+          "line": 20,
+          "name": "pow",
+          "type": "Let"
+        },
+        {
+          "column": 5,
+          "constant": false,
+          "expression": {
+            "column": 22,
+            "left": {
+              "column": 18,
+              "line": 21,
+              "op": "-",
+              "operand": {
+                "column": 19,
+                "line": 21,
+                "type": "Literal",
+                "value": "2"
+              },
+              "type": "UnaryOp"
+            },
+            "line": 21,
+            "op": "**",
+            "right": {
+              "column": 25,
+              "line": 21,
+              "type": "Literal",
+              "value": "2"
+            },
+            "type": "BinaryOp"
+          },
+          "line": 21,
+          "name": "pow_paren",
+          "type": "Let"
+        },
+        {
+          "column": 5,
+          "constant": false,
+          "expression": {
+            "column": 19,
+            "left": {
+              "column": 17,
+              "line": 22,
+              "type": "Literal",
+              "value": "2"
+            },
+            "line": 22,
+            "op": "**",
+            "right": {
+              "column": 24,
+              "left": {
+                "column": 22,
+                "line": 22,
+                "type": "Literal",
+                "value": "3"
+              },
+              "line": 22,
+              "op": "**",
+              "right": {
+                "column": 27,
+                "line": 22,
+                "type": "Literal",
+                "value": "2"
+              },
+              "type": "BinaryOp"
+            },
+            "type": "BinaryOp"
+          },
+          "line": 22,
+          "name": "pow_chain",
+          "type": "Let"
+        },
+        {
+          "column": 5,
+          "constant": false,
+          "expression": {
+            "column": 15,
+            "left": {
+              "column": 13,
+              "line": 23,
+              "type": "Literal",
+              "value": "2"
+            },
+            "line": 23,
+            "op": "*",
+            "right": {
+              "column": 19,
+              "left": {
+                "column": 17,
+                "line": 23,
+                "type": "Literal",
+                "value": "3"
+              },
+              "line": 23,
+              "op": "**",
+              "right": {
+                "column": 22,
+                "line": 23,
+                "type": "Literal",
+                "value": "2"
+              },
+              "type": "BinaryOp"
+            },
+            "type": "BinaryOp"
+          },
+          "line": 23,
+          "name": "combo",
+          "type": "Let"
+        },
+        {
+          "column": 5,
+          "constant": false,
+          "expression": {
+            "column": 18,
+            "left": {
+              "column": 15,
+              "line": 24,
+              "type": "Literal",
+              "value": "10"
+            },
+            "line": 24,
+            "op": "%",
+            "right": {
+              "column": 20,
+              "line": 24,
+              "type": "Literal",
+              "value": "4"
+            },
+            "type": "BinaryOp"
+          },
+          "line": 24,
+          "name": "mod_val",
+          "type": "Let"
+        },
+        {
+          "column": 5,
+          "constant": false,
+          "expression": {
+            "column": 18,
+            "left": {
+              "column": 15,
+              "line": 25,
+              "type": "Literal",
+              "value": "10"
+            },
+            "line": 25,
+            "op": "/",
+            "right": {
+              "column": 20,
+              "line": 25,
+              "type": "Literal",
+              "value": "4"
+            },
+            "type": "BinaryOp"
+          },
+          "line": 25,
+          "name": "div_val",
+          "type": "Let"
+        },
+        {
+          "column": 5,
+          "constant": false,
+          "expression": {
+            "column": 25,
+            "kind": "gt",
+            "left": {
+              "column": 13,
+              "line": 26,
+              "path": [
+                "total"
+              ],
+              "type": "StatePath"
+            },
+            "line": 26,
+            "right": {
+              "column": 41,
+              "line": 26,
+              "type": "Literal",
+              "value": "0"
+            },
+            "type": "Comparison"
+          },
+          "line": 26,
+          "name": "gt_ok",
+          "type": "Let"
+        },
+        {
+          "column": 5,
+          "constant": false,
+          "expression": {
+            "column": 25,
+            "kind": "lt",
+            "left": {
+              "column": 13,
+              "line": 27,
+              "path": [
+                "total"
+              ],
+              "type": "StatePath"
+            },
+            "line": 27,
+            "right": {
+              "column": 38,
+              "line": 27,
+              "type": "Literal",
+              "value": "100"
+            },
+            "type": "Comparison"
+          },
+          "line": 27,
+          "name": "lt_ok",
+          "type": "Let"
+        },
+        {
+          "column": 5,
+          "constant": false,
+          "expression": {
+            "column": 26,
+            "kind": "gte",
+            "left": {
+              "column": 14,
+              "line": 28,
+              "path": [
+                "total"
+              ],
+              "type": "StatePath"
+            },
+            "line": 28,
+            "right": {
+              "column": 38,
+              "line": 28,
+              "type": "Literal",
+              "value": "26"
+            },
+            "type": "Comparison"
+          },
+          "line": 28,
+          "name": "gte_ok",
+          "type": "Let"
+        },
+        {
+          "column": 5,
+          "constant": false,
+          "expression": {
+            "column": 26,
+            "kind": "lte",
+            "left": {
+              "column": 14,
+              "line": 29,
+              "path": [
+                "total"
+              ],
+              "type": "StatePath"
+            },
+            "line": 29,
+            "right": {
+              "column": 37,
+              "line": 29,
+              "type": "Literal",
+              "value": "26"
+            },
+            "type": "Comparison"
+          },
+          "line": 29,
+          "name": "lte_ok",
+          "type": "Let"
+        },
+        {
+          "column": 5,
+          "constant": false,
+          "expression": {
+            "column": 51,
+            "left": {
+              "column": 43,
+              "left": {
+                "column": 30,
+                "kind": "gte",
+                "left": {
+                  "column": 18,
+                  "line": 30,
+                  "path": [
+                    "total"
+                  ],
+                  "type": "StatePath"
+                },
+                "line": 30,
+                "right": {
+                  "column": 41,
+                  "line": 30,
+                  "type": "Literal",
+                  "value": "0"
+                },
+                "type": "Comparison"
+              },
+              "line": 30,
+              "op": "and",
+              "right": {
+                "column": 30,
+                "kind": "lte",
+                "left": {
+                  "column": 18,
+                  "line": 30,
+                  "path": [
+                    "total"
+                  ],
+                  "type": "StatePath"
+                },
+                "line": 30,
+                "right": {
+                  "column": 47,
+                  "line": 30,
+                  "type": "Literal",
+                  "value": "100"
+                },
+                "type": "Comparison"
+              },
+              "type": "BinaryOp"
+            },
+            "line": 30,
+            "op": "and",
+            "right": {
+              "column": 59,
+              "kind": "gt",
+              "left": {
+                "column": 55,
+                "line": 30,
+                "name": "avg",
+                "type": "VarReference"
+              },
+              "line": 30,
+              "right": {
+                "column": 75,
+                "line": 30,
+                "type": "Literal",
+                "value": "0"
+              },
+              "type": "Comparison"
+            },
+            "type": "BinaryOp"
+          },
+          "line": 30,
+          "name": "between_ok",
+          "type": "Let"
+        },
+        {
+          "column": 5,
+          "constant": false,
+          "expression": {
+            "column": 51,
+            "left": {
+              "column": 29,
+              "kind": "gt",
+              "left": {
+                "column": 17,
+                "line": 31,
+                "path": [
+                  "total"
+                ],
+                "type": "StatePath"
+              },
+              "line": 31,
+              "right": {
+                "column": 49,
+                "line": 31,
+                "type": "Literal",
+                "value": "0"
+              },
+              "type": "Comparison"
+            },
+            "line": 31,
+            "op": "and",
+            "right": {
+              "column": 29,
+              "kind": "lt",
+              "left": {
+                "column": 17,
+                "line": 31,
+                "path": [
+                  "total"
+                ],
+                "type": "StatePath"
+              },
+              "line": 31,
+              "right": {
+                "column": 55,
+                "line": 31,
+                "type": "Literal",
+                "value": "30"
+              },
+              "type": "Comparison"
+            },
+            "type": "BinaryOp"
+          },
+          "line": 31,
+          "name": "strict_ok",
+          "type": "Let"
+        },
+        {
+          "column": 5,
+          "constant": false,
+          "expression": {
+            "column": 19,
+            "line": 32,
+            "op": "not",
+            "operand": {
+              "column": 48,
+              "left": {
+                "column": 35,
+                "kind": "gte",
+                "left": {
+                  "column": 23,
+                  "line": 32,
+                  "path": [
+                    "total"
+                  ],
+                  "type": "StatePath"
+                },
+                "line": 32,
+                "right": {
+                  "column": 46,
+                  "line": 32,
+                  "type": "Literal",
+                  "value": "0"
+                },
+                "type": "Comparison"
+              },
+              "line": 32,
+              "op": "and",
+              "right": {
+                "column": 35,
+                "kind": "lte",
+                "left": {
+                  "column": 23,
+                  "line": 32,
+                  "path": [
+                    "total"
+                  ],
+                  "type": "StatePath"
+                },
+                "line": 32,
+                "right": {
+                  "column": 52,
+                  "line": 32,
+                  "type": "Literal",
+                  "value": "100"
+                },
+                "type": "Comparison"
+              },
+              "type": "BinaryOp"
+            },
+            "type": "UnaryOp"
+          },
+          "line": 32,
+          "name": "not_between",
+          "type": "Let"
+        },
+        {
+          "column": 3,
+          "expression": {
+            "column": 10,
+            "entries": [
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 34,
+                  "type": "Literal",
+                  "value": "size"
+                },
+                "line": 34,
+                "type": "MapEntry",
+                "value": {
+                  "column": 15,
+                  "line": 34,
+                  "name": "size",
+                  "type": "VarReference"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 35,
+                  "type": "Literal",
+                  "value": "first"
+                },
+                "line": 35,
+                "type": "MapEntry",
+                "value": {
+                  "column": 16,
+                  "line": 35,
+                  "name": "first",
+                  "type": "VarReference"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 36,
+                  "type": "Literal",
+                  "value": "doubled"
+                },
+                "line": 36,
+                "type": "MapEntry",
+                "value": {
+                  "column": 18,
+                  "line": 36,
+                  "name": "doubled",
+                  "type": "VarReference"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 37,
+                  "type": "Literal",
+                  "value": "big"
+                },
+                "line": 37,
+                "type": "MapEntry",
+                "value": {
+                  "column": 14,
+                  "line": 37,
+                  "name": "big",
+                  "type": "VarReference"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 38,
+                  "type": "Literal",
+                  "value": "total"
+                },
+                "line": 38,
+                "type": "MapEntry",
+                "value": {
+                  "column": 16,
+                  "line": 38,
+                  "path": [
+                    "total"
+                  ],
+                  "type": "StatePath"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 39,
+                  "type": "Literal",
+                  "value": "avg"
+                },
+                "line": 39,
+                "type": "MapEntry",
+                "value": {
+                  "column": 14,
+                  "line": 39,
+                  "name": "avg",
+                  "type": "VarReference"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 40,
+                  "type": "Literal",
+                  "value": "sum_all"
+                },
+                "line": 40,
+                "type": "MapEntry",
+                "value": {
+                  "column": 18,
+                  "line": 40,
+                  "name": "sum_all",
+                  "type": "VarReference"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 41,
+                  "type": "Literal",
+                  "value": "min_val"
+                },
+                "line": 41,
+                "type": "MapEntry",
+                "value": {
+                  "column": 18,
+                  "line": 41,
+                  "name": "min_val",
+                  "type": "VarReference"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 42,
+                  "type": "Literal",
+                  "value": "max_val"
+                },
+                "line": 42,
+                "type": "MapEntry",
+                "value": {
+                  "column": 18,
+                  "line": 42,
+                  "name": "max_val",
+                  "type": "VarReference"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 43,
+                  "type": "Literal",
+                  "value": "median_val"
+                },
+                "line": 43,
+                "type": "MapEntry",
+                "value": {
+                  "column": 21,
+                  "line": 43,
+                  "name": "median_val",
+                  "type": "VarReference"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 44,
+                  "type": "Literal",
+                  "value": "pow"
+                },
+                "line": 44,
+                "type": "MapEntry",
+                "value": {
+                  "column": 14,
+                  "line": 44,
+                  "name": "pow",
+                  "type": "VarReference"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 45,
+                  "type": "Literal",
+                  "value": "pow_paren"
+                },
+                "line": 45,
+                "type": "MapEntry",
+                "value": {
+                  "column": 20,
+                  "line": 45,
+                  "name": "pow_paren",
+                  "type": "VarReference"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 46,
+                  "type": "Literal",
+                  "value": "pow_chain"
+                },
+                "line": 46,
+                "type": "MapEntry",
+                "value": {
+                  "column": 20,
+                  "line": 46,
+                  "name": "pow_chain",
+                  "type": "VarReference"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 47,
+                  "type": "Literal",
+                  "value": "combo"
+                },
+                "line": 47,
+                "type": "MapEntry",
+                "value": {
+                  "column": 16,
+                  "line": 47,
+                  "name": "combo",
+                  "type": "VarReference"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 48,
+                  "type": "Literal",
+                  "value": "mod_val"
+                },
+                "line": 48,
+                "type": "MapEntry",
+                "value": {
+                  "column": 18,
+                  "line": 48,
+                  "name": "mod_val",
+                  "type": "VarReference"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 49,
+                  "type": "Literal",
+                  "value": "div_val"
+                },
+                "line": 49,
+                "type": "MapEntry",
+                "value": {
+                  "column": 18,
+                  "line": 49,
+                  "name": "div_val",
+                  "type": "VarReference"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 50,
+                  "type": "Literal",
+                  "value": "gt_ok"
+                },
+                "line": 50,
+                "type": "MapEntry",
+                "value": {
+                  "column": 16,
+                  "line": 50,
+                  "name": "gt_ok",
+                  "type": "VarReference"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 51,
+                  "type": "Literal",
+                  "value": "lt_ok"
+                },
+                "line": 51,
+                "type": "MapEntry",
+                "value": {
+                  "column": 16,
+                  "line": 51,
+                  "name": "lt_ok",
+                  "type": "VarReference"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 52,
+                  "type": "Literal",
+                  "value": "gte_ok"
+                },
+                "line": 52,
+                "type": "MapEntry",
+                "value": {
+                  "column": 17,
+                  "line": 52,
+                  "name": "gte_ok",
+                  "type": "VarReference"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 53,
+                  "type": "Literal",
+                  "value": "lte_ok"
+                },
+                "line": 53,
+                "type": "MapEntry",
+                "value": {
+                  "column": 17,
+                  "line": 53,
+                  "name": "lte_ok",
+                  "type": "VarReference"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 54,
+                  "type": "Literal",
+                  "value": "between_ok"
+                },
+                "line": 54,
+                "type": "MapEntry",
+                "value": {
+                  "column": 21,
+                  "line": 54,
+                  "name": "between_ok",
+                  "type": "VarReference"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 55,
+                  "type": "Literal",
+                  "value": "strict_ok"
+                },
+                "line": 55,
+                "type": "MapEntry",
+                "value": {
+                  "column": 20,
+                  "line": 55,
+                  "name": "strict_ok",
+                  "type": "VarReference"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 56,
+                  "type": "Literal",
+                  "value": "not_between"
+                },
+                "line": 56,
+                "type": "MapEntry",
+                "value": {
+                  "column": 22,
+                  "line": 56,
+                  "name": "not_between",
+                  "type": "VarReference"
+                }
+              }
+            ],
+            "line": 33,
+            "type": "MapExpr"
+          },
+          "line": 33,
+          "type": "Return"
+        }
+      ],
+      "column": 1,
+      "line": 3,
+      "name": "surface",
+      "requires": null,
+      "type": "Flow"
+    }
+  ],
+  "identity": null,
+  "jobs": [],
+  "line": null,
+  "pages": [],
+  "records": [],
+  "spec_version": "1.0",
   "theme_preference": {
     "allow_override": [
       false,
@@ -19,6 +1266,13 @@
       null
     ]
   },
+  "theme_tokens": {},
+  "tools": [],
+  "type": "Program",
+  "ui_column": null,
+  "ui_line": null,
+  "ui_packs": [],
+  "ui_patterns": [],
   "ui_settings": {
     "accent_color": [
       "blue",
@@ -51,1258 +1305,5 @@
       null
     ]
   },
-  "ui_line": null,
-  "ui_column": null,
-  "capabilities": [],
-  "records": [],
-  "flows": [
-    {
-      "type": "Flow",
-      "line": 3,
-      "column": 1,
-      "name": "surface",
-      "body": [
-        {
-          "type": "Let",
-          "line": 4,
-          "column": 3,
-          "name": "numbers",
-          "expression": {
-            "type": "ListExpr",
-            "line": 4,
-            "column": 18,
-            "items": [
-              {
-                "type": "Literal",
-                "line": 4,
-                "column": 24,
-                "value": "1"
-              },
-              {
-                "type": "Literal",
-                "line": 4,
-                "column": 27,
-                "value": "2"
-              },
-              {
-                "type": "Literal",
-                "line": 4,
-                "column": 30,
-                "value": "3"
-              },
-              {
-                "type": "Literal",
-                "line": 4,
-                "column": 33,
-                "value": "10"
-              }
-            ]
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 5,
-          "column": 3,
-          "name": "appended",
-          "expression": {
-            "type": "ListOpExpr",
-            "line": 5,
-            "column": 19,
-            "kind": "append",
-            "target": {
-              "type": "VarReference",
-              "line": 5,
-              "column": 31,
-              "name": "numbers"
-            },
-            "value": {
-              "type": "Literal",
-              "line": 5,
-              "column": 44,
-              "value": "12"
-            },
-            "index": null
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 6,
-          "column": 3,
-          "name": "size",
-          "expression": {
-            "type": "ListOpExpr",
-            "line": 6,
-            "column": 15,
-            "kind": "length",
-            "target": {
-              "type": "VarReference",
-              "line": 6,
-              "column": 30,
-              "name": "appended"
-            },
-            "value": null,
-            "index": null
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 7,
-          "column": 3,
-          "name": "first",
-          "expression": {
-            "type": "ListOpExpr",
-            "line": 7,
-            "column": 16,
-            "kind": "get",
-            "target": {
-              "type": "VarReference",
-              "line": 7,
-              "column": 25,
-              "name": "appended"
-            },
-            "value": null,
-            "index": {
-              "type": "Literal",
-              "line": 7,
-              "column": 37,
-              "value": "0"
-            }
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 9,
-          "column": 5,
-          "name": "doubled",
-          "expression": {
-            "type": "ListMapExpr",
-            "line": 9,
-            "column": 15,
-            "target": {
-              "type": "VarReference",
-              "line": 9,
-              "column": 19,
-              "name": "numbers"
-            },
-            "var_name": "n",
-            "body": {
-              "type": "BinaryOp",
-              "line": 10,
-              "column": 9,
-              "op": "*",
-              "left": {
-                "type": "VarReference",
-                "line": 10,
-                "column": 7,
-                "name": "n"
-              },
-              "right": {
-                "type": "Literal",
-                "line": 10,
-                "column": 11,
-                "value": "2"
-              }
-            }
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 11,
-          "column": 5,
-          "name": "big",
-          "expression": {
-            "type": "ListFilterExpr",
-            "line": 11,
-            "column": 11,
-            "target": {
-              "type": "VarReference",
-              "line": 11,
-              "column": 18,
-              "name": "doubled"
-            },
-            "var_name": "x",
-            "predicate": {
-              "type": "Comparison",
-              "line": 12,
-              "column": 9,
-              "kind": "gt",
-              "left": {
-                "type": "VarReference",
-                "line": 12,
-                "column": 7,
-                "name": "x"
-              },
-              "right": {
-                "type": "Literal",
-                "line": 12,
-                "column": 25,
-                "value": "5"
-              }
-            }
-          },
-          "constant": false
-        },
-        {
-          "type": "Set",
-          "line": 13,
-          "column": 5,
-          "target": {
-            "type": "StatePath",
-            "line": 13,
-            "column": 5,
-            "path": [
-              "total"
-            ]
-          },
-          "expression": {
-            "type": "ListReduceExpr",
-            "line": 13,
-            "column": 19,
-            "target": {
-              "type": "VarReference",
-              "line": 13,
-              "column": 26,
-              "name": "big"
-            },
-            "acc_name": "s",
-            "item_name": "v",
-            "start": {
-              "type": "Literal",
-              "line": 13,
-              "column": 67,
-              "value": "0"
-            },
-            "body": {
-              "type": "BinaryOp",
-              "line": 14,
-              "column": 9,
-              "op": "+",
-              "left": {
-                "type": "VarReference",
-                "line": 14,
-                "column": 7,
-                "name": "s"
-              },
-              "right": {
-                "type": "VarReference",
-                "line": 14,
-                "column": 11,
-                "name": "v"
-              }
-            }
-          }
-        },
-        {
-          "type": "Let",
-          "line": 15,
-          "column": 5,
-          "name": "avg",
-          "expression": {
-            "type": "ListOpExpr",
-            "line": 15,
-            "column": 11,
-            "kind": "mean",
-            "target": {
-              "type": "VarReference",
-              "line": 15,
-              "column": 16,
-              "name": "big"
-            },
-            "value": null,
-            "index": null
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 16,
-          "column": 5,
-          "name": "sum_all",
-          "expression": {
-            "type": "ListOpExpr",
-            "line": 16,
-            "column": 15,
-            "kind": "sum",
-            "target": {
-              "type": "VarReference",
-              "line": 16,
-              "column": 19,
-              "name": "numbers"
-            },
-            "value": null,
-            "index": null
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 17,
-          "column": 5,
-          "name": "min_val",
-          "expression": {
-            "type": "ListOpExpr",
-            "line": 17,
-            "column": 15,
-            "kind": "min",
-            "target": {
-              "type": "VarReference",
-              "line": 17,
-              "column": 19,
-              "name": "numbers"
-            },
-            "value": null,
-            "index": null
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 18,
-          "column": 5,
-          "name": "max_val",
-          "expression": {
-            "type": "ListOpExpr",
-            "line": 18,
-            "column": 15,
-            "kind": "max",
-            "target": {
-              "type": "VarReference",
-              "line": 18,
-              "column": 19,
-              "name": "numbers"
-            },
-            "value": null,
-            "index": null
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 19,
-          "column": 5,
-          "name": "median_val",
-          "expression": {
-            "type": "ListOpExpr",
-            "line": 19,
-            "column": 18,
-            "kind": "median",
-            "target": {
-              "type": "VarReference",
-              "line": 19,
-              "column": 25,
-              "name": "numbers"
-            },
-            "value": null,
-            "index": null
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 20,
-          "column": 5,
-          "name": "pow",
-          "expression": {
-            "type": "UnaryOp",
-            "line": 20,
-            "column": 11,
-            "op": "-",
-            "operand": {
-              "type": "BinaryOp",
-              "line": 20,
-              "column": 14,
-              "op": "**",
-              "left": {
-                "type": "Literal",
-                "line": 20,
-                "column": 12,
-                "value": "2"
-              },
-              "right": {
-                "type": "Literal",
-                "line": 20,
-                "column": 17,
-                "value": "2"
-              }
-            }
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 21,
-          "column": 5,
-          "name": "pow_paren",
-          "expression": {
-            "type": "BinaryOp",
-            "line": 21,
-            "column": 22,
-            "op": "**",
-            "left": {
-              "type": "UnaryOp",
-              "line": 21,
-              "column": 18,
-              "op": "-",
-              "operand": {
-                "type": "Literal",
-                "line": 21,
-                "column": 19,
-                "value": "2"
-              }
-            },
-            "right": {
-              "type": "Literal",
-              "line": 21,
-              "column": 25,
-              "value": "2"
-            }
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 22,
-          "column": 5,
-          "name": "pow_chain",
-          "expression": {
-            "type": "BinaryOp",
-            "line": 22,
-            "column": 19,
-            "op": "**",
-            "left": {
-              "type": "Literal",
-              "line": 22,
-              "column": 17,
-              "value": "2"
-            },
-            "right": {
-              "type": "BinaryOp",
-              "line": 22,
-              "column": 24,
-              "op": "**",
-              "left": {
-                "type": "Literal",
-                "line": 22,
-                "column": 22,
-                "value": "3"
-              },
-              "right": {
-                "type": "Literal",
-                "line": 22,
-                "column": 27,
-                "value": "2"
-              }
-            }
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 23,
-          "column": 5,
-          "name": "combo",
-          "expression": {
-            "type": "BinaryOp",
-            "line": 23,
-            "column": 15,
-            "op": "*",
-            "left": {
-              "type": "Literal",
-              "line": 23,
-              "column": 13,
-              "value": "2"
-            },
-            "right": {
-              "type": "BinaryOp",
-              "line": 23,
-              "column": 19,
-              "op": "**",
-              "left": {
-                "type": "Literal",
-                "line": 23,
-                "column": 17,
-                "value": "3"
-              },
-              "right": {
-                "type": "Literal",
-                "line": 23,
-                "column": 22,
-                "value": "2"
-              }
-            }
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 24,
-          "column": 5,
-          "name": "mod_val",
-          "expression": {
-            "type": "BinaryOp",
-            "line": 24,
-            "column": 18,
-            "op": "%",
-            "left": {
-              "type": "Literal",
-              "line": 24,
-              "column": 15,
-              "value": "10"
-            },
-            "right": {
-              "type": "Literal",
-              "line": 24,
-              "column": 20,
-              "value": "4"
-            }
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 25,
-          "column": 5,
-          "name": "div_val",
-          "expression": {
-            "type": "BinaryOp",
-            "line": 25,
-            "column": 18,
-            "op": "/",
-            "left": {
-              "type": "Literal",
-              "line": 25,
-              "column": 15,
-              "value": "10"
-            },
-            "right": {
-              "type": "Literal",
-              "line": 25,
-              "column": 20,
-              "value": "4"
-            }
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 26,
-          "column": 5,
-          "name": "gt_ok",
-          "expression": {
-            "type": "Comparison",
-            "line": 26,
-            "column": 25,
-            "kind": "gt",
-            "left": {
-              "type": "StatePath",
-              "line": 26,
-              "column": 13,
-              "path": [
-                "total"
-              ]
-            },
-            "right": {
-              "type": "Literal",
-              "line": 26,
-              "column": 41,
-              "value": "0"
-            }
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 27,
-          "column": 5,
-          "name": "lt_ok",
-          "expression": {
-            "type": "Comparison",
-            "line": 27,
-            "column": 25,
-            "kind": "lt",
-            "left": {
-              "type": "StatePath",
-              "line": 27,
-              "column": 13,
-              "path": [
-                "total"
-              ]
-            },
-            "right": {
-              "type": "Literal",
-              "line": 27,
-              "column": 38,
-              "value": "100"
-            }
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 28,
-          "column": 5,
-          "name": "gte_ok",
-          "expression": {
-            "type": "Comparison",
-            "line": 28,
-            "column": 26,
-            "kind": "gte",
-            "left": {
-              "type": "StatePath",
-              "line": 28,
-              "column": 14,
-              "path": [
-                "total"
-              ]
-            },
-            "right": {
-              "type": "Literal",
-              "line": 28,
-              "column": 38,
-              "value": "26"
-            }
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 29,
-          "column": 5,
-          "name": "lte_ok",
-          "expression": {
-            "type": "Comparison",
-            "line": 29,
-            "column": 26,
-            "kind": "lte",
-            "left": {
-              "type": "StatePath",
-              "line": 29,
-              "column": 14,
-              "path": [
-                "total"
-              ]
-            },
-            "right": {
-              "type": "Literal",
-              "line": 29,
-              "column": 37,
-              "value": "26"
-            }
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 30,
-          "column": 5,
-          "name": "between_ok",
-          "expression": {
-            "type": "BinaryOp",
-            "line": 30,
-            "column": 51,
-            "op": "and",
-            "left": {
-              "type": "BinaryOp",
-              "line": 30,
-              "column": 43,
-              "op": "and",
-              "left": {
-                "type": "Comparison",
-                "line": 30,
-                "column": 30,
-                "kind": "gte",
-                "left": {
-                  "type": "StatePath",
-                  "line": 30,
-                  "column": 18,
-                  "path": [
-                    "total"
-                  ]
-                },
-                "right": {
-                  "type": "Literal",
-                  "line": 30,
-                  "column": 41,
-                  "value": "0"
-                }
-              },
-              "right": {
-                "type": "Comparison",
-                "line": 30,
-                "column": 30,
-                "kind": "lte",
-                "left": {
-                  "type": "StatePath",
-                  "line": 30,
-                  "column": 18,
-                  "path": [
-                    "total"
-                  ]
-                },
-                "right": {
-                  "type": "Literal",
-                  "line": 30,
-                  "column": 47,
-                  "value": "100"
-                }
-              }
-            },
-            "right": {
-              "type": "Comparison",
-              "line": 30,
-              "column": 59,
-              "kind": "gt",
-              "left": {
-                "type": "VarReference",
-                "line": 30,
-                "column": 55,
-                "name": "avg"
-              },
-              "right": {
-                "type": "Literal",
-                "line": 30,
-                "column": 75,
-                "value": "0"
-              }
-            }
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 31,
-          "column": 5,
-          "name": "strict_ok",
-          "expression": {
-            "type": "BinaryOp",
-            "line": 31,
-            "column": 51,
-            "op": "and",
-            "left": {
-              "type": "Comparison",
-              "line": 31,
-              "column": 29,
-              "kind": "gt",
-              "left": {
-                "type": "StatePath",
-                "line": 31,
-                "column": 17,
-                "path": [
-                  "total"
-                ]
-              },
-              "right": {
-                "type": "Literal",
-                "line": 31,
-                "column": 49,
-                "value": "0"
-              }
-            },
-            "right": {
-              "type": "Comparison",
-              "line": 31,
-              "column": 29,
-              "kind": "lt",
-              "left": {
-                "type": "StatePath",
-                "line": 31,
-                "column": 17,
-                "path": [
-                  "total"
-                ]
-              },
-              "right": {
-                "type": "Literal",
-                "line": 31,
-                "column": 55,
-                "value": "30"
-              }
-            }
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 32,
-          "column": 5,
-          "name": "not_between",
-          "expression": {
-            "type": "UnaryOp",
-            "line": 32,
-            "column": 19,
-            "op": "not",
-            "operand": {
-              "type": "BinaryOp",
-              "line": 32,
-              "column": 48,
-              "op": "and",
-              "left": {
-                "type": "Comparison",
-                "line": 32,
-                "column": 35,
-                "kind": "gte",
-                "left": {
-                  "type": "StatePath",
-                  "line": 32,
-                  "column": 23,
-                  "path": [
-                    "total"
-                  ]
-                },
-                "right": {
-                  "type": "Literal",
-                  "line": 32,
-                  "column": 46,
-                  "value": "0"
-                }
-              },
-              "right": {
-                "type": "Comparison",
-                "line": 32,
-                "column": 35,
-                "kind": "lte",
-                "left": {
-                  "type": "StatePath",
-                  "line": 32,
-                  "column": 23,
-                  "path": [
-                    "total"
-                  ]
-                },
-                "right": {
-                  "type": "Literal",
-                  "line": 32,
-                  "column": 52,
-                  "value": "100"
-                }
-              }
-            }
-          },
-          "constant": false
-        },
-        {
-          "type": "Return",
-          "line": 33,
-          "column": 3,
-          "expression": {
-            "type": "MapExpr",
-            "line": 33,
-            "column": 10,
-            "entries": [
-              {
-                "type": "MapEntry",
-                "line": 34,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 34,
-                  "column": 5,
-                  "value": "size"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 34,
-                  "column": 15,
-                  "name": "size"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 35,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 35,
-                  "column": 5,
-                  "value": "first"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 35,
-                  "column": 16,
-                  "name": "first"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 36,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 36,
-                  "column": 5,
-                  "value": "doubled"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 36,
-                  "column": 18,
-                  "name": "doubled"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 37,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 37,
-                  "column": 5,
-                  "value": "big"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 37,
-                  "column": 14,
-                  "name": "big"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 38,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 38,
-                  "column": 5,
-                  "value": "total"
-                },
-                "value": {
-                  "type": "StatePath",
-                  "line": 38,
-                  "column": 16,
-                  "path": [
-                    "total"
-                  ]
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 39,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 39,
-                  "column": 5,
-                  "value": "avg"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 39,
-                  "column": 14,
-                  "name": "avg"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 40,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 40,
-                  "column": 5,
-                  "value": "sum_all"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 40,
-                  "column": 18,
-                  "name": "sum_all"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 41,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 41,
-                  "column": 5,
-                  "value": "min_val"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 41,
-                  "column": 18,
-                  "name": "min_val"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 42,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 42,
-                  "column": 5,
-                  "value": "max_val"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 42,
-                  "column": 18,
-                  "name": "max_val"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 43,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 43,
-                  "column": 5,
-                  "value": "median_val"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 43,
-                  "column": 21,
-                  "name": "median_val"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 44,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 44,
-                  "column": 5,
-                  "value": "pow"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 44,
-                  "column": 14,
-                  "name": "pow"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 45,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 45,
-                  "column": 5,
-                  "value": "pow_paren"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 45,
-                  "column": 20,
-                  "name": "pow_paren"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 46,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 46,
-                  "column": 5,
-                  "value": "pow_chain"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 46,
-                  "column": 20,
-                  "name": "pow_chain"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 47,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 47,
-                  "column": 5,
-                  "value": "combo"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 47,
-                  "column": 16,
-                  "name": "combo"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 48,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 48,
-                  "column": 5,
-                  "value": "mod_val"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 48,
-                  "column": 18,
-                  "name": "mod_val"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 49,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 49,
-                  "column": 5,
-                  "value": "div_val"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 49,
-                  "column": 18,
-                  "name": "div_val"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 50,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 50,
-                  "column": 5,
-                  "value": "gt_ok"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 50,
-                  "column": 16,
-                  "name": "gt_ok"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 51,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 51,
-                  "column": 5,
-                  "value": "lt_ok"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 51,
-                  "column": 16,
-                  "name": "lt_ok"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 52,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 52,
-                  "column": 5,
-                  "value": "gte_ok"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 52,
-                  "column": 17,
-                  "name": "gte_ok"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 53,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 53,
-                  "column": 5,
-                  "value": "lte_ok"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 53,
-                  "column": 17,
-                  "name": "lte_ok"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 54,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 54,
-                  "column": 5,
-                  "value": "between_ok"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 54,
-                  "column": 21,
-                  "name": "between_ok"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 55,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 55,
-                  "column": 5,
-                  "value": "strict_ok"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 55,
-                  "column": 20,
-                  "name": "strict_ok"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 56,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 56,
-                  "column": 5,
-                  "value": "not_between"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 56,
-                  "column": 22,
-                  "name": "not_between"
-                }
-              }
-            ]
-          }
-        }
-      ],
-      "requires": null,
-      "audited": false
-    }
-  ],
-  "jobs": [],
-  "pages": [],
-  "ais": [],
-  "tools": [],
-  "agents": [],
-  "ui_packs": [],
-  "uses": [],
-  "capsule": null,
-  "agent_team": null,
-  "identity": null
+  "uses": []
 }

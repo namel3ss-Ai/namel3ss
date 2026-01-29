@@ -28,6 +28,7 @@ from .reasons import (
     action_reason_line,
     action_status,
     declared_in_pack,
+    declared_in_pattern,
     declared_in_page,
     evaluate_requires,
     format_requires,
@@ -149,6 +150,9 @@ def _element_state(
     origin_reason = declared_in_pack(element.get("origin"))
     if origin_reason:
         reasons.append(origin_reason)
+    pattern_reason = declared_in_pattern(element.get("origin"))
+    if pattern_reason:
+        reasons.append(pattern_reason)
     visible = element.get("visible", True) is not False
     reasons.extend(visibility_reasons(element.get("visibility"), visible))
     enabled: bool | None = None

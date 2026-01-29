@@ -102,6 +102,7 @@ def test_keyword_list_is_stable() -> None:
         "present",
         "unique",
         "pattern",
+        "param",
         "have",
         "length",
         "at",

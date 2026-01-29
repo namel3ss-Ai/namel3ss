@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
-from namel3ss.parser.core.helpers import parse_reference_name
-from namel3ss.parser.decl.page_common import _parse_visibility_clause
+from namel3ss.parser.decl.page_common import _parse_reference_name_value, _parse_string_value, _parse_visibility_clause
 
 
-def parse_number_item(parser, tok) -> ast.NumberItem:
+def parse_number_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.NumberItem:
     parser._advance()
-    visibility = _parse_visibility_clause(parser)
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     parser._expect("COLON", "Expected ':' after number")
     entries: list[ast.NumberEntry] = []
     parser._expect("NEWLINE", "Expected newline after number")
@@ -24,17 +23,17 @@ def parse_number_item(parser, tok) -> ast.NumberItem:
             if of_tok.type not in {"IDENT"} or of_tok.value != "of":
                 raise Namel3ssError("Expected 'of' after count", line=of_tok.line, column=of_tok.column)
             parser._advance()
-            record_name = parse_reference_name(parser, context="record")
+            record_name = _parse_reference_name_value(parser, allow_pattern_params=allow_pattern_params, context="record")
             as_tok = parser._current()
             if as_tok.type not in {"IDENT", "AS"} or as_tok.value != "as":
                 raise Namel3ssError("Expected 'as' after record name", line=as_tok.line, column=as_tok.column)
             parser._advance()
-            label_tok = parser._expect("STRING", "Expected label string for count")
+            label = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="count label")
             entries.append(
                 ast.NumberEntry(
                     kind="count",
                     record_name=record_name,
-                    label=label_tok.value,
+                    label=label,
                     line=entry_tok.line,
                     column=entry_tok.column,
                 )

@@ -1,16 +1,17 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import List
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.lang.keywords import is_keyword
-from namel3ss.parser.core.helpers import parse_reference_name
 from namel3ss.parser.decl.page_actions import parse_ui_action_body
+from namel3ss.parser.decl.page_common import _parse_number_value, _parse_string_value
 from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
 
-def parse_table_block(parser):
+def parse_table_block(parser, *, allow_pattern_params: bool = False):
     parser._expect("NEWLINE", "Expected newline after table header")
     parser._expect("INDENT", "Expected indented table block")
     columns = None
@@ -33,15 +34,14 @@ def parse_table_block(parser):
             if empty_text is not None:
                 raise Namel3ssError("Empty state is declared more than once", line=tok.line, column=tok.column)
             parser._advance()
-            empty_text = _parse_empty_state_block(parser)
+            empty_text = _parse_empty_state_block(parser, allow_pattern_params=allow_pattern_params)
             continue
         if tok.type == "IDENT" and tok.value == "empty_text":
             if empty_text is not None:
                 raise Namel3ssError("Empty state is declared more than once", line=tok.line, column=tok.column)
             parser._advance()
             parser._expect("IS", "Expected 'is' after empty_text")
-            value_tok = parser._expect("STRING", "Expected empty state string")
-            empty_text = value_tok.value
+            empty_text = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="empty state")
             if parser._match("NEWLINE"):
                 continue
             continue
@@ -55,7 +55,7 @@ def parse_table_block(parser):
             if pagination is not None:
                 raise Namel3ssError("Pagination block is declared more than once", line=tok.line, column=tok.column)
             parser._advance()
-            pagination = _parse_table_pagination(parser, tok.line, tok.column)
+            pagination = _parse_table_pagination(parser, tok.line, tok.column, allow_pattern_params=allow_pattern_params)
             continue
         if tok.type == "IDENT" and tok.value == "selection":
             if selection is not None:
@@ -85,7 +85,7 @@ def parse_table_block(parser):
             if row_actions is not None:
                 raise Namel3ssError("Row actions block is declared more than once", line=tok.line, column=tok.column)
             parser._advance()
-            row_actions = _parse_row_actions_block(parser)
+            row_actions = _parse_row_actions_block(parser, allow_pattern_params=allow_pattern_params)
             continue
         raise Namel3ssError(
             f"Unknown table setting '{tok.value}'",
@@ -153,7 +153,7 @@ def _parse_table_columns(parser):
     return directives
 
 
-def _parse_empty_state_block(parser) -> str:
+def _parse_empty_state_block(parser, *, allow_pattern_params: bool = False) -> str:
     parser._expect("COLON", "Expected ':' after empty_state")
     parser._expect("NEWLINE", "Expected newline after empty_state")
     if not parser._match("INDENT"):
@@ -168,10 +168,10 @@ def _parse_empty_state_block(parser) -> str:
             raise Namel3ssError("Empty state only supports text", line=tok.line, column=tok.column)
         parser._advance()
         parser._expect("IS", "Expected 'is' after 'text'")
-        value_tok = parser._expect("STRING", "Expected empty state string")
+        value_tok = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="empty state")
         if text_value is not None:
             raise Namel3ssError("Empty state only supports one text entry", line=tok.line, column=tok.column)
-        text_value = value_tok.value
+        text_value = value_tok
         if parser._match("NEWLINE"):
             continue
     parser._expect("DEDENT", "Expected end of empty_state block")
@@ -225,7 +225,7 @@ def _parse_table_sort(parser, line: int, column: int) -> ast.TableSort:
     return ast.TableSort(by=by, order=order, line=line, column=column)
 
 
-def _parse_table_pagination(parser, line: int, column: int) -> ast.TablePagination:
+def _parse_table_pagination(parser, line: int, column: int, *, allow_pattern_params: bool) -> ast.TablePagination:
     parser._expect("COLON", "Expected ':' after pagination")
     parser._expect("NEWLINE", "Expected newline after pagination")
     parser._expect("INDENT", "Expected indented pagination block")
@@ -237,10 +237,11 @@ def _parse_table_pagination(parser, line: int, column: int) -> ast.TablePaginati
         if tok.type == "IDENT" and tok.value == "page_size":
             parser._advance()
             parser._expect("IS", "Expected 'is' after page_size")
-            value_tok = parser._expect("NUMBER", "Expected page_size number")
-            if value_tok.value <= 0 or value_tok.value != value_tok.value.to_integral_value():
-                raise Namel3ssError("page_size must be a positive integer", line=value_tok.line, column=value_tok.column)
-            page_size = int(value_tok.value)
+            page_size = _parse_number_value(parser, allow_pattern_params=allow_pattern_params)
+            if isinstance(page_size, (int, float, Decimal)):
+                if page_size <= 0 or page_size != int(page_size):
+                    raise Namel3ssError("page_size must be a positive integer", line=tok.line, column=tok.column)
+                page_size = int(page_size)
             if parser._match("NEWLINE"):
                 continue
             continue
@@ -255,7 +256,7 @@ def _parse_table_pagination(parser, line: int, column: int) -> ast.TablePaginati
     return ast.TablePagination(page_size=page_size, line=line, column=column)
 
 
-def _parse_row_actions_block(parser) -> List[ast.TableRowAction]:
+def _parse_row_actions_block(parser, *, allow_pattern_params: bool) -> List[ast.TableRowAction]:
     parser._expect("COLON", "Expected ':' after row_actions")
     parser._expect("NEWLINE", "Expected newline after row_actions")
     if not parser._match("INDENT"):
@@ -269,7 +270,7 @@ def _parse_row_actions_block(parser) -> List[ast.TableRowAction]:
         if tok.type != "IDENT" or tok.value != "row_action":
             raise Namel3ssError("Row actions may only contain row_action entries", line=tok.line, column=tok.column)
         parser._advance()
-        label_tok = parser._expect("STRING", "Expected row action label string")
+        label = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="row action label")
         if parser._match("CALLS"):
             raise Namel3ssError(
                 'Row actions must use a block. Use: row_action "Label": NEWLINE indent calls flow "demo"',
@@ -285,7 +286,11 @@ def _parse_row_actions_block(parser) -> List[ast.TableRowAction]:
         while parser._current().type != "DEDENT":
             if parser._match("NEWLINE"):
                 continue
-            kind, flow_name, target = parse_ui_action_body(parser, entry_label="Row action")
+            kind, flow_name, target = parse_ui_action_body(
+                parser,
+                entry_label="Row action",
+                allow_pattern_params=allow_pattern_params,
+            )
             if parser._match("NEWLINE"):
                 continue
             break
@@ -298,7 +303,7 @@ def _parse_row_actions_block(parser) -> List[ast.TableRowAction]:
             raise Namel3ssError("Row action body must include a modal or drawer target", line=tok.line, column=tok.column)
         actions.append(
             ast.TableRowAction(
-                label=label_tok.value,
+                label=label,
                 flow_name=flow_name,
                 kind=kind,
                 target=target,

@@ -20,6 +20,7 @@ def collect_definitions(programs: Iterable[ast.Program]) -> Dict[str, set[str]]:
         "tool": set(),
         "function": set(),
         "ui_pack": set(),
+        "pattern": set(),
     }
     for program in programs:
         defs["record"].update({rec.name for rec in program.records})
@@ -28,6 +29,7 @@ def collect_definitions(programs: Iterable[ast.Program]) -> Dict[str, set[str]]:
         defs["job"].update({job.name for job in getattr(program, "jobs", [])})
         defs["page"].update({page.name for page in program.pages})
         defs["ui_pack"].update({pack.name for pack in getattr(program, "ui_packs", [])})
+        defs["pattern"].update({pattern.name for pattern in getattr(program, "ui_patterns", [])})
         defs["ai"].update({ai.name for ai in program.ais})
         defs["agent"].update({agent.name for agent in program.agents})
         defs["tool"].update({tool.name for tool in program.tools})
@@ -116,6 +118,17 @@ def resolve_program(
                     exports_map=exports_map,
                     context_label=context_label,
                 )
+    for pattern in getattr(program, "ui_patterns", []):
+        pattern.name = qualify(module_name, pattern.name)
+        for item in pattern.items:
+            resolve_page_item(
+                item,
+                module_name=module_name,
+                alias_map=alias_map,
+                local_defs=local_defs,
+                exports_map=exports_map,
+                context_label=context_label,
+            )
     for ai in program.ais:
         ai.name = qualify(module_name, ai.name)
         ai.exposed_tools = [

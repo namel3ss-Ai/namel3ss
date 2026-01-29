@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, TYPE_CHECKING
 
 from namel3ss.ast.base import Node
 from namel3ss.ast.expressions import Expression, StatePath
+
+if TYPE_CHECKING:  # pragma: no cover - typing-only
+    from namel3ss.ast.ui_patterns import PatternArgument
 
 
 @dataclass
@@ -173,6 +176,12 @@ class ChartItem(PageItem):
 class UseUIPackItem(PageItem):
     pack_name: str
     fragment_name: str
+
+
+@dataclass
+class UsePatternItem(PageItem):
+    pattern_name: str
+    arguments: list["PatternArgument"] | None = None
 
 
 @dataclass

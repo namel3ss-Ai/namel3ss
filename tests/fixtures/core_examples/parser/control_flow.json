@@ -296,6 +296,7 @@
   "ui_column": null,
   "ui_line": null,
   "ui_packs": [],
+  "ui_patterns": [],
   "ui_settings": {
     "accent_color": [
       "blue",

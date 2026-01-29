@@ -29,6 +29,21 @@ def declared_in_pack(origin: dict) -> str | None:
     return f'from ui_pack "{pack}" fragment "{fragment}"'
 
 
+def declared_in_pattern(origin: dict) -> str | None:
+    if not isinstance(origin, dict):
+        return None
+    pattern = origin.get("pattern")
+    invocation = origin.get("invocation")
+    element = origin.get("element")
+    if not pattern:
+        return None
+    if invocation and element:
+        return f'from pattern "{pattern}" invocation "{invocation}" element "{element}"'
+    if invocation:
+        return f'from pattern "{pattern}" invocation "{invocation}"'
+    return f'from pattern "{pattern}"'
+
+
 def format_requires(expr: ir.Expression | None) -> str | None:
     if expr is None:
         return None
@@ -103,6 +118,7 @@ __all__ = [
     "action_reason_line",
     "action_status",
     "declared_in_pack",
+    "declared_in_pattern",
     "declared_in_page",
     "evaluate_requires",
     "format_requires",

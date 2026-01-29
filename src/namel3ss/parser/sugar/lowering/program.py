@@ -25,6 +25,7 @@ def lower_program(program: ast.Program) -> ast.Program:
         jobs=[_lower_job(job) for job in getattr(program, "jobs", [])],
         pages=[_lower_page(page) for page in program.pages],
         ui_packs=[_lower_ui_pack(pack) for pack in getattr(program, "ui_packs", [])],
+        ui_patterns=[_lower_ui_pattern(pattern) for pattern in getattr(program, "ui_patterns", [])],
         ais=list(program.ais),
         tools=list(program.tools),
         agents=list(program.agents),
@@ -113,6 +114,27 @@ def _lower_ui_pack(pack: ast.UIPackDecl) -> ast.UIPackDecl:
         fragments=fragments,
         line=pack.line,
         column=pack.column,
+    )
+
+
+def _lower_ui_pattern(pattern: ast.UIPatternDecl) -> ast.UIPatternDecl:
+    params = [
+        ast.PatternParam(
+            name=param.name,
+            kind=param.kind,
+            optional=bool(getattr(param, "optional", False)),
+            default=getattr(param, "default", None),
+            line=param.line,
+            column=param.column,
+        )
+        for param in getattr(pattern, "parameters", [])
+    ]
+    return ast.UIPatternDecl(
+        name=pattern.name,
+        parameters=params,
+        items=[_lower_page_item(item) for item in pattern.items],
+        line=pattern.line,
+        column=pattern.column,
     )
 
 

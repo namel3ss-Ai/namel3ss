@@ -5,56 +5,92 @@ from typing import List
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.lang.keywords import is_keyword
-from namel3ss.parser.core.helpers import parse_reference_name
 from namel3ss.parser.decl.page_actions import parse_ui_action_body
-from namel3ss.parser.decl.page_common import _parse_visibility_clause
+from namel3ss.parser.decl.page_common import (
+    _parse_optional_string_value,
+    _parse_reference_name_value,
+    _parse_string_value,
+    _parse_visibility_clause,
+)
 from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
 
-def parse_compose_item(parser, tok, parse_block) -> ast.ComposeItem:
+def parse_compose_item(parser, tok, parse_block, *, allow_pattern_params: bool = False) -> ast.ComposeItem:
     parser._advance()
     name_tok = parser._expect("IDENT", "Expected compose name")
     if is_keyword(name_tok.value) and not getattr(name_tok, "escaped", False):
         guidance, details = reserved_identifier_diagnostic(name_tok.value)
         raise Namel3ssError(guidance, line=name_tok.line, column=name_tok.column, details=details)
-    visibility = _parse_visibility_clause(parser)
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     parser._expect("COLON", "Expected ':' after compose name")
-    children = parse_block(parser, columns_only=False, allow_tabs=False, allow_overlays=False)
+    children = parse_block(
+        parser,
+        columns_only=False,
+        allow_tabs=False,
+        allow_overlays=False,
+        allow_pattern_params=allow_pattern_params,
+    )
     return ast.ComposeItem(name=name_tok.value, children=children, visibility=visibility, line=tok.line, column=tok.column)
 
 
-def parse_modal_item(parser, tok, parse_block, *, allow_overlays: bool) -> ast.ModalItem:
+def parse_modal_item(
+    parser,
+    tok,
+    parse_block,
+    *,
+    allow_overlays: bool,
+    allow_pattern_params: bool = False,
+) -> ast.ModalItem:
     if not allow_overlays:
         raise Namel3ssError("Modals may only appear at the page root", line=tok.line, column=tok.column)
     parser._advance()
-    label_tok = parser._expect("STRING", "Expected modal label string")
-    visibility = _parse_visibility_clause(parser)
+    label = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="modal label")
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     parser._expect("COLON", "Expected ':' after modal label")
-    children = parse_block(parser, columns_only=False, allow_tabs=False, allow_overlays=False)
-    return ast.ModalItem(label=label_tok.value, children=children, visibility=visibility, line=tok.line, column=tok.column)
+    children = parse_block(
+        parser,
+        columns_only=False,
+        allow_tabs=False,
+        allow_overlays=False,
+        allow_pattern_params=allow_pattern_params,
+    )
+    return ast.ModalItem(label=label, children=children, visibility=visibility, line=tok.line, column=tok.column)
 
 
-def parse_drawer_item(parser, tok, parse_block, *, allow_overlays: bool) -> ast.DrawerItem:
+def parse_drawer_item(
+    parser,
+    tok,
+    parse_block,
+    *,
+    allow_overlays: bool,
+    allow_pattern_params: bool = False,
+) -> ast.DrawerItem:
     if not allow_overlays:
         raise Namel3ssError("Drawers may only appear at the page root", line=tok.line, column=tok.column)
     parser._advance()
-    label_tok = parser._expect("STRING", "Expected drawer label string")
-    visibility = _parse_visibility_clause(parser)
+    label = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="drawer label")
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     parser._expect("COLON", "Expected ':' after drawer label")
-    children = parse_block(parser, columns_only=False, allow_tabs=False, allow_overlays=False)
-    return ast.DrawerItem(label=label_tok.value, children=children, visibility=visibility, line=tok.line, column=tok.column)
+    children = parse_block(
+        parser,
+        columns_only=False,
+        allow_tabs=False,
+        allow_overlays=False,
+        allow_pattern_params=allow_pattern_params,
+    )
+    return ast.DrawerItem(label=label, children=children, visibility=visibility, line=tok.line, column=tok.column)
 
 
-def parse_button_item(parser, tok) -> ast.ButtonItem:
+def parse_button_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.ButtonItem:
     parser._advance()
-    label_tok = parser._expect("STRING", "Expected button label string")
+    label = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="button label")
     if parser._match("CALLS"):
         raise Namel3ssError(
             'Buttons must use a block. Use: button "Run": NEWLINE indent calls flow "demo"',
             line=tok.line,
             column=tok.column,
         )
-    visibility = _parse_visibility_clause(parser)
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     parser._expect("COLON", "Expected ':' after button label")
     parser._expect("NEWLINE", "Expected newline after button header")
     parser._expect("INDENT", "Expected indented button body")
@@ -66,12 +102,12 @@ def parse_button_item(parser, tok) -> ast.ButtonItem:
         if tok_action.type == "CALLS":
             parser._advance()
             parser._expect("FLOW", "Expected 'flow' keyword in button action")
-            flow_name = parse_reference_name(parser, context="flow")
+            flow_name = _parse_reference_name_value(parser, allow_pattern_params=allow_pattern_params, context="flow")
             parser._match("NEWLINE")
             continue
         if tok_action.type == "IDENT" and tok_action.value == "runs":
             parser._advance()
-            flow_name = parse_reference_name(parser, context="flow")
+            flow_name = _parse_reference_name_value(parser, allow_pattern_params=allow_pattern_params, context="flow")
             parser._match("NEWLINE")
             continue
         raise Namel3ssError(
@@ -86,32 +122,36 @@ def parse_button_item(parser, tok) -> ast.ButtonItem:
             line=tok.line,
             column=tok.column,
         )
-    return ast.ButtonItem(label=label_tok.value, flow_name=flow_name, visibility=visibility, line=tok.line, column=tok.column)
+    return ast.ButtonItem(label=label, flow_name=flow_name, visibility=visibility, line=tok.line, column=tok.column)
 
 
-def parse_link_item(parser, tok) -> ast.LinkItem:
+def parse_link_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.LinkItem:
     parser._advance()
-    label_tok = parser._expect("STRING", "Expected link label string")
+    label = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="link label")
     parser._expect("TO", "Expected 'to' after link label")
     page_tok = parser._current()
     if page_tok.type != "PAGE":
         raise Namel3ssError("Expected 'page' after 'to'", line=page_tok.line, column=page_tok.column)
     parser._advance()
-    name_tok = parser._expect("STRING", "Expected page name string")
-    visibility = _parse_visibility_clause(parser)
-    return ast.LinkItem(label=label_tok.value, page_name=name_tok.value, visibility=visibility, line=tok.line, column=tok.column)
+    name = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="page name")
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    return ast.LinkItem(label=label, page_name=name, visibility=visibility, line=tok.line, column=tok.column)
 
 
-def parse_section_item(parser, tok, parse_block) -> ast.SectionItem:
+def parse_section_item(parser, tok, parse_block, *, allow_pattern_params: bool = False) -> ast.SectionItem:
     parser._advance()
-    label_tok = parser._current() if parser._current().type == "STRING" else None
-    if label_tok:
-        parser._advance()
-    visibility = _parse_visibility_clause(parser)
+    label = _parse_optional_string_value(parser, allow_pattern_params=allow_pattern_params)
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     parser._expect("COLON", "Expected ':' after section")
-    children = parse_block(parser, columns_only=False, allow_tabs=False, allow_overlays=False)
+    children = parse_block(
+        parser,
+        columns_only=False,
+        allow_tabs=False,
+        allow_overlays=False,
+        allow_pattern_params=allow_pattern_params,
+    )
     return ast.SectionItem(
-        label=label_tok.value if label_tok else None,
+        label=label,
         children=children,
         visibility=visibility,
         line=tok.line,
@@ -119,24 +159,22 @@ def parse_section_item(parser, tok, parse_block) -> ast.SectionItem:
     )
 
 
-def parse_card_group_item(parser, tok, parse_page_item) -> ast.CardGroupItem:
+def parse_card_group_item(parser, tok, parse_page_item, *, allow_pattern_params: bool = False) -> ast.CardGroupItem:
     parser._advance()
-    visibility = _parse_visibility_clause(parser)
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     parser._expect("COLON", "Expected ':' after card_group")
-    children = _parse_card_group_block(parser, parse_page_item)
+    children = _parse_card_group_block(parser, parse_page_item, allow_pattern_params=allow_pattern_params)
     return ast.CardGroupItem(children=children, visibility=visibility, line=tok.line, column=tok.column)
 
 
-def parse_card_item(parser, tok, parse_page_item) -> ast.CardItem:
+def parse_card_item(parser, tok, parse_page_item, *, allow_pattern_params: bool = False) -> ast.CardItem:
     parser._advance()
-    label_tok = parser._current() if parser._current().type == "STRING" else None
-    if label_tok:
-        parser._advance()
-    visibility = _parse_visibility_clause(parser)
+    label = _parse_optional_string_value(parser, allow_pattern_params=allow_pattern_params)
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     parser._expect("COLON", "Expected ':' after card")
-    children, stat, actions = _parse_card_block(parser, parse_page_item)
+    children, stat, actions = _parse_card_block(parser, parse_page_item, allow_pattern_params=allow_pattern_params)
     return ast.CardItem(
-        label=label_tok.value if label_tok else None,
+        label=label,
         children=children,
         stat=stat,
         actions=actions,
@@ -146,29 +184,41 @@ def parse_card_item(parser, tok, parse_page_item) -> ast.CardItem:
     )
 
 
-def parse_row_item(parser, tok, parse_block) -> ast.RowItem:
+def parse_row_item(parser, tok, parse_block, *, allow_pattern_params: bool = False) -> ast.RowItem:
     parser._advance()
-    visibility = _parse_visibility_clause(parser)
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     parser._expect("COLON", "Expected ':' after row")
-    children = parse_block(parser, columns_only=True, allow_tabs=False, allow_overlays=False)
+    children = parse_block(
+        parser,
+        columns_only=True,
+        allow_tabs=False,
+        allow_overlays=False,
+        allow_pattern_params=allow_pattern_params,
+    )
     return ast.RowItem(children=children, visibility=visibility, line=tok.line, column=tok.column)
 
 
-def parse_column_item(parser, tok, parse_block) -> ast.ColumnItem:
+def parse_column_item(parser, tok, parse_block, *, allow_pattern_params: bool = False) -> ast.ColumnItem:
     parser._advance()
-    visibility = _parse_visibility_clause(parser)
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     parser._expect("COLON", "Expected ':' after column")
-    children = parse_block(parser, columns_only=False, allow_tabs=False, allow_overlays=False)
+    children = parse_block(
+        parser,
+        columns_only=False,
+        allow_tabs=False,
+        allow_overlays=False,
+        allow_pattern_params=allow_pattern_params,
+    )
     return ast.ColumnItem(children=children, visibility=visibility, line=tok.line, column=tok.column)
 
 
-def parse_divider_item(parser, tok) -> ast.DividerItem:
+def parse_divider_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.DividerItem:
     parser._advance()
-    visibility = _parse_visibility_clause(parser)
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     return ast.DividerItem(visibility=visibility, line=tok.line, column=tok.column)
 
 
-def _parse_card_group_block(parser, parse_page_item) -> List[ast.PageItem]:
+def _parse_card_group_block(parser, parse_page_item, *, allow_pattern_params: bool) -> List[ast.PageItem]:
     parser._expect("NEWLINE", "Expected newline after card_group header")
     parser._expect("INDENT", "Expected indented card_group body")
     items: List[ast.PageItem] = []
@@ -178,12 +228,17 @@ def _parse_card_group_block(parser, parse_page_item) -> List[ast.PageItem]:
         tok = parser._current()
         if tok.type != "CARD":
             raise Namel3ssError("Card groups may only contain cards", line=tok.line, column=tok.column)
-        items.append(parse_page_item(parser, allow_tabs=False))
+        items.append(parse_page_item(parser, allow_tabs=False, allow_pattern_params=allow_pattern_params))
     parser._expect("DEDENT", "Expected end of card_group body")
     return items
 
 
-def _parse_card_block(parser, parse_page_item) -> tuple[List[ast.PageItem], ast.CardStat | None, List[ast.CardAction] | None]:
+def _parse_card_block(
+    parser,
+    parse_page_item,
+    *,
+    allow_pattern_params: bool,
+) -> tuple[List[ast.PageItem], ast.CardStat | None, List[ast.CardAction] | None]:
     parser._expect("NEWLINE", "Expected newline after card header")
     parser._expect("INDENT", "Expected indented card body")
     children: List[ast.PageItem] = []
@@ -203,9 +258,9 @@ def _parse_card_block(parser, parse_page_item) -> tuple[List[ast.PageItem], ast.
             if actions is not None:
                 raise Namel3ssError("Actions block is declared more than once", line=tok.line, column=tok.column)
             parser._advance()
-            actions = _parse_card_actions_block(parser)
+            actions = _parse_card_actions_block(parser, allow_pattern_params=allow_pattern_params)
             continue
-        children.append(parse_page_item(parser, allow_tabs=False))
+        children.append(parse_page_item(parser, allow_tabs=False, allow_pattern_params=allow_pattern_params))
     parser._expect("DEDENT", "Expected end of card body")
     return children, stat, actions
 
@@ -252,7 +307,7 @@ def _parse_card_stat_block(parser, line: int, column: int) -> ast.CardStat:
     return ast.CardStat(value=value_expr, label=label, line=line, column=column)
 
 
-def _parse_card_actions_block(parser) -> List[ast.CardAction]:
+def _parse_card_actions_block(parser, *, allow_pattern_params: bool) -> List[ast.CardAction]:
     parser._expect("COLON", "Expected ':' after actions")
     parser._expect("NEWLINE", "Expected newline after actions")
     if not parser._match("INDENT"):
@@ -282,7 +337,11 @@ def _parse_card_actions_block(parser) -> List[ast.CardAction]:
         while parser._current().type != "DEDENT":
             if parser._match("NEWLINE"):
                 continue
-            kind, flow_name, target = parse_ui_action_body(parser, entry_label="Action")
+            kind, flow_name, target = parse_ui_action_body(
+                parser,
+                entry_label="Action",
+                allow_pattern_params=allow_pattern_params,
+            )
             if parser._match("NEWLINE"):
                 continue
             break

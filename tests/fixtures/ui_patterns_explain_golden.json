@@ -1,0 +1,157 @@
+{
+  "actions": [
+    {
+      "flow": "retry",
+      "id": "page.home.button.retry",
+      "reasons": [],
+      "record": null,
+      "requires": null,
+      "status": "available",
+      "type": "call_flow"
+    }
+  ],
+  "api_version": "ui",
+  "ok": true,
+  "pages": [
+    {
+      "elements": [
+        {
+          "bound_to": null,
+          "enabled": null,
+          "id": "page:home:item:1:section",
+          "kind": "section",
+          "label": "",
+          "reasons": [
+            "declared in page \"home\"",
+            "from pattern \"Status Block\" invocation \"page:home:pattern:0\" element \"0\""
+          ],
+          "visible": true
+        },
+        {
+          "bound_to": null,
+          "enabled": null,
+          "id": "page:home:item:2:title",
+          "kind": "title",
+          "label": "Ready",
+          "reasons": [
+            "declared in page \"home\"",
+            "from pattern \"Status Block\" invocation \"page:home:pattern:0\" element \"0.0\""
+          ],
+          "visible": true
+        },
+        {
+          "bound_to": null,
+          "enabled": null,
+          "id": "page:home:item:3:text",
+          "kind": "text",
+          "label": "Waiting",
+          "reasons": [
+            "declared in page \"home\"",
+            "from pattern \"Status Block\" invocation \"page:home:pattern:0\" element \"0.1\""
+          ],
+          "visible": true
+        },
+        {
+          "bound_to": null,
+          "enabled": null,
+          "id": "page:home:item:4:section",
+          "kind": "section",
+          "label": "",
+          "reasons": [
+            "declared in page \"home\"",
+            "from pattern \"Empty State\" invocation \"page:home:pattern:1\" element \"0\""
+          ],
+          "visible": true
+        },
+        {
+          "bound_to": null,
+          "enabled": null,
+          "id": "page:home:item:5:title",
+          "kind": "title",
+          "label": "No results",
+          "reasons": [
+            "declared in page \"home\"",
+            "from pattern \"Empty State\" invocation \"page:home:pattern:1\" element \"0.0\""
+          ],
+          "visible": true
+        },
+        {
+          "bound_to": null,
+          "enabled": null,
+          "id": "page:home:item:6:text",
+          "kind": "text",
+          "label": "Try again",
+          "reasons": [
+            "declared in page \"home\"",
+            "from pattern \"Empty State\" invocation \"page:home:pattern:1\" element \"0.1\""
+          ],
+          "visible": true
+        },
+        {
+          "bound_to": null,
+          "enabled": true,
+          "id": "page:home:item:7:button",
+          "kind": "button",
+          "label": "Retry",
+          "reasons": [
+            "declared in page \"home\"",
+            "from pattern \"Empty State\" invocation \"page:home:pattern:1\" element \"0.2\"",
+            "action \"page.home.button.retry\" is available"
+          ],
+          "visible": true
+        },
+        {
+          "bound_to": "record:Result",
+          "enabled": null,
+          "id": "page:home:item:8:table",
+          "kind": "table",
+          "label": null,
+          "reasons": [
+            "declared in page \"home\"",
+            "from pattern \"Results Layout\" invocation \"page:home:pattern:2\" element \"0\""
+          ],
+          "visible": true
+        },
+        {
+          "bound_to": null,
+          "enabled": null,
+          "id": "page:home:item:9:section",
+          "kind": "section",
+          "label": "",
+          "reasons": [
+            "declared in page \"home\"",
+            "from pattern \"Empty State\" invocation \"page:home:pattern:2.1\" element \"0\""
+          ],
+          "visible": true
+        },
+        {
+          "bound_to": null,
+          "enabled": null,
+          "id": "page:home:item:10:title",
+          "kind": "title",
+          "label": "Nothing here",
+          "reasons": [
+            "declared in page \"home\"",
+            "from pattern \"Empty State\" invocation \"page:home:pattern:2.1\" element \"0.0\""
+          ],
+          "visible": true
+        },
+        {
+          "bound_to": null,
+          "enabled": null,
+          "id": "page:home:item:11:text",
+          "kind": "text",
+          "label": "Check back later",
+          "reasons": [
+            "declared in page \"home\"",
+            "from pattern \"Empty State\" invocation \"page:home:pattern:2.1\" element \"0.1\""
+          ],
+          "visible": true
+        }
+      ],
+      "name": "home"
+    }
+  ],
+  "summary": "UI: 1 pages, 11 elements, 1 actions.",
+  "what_not": []
+}

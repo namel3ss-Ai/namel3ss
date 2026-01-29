@@ -101,6 +101,7 @@ KEYWORDS = {
     "present": "PRESENT",
     "unique": "UNIQUE",
     "pattern": "PATTERN",
+    "param": "PARAM",
     "have": "HAVE",
     "length": "LENGTH",
     "at": "AT",

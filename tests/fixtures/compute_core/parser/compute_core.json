@@ -1,12 +1,596 @@
 {
-  "type": "Program",
-  "line": null,
-  "column": null,
-  "spec_version": "1.0",
+  "agent_team": null,
+  "agents": [],
+  "ais": [],
   "app_theme": "light",
-  "app_theme_line": null,
   "app_theme_column": null,
-  "theme_tokens": {},
+  "app_theme_line": null,
+  "capabilities": [],
+  "capsule": null,
+  "column": null,
+  "flows": [
+    {
+      "audited": false,
+      "body": [
+        {
+          "column": 3,
+          "constant": false,
+          "expression": {
+            "column": 17,
+            "left": {
+              "column": 15,
+              "line": 13,
+              "type": "Literal",
+              "value": "2"
+            },
+            "line": 13,
+            "op": "+",
+            "right": {
+              "column": 21,
+              "left": {
+                "column": 19,
+                "line": 13,
+                "type": "Literal",
+                "value": "3"
+              },
+              "line": 13,
+              "op": "*",
+              "right": {
+                "column": 23,
+                "line": 13,
+                "type": "Literal",
+                "value": "4"
+              },
+              "type": "BinaryOp"
+            },
+            "type": "BinaryOp"
+          },
+          "line": 13,
+          "name": "base",
+          "type": "Let"
+        },
+        {
+          "column": 3,
+          "constant": false,
+          "expression": {
+            "column": 23,
+            "left": {
+              "column": 20,
+              "line": 14,
+              "type": "Literal",
+              "value": "10"
+            },
+            "line": 14,
+            "op": "%",
+            "right": {
+              "column": 25,
+              "line": 14,
+              "type": "Literal",
+              "value": "4"
+            },
+            "type": "BinaryOp"
+          },
+          "line": 14,
+          "name": "remainder",
+          "type": "Let"
+        },
+        {
+          "column": 3,
+          "constant": false,
+          "expression": {
+            "column": 24,
+            "left": {
+              "column": 19,
+              "line": 15,
+              "name": "base",
+              "type": "VarReference"
+            },
+            "line": 15,
+            "op": "+",
+            "right": {
+              "column": 26,
+              "line": 15,
+              "name": "remainder",
+              "type": "VarReference"
+            },
+            "type": "BinaryOp"
+          },
+          "line": 15,
+          "name": "adjusted",
+          "type": "Let"
+        },
+        {
+          "column": 3,
+          "constant": false,
+          "expression": {
+            "arguments": [
+              {
+                "column": 5,
+                "line": 17,
+                "name": "subtotal",
+                "type": "FunctionCallArg",
+                "value": {
+                  "column": 17,
+                  "line": 17,
+                  "name": "adjusted",
+                  "type": "VarReference"
+                }
+              }
+            ],
+            "column": 18,
+            "function_name": "apply tax",
+            "line": 16,
+            "type": "CallFunctionExpr"
+          },
+          "line": 16,
+          "name": "summary",
+          "type": "Let"
+        },
+        {
+          "column": 3,
+          "constant": false,
+          "expression": {
+            "column": 18,
+            "items": [
+              {
+                "column": 5,
+                "line": 19,
+                "type": "Literal",
+                "value": "1"
+              },
+              {
+                "column": 5,
+                "line": 20,
+                "type": "Literal",
+                "value": "2"
+              }
+            ],
+            "line": 18,
+            "type": "ListExpr"
+          },
+          "line": 18,
+          "name": "numbers",
+          "type": "Let"
+        },
+        {
+          "column": 3,
+          "constant": false,
+          "expression": {
+            "column": 19,
+            "index": null,
+            "kind": "append",
+            "line": 21,
+            "target": {
+              "column": 31,
+              "line": 21,
+              "name": "numbers",
+              "type": "VarReference"
+            },
+            "type": "ListOpExpr",
+            "value": {
+              "column": 44,
+              "line": 21,
+              "type": "Literal",
+              "value": "3"
+            }
+          },
+          "line": 21,
+          "name": "numbers2",
+          "type": "Let"
+        },
+        {
+          "column": 3,
+          "constant": false,
+          "expression": {
+            "column": 16,
+            "index": null,
+            "kind": "length",
+            "line": 22,
+            "target": {
+              "column": 31,
+              "line": 22,
+              "name": "numbers2",
+              "type": "VarReference"
+            },
+            "type": "ListOpExpr",
+            "value": null
+          },
+          "line": 22,
+          "name": "count",
+          "type": "Let"
+        },
+        {
+          "column": 3,
+          "constant": false,
+          "expression": {
+            "column": 15,
+            "entries": [
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 24,
+                  "type": "Literal",
+                  "value": "count"
+                },
+                "line": 24,
+                "type": "MapEntry",
+                "value": {
+                  "column": 16,
+                  "line": 24,
+                  "name": "count",
+                  "type": "VarReference"
+                }
+              },
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 25,
+                  "type": "Literal",
+                  "value": "label"
+                },
+                "line": 25,
+                "type": "MapEntry",
+                "value": {
+                  "column": 16,
+                  "line": 25,
+                  "type": "Literal",
+                  "value": "ok"
+                }
+              }
+            ],
+            "line": 23,
+            "type": "MapExpr"
+          },
+          "line": 23,
+          "name": "data",
+          "type": "Let"
+        },
+        {
+          "column": 3,
+          "constant": false,
+          "expression": {
+            "column": 16,
+            "key": {
+              "column": 33,
+              "line": 26,
+              "type": "Literal",
+              "value": "extra"
+            },
+            "kind": "set",
+            "line": 26,
+            "target": {
+              "column": 24,
+              "line": 26,
+              "name": "data",
+              "type": "VarReference"
+            },
+            "type": "MapOpExpr",
+            "value": {
+              "column": 47,
+              "line": 26,
+              "type": "Literal",
+              "value": "yes"
+            }
+          },
+          "line": 26,
+          "name": "data2",
+          "type": "Let"
+        },
+        {
+          "column": 3,
+          "constant": false,
+          "expression": {
+            "column": 15,
+            "key": null,
+            "kind": "keys",
+            "line": 27,
+            "target": {
+              "column": 24,
+              "line": 27,
+              "name": "data2",
+              "type": "VarReference"
+            },
+            "type": "MapOpExpr",
+            "value": null
+          },
+          "line": 27,
+          "name": "keys",
+          "type": "Let"
+        },
+        {
+          "column": 3,
+          "constant": false,
+          "expression": {
+            "column": 20,
+            "index": {
+              "column": 37,
+              "line": 28,
+              "type": "Literal",
+              "value": "0"
+            },
+            "kind": "get",
+            "line": 28,
+            "target": {
+              "column": 29,
+              "line": 28,
+              "name": "keys",
+              "type": "VarReference"
+            },
+            "type": "ListOpExpr",
+            "value": null
+          },
+          "line": 28,
+          "name": "first_key",
+          "type": "Let"
+        },
+        {
+          "column": 3,
+          "constant": false,
+          "expression": {
+            "column": 12,
+            "line": 29,
+            "type": "Literal",
+            "value": "0"
+          },
+          "line": 29,
+          "name": "i",
+          "type": "Let"
+        },
+        {
+          "body": [
+            {
+              "column": 5,
+              "expression": {
+                "column": 16,
+                "left": {
+                  "column": 14,
+                  "line": 31,
+                  "name": "i",
+                  "type": "VarReference"
+                },
+                "line": 31,
+                "op": "+",
+                "right": {
+                  "column": 18,
+                  "line": 31,
+                  "type": "Literal",
+                  "value": "1"
+                },
+                "type": "BinaryOp"
+              },
+              "line": 31,
+              "target": {
+                "column": 9,
+                "line": 31,
+                "name": "i",
+                "type": "VarReference"
+              },
+              "type": "Set"
+            }
+          ],
+          "column": 3,
+          "condition": {
+            "column": 18,
+            "kind": "lt",
+            "left": {
+              "column": 16,
+              "line": 30,
+              "name": "i",
+              "type": "VarReference"
+            },
+            "line": 30,
+            "right": {
+              "column": 31,
+              "line": 30,
+              "type": "Literal",
+              "value": "2"
+            },
+            "type": "Comparison"
+          },
+          "limit": 3,
+          "limit_column": 39,
+          "limit_line": 30,
+          "line": 30,
+          "type": "RepeatWhile"
+        },
+        {
+          "column": 3,
+          "condition": {
+            "column": 34,
+            "left": {
+              "column": 15,
+              "kind": "gt",
+              "left": {
+                "column": 6,
+                "line": 32,
+                "name": "adjusted",
+                "type": "VarReference"
+              },
+              "line": 32,
+              "right": {
+                "column": 31,
+                "line": 32,
+                "type": "Literal",
+                "value": "10"
+              },
+              "type": "Comparison"
+            },
+            "line": 32,
+            "op": "and",
+            "right": {
+              "column": 48,
+              "kind": "eq",
+              "left": {
+                "column": 38,
+                "line": 32,
+                "name": "first_key",
+                "type": "VarReference"
+              },
+              "line": 32,
+              "right": {
+                "column": 60,
+                "line": 32,
+                "type": "Literal",
+                "value": "count"
+              },
+              "type": "Comparison"
+            },
+            "type": "BinaryOp"
+          },
+          "else_body": [],
+          "line": 32,
+          "then_body": [
+            {
+              "column": 5,
+              "expression": {
+                "column": 12,
+                "key": {
+                  "column": 29,
+                  "line": 33,
+                  "type": "Literal",
+                  "value": "count"
+                },
+                "kind": "get",
+                "line": 33,
+                "target": {
+                  "column": 20,
+                  "line": 33,
+                  "name": "data",
+                  "type": "VarReference"
+                },
+                "type": "MapOpExpr",
+                "value": null
+              },
+              "line": 33,
+              "type": "Return"
+            }
+          ],
+          "type": "If"
+        },
+        {
+          "column": 3,
+          "expression": {
+            "column": 10,
+            "key": {
+              "column": 30,
+              "line": 34,
+              "type": "Literal",
+              "value": "total"
+            },
+            "kind": "get",
+            "line": 34,
+            "target": {
+              "column": 18,
+              "line": 34,
+              "name": "summary",
+              "type": "VarReference"
+            },
+            "type": "MapOpExpr",
+            "value": null
+          },
+          "line": 34,
+          "type": "Return"
+        }
+      ],
+      "column": 1,
+      "line": 12,
+      "name": "core_demo",
+      "requires": null,
+      "type": "Flow"
+    }
+  ],
+  "functions": [
+    {
+      "body": [
+        {
+          "column": 3,
+          "expression": {
+            "column": 10,
+            "entries": [
+              {
+                "column": 5,
+                "key": {
+                  "column": 5,
+                  "line": 10,
+                  "type": "Literal",
+                  "value": "total"
+                },
+                "line": 10,
+                "type": "MapEntry",
+                "value": {
+                  "column": 25,
+                  "left": {
+                    "column": 16,
+                    "line": 10,
+                    "name": "subtotal",
+                    "type": "VarReference"
+                  },
+                  "line": 10,
+                  "op": "+",
+                  "right": {
+                    "column": 27,
+                    "line": 10,
+                    "type": "Literal",
+                    "value": "1"
+                  },
+                  "type": "BinaryOp"
+                }
+              }
+            ],
+            "line": 9,
+            "type": "MapExpr"
+          },
+          "line": 9,
+          "type": "Return"
+        }
+      ],
+      "column": 1,
+      "line": 3,
+      "name": "apply tax",
+      "signature": {
+        "column": 1,
+        "inputs": [
+          {
+            "column": 5,
+            "line": 5,
+            "name": "subtotal",
+            "required": true,
+            "type": "FunctionParam",
+            "type_name": "number"
+          }
+        ],
+        "line": 3,
+        "outputs": [
+          {
+            "column": 5,
+            "line": 7,
+            "name": "total",
+            "required": true,
+            "type": "FunctionParam",
+            "type_name": "number"
+          },
+          {
+            "column": 5,
+            "line": 8,
+            "name": "note",
+            "required": false,
+            "type": "FunctionParam",
+            "type_name": "text"
+          }
+        ],
+        "type": "FunctionSignature"
+      },
+      "type": "FunctionDecl"
+    }
+  ],
+  "identity": null,
+  "jobs": [],
+  "line": null,
+  "pages": [],
+  "records": [],
+  "spec_version": "1.0",
   "theme_preference": {
     "allow_override": [
       false,
@@ -19,6 +603,13 @@
       null
     ]
   },
+  "theme_tokens": {},
+  "tools": [],
+  "type": "Program",
+  "ui_column": null,
+  "ui_line": null,
+  "ui_packs": [],
+  "ui_patterns": [],
   "ui_settings": {
     "accent_color": [
       "blue",
@@ -51,595 +642,5 @@
       null
     ]
   },
-  "ui_line": null,
-  "ui_column": null,
-  "capabilities": [],
-  "records": [],
-  "functions": [
-    {
-      "type": "FunctionDecl",
-      "line": 3,
-      "column": 1,
-      "name": "apply tax",
-      "signature": {
-        "type": "FunctionSignature",
-        "line": 3,
-        "column": 1,
-        "inputs": [
-          {
-            "type": "FunctionParam",
-            "line": 5,
-            "column": 5,
-            "name": "subtotal",
-            "type_name": "number",
-            "required": true
-          }
-        ],
-        "outputs": [
-          {
-            "type": "FunctionParam",
-            "line": 7,
-            "column": 5,
-            "name": "total",
-            "type_name": "number",
-            "required": true
-          },
-          {
-            "type": "FunctionParam",
-            "line": 8,
-            "column": 5,
-            "name": "note",
-            "type_name": "text",
-            "required": false
-          }
-        ]
-      },
-      "body": [
-        {
-          "type": "Return",
-          "line": 9,
-          "column": 3,
-          "expression": {
-            "type": "MapExpr",
-            "line": 9,
-            "column": 10,
-            "entries": [
-              {
-                "type": "MapEntry",
-                "line": 10,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 10,
-                  "column": 5,
-                  "value": "total"
-                },
-                "value": {
-                  "type": "BinaryOp",
-                  "line": 10,
-                  "column": 25,
-                  "op": "+",
-                  "left": {
-                    "type": "VarReference",
-                    "line": 10,
-                    "column": 16,
-                    "name": "subtotal"
-                  },
-                  "right": {
-                    "type": "Literal",
-                    "line": 10,
-                    "column": 27,
-                    "value": "1"
-                  }
-                }
-              }
-            ]
-          }
-        }
-      ]
-    }
-  ],
-  "flows": [
-    {
-      "type": "Flow",
-      "line": 12,
-      "column": 1,
-      "name": "core_demo",
-      "body": [
-        {
-          "type": "Let",
-          "line": 13,
-          "column": 3,
-          "name": "base",
-          "expression": {
-            "type": "BinaryOp",
-            "line": 13,
-            "column": 17,
-            "op": "+",
-            "left": {
-              "type": "Literal",
-              "line": 13,
-              "column": 15,
-              "value": "2"
-            },
-            "right": {
-              "type": "BinaryOp",
-              "line": 13,
-              "column": 21,
-              "op": "*",
-              "left": {
-                "type": "Literal",
-                "line": 13,
-                "column": 19,
-                "value": "3"
-              },
-              "right": {
-                "type": "Literal",
-                "line": 13,
-                "column": 23,
-                "value": "4"
-              }
-            }
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 14,
-          "column": 3,
-          "name": "remainder",
-          "expression": {
-            "type": "BinaryOp",
-            "line": 14,
-            "column": 23,
-            "op": "%",
-            "left": {
-              "type": "Literal",
-              "line": 14,
-              "column": 20,
-              "value": "10"
-            },
-            "right": {
-              "type": "Literal",
-              "line": 14,
-              "column": 25,
-              "value": "4"
-            }
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 15,
-          "column": 3,
-          "name": "adjusted",
-          "expression": {
-            "type": "BinaryOp",
-            "line": 15,
-            "column": 24,
-            "op": "+",
-            "left": {
-              "type": "VarReference",
-              "line": 15,
-              "column": 19,
-              "name": "base"
-            },
-            "right": {
-              "type": "VarReference",
-              "line": 15,
-              "column": 26,
-              "name": "remainder"
-            }
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 16,
-          "column": 3,
-          "name": "summary",
-          "expression": {
-            "type": "CallFunctionExpr",
-            "line": 16,
-            "column": 18,
-            "function_name": "apply tax",
-            "arguments": [
-              {
-                "type": "FunctionCallArg",
-                "line": 17,
-                "column": 5,
-                "name": "subtotal",
-                "value": {
-                  "type": "VarReference",
-                  "line": 17,
-                  "column": 17,
-                  "name": "adjusted"
-                }
-              }
-            ]
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 18,
-          "column": 3,
-          "name": "numbers",
-          "expression": {
-            "type": "ListExpr",
-            "line": 18,
-            "column": 18,
-            "items": [
-              {
-                "type": "Literal",
-                "line": 19,
-                "column": 5,
-                "value": "1"
-              },
-              {
-                "type": "Literal",
-                "line": 20,
-                "column": 5,
-                "value": "2"
-              }
-            ]
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 21,
-          "column": 3,
-          "name": "numbers2",
-          "expression": {
-            "type": "ListOpExpr",
-            "line": 21,
-            "column": 19,
-            "kind": "append",
-            "target": {
-              "type": "VarReference",
-              "line": 21,
-              "column": 31,
-              "name": "numbers"
-            },
-            "value": {
-              "type": "Literal",
-              "line": 21,
-              "column": 44,
-              "value": "3"
-            },
-            "index": null
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 22,
-          "column": 3,
-          "name": "count",
-          "expression": {
-            "type": "ListOpExpr",
-            "line": 22,
-            "column": 16,
-            "kind": "length",
-            "target": {
-              "type": "VarReference",
-              "line": 22,
-              "column": 31,
-              "name": "numbers2"
-            },
-            "value": null,
-            "index": null
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 23,
-          "column": 3,
-          "name": "data",
-          "expression": {
-            "type": "MapExpr",
-            "line": 23,
-            "column": 15,
-            "entries": [
-              {
-                "type": "MapEntry",
-                "line": 24,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 24,
-                  "column": 5,
-                  "value": "count"
-                },
-                "value": {
-                  "type": "VarReference",
-                  "line": 24,
-                  "column": 16,
-                  "name": "count"
-                }
-              },
-              {
-                "type": "MapEntry",
-                "line": 25,
-                "column": 5,
-                "key": {
-                  "type": "Literal",
-                  "line": 25,
-                  "column": 5,
-                  "value": "label"
-                },
-                "value": {
-                  "type": "Literal",
-                  "line": 25,
-                  "column": 16,
-                  "value": "ok"
-                }
-              }
-            ]
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 26,
-          "column": 3,
-          "name": "data2",
-          "expression": {
-            "type": "MapOpExpr",
-            "line": 26,
-            "column": 16,
-            "kind": "set",
-            "target": {
-              "type": "VarReference",
-              "line": 26,
-              "column": 24,
-              "name": "data"
-            },
-            "key": {
-              "type": "Literal",
-              "line": 26,
-              "column": 33,
-              "value": "extra"
-            },
-            "value": {
-              "type": "Literal",
-              "line": 26,
-              "column": 47,
-              "value": "yes"
-            }
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 27,
-          "column": 3,
-          "name": "keys",
-          "expression": {
-            "type": "MapOpExpr",
-            "line": 27,
-            "column": 15,
-            "kind": "keys",
-            "target": {
-              "type": "VarReference",
-              "line": 27,
-              "column": 24,
-              "name": "data2"
-            },
-            "key": null,
-            "value": null
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 28,
-          "column": 3,
-          "name": "first_key",
-          "expression": {
-            "type": "ListOpExpr",
-            "line": 28,
-            "column": 20,
-            "kind": "get",
-            "target": {
-              "type": "VarReference",
-              "line": 28,
-              "column": 29,
-              "name": "keys"
-            },
-            "value": null,
-            "index": {
-              "type": "Literal",
-              "line": 28,
-              "column": 37,
-              "value": "0"
-            }
-          },
-          "constant": false
-        },
-        {
-          "type": "Let",
-          "line": 29,
-          "column": 3,
-          "name": "i",
-          "expression": {
-            "type": "Literal",
-            "line": 29,
-            "column": 12,
-            "value": "0"
-          },
-          "constant": false
-        },
-        {
-          "type": "RepeatWhile",
-          "line": 30,
-          "column": 3,
-          "condition": {
-            "type": "Comparison",
-            "line": 30,
-            "column": 18,
-            "kind": "lt",
-            "left": {
-              "type": "VarReference",
-              "line": 30,
-              "column": 16,
-              "name": "i"
-            },
-            "right": {
-              "type": "Literal",
-              "line": 30,
-              "column": 31,
-              "value": "2"
-            }
-          },
-          "limit": 3,
-          "body": [
-            {
-              "type": "Set",
-              "line": 31,
-              "column": 5,
-              "target": {
-                "type": "VarReference",
-                "line": 31,
-                "column": 9,
-                "name": "i"
-              },
-              "expression": {
-                "type": "BinaryOp",
-                "line": 31,
-                "column": 16,
-                "op": "+",
-                "left": {
-                  "type": "VarReference",
-                  "line": 31,
-                  "column": 14,
-                  "name": "i"
-                },
-                "right": {
-                  "type": "Literal",
-                  "line": 31,
-                  "column": 18,
-                  "value": "1"
-                }
-              }
-            }
-          ],
-          "limit_line": 30,
-          "limit_column": 39
-        },
-        {
-          "type": "If",
-          "line": 32,
-          "column": 3,
-          "condition": {
-            "type": "BinaryOp",
-            "line": 32,
-            "column": 34,
-            "op": "and",
-            "left": {
-              "type": "Comparison",
-              "line": 32,
-              "column": 15,
-              "kind": "gt",
-              "left": {
-                "type": "VarReference",
-                "line": 32,
-                "column": 6,
-                "name": "adjusted"
-              },
-              "right": {
-                "type": "Literal",
-                "line": 32,
-                "column": 31,
-                "value": "10"
-              }
-            },
-            "right": {
-              "type": "Comparison",
-              "line": 32,
-              "column": 48,
-              "kind": "eq",
-              "left": {
-                "type": "VarReference",
-                "line": 32,
-                "column": 38,
-                "name": "first_key"
-              },
-              "right": {
-                "type": "Literal",
-                "line": 32,
-                "column": 60,
-                "value": "count"
-              }
-            }
-          },
-          "then_body": [
-            {
-              "type": "Return",
-              "line": 33,
-              "column": 5,
-              "expression": {
-                "type": "MapOpExpr",
-                "line": 33,
-                "column": 12,
-                "kind": "get",
-                "target": {
-                  "type": "VarReference",
-                  "line": 33,
-                  "column": 20,
-                  "name": "data"
-                },
-                "key": {
-                  "type": "Literal",
-                  "line": 33,
-                  "column": 29,
-                  "value": "count"
-                },
-                "value": null
-              }
-            }
-          ],
-          "else_body": []
-        },
-        {
-          "type": "Return",
-          "line": 34,
-          "column": 3,
-          "expression": {
-            "type": "MapOpExpr",
-            "line": 34,
-            "column": 10,
-            "kind": "get",
-            "target": {
-              "type": "VarReference",
-              "line": 34,
-              "column": 18,
-              "name": "summary"
-            },
-            "key": {
-              "type": "Literal",
-              "line": 34,
-              "column": 30,
-              "value": "total"
-            },
-            "value": null
-          }
-        }
-      ],
-      "requires": null,
-      "audited": false
-    }
-  ],
-  "jobs": [],
-  "pages": [],
-  "ais": [],
-  "tools": [],
-  "agents": [],
-  "ui_packs": [],
-  "uses": [],
-  "capsule": null,
-  "agent_team": null,
-  "identity": null
+  "uses": []
 }

@@ -82,6 +82,7 @@ from namel3ss.ast.pages import (
     StoryItem,
     StoryStep,
     UploadItem,
+    UsePatternItem,
     UseUIPackItem,
     TabItem,
     TabsItem,
@@ -100,6 +101,7 @@ from namel3ss.ast.pages import (
 )
 from namel3ss.ast.policy import PolicyDecl, PolicyRuleDecl
 from namel3ss.ast.ui_packs import UIPackDecl, UIPackFragment
+from namel3ss.ast.ui_patterns import PatternArgument, PatternParam, PatternParamRef, UIPatternDecl
 from namel3ss.ast.program import Flow, Program
 from namel3ss.ast.identity import IdentityDecl
 from namel3ss.ast.statements import (
@@ -244,6 +246,7 @@ __all__ = [
     "ListItem",
     "ListItemMapping",
     "ChartItem",
+    "UsePatternItem",
     "UseUIPackItem",
     "ChatMessagesItem",
     "ChatComposerItem",
@@ -269,6 +272,10 @@ __all__ = [
     "PageDecl",
     "UIPackDecl",
     "UIPackFragment",
+    "UIPatternDecl",
+    "PatternParam",
+    "PatternArgument",
+    "PatternParamRef",
     "IdentityDecl",
     "AIDecl",
     "AIMemory",
