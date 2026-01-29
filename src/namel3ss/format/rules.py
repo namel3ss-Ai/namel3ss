@@ -128,6 +128,10 @@ _BARE_FIELD_LINE_RE = re.compile(r'^(\s*)([A-Za-z_][A-Za-z0-9_]*)\s+is\s+(.+)$')
 _SCHEMA_HEADER_RE = re.compile(r'^\s*(record|identity)\s+"[^"]+"\s*:$')
 _TOOL_HEADER_RE = re.compile(r'^\s*tool\s+"[^"]+"\s*:$')
 _FUNCTION_HEADER_RE = re.compile(r'^\s*define\s+function\s+"[^"]+"\s*:$', re.IGNORECASE)
+_CONTRACT_HEADER_RE = re.compile(r'^\s*contract\s+flow\s+"[^"]+"\s*:$')
+_CALL_HEADER_RE = re.compile(
+    r'^\s*(?:let\s+[A-Za-z_][A-Za-z0-9_]*\s+is\s+)?call\s+(flow|pipeline|tool)\s+"[^"]+"\s*:\s*$'
+)
 _FIELDS_HEADER_RE = re.compile(r'^\s*fields\s*:$')
 _TOOL_SECTION_RE = re.compile(r'^\s*(input|output)\s*:$')
 _FUNCTION_SECTION_RE = re.compile(r'^\s*(input|output)\s*:$')
@@ -189,10 +193,88 @@ def normalize_function_fields(lines: List[str]) -> List[str]:
     return normalized
 
 
+def normalize_contract_fields(lines: List[str]) -> List[str]:
+    normalized: List[str] = []
+    idx = 0
+    while idx < len(lines):
+        line = lines[idx]
+        if _CONTRACT_HEADER_RE.match(line):
+            contract_indent = _line_indent(line)
+            normalized.append(line)
+            idx += 1
+            block_lines, idx = _collect_block(lines, idx, contract_indent)
+            normalized.extend(_normalize_contract_block(block_lines, contract_indent))
+            continue
+        normalized.append(line)
+        idx += 1
+    return normalized
+
+
+def normalize_call_fields(lines: List[str]) -> List[str]:
+    normalized: List[str] = []
+    idx = 0
+    while idx < len(lines):
+        line = lines[idx]
+        if _CALL_HEADER_RE.match(line):
+            call_indent = _line_indent(line)
+            normalized.append(line)
+            idx += 1
+            block_lines, idx = _collect_block(lines, idx, call_indent)
+            normalized.extend(_normalize_call_block(block_lines, call_indent))
+            continue
+        normalized.append(line)
+        idx += 1
+    return normalized
+
+
 def _normalize_function_block(lines: List[str], func_indent: int) -> List[str]:
     normalized: List[str] = []
     idx = 0
     body_indent = func_indent + 2
+    while idx < len(lines):
+        line = lines[idx]
+        if line.strip() == "":
+            normalized.append(line)
+            idx += 1
+            continue
+        indent = _line_indent(line)
+        if indent == body_indent and _FUNCTION_SECTION_RE.match(line):
+            normalized.append(line)
+            idx += 1
+            block_lines, idx = _collect_block(lines, idx, indent)
+            normalized.extend(_normalize_tool_fields(block_lines))
+            continue
+        normalized.append(line)
+        idx += 1
+    return normalized
+
+
+def _normalize_contract_block(lines: List[str], contract_indent: int) -> List[str]:
+    normalized: List[str] = []
+    idx = 0
+    body_indent = contract_indent + 2
+    while idx < len(lines):
+        line = lines[idx]
+        if line.strip() == "":
+            normalized.append(line)
+            idx += 1
+            continue
+        indent = _line_indent(line)
+        if indent == body_indent and _FUNCTION_SECTION_RE.match(line):
+            normalized.append(line)
+            idx += 1
+            block_lines, idx = _collect_block(lines, idx, indent)
+            normalized.extend(_normalize_tool_fields(block_lines))
+            continue
+        normalized.append(line)
+        idx += 1
+    return normalized
+
+
+def _normalize_call_block(lines: List[str], call_indent: int) -> List[str]:
+    normalized: List[str] = []
+    idx = 0
+    body_indent = call_indent + 2
     while idx < len(lines):
         line = lines[idx]
         if line.strip() == "":

@@ -4,6 +4,8 @@ from namel3ss.format.list_rules import normalize_list_literals, normalize_one_of
 from namel3ss.format.rules import (
     collapse_blank_lines,
     migrate_buttons,
+    normalize_call_fields,
+    normalize_contract_fields,
     normalize_function_fields,
     normalize_indentation,
     normalize_record_fields,
@@ -19,6 +21,8 @@ def format_source(source: str) -> str:
     lines = normalize_indentation(lines)
     lines = normalize_record_fields(lines)
     lines = normalize_function_fields(lines)
+    lines = normalize_contract_fields(lines)
+    lines = normalize_call_fields(lines)
     lines = normalize_one_of_lists(lines)
     lines = normalize_list_literals(lines)
     lines = collapse_blank_lines(lines)
