@@ -269,9 +269,11 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
         program = state.program
         if program is None:
             return build_error_payload("Program not loaded.", kind="engine")
+        if not _observability_enabled():
+            return _empty_observability_payload(kind)
         builder = _load_observability_builder(kind)
         if builder is None:
-            return {"ok": True, "count": 0}
+            return _empty_observability_payload(kind)
         return builder(getattr(program, "project_root", None), getattr(program, "app_path", None))
 
     def _build_payload(self) -> dict:
@@ -492,6 +494,20 @@ def _load_observability_builder(kind: str):
         "metrics": observability_api.get_metrics_payload,
     }
     return mapping.get(kind)
+
+
+def _observability_enabled() -> bool:
+    from namel3ss.observability.enablement import observability_enabled
+
+    return observability_enabled()
+
+
+def _empty_observability_payload(kind: str) -> dict:
+    if kind == "metrics":
+        return {"ok": True, "counters": [], "timings": []}
+    if kind in {"trace", "traces"}:
+        return {"ok": True, "count": 0, "spans": []}
+    return {"ok": True, "count": 0, "logs": []}
 
 
 __all__ = ["BrowserRequestHandler"]

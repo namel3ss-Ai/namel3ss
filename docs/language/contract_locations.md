@@ -20,3 +20,9 @@
 ## Observability Contract
 - `src/namel3ss/runtime/observability/collector.py`
 - `tests/fixtures/observability/explain_disabled.json`
+
+## Install + Verify
+- `README.md`
+
+## Release Checklist
+- `docs/release-checklist.md`

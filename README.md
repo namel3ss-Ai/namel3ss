@@ -64,6 +64,26 @@ docker build -t namel3ss:local .
 docker run --rm namel3ss:local n3 --help
 ```
 
+## Install + Verify
+
+Install (source, editable):
+```bash
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
+```
+
+Verify CLI and package:
+```bash
+n3 --version
+n3 doc
+python tools/package_verify.py
+```
+
+Verify embedding (C example, requires C toolchain + cargo):
+```bash
+python -m pytest -q tests/embed/test_embed_c_example.py
+```
+
 ## Browser Protocol
 
 Browser Protocol is defined in [docs/runtime/browser-protocol.md](docs/runtime/browser-protocol.md).

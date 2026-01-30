@@ -307,9 +307,13 @@ def _respond_post(
 
 
 def _observability_payload(handler: Any, kind: str) -> dict:
+    from namel3ss.observability.enablement import observability_enabled
+
+    if not observability_enabled():
+        return _empty_observability_payload(kind)
     builder = _load_observability_builder(kind)
     if builder is None:
-        return {"ok": True}
+        return _empty_observability_payload(kind)
     return builder(handler.server.project_root, handler.server.app_path)  # type: ignore[attr-defined]
 
 
@@ -323,6 +327,14 @@ def _load_observability_builder(kind: str):
         "metrics": observability_api.get_metrics_payload,
     }
     return mapping.get(kind)
+
+
+def _empty_observability_payload(kind: str) -> dict:
+    if kind == "metrics":
+        return {"ok": True, "counters": [], "timings": []}
+    if kind in {"trace", "traces"}:
+        return {"ok": True, "count": 0, "spans": []}
+    return {"ok": True, "count": 0, "logs": []}
 
 
 __all__ = ["handle_api_get", "handle_api_post"]

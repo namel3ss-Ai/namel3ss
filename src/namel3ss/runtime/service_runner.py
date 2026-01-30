@@ -238,9 +238,13 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         program_ir = self._program()
         if program_ir is None:
             return build_error_payload("Program not loaded", kind="engine"), 500
+        if not _observability_enabled():
+            payload = _empty_observability_payload(kind)
+            return payload, 200
         builder = _load_observability_builder(kind)
         if builder is None:
-            return {"ok": True, "count": 0}, 200
+            payload = _empty_observability_payload(kind)
+            return payload, 200
         payload = builder(getattr(program_ir, "project_root", None), getattr(program_ir, "app_path", None))
         status = 200 if payload.get("ok", True) else 400
         return payload, status
@@ -415,6 +419,20 @@ def _load_observability_builder(kind: str):
         "metrics": observability_api.get_metrics_payload,
     }
     return mapping.get(kind)
+
+
+def _observability_enabled() -> bool:
+    from namel3ss.observability.enablement import observability_enabled
+
+    return observability_enabled()
+
+
+def _empty_observability_payload(kind: str) -> dict:
+    if kind == "metrics":
+        return {"ok": True, "counters": [], "timings": []}
+    if kind in {"trace", "traces"}:
+        return {"ok": True, "count": 0, "spans": []}
+    return {"ok": True, "count": 0, "logs": []}
 
 
 __all__ = ["DEFAULT_SERVICE_PORT", "ServiceRunner"]
