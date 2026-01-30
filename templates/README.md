@@ -1,13 +1,15 @@
 ﻿# Templates
 
 ## Purpose
-- Provide a single home for canonical templates.
+- Define templates as production primitives, not demos.
+- Provide a single home for canonical template sources.
 - Keep structure, naming, and invariants stable.
 
 ## Scope
 - This folder is documentation and source only.
 - Runtime scaffolding remains in `src/namel3ss/templates/`.
 - No execution tooling or auto-discovery lives here.
+- Templates may be empty; a contract-first landing is valid.
 
 ## Structure
 Each template lives in `templates/<name>/` and must include:
@@ -22,7 +24,7 @@ Additional files are allowed only when deterministic and documented in the templ
 ## Naming
 - Use short nouns only.
 - Use lowercase snake_case.
-- No numbers, phases, or marketing terms.
+- No numbers or lifecycle labels.
 
 ## Template README
 Each `templates/<name>/README.md` must include these headings in this order:
@@ -41,8 +43,9 @@ Each `templates/<name>/README.md` must include these headings in this order:
 Every template must document deterministic invariants, including:
 - No timestamps, randomness, host paths, or secrets.
 - Stable ordering for lists and outputs.
-- No runtime artifacts committed to the repo.
-- No external dependencies or setup beyond the runtime.
+- Explain surfaces are available by default and documented in the template README.
+- Offline by default; no network or external services required.
+- Runtime artifacts stay out of git and remain under `.namel3ss/`.
 
 ## Explain
 Document the explain surfaces for the template in one or two lines.
