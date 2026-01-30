@@ -20,12 +20,6 @@ from namel3ss.runtime.data.data_routes import (
 from namel3ss.runtime.deploy_routes import get_build_payload, get_deploy_payload
 from namel3ss.runtime.auth.auth_context import resolve_auth_context
 from namel3ss.runtime.auth.auth_routes import handle_login, handle_logout, handle_session
-from namel3ss.runtime.observability_api import (
-    get_logs_payload,
-    get_metrics_payload,
-    get_trace_payload,
-    get_traces_payload,
-)
 from namel3ss.resources import studio_web_root
 from namel3ss.ui.external.serve import resolve_external_ui_file
 from namel3ss.determinism import canonical_json_dumps
@@ -118,22 +112,22 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
             self._respond_json(response, status=status)
             return
         if path == "/api/logs":
-            payload = self._observability_payload(get_logs_payload)
+            payload = self._observability_payload("logs")
             status = 200 if payload.get("ok", True) else 400
             self._respond_json(payload, status=status)
             return
         if path == "/api/traces":
-            payload = self._observability_payload(get_traces_payload)
+            payload = self._observability_payload("traces")
             status = 200 if payload.get("ok", True) else 400
             self._respond_json(payload, status=status)
             return
         if path == "/api/trace":
-            payload = self._observability_payload(get_trace_payload)
+            payload = self._observability_payload("trace")
             status = 200 if payload.get("ok", True) else 400
             self._respond_json(payload, status=status)
             return
         if path == "/api/metrics":
-            payload = self._observability_payload(get_metrics_payload)
+            payload = self._observability_payload("metrics")
             status = 200 if payload.get("ok", True) else 400
             self._respond_json(payload, status=status)
             return
@@ -269,12 +263,15 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
             )
             return payload, 500
 
-    def _observability_payload(self, builder) -> dict:
+    def _observability_payload(self, kind: str) -> dict:
         state = self._state()
         state._refresh_if_needed()
         program = state.program
         if program is None:
             return build_error_payload("Program not loaded.", kind="engine")
+        builder = _load_observability_builder(kind)
+        if builder is None:
+            return {"ok": True, "count": 0}
         return builder(getattr(program, "project_root", None), getattr(program, "app_path", None))
 
     def _build_payload(self) -> dict:
@@ -483,6 +480,18 @@ def _resolve_runtime_file(path: str, mode: str) -> tuple[Path | None, str | None
 
 def _runtime_web_root() -> Path:
     return Path(__file__).resolve().parents[2] / "web"
+
+
+def _load_observability_builder(kind: str):
+    from namel3ss.runtime import observability_api
+
+    mapping = {
+        "logs": observability_api.get_logs_payload,
+        "trace": observability_api.get_trace_payload,
+        "traces": observability_api.get_traces_payload,
+        "metrics": observability_api.get_metrics_payload,
+    }
+    return mapping.get(kind)
 
 
 __all__ = ["BrowserRequestHandler"]

@@ -15,12 +15,6 @@ from namel3ss.errors.payload import build_error_from_exception, build_error_payl
 from namel3ss.runtime.executor import execute_program_flow
 from namel3ss.runtime.backend.upload_handler import handle_upload, handle_upload_list
 from namel3ss.runtime.backend.upload_recorder import UploadRecorder, apply_upload_error_payload
-from namel3ss.runtime.observability_api import (
-    get_logs_payload,
-    get_metrics_payload,
-    get_trace_payload,
-    get_traces_payload,
-)
 from namel3ss.runtime.deploy_routes import get_build_payload, get_deploy_payload
 from namel3ss.ui.actions.dispatch import dispatch_ui_action
 from namel3ss.ui.export.contract import build_ui_contract_payload
@@ -107,19 +101,19 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
             self._respond_json(response, status=status, sort_keys=True)
             return
         if normalized == "/api/logs":
-            response, status = self._handle_observability(get_logs_payload)
+            response, status = self._handle_observability("logs")
             self._respond_json(response, status=status, sort_keys=True)
             return
         if normalized == "/api/traces":
-            response, status = self._handle_observability(get_traces_payload)
+            response, status = self._handle_observability("traces")
             self._respond_json(response, status=status, sort_keys=True)
             return
         if normalized == "/api/trace":
-            response, status = self._handle_observability(get_trace_payload)
+            response, status = self._handle_observability("trace")
             self._respond_json(response, status=status, sort_keys=True)
             return
         if normalized == "/api/metrics":
-            response, status = self._handle_observability(get_metrics_payload)
+            response, status = self._handle_observability("metrics")
             self._respond_json(response, status=status, sort_keys=True)
             return
         if normalized == "/api/build":
@@ -240,10 +234,13 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
             payload = build_error_payload(str(err), kind="internal")
             return payload, 500
 
-    def _handle_observability(self, builder) -> tuple[dict, int]:
+    def _handle_observability(self, kind: str) -> tuple[dict, int]:
         program_ir = self._program()
         if program_ir is None:
             return build_error_payload("Program not loaded", kind="engine"), 500
+        builder = _load_observability_builder(kind)
+        if builder is None:
+            return {"ok": True, "count": 0}, 200
         payload = builder(getattr(program_ir, "project_root", None), getattr(program_ir, "app_path", None))
         status = 200 if payload.get("ok", True) else 400
         return payload, status
@@ -406,6 +403,18 @@ def _seed_flow(program_ir, flow_name: str) -> None:
         execute_program_flow(program_ir, flow_name)
     except Exception:
         pass
+
+
+def _load_observability_builder(kind: str):
+    from namel3ss.runtime import observability_api
+
+    mapping = {
+        "logs": observability_api.get_logs_payload,
+        "trace": observability_api.get_trace_payload,
+        "traces": observability_api.get_traces_payload,
+        "metrics": observability_api.get_metrics_payload,
+    }
+    return mapping.get(kind)
 
 
 __all__ = ["DEFAULT_SERVICE_PORT", "ServiceRunner"]
