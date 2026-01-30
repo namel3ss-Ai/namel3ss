@@ -1,5 +1,7 @@
 # IR Reference
 
+> This document is a reference. The canonical IR schema and field ordering are defined in `docs/language/ir_schema.md`.
+
 ## Overview
 - Pipeline: **AST → IR → Engine**. The parser builds AST nodes, lowering converts AST to IR (in `src/namel3ss/ir/lowering/`), and the engine executes IR flows.
 - IR lives in `src/namel3ss/ir/model/` and mirrors the language surface with deterministic shapes for execution.
