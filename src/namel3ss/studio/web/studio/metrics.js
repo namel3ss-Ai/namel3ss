@@ -119,6 +119,28 @@
     } else {
       qualityRows.push(buildSummaryRow("Status", "Not available"));
     }
+    const executions = summary.executions || {};
+    const executionEntries = Array.isArray(executions.entries) ? executions.entries : [];
+    const executionRows = executionEntries.map((entry) => {
+      const scope = entry.scope || "unknown";
+      const outcome = entry.outcome || "unknown";
+      return buildSummaryRow(scope, outcome);
+    });
+    if (!executionRows.length) {
+      executionRows.push(buildSummaryRow("Status", "Not available"));
+    }
+    const retrieval = summary.retrieval || {};
+    const retrievalRows = [];
+    if (retrieval.status === "available") {
+      retrievalRows.push(buildSummaryRow("Result count", String(retrieval.result_count ?? 0)));
+      retrievalRows.push(buildSummaryRow("Preferred quality", String(retrieval.preferred_quality ?? "")));
+      retrievalRows.push(buildSummaryRow("Included warn", String(retrieval.included_warn ?? false)));
+      retrievalRows.push(buildSummaryRow("Excluded warn", String(retrieval.excluded_warn ?? 0)));
+      retrievalRows.push(buildSummaryRow("Excluded blocked", String(retrieval.excluded_blocked ?? 0)));
+      retrievalRows.push(buildSummaryRow("Warn allowed", String(retrieval.warn_allowed ?? false)));
+    } else {
+      retrievalRows.push(buildSummaryRow("Status", "Not available"));
+    }
     const failures = Array.isArray(summary.failures) ? summary.failures : [];
     const failureRows = failures.map((entry) => {
       const label = entry.category || "unknown";
@@ -136,10 +158,23 @@
       const value = String(entry.count ?? 0);
       retryRows.push(buildSummaryRow(label, value));
     });
+    const cost = summary.cost || {};
+    const costEntries = Array.isArray(cost.entries) ? cost.entries : [];
+    const costRows = costEntries.map((entry) => {
+      const label = entry.name || "cost";
+      const value = String(entry.value ?? 0);
+      return buildSummaryRow(label, value);
+    });
+    if (!costRows.length) {
+      costRows.push(buildSummaryRow("Status", "Not available"));
+    }
     wrapper.appendChild(buildSummarySection("Health", healthRows));
+    wrapper.appendChild(buildSummarySection("Executions", executionRows));
+    wrapper.appendChild(buildSummarySection("Retrieval", retrievalRows));
     wrapper.appendChild(buildSummarySection("Quality", qualityRows));
     wrapper.appendChild(buildSummarySection("Failures", failureRows));
     wrapper.appendChild(buildSummarySection("Retries", retryRows));
+    wrapper.appendChild(buildSummarySection("Cost", costRows));
     return wrapper;
   }
 

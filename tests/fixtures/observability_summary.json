@@ -1,4 +1,18 @@
 {
+  "cost": {
+    "entries": [],
+    "status": "not_available"
+  },
+  "executions": {
+    "entries": [
+      {
+        "id": "log:0003",
+        "outcome": "ok",
+        "scope": "runtime"
+      }
+    ],
+    "status": "available"
+  },
   "failures": [],
   "health": {
     "blocked": 0,
@@ -9,6 +23,9 @@
   "quality": {
     "coverage": null,
     "faithfulness": null,
+    "status": "not_available"
+  },
+  "retrieval": {
     "status": "not_available"
   },
   "retries": {

@@ -48,7 +48,7 @@ Studio is an optional inspection lens for namel3ss. It stays fast and minimal wh
 - Logs show structured log events with levels and fields (redacted).
 - Tracing shows deterministic spans for actions, jobs, capabilities, and packs.
 - Metrics lists counters and logical timings with stable ordering.
-- Metrics summary surfaces health, quality, failures, and retries from observability outputs.
+- Metrics summary surfaces health, executions, retrieval, quality, failures, retries, and cost when available.
 
 ## Formulas + Explain (calc)
 - Formulas tab renders calc blocks with a Code/Formula toggle for math-friendly display.

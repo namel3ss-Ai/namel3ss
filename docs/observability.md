@@ -45,6 +45,7 @@ Metric operations:
 
 Timings use logical steps. Automatic timings are recorded for actions, jobs, and capabilities.
 Default counters include requests, jobs, errors, blocks, and retries with scope/outcome labels.
+Summary surfaces health, executions, retrieval, quality, failures, retries, and cost when available.
 
 ## Storage
 Runtime output is stored under:
