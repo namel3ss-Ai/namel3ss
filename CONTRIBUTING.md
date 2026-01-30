@@ -7,8 +7,8 @@ Clarity beats cleverness. Every change should make the language easier to unders
 ## Non-Negotiables
 
 1) 500-Line Rule  
-- Hard cap: every file stays under 500 LOC.  
-- Split near ~400 LOC. If a file grows, turn it into a folder module.
+- Hard cap: files stay under 500 lines; files under `templates/` may be up to 1000 lines.  
+- Split near ~400 lines. If a file grows, turn it into a folder module.
 
 2) Single Responsibility  
 - One file does one job. If it starts doing two, split it — even at 150 lines.
@@ -95,7 +95,7 @@ If you change language/engine/parsing, update examples and integration tests acc
 - `src/namel3ss/templates/` — onboarding surfaces; must pass STATIC validation.
 
 Quick reminders:
-- File size: ≤500 LOC; split near 400 with folder-first naming.
+- File size: <=500 lines; templates may be up to 1000 lines; split near 400 with folder-first naming.
 - Single responsibility per file.
 - Propose grammar/UI changes as small PRs with examples and tests.
 
@@ -143,7 +143,7 @@ To add validators/UI elements/tools:
 ---
 
 ## Pull Request Checklist
-- Files remain under 500 LOC; single responsibility maintained.  
+- Files remain under 500 lines; files under `templates/` may be up to 1000 lines; single responsibility maintained.  
 - Tests added/updated and `python -m pytest -q` passes.  
 - `python tools/line_limit_check.py` passes.  
 - Docs updated if behavior changed.  

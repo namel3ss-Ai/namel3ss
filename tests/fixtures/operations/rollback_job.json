@@ -1,9 +1,0 @@
-{
-  "artifacts": [
-    "artifact-1",
-    "artifact-2"
-  ],
-  "job_id": "job-rollback",
-  "name": "rollback-case",
-  "reason": "policy"
-}

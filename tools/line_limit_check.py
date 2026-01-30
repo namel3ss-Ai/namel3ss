@@ -37,7 +37,7 @@ def count_lines(path: Path) -> int:
 
 def format_path(path: Path) -> str:
     try:
-        return str(path.relative_to(Path.cwd()))
+        return str(path.relative_to(REPO_ROOT))
     except ValueError:
         return str(path)
 
@@ -76,3 +76,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+

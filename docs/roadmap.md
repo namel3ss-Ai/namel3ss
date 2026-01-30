@@ -15,7 +15,7 @@ This document is informational only and does not promise future features.
 - Explicit, inspectable AI boundary
 - Deterministic engine; AI is the only non-deterministic boundary
 - Full-stack in one language (UI + backend + AI)
-- Discipline: max 500 lines per file; templates may be up to 1000 lines to keep full templates readable and usable; single responsibility, folder-first, tests mirror `src/`, `.ai` only
+- Discipline: < 500 LOC per file, single responsibility, folder-first, tests mirror `src/`, `.ai` only
 
 ## Established foundation (<= v0.1.0a7)
 

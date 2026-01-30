@@ -1,1 +1,0 @@
-Reset policy: use the reset portal for account access. Billing reset requires verification. Keep actions deterministic and documented.
