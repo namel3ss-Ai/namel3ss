@@ -254,6 +254,7 @@ page "home":
 - Determinism:
   - Step ids derive from flow name + step kind + ordinal position.
   - Step order is preserved; record writes and field order are deterministic.
+  - Backend implementations must preserve these deterministic ids and ordering.
 - Explainability:
   - Flow start and step traces include what ran, why it ran (action id + flow), and what changed.
   - Gates include status and reason when available.

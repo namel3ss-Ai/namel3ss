@@ -6,3 +6,6 @@
 - `tests/fixtures/explain/basic.ai`
 - `tests/fixtures/explain/basic.json`
 - `tests/contract/test_explain_golden.py`
+
+## Native Boundary Contract
+- `docs/language/native_boundary.md`
