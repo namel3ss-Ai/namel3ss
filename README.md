@@ -13,7 +13,6 @@ Deterministic execution with explicit AI boundaries and governed runtime.
 - [Quickstart](docs/quickstart.md)
 - [First 5 minutes](docs/first-5-minutes.md)
 - [What you can build today](docs/what-you-can-build-today.md)
-- [Start with templates](docs/start-with-templates.md)
 - [Stability](docs/stability.md)
 - [Limitations](resources/limitations.md)
 
@@ -118,14 +117,6 @@ Runtime guarantees:
 
 See [docs/trust-and-governance.md](docs/trust-and-governance.md).
 
-## Stability Guarantees
-
-Authoritative freeze contract: [docs/spec-freeze.md](docs/spec-freeze.md).
-
-- Frozen: language core (grammar + runtime), tool protocol and pack contracts, UI DSL surface, trace schema keys.
-- Can evolve: additive fields and new capabilities that preserve existing behavior.
-- Breaking change: explicit contract version bump with documented migration path and opt-in only.
-
 ## UX as a Contract
 
 UX behavior is deterministic and explainable through stable manifests and `n3 see` output.
@@ -163,8 +154,6 @@ If you must use reserved identifiers, escape them with backticks and use `n3 res
 Getting started:
 - [Install and run](docs/install-and-run.md)
 - [Quickstart](docs/quickstart.md)
-- [Start with templates](docs/start-with-templates.md)
-- [Template walkthrough](docs/template-walkthrough.md)
 
 Language & grammar:
 - [Grammar contract](docs/language/grammar_contract.md)
@@ -184,7 +173,6 @@ UI & Studio:
 Governance & releases:
 - [Release readiness](docs/release-ready.md)
 - [Stability](docs/stability.md)
-- [Spec freeze](docs/spec-freeze.md)
 
 ## Discussions & Design Conversations
 
