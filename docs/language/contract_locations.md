@@ -5,6 +5,9 @@
 ## Native Boundary Contract
 - `docs/language/native_boundary.md`
 
+## Embedding Contract
+- `docs/contracts/embedding.md`
+
 ## Doctor Report Contract
 - `tests/fixtures/doctor/doc_golden.json`
 
