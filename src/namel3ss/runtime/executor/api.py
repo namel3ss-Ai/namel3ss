@@ -140,6 +140,7 @@ def execute_program_flow(
         flow_action_id=action_id,
         observability=obs,
     )
+    template_id = _template_id(getattr(program, "app_path", None))
     module_traces = getattr(program, "module_traces", None)
     if module_traces:
         executor.ctx.traces.extend(copy.deepcopy(module_traces))
@@ -152,7 +153,21 @@ def execute_program_flow(
     result: ExecutionResult | None = None
     error: Exception | None = None
     span_id = None
+    template_span_id = None
     if owns_observability:
+        scope_value = "template" if template_id else "runtime"
+        obs.metrics.add("errors", value=0, labels={"scope": scope_value})
+        obs.metrics.add("blocks", value=0, labels={"scope": scope_value})
+        obs.metrics.add("retries", value=0, labels={"scope": scope_value})
+        if template_id:
+            template_span_id = obs.start_span(
+                executor.ctx,
+                name=f"template:{template_id}",
+                kind="template",
+                details={"template": template_id},
+                timing_name="template",
+                timing_labels={"template": template_id},
+            )
         span_kind = "action" if action_id else "flow"
         span_name = f"action:{action_id}" if action_id else f"flow:{flow_name}"
         timing_labels = {"action": action_id} if action_id else {"flow": flow_name}
@@ -165,6 +180,7 @@ def execute_program_flow(
             details={"flow": flow_name, "action_id": action_id},
             timing_name=span_kind,
             timing_labels=timing_labels,
+            parent_id=template_span_id,
         )
     try:
         result = executor.run()
@@ -187,6 +203,25 @@ def execute_program_flow(
     finally:
         if span_id:
             obs.end_span(executor.ctx, span_id, status=status)
+        if template_span_id:
+            obs.end_span(executor.ctx, template_span_id, status=status)
+        if owns_observability:
+            scope_value = "template" if template_id else "runtime"
+            outcome = "failed" if status == "error" else "ok"
+            payload = {"status": status}
+            if error is not None:
+                payload["error_kind"] = error.__class__.__name__
+                payload["error_category"] = _error_category(error)
+            obs.record_event(
+                event_kind="run",
+                scope=scope_value,
+                outcome=outcome,
+                identifiers=_flow_identifiers(flow_name, action_id, template_id),
+                payload=payload,
+            )
+            obs.metrics.increment("requests", labels={"scope": scope_value, "outcome": outcome})
+            if status == "error":
+                obs.metrics.increment("errors", labels={"scope": scope_value})
         if owns_observability:
             obs.flush()
         if resolved_root:
@@ -232,3 +267,32 @@ def _unknown_flow_message(flow_name: str, flows: list[ir.Flow]) -> str:
         fix="Call an existing flow or add it to your app.ai file.",
         example=example,
     )
+
+
+def _template_id(app_path: str | Path | None) -> str | None:
+    if not app_path:
+        return None
+    parts = [str(part) for part in Path(app_path).parts]
+    for idx, part in enumerate(parts):
+        if part.lower() == "templates" and idx + 1 < len(parts):
+            return str(parts[idx + 1])
+    return None
+
+
+def _flow_identifiers(flow_name: str, action_id: str | None, template_id: str | None) -> dict:
+    identifiers: dict[str, str] = {"flow": flow_name}
+    if action_id:
+        identifiers["action_id"] = action_id
+    if template_id:
+        identifiers["template"] = template_id
+    return identifiers
+
+
+def _error_category(err: Exception) -> str:
+    if isinstance(err, Namel3ssError):
+        details = err.details or {}
+        category = str(details.get("category") or "").strip().lower()
+        if category in {"input", "policy", "dependency", "internal"}:
+            return category
+        return "input"
+    return "internal"

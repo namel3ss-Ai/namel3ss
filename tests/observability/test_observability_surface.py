@@ -71,6 +71,10 @@ def test_logs_metrics_spans_are_scrubbed_and_stable(tmp_path: Path, monkeypatch)
     assert logs[1].get("id") == "log:0002"
     assert logs[0].get("fields", {}).get("token") == "***REDACTED***"
     assert logs[0].get("fields", {}).get("path") == "<path>"
+    assert all(isinstance(entry.get("order"), int) for entry in logs)
+    run_events = [entry for entry in logs if entry.get("event_kind") == "run"]
+    assert run_events
+    assert run_events[-1].get("scope") == "runtime"
     log_ids = [entry.get("id") for entry in logs]
     assert log_ids == sorted(log_ids)
 
@@ -125,6 +129,10 @@ def test_observability_endpoints_payloads(tmp_path: Path, monkeypatch) -> None:
     assert isinstance(metrics_payload.get("counters"), list)
     assert isinstance(metrics_payload.get("timings"), list)
     assert trace_payload == traces_payload
+    summary = metrics_payload.get("summary")
+    assert isinstance(summary, dict)
+    expected = json.loads(Path("tests/fixtures/observability_summary.json").read_text(encoding="utf-8"))
+    assert summary == expected
 
     _assert_scrubbed(logs_payload, secret_value, path_value)
     _assert_scrubbed(trace_payload, secret_value, path_value)

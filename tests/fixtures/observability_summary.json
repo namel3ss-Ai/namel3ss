@@ -1,0 +1,18 @@
+{
+  "failures": [],
+  "health": {
+    "blocked": 0,
+    "failed": 0,
+    "ok": 1,
+    "total": 1
+  },
+  "quality": {
+    "coverage": null,
+    "faithfulness": null,
+    "status": "not_available"
+  },
+  "retries": {
+    "count": 0,
+    "reasons": []
+  }
+}

@@ -59,6 +59,50 @@ class ObservabilityContext:
         span_id = self.traces.current_span_id()
         return self.logs.record(level=level, message=message, fields=fields, span_id=span_id)
 
+    def record_event(
+        self,
+        *,
+        event_kind: str,
+        scope: str,
+        outcome: str | None = None,
+        identifiers: dict | None = None,
+        payload: dict | None = None,
+        level: str | None = None,
+    ) -> dict | None:
+        normalized_outcome = _normalize_outcome(outcome)
+        resolved_level = level or _level_for_outcome(normalized_outcome)
+        span_id = self.traces.current_span_id()
+        return self.logs.record_event(
+            level=resolved_level,
+            event_kind=event_kind,
+            scope=scope,
+            outcome=normalized_outcome,
+            identifiers=_clean_mapping(identifiers),
+            payload=_clean_mapping(payload, allow_none=True),
+            span_id=span_id,
+        )
+
+    def record_retry(
+        self,
+        *,
+        scope: str,
+        reason: str,
+        attempt: int,
+        identifiers: dict | None = None,
+        payload: dict | None = None,
+    ) -> dict | None:
+        retry_payload = {"attempt": int(attempt), "reason": str(reason)}
+        if payload:
+            retry_payload["details"] = payload
+        return self.record_event(
+            event_kind="retry",
+            scope=scope,
+            outcome="ok",
+            identifiers=identifiers,
+            payload=retry_payload,
+            level="warn",
+        )
+
     def start_span(
         self,
         ctx,
@@ -148,6 +192,31 @@ class ObservabilityContext:
             return int(value)
         except Exception:
             return 0
+
+
+def _normalize_outcome(outcome: str | None) -> str | None:
+    if outcome is None:
+        return None
+    text = str(outcome).strip().lower()
+    if text in {"ok", "blocked", "failed"}:
+        return text
+    return "failed" if text else None
+
+
+def _level_for_outcome(outcome: str | None) -> str:
+    if outcome == "failed":
+        return "error"
+    if outcome == "blocked":
+        return "warn"
+    return "info"
+
+
+def _clean_mapping(values: dict | None, *, allow_none: bool = False) -> dict | None:
+    if values is None:
+        return {} if not allow_none else None
+    if isinstance(values, dict):
+        return dict(values)
+    return {} if not allow_none else None
 
 
 __all__ = ["ObservabilityContext"]

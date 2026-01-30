@@ -76,6 +76,73 @@
     return section;
   }
 
+  function buildSummarySection(title, rows) {
+    const section = document.createElement("div");
+    section.className = "metric-section";
+    const header = document.createElement("div");
+    header.className = "metric-section-title";
+    header.textContent = title;
+    section.appendChild(header);
+    if (!rows.length) {
+      const empty = document.createElement("div");
+      empty.className = "metric-empty";
+      empty.textContent = "No data yet.";
+      section.appendChild(empty);
+      return section;
+    }
+    rows.forEach((row) => section.appendChild(row));
+    return section;
+  }
+
+  function buildSummaryRow(label, value) {
+    return buildMetricRow({ name: label, value: value }, "counter");
+  }
+
+  function buildSummary(summary) {
+    if (!summary || typeof summary !== "object") return null;
+    const wrapper = document.createElement("div");
+    wrapper.className = "panel-stack";
+    const health = summary.health || {};
+    const healthRows = [
+      buildSummaryRow("Total", String(health.total ?? 0)),
+      buildSummaryRow("Ok", String(health.ok ?? 0)),
+      buildSummaryRow("Blocked", String(health.blocked ?? 0)),
+      buildSummaryRow("Failed", String(health.failed ?? 0)),
+    ];
+    const quality = summary.quality || {};
+    const qualityRows = [];
+    if (quality.status === "available") {
+      const coverage = quality.coverage ?? "n/a";
+      const faithfulness = quality.faithfulness ?? "n/a";
+      qualityRows.push(buildSummaryRow("Coverage", String(coverage)));
+      qualityRows.push(buildSummaryRow("Faithfulness", String(faithfulness)));
+    } else {
+      qualityRows.push(buildSummaryRow("Status", "Not available"));
+    }
+    const failures = Array.isArray(summary.failures) ? summary.failures : [];
+    const failureRows = failures.map((entry) => {
+      const label = entry.category || "unknown";
+      const value = String(entry.count ?? 0);
+      return buildSummaryRow(label, value);
+    });
+    if (!failureRows.length) {
+      failureRows.push(buildSummaryRow("None", "0"));
+    }
+    const retries = summary.retries || {};
+    const retryReasons = Array.isArray(retries.reasons) ? retries.reasons : [];
+    const retryRows = [buildSummaryRow("Total", String(retries.count ?? 0))];
+    retryReasons.forEach((entry) => {
+      const label = entry.reason || "unspecified";
+      const value = String(entry.count ?? 0);
+      retryRows.push(buildSummaryRow(label, value));
+    });
+    wrapper.appendChild(buildSummarySection("Health", healthRows));
+    wrapper.appendChild(buildSummarySection("Quality", qualityRows));
+    wrapper.appendChild(buildSummarySection("Failures", failureRows));
+    wrapper.appendChild(buildSummarySection("Retries", retryRows));
+    return wrapper;
+  }
+
   function renderMetrics(input) {
     const container = getContainer();
     if (!container) return;
@@ -84,13 +151,18 @@
       : (state && typeof state.getCachedMetrics === "function" ? state.getCachedMetrics() : null);
     const counters = Array.isArray(data && data.counters) ? data.counters : [];
     const timings = Array.isArray(data && data.timings) ? data.timings : [];
+    const summary = data && typeof data === "object" ? data.summary : null;
 
-    if (!counters.length && !timings.length) {
+    if (!counters.length && !timings.length && !summary) {
       dom.showEmpty(container, "No metrics yet. Run your app.");
       return;
     }
 
     container.innerHTML = "";
+    const summaryBlock = buildSummary(summary);
+    if (summaryBlock) {
+      container.appendChild(summaryBlock);
+    }
     container.appendChild(buildSection("Counters", counters, "counter"));
     container.appendChild(buildSection("Timings", timings, "timing"));
   }

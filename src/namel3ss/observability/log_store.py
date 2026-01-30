@@ -53,12 +53,11 @@ class LogStore:
         fields: object | None = None,
         span_id: str | None = None,
     ) -> dict:
-        normalized_level = level.lower().strip()
-        if normalized_level not in LOG_LEVELS:
-            normalized_level = "info"
+        normalized_level = _normalize_level(level)
         self._seq += 1
         event = {
             "id": f"log:{self._seq:04d}",
+            "order": self._seq,
             "level": normalized_level,
             "message": _coerce_message(message),
         }
@@ -66,6 +65,42 @@ class LogStore:
             event["span_id"] = span_id
         if fields is not None:
             event["fields"] = fields
+        scrubbed = self._scrub(event)
+        if isinstance(scrubbed, dict):
+            self._logs.append(scrubbed)
+            return scrubbed
+        self._logs.append(event)
+        return event
+
+    def record_event(
+        self,
+        *,
+        level: str,
+        event_kind: str,
+        scope: str,
+        outcome: str | None = None,
+        identifiers: dict | None = None,
+        payload: dict | None = None,
+        span_id: str | None = None,
+    ) -> dict:
+        normalized_level = _normalize_level(level)
+        self._seq += 1
+        event = {
+            "id": f"log:{self._seq:04d}",
+            "order": self._seq,
+            "level": normalized_level,
+            "message": _coerce_message(event_kind),
+            "event_kind": _coerce_message(event_kind),
+            "scope": _coerce_message(scope),
+        }
+        if outcome is not None:
+            event["outcome"] = _coerce_message(outcome)
+        if identifiers:
+            event["identifiers"] = identifiers
+        if payload is not None:
+            event["payload"] = payload
+        if span_id:
+            event["span_id"] = span_id
         scrubbed = self._scrub(event)
         if isinstance(scrubbed, dict):
             self._logs.append(scrubbed)
@@ -107,6 +142,13 @@ def _coerce_message(message: object) -> str:
     if isinstance(message, str):
         return message
     return str(message)
+
+
+def _normalize_level(level: str) -> str:
+    normalized_level = level.lower().strip() if isinstance(level, str) else "info"
+    if normalized_level not in LOG_LEVELS:
+        return "info"
+    return normalized_level
 
 
 __all__ = ["LOG_LEVELS", "LogStore", "logs_path", "read_logs"]

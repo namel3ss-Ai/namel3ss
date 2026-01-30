@@ -48,6 +48,7 @@ def _run_ingestion(ctx, definition, payload: dict) -> PipelineRunResult:
         project_root=ctx.project_root,
         app_path=ctx.app_path,
         secret_values=secret_list,
+        observability=getattr(ctx, "observability", None),
     )
     report = result.get("report") if isinstance(result, dict) else None
     if not isinstance(report, dict):
@@ -121,6 +122,7 @@ def _run_retrieval(ctx, definition, payload: dict) -> PipelineRunResult:
         secret_values=collect_secret_values(ctx.config),
         identity=ctx.identity,
         policy_decl=getattr(ctx, "policy", None),
+        observability=getattr(ctx, "observability", None),
     )
     excluded_blocked = int(result.get("excluded_blocked") or 0) if isinstance(result, dict) else 0
     excluded_warn = int(result.get("excluded_warn") or 0) if isinstance(result, dict) else 0
