@@ -16,3 +16,7 @@
 
 ## Packaging Verification Contract
 - `tools/package_verify.py`
+
+## Observability Contract
+- `src/namel3ss/runtime/observability/collector.py`
+- `tests/fixtures/observability/explain_disabled.json`

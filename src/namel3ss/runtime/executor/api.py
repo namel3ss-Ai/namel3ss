@@ -23,6 +23,7 @@ from namel3ss.secrets import collect_secret_values
 from namel3ss.compatibility import validate_spec_version
 import time
 from namel3ss.observability.context import ObservabilityContext
+from namel3ss.observability.enablement import resolve_observability_context
 from namel3ss.pipelines.registry import pipeline_contracts
 
 
@@ -116,13 +117,13 @@ def execute_program_flow(
             return native_result
     secret_values = collect_secret_values(resolved_config)
     start_time = time.time()
-    owns_observability = observability is None
-    obs = observability or ObservabilityContext.from_config(
+    obs, owns_observability = resolve_observability_context(
+        observability,
         project_root=resolved_root,
         app_path=getattr(program, "app_path", None),
         config=resolved_config,
     )
-    if owns_observability:
+    if obs and owns_observability:
         obs.start_session()
     executor = Executor(
         flow,
@@ -166,7 +167,7 @@ def execute_program_flow(
     result: ExecutionResult | None = None
     error: Exception | None = None
     span_id = None
-    if owns_observability:
+    if obs and owns_observability:
         span_kind = "action" if action_id else "flow"
         span_name = f"action:{action_id}" if action_id else f"flow:{flow_name}"
         timing_labels = {"action": action_id} if action_id else {"flow": flow_name}
@@ -199,9 +200,9 @@ def execute_program_flow(
                 secret_values=secret_values,
             )
     finally:
-        if span_id:
+        if span_id and obs:
             obs.end_span(executor.ctx, span_id, status=status)
-        if owns_observability:
+        if obs and owns_observability:
             obs.flush()
         if resolved_root:
             record_event(

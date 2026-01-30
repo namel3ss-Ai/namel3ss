@@ -10,6 +10,7 @@ from namel3ss.runtime.persistence_paths import resolve_persistence_root
 
 METRICS_DIRNAME = "metrics"
 METRICS_FILENAME = "metrics.json"
+TIMING_BUCKETS = (0, 1, 2, 5, 10, 25, 50, 100, 250, 500, 1000)
 
 
 def metrics_path(project_root: str | Path | None, app_path: str | Path | None) -> Path | None:
@@ -62,6 +63,10 @@ class MetricsStore:
         entry["last_steps"] = int(duration)
         entry["min_steps"] = _min_or(entry.get("min_steps"), duration)
         entry["max_steps"] = _max_or(entry.get("max_steps"), duration)
+        buckets = entry.setdefault("buckets", _default_buckets())
+        index = _bucket_index(int(duration))
+        if 0 <= index < len(buckets):
+            buckets[index]["count"] = int(buckets[index].get("count", 0)) + 1
 
     def snapshot(self) -> dict:
         counters = sorted(self._counters.values(), key=_metric_sort_key)
@@ -86,6 +91,7 @@ class MetricsStore:
         entry.setdefault("min_steps", None)
         entry.setdefault("max_steps", None)
         entry.setdefault("last_steps", 0)
+        entry.setdefault("buckets", _default_buckets())
         return entry
 
     def _entry(self, name: str, labels: dict | None, *, timing: bool = False) -> dict:
@@ -139,6 +145,19 @@ def _metric_sort_key(entry: dict) -> tuple:
     labels = entry.get("labels", {})
     label_key = _label_key(labels if isinstance(labels, dict) else {})
     return (name, label_key)
+
+
+def _default_buckets() -> list[dict]:
+    buckets = [{"le": bound, "count": 0} for bound in TIMING_BUCKETS]
+    buckets.append({"gt": TIMING_BUCKETS[-1], "count": 0})
+    return buckets
+
+
+def _bucket_index(duration: int) -> int:
+    for idx, bound in enumerate(TIMING_BUCKETS):
+        if duration <= bound:
+            return idx
+    return len(TIMING_BUCKETS)
 
 
 def _coerce_number(value: object) -> float:

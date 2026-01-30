@@ -52,6 +52,8 @@ class LogStore:
         message: object,
         fields: object | None = None,
         span_id: str | None = None,
+        name: str | None = None,
+        kind: str | None = None,
     ) -> dict:
         normalized_level = level.lower().strip()
         if normalized_level not in LOG_LEVELS:
@@ -59,6 +61,8 @@ class LogStore:
         self._seq += 1
         event = {
             "id": f"log:{self._seq:04d}",
+            "name": name or "log.message",
+            "kind": kind or normalized_level,
             "level": normalized_level,
             "message": _coerce_message(message),
         }
