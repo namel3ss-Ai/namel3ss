@@ -1,4 +1,0 @@
-spec is "1.0"
-
-flow "main":
-  return "ok"
