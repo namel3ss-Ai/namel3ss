@@ -1,0 +1,17 @@
+spec is "1.0"
+
+record "Account":
+  tenant_key is identity.organization_id
+  name is text
+
+flow "restricted" requires identity.role is "admin"
+  input
+    name is text
+  create "Account"
+    name is input.name
+
+page "home": requires identity.role is "admin"
+  title is "Explain"
+  text is "ok"
+  button "Run":
+    calls flow "restricted"

@@ -1,0 +1,175 @@
+{
+  "access_rules": {
+    "flow_count": 1,
+    "flows": [
+      "restricted"
+    ],
+    "page_count": 1,
+    "pages": [
+      "home"
+    ]
+  },
+  "active_build_id": null,
+  "active_proof_id": "proof-stable",
+  "capsules": [
+    {
+      "name": "local_core",
+      "source": "local"
+    },
+    {
+      "name": "pack_tools",
+      "source": "package"
+    }
+  ],
+  "composition": {
+    "api_version": "composition",
+    "call_tree": {
+      "calls": [
+        {
+          "callee": "alpha",
+          "caller": "restricted",
+          "contract_inputs": [
+            "x"
+          ],
+          "contract_outputs": [
+            "result"
+          ],
+          "error_message": "failed at <path>sers<path>",
+          "id": "flow_call:0001",
+          "inputs": [
+            "x"
+          ],
+          "kind": "flow",
+          "outputs": [
+            "result"
+          ],
+          "parent_id": "flow:restricted",
+          "status": "error"
+        },
+        {
+          "id": "pipeline:retrieval:0001",
+          "kind": "pipeline",
+          "parent_id": "flow:restricted",
+          "pipeline": "retrieval",
+          "status": "ok"
+        }
+      ],
+      "root": {
+        "id": "flow:restricted",
+        "kind": "flow",
+        "name": "restricted"
+      },
+      "total": 2,
+      "truncated": false
+    },
+    "flow_name": "restricted",
+    "ok": false,
+    "orchestration": {
+      "runs": [],
+      "runs_truncated": false,
+      "total_runs": 0
+    },
+    "pipelines": {
+      "runs": [
+        {
+          "pipeline": "retrieval",
+          "run_id": "pipeline:retrieval:0001",
+          "status": "ok",
+          "step_total": 1,
+          "steps": [
+            {
+              "checksum": "abc123",
+              "ordinal": 1,
+              "status": "ok",
+              "step_id": "pipeline:retrieval:accept:1",
+              "step_kind": "accept",
+              "summary": {
+                "limit": 1,
+                "note": "***REDACTED***",
+                "query": "invoice"
+              }
+            }
+          ],
+          "steps_truncated": false
+        }
+      ],
+      "runs_truncated": false,
+      "steps_truncated": false,
+      "total_runs": 1,
+      "total_steps": 1
+    }
+  },
+  "engine_target": "local",
+  "flows": 1,
+  "governance": {
+    "checks": [],
+    "status": "unknown"
+  },
+  "pages": 1,
+  "persistence": {
+    "descriptor": null,
+    "target": "memory"
+  },
+  "policy": {
+    "declared": [],
+    "effective": [
+      {
+        "action": "ingestion.override",
+        "effect": "allow",
+        "mode": "require",
+        "requires": [
+          "ingestion.override"
+        ],
+        "source": "default"
+      },
+      {
+        "action": "ingestion.review",
+        "effect": "allow",
+        "mode": "allow",
+        "source": "default"
+      },
+      {
+        "action": "ingestion.run",
+        "effect": "allow",
+        "mode": "allow",
+        "source": "default"
+      },
+      {
+        "action": "ingestion.skip",
+        "effect": "allow",
+        "mode": "require",
+        "requires": [
+          "ingestion.skip"
+        ],
+        "source": "default"
+      },
+      {
+        "action": "retrieval.include_warn",
+        "effect": "allow",
+        "mode": "require",
+        "requires": [
+          "retrieval.include_warn"
+        ],
+        "source": "default"
+      },
+      {
+        "action": "upload.replace",
+        "effect": "allow",
+        "mode": "require",
+        "requires": [
+          "upload.replace"
+        ],
+        "source": "default"
+      }
+    ]
+  },
+  "records": 1,
+  "schema_version": 1,
+  "tenant_scoping": {
+    "count": 1,
+    "records": [
+      "Account"
+    ]
+  },
+  "tools": []
+}
