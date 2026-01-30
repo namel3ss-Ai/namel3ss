@@ -1,28 +1,32 @@
 # Operations
 
 ## Purpose
-
-Provide a canonical, deterministic operations template.
+- Provide deterministic job lifecycle tracking with replayable execution narratives.
+- Surface explicit failure, retry, rollback, and summary signals for operations.
 
 ## Entry
-
-`app.ai` defines the template entry. The default flow returns a stable value and performs no side effects.
+- Entry file: `app.ai`.
+- CLI wiring is defined outside this folder.
 
 ## Contracts
-
-- Deterministic outputs only
-- Offline by default
-- No repo artifacts
-- No host paths or secrets in outputs
+- Deterministic only: no timestamps, randomness, host paths, or secrets.
+- Job ids are stable inputs (`job_id`) and are required for all flows.
+- Lifecycle states are explicit and limited to: queued, running, blocked, done.
+- Transitions emit explain records with previous/next state and stable reason codes.
+- Failure classification is stable: input, policy, dependency, internal.
+- Retries are bounded and recorded with ordered attempt numbers.
+- Rollback is explicit with reason codes and artifact ids.
+- Execution narrative is stored in `ExecutionEvent` and is replayed without side effects.
+- Job ordering in summaries is stable: queued -> running -> blocked -> done.
+- Drift uses expected vs actual outcomes; cost reports `not_available` unless extended.
+- Offline by default; no network or external services required.
+- Runtime artifacts remain under `.namel3ss/` and stay out of git.
 
 ## Explain
-
-Explain surfaces must remain available and deterministic for any future logic.
+- ExplainEntry records lifecycle transitions, failure classification, retries, rollback, and summaries.
 
 ## Fixtures
-
-None by default.
+- See `tests/fixtures/operations/`.
 
 ## Verify
-
-Run the standard repository checks.
+- `n3 app.ai check`

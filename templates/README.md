@@ -1,22 +1,40 @@
-# Templates
+﻿# Templates
 
-Templates are canonical, production primitives. They define stable program shapes that are safe to copy, extend, and audit.
+## Purpose
+- Define templates as production primitives, not demos.
+- Provide a single home for canonical template sources.
+- Keep structure, naming, and invariants stable.
+
+## Scope
+- This folder is documentation and source only.
+- Runtime scaffolding remains in `src/namel3ss/templates/`.
+- No execution tooling or auto-discovery lives here.
+- Templates may be empty; a contract-first landing is valid.
 
 ## Structure
-
-Each template lives under `templates/<name>/` and must contain:
-
+Each template lives in `templates/<name>/` and must include:
 - `README.md`
 - `app.ai`
 
 Optional:
+- `fixtures/` (deterministic, repo-safe only)
 
-- `fixtures/` (only deterministic, repo-safe fixtures)
+Additional files are allowed only when deterministic and documented in the template README.
+
+## Naming
+- Use short nouns only.
+- Use lowercase snake_case.
+- No numbers or lifecycle labels.
+
+## Shortcuts
+- Commands are 2-5 characters, lowercase, and englishish nouns or verbs.
+- One shortcut per template; no aliases.
+- Shortcuts identify templates only and do not execute template files.
+- Mappings are static and repo-relative.
+- Output is deterministic and ordered.
 
 ## Template README
-
-Each template README must include the following stable headings:
-
+Each `templates/<name>/README.md` must include these headings in this order:
 - Purpose
 - Entry
 - Contracts
@@ -24,18 +42,23 @@ Each template README must include the following stable headings:
 - Fixtures
 - Verify
 
-## Determinism and safety
+## Entry
+- Entry file: `app.ai` (canonical entry extension in this repo).
+- CLI entry: `n3 new <template> <project_name>` (reserved; wiring is external to this folder).
 
-Templates must remain deterministic and offline by default:
+## Contracts
+Every template must document deterministic invariants, including:
+- No timestamps, randomness, host paths, or secrets.
+- Stable ordering for lists and outputs.
+- Explain surfaces are available by default and documented in the template README.
+- Offline by default; no network or external services required.
+- Runtime artifacts stay out of git and remain under `.namel3ss/`.
 
-- No timestamps
-- No randomness
-- No network access
-- No repo artifacts
-- No host paths or secrets in outputs
+## Explain
+Document the explain surfaces for the template in one or two lines.
 
-## Index
+## Fixtures
+If `fixtures/` exists, include only deterministic, repo-safe data.
 
-`templates/index.md` lists templates in alphabetical order by folder name. Each entry includes the template name and repo-relative path. If a shortcut is listed, it is a static identifier only and must not execute the template.
-
-Templates may be empty initially; the contract remains valid without any entries.
+## Verify
+List deterministic checks for the template (for example, `n3 app.ai check`).

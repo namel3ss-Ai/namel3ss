@@ -98,6 +98,7 @@ References:
 ## What you can run today
 
 - Templates: [docs/templates.md](docs/templates.md)
+- Template contract: [templates/](templates/)
 - Demos: [src/namel3ss/demos](src/namel3ss/demos)
 - Studio (inspection UI): [docs/studio.md](docs/studio.md)
 
