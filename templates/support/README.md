@@ -1,30 +1,28 @@
 # Support
 
 ## Purpose
-- Provide deterministic case intake, routing, escalation, and resolution for support workflows.
-- Treat cases as canonical records with auditable lifecycle transitions and retrieval-backed outcomes.
+
+Provide a canonical, deterministic support template.
 
 ## Entry
-- Entry file: `app.ai`.
-- CLI wiring is defined outside this folder.
+
+`app.ai` defines the template entry. The default flow returns a stable value and performs no side effects.
 
 ## Contracts
-- Deterministic only: no timestamps, randomness, host paths, or secrets.
-- Case lifecycle states are explicit: received, understood, resolved, escalated.
-- Case ids are stable and must be provided or derived from upload checksums.
-- Retrieval is multi-source (knowledge + past cases) with explicit routing rules and stable ordering.
-- Knowledge sources are supplied via deterministic ingestion into state.index and state.ingestion.
-- Escalations use deterministic reason codes and evidence references.
-- Resolved cases become retrievable through an auditable archive and index.
-- Offline by default; no network or external services required.
-- Explain surfaces are required and must be documented when flows exist.
-- Runtime artifacts remain under `.namel3ss/` and stay out of git.
+
+- Deterministic outputs only
+- Offline by default
+- No repo artifacts
+- No host paths or secrets in outputs
 
 ## Explain
-- ExplainEntry records capture lifecycle transitions, routing decisions, retrieval ordering, escalations, and outcomes.
+
+Explain surfaces must remain available and deterministic for any future logic.
 
 ## Fixtures
-- See `tests/fixtures/support/` and `tests/fixtures/support_explain_citations.json`.
+
+None by default.
 
 ## Verify
-- `n3 app.ai check`
+
+Run the standard repository checks.

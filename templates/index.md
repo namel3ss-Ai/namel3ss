@@ -1,9 +1,9 @@
 # Templates
 
-Canonical templates live under `templates/<name>/`.
-List order is alphabetical by folder name.
+Canonical templates are listed below in alphabetical order by folder name.
 
-## List
-- knowledge - deterministic ingestion, retrieval, and cited answers
-- operations - deterministic job lifecycle, narratives, and summaries
-- support - deterministic case lifecycle, routing, and outcomes
+| Name | Path | Summary |
+| --- | --- | --- |
+| knowledge | templates/knowledge/ | Knowledge template |
+| operations | templates/operations/ | Operations template |
+| support | templates/support/ | Support template |
