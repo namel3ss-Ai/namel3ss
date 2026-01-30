@@ -53,6 +53,7 @@ Every template must document deterministic invariants, including:
 - Explain surfaces are available by default and documented in the template README.
 - Offline by default; no network or external services required.
 - Runtime artifacts stay out of git and remain under `.namel3ss/`.
+- Line limits: templates may be up to 1000 lines to keep full templates readable and usable; all other files remain capped at 500 lines.
 
 ## Explain
 Document the explain surfaces for the template in one or two lines.

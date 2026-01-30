@@ -1,7 +1,8 @@
 """
-Line length enforcement for Namel3ss source files.
+Line length enforcement for Namel3ss repository files.
 
-Fails if any Python file under src/ exceeds the configured line limit.
+Fails if any Python file under src/ exceeds the default line limit or any file under
+templates/ exceeds the template line limit.
 """
 
 from __future__ import annotations
@@ -11,13 +12,21 @@ from pathlib import Path
 from typing import Iterable, Tuple
 
 
-LINE_LIMIT = 500
-SRC_ROOT = Path(__file__).resolve().parent.parent / "src"
+DEFAULT_LINE_LIMIT = 500
+TEMPLATE_LINE_LIMIT = 1000
+REPO_ROOT = Path(__file__).resolve().parent.parent
+SRC_ROOT = REPO_ROOT / "src"
+TEMPLATES_ROOT = REPO_ROOT / "templates"
 
 
 def iter_python_files(root: Path) -> Iterable[Path]:
     """Yield all Python files under the given root, sorted for stable output."""
     return sorted(root.rglob("*.py"))
+
+
+def iter_template_files(root: Path) -> Iterable[Path]:
+    """Yield all files under templates/, sorted for stable output."""
+    return sorted(path for path in root.rglob("*") if path.is_file())
 
 
 def count_lines(path: Path) -> int:
@@ -33,12 +42,12 @@ def format_path(path: Path) -> str:
         return str(path)
 
 
-def find_offenders(files: Iterable[Path]) -> Iterable[Tuple[str, int]]:
-    """Return iterable of (path, line_count) tuples that break the limit."""
+def find_offenders(files: Iterable[Path], limit: int) -> Iterable[Tuple[str, int, int]]:
+    """Return iterable of (path, line_count, limit) tuples that break the limit."""
     for file_path in files:
         line_count = count_lines(file_path)
-        if line_count > LINE_LIMIT:
-            yield format_path(file_path), line_count
+        if line_count > limit:
+            yield format_path(file_path), line_count, limit
 
 
 def main() -> int:
@@ -46,17 +55,24 @@ def main() -> int:
         print("src directory not found; expected source files under ./src.", file=sys.stderr)
         return 1
 
-    offenders = list(find_offenders(iter_python_files(SRC_ROOT)))
+    offenders: list[Tuple[str, int, int]] = []
+    offenders.extend(find_offenders(iter_python_files(SRC_ROOT), DEFAULT_LINE_LIMIT))
+    if TEMPLATES_ROOT.exists():
+        offenders.extend(find_offenders(iter_template_files(TEMPLATES_ROOT), TEMPLATE_LINE_LIMIT))
+    offenders.sort(key=lambda item: item[0])
+
     if offenders:
-        print(f"Line limit exceeded (> {LINE_LIMIT} lines per file):", file=sys.stderr)
-        for path, line_count in offenders:
-            print(f" - {path}: {line_count} lines", file=sys.stderr)
+        print("Line limit exceeded:", file=sys.stderr)
+        for path, line_count, limit in offenders:
+            print(f" - {path}: {line_count} lines (limit {limit})", file=sys.stderr)
         return 1
 
-    print(f"Line limit check passed (<= {LINE_LIMIT} lines per file).")
+    print(
+        "Line limit check passed "
+        f"(<= {DEFAULT_LINE_LIMIT} lines, templates <= {TEMPLATE_LINE_LIMIT} lines)."
+    )
     return 0
 
 
 if __name__ == "__main__":
     sys.exit(main())
-
