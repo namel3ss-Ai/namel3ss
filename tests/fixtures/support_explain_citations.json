@@ -1,0 +1,85 @@
+{
+  "citations": [
+    {
+      "title": "fd66804aa7cfe18f017deba753e8b75da66dd7042897984a7da20f1b4afcdbe1",
+      "source_type": "knowledge",
+      "source_id": "fd66804aa7cfe18f017deba753e8b75da66dd7042897984a7da20f1b4afcdbe1:0",
+      "snippet": "Reset policy: use the reset portal for account access. Billing reset requires verification. Keep actions deterministic and documented."
+    }
+  ],
+  "explain": [
+    {
+      "stage": "transition",
+      "detail": {
+        "case_id": "case-knowledge",
+        "previous": "none",
+        "next": "received",
+        "reason": "intake",
+        "evidence_ids": []
+      }
+    },
+    {
+      "stage": "transition",
+      "detail": {
+        "case_id": "case-knowledge",
+        "previous": "received",
+        "next": "understood",
+        "reason": "retrieval",
+        "evidence_ids": []
+      }
+    },
+    {
+      "stage": "routing",
+      "detail": {
+        "case_id": "case-knowledge",
+        "route": "knowledge",
+        "reason": "knowledge"
+      }
+    },
+    {
+      "stage": "retrieval",
+      "detail": {
+        "case_id": "case-knowledge",
+        "raw_query": "reset",
+        "result_count": 1,
+        "coverage": 0.25,
+        "evidence_ids": [
+          "fd66804aa7cfe18f017deba753e8b75da66dd7042897984a7da20f1b4afcdbe1:0"
+        ]
+      }
+    },
+    {
+      "stage": "transition",
+      "detail": {
+        "case_id": "case-knowledge",
+        "previous": "understood",
+        "next": "resolved",
+        "reason": "evidence",
+        "evidence_ids": [
+          "fd66804aa7cfe18f017deba753e8b75da66dd7042897984a7da20f1b4afcdbe1:0"
+        ]
+      }
+    },
+    {
+      "stage": "learning",
+      "detail": {
+        "case_id": "case-knowledge",
+        "chunk_id": "case-knowledge",
+        "index_updated": true
+      }
+    },
+    {
+      "stage": "outcome",
+      "detail": {
+        "case_id": "case-knowledge",
+        "status": "resolved",
+        "coverage": 0.25,
+        "confidence": 0.25,
+        "source_count": 1,
+        "evidence_ids": [
+          "fd66804aa7cfe18f017deba753e8b75da66dd7042897984a7da20f1b4afcdbe1:0"
+        ]
+      }
+    }
+  ]
+}
