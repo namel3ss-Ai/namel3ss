@@ -5,26 +5,14 @@
 - Applies to: Expression Surface, UI Surface
 - Freeze semantics: public contract; changes must be additive and explicitly documented
 
-Namel3ss v1 contracts are frozen. These are the rules the engine, CLI, and tooling
-must obey without breaking changes. When a breaking change is required, bump only
-the relevant key in the canonical version map.
+Namel3ss contracts are frozen. The authoritative list of frozen public contracts
+is in `docs/contract-freeze.md`.
 
 Canonical version map:
 - resources/spec_versions.json
 
-## Frozen contracts (v1)
-- Language core (grammar + runtime semantics)
-- Tool DSL (English-first declarations and calls)
-- Tool protocol (local/service/container)
-- Pack manifest + trust model
-- Tool resolution precedence + collision rules
-- UI DSL surface (docs/ui-dsl.md)
-- UI manifest schema
-- Identity schema + persistence config semantics
-- Trace schema keys
-
-Each contract is versioned in `resources/spec_versions.json`. Breaking changes
-must increment the specific key only, with a changelog note.
+## Frozen contracts
+See `docs/contract-freeze.md`.
 
 ## What may change (non-breaking)
 - New language keywords that do not alter existing behavior

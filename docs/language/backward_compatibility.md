@@ -18,6 +18,8 @@ This policy defines how the frozen namel3ss grammar and semantics may evolve. Co
 - Publish an RFC describing the change, migration path, and risk.
 - Provide deprecation warnings where possible and a documented migration window.
 - Update contract docs and contract tests to reflect the new behavior, with explicit approval.
+- Provide deterministic migration tooling and a written migration plan.
+- Require explicit opt-in before any breaking change applies.
 
 ## Enforcement
 - Grammar and contract tests must fail on incompatible changes.
