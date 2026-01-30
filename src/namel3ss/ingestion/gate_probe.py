@@ -16,10 +16,11 @@ from namel3ss.ingestion.gate_contract import (
 
 def probe_content(content: bytes | None, *, metadata: dict, detected: dict) -> dict:
     payload = content or b""
-    byte_count = len(payload)
-    null_bytes = payload.count(b"\x00")
     utf8_valid = _is_utf8(payload)
-    sample = payload[: min(byte_count, PROBE_SAMPLE_BYTES)]
+    canonical_payload = _canonical_probe_payload(payload, utf8_valid=utf8_valid)
+    byte_count = len(canonical_payload)
+    null_bytes = canonical_payload.count(b"\x00")
+    sample = canonical_payload[: min(byte_count, PROBE_SAMPLE_BYTES)]
     binary_ratio = _binary_ratio(sample)
     sniff = "binary" if binary_ratio > PROBE_BINARY_RATIO_LIMIT else "text"
 
@@ -72,6 +73,16 @@ def _is_utf8(payload: bytes) -> bool:
     except UnicodeDecodeError:
         return False
     return True
+
+
+def _canonical_probe_payload(payload: bytes, *, utf8_valid: bool) -> bytes:
+    if not payload:
+        return b""
+    if not utf8_valid:
+        return payload
+    if b"\r" not in payload:
+        return payload
+    return payload.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
 
 
 def _binary_ratio(sample: bytes) -> int:

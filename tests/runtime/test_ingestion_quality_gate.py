@@ -6,6 +6,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from namel3ss.ingestion.api import run_ingestion
+from namel3ss.ingestion.gate_probe import probe_content
 from namel3ss.ingestion.gate_contract import EVIDENCE_EXCERPT_LIMIT
 from namel3ss.runtime.backend.upload_store import store_upload
 from namel3ss.runtime.persistence_paths import resolve_persistence_root
@@ -45,6 +46,13 @@ def test_gate_decision_matches_fixture(tmp_path: Path) -> None:
     gate = result["report"]["gate"]
     expected = _load_json(FIXTURE_DIR / "valid_gate.json")
     assert gate == expected
+
+
+def test_probe_counts_use_canonical_newlines() -> None:
+    payload = b"line1\r\nline2\r\n"
+    probe = probe_content(payload, metadata={"content_type": "text/plain"}, detected={"type": "text"})
+    assert probe["bytes"] == len(b"line1\nline2\n")
+    assert probe["sample_bytes"] == probe["bytes"]
 
 
 def test_gate_blocks_null_bytes_and_writes_quarantine(tmp_path: Path) -> None:
