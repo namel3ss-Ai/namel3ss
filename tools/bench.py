@@ -12,6 +12,13 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any, Callable
 
+ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from namel3ss.cli.doc_mode import build_doc_payload
 from namel3ss.determinism import canonical_json_dumps
 from namel3ss.ingestion.detect import detect_upload
@@ -31,7 +38,6 @@ from namel3ss.runtime.executor.api import execute_program_flow
 from namel3ss.runtime.native.exec_adapter import _reset_exec_state, native_exec_available
 from namel3ss.spec_freeze.v1.rules import NONDETERMINISTIC_KEYS, NORMALIZED_VALUE, PATH_KEYS
 
-ROOT = Path(__file__).resolve().parents[1]
 FORBIDDEN_SUBSTRINGS = ("/Users/", "/home/", "C:\\")
 
 
