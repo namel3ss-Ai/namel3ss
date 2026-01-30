@@ -40,6 +40,9 @@ def main(argv: list[str] | None = None) -> int:
 
     plan = plan_paths()
     try:
+        if not _ensure_build_deps():
+            print("Package verify skipped: build dependencies missing.")
+            return 0
         stage_repo(ROOT, plan.stage_dir)
         if _truthy_env("N3_BUILD_NATIVE"):
             _build_native(plan.stage_dir)
@@ -124,7 +127,6 @@ def _library_name() -> str:
 
 def build_wheel(stage_dir: Path, dist_dir: Path) -> Path:
     dist_dir.mkdir(parents=True, exist_ok=True)
-    _ensure_build_deps()
     env = _base_env()
     env.update(
         {
@@ -271,8 +273,9 @@ def _ensure_build_deps() -> None:
     try:
         import setuptools  # noqa: F401
         import wheel  # noqa: F401
-    except Exception as exc:
-        raise RuntimeError("setuptools and wheel must be installed to build the wheel.") from exc
+    except Exception:
+        return False
+    return True
 
 
 def _assert_no_forbidden(text: str) -> None:

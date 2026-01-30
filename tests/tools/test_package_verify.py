@@ -58,6 +58,7 @@ def test_package_verify_main_cleans_temp(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(module, "build_wheel", fake_build_wheel)
     monkeypatch.setattr(module, "verify_wheel", fake_verify_wheel)
     monkeypatch.setattr(module, "_build_native", lambda _stage: None)
+    monkeypatch.setattr(module, "_ensure_build_deps", lambda: True)
     monkeypatch.delenv("N3_BUILD_NATIVE", raising=False)
 
     rc = module.main([])
