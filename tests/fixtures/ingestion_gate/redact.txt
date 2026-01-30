@@ -1,0 +1,1 @@
+Sensitive path /Users/alice/secrets/report.txt with SECRET_TOKEN should be redacted.

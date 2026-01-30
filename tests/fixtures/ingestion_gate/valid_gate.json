@@ -1,0 +1,38 @@
+{
+  "cache": {
+    "hit": false,
+    "key": "0a7eed6280c354e6ea7dbc1062384e2de5e47bb1b37bc605406d89e1874b2098.5fe1ea8721363af09b9d4e41a09e8507684a1b1ad4975dc2edec87f71e630190"
+  },
+  "evidence": {
+    "excerpt": "This is a safe ingestion sample with enough distinct words to pass the quality gate.",
+    "excerpt_bytes": 84,
+    "source": "normalized_text"
+  },
+  "fingerprint": {
+    "content_hash": "0a7eed6280c354e6ea7dbc1062384e2de5e47bb1b37bc605406d89e1874b2098",
+    "runtime_signature": "5fe1ea8721363af09b9d4e41a09e8507684a1b1ad4975dc2edec87f71e630190"
+  },
+  "normalize": {
+    "basis": "raw_bytes",
+    "bytes": 85,
+    "encoding": "utf-8",
+    "hash": "0a7eed6280c354e6ea7dbc1062384e2de5e47bb1b37bc605406d89e1874b2098"
+  },
+  "probe": {
+    "binary_ratio": 0,
+    "block_reasons": [],
+    "bytes": 85,
+    "content_type": "text/plain",
+    "detected_type": "text",
+    "null_bytes": 0,
+    "pdf_eof": null,
+    "sample_bytes": 85,
+    "sniff": "text",
+    "status": "pass",
+    "utf8_valid": true,
+    "warn_reasons": []
+  },
+  "quality": "pass",
+  "reasons": [],
+  "status": "allowed"
+}
