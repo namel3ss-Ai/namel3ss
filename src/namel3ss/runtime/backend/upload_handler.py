@@ -7,6 +7,7 @@ from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.observability.context import ObservabilityContext
+from namel3ss.observability.enablement import resolve_observability_context
 from namel3ss.runtime.backend.upload_contract import (
     DEFAULT_CONTENT_TYPE,
     UPLOAD_ERROR_CAPABILITY,
@@ -109,8 +110,6 @@ def handle_upload_list(ctx) -> dict:
 
 def _resolve_observability(ctx) -> tuple[ObservabilityContext | None, bool]:
     obs = getattr(ctx, "observability", None)
-    if obs is not None:
-        return obs, False
     app_path = getattr(ctx, "app_path", None)
     project_root = getattr(ctx, "project_root", None)
     config = None
@@ -118,12 +117,12 @@ def _resolve_observability(ctx) -> tuple[ObservabilityContext | None, bool]:
         config = load_config(app_path=app_path, root=project_root)
     except Exception:
         config = None
-    obs = ObservabilityContext.from_config(
+    return resolve_observability_context(
+        obs,
         project_root=project_root,
         app_path=app_path,
         config=config,
     )
-    return obs, True
 
 
 def _multipart_boundary(content_type: str) -> bytes:

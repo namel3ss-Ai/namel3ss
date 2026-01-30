@@ -51,6 +51,15 @@ jobs:
       - name: Release check
         run: n3 release-check --json .namel3ss/ci_artifacts/release_report.json --txt .namel3ss/ci_artifacts/release_report.txt --fast
 
+      - name: Package verification
+        run: python tools/package_verify.py
+
+      - name: Embed example (C)
+        run: python -m pytest -q tests/embed/test_embed_c_example.py
+
+      - name: Benchmark report
+        run: python tools/bench.py --out .namel3ss/ci_artifacts/bench_report.json --iterations 1 --timing deterministic
+
       - name: Dump release-check context (always)
         if: ${{ always() }}
         run: |

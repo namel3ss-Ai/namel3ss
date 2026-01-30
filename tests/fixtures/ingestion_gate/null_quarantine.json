@@ -1,0 +1,39 @@
+{
+  "evidence": {
+    "excerpt": "alphabetagamma",
+    "excerpt_bytes": 14,
+    "source": "raw_bytes"
+  },
+  "fingerprint": {
+    "content_hash": "a4ec7fdf288e8d36eb55c9c7a28d561f9e2345d34141044aa9234d13849cb59f",
+    "runtime_signature": "5fe1ea8721363af09b9d4e41a09e8507684a1b1ad4975dc2edec87f71e630190"
+  },
+  "normalize": {
+    "basis": "raw_bytes",
+    "bytes": 16,
+    "encoding": "utf-8",
+    "hash": "a4ec7fdf288e8d36eb55c9c7a28d561f9e2345d34141044aa9234d13849cb59f"
+  },
+  "probe": {
+    "binary_ratio": 125,
+    "block_reasons": [
+      "null_bytes"
+    ],
+    "bytes": 16,
+    "content_type": "application/octet-stream",
+    "detected_type": "text",
+    "null_bytes": 2,
+    "pdf_eof": null,
+    "sample_bytes": 16,
+    "sniff": "text",
+    "status": "block",
+    "utf8_valid": true,
+    "warn_reasons": []
+  },
+  "reasons": [
+    "null_bytes",
+    "text_too_short",
+    "low_unique_tokens"
+  ],
+  "status": "blocked"
+}

@@ -36,6 +36,7 @@ from namel3ss.errors.runtime.model import RuntimeWhere
 from namel3ss.runtime.boundary import attach_project_root, attach_secret_values, boundary_from_error, mark_boundary
 from namel3ss.security import activate_security_wall, build_security_wall
 from namel3ss.observability.context import ObservabilityContext
+from namel3ss.observability.enablement import resolve_observability_context
 from namel3ss.purity import is_pure
 
 
@@ -85,7 +86,8 @@ class Executor:
         resolved_identity = identity if identity is not None else resolve_identity(resolved_config, identity_schema)
         ai_profiles = ai_profiles or {}
         secrets_map = _build_secrets_map(ai_profiles, resolved_config, app_path)
-        obs = observability or ObservabilityContext.from_config(
+        obs, _ = resolve_observability_context(
+            observability,
             project_root=project_root,
             app_path=app_path,
             config=resolved_config,

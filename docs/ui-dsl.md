@@ -5,6 +5,7 @@ This is the authoritative description of the UI DSL. It is semantic and explicit
 ## 1) What UI DSL is
 - Declarative, semantic UI that maps to flows and records.
 - Deterministic structure; no per-component styling knobs.
+- Canonical serialization: UI manifests and their IR nodes use stable ordering and deterministic JSON.
 - Frozen surface: additive changes only, no silent behavior changes.
 - Text-first: intent over pixels.
 - Studio panels (Setup, Graph, Traces, Memory, etc.) are tooling views; they are not part of the UI DSL contract.

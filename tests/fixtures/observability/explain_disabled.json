@@ -1,0 +1,110 @@
+{
+  "access_rules": {
+    "flow_count": 0,
+    "flows": [],
+    "page_count": 0,
+    "pages": []
+  },
+  "active_build_id": "build-test",
+  "active_proof_id": "proof-test",
+  "capsules": [],
+  "composition": {
+    "api_version": "composition",
+    "call_tree": {
+      "calls": [],
+      "root": {
+        "id": "flow:unknown",
+        "kind": "flow",
+        "name": "unknown"
+      },
+      "total": 0,
+      "truncated": false
+    },
+    "flow_name": "unknown",
+    "ok": false,
+    "orchestration": {
+      "runs": [],
+      "runs_truncated": false,
+      "total_runs": 0
+    },
+    "pipelines": {
+      "runs": [],
+      "runs_truncated": false,
+      "steps_truncated": false,
+      "total_runs": 0,
+      "total_steps": 0
+    },
+    "reason": "no_run"
+  },
+  "engine_target": "local",
+  "flows": 1,
+  "governance": {
+    "checks": [],
+    "status": "unknown"
+  },
+  "pages": 0,
+  "persistence": {
+    "descriptor": null,
+    "target": "memory"
+  },
+  "policy": {
+    "declared": [],
+    "effective": [
+      {
+        "action": "ingestion.override",
+        "effect": "allow",
+        "mode": "require",
+        "requires": [
+          "ingestion.override"
+        ],
+        "source": "default"
+      },
+      {
+        "action": "ingestion.review",
+        "effect": "allow",
+        "mode": "allow",
+        "source": "default"
+      },
+      {
+        "action": "ingestion.run",
+        "effect": "allow",
+        "mode": "allow",
+        "source": "default"
+      },
+      {
+        "action": "ingestion.skip",
+        "effect": "allow",
+        "mode": "require",
+        "requires": [
+          "ingestion.skip"
+        ],
+        "source": "default"
+      },
+      {
+        "action": "retrieval.include_warn",
+        "effect": "allow",
+        "mode": "require",
+        "requires": [
+          "retrieval.include_warn"
+        ],
+        "source": "default"
+      },
+      {
+        "action": "upload.replace",
+        "effect": "allow",
+        "mode": "require",
+        "requires": [
+          "upload.replace"
+        ],
+        "source": "default"
+      }
+    ]
+  },
+  "records": 0,
+  "schema_version": 1,
+  "tenant_scoping": {
+    "count": 0,
+    "records": []
+  },
+  "tools": []
+}

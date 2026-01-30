@@ -6,4 +6,5 @@ recursive-include src/namel3ss/examples *
 recursive-include src/namel3ss/demos *
 recursive-include src/namel3ss/studio/web *
 recursive-include src/namel3ss/runtime/web *
+recursive-include src/namel3ss/runtime/native/lib *
 recursive-include resources/icons *

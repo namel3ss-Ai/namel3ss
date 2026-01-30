@@ -1,0 +1,5 @@
+flow "demo":
+  let `title` is "Hello world"
+  let total is 2.5
+  if total is greater than 1:
+    return total

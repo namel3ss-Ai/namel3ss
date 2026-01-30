@@ -1,0 +1,322 @@
+{
+  "decisions": [
+    {
+      "category": "ingestion",
+      "id": "ingestion:a4ec7fdf288e8d36eb55c9c7a28d561f9e2345d34141044aa9234d13849cb59f",
+      "inputs": {
+        "detected": {
+          "has_images": null,
+          "page_count": null,
+          "type": "text"
+        },
+        "gate": {
+          "cache": {
+            "hit": false,
+            "key": "a4ec7fdf288e8d36eb55c9c7a28d561f9e2345d34141044aa9234d13849cb59f.5fe1ea8721363af09b9d4e41a09e8507684a1b1ad4975dc2edec87f71e630190"
+          },
+          "evidence": {
+            "excerpt": "alphabetagamma",
+            "excerpt_bytes": 14,
+            "source": "raw_bytes"
+          },
+          "fingerprint": {
+            "content_hash": "a4ec7fdf288e8d36eb55c9c7a28d561f9e2345d34141044aa9234d13849cb59f",
+            "runtime_signature": "5fe1ea8721363af09b9d4e41a09e8507684a1b1ad4975dc2edec87f71e630190"
+          },
+          "normalize": {
+            "basis": "raw_bytes",
+            "bytes": 16,
+            "encoding": "utf-8",
+            "hash": "a4ec7fdf288e8d36eb55c9c7a28d561f9e2345d34141044aa9234d13849cb59f"
+          },
+          "probe": {
+            "binary_ratio": 125,
+            "block_reasons": [
+              "null_bytes"
+            ],
+            "bytes": 16,
+            "content_type": "application/octet-stream",
+            "detected_type": "text",
+            "null_bytes": 2,
+            "pdf_eof": null,
+            "sample_bytes": 16,
+            "sniff": "text",
+            "status": "block",
+            "utf8_valid": true,
+            "warn_reasons": []
+          },
+          "quality": "block",
+          "quarantine": {
+            "key": "a4ec7fdf288e8d36eb55c9c7a28d561f9e2345d34141044aa9234d13849cb59f.5fe1ea8721363af09b9d4e41a09e8507684a1b1ad4975dc2edec87f71e630190",
+            "written": true
+          },
+          "reasons": [
+            "null_bytes",
+            "text_too_short",
+            "low_unique_tokens"
+          ],
+          "status": "blocked"
+        },
+        "method_used": "primary",
+        "signals": {
+          "empty_pages_ratio": 0.0,
+          "line_break_ratio": 0.0,
+          "non_ascii_ratio": 0.0,
+          "repeated_line_ratio": 0.0,
+          "table_like_ratio": 0.0,
+          "text_chars": 0,
+          "unique_token_ratio": "***REDACTED***"
+        },
+        "upload_id": "a4ec7fdf288e8d36eb55c9c7a28d561f9e2345d34141044aa9234d13849cb59f"
+      },
+      "outcome": {
+        "gate": "blocked",
+        "status": "block"
+      },
+      "rules": [
+        "quality gate",
+        "null_bytes",
+        "text_too_short",
+        "low_unique_tokens"
+      ],
+      "subject": "a4ec7fdf288e8d36eb55c9c7a28d561f9e2345d34141044aa9234d13849cb59f"
+    },
+    {
+      "category": "policy",
+      "id": "policy:ingestion.run",
+      "inputs": {
+        "action": "ingestion.run"
+      },
+      "outcome": {
+        "decision": "allowed",
+        "reason": null,
+        "required_permissions": [],
+        "source": "policy"
+      },
+      "rules": [
+        {
+          "action": "ingestion.run",
+          "effect": "allow",
+          "mode": "allow",
+          "source": "default"
+        }
+      ],
+      "subject": "ingestion.run"
+    },
+    {
+      "category": "policy",
+      "id": "policy:ingestion.override",
+      "inputs": {
+        "action": "ingestion.override"
+      },
+      "outcome": {
+        "decision": "denied",
+        "reason": "permission_missing",
+        "required_permissions": [
+          "ingestion.override"
+        ],
+        "source": "policy"
+      },
+      "rules": [
+        {
+          "action": "ingestion.override",
+          "effect": "allow",
+          "mode": "require",
+          "requires": [
+            "ingestion.override"
+          ],
+          "source": "default"
+        }
+      ],
+      "subject": "ingestion.override"
+    },
+    {
+      "category": "policy",
+      "id": "policy:ingestion.review",
+      "inputs": {
+        "action": "ingestion.review"
+      },
+      "outcome": {
+        "decision": "allowed",
+        "reason": null,
+        "required_permissions": [],
+        "source": "policy"
+      },
+      "rules": [
+        {
+          "action": "ingestion.review",
+          "effect": "allow",
+          "mode": "allow",
+          "source": "default"
+        }
+      ],
+      "subject": "ingestion.review"
+    },
+    {
+      "category": "policy",
+      "id": "policy:ingestion.skip",
+      "inputs": {
+        "action": "ingestion.skip"
+      },
+      "outcome": {
+        "decision": "denied",
+        "reason": "permission_missing",
+        "required_permissions": [
+          "ingestion.skip"
+        ],
+        "source": "policy"
+      },
+      "rules": [
+        {
+          "action": "ingestion.skip",
+          "effect": "allow",
+          "mode": "require",
+          "requires": [
+            "ingestion.skip"
+          ],
+          "source": "default"
+        }
+      ],
+      "subject": "ingestion.skip"
+    },
+    {
+      "category": "policy",
+      "id": "policy:retrieval.include_warn",
+      "inputs": {
+        "action": "retrieval.include_warn"
+      },
+      "outcome": {
+        "decision": "denied",
+        "reason": "permission_missing",
+        "required_permissions": [
+          "retrieval.include_warn"
+        ],
+        "source": "policy"
+      },
+      "rules": [
+        {
+          "action": "retrieval.include_warn",
+          "effect": "allow",
+          "mode": "require",
+          "requires": [
+            "retrieval.include_warn"
+          ],
+          "source": "default"
+        }
+      ],
+      "subject": "retrieval.include_warn"
+    },
+    {
+      "category": "policy",
+      "id": "policy:upload.replace",
+      "inputs": {
+        "action": "upload.replace"
+      },
+      "outcome": {
+        "decision": "denied",
+        "reason": "permission_missing",
+        "required_permissions": [
+          "upload.replace"
+        ],
+        "source": "policy"
+      },
+      "rules": [
+        {
+          "action": "upload.replace",
+          "effect": "allow",
+          "mode": "require",
+          "requires": [
+            "upload.replace"
+          ],
+          "source": "default"
+        }
+      ],
+      "subject": "upload.replace"
+    }
+  ],
+  "inputs": {
+    "app": {
+      "path": "app.ai"
+    },
+    "identity": {
+      "permissions": [],
+      "roles": [],
+      "subject": null,
+      "trust_level": null
+    },
+    "state": {
+      "index_chunks": 0,
+      "ingestion_reports": 1,
+      "uploads": 0
+    }
+  },
+  "outcomes": {
+    "ingestion": {
+      "counts": {
+        "block": 1,
+        "pass": 0,
+        "warn": 0
+      }
+    },
+    "policy_denials": [
+      "ingestion.override",
+      "ingestion.skip",
+      "retrieval.include_warn",
+      "upload.replace"
+    ]
+  },
+  "policies": {
+    "declared": [],
+    "effective": [
+      {
+        "action": "ingestion.override",
+        "effect": "allow",
+        "mode": "require",
+        "requires": [
+          "ingestion.override"
+        ],
+        "source": "default"
+      },
+      {
+        "action": "ingestion.review",
+        "effect": "allow",
+        "mode": "allow",
+        "source": "default"
+      },
+      {
+        "action": "ingestion.run",
+        "effect": "allow",
+        "mode": "allow",
+        "source": "default"
+      },
+      {
+        "action": "ingestion.skip",
+        "effect": "allow",
+        "mode": "require",
+        "requires": [
+          "ingestion.skip"
+        ],
+        "source": "default"
+      },
+      {
+        "action": "retrieval.include_warn",
+        "effect": "allow",
+        "mode": "require",
+        "requires": [
+          "retrieval.include_warn"
+        ],
+        "source": "default"
+      },
+      {
+        "action": "upload.replace",
+        "effect": "allow",
+        "mode": "require",
+        "requires": [
+          "upload.replace"
+        ],
+        "source": "default"
+      }
+    ]
+  }
+}
+

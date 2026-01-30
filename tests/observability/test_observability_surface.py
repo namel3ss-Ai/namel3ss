@@ -52,6 +52,7 @@ def _assert_scrubbed(payload: object, secret_value: str, path_value: str) -> Non
 def test_logs_metrics_spans_are_scrubbed_and_stable(tmp_path: Path, monkeypatch) -> None:
     secret_value = "sk-test-secret"
     monkeypatch.setenv("OPENAI_API_KEY", secret_value)
+    monkeypatch.setenv("N3_OBSERVABILITY", "1")
     path_value = (tmp_path / "secrets.txt").as_posix()
     app_file = _run_app(tmp_path, secret_value, path_value)
 
@@ -107,6 +108,7 @@ def test_logs_metrics_spans_are_scrubbed_and_stable(tmp_path: Path, monkeypatch)
 def test_observability_endpoints_payloads(tmp_path: Path, monkeypatch) -> None:
     secret_value = "sk-test-secret"
     monkeypatch.setenv("OPENAI_API_KEY", secret_value)
+    monkeypatch.setenv("N3_OBSERVABILITY", "1")
     path_value = (tmp_path / "secrets.txt").as_posix()
     app_file = _run_app(tmp_path, secret_value, path_value)
 
@@ -137,6 +139,7 @@ def test_observability_repo_clean(tmp_path: Path, monkeypatch) -> None:
     baseline = set(repo_dirty_entries(root))
     secret_value = "sk-test-secret"
     monkeypatch.setenv("OPENAI_API_KEY", secret_value)
+    monkeypatch.setenv("N3_OBSERVABILITY", "1")
     path_value = (tmp_path / "secrets.txt").as_posix()
     _run_app(tmp_path, secret_value, path_value)
     dirty = set(repo_dirty_entries(root))

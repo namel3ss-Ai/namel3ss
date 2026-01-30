@@ -1,0 +1,24 @@
+{
+  "ingestion_gate": {
+    "cache_root": "project_root",
+    "enabled": true,
+    "quarantine_root": "project_root"
+  },
+  "native": {
+    "artifact": "missing",
+    "available": false,
+    "enabled": false
+  },
+  "pack_governance": {
+    "allowlist": {
+      "enabled": true
+    },
+    "signing": {
+      "enabled": true
+    }
+  },
+  "python": {
+    "version": "3"
+  },
+  "runtime_signature": "e2dd8d4cf0c5f935439f4b0c87674445729dde549e2570c184f1c15d0626b066"
+}

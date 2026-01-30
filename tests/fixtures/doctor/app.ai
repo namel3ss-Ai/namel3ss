@@ -1,0 +1,7 @@
+spec is "1.0"
+
+flow "demo":
+  return "ok"
+
+page "home":
+  text is "ok"
