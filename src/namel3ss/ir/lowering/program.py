@@ -34,7 +34,6 @@ from namel3ss.ui.settings import normalize_ui_settings
 from namel3ss.validation import ValidationMode
 from namel3ss.lang.capabilities import normalize_builtin_capability
 from namel3ss.pipelines.registry import pipeline_contracts
-import namel3ss.profiling as profiling
 
 
 def _statement_has_theme_change(stmt) -> bool:
@@ -133,7 +132,6 @@ def lower_program(program: ast.Program) -> Program:
         column=program.column,
     )
     setattr(lowered, "pack_allowlist", pack_allowlist)
-    profiling.record_lower(lowered)
     return lowered
 
 

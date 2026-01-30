@@ -50,7 +50,6 @@ _ENV_KEYS = {
     "NAMEL3SS_GEMINI_API_KEY",
     "NAMEL3SS_MISTRAL_API_KEY",
     "N3_AUTH_SIGNING_KEY",
-    "N3_PROFILE",
 }
 
 
@@ -166,30 +165,3 @@ def test_explain_payload_matches_golden_and_is_deterministic(tmp_path: Path) -> 
     assert "C:\\" not in actual_first
     assert "***REDACTED***" in actual_first
     assert "<path>" in actual_first
-
-
-def test_explain_profile_is_opt_in_and_deterministic(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    import namel3ss.profiling as profiling
-
-    app_path = _prepare_project(tmp_path / "explain_profile")
-    monkeypatch.setenv("N3_PROFILE", "1")
-    profiling.reset()
-    payload_first = build_explain_payload(app_path)
-    payload_second = build_explain_payload(app_path)
-    profile_first = payload_first.get("profiling")
-    profile_second = payload_second.get("profiling")
-    assert profile_first == profile_second
-    assert isinstance(profile_first, dict)
-    buckets = profile_first.get("buckets") if isinstance(profile_first, dict) else None
-    assert isinstance(buckets, list)
-    names = [bucket.get("name") for bucket in buckets if isinstance(bucket, dict)]
-    assert names == sorted(names)
-    assert {"scan", "parse", "lower", "explain"} <= set(names)
-    stripped = dict(payload_first)
-    stripped.pop("profiling", None)
-    expected = GOLDEN_PATH.read_text(encoding="utf-8")
-    assert canonical_json_dumps(stripped, pretty=True, drop_run_keys=False) == expected
-    actual = canonical_json_dumps(payload_first, pretty=True, drop_run_keys=False)
-    assert "SECRET_TOKEN" not in actual
-    assert "/Users/" not in actual
-    assert "C:\\" not in actual
