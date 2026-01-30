@@ -1,8 +1,8 @@
-﻿# Knowledge
+# Knowledge
 
 ## Purpose
-- Define a production template skeleton for knowledge apps.
-- Establish structure and guarantees; functionality will be added incrementally.
+- Provide deterministic ingestion, retrieval, and cited answers for knowledge workloads.
+- Define auditable add, update, and remove behavior for documents.
 
 ## Entry
 - Entry file: `app.ai`.
@@ -10,12 +10,16 @@
 
 ## Contracts
 - Deterministic only: no timestamps, randomness, host paths, or secrets.
-- Offline by default; no network or external services required.
-- Explain surfaces are required and must be documented when flows exist.
-- Runtime artifacts remain under `.namel3ss/` and stay out of git.
+- Ingestion runs through the quality gate and writes reports and index entries into state.
+- Document ids derive from input or the upload checksum; chunk ids follow `<upload_checksum>:<chunk_index>`.
+- Updates remove prior index entries without full reindexing.
+- Answers are grounded in retrieved sources; no answer is returned when no sources are found.
+- Citations are required and reference provenance ids from retrieval.
 
 ## Explain
-No explain output yet; this skeleton contains no flows or runtime behavior.
+- ExplainEntry records capture ingestion decisions, retrieval normalization and ordering, and evaluation signals.
+- Retrieval explain includes both raw and normalized queries plus ranking inputs and selected sources.
+- DocumentChange, RetrievalReport, Answer, and Citation records provide the audit trail.
 
 ## Fixtures
 None.
