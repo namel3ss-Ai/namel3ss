@@ -9,7 +9,7 @@ This document is the authoritative list of frozen public contracts. Any change t
 - CLI commands and output shapes: docs/cli-*.md and tests/fixtures/cli/help.txt
 - Explain and audit outputs: docs/trust-and-governance.md and docs/trace-schema.md
 - Observability outputs: docs/observability.md and tests/fixtures/observability_summary.json
-- Template contracts and index: docs/templates.md and src/namel3ss/templates/
+- Template contracts and index: templates/README.md and templates/index.md
 - Studio stable UI surfaces: docs/studio.md and tests/studio/test_studio_guardrails.py
 - Capability and policy enforcement: docs/capabilities.md and docs/language/backend-capabilities.md
 

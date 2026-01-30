@@ -11,7 +11,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_TARGETS = {
     "grammar": REPO_ROOT / "docs" / "language" / "grammar_contract.md",
     "schema": REPO_ROOT / "docs" / "trace-schema.md",
-    "templates": REPO_ROOT / "docs" / "templates.md",
+    "templates": REPO_ROOT / "templates" / "README.md",
 }
 
 
