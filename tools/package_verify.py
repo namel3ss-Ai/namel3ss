@@ -231,6 +231,9 @@ def _verify_native_fallback(n3_bin: Path, env: dict[str, str]) -> None:
 def _base_env() -> dict[str, str]:
     env = os.environ.copy()
     env.pop("PYTHONPATH", None)
+    env.pop("N3_NATIVE", None)
+    env.pop("N3_NATIVE_LIB", None)
+    env.pop("N3_PERSIST_ROOT", None)
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     return env
 
