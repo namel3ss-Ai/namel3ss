@@ -1,0 +1,4 @@
+Templates:
+  knowledge  kb  templates/knowledge
+  operations ops templates/operations
+  support    aid templates/support
