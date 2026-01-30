@@ -20,6 +20,7 @@ from namel3ss.runtime.composition.explain import build_composition_explain_bundl
 from namel3ss.ingestion.policy_inspection import inspect_ingestion_policy
 from namel3ss.secrets import collect_secret_values
 from namel3ss.utils.json_tools import dumps_pretty
+import namel3ss.profiling as profiling
 
 
 @dataclass
@@ -202,6 +203,9 @@ def _validate_mode(
 
 
 def build_explain_payload(app_path) -> dict:
+    profiling_enabled = profiling.enabled()
+    if profiling_enabled:
+        profiling.reset()
     project_root = app_path.parent
     active = _hydrate_active_proof(project_root, load_active_proof(project_root))
     proof_id = active.get("proof_id") if isinstance(active, dict) else None
@@ -221,7 +225,10 @@ def build_explain_payload(app_path) -> dict:
             active.setdefault("target", target)
             if isinstance(proof, dict):
                 active.setdefault("build_id", (proof.get("build") or {}).get("build_id"))
-    return _assemble_explain_payload(app_path, active, proof)
+    payload = _assemble_explain_payload(app_path, active, proof)
+    if profiling_enabled:
+        return profiling.attach_profile(payload)
+    return payload
 
 
 def _assemble_explain_payload(app_path, active: dict, proof: dict) -> dict:

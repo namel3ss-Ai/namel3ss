@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from decimal import Decimal
+import sys
 from typing import List
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.lexer.tokens import ESCAPED_IDENTIFIER, KEYWORDS, Token
+import namel3ss.profiling as profiling
 
 
 class Lexer:
@@ -48,6 +50,7 @@ class Lexer:
             tokens.append(Token("DEDENT", None, len(lines), 1))
 
         tokens.append(Token("EOF", None, len(lines) + 1, 1))
+        profiling.record_scan(tokens=len(tokens), lines=len(lines))
         return tokens
 
     @staticmethod
@@ -236,6 +239,8 @@ class Lexer:
     def _keyword_value(token_type: str, raw: str):
         if token_type == "BOOLEAN":
             return raw.lower() == "true"
+        if token_type != "IDENT":
+            return sys.intern(raw)
         return raw
 
 

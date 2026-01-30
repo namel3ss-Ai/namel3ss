@@ -12,7 +12,7 @@ from namel3ss.editor.workspace import EditorWorkspace, collect_project_files, no
 from namel3ss.runtime.mutation_policy import flow_mutates, page_has_form
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Diagnostic:
     id: str
     severity: str

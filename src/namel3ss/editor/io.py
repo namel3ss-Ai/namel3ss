@@ -13,7 +13,7 @@ from namel3ss.module_loader.types import ModuleExports
 TRIVIA_TOKENS = {"NEWLINE", "INDENT", "DEDENT", "EOF"}
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class TextSpan:
     line: int
     column: int
@@ -26,7 +26,7 @@ class TextSpan:
         return self.column <= column < self.end_column
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class TokenSpan:
     type: str
     value: object | None
@@ -35,7 +35,7 @@ class TokenSpan:
     end_column: int
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class SymbolDefinition:
     kind: str
     name: str
@@ -46,7 +46,7 @@ class SymbolDefinition:
     exported: bool
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class SymbolReference:
     kind: str
     raw_name: str
@@ -56,7 +56,7 @@ class SymbolReference:
     is_string: bool
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class FileIndex:
     path: Path
     module: str | None
@@ -66,7 +66,7 @@ class FileIndex:
     references: List[SymbolReference]
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class ProjectIndex:
     root: Path
     files: Dict[Path, FileIndex]

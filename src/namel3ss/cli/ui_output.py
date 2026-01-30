@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from namel3ss.cli.json_io import dumps_pretty
-from namel3ss.traces.plain import format_plain
 from namel3ss.version import get_version
 
 def print_usage() -> None:
@@ -59,6 +58,8 @@ def print_payload(payload: object, json_mode: bool) -> None:
     if json_mode:
         print(dumps_pretty(payload))
     else:
+        from namel3ss.traces.plain import format_plain
+
         print(format_plain(payload))
 
 def print_version() -> None:

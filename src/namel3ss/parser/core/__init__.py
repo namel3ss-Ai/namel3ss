@@ -5,6 +5,7 @@ from typing import List, Set
 from namel3ss.ast import nodes as ast
 from namel3ss.lexer.lexer import Lexer
 from namel3ss.lexer.tokens import Token
+import namel3ss.profiling as profiling
 from namel3ss.parser.core.stream import TokenStream
 from namel3ss.parser.core import tokens as token_ops
 from namel3ss.parser.decl.constraints import parse_field_constraint
@@ -79,6 +80,7 @@ class Parser(TokenStream):
         if lower_sugar:
             program = lower_sugar_program(program)
         parser._expect("EOF")
+        profiling.record_parse(program)
         return program
 
     # Token helpers
