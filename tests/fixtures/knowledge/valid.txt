@@ -1,0 +1,1 @@
+Policy guidance: deterministic ingestion and retrieval keep sources stable. Use approved documents only for answers.

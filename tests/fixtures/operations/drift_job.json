@@ -1,0 +1,6 @@
+{
+  "actual_outcome": "changed",
+  "expected_outcome": "ok",
+  "job_id": "job-drift",
+  "name": "drift-check"
+}
