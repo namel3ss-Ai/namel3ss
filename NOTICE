@@ -1,0 +1,14 @@
+NOTICE
+
+This project includes third-party components. The inventory below lists declared dependencies.
+
+Build and packaging:
+- setuptools
+- wheel
+
+Development:
+- pytest
+
+Optional runtime:
+- psycopg
+- pymysql
