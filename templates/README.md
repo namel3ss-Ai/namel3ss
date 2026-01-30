@@ -18,5 +18,5 @@ Templates are canonical, deterministic starting points for production systems. T
 - Template names are stable nouns.
 
 ## Stability
-- Template contracts are frozen by docs/contract-freeze.md.
+- Template contracts are frozen by [docs/spec-freeze.md](../docs/spec-freeze.md).
 - Breaking changes require explicit migration tooling and opt-in.

@@ -1,20 +1,18 @@
 # Start with Templates
 
 ## What templates are
-Templates are canonical production primitives. They are deterministic, explainable, and safe by default.
+Templates are canonical production primitives. They are deterministic, explainable, and safe by default. They are not demos.
 
 ## Choose a template
-The canonical templates are listed in a stable order:
-- knowledge: retrieval-first systems with cited answers and explainable updates.
-- support: case lifecycle handling with deterministic routing and escalation.
+- knowledge: retrieval workflows with cited answers and explainable updates.
 - operations: job lifecycle visibility with replayable narratives and audit surfaces.
+- support: case lifecycle handling with deterministic routing and escalation.
 
-## First commands
-- n3 new
-- n3 new <template> <name>
+## Discover templates
+- Run `n3 new` to list available templates.
+- See the template contract in [templates/README.md](../templates/README.md).
+- See the template index in [templates/index.md](../templates/index.md).
 
-## References
-- templates/README.md
-- templates/index.md
-- README.md#stability-guarantees
-- docs/contract-freeze.md
+## Stability
+- [README.md#stability-guarantees](../README.md#stability-guarantees)
+- [docs/spec-freeze.md](../docs/spec-freeze.md)

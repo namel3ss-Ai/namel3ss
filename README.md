@@ -120,11 +120,11 @@ See [docs/trust-and-governance.md](docs/trust-and-governance.md).
 
 ## Stability Guarantees
 
-Authoritative freeze contract: [docs/contract-freeze.md](docs/contract-freeze.md).
+Authoritative freeze contract: [docs/spec-freeze.md](docs/spec-freeze.md).
 
-- Frozen: grammar and semantics, CLI commands and output shapes, explain/audit/observability schemas, template contracts, Studio stable UI surfaces.
-- Can evolve: additive fields, diagnostics, and performance improvements that preserve behavior.
-- Breaking change: explicit migration tooling and opt-in only, with contract updates required.
+- Frozen: language core (grammar + runtime), tool protocol and pack contracts, UI DSL surface, trace schema keys.
+- Can evolve: additive fields and new capabilities that preserve existing behavior.
+- Breaking change: explicit contract version bump with documented migration path and opt-in only.
 
 ## UX as a Contract
 
@@ -184,9 +184,7 @@ UI & Studio:
 Governance & releases:
 - [Release readiness](docs/release-ready.md)
 - [Stability](docs/stability.md)
-- [Contract freeze](docs/contract-freeze.md)
-- [Migration](docs/migration.md)
-- [Deprecation](docs/deprecation.md)
+- [Spec freeze](docs/spec-freeze.md)
 
 ## Discussions & Design Conversations
 

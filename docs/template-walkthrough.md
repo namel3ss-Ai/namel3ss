@@ -10,7 +10,7 @@ Knowledge is a canonical template for retrieval-first systems.
 - Explain: surface why each source and decision was chosen.
 - Update: apply incremental changes with auditable lineage.
 
-## Observability and stability
-- Observability is provided by structured logs, traces, and metrics (docs/observability.md).
-- Stability guarantees and frozen contracts are defined in docs/contract-freeze.md.
-- Breaking changes require explicit migration tooling and opt-in (docs/migration.md).
+## Observability and security
+- [docs/observability.md](../docs/observability.md)
+- [SECURITY.md](../SECURITY.md)
+- [docs/spec-freeze.md](../docs/spec-freeze.md)
