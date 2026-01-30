@@ -36,6 +36,8 @@ n3_status n3_normalize(const n3_buffer *source, n3_buffer *out);
 
 n3_status n3_chunk_plan(const n3_buffer *source, const n3_chunk_options *options, n3_buffer *out);
 
+n3_status n3_exec_ir(const n3_buffer *ir, const n3_buffer *config, n3_buffer *out);
+
 void n3_free(n3_buffer *buffer);
 
 #ifdef __cplusplus

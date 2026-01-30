@@ -8,6 +8,9 @@
 ## Embedding Contract
 - `docs/contracts/embedding.md`
 
+## IR Executor Contract
+- `docs/contracts/ir_executor.md`
+
 ## Doctor Report Contract
 - `tests/fixtures/doctor/doc_golden.json`
 

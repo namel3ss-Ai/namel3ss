@@ -3,12 +3,15 @@
 use core::ptr;
 
 mod chunk_plan;
+mod exec;
 mod json;
+mod json_parse;
 mod normalize;
 mod scan;
 mod sha256;
 
 use chunk_plan::{plan_chunks, plan_to_json};
+use exec::execute_ir;
 use normalize::normalize_text;
 use scan::{scan, tokens_to_json};
 use sha256::hash_hex;
@@ -155,6 +158,42 @@ pub extern "C" fn n3_chunk_plan(
     let overlap = opts.map(|opt| opt.overlap).unwrap_or(100);
     let plan = plan_chunks(text, max_chars, overlap);
     let payload = plan_to_json(&plan);
+    set_buffer(out, payload);
+    n3_status::N3_STATUS_OK
+}
+
+#[no_mangle]
+pub extern "C" fn n3_exec_ir(ir: *const n3_buffer, config: *const n3_buffer, out: *mut n3_buffer) -> n3_status {
+    clear_buffer(out);
+    let ir_bytes = match buffer_as_slice(ir) {
+        Ok(value) => value,
+        Err(status) => return status,
+    };
+    let ir_text = match std::str::from_utf8(ir_bytes) {
+        Ok(value) => value,
+        Err(_) => return n3_status::N3_STATUS_INVALID_ARGUMENT,
+    };
+    let config_text = if config.is_null() {
+        None
+    } else {
+        match buffer_as_slice(config) {
+            Ok(value) => {
+                if value.is_empty() {
+                    None
+                } else {
+                    match std::str::from_utf8(value) {
+                        Ok(text) => Some(text),
+                        Err(_) => return n3_status::N3_STATUS_INVALID_ARGUMENT,
+                    }
+                }
+            }
+            Err(_) => return n3_status::N3_STATUS_INVALID_ARGUMENT,
+        }
+    };
+    let payload = match execute_ir(ir_text, config_text) {
+        Ok(data) => data,
+        Err(status) => return status,
+    };
     set_buffer(out, payload);
     n3_status::N3_STATUS_OK
 }

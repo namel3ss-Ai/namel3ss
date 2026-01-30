@@ -1,0 +1,5 @@
+spec is "1.0"
+
+flow "demo":
+  set state.status is "ready"
+  return state.status

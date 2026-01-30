@@ -5,6 +5,9 @@ from importlib import import_module
 _EXPORTS = {
     "NativeOutcome": ("namel3ss.runtime.native.adapter", "NativeOutcome"),
     "NativeStatus": ("namel3ss.runtime.native.status", "NativeStatus"),
+    "native_exec_available": ("namel3ss.runtime.native.exec_adapter", "native_exec_available"),
+    "native_exec_enabled": ("namel3ss.runtime.native.exec_adapter", "native_exec_enabled"),
+    "native_exec_ir": ("namel3ss.runtime.native.exec_adapter", "native_exec_ir"),
     "native_available": ("namel3ss.runtime.native.adapter", "native_available"),
     "native_chunk_plan": ("namel3ss.runtime.native.adapter", "native_chunk_plan"),
     "native_enabled": ("namel3ss.runtime.native.adapter", "native_enabled"),
