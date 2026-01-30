@@ -1,0 +1,6 @@
+{
+  "failure_class": "dependency",
+  "job_id": "job-retry",
+  "name": "retryable",
+  "reason": "dependency"
+}
