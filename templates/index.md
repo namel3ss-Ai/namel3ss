@@ -5,3 +5,5 @@ List order is alphabetical by folder name.
 
 ## List
 - knowledge - structure only
+- operations - structure only
+- support - structure only

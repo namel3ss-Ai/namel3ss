@@ -43,7 +43,12 @@ from namel3ss.cli.see_mode import run_see_command
 from namel3ss.cli.status_mode import run_status_command
 from namel3ss.cli.test_mode import run_test_command
 from namel3ss.cli.text_output import prepare_cli_text, prepare_first_run_text
-from namel3ss.cli.template_shortcuts import find_template_shortcut, render_template_shortcut
+from namel3ss.cli.template_shortcuts import (
+    TEMPLATE_LIST_COMMAND,
+    find_template_shortcut,
+    render_template_list,
+    render_template_shortcut,
+)
 from namel3ss.cli.tools_mode import run_tools
 from namel3ss.cli.ui_output import print_usage, print_version
 from namel3ss.cli.verify_mode import run_verify_command
@@ -93,6 +98,11 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if cmd_raw in {"--help", "-h"}:
             print_usage()
+            return 0
+        if cmd == TEMPLATE_LIST_COMMAND:
+            if args[1:]:
+                raise Namel3ssError(f"Usage: n3 {TEMPLATE_LIST_COMMAND}")
+            print(render_template_list())
             return 0
         shortcut = find_template_shortcut(cmd)
         if shortcut is not None:

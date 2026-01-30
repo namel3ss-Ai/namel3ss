@@ -26,6 +26,13 @@ Additional files are allowed only when deterministic and documented in the templ
 - Use lowercase snake_case.
 - No numbers or lifecycle labels.
 
+## Shortcuts
+- Commands are 2-5 characters, lowercase, and englishish nouns or verbs.
+- One shortcut per template; no aliases.
+- Shortcuts identify templates only and do not execute template files.
+- Mappings are static and repo-relative.
+- Output is deterministic and ordered.
+
 ## Template README
 Each `templates/<name>/README.md` must include these headings in this order:
 - Purpose

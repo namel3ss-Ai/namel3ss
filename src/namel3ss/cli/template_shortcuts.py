@@ -11,12 +11,26 @@ class TemplateShortcut:
     description: str
 
 
+TEMPLATE_LIST_COMMAND = "list"
+
 TEMPLATE_SHORTCUTS: tuple[TemplateShortcut, ...] = (
     TemplateShortcut(
         command="kb",
         name="knowledge",
         path="templates/knowledge",
         description="Knowledge template",
+    ),
+    TemplateShortcut(
+        command="ops",
+        name="operations",
+        path="templates/operations",
+        description="Operations template",
+    ),
+    TemplateShortcut(
+        command="aid",
+        name="support",
+        path="templates/support",
+        description="Support template",
     ),
 )
 
@@ -38,4 +52,25 @@ def render_template_shortcut(shortcut: TemplateShortcut) -> str:
     return "\n".join(lines)
 
 
-__all__ = ["TEMPLATE_SHORTCUTS", "TemplateShortcut", "find_template_shortcut", "render_template_shortcut"]
+def render_template_list() -> str:
+    shortcuts = sorted(TEMPLATE_SHORTCUTS, key=lambda item: item.name)
+    names = [shortcut.name for shortcut in shortcuts]
+    commands = [shortcut.command for shortcut in shortcuts]
+    max_name = max(len(name) for name in names)
+    max_command = max(len(command) for command in commands)
+    lines = ["Templates:"]
+    for shortcut in shortcuts:
+        name = shortcut.name.ljust(max_name)
+        command = shortcut.command.ljust(max_command)
+        lines.append(f"  {name} {command} {shortcut.path}")
+    return "\n".join(lines)
+
+
+__all__ = [
+    "TEMPLATE_LIST_COMMAND",
+    "TEMPLATE_SHORTCUTS",
+    "TemplateShortcut",
+    "find_template_shortcut",
+    "render_template_list",
+    "render_template_shortcut",
+]
