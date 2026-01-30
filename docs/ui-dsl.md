@@ -7,7 +7,7 @@ This is the authoritative description of the UI DSL. It is semantic and explicit
 - Deterministic structure; no per-component styling knobs.
 - Frozen surface: additive changes only, no silent behavior changes.
 - Text-first: intent over pixels.
-- Studio panels (Setup, Graph, Traces, Memory, Observability dashboards, etc.) are tooling views; they are not part of the UI DSL contract.
+- Studio panels (Setup, Graph, Traces, Memory, etc.) are tooling views; they are not part of the UI DSL contract.
 - Studio renders the same UI manifest intent as `n3 ui` and does not add DSL semantics.
 
 ## 2) Core blocks and naming rules

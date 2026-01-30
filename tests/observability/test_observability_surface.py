@@ -9,7 +9,6 @@ from namel3ss.observability.log_store import read_logs
 from namel3ss.observability.metrics_store import read_metrics
 from namel3ss.observability.trace_store import read_spans
 from namel3ss.runtime.executor import execute_program_flow
-from namel3ss.observability.context import ObservabilityContext
 from namel3ss.runtime.observability_api import (
     get_logs_payload,
     get_metrics_payload,
@@ -50,17 +49,6 @@ def _assert_scrubbed(payload: object, secret_value: str, path_value: str) -> Non
     assert path_value not in blob
 
 
-def _assert_no_timestamps(payload: object) -> None:
-    banned = {"time", "time_start", "time_end", "timestamp"}
-    if isinstance(payload, dict):
-        for key, value in payload.items():
-            assert key not in banned
-            _assert_no_timestamps(value)
-    elif isinstance(payload, list):
-        for item in payload:
-            _assert_no_timestamps(item)
-
-
 def test_logs_metrics_spans_are_scrubbed_and_stable(tmp_path: Path, monkeypatch) -> None:
     secret_value = "sk-test-secret"
     monkeypatch.setenv("OPENAI_API_KEY", secret_value)
@@ -78,18 +66,11 @@ def test_logs_metrics_spans_are_scrubbed_and_stable(tmp_path: Path, monkeypatch)
     _assert_scrubbed(logs, secret_value, path_value)
     _assert_scrubbed(spans, secret_value, path_value)
     _assert_scrubbed(metrics, secret_value, path_value)
-    _assert_no_timestamps(logs)
-    _assert_no_timestamps(spans)
-    _assert_no_timestamps(metrics)
 
     assert logs[0].get("id") == "log:0001"
     assert logs[1].get("id") == "log:0002"
     assert logs[0].get("fields", {}).get("token") == "***REDACTED***"
     assert logs[0].get("fields", {}).get("path") == "<path>"
-    assert all(isinstance(entry.get("order"), int) for entry in logs)
-    run_events = [entry for entry in logs if entry.get("event_kind") == "run"]
-    assert run_events
-    assert run_events[-1].get("scope") == "runtime"
     log_ids = [entry.get("id") for entry in logs]
     assert log_ids == sorted(log_ids)
 
@@ -144,19 +125,11 @@ def test_observability_endpoints_payloads(tmp_path: Path, monkeypatch) -> None:
     assert isinstance(metrics_payload.get("counters"), list)
     assert isinstance(metrics_payload.get("timings"), list)
     assert trace_payload == traces_payload
-    summary = metrics_payload.get("summary")
-    assert isinstance(summary, dict)
-    expected = json.loads(Path("tests/fixtures/observability_summary.json").read_text(encoding="utf-8"))
-    assert summary == expected
 
     _assert_scrubbed(logs_payload, secret_value, path_value)
     _assert_scrubbed(trace_payload, secret_value, path_value)
     _assert_scrubbed(traces_payload, secret_value, path_value)
     _assert_scrubbed(metrics_payload, secret_value, path_value)
-    _assert_no_timestamps(logs_payload)
-    _assert_no_timestamps(trace_payload)
-    _assert_no_timestamps(traces_payload)
-    _assert_no_timestamps(metrics_payload)
 
 
 def test_observability_repo_clean(tmp_path: Path, monkeypatch) -> None:
@@ -168,28 +141,6 @@ def test_observability_repo_clean(tmp_path: Path, monkeypatch) -> None:
     _run_app(tmp_path, secret_value, path_value)
     dirty = set(repo_dirty_entries(root))
     assert dirty == baseline
-
-
-def test_retry_events_are_visible_and_deterministic(tmp_path: Path) -> None:
-    app_file = tmp_path / "app.ai"
-    app_file.write_text('spec is "1.0"\n\nflow "demo":\n  return "ok"\n', encoding="utf-8")
-    obs = ObservabilityContext.from_config(project_root=tmp_path, app_path=app_file, config=None)
-    obs.start_session()
-    obs.record_retry(scope="runtime", reason="parse_error", attempt=1, identifiers={"flow": "demo"})
-    obs.record_retry(scope="runtime", reason="parse_error", attempt=2, identifiers={"flow": "demo"})
-    obs.flush()
-
-    logs = read_logs(tmp_path, app_file)
-    retry_events = [entry for entry in logs if entry.get("event_kind") == "retry"]
-    assert [entry.get("payload", {}).get("attempt") for entry in retry_events] == [1, 2]
-    orders = [entry.get("order") for entry in retry_events]
-    assert orders == sorted(orders)
-
-    metrics_payload = get_metrics_payload(tmp_path, app_file)
-    summary = metrics_payload.get("summary", {})
-    assert summary.get("retries", {}).get("count") == 2
-    reasons = summary.get("retries", {}).get("reasons", [])
-    assert reasons == [{"count": 2, "reason": "parse_error"}]
 
 
 def _metric_sort_key(entry: dict) -> tuple:

@@ -17,10 +17,8 @@ Log entries include:
 - level: debug, info, warn, or error
 - message
 - optional fields object
-- optional event schema fields: event_kind, scope, outcome, identifiers, payload, order
 
 Logs attach to the current span when a span is active.
-System events use the event schema to describe flow, ingestion, retrieval, job, and template runs without logging raw content.
 
 ## Tracing
 Spans are emitted automatically for actions, jobs, tools, and capabilities (HTTP, file, uploads, and packs). Each span includes a stable id, name, kind, status, and parent relationship when nested. Timing is measured in logical steps, not wall time.
@@ -44,8 +42,6 @@ Metric operations:
 - timing: record
 
 Timings use logical steps. Automatic timings are recorded for actions, jobs, and capabilities.
-Default counters include requests, jobs, errors, blocks, and retries with scope/outcome labels.
-Summary surfaces health, executions, retrieval, quality, failures, retries, and cost when available.
 
 ## Storage
 Runtime output is stored under:
@@ -60,7 +56,6 @@ Runtime output is stored under:
 
 ## Studio
 Studio surfaces Logs, Tracing, and Metrics in dedicated panels alongside other explainability views.
-The Metrics panel includes a health/quality/failures/retries summary derived from observability outputs.
 
 ## Runtime endpoints
 - `GET /api/logs` returns `ok`, `count`, and `logs`.

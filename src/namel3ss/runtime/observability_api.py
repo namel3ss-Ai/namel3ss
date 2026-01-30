@@ -6,7 +6,6 @@ from namel3ss.config.loader import load_config
 from namel3ss.observability.log_store import read_logs
 from namel3ss.observability.metrics_store import read_metrics
 from namel3ss.observability.scrub import scrub_payload
-from namel3ss.observability.summary import build_observability_summary
 from namel3ss.observability.trace_store import read_spans
 from namel3ss.secrets import collect_secret_values
 
@@ -37,9 +36,6 @@ def get_metrics_payload(project_root: str | Path | None, app_path: str | Path | 
         cleaned = {"counters": [], "timings": []}
     cleaned.setdefault("counters", [])
     cleaned.setdefault("timings", [])
-    logs = [scrub(item) for item in read_logs(project_root, app_path)]
-    logs = [item for item in logs if isinstance(item, dict)]
-    cleaned["summary"] = build_observability_summary(logs=logs, metrics=cleaned)
     cleaned["ok"] = True
     return cleaned
 

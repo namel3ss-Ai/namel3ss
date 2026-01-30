@@ -21,7 +21,6 @@ from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.ui.actions.validate import ensure_json_serializable
 from namel3ss.traces.schema import TraceEventType
 from namel3ss.ui.manifest import build_manifest
-from namel3ss.observability.context import ObservabilityContext
 
 
 def handle_ingestion_run_action(
@@ -79,24 +78,14 @@ def handle_ingestion_run_action(
                 secret_values=secret_values,
                 error=policy_error(ACTION_INGESTION_OVERRIDE, override, mode=mode_value),
             )
-    obs = ObservabilityContext.from_config(
+    result = run_ingestion(
+        upload_id=str(upload_id) if isinstance(upload_id, str) else "",
+        mode=str(mode) if isinstance(mode, str) else None,
+        state=state,
         project_root=getattr(program_ir, "project_root", None),
         app_path=getattr(program_ir, "app_path", None),
-        config=config,
+        secret_values=secret_values,
     )
-    obs.start_session()
-    try:
-        result = run_ingestion(
-            upload_id=str(upload_id) if isinstance(upload_id, str) else "",
-            mode=str(mode) if isinstance(mode, str) else None,
-            state=state,
-            project_root=getattr(program_ir, "project_root", None),
-            app_path=getattr(program_ir, "app_path", None),
-            secret_values=secret_values,
-            observability=obs,
-        )
-    finally:
-        obs.flush()
     report = result["report"]
     traces.extend(_build_traces(report))
     response = build_run_payload(

@@ -153,7 +153,6 @@ def _run_job(ctx, job: ir.JobDecl, payload: object) -> None:
     studio_effect_adapter.record_job_started(ctx, job_name=job.name, payload=payload if payload is not None else {})
     status = "ok"
     output = None
-    error: Exception | None = None
     try:
         for idx, stmt in enumerate(job.body, start=1):
             ctx.current_statement = stmt
@@ -161,9 +160,8 @@ def _run_job(ctx, job: ir.JobDecl, payload: object) -> None:
             execute_statement(ctx, stmt)
     except _ReturnSignal as signal:
         ctx.last_value = signal.value
-    except Exception as err:
+    except Exception:
         status = "error"
-        error = err
         raise
     finally:
         if span_id:
@@ -178,25 +176,6 @@ def _run_job(ctx, job: ir.JobDecl, payload: object) -> None:
             line=job.line,
             column=job.column,
         )
-        if obs:
-            outcome = "ok" if status == "ok" else "failed"
-            payload = {"status": status}
-            if error is not None:
-                payload["error_kind"] = error.__class__.__name__
-                payload["error_category"] = _error_category(error)
-            obs.record_event(
-                event_kind="run",
-                scope="job",
-                outcome=outcome,
-                identifiers={"job": job.name},
-                payload=payload,
-            )
-            obs.metrics.increment(
-                "jobs",
-                labels={"scope": "job", "job": job.name, "outcome": outcome},
-            )
-            if status != "ok":
-                obs.metrics.increment("errors", labels={"scope": "job"})
         ctx.locals = original_locals
         ctx.constants = original_constants
         ctx.call_stack = original_call_stack
@@ -275,16 +254,6 @@ def _require_jobs_capability(ctx, *, line: int | None, column: int | None) -> No
         line=line,
         column=column,
     )
-
-
-def _error_category(err: Exception) -> str:
-    if isinstance(err, Namel3ssError):
-        details = err.details or {}
-        category = str(details.get("category") or "").strip().lower()
-        if category in {"input", "policy", "dependency", "internal"}:
-            return category
-        return "input"
-    return "internal"
 
 
 __all__ = [

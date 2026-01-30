@@ -18,7 +18,6 @@ from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.ui.actions.validate import ensure_json_serializable
 from namel3ss.traces.schema import TraceEventType
 from namel3ss.ui.manifest import build_manifest
-from namel3ss.observability.context import ObservabilityContext
 
 
 def handle_retrieval_run_action(
@@ -45,26 +44,16 @@ def handle_retrieval_run_action(
         policy_decl=getattr(program_ir, "policy", None),
     )
     decision = evaluate_ingestion_policy(policy, ACTION_RETRIEVAL_INCLUDE_WARN, identity)
-    obs = ObservabilityContext.from_config(
+    result = run_retrieval(
+        query=query,
+        limit=limit,
+        state=state,
         project_root=getattr(program_ir, "project_root", None),
         app_path=getattr(program_ir, "app_path", None),
-        config=config,
+        secret_values=secret_values,
+        identity=identity,
+        policy_decision=decision,
     )
-    obs.start_session()
-    try:
-        result = run_retrieval(
-            query=query,
-            limit=limit,
-            state=state,
-            project_root=getattr(program_ir, "project_root", None),
-            app_path=getattr(program_ir, "app_path", None),
-            secret_values=secret_values,
-            identity=identity,
-            policy_decision=decision,
-            observability=obs,
-        )
-    finally:
-        obs.flush()
     traces = [policy_trace(ACTION_RETRIEVAL_INCLUDE_WARN, decision)]
     traces.extend(_build_traces(result))
     response = build_run_payload(
