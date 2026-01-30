@@ -4,4 +4,4 @@ Canonical templates live under `templates/<name>/`.
 List order is alphabetical by folder name.
 
 ## List
-- (none)
+- knowledge - structure only
