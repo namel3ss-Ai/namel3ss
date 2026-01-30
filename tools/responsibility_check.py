@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import re
 import sys
 from pathlib import Path
@@ -8,11 +9,22 @@ from typing import Iterable
 HINT = "Split into folder modules; one responsibility per file."
 
 
+def load_line_limit_check() -> object:
+    tools_dir = Path(__file__).resolve().parent
+    module_path = tools_dir / "line_limit_check.py"
+    spec = importlib.util.spec_from_file_location("line_limit_check", module_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Unable to load line_limit_check module.")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def iter_source_files(root: Path) -> Iterable[Path]:
     src_root = root / "src"
     if not src_root.exists():
         return []
-    return src_root.rglob("*.py")
+    return sorted(src_root.rglob("*.py"))
 
 
 def rule1_dataclasses_and_execute(text: str) -> bool:
@@ -59,6 +71,9 @@ def analyze_file(path: Path) -> list[str]:
 
 
 def main() -> int:
+    line_limit_module = load_line_limit_check()
+    line_limit_status = line_limit_module.main()
+
     repo_root = Path(__file__).resolve().parent.parent
     offenders: list[tuple[Path, list[str]]] = []
     for path in iter_source_files(repo_root):
@@ -67,12 +82,14 @@ def main() -> int:
             offenders.append((path, violations))
 
     if offenders:
+        offenders.sort(key=lambda item: item[0])
         for path, violations in offenders:
             relative_path = path.relative_to(repo_root)
             joined_rules = "; ".join(violations)
             print(f"{relative_path} - {joined_rules}. {HINT}")
         return 1
-    return 0
+
+    return line_limit_status
 
 
 if __name__ == "__main__":
