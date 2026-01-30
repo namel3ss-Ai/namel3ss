@@ -25,13 +25,13 @@ fn remove_hyphen_breaks(text: &str) -> String {
     while i < chars.len() {
         if chars[i] == '-'
             && i + 2 < chars.len()
-            && chars[i + 1] == '\\\\'
+            && chars[i + 1] == '\\'
             && chars[i + 2] == 'n'
             && i >= 2
-            && chars[i - 2] == '\\\\'
+            && chars[i - 2] == '\\'
             && chars[i - 1] == 'w'
             && i + 4 < chars.len()
-            && chars[i + 3] == '\\\\'
+            && chars[i + 3] == '\\'
             && chars[i + 4] == 'w'
         {
             i += 3;
