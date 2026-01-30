@@ -7,7 +7,7 @@ from namel3ss.cli.main import main as cli_main
 
 
 GOLDEN_PATH = Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "doctor" / "doc_golden.json"
-FORBIDDEN = ("/Users/", "/home/", "C:\\")
+FORBIDDEN = ("/Users/", "/home/", "C:\\", "windows", "posix", "linux", "darwin")
 
 
 def _run_doc(tmp_path: Path, monkeypatch, capsys) -> str:

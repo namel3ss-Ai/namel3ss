@@ -97,8 +97,7 @@ def _pack_payload() -> dict:
 
 def _python_payload() -> dict:
     version = f"{sys.version_info.major}"
-    platform = "windows" if os.name == "nt" else "posix"
-    return {"version": version, "platform": platform}
+    return {"version": version}
 
 
 def _persistence_kind(project_root: Path | None) -> str:

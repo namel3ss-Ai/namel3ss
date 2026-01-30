@@ -18,7 +18,6 @@
     }
   },
   "python": {
-    "platform": "posix",
     "version": "3"
   },
   "runtime_signature": "e2dd8d4cf0c5f935439f4b0c87674445729dde549e2570c184f1c15d0626b066"
