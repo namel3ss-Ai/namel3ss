@@ -1,6 +1,7 @@
 from namel3ss.runtime.native.adapter import (
     NativeOutcome,
     native_available,
+    native_chunk_plan,
     native_enabled,
     native_hash,
     native_info,
@@ -13,6 +14,7 @@ __all__ = [
     "NativeOutcome",
     "NativeStatus",
     "native_available",
+    "native_chunk_plan",
     "native_enabled",
     "native_hash",
     "native_info",

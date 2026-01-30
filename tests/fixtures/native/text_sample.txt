@@ -1,0 +1,10 @@
+Report Title
+Invoice  summary
+Line one with hy-
+phen break.
+
+
+Page footer
+Report Title
+Second page has   extra   spaces.
+Line with	 tabs.Page footer

@@ -15,6 +15,14 @@ class Lexer:
         self.source = source
 
     def tokenize(self) -> List[Token]:
+        from namel3ss.lexer.native_scan import scan_tokens_native
+
+        native_tokens = scan_tokens_native(self.source)
+        if native_tokens is not None:
+            return native_tokens
+        return self._tokenize_python()
+
+    def _tokenize_python(self) -> List[Token]:
         tokens: List[Token] = []
         indent_stack = [0]
         lines = self.source.splitlines()

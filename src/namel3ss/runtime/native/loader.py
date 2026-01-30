@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -21,7 +22,7 @@ def native_enabled() -> bool:
 def native_library_path() -> Path | None:
     value = os.getenv(_NATIVE_LIB_ENV, "").strip()
     if not value:
-        return None
+        return _packaged_library_path()
     return Path(value)
 
 
@@ -54,6 +55,24 @@ def _reset_native_state() -> None:
     global _LIB, _LOAD_ATTEMPTED
     _LIB = None
     _LOAD_ATTEMPTED = False
+
+
+def _packaged_library_path() -> Path | None:
+    base = Path(__file__).resolve().parent
+    lib_dir = base / "lib"
+    for name in _candidate_library_names():
+        candidate = lib_dir / name
+        if candidate.exists():
+            return candidate
+    return None
+
+
+def _candidate_library_names() -> tuple[str, ...]:
+    if sys.platform.startswith("win"):
+        return ("namel3ss_native.dll",)
+    if sys.platform == "darwin":
+        return ("libnamel3ss_native.dylib",)
+    return ("libnamel3ss_native.so",)
 
 
 __all__ = [

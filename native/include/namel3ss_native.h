@@ -21,6 +21,11 @@ typedef struct n3_buffer {
     size_t len;
 } n3_buffer;
 
+typedef struct n3_chunk_options {
+    uint32_t max_chars;
+    uint32_t overlap;
+} n3_chunk_options;
+
 n3_status n3_native_info(n3_buffer *out);
 
 n3_status n3_scan(const n3_buffer *source, n3_buffer *out);
@@ -28,6 +33,8 @@ n3_status n3_scan(const n3_buffer *source, n3_buffer *out);
 n3_status n3_hash(const n3_buffer *source, n3_buffer *out);
 
 n3_status n3_normalize(const n3_buffer *source, n3_buffer *out);
+
+n3_status n3_chunk_plan(const n3_buffer *source, const n3_chunk_options *options, n3_buffer *out);
 
 void n3_free(n3_buffer *buffer);
 

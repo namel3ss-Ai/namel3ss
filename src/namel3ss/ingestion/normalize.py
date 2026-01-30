@@ -15,6 +15,9 @@ _SAFE_PREFIXES = ("/api/", "/health", "/version", "/ui", "/docs/")
 def normalize_text(text: str) -> str:
     if not text:
         return ""
+    native = _native_normalize_text(text)
+    if native is not None:
+        return native
     cleaned = text.replace("\r\n", "\n").replace("\r", "\n")
     cleaned = _HYPHEN_BREAK_RE.sub("", cleaned)
     cleaned = _suppress_headers_footers(cleaned)
@@ -93,6 +96,18 @@ def _scrub_inline_paths(text: str) -> str:
         return "<path>"
 
     return _INLINE_POSIX_PATH.sub(replace, text)
+
+
+def _native_normalize_text(text: str) -> str | None:
+    from namel3ss.runtime.native import NativeStatus, native_normalize
+
+    outcome = native_normalize(text.encode("utf-8"))
+    if outcome.status != NativeStatus.OK or outcome.payload is None:
+        return None
+    try:
+        return outcome.payload.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
 
 
 __all__ = ["normalize_text", "preview_text", "sanitize_text"]

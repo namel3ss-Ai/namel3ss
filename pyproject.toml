@@ -102,6 +102,7 @@ where = ["src"]
     "web/*.css",
     "web/*.js",
 ]
+"namel3ss.runtime.native" = ["lib/*"]
 "namel3ss.studio.web" = ["**/*"]
 
 [tool.setuptools.data-files]
