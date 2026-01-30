@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
 
+from namel3ss.determinism import canonical_json_dumps
 from namel3ss.ingestion.chunk_plan import plan_chunks, plan_to_payload
 from namel3ss.ingestion.hash import hash_text
 from namel3ss.ingestion.normalize import normalize_text
@@ -34,6 +36,8 @@ def test_scan_payload_matches_golden() -> None:
     expected = (FIXTURES / "scan_basic.json").read_bytes()
     tokens = Lexer(source)._tokenize_python()
     payload = tokens_to_payload(tokens)
+    _assert_canonical_json(expected)
+    _assert_canonical_json(payload)
     assert payload == expected
 
 
@@ -53,6 +57,8 @@ def test_chunk_plan_matches_golden() -> None:
     text = (FIXTURES / "text_sample.normalized.txt").read_text(encoding="utf-8")
     expected = (FIXTURES / "text_sample.chunk_plan.json").read_bytes()
     payload = plan_to_payload(plan_chunks(text, max_chars=40, overlap=5))
+    _assert_canonical_json(expected)
+    _assert_canonical_json(payload)
     assert payload == expected
 
 
@@ -63,7 +69,10 @@ def test_native_scan_matches_golden(monkeypatch: pytest.MonkeyPatch) -> None:
     first = native_scan(source)
     second = native_scan(source)
     assert first.status == NativeStatus.OK
+    _assert_canonical_json(expected)
+    _assert_canonical_json(first.payload or b"")
     assert first.payload == expected
+    _assert_canonical_json(second.payload or b"")
     assert second.payload == expected
 
 
@@ -96,7 +105,10 @@ def test_native_chunk_plan_matches_golden(monkeypatch: pytest.MonkeyPatch) -> No
     first = native_chunk_plan(text, max_chars=40, overlap=5)
     second = native_chunk_plan(text, max_chars=40, overlap=5)
     assert first.status == NativeStatus.OK
+    _assert_canonical_json(expected)
+    _assert_canonical_json(first.payload or b"")
     assert first.payload == expected
+    _assert_canonical_json(second.payload or b"")
     assert second.payload == expected
 
 
@@ -105,3 +117,9 @@ def _require_native(monkeypatch: pytest.MonkeyPatch) -> None:
     native_loader._reset_native_state()
     if not native_available():
         pytest.skip("native library not available")
+
+
+def _assert_canonical_json(payload: bytes) -> None:
+    data = json.loads(payload.decode("utf-8"))
+    canonical = canonical_json_dumps(data, pretty=False).encode("utf-8")
+    assert canonical == payload
