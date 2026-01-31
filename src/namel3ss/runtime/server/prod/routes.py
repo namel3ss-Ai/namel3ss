@@ -20,12 +20,6 @@ from namel3ss.runtime.data.data_routes import (
 )
 from namel3ss.runtime.deploy_routes import get_build_payload, get_deploy_payload
 from namel3ss.runtime.dev_server import BrowserAppState
-from namel3ss.runtime.observability_api import (
-    get_logs_payload,
-    get_metrics_payload,
-    get_trace_payload,
-    get_traces_payload,
-)
 from namel3ss.ui.external.serve import resolve_external_ui_file
 from namel3ss.utils.json_tools import dumps as json_dumps
 from namel3ss.version import get_version
@@ -75,19 +69,19 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             self._respond_json(response, status=status)
             return
         if path == "/api/logs":
-            payload, status = self._handle_observability(get_logs_payload)
+            payload, status = self._handle_observability("logs")
             self._respond_json(payload, status=status, sort_keys=True)
             return
         if path == "/api/traces":
-            payload, status = self._handle_observability(get_traces_payload)
+            payload, status = self._handle_observability("traces")
             self._respond_json(payload, status=status, sort_keys=True)
             return
         if path == "/api/trace":
-            payload, status = self._handle_observability(get_trace_payload)
+            payload, status = self._handle_observability("trace")
             self._respond_json(payload, status=status, sort_keys=True)
             return
         if path == "/api/metrics":
-            payload, status = self._handle_observability(get_metrics_payload)
+            payload, status = self._handle_observability("metrics")
             self._respond_json(payload, status=status, sort_keys=True)
             return
         if path == "/api/build":
@@ -260,10 +254,17 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             payload = build_error_payload(str(err), kind="internal")
             return payload, 500
 
-    def _handle_observability(self, builder) -> tuple[dict, int]:
+    def _handle_observability(self, kind: str) -> tuple[dict, int]:
         program = getattr(self._state(), "program", None)
         if program is None:
             return build_error_payload("Program not loaded.", kind="engine"), 500
+        if not _observability_enabled():
+            payload = _empty_observability_payload(kind)
+            return payload, 200
+        builder = _load_observability_builder(kind)
+        if builder is None:
+            payload = _empty_observability_payload(kind)
+            return payload, 200
         payload = builder(getattr(program, "project_root", None), getattr(program, "app_path", None))
         status = 200 if payload.get("ok", True) else 400
         return payload, status
@@ -414,6 +415,32 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
 
     def _state(self) -> BrowserAppState:
         return self.server.app_state  # type: ignore[attr-defined]
+
+
+def _load_observability_builder(kind: str):
+    from namel3ss.runtime import observability_api
+
+    mapping = {
+        "logs": observability_api.get_logs_payload,
+        "trace": observability_api.get_trace_payload,
+        "traces": observability_api.get_traces_payload,
+        "metrics": observability_api.get_metrics_payload,
+    }
+    return mapping.get(kind)
+
+
+def _observability_enabled() -> bool:
+    from namel3ss.observability.enablement import observability_enabled
+
+    return observability_enabled()
+
+
+def _empty_observability_payload(kind: str) -> dict:
+    if kind == "metrics":
+        return {"ok": True, "counters": [], "timings": []}
+    if kind in {"trace", "traces"}:
+        return {"ok": True, "count": 0, "spans": []}
+    return {"ok": True, "count": 0, "logs": []}
 
 
 __all__ = ["ProductionRequestHandler"]

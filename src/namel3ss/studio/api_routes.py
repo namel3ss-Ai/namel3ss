@@ -29,12 +29,6 @@ from namel3ss.studio.routes.core import handle_action
 from namel3ss.studio.why_api import get_why_payload
 from namel3ss.studio.registry_api import get_registry_payload
 from namel3ss.studio.deploy_api import get_build_payload_from_source, get_deploy_payload_from_source
-from namel3ss.runtime.observability_api import (
-    get_logs_payload,
-    get_metrics_payload,
-    get_trace_payload,
-    get_traces_payload,
-)
 from namel3ss.runtime.auth.auth_routes import handle_login, handle_logout, handle_session
 from namel3ss.runtime.data.studio_adapters import (
     get_data_status_payload,
@@ -73,19 +67,19 @@ def handle_api_get(handler: Any) -> None:
         _respond_with_source(handler, source, get_migrations_plan_payload, kind="data", include_app_path=True)
         return
     if handler.path == "/api/logs":
-        payload = get_logs_payload(handler.server.project_root, handler.server.app_path)  # type: ignore[attr-defined]
+        payload = _observability_payload(handler, "logs")
         handler._respond_json(payload, status=200)
         return
     if handler.path == "/api/traces":
-        payload = get_traces_payload(handler.server.project_root, handler.server.app_path)  # type: ignore[attr-defined]
+        payload = _observability_payload(handler, "traces")
         handler._respond_json(payload, status=200)
         return
     if handler.path == "/api/trace":
-        payload = get_trace_payload(handler.server.project_root, handler.server.app_path)  # type: ignore[attr-defined]
+        payload = _observability_payload(handler, "trace")
         handler._respond_json(payload, status=200)
         return
     if handler.path == "/api/metrics":
-        payload = get_metrics_payload(handler.server.project_root, handler.server.app_path)  # type: ignore[attr-defined]
+        payload = _observability_payload(handler, "metrics")
         handler._respond_json(payload, status=200)
         return
     if handler.path == "/api/build":
@@ -310,6 +304,37 @@ def _respond_post(
         payload = build_error_payload(str(err), kind="internal")
         handler._respond_json(payload, status=500)
         return
+
+
+def _observability_payload(handler: Any, kind: str) -> dict:
+    from namel3ss.observability.enablement import observability_enabled
+
+    if not observability_enabled():
+        return _empty_observability_payload(kind)
+    builder = _load_observability_builder(kind)
+    if builder is None:
+        return _empty_observability_payload(kind)
+    return builder(handler.server.project_root, handler.server.app_path)  # type: ignore[attr-defined]
+
+
+def _load_observability_builder(kind: str):
+    from namel3ss.runtime import observability_api
+
+    mapping = {
+        "logs": observability_api.get_logs_payload,
+        "trace": observability_api.get_trace_payload,
+        "traces": observability_api.get_traces_payload,
+        "metrics": observability_api.get_metrics_payload,
+    }
+    return mapping.get(kind)
+
+
+def _empty_observability_payload(kind: str) -> dict:
+    if kind == "metrics":
+        return {"ok": True, "counters": [], "timings": []}
+    if kind in {"trace", "traces"}:
+        return {"ok": True, "count": 0, "spans": []}
+    return {"ok": True, "count": 0, "logs": []}
 
 
 __all__ = ["handle_api_get", "handle_api_post"]

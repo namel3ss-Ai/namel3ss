@@ -123,6 +123,10 @@ def main(argv: list[str] | None = None) -> int:
             return run_artifacts_clean(args[1:])
         if cmd == "doctor":
             return run_doctor(args[1:])
+        if cmd == "doc":
+            from namel3ss.cli.doc_mode import run_doc_command
+
+            return run_doc_command(args[1:])
         if cmd == "version":
             print_version()
             return 0

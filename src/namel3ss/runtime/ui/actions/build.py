@@ -17,7 +17,7 @@ from namel3ss.runtime.records.state_paths import set_state_record
 from namel3ss.runtime.run_pipeline import build_flow_payload, finalize_run_payload
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.storage.factory import resolve_store
-from namel3ss.observability.context import ObservabilityContext
+from namel3ss.observability.enablement import resolve_observability_context
 from namel3ss.secrets import collect_secret_values
 from namel3ss.ui.manifest import build_manifest
 from namel3ss.runtime.ui.actions.form_policy import enforce_form_policy, submit_form_trace
@@ -92,6 +92,7 @@ def handle_action(
     action = actions[action_id]
     action_type = action.get("type")
     obs = None
+    owns_obs = False
     span_id = None
     span_status = "ok"
     try:
@@ -121,20 +122,23 @@ def handle_action(
             if action_error:
                 _record_engine_error(project_root, action_id, actor, action_error, secret_values)
         elif action_type == "submit_form":
-            obs = ObservabilityContext.from_config(
+            obs, owns_obs = resolve_observability_context(
+                None,
                 project_root=project_root,
                 app_path=getattr(program_ir, "app_path", None),
                 config=resolved_config,
             )
-            obs.start_session()
-            span_id = obs.start_span(
-                None,
-                name=f"action:{action_id}",
-                kind="action",
-                details={"action_id": action_id, "type": "submit_form"},
-                timing_name="action",
-                timing_labels={"action": action_id, "type": "submit_form"},
-            )
+            if obs and owns_obs:
+                obs.start_session()
+            if obs:
+                span_id = obs.start_span(
+                    None,
+                    name=f"action:{action_id}",
+                    kind="action",
+                    details={"action_id": action_id, "type": "submit_form"},
+                    timing_name="action",
+                    timing_labels={"action": action_id, "type": "submit_form"},
+                )
             try:
                 response = _handle_submit_form(
                     program_ir,
@@ -154,9 +158,10 @@ def handle_action(
                 span_status = "error"
                 raise
             finally:
-                if span_id:
+                if obs and span_id:
                     obs.end_span(None, span_id, status=span_status)
-                obs.flush()
+                if obs and owns_obs:
+                    obs.flush()
         elif action_type == "upload_select":
             response = handle_upload_select_action(
                 program_ir,

@@ -1,0 +1,10 @@
+[package]
+name = "namel3ss_native"
+version = "0.0.0"
+edition = "2021"
+
+[lib]
+name = "namel3ss_native"
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]

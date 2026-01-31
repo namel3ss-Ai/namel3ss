@@ -59,6 +59,17 @@ class ObservabilityContext:
         span_id = self.traces.current_span_id()
         return self.logs.record(level=level, message=message, fields=fields, span_id=span_id)
 
+    def record_event(self, *, name: str, kind: str, fields: object | None = None) -> dict | None:
+        span_id = self.traces.current_span_id()
+        return self.logs.record(
+            level=kind,
+            message=name,
+            fields=fields,
+            span_id=span_id,
+            name=name,
+            kind=kind,
+        )
+
     def start_span(
         self,
         ctx,

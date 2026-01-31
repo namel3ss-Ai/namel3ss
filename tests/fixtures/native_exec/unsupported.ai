@@ -1,0 +1,6 @@
+spec is "1.0"
+
+flow "demo":
+  if true:
+    return "ok"
+  return "no"

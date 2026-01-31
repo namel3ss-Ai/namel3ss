@@ -11,6 +11,7 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.ai.provider import AIProvider
 from namel3ss.runtime.executor.executor import Executor
+from namel3ss.runtime.executor.native_exec import NativeExecConfig, try_native_execute
 from namel3ss.runtime.executor.result import ExecutionResult
 from namel3ss.runtime.memory.api import MemoryManager
 from namel3ss.runtime.storage.base import Storage
@@ -22,6 +23,7 @@ from namel3ss.secrets import collect_secret_values
 from namel3ss.compatibility import validate_spec_version
 import time
 from namel3ss.observability.context import ObservabilityContext
+from namel3ss.observability.enablement import resolve_observability_context
 from namel3ss.pipelines.registry import pipeline_contracts
 
 
@@ -100,15 +102,28 @@ def execute_program_flow(
     )
     project_root = getattr(program, "project_root", None)
     resolved_root = project_root if isinstance(project_root, (str, type(None))) else str(project_root)
+    app_path = getattr(program, "app_path", None)
+    if resolved_root is None and app_path is None:
+        native_config = NativeExecConfig(
+            flow_name=flow_name,
+            runtime_theme=resolution.setting_used.value,
+            theme_source=resolution.source.value,
+        )
+        native_result = try_native_execute(program, flow, native_config)
+        if native_result is not None:
+            if native_result.runtime_theme is None:
+                native_result.runtime_theme = resolution.setting_used.value
+            native_result.theme_source = resolution.source.value
+            return native_result
     secret_values = collect_secret_values(resolved_config)
     start_time = time.time()
-    owns_observability = observability is None
-    obs = observability or ObservabilityContext.from_config(
+    obs, owns_observability = resolve_observability_context(
+        observability,
         project_root=resolved_root,
         app_path=getattr(program, "app_path", None),
         config=resolved_config,
     )
-    if owns_observability:
+    if obs and owns_observability:
         obs.start_session()
     executor = Executor(
         flow,
@@ -152,7 +167,7 @@ def execute_program_flow(
     result: ExecutionResult | None = None
     error: Exception | None = None
     span_id = None
-    if owns_observability:
+    if obs and owns_observability:
         span_kind = "action" if action_id else "flow"
         span_name = f"action:{action_id}" if action_id else f"flow:{flow_name}"
         timing_labels = {"action": action_id} if action_id else {"flow": flow_name}
@@ -185,9 +200,9 @@ def execute_program_flow(
                 secret_values=secret_values,
             )
     finally:
-        if span_id:
+        if span_id and obs:
             obs.end_span(executor.ctx, span_id, status=status)
-        if owns_observability:
+        if obs and owns_observability:
             obs.flush()
         if resolved_root:
             record_event(

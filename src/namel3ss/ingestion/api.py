@@ -8,7 +8,9 @@ from namel3ss.ingestion.chunk import chunk_text
 from namel3ss.ingestion.detect import detect_upload
 from namel3ss.ingestion.extract import extract_fallback, extract_text
 from namel3ss.ingestion.gate import gate_quality, should_fallback
+from namel3ss.ingestion.gate_probe import probe_content
 from namel3ss.ingestion.normalize import normalize_text, preview_text, sanitize_text
+from namel3ss.ingestion.quality_gate import evaluate_gate
 from namel3ss.ingestion.signals import compute_signals
 from namel3ss.ingestion.store import drop_index, store_report, update_index
 from namel3ss.runtime.backend.upload_store import list_uploads
@@ -35,20 +37,41 @@ def run_ingestion(
     metadata = _resolve_metadata(ctx, upload_id)
     content = _read_upload_bytes(ctx, metadata)
     detected = detect_upload(metadata, content=content)
-    if resolved_mode in {"layout", "ocr"}:
-        text, method_used = extract_text(content, detected=detected, mode=resolved_mode)
-        primary_signals = compute_signals(normalize_text(text), detected=detected)
-    else:
-        text, method_used = extract_text(content, detected=detected, mode="primary")
-        normalized_primary = normalize_text(text)
-        primary_signals = compute_signals(normalized_primary, detected=detected)
-        if should_fallback(primary_signals, detected):
-            text, method_used = extract_fallback(content, detected=detected)
-    normalized = normalize_text(text)
-    signals = compute_signals(normalized, detected=detected)
+    probe = probe_content(content, metadata=metadata, detected=detected)
+    probe_blocked = probe.get("status") == "block"
+    normalized: str | None = None
+    text = ""
+    method_used = "primary"
+    if not probe_blocked:
+        if resolved_mode in {"layout", "ocr"}:
+            text, method_used = extract_text(content, detected=detected, mode=resolved_mode)
+            primary_signals = compute_signals(normalize_text(text), detected=detected)
+        else:
+            text, method_used = extract_text(content, detected=detected, mode="primary")
+            normalized_primary = normalize_text(text)
+            primary_signals = compute_signals(normalized_primary, detected=detected)
+            if should_fallback(primary_signals, detected):
+                text, method_used = extract_fallback(content, detected=detected)
+        normalized = normalize_text(text)
+    normalized_for_signals = normalized or ""
+    signals = compute_signals(normalized_for_signals, detected=detected)
     status, reasons = gate_quality(signals)
+    gate = evaluate_gate(
+        content=content,
+        metadata=metadata,
+        detected=detected,
+        normalized_text=normalized,
+        quality_status=status,
+        quality_reasons=reasons,
+        project_root=project_root,
+        app_path=app_path,
+        secret_values=secret_values,
+        probe=probe,
+    )
+    if gate.get("status") == "blocked":
+        status = "block"
     sanitized = sanitize_text(
-        normalized,
+        normalized_for_signals,
         project_root=project_root,
         app_path=app_path,
         secret_values=secret_values,
@@ -66,6 +89,7 @@ def run_ingestion(
             secret_values=secret_values,
         ),
         "reasons": list(reasons),
+        "gate": gate,
     }
     store_report(state, upload_id=upload_id, report=report)
     if status == "block":

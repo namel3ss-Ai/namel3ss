@@ -18,7 +18,8 @@ def ingestion_decisions(state: dict, upload_id: str | None) -> list[DecisionStep
         uid_text = str(uid)
         if upload_id and uid_text != upload_id:
             continue
-        reasons = string_list(report.get("reasons"))
+        gate = report.get("gate") if isinstance(report.get("gate"), dict) else None
+        reasons = string_list(gate.get("reasons")) if gate else string_list(report.get("reasons"))
         rules = ["quality gate"] + reasons if reasons else ["quality gate"]
         inputs = {
             "upload_id": uid_text,
@@ -26,6 +27,11 @@ def ingestion_decisions(state: dict, upload_id: str | None) -> list[DecisionStep
             "detected": report.get("detected"),
             "signals": report.get("signals"),
         }
+        if gate:
+            inputs["gate"] = gate
+        outcome = {"status": report.get("status")}
+        if gate and isinstance(gate.get("status"), str):  # allowed | blocked
+            outcome["gate"] = gate.get("status")
         steps.append(
             DecisionStep(
                 id=f"ingestion:{uid_text}",
@@ -33,7 +39,7 @@ def ingestion_decisions(state: dict, upload_id: str | None) -> list[DecisionStep
                 subject=uid_text,
                 inputs=inputs,
                 rules=rules,
-                outcome={"status": report.get("status")},
+                outcome=outcome,
             )
         )
     return steps

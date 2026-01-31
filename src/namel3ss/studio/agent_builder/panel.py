@@ -18,7 +18,7 @@ from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.ai.mock_provider import MockProvider
 from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.memory.api import MemoryManager, admin_action
-from namel3ss.observability.context import ObservabilityContext
+from namel3ss.observability.enablement import resolve_observability_context
 from namel3ss.runtime.memory_packs import (
     load_memory_pack_catalog,
     merge_packs,
@@ -385,6 +385,12 @@ def _build_context(
     dummy_flow = ir.Flow(name="agent_panel", body=[], requires=None, audited=False, line=None, column=None)
     schemas = {schema.name: schema for schema in getattr(program, "records", [])}
     provider = MockProvider()
+    obs, _ = resolve_observability_context(
+        None,
+        project_root=getattr(program, "project_root", None),
+        app_path=getattr(program, "app_path", None),
+        config=config,
+    )
     return ExecutionContext(
         flow=dummy_flow,
         schemas=schemas,
@@ -411,11 +417,7 @@ def _build_context(
         runtime_theme=None,
         project_root=getattr(program, "project_root", None),
         app_path=getattr(program, "app_path", None),
-        observability=ObservabilityContext.from_config(
-            project_root=getattr(program, "project_root", None),
-            app_path=getattr(program, "app_path", None),
-            config=config,
-        ),
+        observability=obs,
         record_changes=[],
         execution_steps=[],
         execution_step_counter=0,

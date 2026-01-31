@@ -13,6 +13,8 @@ from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.module_loader import load_project
+from namel3ss.observability.enablement import observability_enabled
+from namel3ss.runtime.observability.collector import build_observability_payload
 from namel3ss.proofs import build_engine_proof
 from namel3ss.runtime.capabilities.report import collect_tool_reports
 from namel3ss.runtime.audit import build_audit_report, build_decision_model, render_audit
@@ -30,6 +32,7 @@ class _ExplainParams:
     upload_id: str | None
     query: str | None
     input_path: str | None
+    include_observability: bool
 
 
 def run_explain_command(args: list[str]) -> int:
@@ -45,7 +48,7 @@ def run_explain_command(args: list[str]) -> int:
         lines = build_why_lines(payload, audience="non_technical" if params.mode == "non_technical" else "default")
         print("\n".join(lines))
         return 0
-    payload = build_explain_payload(app_path)
+    payload = build_explain_payload(app_path, include_observability=params.include_observability)
     if params.json_mode:
         print(dumps_pretty(payload))
         return 0
@@ -63,6 +66,7 @@ def _parse_args(args: list[str]) -> _ExplainParams:
     audit_requested = False
     why_requested = False
     non_technical_requested = False
+    include_observability = False
     i = 0
     while i < len(args):
         arg = args[i]
@@ -86,6 +90,10 @@ def _parse_args(args: list[str]) -> _ExplainParams:
             continue
         if arg == "--json":
             json_mode = True
+            i += 1
+            continue
+        if arg == "--observability":
+            include_observability = True
             i += 1
             continue
         if arg == "--input":
@@ -131,7 +139,7 @@ def _parse_args(args: list[str]) -> _ExplainParams:
             raise Namel3ssError(
                 build_guidance_message(
                     what=f"Unknown flag '{arg}'.",
-                    why="Supported flags: --json, --why, --non-technical, --audit, --input, --upload, --query.",
+                    why="Supported flags: --json, --why, --non-technical, --audit, --input, --upload, --query, --observability.",
                     fix="Remove the unsupported flag.",
                     example="n3 explain --json",
                 )
@@ -157,7 +165,7 @@ def _parse_args(args: list[str]) -> _ExplainParams:
         why_requested=why_requested,
         non_technical_requested=non_technical_requested,
     )
-    return _ExplainParams(app_arg, json_mode, mode, upload_id, query, input_path)
+    return _ExplainParams(app_arg, json_mode, mode, upload_id, query, input_path, include_observability)
 
 
 def _validate_mode(
@@ -201,7 +209,7 @@ def _validate_mode(
         )
 
 
-def build_explain_payload(app_path) -> dict:
+def build_explain_payload(app_path, *, include_observability: bool | None = None) -> dict:
     project_root = app_path.parent
     active = _hydrate_active_proof(project_root, load_active_proof(project_root))
     proof_id = active.get("proof_id") if isinstance(active, dict) else None
@@ -221,10 +229,16 @@ def build_explain_payload(app_path) -> dict:
             active.setdefault("target", target)
             if isinstance(proof, dict):
                 active.setdefault("build_id", (proof.get("build") or {}).get("build_id"))
-    return _assemble_explain_payload(app_path, active, proof)
+    return _assemble_explain_payload(app_path, active, proof, include_observability=include_observability)
 
 
-def _assemble_explain_payload(app_path, active: dict, proof: dict) -> dict:
+def _assemble_explain_payload(
+    app_path,
+    active: dict,
+    proof: dict,
+    *,
+    include_observability: bool | None,
+) -> dict:
     project_root = app_path.parent
     config = load_config(app_path=app_path, root=project_root)
     project = load_project(app_path)
@@ -238,7 +252,7 @@ def _assemble_explain_payload(app_path, active: dict, proof: dict) -> dict:
         app_path=app_path,
         secret_values=secret_values,
     )
-    return {
+    payload = {
         "schema_version": 1,
         "engine_target": target or "none",
         "active_proof_id": active.get("proof_id") if isinstance(active, dict) else None,
@@ -265,6 +279,14 @@ def _assemble_explain_payload(app_path, active: dict, proof: dict) -> dict:
         "pages": len(project.program.pages),
         "records": len(project.program.records),
     }
+    enabled = observability_enabled() if include_observability is None else include_observability
+    if enabled:
+        payload["observability"] = build_observability_payload(
+            project_root,
+            app_path=app_path,
+            secret_values=secret_values,
+        )
+    return payload
 
 
 def _hydrate_active_proof(project_root: Path, active: dict | None) -> dict:
