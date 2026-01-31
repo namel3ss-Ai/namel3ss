@@ -219,8 +219,11 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          New-Item -ItemType Directory -Force -Path .namel3ss/ci | Out-Null
-          if (-not (Test-Path -Path .namel3ss/ci -PathType Container)) {
+          $logDir = ".namel3ss\\ci"
+          $logPath = Join-Path -Path $logDir -ChildPath "pytest_cli_install_gate.log"
+          $helpPath = Join-Path -Path $logDir -ChildPath "namel3ss_help.txt"
+          New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+          if (-not (Test-Path -Path $logDir -PathType Container)) {
             throw "missing .namel3ss/ci"
           }
           python -m compileall src -q
@@ -235,34 +238,39 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             exit $LASTEXITCODE
           }
-          python -m namel3ss --help | Out-File -FilePath .namel3ss/ci/namel3ss_help.txt -Encoding utf8
+          python -m namel3ss --help | Out-File -FilePath $helpPath -Encoding utf8
           if ($LASTEXITCODE -ne 0) {
             exit $LASTEXITCODE
           }
-          $logPath = ".namel3ss/ci/pytest_cli_install_gate.log"
-          New-Item -ItemType Directory -Force -Path .namel3ss/ci | Out-Null
+          New-Item -ItemType Directory -Force -Path $logDir | Out-Null
           New-Item -ItemType File -Force -Path $logPath | Out-Null
-          $pytestOutput = & python -m pytest -q tests/test_cli_install.py 2>&1 | Tee-Object -FilePath $logPath
-          if ($LASTEXITCODE -ne 0) {
+          $pytestOutput = & python -m pytest -q tests/test_cli_install.py 2>&1
+          $exitCode = $LASTEXITCODE
+          New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+          $pytestOutput | Out-File -FilePath $logPath -Encoding utf8
+          if ($exitCode -ne 0) {
             if (Test-Path -Path $logPath) {
               Get-Content -Path $logPath
             } else {
               $pytestOutput | Write-Output
               Write-Output "missing pytest_cli_install_gate.log"
             }
-            exit $LASTEXITCODE
+            exit $exitCode
           }
-          New-Item -ItemType Directory -Force -Path .namel3ss/ci | Out-Null
+          New-Item -ItemType Directory -Force -Path $logDir | Out-Null
           New-Item -ItemType File -Force -Path $logPath | Out-Null
-          $pytestOutput = & python -m pytest -q 2>&1 | Tee-Object -FilePath $logPath
-          if ($LASTEXITCODE -ne 0) {
+          $pytestOutput = & python -m pytest -q 2>&1
+          $exitCode = $LASTEXITCODE
+          New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+          $pytestOutput | Out-File -FilePath $logPath -Encoding utf8
+          if ($exitCode -ne 0) {
             if (Test-Path -Path $logPath) {
               Get-Content -Path $logPath
             } else {
               $pytestOutput | Write-Output
               Write-Output "missing pytest_cli_install_gate.log"
             }
-            exit $LASTEXITCODE
+            exit $exitCode
           }
 
       - name: Ensure CLI gate artifacts dir
