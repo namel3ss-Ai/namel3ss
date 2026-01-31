@@ -1,0 +1,28 @@
+#!/bin/sh
+set -e
+
+root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [ -z "$root" ]; then
+  echo "pre-push: unable to locate repository root."
+  exit 1
+fi
+
+cd "$root"
+
+python_cmd=""
+if command -v python >/dev/null 2>&1; then
+  python_cmd="python"
+elif command -v python3 >/dev/null 2>&1; then
+  python_cmd="python3"
+else
+  echo "pre-push: python is required to run local verification."
+  echo "pre-push: install python and re-run: python tools/ci/verify_local.py"
+  exit 1
+fi
+
+echo "pre-push: running local verification"
+if ! "${python_cmd}" tools/ci/verify_local.py; then
+  echo "pre-push: verification failed."
+  echo "pre-push: re-run locally with: ${python_cmd} tools/ci/verify_local.py"
+  exit 1
+fi

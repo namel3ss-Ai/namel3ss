@@ -37,7 +37,10 @@ def _stage_template(tmp_path: Path) -> Path:
 
 
 def _store_text_upload(tmp_path: Path, filename: str) -> dict:
-    payload = (FIXTURES_DIR / filename).read_bytes()
+    text = (FIXTURES_DIR / filename).read_text(encoding="utf-8")
+    # Normalize line endings for cross-platform checksum determinism.
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    payload = normalized.encode("utf-8")
     app_path = tmp_path / "app.ai"
     ctx = SimpleNamespace(project_root=str(tmp_path), app_path=app_path.as_posix())
     return store_upload(ctx, filename=filename, content_type="text/plain", stream=io.BytesIO(payload))

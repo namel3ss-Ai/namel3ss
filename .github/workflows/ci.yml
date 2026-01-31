@@ -24,6 +24,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .[dev]
 
+      - name: Prepare CI artifacts dir
+        run: mkdir -p .namel3ss/ci_artifacts
+
       - name: Compile check
         run: python -m compileall src -q -x '.*namel3ss/runtime/build.*'
 
@@ -37,19 +40,26 @@ jobs:
         run: python -m pytest -q tests/traces/test_trace_schema_v1.py
 
       - name: Run tests
-        run: python -m pytest -q
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .namel3ss/ci_artifacts
+          : > .namel3ss/ci_artifacts/pytest_release_gate.log
+          set +e
+          python -m pytest -q 2>&1 | tee .namel3ss/ci_artifacts/pytest_release_gate.log
+          status=${PIPESTATUS[0]}
+          set -e
+          echo "${status}" > .namel3ss/ci_artifacts/pytest_exit_code.txt
+          exit ${status}
 
       - name: Release smoke (build + start)
         run: python -m pytest -q tests/runtime/test_production_server.py
-
-      - name: Ensure CI artifacts dir
-        run: mkdir -p .namel3ss/ci_artifacts
 
       - name: Expression surface gate
         run: n3 expr-check --json .namel3ss/ci_artifacts/expr_report.json
 
       - name: Release check
-        run: n3 release-check --json .namel3ss/ci_artifacts/release_report.json --txt .namel3ss/ci_artifacts/release_report.txt --fast
+        run: n3 release-check --json .namel3ss/ci_artifacts/release_check_report.json --txt .namel3ss/ci_artifacts/release_check_report.txt --fast
 
       - name: Package verification
         run: python tools/package_verify.py
@@ -60,7 +70,11 @@ jobs:
       - name: Benchmark report
         run: python tools/bench.py --out .namel3ss/ci_artifacts/bench_report.json --iterations 1 --timing deterministic
 
-      - name: Dump release-check context (always)
+      - name: Generate release gate report (always)
+        if: ${{ always() }}
+        run: python tools/release_gate_report.py
+
+      - name: Dump release gate reports (always)
         if: ${{ always() }}
         run: |
           echo "=== COMMIT ==="
@@ -69,6 +83,10 @@ jobs:
           (test -f .namel3ss/ci_artifacts/release_report.txt && cat .namel3ss/ci_artifacts/release_report.txt) || echo "missing release_report.txt"
           echo "=== release_report.json ==="
           (test -f .namel3ss/ci_artifacts/release_report.json && cat .namel3ss/ci_artifacts/release_report.json) || echo "missing release_report.json"
+          echo "=== release_check_report.txt ==="
+          (test -f .namel3ss/ci_artifacts/release_check_report.txt && cat .namel3ss/ci_artifacts/release_check_report.txt) || echo "missing release_check_report.txt"
+          echo "=== release_check_report.json ==="
+          (test -f .namel3ss/ci_artifacts/release_check_report.json && cat .namel3ss/ci_artifacts/release_check_report.json) || echo "missing release_check_report.json"
 
       - name: Upload release gate reports
         if: ${{ always() }}

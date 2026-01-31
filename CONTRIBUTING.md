@@ -23,7 +23,7 @@ Clarity beats cleverness. Every change should make the language easier to unders
 
 5) Package Safety  
 - Packages must ship `capsule.ai` with explicit exports.  
-- LICENSE + checksums are required; no install scripts or hooks.  
+- LICENSE + checksums are required; package distributions must not ship install scripts or hooks.  
 - Run `n3 pkg validate`, `n3 test`, and `n3 verify --prod` where applicable.
 
 6) `.ai` Is the Extension  
@@ -67,6 +67,18 @@ Compile check:
 ```bash
 python -m compileall src -q
 ```
+
+Local verification (matches CI core checks):
+```bash
+python tools/ci/verify_local.py
+```
+
+Install the pre-push hook:
+```bash
+python tools/git/install_hooks.py
+```
+
+The pre-push hook enforces the local verification gate and blocks pushes when any check fails.
 
 Memory import guard:
 ```bash
