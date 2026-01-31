@@ -21,6 +21,24 @@ from namel3ss.runtime.backend.upload_contract import (
 from namel3ss.utils.slugify import slugify_text
 
 
+def normalize_hash_bytes(data: bytes) -> bytes:
+    if not data:
+        return b""
+    return data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+
+
+def _normalize_hash_chunk(data: bytes, *, pending_cr: bool) -> tuple[bytes, bool]:
+    if pending_cr:
+        data = b"\r" + data
+        pending_cr = False
+    if not data:
+        return b"", False
+    if data.endswith(b"\r"):
+        pending_cr = True
+        data = data[:-1]
+    return normalize_hash_bytes(data), pending_cr
+
+
 def store_upload(
     ctx,
     *,
@@ -93,6 +111,7 @@ def _uploads_root(ctx) -> Path:
 def _write_stream(path: Path, stream: object, *, progress=None, preview: UploadPreviewCounter | None = None) -> tuple[int, str]:
     hasher = hashlib.sha256()
     size = 0
+    pending_cr = False
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("wb") as handle:
         if hasattr(stream, "read"):
@@ -107,7 +126,8 @@ def _write_stream(path: Path, stream: object, *, progress=None, preview: UploadP
                         details=upload_error_details(UPLOAD_ERROR_STREAM),
                     )
                 data = bytes(chunk)
-                hasher.update(data)
+                normalized, pending_cr = _normalize_hash_chunk(data, pending_cr=pending_cr)
+                hasher.update(normalized)
                 size += len(data)
                 if progress is not None:
                     progress(len(data))
@@ -122,13 +142,16 @@ def _write_stream(path: Path, stream: object, *, progress=None, preview: UploadP
                         details=upload_error_details(UPLOAD_ERROR_STREAM),
                     )
                 data = bytes(chunk)
-                hasher.update(data)
+                normalized, pending_cr = _normalize_hash_chunk(data, pending_cr=pending_cr)
+                hasher.update(normalized)
                 size += len(data)
                 if progress is not None:
                     progress(len(data))
                 if preview is not None:
                     preview.consume(data)
                 handle.write(data)
+    if pending_cr:
+        hasher.update(b"\n")
     return size, hasher.hexdigest()
 
 
@@ -165,4 +188,4 @@ def _update_index(root: Path, entry: dict) -> None:
     index_path.write_text(canonical_json_dumps(entries, pretty=True), encoding="utf-8")
 
 
-__all__ = ["list_uploads", "store_upload"]
+__all__ = ["list_uploads", "normalize_hash_bytes", "store_upload"]

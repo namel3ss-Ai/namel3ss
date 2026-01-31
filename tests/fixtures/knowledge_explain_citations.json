@@ -2,7 +2,7 @@
   "citations": [
     {
       "title": "Policy Guide",
-      "source_id": "0bc2357af0926aa496ab71588ce7750dd5b3e564ae9363d93dfe2d7a440ca4af:0",
+      "source_id": "7a6ba7e4af8b45040fe2a2646beaffc1641005e030462832355b880c96c99c20:0",
       "snippet": "Policy guidance: deterministic ingestion and retrieval keep sources stable. Use approved documents only for answers."
     }
   ],
@@ -11,13 +11,13 @@
       "stage": "ingestion",
       "detail": {
         "document_id": "policy",
-        "upload_id": "0bc2357af0926aa496ab71588ce7750dd5b3e564ae9363d93dfe2d7a440ca4af",
+        "upload_id": "7a6ba7e4af8b45040fe2a2646beaffc1641005e030462832355b880c96c99c20",
         "previous_upload_id": "",
         "event": "new",
         "status": "pass",
         "reasons": [],
         "chunk_ids": [
-          "0bc2357af0926aa496ab71588ce7750dd5b3e564ae9363d93dfe2d7a440ca4af:0"
+          "7a6ba7e4af8b45040fe2a2646beaffc1641005e030462832355b880c96c99c20:0"
         ],
         "index_updated": true
       }
@@ -36,15 +36,15 @@
           "ordering": "index_order",
           "tie_break": "ingestion_order",
           "inputs": [
-            "0bc2357af0926aa496ab71588ce7750dd5b3e564ae9363d93dfe2d7a440ca4af:0"
+            "7a6ba7e4af8b45040fe2a2646beaffc1641005e030462832355b880c96c99c20:0"
           ],
           "scores": []
         },
         "sources": [
           {
             "document_id": "policy",
-            "upload_id": "0bc2357af0926aa496ab71588ce7750dd5b3e564ae9363d93dfe2d7a440ca4af",
-            "chunk_id": "0bc2357af0926aa496ab71588ce7750dd5b3e564ae9363d93dfe2d7a440ca4af:0",
+            "upload_id": "7a6ba7e4af8b45040fe2a2646beaffc1641005e030462832355b880c96c99c20",
+            "chunk_id": "7a6ba7e4af8b45040fe2a2646beaffc1641005e030462832355b880c96c99c20:0",
             "quality": "pass"
           }
         ]

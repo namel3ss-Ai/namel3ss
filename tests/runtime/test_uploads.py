@@ -10,7 +10,7 @@ import pytest
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.backend.upload_handler import handle_upload, handle_upload_list
-from namel3ss.runtime.backend.upload_store import store_upload
+from namel3ss.runtime.backend.upload_store import normalize_hash_bytes, store_upload
 from namel3ss.utils.slugify import slugify_text
 
 
@@ -66,6 +66,17 @@ def test_store_upload_scoped_and_indexed(tmp_path: Path) -> None:
     index = json.loads(index_path.read_text(encoding="utf-8"))
     assert index
     assert index[0]["stored_path"] == expected_path
+
+
+def test_upload_checksum_normalizes_newlines(tmp_path: Path) -> None:
+    ctx = _ctx(tmp_path)
+    payload_lf = b"policy line\nnext line\n"
+    payload_crlf = b"policy line\r\nnext line\r\n"
+    meta_lf = store_upload(ctx, filename="policy_lf.txt", content_type="text/plain", stream=io.BytesIO(payload_lf))
+    meta_crlf = store_upload(ctx, filename="policy_crlf.txt", content_type="text/plain", stream=io.BytesIO(payload_crlf))
+    expected = hashlib.sha256(normalize_hash_bytes(payload_lf)).hexdigest()
+    assert meta_lf["checksum"] == expected
+    assert meta_crlf["checksum"] == expected
 
 
 def test_handle_upload_multipart(tmp_path: Path) -> None:
