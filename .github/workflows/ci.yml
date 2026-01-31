@@ -43,12 +43,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p .namel3ss/ci_artifacts
-          : > .namel3ss/ci_artifacts/pytest_release_gate.log
+          tmp_log="${RUNNER_TEMP:-/tmp}/pytest_release_gate.log"
+          : > "${tmp_log}"
           set +e
-          python -m pytest -q 2>&1 | tee .namel3ss/ci_artifacts/pytest_release_gate.log
+          python -m pytest -q 2>&1 | tee "${tmp_log}"
           status=${PIPESTATUS[0]}
           set -e
+          mkdir -p .namel3ss/ci_artifacts
+          cp "${tmp_log}" .namel3ss/ci_artifacts/pytest_release_gate.log
           echo "${status}" > .namel3ss/ci_artifacts/pytest_exit_code.txt
           exit ${status}
 
@@ -189,11 +191,13 @@ jobs:
           python tools/line_limit_check.py
           python -m pip install -e .
           python -m namel3ss --help > .namel3ss/ci/namel3ss_help.txt
-          mkdir -p .namel3ss/ci
-          : > .namel3ss/ci/pytest_cli_install_gate.log
-          if python -m pytest -q tests/test_cli_install.py 2>&1 | tee .namel3ss/ci/pytest_cli_install_gate.log; then
+          tmp_log="${RUNNER_TEMP:-/tmp}/pytest_cli_install_gate.log"
+          : > "${tmp_log}"
+          if python -m pytest -q tests/test_cli_install.py 2>&1 | tee "${tmp_log}"; then
             :
           else
+            mkdir -p .namel3ss/ci
+            cp "${tmp_log}" .namel3ss/ci/pytest_cli_install_gate.log
             if test -f .namel3ss/ci/pytest_cli_install_gate.log; then
               cat .namel3ss/ci/pytest_cli_install_gate.log
             else
@@ -202,10 +206,13 @@ jobs:
             exit 1
           fi
           mkdir -p .namel3ss/ci
-          : > .namel3ss/ci/pytest_cli_install_gate.log
-          if python -m pytest -q 2>&1 | tee .namel3ss/ci/pytest_cli_install_gate.log; then
+          cp "${tmp_log}" .namel3ss/ci/pytest_cli_install_gate.log
+          : > "${tmp_log}"
+          if python -m pytest -q 2>&1 | tee "${tmp_log}"; then
             :
           else
+            mkdir -p .namel3ss/ci
+            cp "${tmp_log}" .namel3ss/ci/pytest_cli_install_gate.log
             if test -f .namel3ss/ci/pytest_cli_install_gate.log; then
               cat .namel3ss/ci/pytest_cli_install_gate.log
             else
@@ -213,6 +220,8 @@ jobs:
             fi
             exit 1
           fi
+          mkdir -p .namel3ss/ci
+          cp "${tmp_log}" .namel3ss/ci/pytest_cli_install_gate.log
 
       - name: CLI install gate (Windows)
         if: matrix.os == 'windows-latest'
