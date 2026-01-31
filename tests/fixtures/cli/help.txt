@@ -5,7 +5,7 @@ Usage:
 namel3ss is an AI-native programming language. Every valid .ai file is an application. Studio is optional (inspector only; browser renders the app).
 
 Start
-  n3 new <template> <name>        # scaffold a project (run `n3 new` to list templates)
+  n3 new <template> <name>        # scaffold a project
   n3 run [file.ai]                # run app in browser (default: ./app.ai)
   n3 dev [file.ai]                # dev loop, alias of run (browser)
   n3 studio [file.ai]             # inspect/debug in Studio
@@ -26,9 +26,9 @@ Advanced
   n3 start [file.ai]              # serve build artifacts
   n3 ship --to T --back           # promote build, alias promote/back
   n3 where [file.ai]              # show active target and build
-  n3 proof <file.ai> --json       # write engine proof (contract snapshot)
-  n3 verify <file.ai> --prod      # governance checks (contract gate)
-  n3 when <file.ai> --json        # check contract compatibility
+  n3 proof <file.ai> --json       # write engine proof
+  n3 verify <file.ai> --prod      # governance checks
+  n3 when <file.ai> --json        # check spec compatibility
   n3 how | what | why | with      # explain the last run
   n3 lint <file.ai> [check]       # lint (strict tools via --strict-tools)
   n3 graph | exports <file.ai>    # dependency graph or exports (use --json)
