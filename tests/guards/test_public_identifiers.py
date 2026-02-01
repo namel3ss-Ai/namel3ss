@@ -48,16 +48,16 @@ def test_public_identifier_constants_are_stable() -> None:
 
 
 def test_public_identifier_catalogs_are_stable() -> None:
-    beta_path = ROOT / "resources" / "beta_surfaces.json"
-    beta_payload = _load_json(beta_path)
-    schema_version = beta_payload.get("schema_version") or ""
-    _assert_stable(str(schema_version), f"{beta_path.as_posix()}:schema_version")
-    for entry in beta_payload.get("surfaces") or []:
+    catalog_path = ROOT / "resources" / "surface_catalog.json"
+    catalog_payload = _load_json(catalog_path)
+    schema_version = catalog_payload.get("schema_version") or ""
+    _assert_stable(str(schema_version), f"{catalog_path.as_posix()}:schema_version")
+    for entry in catalog_payload.get("surfaces") or []:
         if not isinstance(entry, dict):
             continue
         version = entry.get("version")
         if isinstance(version, str) and version:
-            _assert_stable(version, f"{beta_path.as_posix()}:{entry.get('id')}")
+            _assert_stable(version, f"{catalog_path.as_posix()}:{entry.get('id')}")
 
     for rel_path in (
         "evals/suite.json",

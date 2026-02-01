@@ -75,7 +75,7 @@ def stage_repo(repo_root: Path, stage_dir: Path) -> None:
         ".tox",
         ".idea",
         ".vscode",
-        "tmp_tool_test",
+        "tool_fixture",
     }
 
     def _ignore(path: str, names: list[str]) -> set[str]:

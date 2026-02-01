@@ -8,7 +8,7 @@ from namel3ss.evals.model import EVAL_SCHEMA_VERSION
 from namel3ss.traces.schema import TRACE_VERSION
 
 
-def test_beta_surfaces_catalog_is_valid():
+def test_surface_catalog_is_valid():
     surfaces = load_surfaces()
     assert surfaces
     ids = [surface.surface_id for surface in surfaces]
@@ -27,6 +27,6 @@ def test_beta_surfaces_catalog_is_valid():
                 json.loads(path.read_text(encoding="utf-8"))
 
 
-def test_beta_surfaces_schema_version_is_present():
+def test_surface_catalog_schema_version_is_present():
     payload = json.loads(SURFACES_PATH.read_text(encoding="utf-8"))
-    assert payload.get("schema_version") == "beta_surfaces"
+    assert payload.get("schema_version") == "surface_catalog"
