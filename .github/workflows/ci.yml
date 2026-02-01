@@ -163,6 +163,7 @@ jobs:
           for app in "${reference_apps[@]}"; do
             echo "Reference app ${app}"
             (cd "${app}" && n3 test)
+            (cd "${app}" && n3 pack --target local)
             (cd "${app}" && n3 verify --prod)
           done
 
