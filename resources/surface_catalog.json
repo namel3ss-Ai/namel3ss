@@ -1,5 +1,5 @@
 {
-  "schema_version": "beta_surfaces",
+  "schema_version": "surface_catalog",
   "surfaces": [
     {
       "id": "agent_explain_payload",

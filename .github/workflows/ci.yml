@@ -129,6 +129,46 @@ jobs:
       - name: Repo clean check
         run: python -m namel3ss.beta_lock.repo_clean
 
+  graduation-core-stable:
+    name: graduation-core-stable
+    runs-on: ubuntu-latest
+    if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') }}
+    needs:
+      - release-gate
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package (editable)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+
+      - name: Core stable contract gates
+        run: python -m pytest -q tests/fuzz tests/parser/test_incremental_parse_contract.py
+
+      - name: Reference apps gate
+        run: |
+          set -euo pipefail
+          reference_apps=(
+            "evals/apps/reference_release_hub"
+          )
+          for app in "${reference_apps[@]}"; do
+            echo "Reference app ${app}"
+            (cd "${app}" && n3 test)
+            (cd "${app}" && n3 verify --prod)
+          done
+
+      - name: Repo clean check
+        run: python -m namel3ss.beta_lock.repo_clean
+
   docker-build:
     name: docker-build
     runs-on: ubuntu-latest

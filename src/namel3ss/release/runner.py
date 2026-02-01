@@ -87,7 +87,7 @@ DEFAULT_GATES: tuple[GateSpec, ...] = (
     GateSpec(
         name="Beta Lock Gate",
         tests=(
-            "tests/beta_lock/test_beta_surfaces.py",
+            "tests/beta_lock/test_surface_catalog.py",
             "tests/beta_lock/test_agent_explain_goldens.py",
             "tests/beta_lock/test_trace_goldens.py",
             "tests/beta_lock/test_cli_goldens.py",

@@ -18,6 +18,11 @@ Deterministic execution with explicit AI boundaries and governed runtime.
 
 Try it in 60 seconds: [docs/quickstart.md](docs/quickstart.md).
 
+## Core stable
+
+Core stable is the graduation gate for the language surface, compiler determinism, and safety guards.
+See the authoritative definition in [docs/graduation/core_stable.md](docs/graduation/core_stable.md).
+
 ## Get started
 
 ### Develop from source
