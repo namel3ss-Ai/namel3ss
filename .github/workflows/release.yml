@@ -67,6 +67,7 @@ jobs:
     environment: pypi
     permissions:
       contents: read
+      id-token: write
     steps:
       - name: Download dist artifacts
         uses: actions/download-artifact@v4
@@ -76,8 +77,6 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_TOKEN }}
 
   docker-image:
     name: docker-image
