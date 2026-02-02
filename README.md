@@ -3,6 +3,20 @@
 AI-native programming language for deterministic, inspectable applications.
 Deterministic execution with explicit AI boundaries and governed runtime.
 
+<p align="center">
+  <img
+    src="assets/images/namel3ss_screenshot_hero.svg"
+    alt="namel3ss: one .ai file defining data, flows, explicit AI, and deterministic UI"
+    width="900"
+  />
+</p>
+
+<p align="center">
+  <sub>
+    One <code>.ai</code> file defines records, deterministic flows, explicit AI boundaries, and UI — with inspectable state changes.
+  </sub>
+</p>
+
 ![license: MIT](https://img.shields.io/badge/license-MIT-green)
 ![tests](https://github.com/namel3ss-Ai/namel3ss/actions/workflows/ci.yml/badge.svg)
 
@@ -17,6 +31,13 @@ Deterministic execution with explicit AI boundaries and governed runtime.
 - [Limitations](resources/limitations.md)
 
 Try it in 60 seconds: [docs/quickstart.md](docs/quickstart.md).
+
+## What you can run today
+
+- Templates: [docs/templates.md](docs/templates.md)
+- Template contract: [templates/](templates/)
+- Demos: [src/namel3ss/demos](src/namel3ss/demos)
+- Studio (inspection UI): [docs/studio.md](docs/studio.md)
 
 ## Core stable
 
@@ -119,13 +140,6 @@ Release invariants (enforced):
 References:
 - [Release readiness](docs/release-ready.md)
 - [Release workflow](.github/workflows/release.yml)
-
-## What you can run today
-
-- Templates: [docs/templates.md](docs/templates.md)
-- Template contract: [templates/](templates/)
-- Demos: [src/namel3ss/demos](src/namel3ss/demos)
-- Studio (inspection UI): [docs/studio.md](docs/studio.md)
 
 ## How it works (high level)
 
