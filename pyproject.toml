@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "namel3ss"
-version = "0.1.0a11"
-description = "An AI-native programming language with deterministic execution, explainability, and governed memory."
+version = "0.1.0a12"
+description = "AI-native programming language for deterministic, inspectable applications."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }

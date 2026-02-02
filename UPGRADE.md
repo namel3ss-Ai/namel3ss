@@ -2,7 +2,7 @@
 
 This guide lists breaking changes and the manual steps to move between versions.
 
-## 0.1.0a11
+## 0.1.0a12
 
 ### Breaking changes
 - None in this release.
