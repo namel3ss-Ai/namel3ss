@@ -18,6 +18,7 @@ from namel3ss.runtime.executor.stmt.ai_tools import (
     execute_run_agent_stmt,
     execute_run_agents_parallel_stmt,
 )
+from namel3ss.runtime.executor.stmt.ordering import execute_keep_first, execute_order_list
 from namel3ss.runtime.executor.stmt.control_flow import (
     execute_for_each,
     execute_if,
@@ -48,6 +49,12 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
         return
     if isinstance(stmt, ir.Set):
         _execute_set(ctx, stmt)
+        return
+    if isinstance(stmt, ir.OrderList):
+        execute_order_list(ctx, stmt)
+        return
+    if isinstance(stmt, ir.KeepFirst):
+        execute_keep_first(ctx, stmt)
         return
     if isinstance(stmt, ir.If):
         execute_if(ctx, stmt, execute_statement)

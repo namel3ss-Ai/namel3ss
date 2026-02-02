@@ -110,6 +110,7 @@ def statement_rules() -> tuple[StatementRule, ...]:
     from namel3ss.parser.stmt.log import parse_log
     from namel3ss.parser.stmt.match import parse_match
     from namel3ss.parser.stmt.metric import parse_metric
+    from namel3ss.parser.stmt.order import parse_keep_first, parse_order_list
     from namel3ss.parser.stmt.parallel import parse_parallel
     from namel3ss.parser.stmt.orchestration import parse_orchestration
     from namel3ss.parser.stmt.repeat import parse_repeat
@@ -179,6 +180,8 @@ def statement_rules() -> tuple[StatementRule, ...]:
         ),
         StatementRule("calc", "IDENT", parse_calc, token_value="calc"),
         StatementRule("let", "LET", parse_let),
+        StatementRule("order_list", "IDENT", parse_order_list, token_value="order"),
+        StatementRule("keep_first", "IDENT", parse_keep_first, token_value="keep", predicate=_is_keep_first),
         StatementRule("set_theme", "SET", parse_set_theme, predicate=_is_set_theme),
         StatementRule("set", "SET", parse_set),
         StatementRule("if", "IF", parse_if),
@@ -255,6 +258,10 @@ def select_expression_rule(parser) -> ExpressionRule | None:
 def _is_set_theme(parser) -> bool:
     next_type = parser.tokens[parser.position + 1].type if parser.position + 1 < len(parser.tokens) else None
     return next_type == "THEME"
+
+
+def _is_keep_first(parser) -> bool:
+    return _peek_ident_values(parser, ["first"])
 
 
 def _is_run_agent(parser) -> bool:

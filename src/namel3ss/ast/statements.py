@@ -27,6 +27,18 @@ class Set(Statement):
 
 
 @dataclass
+class OrderList(Statement):
+    target: Assignable
+    field: str
+    direction: str
+
+
+@dataclass
+class KeepFirst(Statement):
+    count: Expression
+
+
+@dataclass
 class If(Statement):
     condition: Expression
     then_body: List[Statement]

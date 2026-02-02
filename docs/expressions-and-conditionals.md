@@ -43,6 +43,31 @@ flow "demo":
   let total is sum(numbers)
 ```
 
+## Deterministic ordering and top K
+
+These statements rank a list by a number field and then keep the top few.
+They are explicit, stable, and do not use hidden logic.
+
+Grammar:
+order list_name by score from highest to lowest
+order list_name by score from lowest to highest
+keep first number items
+
+Rules:
+- Ordering is stable when scores match. Equal scores keep the original list order.
+- Keep first trims the most recent ordered list in the same flow.
+- Keep first never reorders items.
+- If no list has been ordered yet, keep first is an error.
+
+Example:
+```
+flow "demo":
+  set state.scored_results is scored_results
+  order state.scored_results by score from highest to lowest
+  keep first 5 items
+  return state.scored_results
+```
+
 4) map/filter/reduce (pure, ordered)
 ```
 flow "demo":

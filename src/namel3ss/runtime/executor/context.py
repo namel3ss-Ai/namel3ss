@@ -71,6 +71,7 @@ class ExecutionContext:
     config: AppConfig
     provider_cache: Dict[str, AIProvider]
     runtime_theme: str | None
+    last_order_target: ir.Assignable | None = None
     flow_map: Dict[str, ir.Flow] = field(default_factory=dict)
     flow_contracts: Dict[str, ir.ContractDecl] = field(default_factory=dict)
     pipeline_contracts: Dict[str, ir.ContractDecl] = field(default_factory=dict)

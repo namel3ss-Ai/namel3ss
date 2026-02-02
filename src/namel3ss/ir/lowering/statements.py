@@ -12,11 +12,13 @@ from namel3ss.ir.model.statements import (
     Find,
     ForEach,
     If,
+    KeepFirst,
     Let,
     LogStmt,
     Match,
     MatchCase,
     MetricStmt,
+    OrderList,
     ParallelBlock,
     ParallelMergePolicy,
     ParallelTask,
@@ -49,6 +51,20 @@ def _lower_statement(stmt: ast.Statement, agents) -> IRStatement:
         return Set(
             target=_lower_assignable(stmt.target),
             expression=_lower_expression(stmt.expression),
+            line=stmt.line,
+            column=stmt.column,
+        )
+    if isinstance(stmt, ast.OrderList):
+        return OrderList(
+            target=_lower_assignable(stmt.target),
+            field=stmt.field,
+            direction=stmt.direction,
+            line=stmt.line,
+            column=stmt.column,
+        )
+    if isinstance(stmt, ast.KeepFirst):
+        return KeepFirst(
+            count=_lower_expression(stmt.count),
             line=stmt.line,
             column=stmt.column,
         )
