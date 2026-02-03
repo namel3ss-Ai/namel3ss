@@ -149,6 +149,12 @@ def _chat_item_reasons(element: dict) -> list[str]:
         flow = element.get("flow")
         if flow:
             reasons.append(f"calls flow: {flow}")
+        fields = element.get("fields") or []
+        if isinstance(fields, list) and fields:
+            names = [field.get("name") for field in fields if isinstance(field, dict) and field.get("name")]
+            joined = _join_limited([str(name) for name in names if name])
+            if joined:
+                reasons.append(f"fields: {joined}")
     if kind == "thinking":
         active = element.get("active")
         if isinstance(active, bool):

@@ -33,6 +33,7 @@ from namel3ss.ir.model.pages import (
     CardGroupItem,
     CardItem,
     ChatItem,
+    ChatComposerItem,
     ColumnItem,
     ComposeItem,
     DrawerItem,
@@ -117,6 +118,7 @@ def lower_program(program: ast.Program) -> Program:
     ]
     _ensure_unique_pages(pages)
     _validate_text_inputs(pages, flow_irs, flow_contracts)
+    _validate_chat_composers(pages, flow_irs, flow_contracts)
     theme_runtime_supported = any(_flow_has_theme_change(flow) for flow in flow_irs)
     ui_settings = normalize_ui_settings(getattr(program, "ui_settings", None))
     theme_setting = ui_settings.get("theme", program.app_theme)
@@ -215,6 +217,97 @@ def _validate_text_inputs(
                 )
 
 
+def _validate_chat_composers(
+    pages: list[Page],
+    flows: list[Flow],
+    flow_contracts: dict[str, ContractDecl],
+) -> None:
+    flow_inputs: dict[str, dict[str, str]] = {flow.name: _flow_input_signature(flow, flow_contracts) for flow in flows}
+    for page in pages:
+        for item in _walk_page_items(page.items):
+            if not isinstance(item, ChatComposerItem):
+                continue
+            inputs = flow_inputs.get(item.flow_name) or {}
+            extra_fields = list(getattr(item, "fields", []) or [])
+            if not extra_fields:
+                if not inputs:
+                    continue
+                message_type = inputs.get("message")
+                if message_type is None:
+                    raise Namel3ssError(
+                        build_guidance_message(
+                            what=f'Chat composer for flow "{item.flow_name}" is missing "message" in inputs.',
+                            why="Composer submissions always include message.",
+                            fix='Add `message is text` to the flow input block.',
+                            example=_composer_input_example(item.flow_name, ["message"]),
+                        ),
+                        line=item.line,
+                        column=item.column,
+                    )
+                if message_type != "text":
+                    raise Namel3ssError(
+                        build_guidance_message(
+                            what='Chat composer field "message" must be text.',
+                            why=f'Flow "{item.flow_name}" declares "message" as {message_type}.',
+                            fix='Change the flow input type to text for "message".',
+                            example=f'flow "{item.flow_name}"\\n  input\\n    message is text',
+                        ),
+                        line=item.line,
+                        column=item.column,
+                    )
+                continue
+            expected_fields = _composer_expected_fields(extra_fields)
+            if not inputs:
+                example = _composer_input_example(item.flow_name, expected_fields)
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what=f'Chat composer for flow "{item.flow_name}" declares extra fields without flow inputs.',
+                        why="Structured composers require explicit input fields for validation.",
+                        fix="Add an input block that lists message and the extra fields.",
+                        example=example,
+                    ),
+                    line=item.line,
+                    column=item.column,
+                )
+            missing = [name for name in expected_fields if name not in inputs]
+            extra = [name for name in inputs.keys() if name not in expected_fields]
+            if missing or extra:
+                why_parts: list[str] = []
+                if missing:
+                    why_parts.append(f"Missing: {', '.join(missing)}.")
+                if extra:
+                    why_parts.append(f"Extra: {', '.join(extra)}.")
+                example = _composer_input_example(item.flow_name, expected_fields)
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what=f'Chat composer fields do not match flow "{item.flow_name}" inputs.',
+                        why=" ".join(why_parts) if why_parts else "Flow inputs must match composer fields.",
+                        fix="Update the flow input block to match the composer payload.",
+                        example=example,
+                    ),
+                    line=item.line,
+                    column=item.column,
+                )
+            type_map = {"message": "text"}
+            for field in extra_fields:
+                type_map[field.name] = field.type_name
+            for name in expected_fields:
+                expected_type = type_map.get(name)
+                actual_type = inputs.get(name)
+                if expected_type and actual_type and actual_type != expected_type:
+                    field = next((entry for entry in extra_fields if entry.name == name), None)
+                    raise Namel3ssError(
+                        build_guidance_message(
+                            what=f'Chat composer field "{name}" must be {expected_type}.',
+                            why=f'Flow "{item.flow_name}" declares "{name}" as {actual_type}.',
+                            fix=f'Change the flow input type to {expected_type} for "{name}".',
+                            example=f'flow "{item.flow_name}"\\n  input\\n    {name} is {expected_type}',
+                        ),
+                        line=field.line if field else item.line,
+                        column=field.column if field else item.column,
+                    )
+
+
 def _flow_input_signature(flow: Flow, flow_contracts: dict[str, ContractDecl]) -> dict[str, str]:
     if flow.steps:
         for step in flow.steps:
@@ -224,6 +317,22 @@ def _flow_input_signature(flow: Flow, flow_contracts: dict[str, ContractDecl]) -
     if contract is None:
         return {}
     return {field.name: field.type_name for field in contract.signature.inputs}
+
+
+def _composer_expected_fields(extra_fields: list[object]) -> list[str]:
+    names = ["message"]
+    for field in extra_fields:
+        name = getattr(field, "name", None)
+        if isinstance(name, str):
+            names.append(name)
+    return names
+
+
+def _composer_input_example(flow_name: str, field_names: list[str]) -> str:
+    lines = [f'flow "{flow_name}"', "  input"]
+    for name in field_names:
+        lines.append(f"    {name} is text")
+    return "\\n".join(lines)
 
 
 def _walk_page_items(items: list[object]) -> list[object]:

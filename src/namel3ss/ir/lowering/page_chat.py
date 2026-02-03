@@ -29,7 +29,23 @@ def _lower_chat_child(child: ast.PageItem, flow_names: set[str], page_name: str,
                 line=child.line,
                 column=child.column,
             )
-        return attach_origin(ir.ChatComposerItem(flow_name=child.flow_name, line=child.line, column=child.column), child)
+        fields = [
+            ir.ChatComposerField(
+                name=field.name,
+                type_name=field.type_name,
+                type_was_alias=field.type_was_alias,
+                raw_type_name=field.raw_type_name,
+                type_line=field.type_line,
+                type_column=field.type_column,
+                line=field.line,
+                column=field.column,
+            )
+            for field in (child.fields or [])
+        ]
+        return attach_origin(
+            ir.ChatComposerItem(flow_name=child.flow_name, fields=fields, line=child.line, column=child.column),
+            child,
+        )
     if isinstance(child, ast.ChatThinkingItem):
         when = _lower_expression(child.when)
         if not isinstance(when, ir.StatePath):

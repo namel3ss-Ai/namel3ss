@@ -60,27 +60,58 @@
   function renderComposer(child, handleAction) {
     const form = document.createElement("form");
     form.className = "ui-chat-composer";
-    const input = document.createElement("input");
-    input.type = "text";
-    input.placeholder = "Type a message";
+    const fields = normalizeComposerFields(child);
+    const inputs = new Map();
+    fields.forEach((field) => {
+      const input = document.createElement("input");
+      input.type = "text";
+      const name = field.name || "message";
+      const placeholder = name === "message" ? "Type a message" : String(name);
+      input.placeholder = placeholder;
+      input.setAttribute("aria-label", placeholder);
+      inputs.set(name, input);
+      form.appendChild(input);
+    });
     const button = document.createElement("button");
     button.type = "submit";
     button.className = "btn small";
     button.textContent = "Send";
-    form.appendChild(input);
     form.appendChild(button);
 
     form.onsubmit = async (e) => {
       e.preventDefault();
-      const message = input.value || "";
-      input.value = "";
+      const payload = {};
+      fields.forEach((field) => {
+        const name = field.name || "message";
+        const input = inputs.get(name);
+        payload[name] = input ? input.value || "" : "";
+      });
+      inputs.forEach((input) => {
+        if (input) input.value = "";
+      });
       await handleAction(
         { id: child.action_id, type: "call_flow", flow: child.flow },
-        { message },
+        payload,
         button
       );
     };
     return form;
+  }
+
+  function normalizeComposerFields(child) {
+    const raw = Array.isArray(child.fields) ? child.fields : [];
+    const fields = [];
+    const seen = new Set();
+    raw.forEach((field) => {
+      if (!field || !field.name) return;
+      const name = String(field.name);
+      if (seen.has(name)) return;
+      seen.add(name);
+      fields.push({ name: name, type: field.type || "text" });
+    });
+    if (!fields.length) return [{ name: "message", type: "text" }];
+    if (!seen.has("message")) fields.unshift({ name: "message", type: "text" });
+    return fields;
   }
 
   function renderThinking(child) {

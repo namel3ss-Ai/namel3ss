@@ -192,8 +192,19 @@ class ChatMessagesItem(PageItem):
 
 
 @dataclass
+class ChatComposerField(Node):
+    name: str
+    type_name: str
+    type_was_alias: bool = False
+    raw_type_name: str | None = None
+    type_line: int | None = None
+    type_column: int | None = None
+
+
+@dataclass
 class ChatComposerItem(PageItem):
     flow_name: str
+    fields: list[ChatComposerField] = field(default_factory=list)
 
 
 @dataclass

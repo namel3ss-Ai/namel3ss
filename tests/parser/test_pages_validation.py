@@ -265,6 +265,67 @@ def test_chat_composer_unknown_flow_errors():
     assert "unknown flow" in str(exc.value).lower()
 
 
+def test_chat_composer_structured_requires_flow_inputs():
+    source = '''flow "ask_flow":
+  return "ok"
+
+page "home":
+  chat:
+    composer sends to flow "ask_flow"
+      send category as text
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    message = str(exc.value).lower()
+    assert "extra fields" in message
+    assert "flow inputs" in message
+
+
+def test_chat_composer_structured_mismatched_inputs_error():
+    source = '''contract flow "ask_flow":
+  input:
+    message is text
+    category is text
+  output:
+    result is text
+
+flow "ask_flow":
+  return "ok"
+
+page "home":
+  chat:
+    composer sends to flow "ask_flow"
+      send category as text
+          language as text
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    message = str(exc.value).lower()
+    assert "missing" in message
+    assert "language" in message
+
+
+def test_chat_composer_structured_type_mismatch_error():
+    source = '''contract flow "ask_flow":
+  input:
+    message is number
+  output:
+    result is text
+
+flow "ask_flow":
+  return "ok"
+
+page "home":
+  chat:
+    composer sends to flow "ask_flow"
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    message = str(exc.value).lower()
+    assert "message" in message
+    assert "text" in message
+
+
 def test_form_group_unknown_field_errors():
     source = '''record "User":
   name text

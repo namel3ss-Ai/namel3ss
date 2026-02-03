@@ -290,13 +290,18 @@
 }
 .ui-chat-composer {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 .ui-chat-composer input {
-  flex: 1;
+  flex: 1 1 180px;
+  min-width: 160px;
   padding: 10px;
   border: 1px solid #eaeaea;
   border-radius: 8px;
+}
+.ui-chat-composer button {
+  flex: 0 0 auto;
 }
 .ui-input {
   display: flex;

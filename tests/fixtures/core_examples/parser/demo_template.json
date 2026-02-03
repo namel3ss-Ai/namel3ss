@@ -222,6 +222,7 @@
           "children": [
             {
               "column": 5,
+              "fields": [],
               "flow_name": "ask_ai",
               "line": 41,
               "type": "ChatComposerItem",

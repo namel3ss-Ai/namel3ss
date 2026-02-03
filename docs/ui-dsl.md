@@ -72,7 +72,8 @@ Data/UI bindings:
 - `list from state <path>` displays a read-only list from state; requires an `item` mapping; no selection or actions.
 - `chart is "RecordName"` or `chart from is state.<path>` read-only visualization (`summary`/`bar`/`line`), optional `type`/`x`/`y`/`explain`; must be paired with a table or list using the same data source.
 - `messages from is state.<path>` renders a message list from state (role/content).
-- `composer calls flow "flow_name"` emits a `call_flow` action with `message` payload.
+- `composer sends to flow "flow_name"` emits a `call_flow` action with `message` payload.
+- `composer sends to flow "flow_name"` may declare extra fields with a `send` block; indented lines inherit `send` to avoid repetition.
 - `input text as <name>` with body `send to flow "<flow>"` renders a single-line input and emits a `call_flow` action with payload named `<name>`; the flow must declare a matching text input field (flow input block or contract).
 - `thinking when is state.<path>` UI-only indicator bound to state.
 - `citations from is state.<path>` display-only citations list from state.
@@ -83,6 +84,20 @@ Data/UI bindings:
 - `use ui_pack "pack_name" fragment "fragment_name"` static expansion of a pack fragment.
 - `use pattern "pattern_name"` static expansion of a UI pattern.
 - Record/flow names may be module-qualified (for example `inv.Product`, `inv.seed_item`) when using Capsules.
+
+Structured composer:
+```
+page "home":
+  chat:
+    composer sends to flow "ask"
+      send category as text
+          language as text
+```
+Rules:
+- Message is always included.
+- Extra fields are text-only today.
+- Flow inputs must match `message` plus the declared extra fields.
+- Payload field order follows the declaration order.
 
 Nesting rules:
 - `row` -> `column` only.
@@ -192,7 +207,7 @@ page "home":
 - Buttons call flows by name; links navigate to pages; actions are deterministic (`call_flow`, `submit_form`, `open_page`).
 - Overlays open/close via actions (`open_modal`, `close_modal`, `open_drawer`, `close_drawer`).
 - Chat elements bind to explicit state paths; list ordering is preserved as provided.
-- Composer submissions call flows and include `{message: "<text>"}` in payload.
+- Composer submissions call flows and include `{message: "<text>"}` plus any declared extra fields in the same payload.
 - Text input submissions call flows and include `{<name>: "<text>"}` in payload; empty inputs do not emit actions.
 - UI-only state (selection, tabs active, modal/drawer open) never triggers flows.
 - State is visible in Studio; UI manifest lists actions and elements with stable IDs.
