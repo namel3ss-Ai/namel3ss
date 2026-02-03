@@ -9,6 +9,31 @@
 - **last_value**: last evaluated statement result.
 - **store**: backing persistence (`MemoryStore` by default) used by `save`/`find`.
 
+## App lifecycle conventions (state-driven)
+Lifecycle is a normal state value. There is no runtime automation.
+
+Canonical values:
+- "starting"
+- "loading"
+- "ready"
+- "error"
+- "stopped"
+
+Example:
+```
+state:
+  lifecycle is "starting"
+
+flow "init":
+  set state.lifecycle to "loading"
+  set state.lifecycle to "ready"
+```
+
+Rules:
+- Transitions are explicit and flow-driven.
+- No implicit or automatic transitions.
+- Same inputs produce the same lifecycle behavior.
+
 ## Flow execution
 - `Executor.run()` walks a flow body in order.
 - `return` raises an internal `_ReturnSignal` to stop execution and set `last_value`.
