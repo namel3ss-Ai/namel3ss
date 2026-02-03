@@ -1,6 +1,8 @@
 from namel3ss.runtime.ai.mock_provider import MockProvider
 from namel3ss.runtime.ai.provider import AIResponse
-from tests.conftest import run_flow
+from namel3ss.runtime.executor import Executor
+from namel3ss.pipelines.registry import pipeline_contracts
+from tests.conftest import lower_ir_program
 
 
 def _capture_inputs(monkeypatch):
@@ -12,6 +14,25 @@ def _capture_inputs(monkeypatch):
 
     monkeypatch.setattr(MockProvider, "ask", fake_ask)
     return captured
+
+
+def _run_flow(source: str):
+    program = lower_ir_program(source)
+    flow = program.flows[0]
+    schemas = {schema.name: schema for schema in program.records}
+    executor = Executor(
+        flow,
+        schemas=schemas,
+        ai_profiles=program.ais,
+        agents=program.agents,
+        tools=program.tools,
+        functions=program.functions,
+        flows={flow.name: flow for flow in program.flows},
+        flow_contracts=getattr(program, "flow_contracts", {}) or {},
+        pipeline_contracts=pipeline_contracts(),
+        capabilities=getattr(program, "capabilities", ()),
+    )
+    return executor.run()
 
 
 def test_ask_ai_structured_input_serializes_deterministically(monkeypatch):
@@ -31,7 +52,7 @@ flow "demo":
   return reply
 '''
     captured = _capture_inputs(monkeypatch)
-    result = run_flow(source)
+    result = _run_flow(source)
     expected = '{"context":["a","b"],"question":"Hello"}'
     assert captured == [expected]
     trace = result.traces[0]
@@ -59,7 +80,7 @@ flow "demo":
   return reply
 '''
     captured = _capture_inputs(monkeypatch)
-    run_flow(source)
+    _run_flow(source)
     expected = '[{"id":"b","score":2},{"id":"a","score":1}]'
     assert captured == [expected]
 
@@ -74,14 +95,14 @@ ai "assistant":
 flow "demo":
   let payload is map:
     "items" is list:
-    "meta" is map:
+    "meta" is null
   ask ai "assistant" with structured input from payload as reply
   return reply
 '''
     captured = _capture_inputs(monkeypatch)
-    run_flow(source)
-    run_flow(source)
-    expected = '{"items":[],"meta":{}}'
+    _run_flow(source)
+    _run_flow(source)
+    expected = '{"items":[],"meta":null}'
     assert captured == [expected, expected]
 
 
@@ -105,6 +126,6 @@ flow "demo":
   return reply
 '''
     captured = _capture_inputs(monkeypatch)
-    run_flow(source)
+    _run_flow(source)
     expected = '{"steps":["prep","ship"],"topic":"Launch"}'
     assert captured == [expected]

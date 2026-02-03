@@ -39,6 +39,7 @@
             "line": 23,
             "type": "AttrAccess"
           },
+          "input_mode": "text",
           "line": 23,
           "target": "reply",
           "type": "AskAIStmt"

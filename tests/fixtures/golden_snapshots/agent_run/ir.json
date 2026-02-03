@@ -62,6 +62,7 @@
             "type": "Literal",
             "value": "Task"
           },
+          "input_mode": "text",
           "line": 13,
           "target": "plan",
           "type": "RunAgentStmt"

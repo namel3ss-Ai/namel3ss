@@ -83,6 +83,7 @@
                 "type": "Literal",
                 "value": "Task"
               },
+              "input_mode": "text",
               "line": 18,
               "type": "ParallelAgentEntry"
             },
@@ -95,6 +96,7 @@
                 "type": "Literal",
                 "value": "Task"
               },
+              "input_mode": "text",
               "line": 19,
               "type": "ParallelAgentEntry"
             }

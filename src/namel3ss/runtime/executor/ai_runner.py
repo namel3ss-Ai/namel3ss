@@ -74,7 +74,9 @@ def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
         memory_context = recall_pack.payload
         recall_events = recall_pack.events
         recall_meta = recall_pack.meta
-        recalled = _flatten_memory_context(memory_context)
+        recalled: list[dict] = []
+        for key in ("short_term", "semantic", "profile"):
+            recalled.extend(memory_context.get(key, []))
         deterministic_hash = recall_pack.proof.get("recall_hash") or ctx.memory_manager.recall_hash(recalled)
         canonical_events: list[dict] = []
         canonical_events.append(
@@ -83,7 +85,7 @@ def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
                 session=ctx.memory_manager.session_id(ctx.state),
                 query=input_text,
                 recalled=recalled,
-                policy=_memory_policy(profile, ctx.memory_manager),
+                policy=ctx.memory_manager.policy_snapshot(profile),
                 deterministic_hash=deterministic_hash,
                 spaces_consulted=recall_meta.get("spaces_consulted"),
                 recall_counts=recall_meta.get("recall_counts"),
@@ -203,7 +205,6 @@ def run_ai_with_tools(
     )
     provider = _resolve_provider(ctx, provider_name)
     capabilities = get_provider_capabilities(provider_name)
-
     def _text_only_call():
         response = provider.ask(
             model=profile.model,
@@ -299,7 +300,6 @@ def run_ai_with_tools(
         policy = ToolCallPolicy(allow_tools=True, max_calls=3, strict_json=True, retry_on_parse_error=False, max_total_turns=6)
         def _tool_executor(tool_name: str, args: dict[str, object]):
             return execute_tool_call_with_outcome(ctx, tool_name, dict(args))
-
         previous_source = ctx.tool_call_source
         ctx.tool_call_source = "ai"
         try:
@@ -392,17 +392,6 @@ def run_ai_with_tools(
             input_structured=input_structured,
         )
         raise
-
-
-def _flatten_memory_context(context: dict) -> list[dict]:
-    ordered: list[dict] = []
-    for key in ("short_term", "semantic", "profile"):
-        ordered.extend(context.get(key, []))
-    return ordered
-
-
-def _memory_policy(profile: ir.AIDecl, memory_manager: MemoryManager) -> dict:
-    return memory_manager.policy_snapshot(profile)
 
 
 def _resolve_provider(ctx: ExecutionContext, provider_name: str):

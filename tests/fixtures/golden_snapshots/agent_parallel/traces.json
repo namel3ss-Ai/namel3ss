@@ -3824,6 +3824,8 @@
           }
         ],
         "input": "Task",
+        "input_format": "text",
+        "input_structured": null,
         "memory": {
           "profile": [],
           "semantic": [],
@@ -7539,6 +7541,8 @@
           }
         ],
         "input": "Task",
+        "input_format": "text",
+        "input_structured": null,
         "memory": {
           "profile": [],
           "semantic": [],
