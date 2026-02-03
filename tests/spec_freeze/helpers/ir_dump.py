@@ -30,6 +30,8 @@ def _to_data(value: Any, *, field_name: str | None = None) -> Any:
                 continue
             if field.name == "status" and field_value is None:
                 continue
+            if field.name == "ui_active_page_rules" and field_value is None:
+                continue
             if field.name == "policy" and field_value is None:
                 continue
             if field.name == "steps" and not field_value:

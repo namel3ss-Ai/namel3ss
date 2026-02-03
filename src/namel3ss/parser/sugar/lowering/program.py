@@ -17,6 +17,9 @@ def lower_program(program: ast.Program) -> ast.Program:
         ui_settings=program.ui_settings,
         ui_line=getattr(program, "ui_line", None),
         ui_column=getattr(program, "ui_column", None),
+        ui_active_page_rules=_lower_active_page_rules(program.ui_active_page_rules)
+        if program.ui_active_page_rules
+        else None,
         capabilities=list(getattr(program, "capabilities", []) or []),
         records=[_lower_record(record) for record in program.records],
         functions=[_lower_function(func) for func in getattr(program, "functions", [])],
@@ -39,6 +42,21 @@ def lower_program(program: ast.Program) -> ast.Program:
     )
     raw_allowlist = getattr(program, "pack_allowlist", None)
     setattr(lowered, "pack_allowlist", list(raw_allowlist) if raw_allowlist is not None else None)
+    return lowered
+
+
+def _lower_active_page_rules(rules: list[ast.ActivePageRule]) -> list[ast.ActivePageRule]:
+    lowered: list[ast.ActivePageRule] = []
+    for rule in rules:
+        lowered.append(
+            ast.ActivePageRule(
+                page_name=rule.page_name,
+                path=_lower_expression(rule.path),
+                value=_lower_expression(rule.value),
+                line=rule.line,
+                column=rule.column,
+            )
+        )
     return lowered
 
 

@@ -97,6 +97,7 @@ def _merge_programs(
         ui_settings=app_ast.ui_settings,
         ui_line=getattr(app_ast, "ui_line", None),
         ui_column=getattr(app_ast, "ui_column", None),
+        ui_active_page_rules=getattr(app_ast, "ui_active_page_rules", None),
         capabilities=list(getattr(app_ast, "capabilities", []) or []),
         records=combined_records,
         functions=combined_functions,

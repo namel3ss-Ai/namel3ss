@@ -2,6 +2,8 @@ let renderUI = (manifest) => {
   const select = document.getElementById("pageSelect");
   const uiContainer = document.getElementById("ui");
   const pages = manifest.pages || [];
+  const navigation = manifest.navigation || {};
+  const activePage = navigation.active_page || null;
   const emptyMessage = "Run your app to see it here.";
   const collectionRender = window.N3UIRender || {};
   const renderListElement = collectionRender.renderListElement;
@@ -31,6 +33,9 @@ let renderUI = (manifest) => {
     const entry = resolvePageEntry(value);
     return entry ? entry.slug : "";
   }
+
+  const activeSlug = activePage ? resolvePageSlug(activePage.slug || activePage.name) : "";
+  const navigationLocked = Boolean(activeSlug);
 
   function readRouteSlug() {
     if (typeof window === "undefined") return "";
@@ -67,7 +72,7 @@ let renderUI = (manifest) => {
   const currentSelection = select ? select.value : "";
   const urlSelection = readRouteSlug();
   const initialSelection =
-    urlSelection || resolvePageSlug(currentSelection) || (pageEntries[0] ? pageEntries[0].slug : "");
+    activeSlug || urlSelection || resolvePageSlug(currentSelection) || (pageEntries[0] ? pageEntries[0].slug : "");
   if (select) {
     select.innerHTML = "";
     pageEntries.forEach((entry, idx) => {
@@ -79,6 +84,7 @@ let renderUI = (manifest) => {
       }
       select.appendChild(opt);
     });
+    select.disabled = navigationLocked;
   }
   function renderChildren(container, children, pageName) {
     (children || []).forEach((child) => {
@@ -146,6 +152,7 @@ let renderUI = (manifest) => {
     entry.returnFocus = null;
   }
   function navigateToPage(value) {
+    if (navigationLocked) return;
     const slug = resolvePageSlug(value);
     if (!slug) return;
     if (select) {
@@ -167,6 +174,7 @@ let renderUI = (manifest) => {
       return { ok: true };
     }
     if (actionType === "open_page") {
+      if (navigationLocked) return { ok: false };
       navigateToPage(action.target);
       return { ok: true };
     }
@@ -426,6 +434,14 @@ let renderUI = (manifest) => {
         p.textContent = value;
         wrapper.appendChild(p);
       }
+    } else if (el.type === "error") {
+      const box = document.createElement("div");
+      box.className = "empty-state status-error";
+      const message = typeof el.message === "string" ? el.message : String(el.message || "");
+      const text = document.createElement("div");
+      text.textContent = message;
+      box.appendChild(text);
+      wrapper.appendChild(box);
     } else if (el.type === "input") {
       const form = document.createElement("form");
       form.className = "ui-element ui-input";

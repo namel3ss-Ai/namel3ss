@@ -36,6 +36,13 @@ class ActionAvailabilityRule(Node):
 
 
 @dataclass
+class ActivePageRule(Node):
+    page_name: str
+    path: StatePath
+    value: Literal
+
+
+@dataclass
 class StatusCondition(Node):
     path: StatePath
     kind: str  # equals | empty

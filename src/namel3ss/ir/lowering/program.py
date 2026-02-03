@@ -8,6 +8,7 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir.lowering.agents import _lower_agent_team, _lower_agents
 from namel3ss.ir.lowering.ai import _lower_ai_decls
 from namel3ss.ir.lowering.flow import lower_flow
+from namel3ss.ir.lowering.expressions import _lower_expression
 from namel3ss.ir.lowering.contracts import lower_flow_contracts
 from namel3ss.ir.lowering.jobs import lower_jobs
 from namel3ss.ir.lowering.policy import lower_policy
@@ -30,6 +31,7 @@ from namel3ss.ir.model.flow_steps import FlowInput
 from namel3ss.ir.model.contracts import ContractDecl
 from namel3ss.ir.model.program import Flow, Program
 from namel3ss.ir.model.pages import (
+    ActivePageRule,
     CardGroupItem,
     CardItem,
     ChatItem,
@@ -44,14 +46,15 @@ from namel3ss.ir.model.pages import (
     TabsItem,
     TextInputItem,
 )
+from namel3ss.ir.model.expressions import Literal as IRLiteral
+from namel3ss.ir.model.expressions import StatePath as IRStatePath
 from namel3ss.ir.model.statements import ThemeChange, If, Repeat, RepeatWhile, ForEach, Match, MatchCase, TryCatch, ParallelBlock
 from namel3ss.schema import records as schema
 from namel3ss.ui.settings import normalize_ui_settings
 from namel3ss.validation import ValidationMode
 from namel3ss.lang.capabilities import normalize_builtin_capability
 from namel3ss.pipelines.registry import pipeline_contracts
-
-
+from namel3ss.utils.numbers import is_number, to_decimal
 def _statement_has_theme_change(stmt) -> bool:
     if isinstance(stmt, ThemeChange):
         return True
@@ -74,12 +77,8 @@ def _statement_has_theme_change(stmt) -> bool:
     if isinstance(stmt, RunAgentsParallelStmt):
         return any(_statement_has_theme_change(e) for e in stmt.entries)
     return False
-
-
 def _flow_has_theme_change(flow: Flow) -> bool:
     return any(_statement_has_theme_change(stmt) for stmt in flow.body)
-
-
 def lower_program(program: ast.Program) -> Program:
     if not getattr(program, "spec_version", None):
         raise Namel3ssError(
@@ -116,6 +115,10 @@ def lower_program(program: ast.Program) -> Program:
         _lower_page(page, record_map, flow_names, page_names, pack_index, pattern_index)
         for page in program.pages
     ]
+    ui_active_page_rules = _lower_active_page_rules(
+        getattr(program, "ui_active_page_rules", None),
+        page_names,
+    )
     _ensure_unique_pages(pages)
     _validate_text_inputs(pages, flow_irs, flow_contracts)
     _validate_chat_composers(pages, flow_irs, flow_contracts)
@@ -146,13 +149,12 @@ def lower_program(program: ast.Program) -> Program:
         agent_team=agent_team,
         identity=identity_schema,
         state_defaults=getattr(program, "state_defaults", None),
+        ui_active_page_rules=ui_active_page_rules,
         line=program.line,
         column=program.column,
     )
     setattr(lowered, "pack_allowlist", pack_allowlist)
     return lowered
-
-
 def _ensure_unique_pages(pages: list[Page]) -> None:
     seen: dict[str, object] = {}
     for page in pages:
@@ -168,6 +170,67 @@ def _ensure_unique_pages(pages: list[Page]) -> None:
                 column=getattr(page, "column", None),
             )
         seen[page.name] = True
+
+
+def _lower_active_page_rules(
+    rules: list[ast.ActivePageRule] | None,
+    page_names: set[str],
+) -> list[ActivePageRule] | None:
+    if not rules:
+        return None
+    lowered: list[ActivePageRule] = []
+    seen: dict[tuple[tuple[str, ...], object], str] = {}
+    for rule in rules:
+        if not isinstance(rule, ast.ActivePageRule):
+            raise Namel3ssError(
+                "Active page rules require: is \"<page>\" only when state.<path> is <value>.",
+                line=getattr(rule, "line", None),
+                column=getattr(rule, "column", None),
+            )
+        if rule.page_name not in page_names:
+            raise Namel3ssError(
+                f"Active page rule references unknown page '{rule.page_name}'.",
+                line=getattr(rule, "line", None),
+                column=getattr(rule, "column", None),
+            )
+        lowered_path = _lower_expression(rule.path)
+        if not isinstance(lowered_path, IRStatePath):
+            raise Namel3ssError(
+                "Active page rules require state.<path>.",
+                line=getattr(rule, "line", None),
+                column=getattr(rule, "column", None),
+            )
+        lowered_value = _lower_expression(rule.value)
+        if not isinstance(lowered_value, IRLiteral):
+            raise Namel3ssError(
+                "Active page rules require a text, number, or boolean literal.",
+                line=getattr(rule, "line", None),
+                column=getattr(rule, "column", None),
+            )
+        key = _active_page_rule_key(lowered_path.path, lowered_value.value)
+        if key in seen:
+            raise Namel3ssError(
+                "Active page rules must be unique for each state value.",
+                line=getattr(rule, "line", None),
+                column=getattr(rule, "column", None),
+            )
+        seen[key] = rule.page_name
+        lowered.append(
+            ActivePageRule(
+                page_name=rule.page_name,
+                path=lowered_path,
+                value=lowered_value,
+                line=rule.line,
+                column=rule.column,
+            )
+        )
+    return lowered
+
+
+def _active_page_rule_key(path: list[str], value: object) -> tuple[tuple[str, ...], object]:
+    if is_number(value):
+        return (tuple(path), to_decimal(value))
+    return (tuple(path), value)
 
 
 def _validate_text_inputs(

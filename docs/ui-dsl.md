@@ -172,6 +172,28 @@ Built-in patterns:
 - `Results Layout` (params: `record_name` record, optional `layout` text, optional `filters_title`/`filters_guidance`, optional empty-state params `empty_title`, `empty_guidance`, `empty_action_label`, `empty_action_flow`)
 - `Status Banner` (params: `tone` text, `heading` text, optional `message` text, optional `action_label`/`action_flow`)
 
+## 3.4) Navigation
+Navigation can be declared as state-driven in the global `ui:` block.
+
+Example:
+```
+ui:
+  pages:
+    active page:
+      is "home" only when state.page is "home"
+      is "results" only when state.page is "results"
+```
+
+Rules:
+- `active page` appears once inside `ui: pages:`.
+- Each rule uses `is "<page>" only when state.<path> is <literal>`.
+- Rules are evaluated in source order; the first match wins.
+- If no rule matches, the first declared page is selected.
+- State paths use dot notation only.
+- Text literals are quoted; numbers and booleans are unquoted.
+- Unknown page names and undeclared state paths are build-time errors.
+- When `active page` is present, state selects the page and the UI reflects it.
+
 ## 3.1) Media
 - Media assets live in a locked `media/` folder at the app root (next to app.ai).
 - References use the base name only (no extensions, no paths).
