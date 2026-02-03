@@ -462,9 +462,27 @@ ai "assistant":
 **Minimal example**:
 ```ai
 flow "ask_assistant":
-  ask ai "assistant" with input: "Summarize this" as reply
+  ask ai "assistant" with input "Summarize this" as reply
   return reply
 ```
+
+**Structured input (deterministic)**:
+```ai
+flow "ask_assistant":
+  let payload is map:
+    "question" is input.question
+    "context" is input.context
+  ask ai "assistant" with structured input from payload as reply
+  return reply
+```
+
+**Rules**:
+- Structured input is converted to text using canonical JSON.
+- Map keys are sorted by key text; list order is preserved.
+- The same structured data always produces the same text.
+- No randomness, timestamps, or locale rules are used in the conversion.
+- Traces include both the structured data and the final text; input_format shows the serialization name.
+- The older form with a colon after input still works.
 
 ### Agents
 **What it is**: Named AI agents with their own system prompts.

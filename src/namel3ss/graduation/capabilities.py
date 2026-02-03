@@ -203,6 +203,16 @@ _CAPABILITIES = (
         examples=(),
     ),
     _cap(
+        cap_id="ai.structured_input",
+        title="Structured input for AI calls",
+        category="ai",
+        status=STATUS_SHIPPED,
+        tests=(
+            "tests/runtime/test_ai_structured_input.py",
+        ),
+        examples=(),
+    ),
+    _cap(
         cap_id="runtime.memory",
         title="Memory governance and traces",
         category="memory",

@@ -54,6 +54,13 @@ def normalize_spacing(line: str) -> str:
 
     # ask ai pattern
     m = re.match(
+        r'^ask\s+ai\s+"([^"]+)"\s+with\s+structured\s+input\s+from\s+(.+?)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)$',
+        rest,
+    )
+    if m:
+        rest = f'ask ai "{m.group(1)}" with structured input from {m.group(2)} as {m.group(3)}'
+
+    m = re.match(
         r'^ask\s+ai\s+"([^"]+)"\s+with\s+input\s*:?\s*(.+?)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)$',
         rest,
     )

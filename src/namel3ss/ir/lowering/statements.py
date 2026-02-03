@@ -156,6 +156,7 @@ def _lower_statement(stmt: ast.Statement, agents) -> IRStatement:
             ai_name=stmt.ai_name,
             input_expr=_lower_expression(stmt.input_expr),
             target=stmt.target,
+            input_mode=getattr(stmt, "input_mode", "text"),
             line=stmt.line,
             column=stmt.column,
         )
@@ -225,6 +226,7 @@ def _lower_statement(stmt: ast.Statement, agents) -> IRStatement:
             agent_name=stmt.agent_name,
             input_expr=_lower_expression(stmt.input_expr),
             target=stmt.target,
+            input_mode=getattr(stmt, "input_mode", "text"),
             line=stmt.line,
             column=stmt.column,
         )
@@ -232,7 +234,13 @@ def _lower_statement(stmt: ast.Statement, agents) -> IRStatement:
         merge = _lower_agent_merge(stmt.merge) if stmt.merge else None
         return RunAgentsParallelStmt(
             entries=[
-                ParallelAgentEntry(agent_name=e.agent_name, input_expr=_lower_expression(e.input_expr), line=e.line, column=e.column)
+                ParallelAgentEntry(
+                    agent_name=e.agent_name,
+                    input_expr=_lower_expression(e.input_expr),
+                    input_mode=getattr(e, "input_mode", "text"),
+                    line=e.line,
+                    column=e.column,
+                )
                 for e in stmt.entries
             ],
             target=stmt.target,

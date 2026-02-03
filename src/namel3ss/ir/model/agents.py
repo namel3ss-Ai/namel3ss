@@ -33,6 +33,7 @@ class AgentTeam(Node):
 class ParallelAgentEntry(Node):
     agent_name: str
     input_expr: Expression
+    input_mode: str = "text"
 
 
 @dataclass
@@ -51,6 +52,7 @@ class RunAgentStmt(Statement):
     agent_name: str
     input_expr: Expression
     target: str
+    input_mode: str = "text"
 
 
 @dataclass

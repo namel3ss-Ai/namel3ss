@@ -39,3 +39,23 @@ def test_agents_parse_and_lower():
     flow = program.flows[0]
     assert isinstance(flow.body[0], ir.RunAgentStmt)
     assert flow.body[0].agent_name == "planner"
+    assert flow.body[0].input_mode == "text"
+    assert flow.body[1].input_mode == "text"
+
+
+def test_agents_parse_structured_input():
+    source = '''ai "assistant":
+  model is "gpt-4.1"
+
+agent "planner":
+  ai is "assistant"
+
+spec is "1.0"
+
+flow "demo":
+  run agent "planner" with structured input from state.payload as plan
+'''
+    program = lower_ir_program(source)
+    flow = program.flows[0]
+    assert isinstance(flow.body[0], ir.RunAgentStmt)
+    assert flow.body[0].input_mode == "structured"

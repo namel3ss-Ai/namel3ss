@@ -263,6 +263,7 @@ page "home":
 - Not supported:
   - Branching, loops, expressions/functions, or hidden side effects.
   - Ordering and keep first statements; those belong to normal flows, not UI DSL actions.
+  - Ask AI and structured AI input statements; those belong to normal flows, not UI DSL actions.
   - Orchestration (fan-out/fan-in), merge policies, or flow/pipeline calls.
 - Triggering from UI:
   - `button "Label":` use either `calls flow "<name>"` (existing) or `runs "<name>"` (alias) to bind to a flow.

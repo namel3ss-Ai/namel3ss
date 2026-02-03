@@ -5,6 +5,7 @@ from decimal import Decimal
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.parser.core.helpers import parse_reference_name
+from namel3ss.parser.stmt.ai_input import parse_ai_input_clause
 
 
 def parse_run_agent_stmt(parser) -> ast.RunAgentStmt:
@@ -14,15 +15,14 @@ def parse_run_agent_stmt(parser) -> ast.RunAgentStmt:
     name_tok = parser._current()
     agent_name = parse_reference_name(parser, context="agent")
     parser._expect("WITH", "Expected 'with' in run agent")
-    parser._expect("INPUT", "Expected 'input' in run agent")
-    parser._expect("COLON", "Expected ':' after input")
-    input_expr = parser._parse_expression()
+    input_expr, input_mode = parse_ai_input_clause(parser, context="run agent statement")
     parser._expect("AS", "Expected 'as' to bind agent result")
     target_tok = parser._expect("IDENT", "Expected target identifier after 'as'")
     return ast.RunAgentStmt(
         agent_name=agent_name,
         input_expr=input_expr,
         target=target_tok.value,
+        input_mode=input_mode,
         line=name_tok.line,
         column=name_tok.column,
     )
@@ -45,13 +45,12 @@ def parse_run_agents_parallel(parser) -> ast.RunAgentsParallelStmt:
         name_tok = parser._current()
         agent_name = parse_reference_name(parser, context="agent")
         parser._expect("WITH", "Expected 'with' in agent entry")
-        parser._expect("INPUT", "Expected 'input' in agent entry")
-        parser._expect("COLON", "Expected ':' after input")
-        input_expr = parser._parse_expression()
+        input_expr, input_mode = parse_ai_input_clause(parser, context="agent entry")
         entries.append(
             ast.ParallelAgentEntry(
                 agent_name=agent_name,
                 input_expr=input_expr,
+                input_mode=input_mode,
                 line=name_tok.line,
                 column=name_tok.column,
             )

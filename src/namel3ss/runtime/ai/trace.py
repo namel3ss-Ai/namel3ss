@@ -16,6 +16,8 @@ class AITrace:
     memory: dict
     tool_calls: list
     tool_results: list
+    input_structured: object | None = None
+    input_format: Optional[str] = None
     canonical_events: list[dict] = field(default_factory=list)
     agent_id: Optional[str] = None
     role: Optional[str] = None
