@@ -26,7 +26,6 @@ def test_button_calls_missing_flow():
     message = str(exc.value).lower()
     assert "unknown flow" in message
     assert "calls flow" in message
-    assert "runs" in message
 
 
 def test_text_input_requires_flow_input():

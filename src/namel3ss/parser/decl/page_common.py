@@ -147,11 +147,11 @@ def _parse_action_availability_rule_line(parser, *, allow_pattern_params: bool =
             column=err.column,
         ) from err
     parser._expect("IS", "Expected 'is' after state path")
-    value = _parse_visibility_rule_value(parser, allow_pattern_params=allow_pattern_params)
+    value = _parse_action_availability_value(parser)
     if parser._current().type not in {"NEWLINE", "DEDENT"}:
         extra = parser._current()
         raise Namel3ssError(
-            "Action availability only supports a literal value.",
+            "Action availability requires a quoted text, number, or boolean value.",
             line=extra.line,
             column=extra.column,
         )
@@ -219,6 +219,24 @@ def _parse_visibility_rule_value(parser, *, allow_pattern_params: bool) -> ast.L
         return ast.Literal(value=str(tok.value), line=tok.line, column=tok.column)
     raise Namel3ssError(
         "Visibility rule requires a text, number, or boolean value.",
+        line=tok.line,
+        column=tok.column,
+    )
+
+
+def _parse_action_availability_value(parser) -> ast.Literal:
+    tok = parser._current()
+    if tok.type == "STRING":
+        parser._advance()
+        return ast.Literal(value=tok.value, line=tok.line, column=tok.column)
+    if tok.type == "NUMBER":
+        parser._advance()
+        return ast.Literal(value=tok.value, line=tok.line, column=tok.column)
+    if tok.type == "BOOLEAN":
+        parser._advance()
+        return ast.Literal(value=bool(tok.value), line=tok.line, column=tok.column)
+    raise Namel3ssError(
+        "Action availability requires a quoted text, number, or boolean value.",
         line=tok.line,
         column=tok.column,
     )

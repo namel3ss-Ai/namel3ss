@@ -341,7 +341,7 @@ page "home":
   - Ask AI and structured AI input statements; those belong to normal flows, not UI DSL actions.
   - Orchestration (fan-out/fan-in), merge policies, or flow/pipeline calls.
 - Triggering from UI:
-  - `button "Label":` use either `calls flow "<name>"` (existing) or `runs "<name>"` (alias) to bind to a flow.
+  - `button "Label":` use `calls flow "<name>"` to bind to a flow.
   - Unknown flow references error with fix hints; runtime surfaces disabled affordance if requirements are unmet.
 - Flow actions run normal flows; those flows may enqueue background jobs or invoke backend capabilities when explicitly enabled.
 

@@ -154,29 +154,15 @@ def parse_button_item(parser, tok, *, allow_pattern_params: bool = False) -> ast
                 availability_rule = rule
             parser._match("NEWLINE")
             continue
-        if tok_action.type == "IDENT" and tok_action.value == "runs":
-            parser._advance()
-            flow_name = _parse_reference_name_value(parser, allow_pattern_params=allow_pattern_params, context="flow")
-            rule = _parse_action_availability_rule_block(parser, allow_pattern_params=allow_pattern_params)
-            if rule is not None:
-                if availability_rule is not None:
-                    raise Namel3ssError(
-                        "Action availability blocks may only declare one only-when rule.",
-                        line=tok_action.line,
-                        column=tok_action.column,
-                    )
-                availability_rule = rule
-            parser._match("NEWLINE")
-            continue
         raise Namel3ssError(
-            "Buttons must declare an action using 'calls flow \"<name>\"' or 'runs \"<flow>\"'",
+            "Buttons must declare an action using 'calls flow \"<name>\"'",
             line=tok_action.line,
             column=tok_action.column,
         )
     parser._expect("DEDENT", "Expected end of button body")
     if flow_name is None:
         raise Namel3ssError(
-            "Button body must include 'calls flow \"<name>\"' or 'runs \"<flow>\"'",
+            "Button body must include 'calls flow \"<name>\"'",
             line=tok.line,
             column=tok.column,
         )
