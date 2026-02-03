@@ -35,6 +35,7 @@ from namel3ss.ui.manifest.canonical import _slugify
 from namel3ss.ui.manifest.accessibility import apply_accessibility_contract
 from namel3ss.ui.manifest.elements import _build_children
 from namel3ss.ui.manifest.state_defaults import StateContext, StateDefaults
+from namel3ss.ui.manifest.status import select_status_items
 from namel3ss.ui.manifest.validation import (
     append_copy_warnings,
     append_consistency_warnings,
@@ -117,8 +118,17 @@ def build_manifest(
             warnings=warnings,
         )
         page_slug = _slugify(page.name)
+        status_items = select_status_items(
+            getattr(page, "status", None),
+            state_ctx,
+            mode,
+            warnings,
+            line=page.line,
+            column=page.column,
+        )
+        items = status_items if status_items is not None else page.items
         elements, action_entries = _build_children(
-            page.items,
+            items,
             record_map,
             page.name,
             page_slug,

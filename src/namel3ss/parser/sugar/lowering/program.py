@@ -93,9 +93,35 @@ def _lower_page(page: ast.PageDecl) -> ast.PageDecl:
         requires=_lower_expression(page.requires) if page.requires else None,
         purpose=getattr(page, "purpose", None),
         state_defaults=getattr(page, "state_defaults", None),
+        status=_lower_status_block(getattr(page, "status", None)),
         line=page.line,
         column=page.column,
     )
+
+
+def _lower_status_block(status: ast.StatusBlock | None) -> ast.StatusBlock | None:
+    if status is None:
+        return None
+    cases: list[ast.StatusCase] = []
+    for case in status.cases:
+        condition = case.condition
+        lowered_condition = ast.StatusCondition(
+            path=_lower_expression(condition.path),
+            kind=condition.kind,
+            value=_lower_expression(condition.value) if condition.value is not None else None,
+            line=condition.line,
+            column=condition.column,
+        )
+        cases.append(
+            ast.StatusCase(
+                name=case.name,
+                condition=lowered_condition,
+                items=[_lower_page_item(item) for item in case.items],
+                line=case.line,
+                column=case.column,
+            )
+        )
+    return ast.StatusBlock(cases=cases, line=status.line, column=status.column)
 
 
 def _lower_ui_pack(pack: ast.UIPackDecl) -> ast.UIPackDecl:

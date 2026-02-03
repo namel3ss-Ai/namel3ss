@@ -14,6 +14,7 @@ class Page(Node):
     requires: Expression | None = None
     purpose: str | None = None
     state_defaults: dict | None = None
+    status: "StatusBlock" | None = None
 
 
 @dataclass
@@ -26,6 +27,25 @@ class PageItem(Node):
 class VisibilityRule(Node):
     path: StatePath
     value: Literal
+
+
+@dataclass
+class StatusCondition(Node):
+    path: StatePath
+    kind: str  # equals | empty
+    value: Literal | None = None
+
+
+@dataclass
+class StatusCase(Node):
+    name: str  # loading | empty | error
+    condition: StatusCondition
+    items: list["PageItem"]
+
+
+@dataclass
+class StatusBlock(Node):
+    cases: list[StatusCase]
 
 
 @dataclass

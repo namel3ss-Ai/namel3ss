@@ -208,6 +208,33 @@ page "home":
     only when state.status is "loading"
 ```
 
+## 3.3) Status patterns
+Status blocks provide built-in loading/empty/error patterns that render before normal UI.
+
+Grammar:
+```
+page "home":
+  status:
+    loading when state.status is loading
+      text is "Loading"
+
+    empty when state.items is empty
+      text is "No results"
+
+    error when state.status is error
+      text is "Something went wrong"
+```
+
+Rules:
+- Only one `status` block may appear per page.
+- Status names must be `loading`, `empty`, or `error`.
+- Conditions are equality (`state.<path> is <literal>`) or emptiness (`state.<path> is empty`) only.
+- Empty checks only apply to list/map values; other types fail at build time.
+- Status blocks evaluate before normal UI blocks.
+- If exactly one status matches, only that block renders.
+- If none matches, the normal page UI renders.
+- If more than one matches, build fails with a deterministic error.
+
 ## 4) Data binding & actions
 - Forms bind to records; payload is `{values: {...}}`.
 - Buttons call flows by name; links navigate to pages; actions are deterministic (`call_flow`, `submit_form`, `open_page`).

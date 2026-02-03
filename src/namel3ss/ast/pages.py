@@ -23,6 +23,25 @@ class VisibilityRule(Node):
 
 
 @dataclass
+class StatusCondition(Node):
+    path: StatePath
+    kind: str  # equals | empty
+    value: Literal | None = None
+
+
+@dataclass
+class StatusCase(Node):
+    name: str  # loading | empty | error
+    condition: StatusCondition
+    items: list["PageItem"]
+
+
+@dataclass
+class StatusBlock(Node):
+    cases: list[StatusCase]
+
+
+@dataclass
 class NumberEntry(Node):
     kind: str  # phrase | count
     value: str | None = None
@@ -341,3 +360,4 @@ class PageDecl(Node):
     requires: Expression | None = None
     purpose: str | None = None
     state_defaults: dict | None = None
+    status: StatusBlock | None = None

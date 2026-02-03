@@ -6,6 +6,7 @@ from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.parser.decl.page_common import _match_ident_value, _reject_list_transforms
 from namel3ss.parser.decl.page_items import parse_page_item
+from namel3ss.parser.decl.page_status import parse_status_block
 
 
 def parse_page(parser) -> ast.PageDecl:
@@ -20,6 +21,7 @@ def parse_page(parser) -> ast.PageDecl:
     parser._expect("INDENT", "Expected indented page body")
     items: List[ast.PageItem] = []
     purpose: str | None = None
+    status_block: ast.StatusBlock | None = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
@@ -33,6 +35,11 @@ def parse_page(parser) -> ast.PageDecl:
             purpose = value_tok.value
             parser._match("NEWLINE")
             continue
+        if tok.type == "IDENT" and tok.value == "status":
+            if status_block is not None:
+                raise Namel3ssError("Status is already declared for this page", line=tok.line, column=tok.column)
+            status_block = parse_status_block(parser)
+            continue
         parsed = parse_page_item(parser, allow_tabs=True, allow_overlays=True)
         if isinstance(parsed, list):
             items.extend(parsed)
@@ -44,6 +51,7 @@ def parse_page(parser) -> ast.PageDecl:
         items=items,
         requires=requires_expr,
         purpose=purpose,
+        status=status_block,
         line=page_tok.line,
         column=page_tok.column,
     )
