@@ -38,6 +38,8 @@ def _to_data(value: Any, *, field_name: str | None = None) -> Any:
                 continue
             if field.name == "visibility_rule" and field_value is None:
                 continue
+            if field.name == "availability_rule" and field_value is None:
+                continue
             data[field.name] = _to_data(field_value, field_name=field.name)
         return data
     if isinstance(value, dict):

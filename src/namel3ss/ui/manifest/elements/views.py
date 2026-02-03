@@ -182,7 +182,14 @@ def build_table_item(
             rows = _apply_table_sort(rows, item.sort, record)
         if item.pagination:
             rows = _apply_table_pagination(rows, item.pagination)
-        row_actions, action_entries = _build_row_actions(element_id, page_slug, item.row_actions)
+        row_actions, action_entries = _build_row_actions(
+            element_id,
+            page_slug,
+            item.row_actions,
+            state_ctx,
+            mode,
+            warnings,
+        )
         element = {
             "type": "table",
             "id": table_id,
@@ -254,7 +261,7 @@ def build_list_item(
         if store is not None:
             scope = build_record_scope(record, identity)
             rows = store.list_records(record, scope=scope)[:20]
-        action_entries, action_map = _build_list_actions(element_id, item.actions)
+        action_entries, action_map = _build_list_actions(element_id, page_slug, item.actions, state_ctx, mode, warnings)
         element = {
             "type": "list",
             "id": list_id,

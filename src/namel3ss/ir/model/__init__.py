@@ -87,6 +87,7 @@ from namel3ss.ir.model.agents import (
     RunAgentsParallelStmt,
 )
 from namel3ss.ir.model.pages import (
+    ActionAvailabilityRule,
     ButtonItem,
     CardAction,
     CardGroupItem,
@@ -261,6 +262,7 @@ __all__ = [
     "StatusBlock",
     "StatusCase",
     "StatusCondition",
+    "ActionAvailabilityRule",
     "VisibilityRule",
     "ModalItem",
     "DrawerItem",

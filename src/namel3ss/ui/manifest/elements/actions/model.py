@@ -7,6 +7,9 @@ from namel3ss.ir import nodes as ir
 from namel3ss.media import MediaValidationMode
 
 from namel3ss.ui.manifest.origin import _attach_origin
+from namel3ss.ui.manifest.action_availability import evaluate_action_availability
+from namel3ss.ui.manifest.state_defaults import StateContext
+from namel3ss.validation import ValidationMode
 
 from ..base import _base_element
 from .ids import _allocate_action_id, _button_action_id, _element_id, _input_action_id, _link_action_id
@@ -58,11 +61,22 @@ def build_text_input_item(
     page_slug: str,
     path: List[int],
     taken_actions: set[str],
+    state_ctx: StateContext,
+    mode: ValidationMode,
+    warnings: list | None,
 ) -> tuple[dict, Dict[str, dict]]:
     index = path[-1] if path else 0
     element_id = _element_id(page_slug, "input", path)
     base_action_id = _input_action_id(page_slug, item.name)
     action_id = _allocate_action_id(base_action_id, element_id, taken_actions)
+    enabled, availability = evaluate_action_availability(
+        getattr(item, "availability_rule", None),
+        state_ctx,
+        mode,
+        warnings,
+        line=item.line,
+        column=item.column,
+    )
     action_entry = {
         "id": action_id,
         "type": "call_flow",
@@ -70,6 +84,9 @@ def build_text_input_item(
         "input_field": item.name,
         "input_type": "text",
     }
+    if availability is not None:
+        action_entry["enabled"] = enabled
+        action_entry["availability"] = availability
     base = _base_element(element_id, page_name, page_slug, index, item)
     element = {
         "type": "input",
@@ -80,6 +97,9 @@ def build_text_input_item(
         "action": {"type": "call_flow", "flow": item.flow_name, "input_field": item.name},
         **base,
     }
+    if availability is not None:
+        element["enabled"] = enabled
+        element["action"]["enabled"] = enabled
     return _attach_origin(element, item), {action_id: action_entry}
 
 
@@ -90,12 +110,26 @@ def build_button_item(
     page_slug: str,
     path: List[int],
     taken_actions: set[str],
+    state_ctx: StateContext,
+    mode: ValidationMode,
+    warnings: list | None,
 ) -> tuple[dict, Dict[str, dict]]:
     index = path[-1] if path else 0
     element_id = _element_id(page_slug, "button_item", path)
     base_action_id = _button_action_id(page_slug, item.label)
     action_id = _allocate_action_id(base_action_id, element_id, taken_actions)
+    enabled, availability = evaluate_action_availability(
+        getattr(item, "availability_rule", None),
+        state_ctx,
+        mode,
+        warnings,
+        line=item.line,
+        column=item.column,
+    )
     action_entry = {"id": action_id, "type": "call_flow", "flow": item.flow_name}
+    if availability is not None:
+        action_entry["enabled"] = enabled
+        action_entry["availability"] = availability
     base = _base_element(element_id, page_name, page_slug, index, item)
     element = {
         "type": "button",
@@ -105,6 +139,9 @@ def build_button_item(
         "action": {"type": "call_flow", "flow": item.flow_name},
         **base,
     }
+    if availability is not None:
+        element["enabled"] = enabled
+        element["action"]["enabled"] = enabled
     return _attach_origin(element, item), {action_id: action_entry}
 
 

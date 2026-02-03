@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from namel3ss.ir.lowering import lower_program, lower_flow
 from namel3ss.ir.model import (  # noqa: F401
+    ActionAvailabilityRule,
     AIMemory,
     AIDecl,
     AgentDecl,
@@ -170,6 +171,7 @@ __all__ = [
     "StatusBlock",
     "StatusCase",
     "StatusCondition",
+    "ActionAvailabilityRule",
     "VisibilityRule",
     "ColumnItem",
     "Comparison",

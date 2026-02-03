@@ -4,6 +4,7 @@ from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.lang.keywords import is_keyword
 from namel3ss.parser.decl.page_common import (
+    _parse_action_availability_rule_block,
     _is_visibility_rule_start,
     _parse_optional_string_value,
     _parse_reference_name_value,
@@ -122,6 +123,7 @@ def parse_button_item(parser, tok, *, allow_pattern_params: bool = False) -> ast
     parser._expect("INDENT", "Expected indented button body")
     flow_name = None
     visibility_rule = None
+    availability_rule = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
@@ -141,11 +143,29 @@ def parse_button_item(parser, tok, *, allow_pattern_params: bool = False) -> ast
             parser._advance()
             parser._expect("FLOW", "Expected 'flow' keyword in button action")
             flow_name = _parse_reference_name_value(parser, allow_pattern_params=allow_pattern_params, context="flow")
+            rule = _parse_action_availability_rule_block(parser, allow_pattern_params=allow_pattern_params)
+            if rule is not None:
+                if availability_rule is not None:
+                    raise Namel3ssError(
+                        "Action availability blocks may only declare one only-when rule.",
+                        line=tok_action.line,
+                        column=tok_action.column,
+                    )
+                availability_rule = rule
             parser._match("NEWLINE")
             continue
         if tok_action.type == "IDENT" and tok_action.value == "runs":
             parser._advance()
             flow_name = _parse_reference_name_value(parser, allow_pattern_params=allow_pattern_params, context="flow")
+            rule = _parse_action_availability_rule_block(parser, allow_pattern_params=allow_pattern_params)
+            if rule is not None:
+                if availability_rule is not None:
+                    raise Namel3ssError(
+                        "Action availability blocks may only declare one only-when rule.",
+                        line=tok_action.line,
+                        column=tok_action.column,
+                    )
+                availability_rule = rule
             parser._match("NEWLINE")
             continue
         raise Namel3ssError(
@@ -166,6 +186,7 @@ def parse_button_item(parser, tok, *, allow_pattern_params: bool = False) -> ast
         flow_name=flow_name,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        availability_rule=availability_rule,
         line=tok.line,
         column=tok.column,
     )
@@ -185,6 +206,7 @@ def parse_text_input_item(parser, tok, *, allow_pattern_params: bool = False) ->
     parser._expect("INDENT", "Expected indented input body")
     flow_name = None
     visibility_rule = None
+    availability_rule = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
@@ -207,6 +229,15 @@ def parse_text_input_item(parser, tok, *, allow_pattern_params: bool = False) ->
             if flow_name is not None:
                 raise Namel3ssError("Send to flow is declared more than once", line=tok_action.line, column=tok_action.column)
             flow_name = _parse_reference_name_value(parser, allow_pattern_params=allow_pattern_params, context="flow")
+            rule = _parse_action_availability_rule_block(parser, allow_pattern_params=allow_pattern_params)
+            if rule is not None:
+                if availability_rule is not None:
+                    raise Namel3ssError(
+                        "Action availability blocks may only declare one only-when rule.",
+                        line=tok_action.line,
+                        column=tok_action.column,
+                    )
+                availability_rule = rule
             parser._match("NEWLINE")
             continue
         raise Namel3ssError(
@@ -227,6 +258,7 @@ def parse_text_input_item(parser, tok, *, allow_pattern_params: bool = False) ->
         flow_name=flow_name,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        availability_rule=availability_rule,
         line=tok.line,
         column=tok.column,
     )

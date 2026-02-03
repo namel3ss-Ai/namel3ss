@@ -5,7 +5,10 @@ from typing import Dict
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
 from namel3ss.schema import records as schema
+from namel3ss.ui.manifest.action_availability import evaluate_action_availability
+from namel3ss.ui.manifest.state_defaults import StateContext
 from namel3ss.ui.manifest_overlay import _drawer_id, _modal_id
+from namel3ss.validation import ValidationMode
 
 
 def _list_id(page_slug: str, record_name: str) -> str:
@@ -37,7 +40,11 @@ def _list_item_mapping(mapping: ir.ListItemMapping) -> dict:
 
 def _build_list_actions(
     element_id: str,
+    page_slug: str,
     actions: list[ir.ListAction] | None,
+    state_ctx: StateContext,
+    mode: ValidationMode,
+    warnings: list | None,
 ) -> tuple[list[dict], Dict[str, dict]]:
     if not actions:
         return [], {}
@@ -53,22 +60,48 @@ def _build_list_actions(
                 column=action.column,
             )
         seen.add(action_id)
+        enabled, availability = evaluate_action_availability(
+            getattr(action, "availability_rule", None),
+            state_ctx,
+            mode,
+            warnings,
+            line=action.line,
+            column=action.column,
+        )
         if action.kind == "call_flow":
             entry = {"id": action_id, "type": "call_flow", "flow": action.flow_name}
+            if availability is not None:
+                entry["enabled"] = enabled
+                entry["availability"] = availability
             action_map[action_id] = entry
-            entries.append({"id": action_id, "label": action.label, "flow": action.flow_name})
+            element_entry = {"id": action_id, "label": action.label, "flow": action.flow_name}
+            if availability is not None:
+                element_entry["enabled"] = enabled
+            entries.append(element_entry)
             continue
         if action.kind in {"open_modal", "close_modal"}:
             target = _modal_id(page_slug, action.target or "")
             entry = {"id": action_id, "type": action.kind, "target": target}
+            if availability is not None:
+                entry["enabled"] = enabled
+                entry["availability"] = availability
             action_map[action_id] = entry
-            entries.append({"id": action_id, "label": action.label, "type": action.kind, "target": target})
+            element_entry = {"id": action_id, "label": action.label, "type": action.kind, "target": target}
+            if availability is not None:
+                element_entry["enabled"] = enabled
+            entries.append(element_entry)
             continue
         if action.kind in {"open_drawer", "close_drawer"}:
             target = _drawer_id(page_slug, action.target or "")
             entry = {"id": action_id, "type": action.kind, "target": target}
+            if availability is not None:
+                entry["enabled"] = enabled
+                entry["availability"] = availability
             action_map[action_id] = entry
-            entries.append({"id": action_id, "label": action.label, "type": action.kind, "target": target})
+            element_entry = {"id": action_id, "label": action.label, "type": action.kind, "target": target}
+            if availability is not None:
+                element_entry["enabled"] = enabled
+            entries.append(element_entry)
             continue
         raise Namel3ssError(
             f"List action '{action.label}' is not supported",

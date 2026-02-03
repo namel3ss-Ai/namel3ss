@@ -132,6 +132,77 @@ def _parse_visibility_rule_line(parser, *, allow_pattern_params: bool = False) -
     return ast.VisibilityRule(path=path, value=value, line=only_tok.line, column=only_tok.column)
 
 
+def _parse_action_availability_rule_line(parser, *, allow_pattern_params: bool = False) -> ast.ActionAvailabilityRule:
+    only_tok = parser._current()
+    if only_tok.type != "IDENT" or only_tok.value != "only":
+        raise Namel3ssError("Expected 'only when' action availability rule", line=only_tok.line, column=only_tok.column)
+    parser._advance()
+    parser._expect("WHEN", "Expected 'when' after only")
+    try:
+        path = _parse_state_path_relaxed(parser)
+    except Namel3ssError as err:
+        raise Namel3ssError(
+            "Action availability requires state.<path> is <value>.",
+            line=err.line,
+            column=err.column,
+        ) from err
+    parser._expect("IS", "Expected 'is' after state path")
+    value = _parse_visibility_rule_value(parser, allow_pattern_params=allow_pattern_params)
+    if parser._current().type not in {"NEWLINE", "DEDENT"}:
+        extra = parser._current()
+        raise Namel3ssError(
+            "Action availability only supports a literal value.",
+            line=extra.line,
+            column=extra.column,
+        )
+    return ast.ActionAvailabilityRule(path=path, value=value, line=only_tok.line, column=only_tok.column)
+
+
+def _parse_action_availability_rule_block(parser, *, allow_pattern_params: bool = False) -> ast.ActionAvailabilityRule | None:
+    if parser._current().type != "NEWLINE":
+        return None
+    next_pos = parser.position + 1
+    if next_pos >= len(parser.tokens):
+        return None
+    if parser.tokens[next_pos].type != "INDENT":
+        return None
+    peek_pos = next_pos + 1
+    while peek_pos < len(parser.tokens) and parser.tokens[peek_pos].type == "NEWLINE":
+        peek_pos += 1
+    if peek_pos >= len(parser.tokens):
+        return None
+    peek_tok = parser.tokens[peek_pos]
+    if not (peek_tok.type == "IDENT" and peek_tok.value == "only"):
+        return None
+    parser._advance()  # consume NEWLINE
+    parser._advance()  # consume INDENT
+    rule: ast.ActionAvailabilityRule | None = None
+    while parser._current().type != "DEDENT":
+        if parser._match("NEWLINE"):
+            continue
+        if rule is not None:
+            tok = parser._current()
+            raise Namel3ssError(
+                "Action availability blocks may only declare one only-when rule.",
+                line=tok.line,
+                column=tok.column,
+            )
+        if not _is_visibility_rule_start(parser):
+            tok = parser._current()
+            raise Namel3ssError(
+                "Action availability blocks may only declare an only-when rule.",
+                line=tok.line,
+                column=tok.column,
+            )
+        rule = _parse_action_availability_rule_line(parser, allow_pattern_params=allow_pattern_params)
+        parser._match("NEWLINE")
+    parser._expect("DEDENT", "Expected end of action availability block")
+    if rule is None:
+        tok = parser._current()
+        raise Namel3ssError("Action availability block has no rule", line=tok.line, column=tok.column)
+    return rule
+
+
 def _parse_visibility_rule_value(parser, *, allow_pattern_params: bool) -> ast.Literal:
     tok = parser._current()
     if tok.type == "STRING":
@@ -305,6 +376,8 @@ __all__ = [
     "_is_visibility_rule_start",
     "_parse_visibility_rule_line",
     "_parse_visibility_rule_block",
+    "_parse_action_availability_rule_line",
+    "_parse_action_availability_rule_block",
     "_validate_visibility_combo",
     "_is_param_ref",
     "_parse_param_ref",

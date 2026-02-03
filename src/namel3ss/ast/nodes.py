@@ -51,6 +51,7 @@ from namel3ss.ast.functions import (
 from namel3ss.ast.modules import CapsuleDecl, CapsuleExport, UseDecl
 from namel3ss.ast.jobs import JobDecl
 from namel3ss.ast.pages import (
+    ActionAvailabilityRule,
     ButtonItem,
     CardAction,
     CardGroupItem,
@@ -269,6 +270,7 @@ __all__ = [
     "StatusBlock",
     "StatusCase",
     "StatusCondition",
+    "ActionAvailabilityRule",
     "VisibilityRule",
     "ModalItem",
     "DrawerItem",

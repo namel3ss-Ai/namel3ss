@@ -30,6 +30,12 @@ class VisibilityRule(Node):
 
 
 @dataclass
+class ActionAvailabilityRule(Node):
+    path: StatePath
+    value: Literal
+
+
+@dataclass
 class StatusCondition(Node):
     path: StatePath
     kind: str  # equals | empty
@@ -104,6 +110,7 @@ class TextItem(PageItem):
 class TextInputItem(PageItem):
     name: str
     flow_name: str
+    availability_rule: ActionAvailabilityRule | None = field(default=None, kw_only=True)
 
 
 @dataclass
@@ -162,6 +169,7 @@ class TableRowAction(Node):
     flow_name: str | None = None
     kind: str = "call_flow"
     target: str | None = None
+    availability_rule: ActionAvailabilityRule | None = field(default=None, kw_only=True)
 
 
 @dataclass
@@ -190,6 +198,7 @@ class ListAction(Node):
     flow_name: str | None = None
     kind: str = "call_flow"
     target: str | None = None
+    availability_rule: ActionAvailabilityRule | None = field(default=None, kw_only=True)
 
 
 @dataclass
@@ -285,6 +294,7 @@ class DrawerItem(PageItem):
 class ButtonItem(PageItem):
     label: str
     flow_name: str
+    availability_rule: ActionAvailabilityRule | None = field(default=None, kw_only=True)
 
 
 @dataclass
@@ -305,6 +315,7 @@ class CardAction(Node):
     flow_name: str | None = None
     kind: str = "call_flow"
     target: str | None = None
+    availability_rule: ActionAvailabilityRule | None = field(default=None, kw_only=True)
 
 
 @dataclass

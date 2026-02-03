@@ -290,10 +290,11 @@ def _parse_row_actions_block(parser, *, allow_pattern_params: bool) -> List[ast.
         kind = None
         flow_name = None
         target = None
+        availability_rule = None
         while parser._current().type != "DEDENT":
             if parser._match("NEWLINE"):
                 continue
-            kind, flow_name, target = parse_ui_action_body(
+            kind, flow_name, target, availability_rule = parse_ui_action_body(
                 parser,
                 entry_label="Row action",
                 allow_pattern_params=allow_pattern_params,
@@ -314,6 +315,7 @@ def _parse_row_actions_block(parser, *, allow_pattern_params: bool) -> List[ast.
                 flow_name=flow_name,
                 kind=kind,
                 target=target,
+                availability_rule=availability_rule,
                 line=tok.line,
                 column=tok.column,
             )

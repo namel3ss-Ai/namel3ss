@@ -156,6 +156,7 @@ let renderUI = (manifest) => {
   }
   function handleAction(action, payload, opener) {
     if (!action || !action.id) return;
+    if (action.enabled === false) return { ok: false };
     const actionType = action.type || "call_flow";
     if (actionType === "open_modal" || actionType === "open_drawer") {
       openOverlay(action.target, opener);
@@ -349,12 +350,15 @@ let renderUI = (manifest) => {
         const actions = document.createElement("div");
         actions.className = "ui-card-actions";
         el.actions.forEach((action) => {
+          const enabled = action.enabled !== false;
           const btn = document.createElement("button");
           btn.type = "button";
           btn.className = "btn small";
           btn.textContent = action.label || "Run";
+          btn.disabled = !enabled;
           btn.onclick = (e) => {
             e.stopPropagation();
+            if (!enabled) return;
             handleAction(action, {}, e.currentTarget);
           };
           actions.appendChild(btn);
@@ -427,17 +431,21 @@ let renderUI = (manifest) => {
       form.className = "ui-element ui-input";
       const input = document.createElement("input");
       input.type = "text";
+      const enabled = el.enabled !== false;
       const labelText = el.name ? String(el.name) : "Input";
       input.placeholder = labelText;
       input.setAttribute("aria-label", labelText);
+      input.disabled = !enabled;
       const button = document.createElement("button");
       button.type = "submit";
       button.className = "btn small";
       button.textContent = "Send";
+      button.disabled = !enabled;
       form.appendChild(input);
       form.appendChild(button);
       form.onsubmit = async (e) => {
         e.preventDefault();
+        if (!enabled) return;
         const value = input.value || "";
         if (!value) return;
         const action = el.action || {};
@@ -460,10 +468,13 @@ let renderUI = (manifest) => {
       const actions = document.createElement("div");
       actions.className = "ui-buttons";
       const btn = document.createElement("button");
+      const enabled = el.enabled !== false;
       btn.className = "btn primary";
       btn.textContent = el.label;
+      btn.disabled = !enabled;
       btn.onclick = (e) => {
         e.stopPropagation();
+        if (!enabled) return;
         const action = el.action || {};
         const actionId = el.action_id || el.id;
         handleAction(

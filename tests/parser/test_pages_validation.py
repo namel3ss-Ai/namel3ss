@@ -476,3 +476,17 @@ def test_link_unknown_page_errors():
     with pytest.raises(Namel3ssError) as exc:
         lower_ir_program(source)
     assert "unknown page" in str(exc.value).lower()
+
+
+def test_action_availability_requires_is_comparator():
+    source = '''flow "submit_flow":
+  return "ok"
+
+page "home":
+  button "Submit":
+    calls flow "submit_flow"
+      only when state.status equals ready
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        parse_program(source)
+    assert "Expected 'is' after state path" in str(exc.value)

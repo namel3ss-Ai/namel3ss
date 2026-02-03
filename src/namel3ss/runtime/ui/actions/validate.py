@@ -90,8 +90,19 @@ def unknown_action_message(action_id: str, actions: Dict[str, dict]) -> str:
     )
 
 
+def action_disabled_message(action_id: str, predicate: str | None = None) -> str:
+    rule = f" because {predicate}" if predicate else ""
+    return build_guidance_message(
+        what=f"Action '{action_id}' is disabled.",
+        why=f"The action is disabled by an availability rule{rule}.",
+        fix="Update state to satisfy the rule or remove the only-when clause.",
+        example=f'n3 app.ai {action_id} "{{}}"',
+    )
+
+
 __all__ = [
     "action_payload_message",
+    "action_disabled_message",
     "ensure_json_serializable",
     "missing_values_message",
     "normalize_submit_payload",

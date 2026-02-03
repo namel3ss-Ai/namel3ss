@@ -29,6 +29,7 @@ from namel3ss.runtime.ui.actions.upload_select import handle_upload_select_actio
 from namel3ss.runtime.ui.actions.upload_replace import handle_upload_replace_action
 from namel3ss.runtime.ui.actions.validate import (
     action_payload_message,
+    action_disabled_message,
     ensure_json_serializable,
     normalize_submit_payload,
     text_input_missing_message,
@@ -92,6 +93,12 @@ def handle_action(
         raise Namel3ssError(unknown_action_message(action_id, actions))
 
     action = actions[action_id]
+    if action.get("enabled") is False:
+        predicate = None
+        availability = action.get("availability")
+        if isinstance(availability, dict):
+            predicate = availability.get("predicate")
+        raise Namel3ssError(action_disabled_message(action_id, predicate))
     action_type = action.get("type")
     obs = None
     owns_obs = False

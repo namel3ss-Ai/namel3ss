@@ -152,6 +152,9 @@ def _page_item_to_manifest(
             page_slug=page_slug,
             path=path,
             taken_actions=taken_actions,
+            state_ctx=state_ctx,
+            mode=mode,
+            warnings=warnings,
         )
         return apply_visibility(element, effective_visible, visibility_info), actions, effective_visible
     if isinstance(item, ir.UploadItem):
@@ -310,6 +313,9 @@ def _page_item_to_manifest(
             page_slug=page_slug,
             path=path,
             taken_actions=taken_actions,
+            state_ctx=state_ctx,
+            mode=mode,
+            warnings=warnings,
         )
         return apply_visibility(element, effective_visible, visibility_info), actions, effective_visible
     if isinstance(item, ir.LinkItem):

@@ -50,3 +50,19 @@ page "home":
     assert "text" in str(exc.value).lower()
     response = handle_action(program, action_id="page.home.input.question", payload={"question": "hello"})
     assert response["result"] == "hello"
+
+
+def test_action_availability_blocks_disabled_action():
+    source = '''flow "submit_flow":
+  return "ok"
+
+page "home":
+  button "Submit":
+    calls flow "submit_flow"
+      only when state.status is ready
+'''
+    program = lower_ir_program(source)
+    program.state_defaults = {"status": "ready"}
+    with pytest.raises(Namel3ssError) as exc:
+        handle_action(program, action_id="page.home.button.submit", state={"status": "loading"})
+    assert "disabled" in str(exc.value).lower()

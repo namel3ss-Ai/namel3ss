@@ -6,6 +6,7 @@ from namel3ss.ir.lowering.expressions import _lower_expression
 from namel3ss.ir.lowering.flow_refs import unknown_flow_message
 from namel3ss.ir.lowering.page_actions import _validate_overlay_action
 from namel3ss.ir.model.pages import (
+    ActionAvailabilityRule,
     ButtonItem,
     CardAction,
     CardGroupItem,
@@ -73,8 +74,15 @@ def lower_text_input_item(
             line=item.line,
             column=item.column,
         )
+    availability_rule = _lower_action_availability_rule(getattr(item, "availability_rule", None))
     return attach_origin(
-        TextInputItem(name=item.name, flow_name=item.flow_name, line=item.line, column=item.column),
+        TextInputItem(
+            name=item.name,
+            flow_name=item.flow_name,
+            availability_rule=availability_rule,
+            line=item.line,
+            column=item.column,
+        ),
         item,
     )
 
@@ -92,8 +100,15 @@ def lower_button_item(
             line=item.line,
             column=item.column,
         )
+    availability_rule = _lower_action_availability_rule(getattr(item, "availability_rule", None))
     return attach_origin(
-        ButtonItem(label=item.label, flow_name=item.flow_name, line=item.line, column=item.column),
+        ButtonItem(
+            label=item.label,
+            flow_name=item.flow_name,
+            availability_rule=availability_rule,
+            line=item.line,
+            column=item.column,
+        ),
         item,
     )
 
@@ -295,12 +310,14 @@ def _lower_card_actions(
                 column=action.column,
             )
         seen_labels.add(action.label)
+        availability_rule = _lower_action_availability_rule(getattr(action, "availability_rule", None))
         lowered.append(
             CardAction(
                 label=action.label,
                 flow_name=action.flow_name,
                 kind=action.kind,
                 target=action.target,
+                availability_rule=availability_rule,
                 line=action.line,
                 column=action.column,
             )
@@ -317,6 +334,17 @@ def _lower_card_stat(stat: ast.CardStat | None) -> CardStat | None:
         label=stat.label,
         line=stat.line,
         column=stat.column,
+    )
+
+
+def _lower_action_availability_rule(rule: ast.ActionAvailabilityRule | None) -> ActionAvailabilityRule | None:
+    if rule is None:
+        return None
+    return ActionAvailabilityRule(
+        path=_lower_expression(rule.path),
+        value=_lower_expression(rule.value),
+        line=rule.line,
+        column=rule.column,
     )
 
 

@@ -245,12 +245,25 @@ Rules:
 - UI-only state (selection, tabs active, modal/drawer open) never triggers flows.
 - State is visible in Studio; UI manifest lists actions and elements with stable IDs.
 
-## 4.1) UI explanation output
+## 4.1) Action availability
+- Actions can declare a single availability rule nested under the action line.
+- Availability uses equality only and accepts literal text, number, or boolean values.
+- Availability disables the action without hiding it; disabled actions are rejected at runtime.
+
+Example:
+```
+page "home":
+  button "Submit":
+    calls flow "submit_flow"
+      only when state.status is "ready"
+```
+
+## 4.2) UI explanation output
 - The ui manifest can be explained with `n3 see`.
 - Output is deterministic, bounded, and lists pages, elements, bindings, and action availability.
 - Pack origin metadata is included when elements are expanded from a `ui_pack`.
 
-## 4.2) Upload requests
+## 4.3) Upload requests
 - `upload <name>` declares intent to request a file from the user.
 - Uploads are request-only; no upload occurs until runtime bindings are provided.
 - When a file is selected, the client posts bytes to `/api/upload` and uses the returned metadata to update state.
