@@ -485,7 +485,7 @@ def test_action_availability_requires_is_comparator():
 page "home":
   button "Submit":
     calls flow "submit_flow"
-      only when state.status equals ready
+      only when state.status equals "ready"
 '''
     with pytest.raises(Namel3ssError) as exc:
         parse_program(source)

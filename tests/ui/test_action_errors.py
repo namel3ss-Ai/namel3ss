@@ -59,7 +59,7 @@ def test_action_availability_blocks_disabled_action():
 page "home":
   button "Submit":
     calls flow "submit_flow"
-      only when state.status is ready
+      only when state.status is "ready"
 '''
     program = lower_ir_program(source)
     program.state_defaults = {"status": "ready"}

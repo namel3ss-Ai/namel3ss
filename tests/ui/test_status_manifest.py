@@ -9,11 +9,11 @@ from tests.conftest import lower_ir_program
 
 SOURCE_STATUS = '''page "home":
   status:
-    loading when state.status is loading
+    loading when state.status is "loading"
       text is "Loading"
     empty when state.items is empty
       text is "No results"
-    error when state.status is error
+    error when state.status is "error"
       text is "Something went wrong"
   title is "Main"
   text is "Content"

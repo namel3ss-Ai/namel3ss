@@ -188,8 +188,8 @@ Built-in patterns:
 
 ## 3.2) Visibility
 - Optional `visibility is state.<path>`, `when is state.<path>`, or `visible_when is state.<path>` may be appended to any page item or `tab` header.
-- Optional `only when state.<path> is <value>` may be declared as a single indented line inside a page item block (or directly under a single-line item).
-- `only when` uses equality only and accepts literal text, number, or boolean values.
+- Optional `only when state.<path> is <literal>` may be declared as a single indented line inside a page item block (or directly under a single-line item).
+- Text literals use quotes; numbers and booleans are unquoted.
 - `only when` cannot be combined with `visibility`, `when`, or `visible_when` on the same item.
 - Visibility predicates are read-only state paths only (no expressions, operators, or function calls).
 - Paths must include at least one segment after `state.`.
@@ -215,20 +215,20 @@ Grammar:
 ```
 page "home":
   status:
-    loading when state.status is loading
+    loading when state.status is "loading"
       text is "Loading"
 
     empty when state.items is empty
       text is "No results"
 
-    error when state.status is error
+    error when state.status is "error"
       text is "Something went wrong"
 ```
 
 Rules:
 - Only one `status` block may appear per page.
 - Status names must be `loading`, `empty`, or `error`.
-- Conditions are equality (`state.<path> is <literal>`) or emptiness (`state.<path> is empty`) only.
+- Conditions use `state.<path> is <literal>` or `state.<path> is empty` only.
 - Empty checks only apply to list/map values; other types fail at build time.
 - Status blocks evaluate before normal UI blocks.
 - If exactly one status matches, only that block renders.
@@ -247,8 +247,8 @@ Rules:
 
 ## 4.1) Action availability
 - Actions can declare a single availability rule nested under the action line.
-- Availability uses equality only and accepts literal text, number, or boolean values.
-- Availability disables the action without hiding it; disabled actions are rejected at runtime.
+- Availability uses equality only and accepts literal text in quotes, number, or boolean values.
+- Availability is separate from visibility; it disables the action without hiding it, and disabled actions are rejected at runtime.
 
 Example:
 ```

@@ -13,7 +13,7 @@ SOURCE = '''flow "submit_flow":
 page "home":
   button "Submit":
     calls flow "submit_flow"
-      only when state.status is ready
+      only when state.status is "ready"
 '''
 
 
