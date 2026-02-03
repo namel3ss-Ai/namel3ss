@@ -86,6 +86,7 @@ def _page_item_to_manifest(
 ) -> tuple[dict, Dict[str, dict], bool]:
     predicate_visible, visibility_info = evaluate_visibility(
         getattr(item, "visibility", None),
+        getattr(item, "visibility_rule", None),
         state_ctx,
         mode,
         warnings,

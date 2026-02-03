@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import List, TYPE_CHECKING
 
 from namel3ss.ast.base import Node
-from namel3ss.ast.expressions import Expression, StatePath
+from namel3ss.ast.expressions import Expression, Literal, StatePath
 
 if TYPE_CHECKING:  # pragma: no cover - typing-only
     from namel3ss.ast.ui_patterns import PatternArgument
@@ -13,6 +13,13 @@ if TYPE_CHECKING:  # pragma: no cover - typing-only
 @dataclass
 class PageItem(Node):
     visibility: StatePath | None = field(default=None, kw_only=True)
+    visibility_rule: "VisibilityRule" | None = field(default=None, kw_only=True)
+
+
+@dataclass
+class VisibilityRule(Node):
+    path: StatePath
+    value: Literal
 
 
 @dataclass
@@ -239,6 +246,7 @@ class TabItem(Node):
     label: str
     children: List["PageItem"]
     visibility: StatePath | None = field(default=None, kw_only=True)
+    visibility_rule: VisibilityRule | None = field(default=None, kw_only=True)
 
 
 @dataclass

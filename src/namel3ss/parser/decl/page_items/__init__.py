@@ -4,6 +4,7 @@ from typing import List
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.parser.decl.page_common import _is_visibility_rule_start, _parse_visibility_rule_line
 
 from . import actions as actions_mod
 from . import media as media_mod
@@ -19,12 +20,24 @@ def _parse_block(
     allow_tabs: bool = False,
     allow_overlays: bool = False,
     allow_pattern_params: bool = False,
-) -> List[ast.PageItem]:
+) -> tuple[List[ast.PageItem], ast.VisibilityRule | None]:
     parser._expect("NEWLINE", "Expected newline after header")
     parser._expect("INDENT", "Expected indented block")
     items: List[ast.PageItem] = []
+    visibility_rule: ast.VisibilityRule | None = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
+            continue
+        if _is_visibility_rule_start(parser):
+            if visibility_rule is not None:
+                tok = parser._current()
+                raise Namel3ssError(
+                    "Visibility blocks may only declare one only-when rule.",
+                    line=tok.line,
+                    column=tok.column,
+                )
+            visibility_rule = _parse_visibility_rule_line(parser, allow_pattern_params=allow_pattern_params)
+            parser._match("NEWLINE")
             continue
         if columns_only and parser._current().type != "COLUMN":
             tok = parser._current()
@@ -40,7 +53,7 @@ def _parse_block(
         else:
             items.append(parsed)
     parser._expect("DEDENT", "Expected end of block")
-    return items
+    return items, visibility_rule
 
 
 def parse_page_item(

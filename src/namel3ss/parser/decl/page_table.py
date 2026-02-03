@@ -7,7 +7,7 @@ from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.lang.keywords import is_keyword
 from namel3ss.parser.decl.page_actions import parse_ui_action_body
-from namel3ss.parser.decl.page_common import _parse_number_value, _parse_string_value
+from namel3ss.parser.decl.page_common import _is_visibility_rule_start, _parse_number_value, _parse_string_value, _parse_visibility_rule_line
 from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
 
@@ -20,10 +20,17 @@ def parse_table_block(parser, *, allow_pattern_params: bool = False):
     pagination = None
     selection = None
     row_actions = None
+    visibility_rule = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
         tok = parser._current()
+        if _is_visibility_rule_start(parser):
+            if visibility_rule is not None:
+                raise Namel3ssError("Visibility blocks may only declare one only-when rule.", line=tok.line, column=tok.column)
+            visibility_rule = _parse_visibility_rule_line(parser, allow_pattern_params=allow_pattern_params)
+            parser._match("NEWLINE")
+            continue
         if tok.type == "IDENT" and tok.value == "columns":
             if columns is not None:
                 raise Namel3ssError("Columns block is declared more than once", line=tok.line, column=tok.column)
@@ -93,7 +100,7 @@ def parse_table_block(parser, *, allow_pattern_params: bool = False):
             column=tok.column,
         )
     parser._expect("DEDENT", "Expected end of table block")
-    return columns, empty_text, sort, pagination, selection, row_actions
+    return columns, empty_text, sort, pagination, selection, row_actions, visibility_rule
 
 
 def _parse_table_columns(parser):

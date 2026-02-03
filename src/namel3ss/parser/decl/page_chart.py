@@ -3,7 +3,13 @@ from __future__ import annotations
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.lang.keywords import is_keyword
-from namel3ss.parser.decl.page_common import _parse_reference_name_value, _parse_state_path_value, _parse_string_value
+from namel3ss.parser.decl.page_common import (
+    _is_visibility_rule_start,
+    _parse_reference_name_value,
+    _parse_state_path_value,
+    _parse_string_value,
+    _parse_visibility_rule_line,
+)
 from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
 
@@ -24,17 +30,28 @@ def parse_chart_header(parser, *, allow_pattern_params: bool = False) -> tuple[s
     )
 
 
-def parse_chart_block(parser, *, allow_pattern_params: bool = False) -> tuple[str | None, str | None, str | None, str | None]:
+def parse_chart_block(
+    parser,
+    *,
+    allow_pattern_params: bool = False,
+) -> tuple[str | None, str | None, str | None, str | None, ast.VisibilityRule | None]:
     parser._expect("NEWLINE", "Expected newline after chart header")
     parser._expect("INDENT", "Expected indented chart block")
     chart_type = None
     x = None
     y = None
     explain = None
+    visibility_rule: ast.VisibilityRule | None = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
         tok = parser._current()
+        if _is_visibility_rule_start(parser):
+            if visibility_rule is not None:
+                raise Namel3ssError("Visibility blocks may only declare one only-when rule.", line=tok.line, column=tok.column)
+            visibility_rule = _parse_visibility_rule_line(parser, allow_pattern_params=allow_pattern_params)
+            parser._match("NEWLINE")
+            continue
         if tok.type == "IDENT" and tok.value == "type":
             if chart_type is not None:
                 raise Namel3ssError("Chart type is declared more than once", line=tok.line, column=tok.column)
@@ -77,9 +94,9 @@ def parse_chart_block(parser, *, allow_pattern_params: bool = False) -> tuple[st
             continue
         raise Namel3ssError(f"Unknown chart setting '{tok.value}'", line=tok.line, column=tok.column)
     parser._expect("DEDENT", "Expected end of chart block")
-    if chart_type is None and x is None and y is None and explain is None:
+    if chart_type is None and x is None and y is None and explain is None and visibility_rule is None:
         raise Namel3ssError("Chart block has no entries", line=parser._current().line, column=parser._current().column)
-    return chart_type, x, y, explain
+    return chart_type, x, y, explain, visibility_rule
 
 
 def _parse_chart_field_name(parser) -> str:

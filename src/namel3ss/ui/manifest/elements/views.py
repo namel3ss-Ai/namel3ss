@@ -427,6 +427,7 @@ def build_tabs_item(
         labels.append(tab.label)
         tab_predicate_visible, tab_visibility = evaluate_visibility(
             getattr(tab, "visibility", None),
+            getattr(tab, "visibility_rule", None),
             state_ctx,
             mode,
             warnings,

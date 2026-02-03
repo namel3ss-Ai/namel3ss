@@ -188,9 +188,13 @@ Built-in patterns:
 
 ## 3.2) Visibility
 - Optional `visibility is state.<path>`, `when is state.<path>`, or `visible_when is state.<path>` may be appended to any page item or `tab` header.
+- Optional `only when state.<path> is <value>` may be declared as a single indented line inside a page item block (or directly under a single-line item).
+- `only when` uses equality only and accepts literal text, number, or boolean values.
+- `only when` cannot be combined with `visibility`, `when`, or `visible_when` on the same item.
 - Visibility predicates are read-only state paths only (no expressions, operators, or function calls).
 - Paths must include at least one segment after `state.`.
-- Evaluation is deterministic: a path is visible only when the state value exists and is truthy.
+- For `visibility`/`when`/`visible_when`, a path is visible only when the state value exists and is truthy.
+- For `only when`, missing state paths or type mismatches fail at build time.
 - Elements with `visibility` still appear in the manifest with `visible: true|false`; hidden elements do not emit actions.
 - UI explain output includes the predicate, referenced state paths, evaluated result, and the visibility reason.
 
@@ -200,6 +204,8 @@ page "home":
   title is "Results" when is state.results.ready
   section "Results" visible_when is state.results.present:
     table is "Result"
+  text is "Loading"
+    only when state.status is "loading"
 ```
 
 ## 4) Data binding & actions

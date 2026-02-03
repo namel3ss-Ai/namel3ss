@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import List
 
 from namel3ss.ir.model.base import Node
-from namel3ss.ir.model.expressions import Expression, StatePath
+from namel3ss.ir.model.expressions import Expression, Literal, StatePath
 
 
 @dataclass
@@ -19,6 +19,13 @@ class Page(Node):
 @dataclass
 class PageItem(Node):
     visibility: StatePath | None = field(default=None, kw_only=True)
+    visibility_rule: "VisibilityRule" | None = field(default=None, kw_only=True)
+
+
+@dataclass
+class VisibilityRule(Node):
+    path: StatePath
+    value: Literal
 
 
 @dataclass
@@ -233,6 +240,7 @@ class TabItem(Node):
     label: str
     children: List["PageItem"]
     visibility: StatePath | None = field(default=None, kw_only=True)
+    visibility_rule: VisibilityRule | None = field(default=None, kw_only=True)
 
 
 @dataclass

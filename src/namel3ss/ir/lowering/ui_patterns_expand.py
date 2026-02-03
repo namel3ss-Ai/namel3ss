@@ -11,16 +11,15 @@ from namel3ss.ir.lowering.ui_patterns_materialize import (
 from namel3ss.ir.lowering.ui_patterns_values import (
     resolve_pattern_params,
     resolve_visibility,
+    resolve_visibility_rule,
 )
 from namel3ss.ui.patterns.model import PatternDefinition
-
 
 @dataclass(frozen=True)
 class PatternContext:
     name: str
     invocation_id: str
     parameters: dict[str, object]
-
 
 def expand_pattern_items(
     items: list[ast.PageItem],
@@ -54,7 +53,6 @@ def expand_pattern_items(
         param_defs=None,
         stack=[],
     )
-
 
 def _expand_items(
     items: list[ast.PageItem],
@@ -144,7 +142,6 @@ def _expand_items(
         expanded.append(working)
     return expanded
 
-
 def _expand_use_pattern(
     item: ast.UsePatternItem,
     pattern_index: dict[str, PatternDefinition],
@@ -187,6 +184,13 @@ def _expand_use_pattern(
     )
     parameters = _pattern_parameters(pattern, values)
     visibility = resolve_visibility(item.visibility, param_values=param_values, param_defs=param_defs)
+    visibility_rule = resolve_visibility_rule(item.visibility_rule, param_values=param_values, param_defs=param_defs)
+    if visibility is not None and visibility_rule is not None:
+        raise Namel3ssError(
+            "Pattern visibility cannot combine visibility with only-when rules.",
+            line=item.line,
+            column=item.column,
+        )
     base_items = pattern.builder(values, invocation_path) if pattern.builder else list(pattern.items or [])
     next_origin = _merge_origin(base_origin, getattr(item, "origin", None))
     expanded = _expand_items(
@@ -208,11 +212,13 @@ def _expand_use_pattern(
         param_defs={param.name: param for param in pattern.parameters},
         stack=stack + [pattern.name],
     )
-    if visibility is not None:
+    if visibility is not None or visibility_rule is not None:
         _ensure_no_top_level_visibility(expanded, item)
-        expanded = [_apply_visibility(entry, visibility) for entry in expanded]
+        if visibility is not None:
+            expanded = [_apply_visibility(entry, visibility) for entry in expanded]
+        if visibility_rule is not None:
+            expanded = [_apply_visibility_rule(entry, visibility_rule) for entry in expanded]
     return expanded
-
 
 def _expand_item_children(
     item: ast.PageItem,
@@ -398,7 +404,6 @@ def _expand_item_children(
         return item
     return item
 
-
 def _merge_origin(base: dict | None, override: dict | None) -> dict | None:
     if base is None and override is None:
         return None
@@ -408,7 +413,6 @@ def _merge_origin(base: dict | None, override: dict | None) -> dict | None:
     if override:
         merged.update(override)
     return merged
-
 
 def _attach_pattern_origin(
     item: ast.PageItem,
@@ -429,13 +433,11 @@ def _attach_pattern_origin(
     setattr(item, "origin", origin)
     return item
 
-
 def _pattern_parameters(pattern: PatternDefinition, values: dict[str, object]) -> dict[str, object]:
     ordered: dict[str, object] = {}
     for param in pattern.parameters:
         ordered[param.name] = _sanitize_param_value(values.get(param.name))
     return ordered
-
 
 def _sanitize_param_value(value: object) -> object:
     if value is None:
@@ -448,7 +450,6 @@ def _sanitize_param_value(value: object) -> object:
         return _truncate_text(value)
     return _truncate_text(str(value))
 
-
 def _truncate_text(value: str, limit: int = 80) -> str:
     cleaned = " ".join(str(value).split())
     if _looks_like_path(cleaned):
@@ -457,7 +458,6 @@ def _truncate_text(value: str, limit: int = 80) -> str:
         return cleaned
     return f"{cleaned[: max(0, limit - 3)]}..."
 
-
 def _looks_like_path(value: str) -> bool:
     if value.startswith(("/", "\\", "~")):
         return True
@@ -465,29 +465,28 @@ def _looks_like_path(value: str) -> bool:
         return True
     return False
 
-
 def _ensure_no_top_level_visibility(items: list[ast.PageItem], source: ast.PageItem) -> None:
     for entry in items:
-        if getattr(entry, "visibility", None) is not None:
+        if getattr(entry, "visibility", None) is not None or getattr(entry, "visibility_rule", None) is not None:
             raise Namel3ssError(
                 "Pattern visibility cannot be combined with item visibility",
                 line=source.line,
                 column=source.column,
             )
 
-
 def _apply_visibility(item: ast.PageItem, visibility: ast.StatePath) -> ast.PageItem:
     item.visibility = visibility
     return item
 
+def _apply_visibility_rule(item: ast.PageItem, visibility_rule: ast.VisibilityRule) -> ast.PageItem:
+    item.visibility_rule = visibility_rule
+    return item
 
 def _format_invocation_id(page_name: str, path: list[int]) -> str:
     path_text = ".".join(str(entry) for entry in path)
     return f"page:{page_name}:pattern:{path_text}" if path_text else f"page:{page_name}:pattern"
 
-
 def _format_element_path(path: list[int]) -> str:
     return ".".join(str(entry) for entry in path)
-
 
 __all__ = ["PatternContext", "expand_pattern_items"]

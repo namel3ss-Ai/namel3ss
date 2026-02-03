@@ -6,24 +6,35 @@ from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.lang.types import CANONICAL_TYPES, canonicalize_type_name
 from namel3ss.parser.decl.page_common import (
+    _is_visibility_rule_start,
     _parse_reference_name_value,
     _parse_state_path_value,
     _parse_string_value,
     _parse_visibility_clause,
+    _parse_visibility_rule_block,
+    _parse_visibility_rule_line,
+    _validate_visibility_combo,
 )
 from namel3ss.parser.decl.record import _FIELD_NAME_TOKENS, type_from_token
 
 _ALLOWED_MEMORY_LANES = {"my", "team", "system"}
 
 
-def parse_chat_block(parser, *, allow_pattern_params: bool = False) -> List[ast.PageItem]:
+def parse_chat_block(parser, *, allow_pattern_params: bool = False) -> tuple[List[ast.PageItem], ast.VisibilityRule | None]:
     parser._expect("NEWLINE", "Expected newline after chat")
     parser._expect("INDENT", "Expected indented chat block")
     items: List[ast.PageItem] = []
+    visibility_rule: ast.VisibilityRule | None = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
         tok = parser._current()
+        if _is_visibility_rule_start(parser):
+            if visibility_rule is not None:
+                raise Namel3ssError("Visibility blocks may only declare one only-when rule.", line=tok.line, column=tok.column)
+            visibility_rule = _parse_visibility_rule_line(parser, allow_pattern_params=allow_pattern_params)
+            parser._match("NEWLINE")
+            continue
         if tok.type == "IDENT" and tok.value == "messages":
             items.append(_parse_messages(parser, allow_pattern_params=allow_pattern_params))
             continue
@@ -44,7 +55,7 @@ def parse_chat_block(parser, *, allow_pattern_params: bool = False) -> List[ast.
     if not items:
         tok = parser._current()
         raise Namel3ssError("Chat block has no entries", line=tok.line, column=tok.column)
-    return items
+    return items, visibility_rule
 
 
 def _parse_messages(parser, *, allow_pattern_params: bool) -> ast.ChatMessagesItem:
@@ -56,8 +67,16 @@ def _parse_messages(parser, *, allow_pattern_params: bool) -> ast.ChatMessagesIt
     parser._expect("IS", "Expected 'is' after messages from")
     source = _parse_state_path_value(parser, allow_pattern_params=allow_pattern_params)
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
+    _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
     parser._match("NEWLINE")
-    return ast.ChatMessagesItem(source=source, visibility=visibility, line=tok.line, column=tok.column)
+    return ast.ChatMessagesItem(
+        source=source,
+        visibility=visibility,
+        visibility_rule=visibility_rule,
+        line=tok.line,
+        column=tok.column,
+    )
 
 
 def _parse_composer(parser, *, allow_pattern_params: bool) -> ast.ChatComposerItem:
@@ -82,23 +101,44 @@ def _parse_composer(parser, *, allow_pattern_params: bool) -> ast.ChatComposerIt
             )
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     fields: list[ast.ChatComposerField] = []
+    visibility_rule = None
     if parser._match("NEWLINE"):
         if parser._match("INDENT"):
-            if uses_calls:
+            fields, visibility_rule = _parse_composer_fields(parser, allow_pattern_params=allow_pattern_params)
+            if uses_calls and fields:
                 raise Namel3ssError(
                     'Structured composers must use: composer sends to flow "<name>"',
                     line=tok.line,
                     column=tok.column,
                 )
-            fields = _parse_composer_fields(parser, allow_pattern_params=allow_pattern_params)
-    return ast.ChatComposerItem(flow_name=flow_name, fields=fields, visibility=visibility, line=tok.line, column=tok.column)
+    _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
+    return ast.ChatComposerItem(
+        flow_name=flow_name,
+        fields=fields,
+        visibility=visibility,
+        visibility_rule=visibility_rule,
+        line=tok.line,
+        column=tok.column,
+    )
 
 
-def _parse_composer_fields(parser, *, allow_pattern_params: bool) -> list[ast.ChatComposerField]:
+def _parse_composer_fields(parser, *, allow_pattern_params: bool) -> tuple[list[ast.ChatComposerField], ast.VisibilityRule | None]:
     fields: list[ast.ChatComposerField] = []
     seen: set[str] = set()
+    visibility_rule: ast.VisibilityRule | None = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
+            continue
+        if _is_visibility_rule_start(parser):
+            if visibility_rule is not None:
+                tok = parser._current()
+                raise Namel3ssError(
+                    "Visibility blocks may only declare one only-when rule.",
+                    line=tok.line,
+                    column=tok.column,
+                )
+            visibility_rule = _parse_visibility_rule_line(parser, allow_pattern_params=allow_pattern_params)
+            parser._match("NEWLINE")
             continue
         tok = parser._current()
         if tok.type == "IDENT" and tok.value == "send":
@@ -116,10 +156,10 @@ def _parse_composer_fields(parser, *, allow_pattern_params: bool) -> list[ast.Ch
             column=tok.column,
         )
     parser._expect("DEDENT", "Expected end of composer block")
-    if not fields:
+    if not fields and visibility_rule is None:
         tok = parser._current()
         raise Namel3ssError("Composer block has no fields", line=tok.line, column=tok.column)
-    return fields
+    return fields, visibility_rule
 
 
 def _parse_composer_field_block(
@@ -222,8 +262,16 @@ def _parse_thinking(parser, *, allow_pattern_params: bool) -> ast.ChatThinkingIt
     parser._expect("IS", "Expected 'is' after thinking when")
     when = _parse_state_path_value(parser, allow_pattern_params=allow_pattern_params)
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
+    _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
     parser._match("NEWLINE")
-    return ast.ChatThinkingItem(when=when, visibility=visibility, line=tok.line, column=tok.column)
+    return ast.ChatThinkingItem(
+        when=when,
+        visibility=visibility,
+        visibility_rule=visibility_rule,
+        line=tok.line,
+        column=tok.column,
+    )
 
 
 def _parse_citations(parser, *, allow_pattern_params: bool) -> ast.ChatCitationsItem:
@@ -235,8 +283,16 @@ def _parse_citations(parser, *, allow_pattern_params: bool) -> ast.ChatCitations
     parser._expect("IS", "Expected 'is' after citations from")
     source = _parse_state_path_value(parser, allow_pattern_params=allow_pattern_params)
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
+    _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
     parser._match("NEWLINE")
-    return ast.ChatCitationsItem(source=source, visibility=visibility, line=tok.line, column=tok.column)
+    return ast.ChatCitationsItem(
+        source=source,
+        visibility=visibility,
+        visibility_rule=visibility_rule,
+        line=tok.line,
+        column=tok.column,
+    )
 
 
 def _parse_memory(parser, *, allow_pattern_params: bool) -> ast.ChatMemoryItem:
@@ -263,8 +319,17 @@ def _parse_memory(parser, *, allow_pattern_params: bool) -> ast.ChatMemoryItem:
         if lane not in _ALLOWED_MEMORY_LANES:
             raise Namel3ssError("Lane must be 'my', 'team', or 'system'", line=value_tok.line, column=value_tok.column)
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
+    _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
     parser._match("NEWLINE")
-    return ast.ChatMemoryItem(source=source, lane=lane, visibility=visibility, line=tok.line, column=tok.column)
+    return ast.ChatMemoryItem(
+        source=source,
+        lane=lane,
+        visibility=visibility,
+        visibility_rule=visibility_rule,
+        line=tok.line,
+        column=tok.column,
+    )
 
 
 __all__ = ["parse_chat_block"]
