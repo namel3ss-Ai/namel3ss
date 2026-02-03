@@ -7,7 +7,7 @@ The Application UI Model is the language-level contract for how namel3ss apps de
 - **Layout**: sections, cards, lists, tables, forms, and charts placed in source order. Layout is semantic, not imperative.
 - **Components**: buttons, links, text, forms, tables, views, stories, charts, and media. Components bind to records, state, or actions explicitly.
 - **Navigation**: named pages plus explicit links between them keep routing deterministic and reload-safe.
-- **Bindings**: buttons and UI events call named flows (`calls flow "save"`). Forms and tables bind to records; displays can read from `state.<path>` or record views.
+- **Bindings**: buttons and UI events call named flows (`calls flow "save"`). Forms bind to records; tables and lists can bind to records or read from state paths.
 
 ## Declaring pages
 ```ai
@@ -26,9 +26,10 @@ page "home":
 
 ## Layout and components
 - **Sections/Cards**: group content; keep semantic intent (e.g., `card "Summary"`).
-- **Forms/Tables/Views**: bind to records; schema comes from record declarations.
+- **Forms/Tables/Views**: bind to records; schema comes from record declarations. Tables and lists may also read from state in a read-only way with explicit mappings.
 - **Buttons**: trigger flows via `calls flow "name"`; no implicit actions exist.
 - **Links**: navigate to named pages with `link "Label" to page "PageName"`.
+- **Text inputs**: single-line inputs declared with `input text as name` and `send to flow`; they pass text directly into a flow input field.
 - **Stories/Text/Media**: explanatory content that renders deterministically.
 - **Charts**: render read-only data from records or state; inputs must be explicit.
 - All components are declared inline under their parent page or container; no hidden defaults.
@@ -53,7 +54,7 @@ page "Settings":
 ## Manifest and determinism
 - The UI manifest emitted at `/api/ui` lists pages and actions in source order using canonical JSON serialization.
 - Page, action, and component identifiers derive from declarations; there are no random ids or timestamps.
-- State bindings resolve to explicit state paths; forms and tables bind to declared records.
+- State bindings resolve to explicit state paths; forms bind to declared records; tables and lists can read from records or state.
 - Adding pages or components preserves ordering; removing or reordering declarations updates the manifest deterministically.
 
 ## How it connects to state and actions

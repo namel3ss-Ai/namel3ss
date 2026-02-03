@@ -9,7 +9,7 @@ from namel3ss.media import MediaValidationMode
 from namel3ss.ui.manifest.origin import _attach_origin
 
 from ..base import _base_element
-from .ids import _allocate_action_id, _button_action_id, _element_id, _link_action_id
+from .ids import _allocate_action_id, _button_action_id, _element_id, _input_action_id, _link_action_id
 from .validate import validate_image_reference
 
 
@@ -49,6 +49,38 @@ def build_text_item(
         ),
         {},
     )
+
+
+def build_text_input_item(
+    item: ir.TextInputItem,
+    *,
+    page_name: str,
+    page_slug: str,
+    path: List[int],
+    taken_actions: set[str],
+) -> tuple[dict, Dict[str, dict]]:
+    index = path[-1] if path else 0
+    element_id = _element_id(page_slug, "input", path)
+    base_action_id = _input_action_id(page_slug, item.name)
+    action_id = _allocate_action_id(base_action_id, element_id, taken_actions)
+    action_entry = {
+        "id": action_id,
+        "type": "call_flow",
+        "flow": item.flow_name,
+        "input_field": item.name,
+        "input_type": "text",
+    }
+    base = _base_element(element_id, page_name, page_slug, index, item)
+    element = {
+        "type": "input",
+        "input_type": "text",
+        "name": item.name,
+        "id": action_id,
+        "action_id": action_id,
+        "action": {"type": "call_flow", "flow": item.flow_name, "input_field": item.name},
+        **base,
+    }
+    return _attach_origin(element, item), {action_id: action_entry}
 
 
 def build_button_item(
@@ -146,5 +178,6 @@ __all__ = [
     "build_image_item",
     "build_link_item",
     "build_text_item",
+    "build_text_input_item",
     "build_title_item",
 ]

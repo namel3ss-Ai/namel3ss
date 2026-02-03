@@ -35,6 +35,7 @@ _COMPONENT_SPACING_RULES: dict[str, tuple[tuple[str, str], ...]] = {
     "list": (("item_gap", "base"), ("secondary_gap", "tight"), ("meta_gap", "tight")),
     "chart": (("series_gap", "base"), ("summary_gap", "base"), ("legend_gap", "tight")),
     "chat": (("section_gap", "base"), ("message_gap", "base"), ("composer_gap", "base")),
+    "input": (("input_gap", "tight"), ("action_gap", "tight")),
     "messages": (("item_gap", "base"), ("meta_gap", "tight")),
     "composer": (("input_gap", "tight"), ("action_gap", "tight")),
     "thinking": (("status_gap", "tight"),),

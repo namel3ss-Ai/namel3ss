@@ -21,6 +21,7 @@ from namel3ss.ir.model.pages import (
     RowItem,
     SectionItem,
     TextItem,
+    TextInputItem,
     TitleItem,
 )
 
@@ -57,6 +58,25 @@ def lower_title_item(item: ast.TitleItem, *, attach_origin) -> TitleItem:
 
 def lower_text_item(item: ast.TextItem, *, attach_origin) -> TextItem:
     return attach_origin(TextItem(value=item.value, line=item.line, column=item.column), item)
+
+
+def lower_text_input_item(
+    item: ast.TextInputItem,
+    flow_names: set[str],
+    page_name: str,
+    *,
+    attach_origin,
+) -> TextInputItem:
+    if item.flow_name not in flow_names:
+        raise Namel3ssError(
+            unknown_flow_message(item.flow_name, flow_names, page_name),
+            line=item.line,
+            column=item.column,
+        )
+    return attach_origin(
+        TextInputItem(name=item.name, flow_name=item.flow_name, line=item.line, column=item.column),
+        item,
+    )
 
 
 def lower_button_item(
@@ -375,5 +395,6 @@ __all__ = [
     "lower_row_item",
     "lower_section_item",
     "lower_text_item",
+    "lower_text_input_item",
     "lower_title_item",
 ]

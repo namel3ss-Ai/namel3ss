@@ -43,6 +43,14 @@ def materialize_item(
             return None
         working.value = value
         return working
+    if isinstance(working, ast.TextInputItem):
+        name = resolve_text(working.name, param_values=param_values, param_defs=param_defs)
+        flow = resolve_text(working.flow_name, param_values=param_values, param_defs=param_defs)
+        if name is None or flow is None:
+            return None
+        working.name = name
+        working.flow_name = qualify_name(flow, context_module, flow_names)
+        return working
     if isinstance(working, ast.ImageItem):
         src = resolve_text(working.src, param_values=param_values, param_defs=param_defs)
         if src is None:
@@ -72,10 +80,14 @@ def materialize_item(
         working.fields = resolve_form_fields(working.fields, param_values=param_values, param_defs=param_defs)
         return working
     if isinstance(working, ast.TableItem):
-        record = resolve_record(working.record_name, param_values=param_values, param_defs=param_defs)
-        if record is None:
+        record = resolve_record_optional(working.record_name, param_values=param_values, param_defs=param_defs)
+        source = resolve_state_optional(working.source, param_values=param_values, param_defs=param_defs)
+        if record is None and source is None:
             return None
-        working.record_name = qualify_name(record, context_module, record_names)
+        if record is not None:
+            record = qualify_name(record, context_module, record_names)
+        working.record_name = record
+        working.source = source
         working.empty_text = resolve_text_optional(working.empty_text, param_values=param_values, param_defs=param_defs)
         working.row_actions = resolve_row_actions(
             working.row_actions,
@@ -87,10 +99,14 @@ def materialize_item(
         working.pagination = resolve_pagination(working.pagination, param_values=param_values, param_defs=param_defs)
         return working
     if isinstance(working, ast.ListItem):
-        record = resolve_record(working.record_name, param_values=param_values, param_defs=param_defs)
-        if record is None:
+        record = resolve_record_optional(working.record_name, param_values=param_values, param_defs=param_defs)
+        source = resolve_state_optional(working.source, param_values=param_values, param_defs=param_defs)
+        if record is None and source is None:
             return None
-        working.record_name = qualify_name(record, context_module, record_names)
+        if record is not None:
+            record = qualify_name(record, context_module, record_names)
+        working.record_name = record
+        working.source = source
         working.empty_text = resolve_text_optional(working.empty_text, param_values=param_values, param_defs=param_defs)
         working.actions = resolve_list_actions(
             working.actions,

@@ -144,6 +144,15 @@ def _page_item_to_manifest(
     if isinstance(item, ir.TextItem):
         element, actions = actions_mod.build_text_item(item, page_name=page_name, page_slug=page_slug, path=path)
         return apply_visibility(element, effective_visible, visibility_info), actions, effective_visible
+    if isinstance(item, ir.TextInputItem):
+        element, actions = actions_mod.build_text_input_item(
+            item,
+            page_name=page_name,
+            page_slug=page_slug,
+            path=path,
+            taken_actions=taken_actions,
+        )
+        return apply_visibility(element, effective_visible, visibility_info), actions, effective_visible
     if isinstance(item, ir.UploadItem):
         element, actions = views_mod.build_upload_item(
             item,
@@ -172,6 +181,9 @@ def _page_item_to_manifest(
             path=path,
             store=store,
             identity=identity,
+            state_ctx=state_ctx,
+            mode=mode,
+            warnings=warnings,
         )
         return apply_visibility(element, effective_visible, visibility_info), actions, effective_visible
     if isinstance(item, ir.ListItem):
@@ -183,6 +195,9 @@ def _page_item_to_manifest(
             path=path,
             store=store,
             identity=identity,
+            state_ctx=state_ctx,
+            mode=mode,
+            warnings=warnings,
         )
         return apply_visibility(element, effective_visible, visibility_info), actions, effective_visible
     if isinstance(item, ir.ChartItem):

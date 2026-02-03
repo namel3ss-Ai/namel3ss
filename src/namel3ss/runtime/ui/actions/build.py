@@ -31,6 +31,8 @@ from namel3ss.runtime.ui.actions.validate import (
     action_payload_message,
     ensure_json_serializable,
     normalize_submit_payload,
+    text_input_missing_message,
+    text_input_type_message,
     unknown_action_message,
 )
 
@@ -301,6 +303,13 @@ def _handle_call_flow(
     flow_name = action.get("flow")
     if not isinstance(flow_name, str):
         raise Namel3ssError("Invalid flow reference in action")
+    input_field = action.get("input_field")
+    if isinstance(input_field, str):
+        if input_field not in payload:
+            raise Namel3ssError(text_input_missing_message(input_field))
+        value = payload.get(input_field)
+        if not isinstance(value, str):
+            raise Namel3ssError(text_input_type_message(input_field))
     outcome = build_flow_payload(
         program_ir,
         flow_name,

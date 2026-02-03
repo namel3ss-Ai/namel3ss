@@ -45,6 +45,13 @@ page "home":
       order is asc
 '''
 
+STATE_SOURCE = '''page "home":
+  table from state results:
+    columns:
+      include name
+      include score
+      label score is "Score"
+'''
 
 def _load_record(program, name: str):
     return next(record for record in program.records if record.name == name)
@@ -102,3 +109,28 @@ def test_table_sort_missing_value_errors():
     with pytest.raises(Namel3ssError) as exc:
         build_manifest(program, state={}, store=store)
     assert "missing" in str(exc.value).lower()
+
+
+def test_state_table_manifest_preserves_order():
+    program = lower_ir_program(STATE_SOURCE)
+    state = {
+        "results": [
+            {"name": "First", "score": 10},
+            {"name": "Second", "score": 5},
+        ]
+    }
+    manifest = build_manifest(program, state=state, store=MemoryStore())
+    table = next(el for el in manifest["pages"][0]["elements"] if el["type"] == "table")
+    assert table["source"] == "state.results"
+    assert [col["name"] for col in table["columns"]] == ["name", "score"]
+    assert table["columns"][1]["label"] == "Score"
+    assert table.get("record") is None
+    assert [row["name"] for row in table["rows"]] == ["First", "Second"]
+    assert table.get("row_actions") is None
+
+
+def test_state_table_requires_list_source():
+    program = lower_ir_program(STATE_SOURCE)
+    with pytest.raises(Namel3ssError) as exc:
+        build_manifest(program, state={"results": {"name": "Bad"}}, store=MemoryStore())
+    assert "table source must be a list" in str(exc.value).lower()

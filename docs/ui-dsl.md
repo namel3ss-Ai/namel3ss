@@ -67,10 +67,13 @@ Content:
 Data/UI bindings:
 - `form is "RecordName"` auto-fields from record; optional `groups`/`help`/`readonly`; submits as `submit_form` action.
 - `table is "RecordName"` displays records; optional `columns`/`empty_state`/`sort`/`pagination`/`selection`/`row_actions`.
+- `table from state <path>` displays a read-only table from state; requires `columns` with `include` entries; no sort, pagination, selection, or row actions.
 - `list is "RecordName"` displays records; optional `variant`/`item` mapping/`empty_state`/`selection`/`actions`.
+- `list from state <path>` displays a read-only list from state; requires an `item` mapping; no selection or actions.
 - `chart is "RecordName"` or `chart from is state.<path>` read-only visualization (`summary`/`bar`/`line`), optional `type`/`x`/`y`/`explain`; must be paired with a table or list using the same data source.
 - `messages from is state.<path>` renders a message list from state (role/content).
 - `composer calls flow "flow_name"` emits a `call_flow` action with `message` payload.
+- `input text as <name>` with body `send to flow "<flow>"` renders a single-line input and emits a `call_flow` action with payload named `<name>`; the flow must declare a matching text input field (flow input block or contract).
 - `thinking when is state.<path>` UI-only indicator bound to state.
 - `citations from is state.<path>` display-only citations list from state.
 - `memory from is state.<path> [lane is "my"|"team"|"system"]` display-only memory list from state.
@@ -89,6 +92,16 @@ Nesting rules:
 - `card_group` -> `card` only.
 - Others may contain any page items.
 - Pages remain declarative: no let/set/if/match inside pages.
+
+Show blocks:
+- `show` can group tables and lists under one verb using indentation.
+- `show` only supports `table` and `list` entries.
+- Example:
+```
+page "home":
+  show table from state matches
+       list from state selected
+```
 
 UI packs:
 - `ui_pack` declares a version and one or more fragments.
@@ -180,6 +193,7 @@ page "home":
 - Overlays open/close via actions (`open_modal`, `close_modal`, `open_drawer`, `close_drawer`).
 - Chat elements bind to explicit state paths; list ordering is preserved as provided.
 - Composer submissions call flows and include `{message: "<text>"}` in payload.
+- Text input submissions call flows and include `{<name>: "<text>"}` in payload; empty inputs do not emit actions.
 - UI-only state (selection, tabs active, modal/drawer open) never triggers flows.
 - State is visible in Studio; UI manifest lists actions and elements with stable IDs.
 

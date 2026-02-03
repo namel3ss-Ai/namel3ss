@@ -97,6 +97,7 @@ from namel3ss.ast.pages import (
     TableSort,
     ViewItem,
     TextItem,
+    TextInputItem,
     TitleItem,
 )
 from namel3ss.ast.policy import PolicyDecl, PolicyRuleDecl
@@ -230,6 +231,7 @@ __all__ = [
     "PageItem",
     "TitleItem",
     "TextItem",
+    "TextInputItem",
     "UploadItem",
     "FormItem",
     "FormFieldConfig",

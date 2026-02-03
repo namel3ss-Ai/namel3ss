@@ -23,6 +23,16 @@ def lint_semantic(program_ir: ir.Program) -> List[Finding]:
                             column=item.column,
                         )
                     )
+            if isinstance(item, ir.TextInputItem):
+                if item.flow_name not in flow_names:
+                    findings.append(
+                        Finding(
+                            code="refs.unknown_flow",
+                            message=f"Input references unknown flow '{item.flow_name}'",
+                            line=item.line,
+                            column=item.column,
+                        )
+                    )
             if isinstance(item, ir.FormItem):
                 if item.record_name not in record_names:
                     findings.append(
@@ -34,7 +44,7 @@ def lint_semantic(program_ir: ir.Program) -> List[Finding]:
                         )
                     )
             if isinstance(item, ir.TableItem):
-                if item.record_name not in record_names:
+                if item.record_name and item.record_name not in record_names:
                     findings.append(
                         Finding(
                             code="refs.unknown_record",
@@ -55,7 +65,7 @@ def lint_semantic(program_ir: ir.Program) -> List[Finding]:
                             )
                         )
             if isinstance(item, ir.ListItem):
-                if item.record_name not in record_names:
+                if item.record_name and item.record_name not in record_names:
                     findings.append(
                         Finding(
                             code="refs.unknown_record",

@@ -33,7 +33,11 @@ def parse_page(parser) -> ast.PageDecl:
             purpose = value_tok.value
             parser._match("NEWLINE")
             continue
-        items.append(parse_page_item(parser, allow_tabs=True, allow_overlays=True))
+        parsed = parse_page_item(parser, allow_tabs=True, allow_overlays=True)
+        if isinstance(parsed, list):
+            items.extend(parsed)
+        else:
+            items.append(parsed)
     parser._expect("DEDENT", "Expected end of page body")
     return ast.PageDecl(
         name=name_tok.value,

@@ -68,6 +68,12 @@ class TextItem(PageItem):
 
 
 @dataclass
+class TextInputItem(PageItem):
+    name: str
+    flow_name: str
+
+
+@dataclass
 class UploadItem(PageItem):
     name: str
     accept: list[str] | None = None
@@ -127,7 +133,8 @@ class TableRowAction(Node):
 
 @dataclass
 class TableItem(PageItem):
-    record_name: str
+    record_name: str | None = None
+    source: StatePath | None = None
     columns: List[TableColumnDirective] | None = None
     empty_text: str | None = None
     sort: TableSort | None = None
@@ -154,7 +161,8 @@ class ListAction(Node):
 
 @dataclass
 class ListItem(PageItem):
-    record_name: str
+    record_name: str | None = None
+    source: StatePath | None = None
     variant: str | None = None
     item: ListItemMapping | None = None
     empty_text: str | None = None

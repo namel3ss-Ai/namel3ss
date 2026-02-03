@@ -29,6 +29,40 @@ def test_button_calls_missing_flow():
     assert "runs" in message
 
 
+def test_text_input_requires_flow_input():
+    source = '''flow "answer":
+  return "ok"
+
+page "home":
+  input text as question
+    send to flow "answer"
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "text input" in str(exc.value).lower()
+    assert "input" in str(exc.value).lower()
+
+
+def test_text_input_requires_text_field():
+    source = '''contract flow "answer":
+  input:
+    question is number
+  output:
+    result is text
+
+flow "answer":
+  return "ok"
+
+page "home":
+  input text as question
+    send to flow "answer"
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "text" in str(exc.value).lower()
+    assert "question" in str(exc.value).lower()
+
+
 def test_illegal_statement_in_page_block_errors():
     source = '''page "home":
   let x is 1
@@ -64,6 +98,29 @@ page "home":
     with pytest.raises(Namel3ssError) as exc:
         parse_program(source)
     assert "page_size must be a positive integer" in str(exc.value).lower()
+
+
+def test_state_table_requires_columns():
+    source = '''page "home":
+  table from state metrics
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "state tables require columns" in str(exc.value).lower()
+
+
+def test_state_table_disallows_sorting():
+    source = '''page "home":
+  table from state metrics:
+    columns:
+      include name
+    sort:
+      by is name
+      order is asc
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "state tables do not support sorting" in str(exc.value).lower()
 
 
 def test_row_action_unknown_flow_errors():
@@ -170,6 +227,32 @@ page "home":
     with pytest.raises(Namel3ssError) as exc:
         lower_ir_program(source)
     assert "unknown flow" in str(exc.value).lower()
+
+
+def test_state_list_requires_item_mapping():
+    source = '''page "home":
+  list from state items
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "state lists require item mapping" in str(exc.value).lower()
+
+
+def test_state_list_disallows_actions():
+    source = '''flow "open_item":
+  return "ok"
+
+page "home":
+  list from state items:
+    item:
+      primary is name
+    actions:
+      action "Open":
+        calls flow "open_item"
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "state lists do not support actions" in str(exc.value).lower()
 
 
 def test_chat_composer_unknown_flow_errors():

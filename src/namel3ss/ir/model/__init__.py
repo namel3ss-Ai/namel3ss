@@ -131,6 +131,7 @@ from namel3ss.ir.model.pages import (
     TableSort,
     ViewItem,
     TextItem,
+    TextInputItem,
     TitleItem,
 )
 from namel3ss.ir.model.tools import ToolDecl, ToolField
@@ -256,6 +257,7 @@ __all__ = [
     "TabItem",
     "TabsItem",
     "TextItem",
+    "TextInputItem",
     "TitleItem",
     "ToolDecl",
     "ToolField",

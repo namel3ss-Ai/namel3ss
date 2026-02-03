@@ -93,6 +93,67 @@ def _lower_table_columns(
     ]
 
 
+def _lower_state_table_columns(
+    columns: list[ast.TableColumnDirective] | None,
+    *,
+    line: int | None,
+    column: int | None,
+) -> list[TableColumnDirective]:
+    if not columns:
+        raise Namel3ssError("State tables require columns", line=line, column=column)
+    include_directives: dict[str, ast.TableColumnDirective] = {}
+    label_directives: dict[str, ast.TableColumnDirective] = {}
+    for directive in columns:
+        if directive.kind == "include":
+            if directive.name in include_directives:
+                raise Namel3ssError(
+                    f"Column '{directive.name}' is included more than once",
+                    line=directive.line,
+                    column=directive.column,
+                )
+            include_directives[directive.name] = directive
+            continue
+        if directive.kind == "label":
+            if directive.name in label_directives:
+                raise Namel3ssError(
+                    f"Column '{directive.name}' label is declared more than once",
+                    line=directive.line,
+                    column=directive.column,
+                )
+            label_directives[directive.name] = directive
+            continue
+        if directive.kind == "exclude":
+            raise Namel3ssError(
+                "State tables do not support exclude directives",
+                line=directive.line,
+                column=directive.column,
+            )
+        raise Namel3ssError(
+            f"Unsupported columns directive '{directive.kind}'",
+            line=directive.line,
+            column=directive.column,
+        )
+    if not include_directives:
+        raise Namel3ssError("State tables require include columns", line=line, column=column)
+    for name, directive in label_directives.items():
+        if name not in include_directives:
+            raise Namel3ssError(
+                f"Column '{name}' is labeled but not included",
+                line=directive.line,
+                column=directive.column,
+            )
+    return [
+        TableColumnDirective(
+            kind=directive.kind,
+            name=directive.name,
+            label=directive.label,
+            line=directive.line,
+            column=directive.column,
+        )
+        for directive in columns
+    ]
+
+
 def _lower_table_sort(sort: ast.TableSort | None, record: schema.RecordSchema) -> TableSort | None:
     if sort is None:
         return None
@@ -161,6 +222,7 @@ def _lower_table_row_actions(
 
 __all__ = [
     "_lower_table_columns",
+    "_lower_state_table_columns",
     "_lower_table_sort",
     "_lower_table_pagination",
     "_lower_table_row_actions",

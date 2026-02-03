@@ -1,3 +1,6 @@
+import pytest
+
+from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.store.memory_store import MemoryStore
 from namel3ss.ui.manifest import build_manifest
 from tests.conftest import lower_ir_program
@@ -39,6 +42,12 @@ page "home":
   list is "Metric"
 '''
 
+STATE_SOURCE = '''page "home":
+  list from state items:
+    item:
+      primary is name
+      secondary is detail
+'''
 
 def _load_record(program, name: str):
     return next(record for record in program.records if record.name == name)
@@ -84,3 +93,27 @@ def test_list_default_primary_falls_back_to_id():
     manifest = build_manifest(program, state={}, store=MemoryStore())
     list_el = next(el for el in manifest["pages"][0]["elements"] if el["type"] == "list")
     assert list_el["item"]["primary"] == "_id"
+
+
+def test_state_list_manifest_preserves_order():
+    program = lower_ir_program(STATE_SOURCE)
+    state = {
+        "items": [
+            {"name": "First", "detail": "One"},
+            {"name": "Second", "detail": "Two"},
+        ]
+    }
+    manifest = build_manifest(program, state=state, store=MemoryStore())
+    list_el = next(el for el in manifest["pages"][0]["elements"] if el["type"] == "list")
+    assert list_el["source"] == "state.items"
+    assert list_el.get("record") is None
+    assert list_el["item"]["primary"] == "name"
+    assert list_el["item"]["secondary"] == "detail"
+    assert [row["name"] for row in list_el["rows"]] == ["First", "Second"]
+
+
+def test_state_list_requires_list_source():
+    program = lower_ir_program(STATE_SOURCE)
+    with pytest.raises(Namel3ssError) as exc:
+        build_manifest(program, state={"items": "bad"}, store=MemoryStore())
+    assert "list source must be a list" in str(exc.value).lower()

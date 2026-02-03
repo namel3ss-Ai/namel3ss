@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.parser.expr.common import read_attr_name
 
 
 def _match_ident_value(parser, value: str) -> bool:
@@ -131,6 +132,24 @@ def _parse_state_path_value(parser, *, allow_pattern_params: bool) -> ast.StateP
     return parser._parse_state_path()
 
 
+def _parse_state_path_value_relaxed(parser, *, allow_pattern_params: bool) -> ast.StatePath | ast.PatternParamRef:
+    if allow_pattern_params and _is_param_ref(parser):
+        return _parse_param_ref(parser)
+    return _parse_state_path_relaxed(parser)
+
+
+def _parse_state_path_relaxed(parser) -> ast.StatePath:
+    state_tok = parser._expect("STATE", "Expected 'state'")
+    path: list[str] = []
+    if parser._match("DOT"):
+        path.append(read_attr_name(parser, context="identifier after '.'"))
+    else:
+        path.append(read_attr_name(parser, context="state path"))
+    while parser._match("DOT"):
+        path.append(read_attr_name(parser, context="identifier after '.'"))
+    return ast.StatePath(path=path, line=state_tok.line, column=state_tok.column)
+
+
 def _parse_boolean_value(parser, *, allow_pattern_params: bool) -> bool | ast.PatternParamRef:
     if allow_pattern_params and _is_param_ref(parser):
         return _parse_param_ref(parser)
@@ -168,6 +187,7 @@ __all__ = [
     "_parse_optional_string_value",
     "_parse_reference_name_value",
     "_parse_state_path_value",
+    "_parse_state_path_value_relaxed",
     "_parse_boolean_value",
     "_parse_number_value",
     "_is_param_ref",

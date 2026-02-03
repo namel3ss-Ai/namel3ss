@@ -29,14 +29,16 @@ def _parse_block(
         if columns_only and parser._current().type != "COLUMN":
             tok = parser._current()
             raise Namel3ssError("Rows may only contain columns", line=tok.line, column=tok.column)
-        items.append(
-            parse_page_item(
-                parser,
-                allow_tabs=allow_tabs,
-                allow_overlays=allow_overlays,
-                allow_pattern_params=allow_pattern_params,
-            )
+        parsed = parse_page_item(
+            parser,
+            allow_tabs=allow_tabs,
+            allow_overlays=allow_overlays,
+            allow_pattern_params=allow_pattern_params,
         )
+        if isinstance(parsed, list):
+            items.extend(parsed)
+        else:
+            items.append(parsed)
     parser._expect("DEDENT", "Expected end of block")
     return items
 
@@ -47,7 +49,7 @@ def parse_page_item(
     allow_tabs: bool = False,
     allow_overlays: bool = False,
     allow_pattern_params: bool = False,
-) -> ast.PageItem:
+) -> ast.PageItem | list[ast.PageItem]:
     tok = parser._current()
     if tok.type == "IDENT" and tok.value == "purpose":
         raise Namel3ssError("Purpose must be declared at the page root", line=tok.line, column=tok.column)
@@ -69,6 +71,8 @@ def parse_page_item(
         return views_mod.parse_form_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "TABLE":
         return views_mod.parse_table_item(parser, tok, allow_pattern_params=allow_pattern_params)
+    if tok.type == "IDENT" and tok.value == "show":
+        return views_mod.parse_show_items(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "IDENT" and tok.value == "list":
         return views_mod.parse_list_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "IDENT" and tok.value == "chart":
@@ -105,6 +109,8 @@ def parse_page_item(
         )
     if tok.type == "BUTTON":
         return actions_mod.parse_button_item(parser, tok, allow_pattern_params=allow_pattern_params)
+    if tok.type == "INPUT":
+        return actions_mod.parse_text_input_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "IDENT" and tok.value == "link":
         return actions_mod.parse_link_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "SECTION":

@@ -26,8 +26,23 @@ from namel3ss.ir.lowering.tools import _lower_tools
 from namel3ss.ir.lowering.ui_packs import build_pack_index
 from namel3ss.ir.lowering.ui_patterns import build_pattern_index
 from namel3ss.ir.model.agents import RunAgentsParallelStmt
+from namel3ss.ir.model.flow_steps import FlowInput
+from namel3ss.ir.model.contracts import ContractDecl
 from namel3ss.ir.model.program import Flow, Program
-from namel3ss.ir.model.pages import Page
+from namel3ss.ir.model.pages import (
+    CardGroupItem,
+    CardItem,
+    ChatItem,
+    ColumnItem,
+    ComposeItem,
+    DrawerItem,
+    ModalItem,
+    Page,
+    RowItem,
+    SectionItem,
+    TabsItem,
+    TextInputItem,
+)
 from namel3ss.ir.model.statements import ThemeChange, If, Repeat, RepeatWhile, ForEach, Match, MatchCase, TryCatch, ParallelBlock
 from namel3ss.schema import records as schema
 from namel3ss.ui.settings import normalize_ui_settings
@@ -101,6 +116,7 @@ def lower_program(program: ast.Program) -> Program:
         for page in program.pages
     ]
     _ensure_unique_pages(pages)
+    _validate_text_inputs(pages, flow_irs, flow_contracts)
     theme_runtime_supported = any(_flow_has_theme_change(flow) for flow in flow_irs)
     ui_settings = normalize_ui_settings(getattr(program, "ui_settings", None))
     theme_setting = ui_settings.get("theme", program.app_theme)
@@ -150,6 +166,91 @@ def _ensure_unique_pages(pages: list[Page]) -> None:
                 column=getattr(page, "column", None),
             )
         seen[page.name] = True
+
+
+def _validate_text_inputs(
+    pages: list[Page],
+    flows: list[Flow],
+    flow_contracts: dict[str, ContractDecl],
+) -> None:
+    flow_inputs: dict[str, dict[str, str]] = {flow.name: _flow_input_signature(flow, flow_contracts) for flow in flows}
+    for page in pages:
+        for item in _walk_page_items(page.items):
+            if not isinstance(item, TextInputItem):
+                continue
+            inputs = flow_inputs.get(item.flow_name) or {}
+            if not inputs:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what=f'Text input "{item.name}" targets flow "{item.flow_name}" without input fields.',
+                        why="Text inputs require a flow input field with a text type.",
+                        fix=f'Add an input block with `{item.name} is text` to the flow.',
+                        example=f'flow "{item.flow_name}"\\n  input\\n    {item.name} is text',
+                    ),
+                    line=item.line,
+                    column=item.column,
+                )
+            field_type = inputs.get(item.name)
+            if field_type is None:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what=f'Text input "{item.name}" is not declared on flow "{item.flow_name}".',
+                        why="The input name must match a flow input field.",
+                        fix=f'Add `{item.name} is text` to the flow input block.',
+                        example=f'flow "{item.flow_name}"\\n  input\\n    {item.name} is text',
+                    ),
+                    line=item.line,
+                    column=item.column,
+                )
+            if field_type != "text":
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what=f'Text input "{item.name}" must bind to a text field.',
+                        why=f'Flow "{item.flow_name}" declares "{item.name}" as {field_type}.',
+                        fix=f'Change the flow input type to text for "{item.name}".',
+                        example=f'flow "{item.flow_name}"\\n  input\\n    {item.name} is text',
+                    ),
+                    line=item.line,
+                    column=item.column,
+                )
+
+
+def _flow_input_signature(flow: Flow, flow_contracts: dict[str, ContractDecl]) -> dict[str, str]:
+    if flow.steps:
+        for step in flow.steps:
+            if isinstance(step, FlowInput):
+                return {field.name: field.type_name for field in step.fields}
+    contract = flow_contracts.get(flow.name)
+    if contract is None:
+        return {}
+    return {field.name: field.type_name for field in contract.signature.inputs}
+
+
+def _walk_page_items(items: list[object]) -> list[object]:
+    collected: list[object] = []
+    for item in items:
+        collected.append(item)
+        if isinstance(
+            item,
+            (
+                SectionItem,
+                CardGroupItem,
+                CardItem,
+                RowItem,
+                ColumnItem,
+                ComposeItem,
+                DrawerItem,
+                ModalItem,
+                ChatItem,
+            ),
+        ):
+            collected.extend(_walk_page_items(getattr(item, "children", [])))
+            continue
+        if isinstance(item, TabsItem):
+            for tab in item.tabs:
+                collected.extend(_walk_page_items(tab.children))
+            continue
+    return collected
 
 
 def _normalize_capabilities(items: list[str]) -> tuple[str, ...]:

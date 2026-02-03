@@ -9,10 +9,12 @@ from namel3ss.parser.decl.page_chat import parse_chat_block
 from namel3ss.parser.decl.page_chart import parse_chart_block, parse_chart_header
 from namel3ss.parser.decl.page_common import (
     _is_param_ref,
+    _match_ident_value,
     _parse_boolean_value,
     _parse_param_ref,
     _parse_reference_name_value,
     _parse_state_path_value,
+    _parse_state_path_value_relaxed,
     _parse_string_value,
     _parse_visibility_clause,
 )
@@ -141,8 +143,7 @@ def parse_form_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.F
 
 def parse_table_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.TableItem:
     parser._advance()
-    parser._expect("IS", "Expected 'is' after 'table'")
-    record_name = _parse_reference_name_value(parser, allow_pattern_params=allow_pattern_params, context="record")
+    record_name, source = _parse_table_list_source(parser, allow_pattern_params=allow_pattern_params, label="table")
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     if parser._match("COLON"):
         columns, empty_text, sort, pagination, selection, row_actions = parse_table_block(
@@ -151,6 +152,7 @@ def parse_table_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.
         )
         return ast.TableItem(
             record_name=record_name,
+            source=source,
             columns=columns,
             empty_text=empty_text,
             sort=sort,
@@ -161,13 +163,18 @@ def parse_table_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.
             line=tok.line,
             column=tok.column,
         )
-    return ast.TableItem(record_name=record_name, visibility=visibility, line=tok.line, column=tok.column)
+    return ast.TableItem(
+        record_name=record_name,
+        source=source,
+        visibility=visibility,
+        line=tok.line,
+        column=tok.column,
+    )
 
 
 def parse_list_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.ListItem:
     parser._advance()
-    parser._expect("IS", "Expected 'is' after 'list'")
-    record_name = _parse_reference_name_value(parser, allow_pattern_params=allow_pattern_params, context="record")
+    record_name, source = _parse_table_list_source(parser, allow_pattern_params=allow_pattern_params, label="list")
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     if parser._match("COLON"):
         variant, item, empty_text, selection, actions = parse_list_block(
@@ -176,6 +183,7 @@ def parse_list_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.L
         )
         return ast.ListItem(
             record_name=record_name,
+            source=source,
             variant=variant,
             item=item,
             empty_text=empty_text,
@@ -185,7 +193,65 @@ def parse_list_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.L
             line=tok.line,
             column=tok.column,
         )
-    return ast.ListItem(record_name=record_name, visibility=visibility, line=tok.line, column=tok.column)
+    return ast.ListItem(
+        record_name=record_name,
+        source=source,
+        visibility=visibility,
+        line=tok.line,
+        column=tok.column,
+    )
+
+
+def parse_show_items(parser, tok, *, allow_pattern_params: bool = False) -> list[ast.PageItem]:
+    parser._advance()
+    items: list[ast.PageItem] = []
+    items.append(_parse_show_entry(parser, allow_pattern_params=allow_pattern_params))
+    if parser._match("NEWLINE"):
+        if parser._match("INDENT"):
+            while parser._current().type != "DEDENT":
+                if parser._match("NEWLINE"):
+                    continue
+                items.append(_parse_show_entry(parser, allow_pattern_params=allow_pattern_params))
+            parser._expect("DEDENT", "Expected end of show block")
+    return items
+
+
+def _parse_show_entry(parser, *, allow_pattern_params: bool) -> ast.PageItem:
+    tok = parser._current()
+    if tok.type == "TABLE":
+        return parse_table_item(parser, tok, allow_pattern_params=allow_pattern_params)
+    if tok.type == "IDENT" and tok.value == "list":
+        return parse_list_item(parser, tok, allow_pattern_params=allow_pattern_params)
+    raise Namel3ssError("Show only supports tables and lists", line=tok.line, column=tok.column)
+
+
+def _parse_table_list_source(
+    parser,
+    *,
+    allow_pattern_params: bool,
+    label: str,
+) -> tuple[str | None, ast.StatePath | ast.PatternParamRef | None]:
+    if parser._match("IS"):
+        record_name = _parse_reference_name_value(parser, allow_pattern_params=allow_pattern_params, context="record")
+        return record_name, None
+    tok = parser._current()
+    if tok.type == "IDENT" and tok.value == "from":
+        parser._advance()
+        parser._match("IS")
+        if _match_ident_value(parser, "records") or _match_ident_value(parser, "record"):
+            record_name = _parse_reference_name_value(
+                parser,
+                allow_pattern_params=allow_pattern_params,
+                context="record",
+            )
+            return record_name, None
+        source = _parse_state_path_value_relaxed(parser, allow_pattern_params=allow_pattern_params)
+        return None, source
+    raise Namel3ssError(
+        f"{label.capitalize()} must use is <record> or from state.<path>",
+        line=tok.line,
+        column=tok.column,
+    )
 
 
 def parse_chart_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.ChartItem:

@@ -125,6 +125,53 @@ def parse_button_item(parser, tok, *, allow_pattern_params: bool = False) -> ast
     return ast.ButtonItem(label=label, flow_name=flow_name, visibility=visibility, line=tok.line, column=tok.column)
 
 
+def parse_text_input_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.TextInputItem:
+    parser._advance()
+    type_tok = parser._current()
+    if type_tok.type == "TEXT" or (type_tok.type == "IDENT" and type_tok.value == "text"):
+        parser._advance()
+    else:
+        raise Namel3ssError("Input must declare text", line=type_tok.line, column=type_tok.column)
+    parser._expect("AS", "Expected 'as' after input text")
+    name_tok = parser._expect("IDENT", "Expected input name")
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    parser._expect("NEWLINE", "Expected newline after input header")
+    parser._expect("INDENT", "Expected indented input body")
+    flow_name = None
+    while parser._current().type != "DEDENT":
+        if parser._match("NEWLINE"):
+            continue
+        tok_action = parser._current()
+        if tok_action.type == "IDENT" and tok_action.value == "send":
+            parser._advance()
+            parser._expect("TO", "Expected 'to' after send")
+            parser._expect("FLOW", "Expected 'flow' after send to")
+            if flow_name is not None:
+                raise Namel3ssError("Send to flow is declared more than once", line=tok_action.line, column=tok_action.column)
+            flow_name = _parse_reference_name_value(parser, allow_pattern_params=allow_pattern_params, context="flow")
+            parser._match("NEWLINE")
+            continue
+        raise Namel3ssError(
+            "Input must declare 'send to flow \"<name>\"'",
+            line=tok_action.line,
+            column=tok_action.column,
+        )
+    parser._expect("DEDENT", "Expected end of input body")
+    if flow_name is None:
+        raise Namel3ssError(
+            "Input body must include 'send to flow \"<name>\"'",
+            line=tok.line,
+            column=tok.column,
+        )
+    return ast.TextInputItem(
+        name=name_tok.value,
+        flow_name=flow_name,
+        visibility=visibility,
+        line=tok.line,
+        column=tok.column,
+    )
+
+
 def parse_link_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.LinkItem:
     parser._advance()
     label = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="link label")
@@ -228,7 +275,11 @@ def _parse_card_group_block(parser, parse_page_item, *, allow_pattern_params: bo
         tok = parser._current()
         if tok.type != "CARD":
             raise Namel3ssError("Card groups may only contain cards", line=tok.line, column=tok.column)
-        items.append(parse_page_item(parser, allow_tabs=False, allow_pattern_params=allow_pattern_params))
+        parsed = parse_page_item(parser, allow_tabs=False, allow_pattern_params=allow_pattern_params)
+        if isinstance(parsed, list):
+            items.extend(parsed)
+        else:
+            items.append(parsed)
     parser._expect("DEDENT", "Expected end of card_group body")
     return items
 
@@ -260,7 +311,11 @@ def _parse_card_block(
             parser._advance()
             actions = _parse_card_actions_block(parser, allow_pattern_params=allow_pattern_params)
             continue
-        children.append(parse_page_item(parser, allow_tabs=False, allow_pattern_params=allow_pattern_params))
+        parsed = parse_page_item(parser, allow_tabs=False, allow_pattern_params=allow_pattern_params)
+        if isinstance(parsed, list):
+            children.extend(parsed)
+        else:
+            children.append(parsed)
     parser._expect("DEDENT", "Expected end of card body")
     return children, stat, actions
 

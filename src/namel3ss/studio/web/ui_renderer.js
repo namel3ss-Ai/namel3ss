@@ -422,6 +422,40 @@ let renderUI = (manifest) => {
         p.textContent = value;
         wrapper.appendChild(p);
       }
+    } else if (el.type === "input") {
+      const form = document.createElement("form");
+      form.className = "ui-element ui-input";
+      const input = document.createElement("input");
+      input.type = "text";
+      const labelText = el.name ? String(el.name) : "Input";
+      input.placeholder = labelText;
+      input.setAttribute("aria-label", labelText);
+      const button = document.createElement("button");
+      button.type = "submit";
+      button.className = "btn small";
+      button.textContent = "Send";
+      form.appendChild(input);
+      form.appendChild(button);
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        const value = input.value || "";
+        if (!value) return;
+        const action = el.action || {};
+        const actionId = el.action_id || el.id;
+        const inputField = action.input_field || el.name || "input";
+        await handleAction(
+          {
+            id: actionId,
+            type: action.type || "call_flow",
+            flow: action.flow,
+            target: action.target,
+          },
+          { [inputField]: value },
+          button
+        );
+        input.value = "";
+      };
+      return form;
     } else if (el.type === "button") {
       const actions = document.createElement("div");
       actions.className = "ui-buttons";

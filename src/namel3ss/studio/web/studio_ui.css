@@ -298,6 +298,16 @@
   border: 1px solid #eaeaea;
   border-radius: 8px;
 }
+.ui-input {
+  display: flex;
+  gap: 8px;
+}
+.ui-input input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #eaeaea;
+  border-radius: 8px;
+}
 .ui-chat-thinking {
   font-size: 12px;
   color: #555;

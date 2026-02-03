@@ -14,6 +14,10 @@ def _table_id(page_slug: str, record_name: str) -> str:
     return f"page.{page_slug}.table.{_slugify(record_name)}"
 
 
+def _table_state_id(page_slug: str, source_label: str) -> str:
+    return f"page.{page_slug}.table.{_slugify(source_label)}"
+
+
 def _table_row_action_id(element_id: str, label: str) -> str:
     return f"{element_id}.row_action.{_slugify(label)}"
 
@@ -41,6 +45,21 @@ def _resolve_table_columns(
         if field is None:
             continue
         entry = {"name": field.name, "type": field.type_name, "label": label_from_identifier(field.name)}
+        label = labels.get(name)
+        if label:
+            entry["label"] = label
+        columns.append(entry)
+    return columns
+
+
+def _resolve_state_table_columns(
+    directives: list[ir.TableColumnDirective],
+) -> list[dict]:
+    include = [d.name for d in directives if d.kind == "include"]
+    labels = {d.name: d.label for d in directives if d.kind == "label" and d.label}
+    columns: list[dict] = []
+    for name in include:
+        entry = {"name": name, "type": "text", "label": label_from_identifier(name)}
         label = labels.get(name)
         if label:
             entry["label"] = label
@@ -166,9 +185,11 @@ def _slugify(text: str) -> str:
 
 __all__ = [
     "_table_id",
+    "_table_state_id",
     "_table_row_action_id",
     "_table_id_field",
     "_resolve_table_columns",
+    "_resolve_state_table_columns",
     "_apply_table_sort",
     "_apply_table_pagination",
     "_build_row_actions",

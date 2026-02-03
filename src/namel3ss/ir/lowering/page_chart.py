@@ -64,10 +64,14 @@ def _lower_chart_item(
 
 def _validate_chart_pairing(items: list[ir.PageItem], page_name: str) -> None:
     record_sources: set[str] = set()
+    state_sources: set[tuple[str, ...]] = set()
     charts: list[ir.ChartItem] = []
     for item in _walk_items(items):
         if isinstance(item, (ir.TableItem, ir.ListItem)):
-            record_sources.add(item.record_name)
+            if item.record_name:
+                record_sources.add(item.record_name)
+            elif item.source:
+                state_sources.add(tuple(item.source.path))
         if isinstance(item, ir.ChartItem):
             charts.append(item)
     if not charts:
@@ -83,7 +87,7 @@ def _validate_chart_pairing(items: list[ir.PageItem], page_name: str) -> None:
             continue
         if chart.source is None:
             continue
-        if not _state_chart_paired(chart.source, record_sources):
+        if not _state_chart_paired(chart.source, record_sources, state_sources):
             source_label = f"state.{'.'.join(chart.source.path)}"
             raise Namel3ssError(
                 f"Chart from {source_label} must be paired with a table or list using the same data source",
@@ -92,7 +96,13 @@ def _validate_chart_pairing(items: list[ir.PageItem], page_name: str) -> None:
             )
 
 
-def _state_chart_paired(source: ir.StatePath, record_sources: set[str]) -> bool:
+def _state_chart_paired(
+    source: ir.StatePath,
+    record_sources: set[str],
+    state_sources: set[tuple[str, ...]],
+) -> bool:
+    if tuple(source.path) in state_sources:
+        return True
     for record_name in record_sources:
         if record_state_path(record_name) == source.path:
             return True

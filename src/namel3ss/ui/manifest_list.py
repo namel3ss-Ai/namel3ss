@@ -12,6 +12,10 @@ def _list_id(page_slug: str, record_name: str) -> str:
     return f"page.{page_slug}.list.{_slugify(record_name)}"
 
 
+def _list_state_id(page_slug: str, source_label: str) -> str:
+    return f"page.{page_slug}.list.{_slugify(source_label)}"
+
+
 def _list_action_id(element_id: str, label: str) -> str:
     return f"{element_id}.action.{_slugify(label)}"
 
@@ -86,6 +90,7 @@ def _slugify(text: str) -> str:
 
 __all__ = [
     "_list_id",
+    "_list_state_id",
     "_list_action_id",
     "_list_id_field",
     "_list_item_mapping",

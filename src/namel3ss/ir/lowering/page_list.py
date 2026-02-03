@@ -52,6 +52,31 @@ def _lower_list_item_mapping(
     )
 
 
+def _lower_state_list_item_mapping(
+    mapping: ast.ListItemMapping | None,
+    *,
+    variant: str,
+    line: int,
+    column: int,
+) -> ListItemMapping:
+    if mapping is None:
+        raise Namel3ssError("State lists require item mapping", line=line, column=column)
+    if mapping.icon and variant != "icon":
+        raise Namel3ssError(
+            "List icon requires variant 'icon'",
+            line=mapping.line,
+            column=mapping.column,
+        )
+    return ListItemMapping(
+        primary=mapping.primary,
+        secondary=mapping.secondary,
+        meta=mapping.meta,
+        icon=mapping.icon,
+        line=mapping.line,
+        column=mapping.column,
+    )
+
+
 def _default_list_primary(record: schema.RecordSchema) -> str:
     text_types = {"text", "string", "str"}
     required_text = [
@@ -113,6 +138,7 @@ def _lower_list_actions(
 
 __all__ = [
     "_lower_list_item_mapping",
+    "_lower_state_list_item_mapping",
     "_lower_list_actions",
     "_default_list_primary",
     "_list_id_field",
