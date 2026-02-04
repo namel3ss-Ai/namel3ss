@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.ingestion.keywords import normalize_keywords
 
 
 def store_report(state: dict, *, upload_id: str, report: dict) -> None:
@@ -42,12 +43,14 @@ def update_index(
         page_number = _page_number_value(chunk.get("page_number"))
         chunk_index = _chunk_index_value(chunk.get("chunk_index"))
         phase = _phase_value(chunk.get("ingestion_phase"))
+        keywords = _keywords_value(chunk.get("keywords"))
         if (
             document_id is None
             or source_name is None
             or page_number is None
             or chunk_index is None
             or phase is None
+            or keywords is None
         ):
             raise Namel3ssError(_chunk_provenance_message())
         entry = {
@@ -62,6 +65,7 @@ def update_index(
             "chars": chunk.get("chars"),
             "low_quality": bool(low_quality),
             "ingestion_phase": phase,
+            "keywords": keywords,
         }
         filtered.append(entry)
     index["chunks"] = filtered
@@ -119,7 +123,10 @@ def _index_chunks_shape_message() -> str:
 def _chunk_provenance_message() -> str:
     return build_guidance_message(
         what="Indexed chunks are missing page provenance.",
-        why="Ingestion must include document_id, source_name, page_number, chunk_index, and ingestion_phase for every chunk.",
+        why=(
+            "Ingestion must include document_id, source_name, page_number, chunk_index, "
+            "ingestion_phase, and keywords for every chunk."
+        ),
         fix="Re-run ingestion to rebuild chunks with provenance and phase metadata.",
         example='{"upload_id":"<checksum>"}',
     )
@@ -156,6 +163,10 @@ def _phase_value(value: object) -> str | None:
     if phase in {"quick", "deep"}:
         return phase
     return None
+
+
+def _keywords_value(value: object) -> list[str] | None:
+    return normalize_keywords(value)
 
 
 __all__ = ["store_report", "update_index", "drop_index"]

@@ -141,7 +141,7 @@ def _run_retrieval(ctx, definition, payload: dict) -> PipelineRunResult:
     steps.append(_build_step(definition, 3, retrieve_summary, status="ok"))
 
     rank_summary = {
-        "ordering": "phase_page_chunk",
+        "ordering": "phase_keyword_overlap_page_chunk",
         "tie_break": "index_order",
     }
     steps.append(_build_step(definition, 4, rank_summary, status="ok"))

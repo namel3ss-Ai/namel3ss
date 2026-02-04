@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Callable
 
 from namel3ss.ingestion.chunk import chunk_pages
+from namel3ss.ingestion.keywords import extract_keywords
 from namel3ss.ingestion.store import store_report, update_index
 from namel3ss.secrets import collect_secret_values
 
@@ -30,6 +31,7 @@ def chunk_with_phase(
     for chunk in chunks:
         chunk["document_id"] = document_id
         chunk["source_name"] = source_name
+        chunk["keywords"] = extract_keywords(str(chunk.get("text") or ""))
         if phase:
             chunk["ingestion_phase"] = phase
     return chunks

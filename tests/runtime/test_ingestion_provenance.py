@@ -9,6 +9,7 @@ import pytest
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ingestion.api import run_ingestion
+from namel3ss.ingestion.keywords import extract_keywords
 from namel3ss.runtime.backend.upload_store import store_upload
 
 
@@ -85,6 +86,7 @@ def test_pdf_page_provenance_multi_page(tmp_path: Path) -> None:
             "document_id": metadata["checksum"],
             "source_name": "sample.pdf",
             "ingestion_phase": "deep",
+            "keywords": extract_keywords(page_one),
         },
         {
             "chunk_index": 1,
@@ -94,6 +96,7 @@ def test_pdf_page_provenance_multi_page(tmp_path: Path) -> None:
             "document_id": metadata["checksum"],
             "source_name": "sample.pdf",
             "ingestion_phase": "deep",
+            "keywords": extract_keywords(page_two),
         },
     ]
     assert result["chunks"] == expected_chunks
@@ -115,6 +118,7 @@ def test_pdf_page_provenance_multi_page(tmp_path: Path) -> None:
             "chars": len(page_one),
             "low_quality": False,
             "ingestion_phase": "deep",
+            "keywords": extract_keywords(page_one),
         },
         {
             "upload_id": metadata["checksum"],
@@ -128,6 +132,7 @@ def test_pdf_page_provenance_multi_page(tmp_path: Path) -> None:
             "chars": len(page_two),
             "low_quality": False,
             "ingestion_phase": "deep",
+            "keywords": extract_keywords(page_two),
         },
     ]
 
@@ -218,5 +223,6 @@ def test_text_ingestion_single_page_provenance_is_compatible(tmp_path: Path) -> 
             "document_id": metadata["checksum"],
             "source_name": "notes.txt",
             "ingestion_phase": "deep",
+            "keywords": extract_keywords(text),
         }
     ]

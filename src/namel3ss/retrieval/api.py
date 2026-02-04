@@ -4,6 +4,7 @@ from decimal import Decimal
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.ingestion.keywords import extract_keywords, keyword_matches, normalize_keywords
 from namel3ss.ingestion.normalize import sanitize_text
 from namel3ss.ingestion.policy import (
     ACTION_RETRIEVAL_INCLUDE_WARN,
@@ -29,6 +30,7 @@ def run_retrieval(
     if not isinstance(state, dict):
         raise Namel3ssError(_state_type_message())
     query_text = _normalize_query(query)
+    query_keywords = extract_keywords(query_text)
     tier_request = _normalize_tier(tier)
     entries = _read_index_entries(state)
     status_map = _read_ingestion_status(state)
@@ -40,8 +42,6 @@ def run_retrieval(
             continue
         text = entry.get("text")
         text_value = text if isinstance(text, str) else ""
-        if query_text and query_text not in text_value.lower():
-            continue
         upload_id = str(entry.get("upload_id") or "")
         quality = _quality_for_upload(status_map, upload_id)
         if quality == "block":
@@ -59,6 +59,15 @@ def run_retrieval(
         source_name = _require_string_field(entry, "source_name")
         page_number = _require_page_number(entry)
         ingestion_phase = _require_ingestion_phase(entry)
+        keywords, keyword_source = _require_keywords(entry, clean_text)
+        matches = keyword_matches(query_keywords, keywords)
+        overlap = len(matches)
+        if query_text:
+            if query_keywords:
+                if overlap == 0 and query_text not in text_value.lower():
+                    continue
+            elif query_text not in text_value.lower():
+                continue
         result = {
             "upload_id": upload_id,
             "chunk_id": str(chunk_id or f"{upload_id}:{chunk_index}"),
@@ -70,6 +79,10 @@ def run_retrieval(
             "page_number": page_number,
             "chunk_index": chunk_index,
             "ingestion_phase": ingestion_phase,
+            "keywords": keywords,
+            "keyword_source": keyword_source,
+            "keyword_matches": matches,
+            "keyword_overlap": overlap,
         }
         if quality == "pass":
             pass_entries.append((result, index))
@@ -107,6 +120,7 @@ def run_retrieval(
         results = results[:limit]
     return {
         "query": query_text,
+        "query_keywords": query_keywords,
         "preferred_quality": preferred,
         "included_warn": included_warn,
         "excluded_blocked": blocked,
@@ -233,7 +247,7 @@ def _tier_message(value: str) -> str:
 def _missing_field_message(field: str) -> str:
     return build_guidance_message(
         what=f"Retrieval chunks are missing {field}.",
-        why="Retrieval requires page-level provenance and phase metadata for deterministic ordering.",
+        why="Retrieval requires page-level provenance, phase metadata, and keywords for deterministic ranking.",
         fix="Re-run ingestion to rebuild the index with provenance.",
         example='{"query":"invoice"}',
     )
@@ -244,6 +258,15 @@ def _invalid_phase_message(value: str) -> str:
         what=f"Retrieval chunk has invalid ingestion_phase '{value}'.",
         why="Ingestion phases must be quick or deep.",
         fix="Re-run ingestion to rebuild the index with phase metadata.",
+        example='{"query":"invoice"}',
+    )
+
+
+def _invalid_keywords_message() -> str:
+    return build_guidance_message(
+        what="Retrieval chunk has invalid keywords.",
+        why="Keywords must be a list of non-empty text values.",
+        fix="Re-run ingestion to rebuild the index with keywords.",
         example='{"query":"invoice"}',
     )
 
@@ -279,6 +302,17 @@ def _require_ingestion_phase(entry: dict) -> str:
     raise Namel3ssError(_invalid_phase_message(phase))
 
 
+def _require_keywords(entry: dict, text_value: str) -> tuple[list[str], str]:
+    if "keywords" not in entry:
+        if isinstance(text_value, str) and text_value:
+            return extract_keywords(text_value), "derived"
+        raise Namel3ssError(_missing_field_message("keywords"))
+    normalized = normalize_keywords(entry.get("keywords"))
+    if normalized is None:
+        raise Namel3ssError(_invalid_keywords_message())
+    return normalized, "stored"
+
+
 def _select_tier(
     entries: list[tuple[dict, int]],
     tier_request: str,
@@ -311,13 +345,14 @@ def _order_entries(entries: list[tuple[dict, int]]) -> list[dict]:
     return [entry for entry, _ in ordered]
 
 
-def _entry_sort_key(item: tuple[dict, int]) -> tuple[int, int, int, int]:
+def _entry_sort_key(item: tuple[dict, int]) -> tuple[int, int, int, int, int]:
     entry, order = item
     phase = entry.get("ingestion_phase")
     phase_rank = 0 if phase == "deep" else 1
+    overlap = int(entry.get("keyword_overlap") or 0)
     page_number = _coerce_int(entry.get("page_number")) or 0
     chunk_index = _coerce_int(entry.get("chunk_index")) or 0
-    return (phase_rank, page_number, chunk_index, order)
+    return (phase_rank, -overlap, page_number, chunk_index, order)
 
 
 def _coerce_int(value: object) -> int | None:
