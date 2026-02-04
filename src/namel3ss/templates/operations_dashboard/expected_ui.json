@@ -265,6 +265,10 @@
                           },
                           "record": "Incident",
                           "rows": [],
+                          "empty_state": {
+                            "title": "No rows",
+                            "text": "There are no rows to display."
+                          },
                           "sort": {
                             "by": "summary",
                             "order": "asc"

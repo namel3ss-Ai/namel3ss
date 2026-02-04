@@ -44,6 +44,10 @@
                           },
                           "column": 11,
                           "element_id": "page.onboarding.list.2.0.0.0.0",
+                          "empty_state": {
+                            "text": "No tasks yet.",
+                            "title": "No items"
+                          },
                           "empty_text": "No tasks yet.",
                           "id": "page.onboarding.list.onboardingtask",
                           "index": 0,

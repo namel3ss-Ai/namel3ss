@@ -36,6 +36,25 @@ from namel3ss.validation import ValidationMode
 
 from .base import _base_element, _require_record, _stable_rows_by_id, _view_representation
 
+# Default empty-state content for list/table when app does not specify empty_text.
+# Keeps manifest deterministic and ensures empty collections render an empty state.
+_DEFAULT_EMPTY_STATE_LIST = {"title": "No items", "text": "There are no items to display."}
+_DEFAULT_EMPTY_STATE_TABLE = {"title": "No rows", "text": "There are no rows to display."}
+
+
+def _empty_state_for_list(empty_text: str | None) -> dict:
+    """Return deterministic empty_state dict for a list element."""
+    if empty_text:
+        return {"title": "No items", "text": empty_text}
+    return dict(_DEFAULT_EMPTY_STATE_LIST)
+
+
+def _empty_state_for_table(empty_text: str | None) -> dict:
+    """Return deterministic empty_state dict for a table element."""
+    if empty_text:
+        return {"title": "No rows", "text": empty_text}
+    return dict(_DEFAULT_EMPTY_STATE_TABLE)
+
 
 def build_view_item(
     item: ir.ViewItem,
@@ -69,6 +88,7 @@ def build_view_item(
             **base,
         }
         element["id_field"] = _table_id_field(record)
+        element["empty_state"] = _empty_state_for_table(None)
         return _attach_origin(element, item), {}
     rows = []
     if store is not None:
@@ -84,6 +104,7 @@ def build_view_item(
         "variant": "two_line",
         "item": {"primary": primary},
         "rows": rows,
+        "empty_state": _empty_state_for_list(None),
         **base,
     }
     element["id_field"] = _list_id_field_ir(record)
@@ -230,6 +251,7 @@ def build_table_item(
         "source": source_label,
         "columns": columns,
         "rows": rows,
+        "empty_state": _empty_state_for_table(item.empty_text),
         **base,
     }
     if item.empty_text:
@@ -297,6 +319,7 @@ def build_list_item(
         "variant": item.variant,
         "item": _list_item_mapping(item.item),
         "rows": rows,
+        "empty_state": _empty_state_for_list(item.empty_text),
         **base,
     }
     if item.empty_text:
