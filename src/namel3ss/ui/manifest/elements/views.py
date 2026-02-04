@@ -180,6 +180,7 @@ def build_table_item(
             "record": record.name,
             "columns": columns,
             "rows": rows,
+            "empty_state": _empty_state_for_table(item.empty_text),
             **base,
         }
         if item.empty_text:
@@ -254,6 +255,7 @@ def build_list_item(
             "variant": item.variant,
             "item": _list_item_mapping(item.item),
             "rows": rows,
+            "empty_state": _empty_state_for_list(item.empty_text),
             **base,
         }
         if item.empty_text:
