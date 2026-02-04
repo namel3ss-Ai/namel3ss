@@ -2,7 +2,14 @@ from __future__ import annotations
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
-from namel3ss.parser.decl.page_common import _parse_reference_name_value, _parse_string_value, _parse_visibility_clause
+from namel3ss.parser.decl.page_common import (
+    _is_visibility_rule_start,
+    _parse_reference_name_value,
+    _parse_string_value,
+    _parse_visibility_clause,
+    _parse_visibility_rule_line,
+    _validate_visibility_combo,
+)
 
 
 def parse_number_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.NumberItem:
@@ -10,11 +17,19 @@ def parse_number_item(parser, tok, *, allow_pattern_params: bool = False) -> ast
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     parser._expect("COLON", "Expected ':' after number")
     entries: list[ast.NumberEntry] = []
+    visibility_rule: ast.VisibilityRule | None = None
     parser._expect("NEWLINE", "Expected newline after number")
     if not parser._match("INDENT"):
         raise Namel3ssError("Number block has no entries", line=tok.line, column=tok.column)
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
+            continue
+        if _is_visibility_rule_start(parser):
+            entry_tok = parser._current()
+            if visibility_rule is not None:
+                raise Namel3ssError("Visibility blocks may only declare one only-when rule.", line=entry_tok.line, column=entry_tok.column)
+            visibility_rule = _parse_visibility_rule_line(parser, allow_pattern_params=allow_pattern_params)
+            parser._match("NEWLINE")
             continue
         entry_tok = parser._current()
         if entry_tok.type == "IDENT" and entry_tok.value == "count":
@@ -56,7 +71,14 @@ def parse_number_item(parser, tok, *, allow_pattern_params: bool = False) -> ast
     parser._expect("DEDENT", "Expected end of number block")
     if not entries:
         raise Namel3ssError("Number block has no entries", line=tok.line, column=tok.column)
-    return ast.NumberItem(entries=entries, visibility=visibility, line=tok.line, column=tok.column)
+    _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
+    return ast.NumberItem(
+        entries=entries,
+        visibility=visibility,
+        visibility_rule=visibility_rule,
+        line=tok.line,
+        column=tok.column,
+    )
 
 
 __all__ = ["parse_number_item"]

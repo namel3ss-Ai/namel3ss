@@ -28,6 +28,8 @@ def derive_required_capabilities(program: Program) -> tuple[str, ...]:
         required.add("scheduling")
     if "uploads" in program.capabilities:
         required.add("uploads")
+    if "embedding" in program.capabilities:
+        required.add("embedding")
     for tool in program.tools.values():
         kind = getattr(tool, "kind", None)
         if kind == "http":

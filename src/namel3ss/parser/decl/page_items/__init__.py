@@ -4,6 +4,7 @@ from typing import List
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.parser.decl.page_common import _is_visibility_rule_start, _parse_visibility_rule_line
 
 from . import actions as actions_mod
 from . import media as media_mod
@@ -19,26 +20,40 @@ def _parse_block(
     allow_tabs: bool = False,
     allow_overlays: bool = False,
     allow_pattern_params: bool = False,
-) -> List[ast.PageItem]:
+) -> tuple[List[ast.PageItem], ast.VisibilityRule | None]:
     parser._expect("NEWLINE", "Expected newline after header")
     parser._expect("INDENT", "Expected indented block")
     items: List[ast.PageItem] = []
+    visibility_rule: ast.VisibilityRule | None = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
+            continue
+        if _is_visibility_rule_start(parser):
+            if visibility_rule is not None:
+                tok = parser._current()
+                raise Namel3ssError(
+                    "Visibility blocks may only declare one only-when rule.",
+                    line=tok.line,
+                    column=tok.column,
+                )
+            visibility_rule = _parse_visibility_rule_line(parser, allow_pattern_params=allow_pattern_params)
+            parser._match("NEWLINE")
             continue
         if columns_only and parser._current().type != "COLUMN":
             tok = parser._current()
             raise Namel3ssError("Rows may only contain columns", line=tok.line, column=tok.column)
-        items.append(
-            parse_page_item(
-                parser,
-                allow_tabs=allow_tabs,
-                allow_overlays=allow_overlays,
-                allow_pattern_params=allow_pattern_params,
-            )
+        parsed = parse_page_item(
+            parser,
+            allow_tabs=allow_tabs,
+            allow_overlays=allow_overlays,
+            allow_pattern_params=allow_pattern_params,
         )
+        if isinstance(parsed, list):
+            items.extend(parsed)
+        else:
+            items.append(parsed)
     parser._expect("DEDENT", "Expected end of block")
-    return items
+    return items, visibility_rule
 
 
 def parse_page_item(
@@ -47,7 +62,7 @@ def parse_page_item(
     allow_tabs: bool = False,
     allow_overlays: bool = False,
     allow_pattern_params: bool = False,
-) -> ast.PageItem:
+) -> ast.PageItem | list[ast.PageItem]:
     tok = parser._current()
     if tok.type == "IDENT" and tok.value == "purpose":
         raise Namel3ssError("Purpose must be declared at the page root", line=tok.line, column=tok.column)
@@ -69,6 +84,8 @@ def parse_page_item(
         return views_mod.parse_form_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "TABLE":
         return views_mod.parse_table_item(parser, tok, allow_pattern_params=allow_pattern_params)
+    if tok.type == "IDENT" and tok.value == "show":
+        return views_mod.parse_show_items(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "IDENT" and tok.value == "list":
         return views_mod.parse_list_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "IDENT" and tok.value == "chart":
@@ -105,6 +122,8 @@ def parse_page_item(
         )
     if tok.type == "BUTTON":
         return actions_mod.parse_button_item(parser, tok, allow_pattern_params=allow_pattern_params)
+    if tok.type == "INPUT":
+        return actions_mod.parse_text_input_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "IDENT" and tok.value == "link":
         return actions_mod.parse_link_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "SECTION":

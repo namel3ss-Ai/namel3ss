@@ -7,11 +7,18 @@ from namel3ss.ir import nodes as ir
 from namel3ss.schema import records as schema
 from namel3ss.ui.fields import label_from_identifier
 from namel3ss.utils.numbers import is_number, to_decimal
+from namel3ss.ui.manifest.action_availability import evaluate_action_availability
+from namel3ss.ui.manifest.state_defaults import StateContext
 from namel3ss.ui.manifest_overlay import _drawer_id, _modal_id
+from namel3ss.validation import ValidationMode
 
 
 def _table_id(page_slug: str, record_name: str) -> str:
     return f"page.{page_slug}.table.{_slugify(record_name)}"
+
+
+def _table_state_id(page_slug: str, source_label: str) -> str:
+    return f"page.{page_slug}.table.{_slugify(source_label)}"
 
 
 def _table_row_action_id(element_id: str, label: str) -> str:
@@ -41,6 +48,21 @@ def _resolve_table_columns(
         if field is None:
             continue
         entry = {"name": field.name, "type": field.type_name, "label": label_from_identifier(field.name)}
+        label = labels.get(name)
+        if label:
+            entry["label"] = label
+        columns.append(entry)
+    return columns
+
+
+def _resolve_state_table_columns(
+    directives: list[ir.TableColumnDirective],
+) -> list[dict]:
+    include = [d.name for d in directives if d.kind == "include"]
+    labels = {d.name: d.label for d in directives if d.kind == "label" and d.label}
+    columns: list[dict] = []
+    for name in include:
+        entry = {"name": name, "type": "text", "label": label_from_identifier(name)}
         label = labels.get(name)
         if label:
             entry["label"] = label
@@ -114,6 +136,9 @@ def _build_row_actions(
     element_id: str,
     page_slug: str,
     actions: list[ir.TableRowAction] | None,
+    state_ctx: StateContext,
+    mode: ValidationMode,
+    warnings: list | None,
 ) -> tuple[list[dict], Dict[str, dict]]:
     if not actions:
         return [], {}
@@ -129,22 +154,48 @@ def _build_row_actions(
                 column=action.column,
             )
         seen.add(action_id)
+        enabled, availability = evaluate_action_availability(
+            getattr(action, "availability_rule", None),
+            state_ctx,
+            mode,
+            warnings,
+            line=action.line,
+            column=action.column,
+        )
         if action.kind == "call_flow":
             entry = {"id": action_id, "type": "call_flow", "flow": action.flow_name}
+            if availability is not None:
+                entry["enabled"] = enabled
+                entry["availability"] = availability
             action_map[action_id] = entry
-            entries.append({"id": action_id, "label": action.label, "flow": action.flow_name})
+            element_entry = {"id": action_id, "label": action.label, "flow": action.flow_name}
+            if availability is not None:
+                element_entry["enabled"] = enabled
+            entries.append(element_entry)
             continue
         if action.kind in {"open_modal", "close_modal"}:
             target = _modal_id(page_slug, action.target or "")
             entry = {"id": action_id, "type": action.kind, "target": target}
+            if availability is not None:
+                entry["enabled"] = enabled
+                entry["availability"] = availability
             action_map[action_id] = entry
-            entries.append({"id": action_id, "label": action.label, "type": action.kind, "target": target})
+            element_entry = {"id": action_id, "label": action.label, "type": action.kind, "target": target}
+            if availability is not None:
+                element_entry["enabled"] = enabled
+            entries.append(element_entry)
             continue
         if action.kind in {"open_drawer", "close_drawer"}:
             target = _drawer_id(page_slug, action.target or "")
             entry = {"id": action_id, "type": action.kind, "target": target}
+            if availability is not None:
+                entry["enabled"] = enabled
+                entry["availability"] = availability
             action_map[action_id] = entry
-            entries.append({"id": action_id, "label": action.label, "type": action.kind, "target": target})
+            element_entry = {"id": action_id, "label": action.label, "type": action.kind, "target": target}
+            if availability is not None:
+                element_entry["enabled"] = enabled
+            entries.append(element_entry)
             continue
         raise Namel3ssError(
             f"Row action '{action.label}' is not supported",
@@ -166,9 +217,11 @@ def _slugify(text: str) -> str:
 
 __all__ = [
     "_table_id",
+    "_table_state_id",
     "_table_row_action_id",
     "_table_id_field",
     "_resolve_table_columns",
+    "_resolve_state_table_columns",
     "_apply_table_sort",
     "_apply_table_pagination",
     "_build_row_actions",

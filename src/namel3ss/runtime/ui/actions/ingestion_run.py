@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from typing import Optional
+from types import SimpleNamespace
 
 from namel3ss.config.model import AppConfig
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
-from namel3ss.ingestion.api import run_ingestion
+from namel3ss.ingestion.api import run_ingestion_progressive
 from namel3ss.ingestion.policy import (
     ACTION_INGESTION_OVERRIDE,
     ACTION_INGESTION_RUN,
@@ -16,6 +17,7 @@ from namel3ss.ingestion.policy import (
 )
 from namel3ss.errors.payload import build_error_from_exception
 from namel3ss.production_contract import build_run_payload
+from namel3ss.runtime.backend.job_queue import run_job_queue
 from namel3ss.runtime.run_pipeline import finalize_run_payload
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.ui.actions.validate import ensure_json_serializable
@@ -78,16 +80,24 @@ def handle_ingestion_run_action(
                 secret_values=secret_values,
                 error=policy_error(ACTION_INGESTION_OVERRIDE, override, mode=mode_value),
             )
-    result = run_ingestion(
+    job_traces: list[dict] = []
+    job_ctx = _build_job_context(program_ir, state, job_traces, config=config)
+    result = run_ingestion_progressive(
         upload_id=str(upload_id) if isinstance(upload_id, str) else "",
         mode=str(mode) if isinstance(mode, str) else None,
         state=state,
         project_root=getattr(program_ir, "project_root", None),
         app_path=getattr(program_ir, "app_path", None),
         secret_values=secret_values,
+        job_ctx=job_ctx,
     )
     report = result["report"]
     traces.extend(_build_traces(report))
+    run_job_queue(job_ctx)
+    if job_traces:
+        traces.extend(job_traces)
+    if isinstance(upload_id, str):
+        report = state.get("ingestion", {}).get(upload_id, report)
     response = build_run_payload(
         ok=True,
         flow_name=None,
@@ -116,21 +126,67 @@ def _build_traces(report: dict) -> list[dict]:
     method_used = report.get("method_used")
     status = report.get("status")
     reasons = report.get("reasons")
+    provenance = report.get("provenance") if isinstance(report.get("provenance"), dict) else {}
+    source_name = provenance.get("source_name") if isinstance(provenance, dict) else None
     traces = [
         {
             "type": TraceEventType.INGESTION_STARTED,
             "upload_id": upload_id,
             "method": method_used,
             "detected": detected,
+            "source_name": source_name,
         },
+    ]
+    traces.extend(_progress_traces(report))
+    traces.append(
         {
             "type": TraceEventType.INGESTION_QUALITY_GATE,
             "upload_id": upload_id,
             "status": status,
             "reasons": reasons,
-        },
-    ]
+            "source_name": source_name,
+        }
+    )
     return traces
+
+
+def _progress_traces(report: dict) -> list[dict]:
+    events = report.get("progress")
+    if not isinstance(events, list):
+        return []
+    traces: list[dict] = []
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        trace = {
+            "type": TraceEventType.INGESTION_PROGRESS,
+            "title": event.get("title"),
+            "upload_id": event.get("upload_id"),
+            "source_name": event.get("source_name"),
+            "ingestion_phase": event.get("phase"),
+        }
+        if "status" in event:
+            trace["status"] = event.get("status")
+        traces.append(trace)
+    return traces
+
+
+def _build_job_context(program_ir, state: dict, traces: list[dict], *, config: AppConfig | None) -> SimpleNamespace:
+    return SimpleNamespace(
+        job_queue=[],
+        job_enqueue_counter=0,
+        traces=traces,
+        execution_steps=[],
+        execution_step_counter=0,
+        jobs={},
+        job_order=[],
+        observability=None,
+        state=state,
+        config=config,
+        capabilities=getattr(program_ir, "capabilities", ()) or (),
+        project_root=getattr(program_ir, "project_root", None),
+        app_path=getattr(program_ir, "app_path", None),
+    )
 
 
 def _require_uploads_capability(program_ir) -> None:

@@ -45,6 +45,13 @@ page "home":
       order is asc
 '''
 
+STATE_SOURCE = '''page "home":
+  table from state results:
+    columns:
+      include name
+      include score
+      label score is "Score"
+'''
 
 def _load_record(program, name: str):
     return next(record for record in program.records if record.name == name)
@@ -104,23 +111,26 @@ def test_table_sort_missing_value_errors():
     assert "missing" in str(exc.value).lower()
 
 
-def test_table_manifest_empty_state_always_present():
-    """Empty collections get a deterministic empty_state so the UI can render an empty state."""
-    program = lower_ir_program(SORT_SOURCE)
-    manifest = build_manifest(program, state={}, store=MemoryStore())
+def test_state_table_manifest_preserves_order():
+    program = lower_ir_program(STATE_SOURCE)
+    state = {
+        "results": [
+            {"name": "First", "score": 10},
+            {"name": "Second", "score": 5},
+        ]
+    }
+    manifest = build_manifest(program, state=state, store=MemoryStore())
     table = next(el for el in manifest["pages"][0]["elements"] if el["type"] == "table")
-    assert "empty_state" in table
-    assert table["empty_state"]["title"] == "No rows"
-    assert table["empty_state"]["text"] == "There are no rows to display."
-    assert len(table["rows"]) == 0
-    assert manifest == build_manifest(program, state={}, store=MemoryStore())
+    assert table["source"] == "state.results"
+    assert [col["name"] for col in table["columns"]] == ["name", "score"]
+    assert table["columns"][1]["label"] == "Score"
+    assert table.get("record") is None
+    assert [row["name"] for row in table["rows"]] == ["First", "Second"]
+    assert table.get("row_actions") is None
 
 
-def test_table_manifest_empty_state_uses_app_empty_text_when_set():
-    """When the app sets empty_text, empty_state.text uses it."""
-    program = lower_ir_program(CONFIG_SOURCE)
-    manifest = build_manifest(program, state={}, store=MemoryStore())
-    table = next(el for el in manifest["pages"][0]["elements"] if el["type"] == "table")
-    assert table["empty_state"]["title"] == "No rows"
-    assert table["empty_state"]["text"] == "No orders yet."
-    assert table["empty_text"] == "No orders yet."
+def test_state_table_requires_list_source():
+    program = lower_ir_program(STATE_SOURCE)
+    with pytest.raises(Namel3ssError) as exc:
+        build_manifest(program, state={"results": {"name": "Bad"}}, store=MemoryStore())
+    assert "table source must be a list" in str(exc.value).lower()

@@ -12,6 +12,8 @@ def _element_label(kind: str, element: dict) -> str | None:
         return element.get("source")
     if kind == "composer":
         return element.get("flow")
+    if kind == "input":
+        return element.get("name")
     if kind == "thinking":
         return element.get("when")
     if kind == "image":
@@ -50,6 +52,10 @@ def _bound_to(kind: str, element: dict) -> str | None:
             return when
     if kind == "composer":
         flow = element.get("flow")
+        if flow:
+            return f"flow:{flow}"
+    if kind == "input":
+        flow = element.get("action", {}).get("flow") if isinstance(element.get("action"), dict) else None
         if flow:
             return f"flow:{flow}"
     if kind == "link":

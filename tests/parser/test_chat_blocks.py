@@ -40,6 +40,24 @@ def test_parse_chat_block():
     assert memory.lane == "team"
 
 
+def test_parse_chat_composer_structured_fields():
+    source = '''flow "ask_flow":
+  return "ok"
+
+page "home":
+  chat:
+    composer sends to flow "ask_flow"
+      send category as text
+          language as text
+'''
+    program = parse_program(source)
+    chat = next(item for item in program.pages[0].items if isinstance(item, ast.ChatItem))
+    composer = next(child for child in chat.children if isinstance(child, ast.ChatComposerItem))
+    assert composer.flow_name == "ask_flow"
+    assert [field.name for field in composer.fields] == ["category", "language"]
+    assert [field.type_name for field in composer.fields] == ["text", "text"]
+
+
 def test_chat_elements_outside_block_error():
     source = '''page "home":
   messages from is state.chat.messages

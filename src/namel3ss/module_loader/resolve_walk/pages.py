@@ -32,7 +32,7 @@ def resolve_page_item(
         )
         return
     if isinstance(item, ast.TableItem):
-        if not isinstance(item.record_name, ast.PatternParamRef):
+        if item.record_name is not None and not isinstance(item.record_name, ast.PatternParamRef):
             item.record_name = resolve_name(
                 item.record_name,
                 kind="record",
@@ -60,7 +60,7 @@ def resolve_page_item(
                     )
         return
     if isinstance(item, ast.ListItem):
-        if not isinstance(item.record_name, ast.PatternParamRef):
+        if item.record_name is not None and not isinstance(item.record_name, ast.PatternParamRef):
             item.record_name = resolve_name(
                 item.record_name,
                 kind="record",
@@ -129,6 +129,21 @@ def resolve_page_item(
         )
         return
     if isinstance(item, ast.ButtonItem):
+        if isinstance(item.flow_name, ast.PatternParamRef):
+            return
+        item.flow_name = resolve_name(
+            item.flow_name,
+            kind="flow",
+            module_name=module_name,
+            alias_map=alias_map,
+            local_defs=local_defs,
+            exports_map=exports_map,
+            context_label=context_label,
+            line=item.line,
+            column=item.column,
+        )
+        return
+    if isinstance(item, ast.TextInputItem):
         if isinstance(item.flow_name, ast.PatternParamRef):
             return
         item.flow_name = resolve_name(

@@ -5,7 +5,9 @@ import difflib
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir.lowering.expressions import _lower_expression
+from namel3ss.ir.model.expressions import Literal as IRLiteral
 from namel3ss.ir.model.expressions import StatePath as IRStatePath
+from namel3ss.ir.model.pages import VisibilityRule as IRVisibilityRule
 from namel3ss.schema import records as schema
 
 from . import actions as actions_mod
@@ -22,6 +24,9 @@ def _attach_origin(target, source):
     visibility = _lower_visibility(source)
     if visibility is not None:
         setattr(target, "visibility", visibility)
+    visibility_rule = _lower_visibility_rule(source)
+    if visibility_rule is not None:
+        setattr(target, "visibility_rule", visibility_rule)
     return target
 
 
@@ -43,6 +48,33 @@ def _lower_visibility(source) -> IRStatePath | None:
             column=getattr(source, "column", None),
         )
     return lowered
+
+
+def _lower_visibility_rule(source) -> IRVisibilityRule | None:
+    rule = getattr(source, "visibility_rule", None)
+    if rule is None:
+        return None
+    if not isinstance(rule, ast.VisibilityRule):
+        raise Namel3ssError(
+            "Visibility rule requires state.<path> is <value>.",
+            line=getattr(source, "line", None),
+            column=getattr(source, "column", None),
+        )
+    lowered_path = _lower_expression(rule.path)
+    if not isinstance(lowered_path, IRStatePath):
+        raise Namel3ssError(
+            "Visibility rule requires state.<path> is <value>.",
+            line=getattr(rule, "line", None),
+            column=getattr(rule, "column", None),
+        )
+    lowered_value = _lower_expression(rule.value)
+    if not isinstance(lowered_value, IRLiteral):
+        raise Namel3ssError(
+            "Visibility rule requires a text, number, or boolean literal.",
+            line=getattr(rule.value, "line", None),
+            column=getattr(rule.value, "column", None),
+        )
+    return IRVisibilityRule(path=lowered_path, value=lowered_value, line=rule.line, column=rule.column)
 
 
 def _unknown_record_message(name: str, record_map: dict[str, schema.RecordSchema]) -> str:
@@ -99,6 +131,13 @@ def _lower_page_item(
         return actions_mod.lower_title_item(item, attach_origin=_attach_origin)
     if isinstance(item, ast.TextItem):
         return actions_mod.lower_text_item(item, attach_origin=_attach_origin)
+    if isinstance(item, ast.TextInputItem):
+        return actions_mod.lower_text_input_item(
+            item,
+            flow_names,
+            page_name,
+            attach_origin=_attach_origin,
+        )
     if isinstance(item, ast.UploadItem):
         return views_mod.lower_upload_item(item, attach_origin=_attach_origin)
     if isinstance(item, ast.FormItem):

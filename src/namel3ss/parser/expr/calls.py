@@ -272,7 +272,7 @@ def _read_phrase_line(parser, *, context: str) -> tuple[str, int, int]:
 def parse_ask_expression(parser):
     tok = parser._current()
     raise Namel3ssError(
-        'AI calls are statements. Use: ask ai "name" with input: <expr> as <target>.',
+        'AI calls are statements. Use: ask ai "name" with input <expr> as <target>, or ask ai "name" with structured input from <expr> as <target>.',
         line=tok.line,
         column=tok.column,
     )

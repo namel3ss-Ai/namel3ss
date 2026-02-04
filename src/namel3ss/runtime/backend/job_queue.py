@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Callable
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
@@ -15,6 +16,18 @@ from namel3ss.runtime.backend.logical_clock import current_logical_time
 class JobRequest:
     name: str
     payload: object
+
+
+SystemJobHandler = Callable[[object, object], object]
+_SYSTEM_JOBS: dict[str, SystemJobHandler] = {}
+
+
+def register_system_job(name: str, handler: SystemJobHandler) -> None:
+    if not isinstance(name, str) or not name.strip():
+        raise ValueError("system job name must be a non-empty string")
+    if not callable(handler):
+        raise ValueError("system job handler must be callable")
+    _SYSTEM_JOBS[name.strip()] = handler
 
 
 def initialize_job_triggers(ctx) -> None:
@@ -55,47 +68,42 @@ def enqueue_job(
 ) -> None:
     _require_jobs_capability(ctx, line=line, column=column)
     require_job(ctx, job_name, line=line, column=column)
-    if due_time is None:
-        due_time = current_logical_time(ctx)
-    if order is None:
-        order = next_job_order(ctx)
-    obs = getattr(ctx, "observability", None)
-    span_id = None
-    if obs:
-        details = {"job": job_name, "due_time": int(due_time), "order": int(order)}
-        if reason:
-            details["reason"] = reason
-        span_id = obs.start_span(
-            ctx,
-            name=f"job:enqueue:{job_name}",
-            kind="job_enqueue",
-            details=details,
-        )
-    try:
-        ctx.job_queue.append(
-            {
-                "name": job_name,
-                "payload": payload,
-                "due_time": int(due_time),
-                "order": int(order),
-            }
-        )
-        reason_text = f" ({reason})" if reason else ""
-        record_step(
-            ctx,
-            kind="job_enqueued",
-            what=f"job '{job_name}' enqueued{reason_text}",
-            line=line,
-            column=column,
-        )
-        studio_effect_adapter.record_job_enqueued(ctx, job_name=job_name, payload=payload)
-    except Exception:
-        if span_id:
-            obs.end_span(ctx, span_id, status="error")
-        raise
-    else:
-        if span_id:
-            obs.end_span(ctx, span_id, status="ok")
+    _enqueue_entry(
+        ctx,
+        job_name,
+        payload,
+        line=line,
+        column=column,
+        reason=reason,
+        due_time=due_time,
+        order=order,
+    )
+
+
+def enqueue_system_job(
+    ctx,
+    job_name: str,
+    payload: object,
+    *,
+    line: int | None,
+    column: int | None,
+    reason: str | None = None,
+    due_time: int | None = None,
+    order: int | None = None,
+) -> None:
+    handler = _SYSTEM_JOBS.get(job_name)
+    if handler is None:
+        raise Namel3ssError(f"Unknown system job '{job_name}'.")
+    _enqueue_entry(
+        ctx,
+        job_name,
+        payload,
+        line=line,
+        column=column,
+        reason=reason,
+        due_time=due_time,
+        order=order,
+    )
 
 
 def run_job_queue(ctx) -> None:
@@ -110,8 +118,12 @@ def run_job_queue(ctx) -> None:
             raise Namel3ssError("Job queue entry is invalid")
         job = ctx.jobs.get(job_name) if getattr(ctx, "jobs", None) else None
         if job is None:
-            raise Namel3ssError(f"Unknown job '{job_name}'.")
-        _run_job(ctx, job, payload)
+            handler = _SYSTEM_JOBS.get(job_name)
+            if handler is None:
+                raise Namel3ssError(f"Unknown job '{job_name}'.")
+            _run_system_job(ctx, job_name, handler, payload)
+        else:
+            _run_job(ctx, job, payload)
         update_job_triggers(ctx)
 
 
@@ -186,6 +198,46 @@ def _run_job(ctx, job: ir.JobDecl, payload: object) -> None:
         ctx.current_statement_index = original_statement_index
 
 
+def _run_system_job(ctx, job_name: str, handler: SystemJobHandler, payload: object) -> None:
+    record_step(
+        ctx,
+        kind="job_start",
+        what=f"job '{job_name}' started",
+        line=None,
+        column=None,
+    )
+    span_id = None
+    obs = getattr(ctx, "observability", None)
+    if obs:
+        span_id = obs.start_span(
+            ctx,
+            name=f"job:{job_name}",
+            kind="job",
+            details={"job": job_name},
+            timing_name="job",
+            timing_labels={"job": job_name},
+        )
+    studio_effect_adapter.record_job_started(ctx, job_name=job_name, payload=payload if payload is not None else {})
+    status = "ok"
+    output = None
+    try:
+        output = handler(ctx, payload)
+    except Exception:
+        status = "error"
+        raise
+    finally:
+        if span_id:
+            obs.end_span(ctx, span_id, status=status)
+        studio_effect_adapter.record_job_finished(ctx, job_name=job_name, output=output, status=status)
+        record_step(
+            ctx,
+            kind="job_finish",
+            what=f"job '{job_name}' finished",
+            line=None,
+            column=None,
+        )
+
+
 def _evaluate_when(ctx, expr: ir.Expression) -> bool:
     from namel3ss.runtime.executor.expr_eval import evaluate_expression
 
@@ -240,6 +292,60 @@ def _job_sort_key(entry: dict) -> tuple[int, int, str]:
     return (due_val, order_val, name_val)
 
 
+def _enqueue_entry(
+    ctx,
+    job_name: str,
+    payload: object,
+    *,
+    line: int | None,
+    column: int | None,
+    reason: str | None,
+    due_time: int | None,
+    order: int | None,
+) -> None:
+    if due_time is None:
+        due_time = current_logical_time(ctx)
+    if order is None:
+        order = next_job_order(ctx)
+    obs = getattr(ctx, "observability", None)
+    span_id = None
+    if obs:
+        details = {"job": job_name, "due_time": int(due_time), "order": int(order)}
+        if reason:
+            details["reason"] = reason
+        span_id = obs.start_span(
+            ctx,
+            name=f"job:enqueue:{job_name}",
+            kind="job_enqueue",
+            details=details,
+        )
+    try:
+        ctx.job_queue.append(
+            {
+                "name": job_name,
+                "payload": payload,
+                "due_time": int(due_time),
+                "order": int(order),
+            }
+        )
+        reason_text = f" ({reason})" if reason else ""
+        record_step(
+            ctx,
+            kind="job_enqueued",
+            what=f"job '{job_name}' enqueued{reason_text}",
+            line=line,
+            column=column,
+        )
+        studio_effect_adapter.record_job_enqueued(ctx, job_name=job_name, payload=payload)
+    except Exception:
+        if span_id:
+            obs.end_span(ctx, span_id, status="error")
+        raise
+    else:
+        if span_id:
+            obs.end_span(ctx, span_id, status="ok")
+
+
 def _require_jobs_capability(ctx, *, line: int | None, column: int | None) -> None:
     allowed = set(getattr(ctx, "capabilities", ()) or ())
     if "jobs" in allowed:
@@ -259,9 +365,11 @@ def _require_jobs_capability(ctx, *, line: int | None, column: int | None) -> No
 __all__ = [
     "JobRequest",
     "enqueue_job",
+    "enqueue_system_job",
     "initialize_job_triggers",
     "next_job_order",
     "require_job",
+    "register_system_job",
     "run_job_queue",
     "update_job_triggers",
 ]

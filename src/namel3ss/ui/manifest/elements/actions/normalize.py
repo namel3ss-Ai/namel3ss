@@ -178,7 +178,7 @@ def build_card_item(
     if item.stat is not None:
         element["stat"] = _build_card_stat(item.stat, identity, state_ctx, mode, warnings)
     if item.actions:
-        action_entries, action_map = _build_card_actions(element_id, page_slug, item.actions)
+        action_entries, action_map = _build_card_actions(element_id, page_slug, item.actions, state_ctx, mode, warnings)
         element["actions"] = action_entries
         actions.update(action_map)
     return _attach_origin(element, item), actions

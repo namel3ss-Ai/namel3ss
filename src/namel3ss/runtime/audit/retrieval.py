@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from namel3ss.ingestion.keywords import extract_keywords, keyword_matches, normalize_keywords
 from namel3ss.ingestion.policy import ACTION_RETRIEVAL_INCLUDE_WARN, PolicyDecision
 from namel3ss.retrieval.api import run_retrieval
 
@@ -50,6 +51,7 @@ def build_retrieval_step(
         rules.append({"warn_policy": policy_rule})
     outcome = {
         "query": result.get("query"),
+        "query_keywords": result.get("query_keywords"),
         "preferred_quality": result.get("preferred_quality"),
         "included_warn": result.get("included_warn"),
         "excluded_blocked": result.get("excluded_blocked"),
@@ -82,6 +84,9 @@ def _retrieval_results(result: dict) -> list[dict]:
                 "upload_id": entry.get("upload_id"),
                 "chunk_id": entry.get("chunk_id"),
                 "quality": entry.get("quality"),
+                "keywords": entry.get("keywords"),
+                "keyword_matches": entry.get("keyword_matches"),
+                "keyword_overlap": entry.get("keyword_overlap"),
             }
         )
     return normalized
@@ -150,6 +155,7 @@ def _retrieval_decision_key(entry: dict) -> tuple[int, str]:
 
 def _retrieval_candidates(state: dict, query_text: str) -> dict[str, list[dict]]:
     candidates: dict[str, list[dict]] = {}
+    query_keywords = extract_keywords(query_text)
     index = state.get("index")
     chunks = index.get("chunks") if isinstance(index, dict) else None
     if not isinstance(chunks, list):
@@ -159,8 +165,14 @@ def _retrieval_candidates(state: dict, query_text: str) -> dict[str, list[dict]]
             continue
         text = entry.get("text")
         text_value = text if isinstance(text, str) else ""
-        if query_text and query_text not in text_value.lower():
-            continue
+        keywords = normalize_keywords(entry.get("keywords")) or extract_keywords(text_value)
+        overlap = len(keyword_matches(query_keywords, keywords)) if query_keywords else 0
+        if query_text:
+            if query_keywords:
+                if overlap == 0 and query_text not in text_value.lower():
+                    continue
+            elif query_text not in text_value.lower():
+                continue
         upload_value = entry.get("upload_id")
         upload_id = str(upload_value) if upload_value is not None else ""
         if not upload_id:

@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 from namel3ss.errors.payload import build_error_payload
 from namel3ss.runtime.server.dev.state import BrowserAppState
 
-from . import core, health, ingestion, packs, studio
+from . import answer_explain, core, documents, health, ingestion, packs, studio
 
 
 class BrowserRequestHandler(BaseHTTPRequestHandler):
@@ -15,9 +15,10 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
         pass
 
     def do_GET(self) -> None:  # noqa: N802
-        path = urlparse(self.path).path
+        raw_path = self.path
+        path = urlparse(raw_path).path
         if path.startswith("/api/"):
-            self._handle_api_get(path)
+            self._handle_api_get(path, raw_path)
             return
         if core.handle_static(self, path):
             return
@@ -53,7 +54,9 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
             return
         self.send_error(404)
 
-    def _handle_api_get(self, path: str) -> None:
+    def _handle_api_get(self, path: str, raw_path: str) -> None:
+        if answer_explain.handle_answer_explain_get(self, path):
+            return
         if studio.handle_session_get(self, path):
             return
         if studio.handle_ui_get(self, path):
@@ -67,6 +70,8 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
         if studio.handle_migrations_plan_get(self, path):
             return
         if ingestion.handle_uploads_get(self, path):
+            return
+        if documents.handle_documents_get(self, raw_path):
             return
         if core.handle_observability_get(self, path):
             return

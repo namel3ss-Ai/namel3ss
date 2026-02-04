@@ -12,6 +12,7 @@ from namel3ss.media import MediaValidationMode
 from namel3ss.module_loader import load_project
 from namel3ss.module_loader.source_io import ParseCache
 from namel3ss.runtime.browser_state import record_data_effects, record_rows_snapshot, records_snapshot
+from namel3ss.runtime.answer.traces import extract_answer_explain
 from namel3ss.runtime.dev_overlay import build_dev_overlay_payload
 from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.auth.identity_model import normalize_identity
@@ -209,6 +210,10 @@ class BrowserAppState:
         if isinstance(response, dict):
             if isinstance(response.get("state"), dict):
                 self.session.state = response["state"]
+        if isinstance(response, dict):
+            explain = extract_answer_explain(response.get("traces"))
+            if explain is not None:
+                self.session.last_answer_explain = explain
         if isinstance(response, dict):
             response["state"] = self._state_snapshot()
             response.setdefault("revision", self.revision)

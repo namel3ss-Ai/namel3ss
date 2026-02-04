@@ -23,6 +23,25 @@ def resolve_visibility(
     return resolved
 
 
+def resolve_visibility_rule(
+    value: ast.VisibilityRule | None,
+    *,
+    param_values: dict[str, object] | None,
+    param_defs: dict[str, ast.PatternParam] | None,
+) -> ast.VisibilityRule | None:
+    if value is None:
+        return None
+    if not isinstance(value, ast.VisibilityRule):
+        raise Namel3ssError("Visibility rule requires state.<path> is <value>.", line=getattr(value, "line", None), column=getattr(value, "column", None))
+    if isinstance(value.value, ast.PatternParamRef):
+        raise Namel3ssError(
+            "Visibility rule values must be literal text, number, or boolean values.",
+            line=value.value.line,
+            column=value.value.column,
+        )
+    return value
+
+
 def resolve_text(
     value: str | ast.PatternParamRef | None,
     *,
@@ -295,5 +314,6 @@ __all__ = [
     "resolve_text",
     "resolve_text_optional",
     "resolve_visibility",
+    "resolve_visibility_rule",
     "value_matches_kind",
 ]

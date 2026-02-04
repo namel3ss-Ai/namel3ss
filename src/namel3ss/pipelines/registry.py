@@ -51,6 +51,27 @@ def _PIPELINE_CONTRACTS() -> dict[str, ContractDecl]:
                 inputs=[
                     _field("query", "text", required=False),
                     _field("limit", "number", required=False),
+                    _field("tier", "text", required=False),
+                    _field("ingestion", "json", required=False),
+                    _field("index", "json", required=False),
+                ],
+                outputs=[
+                    _field("report", "json", required=True),
+                ],
+                line=None,
+                column=None,
+            ),
+            line=None,
+            column=None,
+        ),
+        "answer": ContractDecl(
+            kind="pipeline",
+            name="answer",
+            signature=FunctionSignature(
+                inputs=[
+                    _field("query", "text", required=False),
+                    _field("limit", "number", required=False),
+                    _field("tier", "text", required=False),
                     _field("ingestion", "json", required=False),
                     _field("index", "json", required=False),
                 ],
@@ -163,6 +184,47 @@ def _PIPELINE_DEFINITIONS() -> dict[str, PipelineDefinition]:
                     summary_fields=(
                         StepField("preferred_quality", "text"),
                         StepField("included_warn", "boolean"),
+                    ),
+                ),
+            ),
+        ),
+        "answer": PipelineDefinition(
+            name="answer",
+            purity="effectful",
+            steps=(
+                PipelineStep(
+                    kind="accept",
+                    summary_fields=(
+                        StepField("query", "text"),
+                        StepField("limit", "json", required=False),
+                        StepField("tier", "text", required=False),
+                    ),
+                ),
+                PipelineStep(
+                    kind="retrieve",
+                    summary_fields=(
+                        StepField("result_count", "number"),
+                        StepField("chunk_ids", "list", required=False),
+                    ),
+                ),
+                PipelineStep(
+                    kind="prompt",
+                    summary_fields=(
+                        StepField("prompt_hash", "text"),
+                    ),
+                ),
+                PipelineStep(
+                    kind="validate",
+                    summary_fields=(
+                        StepField("status", "text"),
+                        StepField("citation_count", "number"),
+                    ),
+                ),
+                PipelineStep(
+                    kind="report",
+                    summary_fields=(
+                        StepField("source_count", "number"),
+                        StepField("confidence", "number"),
                     ),
                 ),
             ),

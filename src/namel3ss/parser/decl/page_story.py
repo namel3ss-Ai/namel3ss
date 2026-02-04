@@ -6,7 +6,13 @@ Story parsing is isolated here to keep the shared page_items module small and fo
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
-from namel3ss.parser.decl.page_common import _parse_string_value, _parse_visibility_clause
+from namel3ss.parser.decl.page_common import (
+    _is_visibility_rule_start,
+    _parse_string_value,
+    _parse_visibility_clause,
+    _parse_visibility_rule_line,
+    _validate_visibility_combo,
+)
 from namel3ss.parser.decl.page_media import parse_image_role_block
 
 _ALLOWED_STEP_FIELDS = ("text", "icon", "image", "tone", "requires", "next")
@@ -21,11 +27,18 @@ def parse_story_block(parser, *, allow_pattern_params: bool = False) -> ast.Stor
     parser._expect("NEWLINE", "Expected newline after story header")
     parser._expect("INDENT", "Expected indented story body")
     steps: list[ast.StoryStep] = []
+    visibility_rule: ast.VisibilityRule | None = None
     mode: str | None = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
         tok = parser._current()
+        if _is_visibility_rule_start(parser):
+            if visibility_rule is not None:
+                raise Namel3ssError("Visibility blocks may only declare one only-when rule.", line=tok.line, column=tok.column)
+            visibility_rule = _parse_visibility_rule_line(parser, allow_pattern_params=allow_pattern_params)
+            parser._match("NEWLINE")
+            continue
         if tok.type == "STRING":
             if mode == "advanced":
                 raise Namel3ssError("Story cannot mix quoted steps with step blocks", line=tok.line, column=tok.column)
@@ -44,7 +57,15 @@ def parse_story_block(parser, *, allow_pattern_params: bool = False) -> ast.Stor
     parser._expect("DEDENT", "Expected end of story block")
     if not steps:
         raise Namel3ssError("Story has no steps", line=story_tok.line, column=story_tok.column)
-    return ast.StoryItem(title=title, steps=steps, visibility=visibility, line=story_tok.line, column=story_tok.column)
+    _validate_visibility_combo(visibility, visibility_rule, line=story_tok.line, column=story_tok.column)
+    return ast.StoryItem(
+        title=title,
+        steps=steps,
+        visibility=visibility,
+        visibility_rule=visibility_rule,
+        line=story_tok.line,
+        column=story_tok.column,
+    )
 
 
 def _parse_step_block(parser, *, allow_pattern_params: bool) -> ast.StoryStep:

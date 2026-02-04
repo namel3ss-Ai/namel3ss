@@ -17,6 +17,10 @@ def _link_action_id(page_slug: str, label: str) -> str:
     return f"page.{page_slug}.link.{_slugify(label)}"
 
 
+def _input_action_id(page_slug: str, name: str) -> str:
+    return f"page.{page_slug}.input.{_slugify(name)}"
+
+
 def _upload_action_id(page_slug: str, name: str) -> str:
     return f"page.{page_slug}.upload.{_slugify(name)}"
 
@@ -96,6 +100,7 @@ def _walk_elements(elements: list[dict]) -> list[dict]:
 __all__ = [
     "_button_action_id",
     "_form_action_id",
+    "_input_action_id",
     "_link_action_id",
     "_upload_action_id",
     "_ingestion_action_id",

@@ -9,6 +9,31 @@
 - **last_value**: last evaluated statement result.
 - **store**: backing persistence (`MemoryStore` by default) used by `save`/`find`.
 
+## App lifecycle conventions (state-driven)
+Lifecycle is a normal state value. There is no runtime automation.
+
+Canonical values:
+- "starting"
+- "loading"
+- "ready"
+- "error"
+- "stopped"
+
+Example:
+```
+state:
+  lifecycle is "starting"
+
+flow "init":
+  set state.lifecycle to "loading"
+  set state.lifecycle to "ready"
+```
+
+Rules:
+- Transitions are explicit and flow-driven.
+- No implicit or automatic transitions.
+- Same inputs produce the same lifecycle behavior.
+
 ## Flow execution
 - `Executor.run()` walks a flow body in order.
 - `return` raises an internal `_ReturnSignal` to stop execution and set `last_value`.
@@ -48,4 +73,5 @@
 - Explicit boundary: AI calls use profiles with model + system prompt.
 - Tool loop guardrails: max tool calls per AI response; only exposed tools callable.
 - Tracing: `AITrace` captures system prompt, input, output, memory context, tool calls/results.
+- Structured input: maps/lists can be sent to AI calls and are serialized to canonical JSON with stable ordering; traces include the original structured data and the final text plus input_format.
 - Memory: governed `MemoryItem` contract with space-aware recall/write, phase timeline, and explicit deletion/diff events (`memory_recall`, `memory_write`, `memory_denied`, `memory_conflict`, `memory_forget`, `memory_border_check`, `memory_promoted`, `memory_promotion_denied`, `memory_phase_started`, `memory_deleted`, `memory_phase_diff`). See `docs/memory.md`, `docs/memory-policy.md`, `docs/memory-spaces.md`, and `docs/memory-phases.md`.

@@ -16,6 +16,7 @@ from namel3ss.module_loader import load_project
 from namel3ss.secrets import collect_secret_values, discover_required_secrets
 from namel3ss.production_contract import build_run_payload
 from namel3ss.runtime.run_pipeline import finalize_run_payload
+from namel3ss.runtime.answer.traces import extract_answer_explain
 from namel3ss.runtime.browser_state import record_data_effects, record_rows_snapshot
 from namel3ss.runtime.auth.auth_context import resolve_auth_context
 from namel3ss.runtime.ui.actions import handle_action
@@ -311,7 +312,11 @@ def execute_action(
             if ui_theme and ui_theme.get("current"):
                 session.runtime_theme = ui_theme.get("current")
         if response and isinstance(response, dict):
-            return normalize_action_response(response)
+            normalized = normalize_action_response(response)
+            explain = extract_answer_explain(normalized.get("traces"))
+            if explain is not None:
+                session.last_answer_explain = explain
+            return normalized
         return response
     except Namel3ssError as err:
         error_payload = build_error_from_exception(err, kind="engine", source=source)

@@ -21,9 +21,19 @@ def normalize_text(text: str) -> str:
     cleaned = text.replace("\r\n", "\n").replace("\r", "\n")
     cleaned = _HYPHEN_BREAK_RE.sub("", cleaned)
     cleaned = _suppress_headers_footers(cleaned)
+    if "\f" in cleaned:
+        pages = cleaned.split("\f")
+        normalized_pages = []
+        for page in pages:
+            lines = [" ".join(line.split()) for line in page.splitlines()]
+            normalized = "\n".join(lines)
+            normalized = _MULTI_BLANK_RE.sub("\n\n", normalized)
+            normalized_pages.append(normalized.strip(" \t\r\n"))
+        return "\f".join(normalized_pages).strip(" \t\r\n")
     lines = [" ".join(line.split()) for line in cleaned.splitlines()]
     cleaned = "\n".join(lines)
-    cleaned = _MULTI_BLANK_RE.sub("\n\n", cleaned).strip()
+    cleaned = _MULTI_BLANK_RE.sub("\n\n", cleaned)
+    cleaned = cleaned.strip(" \t\r\n")
     return cleaned
 
 

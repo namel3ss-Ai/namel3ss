@@ -168,9 +168,9 @@ title is "Customer Dashboard"
 #### References
 - [Quickstart](quickstart.md)
 - [First 5 minutes](first-5-minutes.md)
-- Templates: operations_dashboard, onboarding, support_inbox (`n3 new operations_dashboard`, `n3 new onboarding`, `n3 new support_inbox`)
+- Templates: operations_dashboard, onboarding, composition, support_inbox (`n3 new operations_dashboard`, `n3 new onboarding`, `n3 new composition`, `n3 new support_inbox`)
 - Demos: browser-ready apps in `src/namel3ss/demos` (copy, then `n3 check` and `n3 run`)
-- Examples: single-file references in `src/namel3ss/examples` (or scaffold with `n3 new example <name>`)
+- Examples: single-file references in `src/namel3ss/examples` (only `hello_flow` is scaffolded with `n3 new example hello_flow`; others are copy-folder examples)
 - [UI DSL](ui-dsl.md)
 - [Execution how](execution-how.md)
 - [Run outcome](flow-what.md)
@@ -462,9 +462,27 @@ ai "assistant":
 **Minimal example**:
 ```ai
 flow "ask_assistant":
-  ask ai "assistant" with input: "Summarize this" as reply
+  ask ai "assistant" with input "Summarize this" as reply
   return reply
 ```
+
+**Structured input (deterministic)**:
+```ai
+flow "ask_assistant":
+  let payload is map:
+    "question" is input.question
+    "context" is input.context
+  ask ai "assistant" with structured input from payload as reply
+  return reply
+```
+
+**Rules**:
+- Structured input is converted to text using canonical JSON.
+- Map keys are sorted by key text; list order is preserved.
+- The same structured data always produces the same text.
+- No randomness, timestamps, or locale rules are used in the conversion.
+- Traces include both the structured data and the final text; input_format shows the serialization name.
+- The older form with a colon after input still works.
 
 ### Agents
 **What it is**: Named AI agents with their own system prompts.

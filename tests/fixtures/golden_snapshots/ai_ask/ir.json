@@ -36,6 +36,7 @@
             "type": "Literal",
             "value": "Hello"
           },
+          "input_mode": "text",
           "line": 9,
           "target": "reply",
           "type": "AskAIStmt"

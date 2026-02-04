@@ -57,6 +57,24 @@ def action_payload_message() -> str:
     )
 
 
+def text_input_missing_message(field_name: str) -> str:
+    return build_guidance_message(
+        what=f'Text input payload is missing "{field_name}".',
+        why="Text inputs send a single text value using the declared input name.",
+        fix=f'Send {{"{field_name}": "<text>"}} as the payload.',
+        example=f'n3 app.ai <action_id> {{"{field_name}": "hello"}}',
+    )
+
+
+def text_input_type_message(field_name: str) -> str:
+    return build_guidance_message(
+        what=f'Text input "{field_name}" must be text.',
+        why="Text inputs accept a single line of text and pass it directly to the flow.",
+        fix=f'Send {{"{field_name}": "<text>"}} as the payload.',
+        example=f'n3 app.ai <action_id> {{"{field_name}": "hello"}}',
+    )
+
+
 def unknown_action_message(action_id: str, actions: Dict[str, dict]) -> str:
     available = sorted(actions.keys())
     sample = ", ".join(available[:5]) if available else "none"
@@ -72,11 +90,24 @@ def unknown_action_message(action_id: str, actions: Dict[str, dict]) -> str:
     )
 
 
+def action_disabled_message(action_id: str, predicate: str | None = None) -> str:
+    rule = f" because {predicate}" if predicate else ""
+    return build_guidance_message(
+        what=f"Action '{action_id}' is disabled.",
+        why=f"The action is disabled by an availability rule{rule}.",
+        fix="Update state to satisfy the rule or remove the only-when clause.",
+        example=f'n3 app.ai {action_id} "{{}}"',
+    )
+
+
 __all__ = [
     "action_payload_message",
+    "action_disabled_message",
     "ensure_json_serializable",
     "missing_values_message",
     "normalize_submit_payload",
     "submit_payload_type_message",
+    "text_input_missing_message",
+    "text_input_type_message",
     "unknown_action_message",
 ]

@@ -53,3 +53,4 @@ class Program(Node):
     agent_team: AgentTeam | None = None
     identity: "IdentitySchema | None" = None
     state_defaults: dict | None = None
+    ui_active_page_rules: list["ActivePageRule"] | None = None
