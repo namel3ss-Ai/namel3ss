@@ -51,8 +51,8 @@ Use this for development and testing.
 
 ```bash
 python3 -m venv .venv && . .venv/bin/activate
-python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
-python -m namel3ss --help
+python3 -m pip install --upgrade pip && python3 -m pip install -e ".[dev]"
+python3 -m namel3ss --help
 ```
 
 ### Run with Docker (isolated runtime)
@@ -94,20 +94,20 @@ docker run --rm namel3ss:local n3 --help
 
 Install (source, editable):
 ```bash
-python -m pip install --upgrade pip
-python -m pip install -e ".[dev]"
+python3 -m pip install --upgrade pip
+python3 -m pip install -e ".[dev]"
 ```
 
 Verify CLI and package:
 ```bash
 n3 --version
 n3 doc
-python tools/package_verify.py
+python3 tools/package_verify.py
 ```
 
 Verify embedding (C example, requires C toolchain + cargo):
 ```bash
-python -m pytest -q tests/embed/test_embed_c_example.py
+python3 -m pytest -q tests/embed/test_embed_c_example.py
 ```
 
 ## Browser Protocol
@@ -227,7 +227,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 Summary:
 - Clone the repo.
 - Create and activate a virtual environment.
-- Install editable + run tests (`python -m pytest -q`).
+- Install editable + run tests (`python3 -m pytest -q`).
 
 ## Troubleshooting
 

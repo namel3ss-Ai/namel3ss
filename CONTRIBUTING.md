@@ -60,22 +60,22 @@ pip install -e .
 
 Run tests:
 ```bash
-python -m pytest -q
+python3 -m pytest -q
 ```
 
 Compile check:
 ```bash
-python -m compileall src -q
+python3 -m compileall src -q
 ```
 
 Local verification (matches CI core checks):
 ```bash
-python tools/ci/verify_local.py
+python3 tools/ci/verify_local.py
 ```
 
 Install the pre-push hook:
 ```bash
-python tools/git/install_hooks.py
+python3 tools/git/install_hooks.py
 ```
 
 The pre-push hook enforces the local verification gate and blocks pushes when any check fails.
@@ -87,7 +87,7 @@ python3 tools/memory_import_guard.py
 
 Enforce line limit:
 ```bash
-python tools/line_limit_check.py
+python3 tools/line_limit_check.py
 ```
 
 Formatting and linting for `.ai`:
@@ -156,8 +156,8 @@ To add validators/UI elements/tools:
 
 ## Pull Request Checklist
 - Line limits enforced: `src/**/*.py` <=500 lines; `templates/**` <=1000 lines; single responsibility maintained.  
-- Tests added/updated and `python -m pytest -q` passes.  
-- `python tools/line_limit_check.py` passes.  
+- Tests added/updated and `python3 -m pytest -q` passes.  
+- `python3 tools/line_limit_check.py` passes.  
 - Docs updated if behavior changed.  
 - No unintended breaking changes.
 - No grammar or semantic changes unless an approved RFC is linked.

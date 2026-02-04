@@ -13,12 +13,12 @@ Run these from the repo root:
 
 1) Full test suite
 ```bash
-python -m pytest -q
+python3 -m pytest -q
 ```
 
 2) Build + start smoke tests
 ```bash
-python -m pytest -q tests/runtime/test_production_server.py
+python3 -m pytest -q tests/runtime/test_production_server.py
 ```
 
 3) Contract gates
@@ -26,12 +26,12 @@ python -m pytest -q tests/runtime/test_production_server.py
 n3 expr-check --json .namel3ss/expr_report.json
 n3 release-check --json .namel3ss/release_report.json --txt .namel3ss/release_report.txt
 n3 verify --dx --json
-python tools/spec_freeze_check.py
+python3 tools/spec_freeze_check.py
 ```
 
 4) Repository cleanliness
 ```bash
-python -m namel3ss.beta_lock.repo_clean
+python3 -m namel3ss.beta_lock.repo_clean
 ```
 
 ## Release invariants

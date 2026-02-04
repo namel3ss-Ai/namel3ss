@@ -9,7 +9,7 @@ def test_release_ready_doc_contract() -> None:
         "Guarantees",
         "Not guaranteed",
         "Reference apps",
-        "python -m pytest -q",
+        "python3 -m pytest -q",
         "n3 release-check",
         "repo_clean",
     ]

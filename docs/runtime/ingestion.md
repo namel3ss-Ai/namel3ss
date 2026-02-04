@@ -77,6 +77,13 @@ Blocked content is never retrievable.
 ## Retrieval safety
 Retrieval uses the ingestion report to prefer `pass` content, include `warn` only when policy allows it, and always exclude `block`.
 
+## Embedding storage contract
+Embeddings are written only during deep ingestion. Quick-phase ingestion never writes embedding rows.
+
+## Embedding storage contract
+Embeddings are written only during deep ingestion. Quick-phase ingestion never writes embedding rows.
+
+
 ## Review and corrective actions
 Ingestion reports are inspectable and read-only until a user takes an explicit action. Actions are deterministic and must be invoked deliberately:
 
