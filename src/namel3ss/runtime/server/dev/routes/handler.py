@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 from namel3ss.errors.payload import build_error_payload
 from namel3ss.runtime.server.dev.state import BrowserAppState
 
-from . import core, health, ingestion, packs, studio
+from . import core, documents, health, ingestion, packs, studio
 
 
 class BrowserRequestHandler(BaseHTTPRequestHandler):
@@ -67,6 +67,8 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
         if studio.handle_migrations_plan_get(self, path):
             return
         if ingestion.handle_uploads_get(self, path):
+            return
+        if documents.handle_documents_get(self, path):
             return
         if core.handle_observability_get(self, path):
             return

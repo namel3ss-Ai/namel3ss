@@ -20,6 +20,7 @@ from namel3ss.runtime.data.data_routes import (
 )
 from namel3ss.runtime.deploy_routes import get_build_payload, get_deploy_payload
 from namel3ss.runtime.dev_server import BrowserAppState
+from namel3ss.runtime.server.prod import documents
 from namel3ss.ui.external.serve import resolve_external_ui_file
 from namel3ss.utils.json_tools import dumps as json_dumps
 from namel3ss.version import get_version
@@ -67,6 +68,8 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
         if path == "/api/uploads":
             response, status = self._handle_upload_list()
             self._respond_json(response, status=status)
+            return
+        if documents.handle_documents_get(self, path):
             return
         if path == "/api/logs":
             payload, status = self._handle_observability("logs")
@@ -163,6 +166,23 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _respond_bytes(
+        self,
+        payload: bytes,
+        *,
+        status: int = 200,
+        content_type: str = "application/octet-stream",
+        headers: dict[str, str] | None = None,
+    ) -> None:
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(payload)))
+        if headers:
+            for key, value in headers.items():
+                self.send_header(key, value)
+        self.end_headers()
+        self.wfile.write(payload)
+
     def _handle_action_post(self, body: dict) -> None:
         if not isinstance(body, dict):
             self._respond_json(build_error_payload("Body must be a JSON object.", kind="engine"), status=400)
@@ -253,6 +273,7 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
         except Exception as err:  # pragma: no cover - defensive guard rail
             payload = build_error_payload(str(err), kind="internal")
             return payload, 500
+
 
     def _handle_observability(self, kind: str) -> tuple[dict, int]:
         program = getattr(self._state(), "program", None)

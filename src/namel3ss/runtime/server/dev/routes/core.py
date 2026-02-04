@@ -34,6 +34,24 @@ def respond_json(handler: Any, payload: dict, *, status: int = 200, headers: dic
     handler.wfile.write(data)
 
 
+def respond_bytes(
+    handler: Any,
+    payload: bytes,
+    *,
+    status: int = 200,
+    content_type: str = "application/octet-stream",
+    headers: dict[str, str] | None = None,
+) -> None:
+    handler.send_response(status)
+    handler.send_header("Content-Type", content_type)
+    handler.send_header("Content-Length", str(len(payload)))
+    if headers:
+        for key, value in headers.items():
+            handler.send_header(key, value)
+    handler.end_headers()
+    handler.wfile.write(payload)
+
+
 def handle_static(handler: Any, path: str) -> bool:
     file_path, content_type = _resolve_runtime_file(path, handler._mode())
     if not file_path or not content_type:
@@ -132,5 +150,6 @@ __all__ = [
     "handle_static",
     "observability_payload",
     "read_json_body",
+    "respond_bytes",
     "respond_json",
 ]
