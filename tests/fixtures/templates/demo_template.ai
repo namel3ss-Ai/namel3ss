@@ -38,7 +38,7 @@ page "home":
   image is "welcome":
     role is "iconic"
   chat:
-    composer calls flow "ask_ai"
+    composer sends to flow "ask_ai"
   compose summary:
     number:
       count of "Answer" as "answers"

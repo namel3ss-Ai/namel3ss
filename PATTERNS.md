@@ -1,6 +1,7 @@
 # Patterns
 
-Patterns are living reference apps. They must remain runnable and verified on every release.
+Patterns are living reference apps. There is no `reference_apps/` directory; `patterns/` is the reference app catalog.
+They must remain runnable and verified on every release.
 
 ## How to propose a new pattern
 

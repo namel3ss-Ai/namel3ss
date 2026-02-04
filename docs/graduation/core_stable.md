@@ -14,7 +14,7 @@ All changes to the frozen surface require an explicit breaking-change process.
 - Lowering and IR output are deterministic with canonical ordering.
 - Purity, identity, mutation, and secrets guards are enforced with deterministic diagnostics.
 - Repository hygiene is enforced; repo_clean must always pass.
- - Fuzz and property tests remain deterministic and stable across runs.
+- Fuzz and property tests remain deterministic and stable across runs.
 
 ## Evolvable surface
 - Performance optimizations that do not change outputs or diagnostics.
@@ -29,16 +29,19 @@ All changes to the frozen surface require an explicit breaking-change process.
 Core stable is achieved only when all graduation checklist items pass in CI and for reference apps.
 
 ## Graduation checklist
-- Grammar contract snapshot matches parser behavior.
-- Grammar coverage gates pass.
-- Parser resiliency and recovery tests pass.
-- Incremental parsing contract tests pass.
-- Fuzz and property determinism gates pass.
-- Determinism and safety gates pass (purity, identity, secrets, mutation).
+- Grammar contract guard tests pass (contract doc + parser snapshot).
+- Spec freeze goldens pass (parser, IR, runtime, trace contracts).
+- Determinism and replay gates pass (determinism wall, pipeline determinism, tool usage).
+- Forbidden constructs gates pass (legacy syntax scan + invariant catalog).
+- UI manifest stability gates pass (pattern goldens, action ordering, visibility contract).
+- Error surface stability gates pass (error snapshots + rendering).
+- Navigation determinism gates pass (active page manifest).
+- Lifecycle conventions gates pass (canonical lifecycle states in docs).
+- Parser resiliency and incremental parse contract tests pass.
 - Lowering produces canonical IR and explain outputs remain stable.
-- Repository cleanliness gate passes.
+- Repository hygiene gates pass (line limits, responsibility, repo_clean).
 - Reference apps pass the same core gates (parse, verify, repo_clean).
 
 ## CI enforcement
-- `release-gate` runs the full test suite and core contract gates.
+- `release-gate` runs the full test suite plus release-check and hardening gates.
 - `graduation-core-stable` runs core stable contract tests, reference apps, and repo_clean.

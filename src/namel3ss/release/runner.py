@@ -23,7 +23,65 @@ DEFAULT_GATES: tuple[GateSpec, ...] = (
     ),
     GateSpec(
         name="Determinism Gate",
-        tests=("tests/contract/test_determinism_wall.py",),
+        tests=(
+            "tests/contract/test_determinism_wall.py",
+            "tests/fuzz/test_pipeline_determinism.py",
+            "tests/tool_usage/test_with_determinism.py",
+        ),
+        required=True,
+    ),
+    GateSpec(
+        name="Grammar Contract Gate",
+        tests=(
+            "tests/grammar/test_contract_guard.py",
+            "tests/parser/test_grammar_current.py",
+        ),
+        required=True,
+    ),
+    GateSpec(
+        name="Spec Freeze Gate",
+        tests=(
+            "tests/spec_freeze/test_parser_golden.py",
+            "tests/spec_freeze/test_ir_golden.py",
+            "tests/spec_freeze/test_runtime_golden.py",
+            "tests/spec_freeze/test_snapshot_stable.py",
+            "tests/spec_freeze/test_trace_contracts.py",
+        ),
+        required=True,
+    ),
+    GateSpec(
+        name="Forbidden Constructs Gate",
+        tests=(
+            "tests/invariants/test_invariant_catalog.py",
+            "tests/invariants/test_legacy_syntax_scan.py",
+        ),
+        required=True,
+    ),
+    GateSpec(
+        name="UI Manifest Stability Gate",
+        tests=(
+            "tests/ui/test_ui_pattern_goldens.py",
+            "tests/ui/test_manifest_actions_order.py",
+            "tests/ui/test_visibility_when_contract.py",
+        ),
+        required=True,
+    ),
+    GateSpec(
+        name="Error Surface Gate",
+        tests=(
+            "tests/errors/test_error_messages_snapshot.py",
+            "tests/errors/test_error_rendering.py",
+        ),
+        required=True,
+    ),
+    GateSpec(
+        name="Navigation Determinism Gate",
+        tests=("tests/ui/test_active_page_manifest.py",),
+        required=True,
+    ),
+    GateSpec(
+        name="Lifecycle Conventions Gate",
+        tests=("tests/contract/test_lifecycle_conventions.py",),
         required=True,
     ),
     GateSpec(

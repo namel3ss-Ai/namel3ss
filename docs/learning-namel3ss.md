@@ -168,9 +168,9 @@ title is "Customer Dashboard"
 #### References
 - [Quickstart](quickstart.md)
 - [First 5 minutes](first-5-minutes.md)
-- Templates: operations_dashboard, onboarding, support_inbox (`n3 new operations_dashboard`, `n3 new onboarding`, `n3 new support_inbox`)
+- Templates: operations_dashboard, onboarding, composition, support_inbox (`n3 new operations_dashboard`, `n3 new onboarding`, `n3 new composition`, `n3 new support_inbox`)
 - Demos: browser-ready apps in `src/namel3ss/demos` (copy, then `n3 check` and `n3 run`)
-- Examples: single-file references in `src/namel3ss/examples` (or scaffold with `n3 new example <name>`)
+- Examples: single-file references in `src/namel3ss/examples` (only `hello_flow` is scaffolded with `n3 new example hello_flow`; others are copy-folder examples)
 - [UI DSL](ui-dsl.md)
 - [Execution how](execution-how.md)
 - [Run outcome](flow-what.md)

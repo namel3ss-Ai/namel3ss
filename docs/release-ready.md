@@ -26,6 +26,7 @@ python -m pytest -q tests/runtime/test_production_server.py
 n3 expr-check --json .namel3ss/expr_report.json
 n3 release-check --json .namel3ss/release_report.json --txt .namel3ss/release_report.txt
 n3 verify --dx --json
+python tools/spec_freeze_check.py
 ```
 
 4) Repository cleanliness
@@ -38,6 +39,7 @@ python -m namel3ss.beta_lock.repo_clean
 - Docker builds do not depend on PyPI.
 - Publish is gated by guards.
 - Canonical release sequence: VERSION bump → tests → tag → PyPI publish → docker image → release notes.
+- Release notes must state grammar/runtime changes (or explicitly state none).
 
 ## Guarantees
 - Deterministic outputs for identical inputs.

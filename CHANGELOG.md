@@ -11,6 +11,7 @@ No breaking changes without an explicit changelog entry.
 
 ### Changed
 - Simplified README Docker section with `docker compose` instructions.
+- No grammar/runtime changes.
 
 ### Fixed
 

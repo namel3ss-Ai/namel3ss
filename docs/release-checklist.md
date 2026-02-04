@@ -20,6 +20,7 @@ python -m pytest -q tests/embed/test_embed_c_example.py
 ```bash
 PYTHONDONTWRITEBYTECODE=1 python -m compileall src -q
 PYTHONDONTWRITEBYTECODE=1 python -m pytest -q
+python tools/spec_freeze_check.py
 python tools/responsibility_check.py
 python -m namel3ss.beta_lock.repo_clean
 git status --porcelain
@@ -29,3 +30,6 @@ git status --porcelain
 ```bash
 python tools/bench.py --out .namel3ss/ci_artifacts/bench_report.json --iterations 1 --timing deterministic
 ```
+
+## Release Notes
+- Ensure the CHANGELOG entry for the version explicitly states grammar/runtime change status (for example: “No grammar/runtime changes.”).
