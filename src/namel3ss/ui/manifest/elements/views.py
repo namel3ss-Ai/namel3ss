@@ -7,11 +7,10 @@ from namel3ss.ir.lowering.page_list import _default_list_primary, _list_id_field
 from namel3ss.runtime.records.service import build_record_scope
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.schema import records as schema
-from namel3ss.ui.manifest.actions import _allocate_action_id, _form_action_id, _ingestion_action_id, _upload_action_id
+from namel3ss.ui.manifest.actions import _form_action_id
 from namel3ss.ui.manifest.canonical import _element_id
 from namel3ss.ui.manifest.origin import _attach_origin
 from namel3ss.ui.manifest_chart import _build_chart_element, _resolve_state_list, _state_path_label
-from namel3ss.ui.manifest_chat import _chat_item_kind, _chat_item_to_manifest
 from namel3ss.ui.manifest_form import _build_form_element
 from namel3ss.ui.manifest_list import (
     _build_list_actions,
@@ -21,7 +20,6 @@ from namel3ss.ui.manifest_list import (
     _list_state_id,
 )
 from namel3ss.ui.manifest.state_defaults import StateContext
-from namel3ss.ui.manifest.visibility import apply_visibility, evaluate_visibility
 from namel3ss.ui.manifest_table import (
     _apply_table_pagination,
     _apply_table_sort,
@@ -35,6 +33,9 @@ from namel3ss.ui.manifest_table import (
 from namel3ss.validation import ValidationMode
 
 from .base import _base_element, _require_record, _stable_rows_by_id, _view_representation
+from .chat_views import build_chat_child_item, build_chat_item
+from .tabs_views import build_tabs_item
+from .upload_views import build_upload_item
 
 # Default empty-state content for list/table when app does not specify empty_text.
 # Keeps manifest deterministic and ensures empty collections render an empty state.
@@ -109,44 +110,6 @@ def build_view_item(
     }
     element["id_field"] = _list_id_field_ir(record)
     return _attach_origin(element, item), {}
-
-
-def build_upload_item(
-    item: ir.UploadItem,
-    *,
-    page_name: str,
-    page_slug: str,
-    path: List[int],
-    taken_actions: set[str],
-) -> tuple[dict, Dict[str, dict]]:
-    index = path[-1] if path else 0
-    element_id = _element_id(page_slug, "upload", path)
-    base_action_id = _upload_action_id(page_slug, item.name)
-    action_id = _allocate_action_id(base_action_id, element_id, taken_actions)
-    ingestion_base = _ingestion_action_id(page_slug, item.name)
-    ingestion_action_id = _allocate_action_id(ingestion_base, element_id, taken_actions)
-    base = _base_element(element_id, page_name, page_slug, index, item)
-    multiple = bool(item.multiple)
-    element = {
-        "type": "upload",
-        "name": item.name,
-        "accept": list(item.accept or []),
-        "multiple": multiple,
-        "id": action_id,
-        "action_id": action_id,
-        **base,
-    }
-    action_entry = {
-        "id": action_id,
-        "type": "upload_select",
-        "name": item.name,
-        "multiple": multiple,
-    }
-    ingestion_entry = {
-        "id": ingestion_action_id,
-        "type": "ingestion_run",
-    }
-    return _attach_origin(element, item), {action_id: action_entry, ingestion_action_id: ingestion_entry}
 
 
 def build_form_item(
@@ -357,153 +320,6 @@ def build_chart_item(
         store=store,
     )
     return _attach_origin({**element, **base}, item), {}
-
-
-def build_chat_item(
-    item: ir.ChatItem,
-    record_map: Dict[str, schema.RecordSchema],
-    *,
-    page_name: str,
-    page_slug: str,
-    path: List[int],
-    store: Storage | None,
-    identity: dict | None,
-    state_ctx: StateContext,
-    mode: ValidationMode,
-    media_registry: dict,
-    media_mode,
-    warnings: list | None,
-    taken_actions: set[str],
-    build_children,
-    parent_visible: bool,
-) -> tuple[dict, Dict[str, dict]]:
-    index = path[-1] if path else 0
-    children, actions = build_children(
-        item.children,
-        record_map,
-        page_name,
-        page_slug,
-        path,
-        store,
-        identity,
-        state_ctx,
-        mode,
-        media_registry,
-        media_mode,
-        warnings,
-        taken_actions,
-        parent_visible=parent_visible,
-    )
-    element_id = _element_id(page_slug, "chat", path)
-    base = _base_element(element_id, page_name, page_slug, index, item)
-    element = {"type": "chat", "children": children, **base}
-    return _attach_origin(element, item), actions
-
-
-def build_chat_child_item(
-    item: ir.PageItem,
-    *,
-    page_name: str,
-    page_slug: str,
-    path: List[int],
-    state_ctx: StateContext,
-    mode: ValidationMode,
-    warnings: list | None,
-) -> tuple[dict, Dict[str, dict]] | None:
-    chat_kind = _chat_item_kind(item)
-    if not chat_kind:
-        return None
-    element_id = _element_id(page_slug, chat_kind, path)
-    result = _chat_item_to_manifest(
-        item,
-        element_id=element_id,
-        page_name=page_name,
-        page_slug=page_slug,
-        index=path[-1] if path else 0,
-        state_ctx=state_ctx,
-        mode=mode,
-        warnings=warnings,
-    )
-    if result is None:
-        return None
-    element, actions = result
-    return _attach_origin(element, item), actions
-
-
-def build_tabs_item(
-    item: ir.TabsItem,
-    record_map: Dict[str, schema.RecordSchema],
-    *,
-    page_name: str,
-    page_slug: str,
-    path: List[int],
-    store: Storage | None,
-    identity: dict | None,
-    state_ctx: StateContext,
-    mode: ValidationMode,
-    media_registry: dict,
-    media_mode,
-    warnings: list | None,
-    taken_actions: set[str],
-    build_children,
-    parent_visible: bool,
-) -> tuple[dict, Dict[str, dict]]:
-    index = path[-1] if path else 0
-    element_id = _element_id(page_slug, "tabs", path)
-    tabs: list[dict] = []
-    action_map: Dict[str, dict] = {}
-    labels: list[str] = []
-    for idx, tab in enumerate(item.tabs):
-        labels.append(tab.label)
-        tab_predicate_visible, tab_visibility = evaluate_visibility(
-            getattr(tab, "visibility", None),
-            getattr(tab, "visibility_rule", None),
-            state_ctx,
-            mode,
-            warnings,
-            line=tab.line,
-            column=tab.column,
-        )
-        tab_visible = parent_visible and tab_predicate_visible
-        children, actions = build_children(
-            tab.children,
-            record_map,
-            page_name,
-            page_slug,
-            path + [idx],
-            store,
-            identity,
-            state_ctx,
-            mode,
-            media_registry,
-            media_mode,
-            warnings,
-            taken_actions,
-            parent_visible=tab_visible,
-        )
-        action_map.update(actions)
-        tab_base = _base_element(_element_id(page_slug, "tab", path + [idx]), page_name, page_slug, idx, tab)
-        tab_element = _attach_origin(
-            {
-                "type": "tab",
-                "label": tab.label,
-                "children": children,
-                **tab_base,
-            },
-            tab,
-        )
-        tabs.append(apply_visibility(tab_element, tab_visible, tab_visibility))
-    default_label = item.default or (labels[0] if labels else "")
-    base = _base_element(element_id, page_name, page_slug, index, item)
-    element = {
-        "type": "tabs",
-        "tabs": labels,
-        "default": default_label,
-        "active": default_label,
-        "children": tabs,
-        **base,
-    }
-    return _attach_origin(element, item), action_map
 
 
 __all__ = [
