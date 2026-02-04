@@ -2,6 +2,8 @@
 
 Ingestion converts uploaded files into clean, deterministic text chunks that can be safely indexed and retrieved. The pipeline is explicit and does not use AI or probabilistic logic.
 
+For the full end-to-end RAG workflow (ingest -> retrieve -> answer -> cite -> preview -> highlight -> explain), see [docs/rag/overview.md](docs/rag/overview.md).
+
 ## What ingestion does
 - Detects the upload type (`text`, `pdf`, `image`, `docx`) and basic traits (page count, embedded images).
 - Extracts text deterministically for the detected type.

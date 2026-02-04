@@ -2,7 +2,7 @@
 
 No breaking changes without an explicit changelog entry.
 
-## v0.1.0a12
+## v0.1.0a13
 ### Added
 - Docker Compose improvements: configurable port, user mapping, and CI docker-build job.
 - Added `.env.example` with configuration options.

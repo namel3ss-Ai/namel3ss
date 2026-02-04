@@ -39,6 +39,17 @@ Try it in 60 seconds: [docs/quickstart.md](docs/quickstart.md).
 - Demos: [src/namel3ss/demos](src/namel3ss/demos)
 - Studio (inspection UI): [docs/studio.md](docs/studio.md)
 
+## RAG support (deterministic)
+
+namel3ss supports production-grade retrieval-augmented generation as a first-class pattern:
+- Deterministic ingestion and retrieval
+- Answering with mandatory citations
+- PDF page preview and exact source highlighting
+- Explain mode for auditable selection
+- Optional embeddings (runtime config only, no grammar changes)
+
+See the canonical overview: [docs/rag/overview.md](docs/rag/overview.md)
+
 ## Core stable
 
 Core stable is the graduation gate for the language surface, compiler determinism, and safety guards.
