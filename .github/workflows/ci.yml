@@ -48,6 +48,9 @@ jobs:
           echo "${status}" > .namel3ss/ci_artifacts/pytest_exit_code.txt
           exit ${status}
 
+      - name: Release smoke (build + start)
+        run: python -m pytest -q tests/runtime/test_production_server.py
+
       - name: Expression surface gate
         run: n3 expr-check --json .namel3ss/ci_artifacts/expr_report.json
 
