@@ -641,6 +641,15 @@
   overflow: auto;
   white-space: pre-wrap;
 }
+.ui-citation-preview-notice {
+  font-size: 11px;
+  color: #8a5a00;
+}
+.ui-citation-highlight {
+  background: #fff3b0;
+  border-radius: 3px;
+  padding: 0 1px;
+}
 .ui-citation-preview-controls {
   display: flex;
   align-items: center;

@@ -31,7 +31,8 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
         pass
 
     def do_GET(self) -> None:  # noqa: N802
-        path = urlparse(self.path).path
+        raw_path = self.path
+        path = urlparse(raw_path).path
         if path.startswith("/health"):
             self._respond_json(self._health_payload())
             return
@@ -69,7 +70,7 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             response, status = self._handle_upload_list()
             self._respond_json(response, status=status)
             return
-        if documents.handle_documents_get(self, path):
+        if documents.handle_documents_get(self, raw_path):
             return
         if path == "/api/logs":
             payload, status = self._handle_observability("logs")

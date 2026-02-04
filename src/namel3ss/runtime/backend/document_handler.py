@@ -15,6 +15,7 @@ from namel3ss.ingestion.policy import (
     policy_error,
 )
 from namel3ss.runtime.backend.upload_contract import clean_upload_filename
+from namel3ss.runtime.backend.document_highlight import fallback_highlights, highlights_from_state
 from namel3ss.runtime.backend.upload_store import list_uploads
 from namel3ss.runtime.persistence_paths import resolve_persistence_root
 from namel3ss.secrets import collect_secret_values
@@ -56,6 +57,8 @@ def handle_document_page(
     *,
     document_id: str,
     page_number: object,
+    state: dict | None = None,
+    chunk_id: str | None = None,
     identity: dict | None = None,
     policy_decl: object | None = None,
     secret_values: list[str] | None = None,
@@ -66,16 +69,12 @@ def handle_document_page(
         raise Namel3ssError(_page_number_message(page_number))
     if page_value < 1 or page_value > payload.page_count:
         raise Namel3ssError(_page_range_message(page_value, payload.page_count))
-    pages, _ = extract_pages(payload.content, detected=payload.detected, mode="layout")
-    pages = _validate_pdf_pages(pages, payload.page_count, payload.source_name)
-    page_text = pages[page_value - 1] if pages else ""
-    resolved_secrets = secret_values if secret_values is not None else _resolve_secret_values(ctx)
-    cleaned = sanitize_text(
-        page_text,
-        project_root=getattr(ctx, "project_root", None),
-        app_path=getattr(ctx, "app_path", None),
-        secret_values=resolved_secrets,
-    )
+    if state is None:
+        cleaned = _page_text_from_pdf(ctx, payload, page_value, secret_values=secret_values)
+        highlights = fallback_highlights(payload.document_id, page_value, chunk_id)
+    else:
+        cleaned = _page_text_from_state(state, payload, page_value)
+        highlights = highlights_from_state(state, payload.document_id, page_value, chunk_id, cleaned)
     return {
         "ok": True,
         "document": payload.info,
@@ -84,6 +83,7 @@ def handle_document_page(
             "text": cleaned,
         },
         "pdf_url": f"/api/documents/{payload.document_id}/pdf#page={page_value}",
+        "highlights": highlights,
     }
 
 
@@ -173,6 +173,47 @@ def _validate_pdf_pages(pages: list[str], expected: int, source_name: str) -> li
     if len(pages) != expected:
         raise Namel3ssError(_pdf_page_mismatch_message(source_name, expected, len(pages)))
     return pages
+
+
+def _page_text_from_pdf(
+    ctx,
+    payload: DocumentPayload,
+    page_value: int,
+    *,
+    secret_values: list[str] | None,
+) -> str:
+    pages, _ = extract_pages(payload.content, detected=payload.detected, mode="layout")
+    pages = _validate_pdf_pages(pages, payload.page_count, payload.source_name)
+    page_text = pages[page_value - 1] if pages else ""
+    resolved_secrets = secret_values if secret_values is not None else _resolve_secret_values(ctx)
+    return sanitize_text(
+        page_text,
+        project_root=getattr(ctx, "project_root", None),
+        app_path=getattr(ctx, "app_path", None),
+        secret_values=resolved_secrets,
+    )
+
+
+def _page_text_from_state(state: dict, payload: DocumentPayload, page_value: int) -> str:
+    if not isinstance(state, dict):
+        raise Namel3ssError(_page_text_missing_message(payload.source_name))
+    ingestion = state.get("ingestion")
+    if not isinstance(ingestion, dict):
+        raise Namel3ssError(_page_text_missing_message(payload.source_name))
+    report = ingestion.get(payload.document_id)
+    if not isinstance(report, dict):
+        raise Namel3ssError(_page_text_missing_message(payload.source_name))
+    page_text = report.get("page_text")
+    if not isinstance(page_text, list):
+        raise Namel3ssError(_page_text_shape_message(payload.source_name))
+    if len(page_text) != payload.page_count:
+        raise Namel3ssError(_page_text_count_message(payload.source_name, payload.page_count, len(page_text)))
+    if page_value - 1 >= len(page_text):
+        raise Namel3ssError(_page_text_count_message(payload.source_name, payload.page_count, len(page_text)))
+    text = page_text[page_value - 1]
+    if not isinstance(text, str):
+        raise Namel3ssError(_page_text_shape_message(payload.source_name))
+    return text
 
 
 def _require_uploads_capability(ctx) -> None:
@@ -305,6 +346,33 @@ def _page_range_message(page_number: int, page_count: int) -> str:
         why=f"Document has {page_count} pages.",
         fix=f"Choose a page between 1 and {page_count}.",
         example="/api/documents/<checksum>/pages/1",
+    )
+
+
+def _page_text_missing_message(source_name: str) -> str:
+    return build_guidance_message(
+        what=f'Page text for "{source_name}" is unavailable.',
+        why="Highlight anchors require stored page text from ingestion.",
+        fix="Re-run ingestion to rebuild page text and highlights.",
+        example='{"upload_id":"<checksum>"}',
+    )
+
+
+def _page_text_shape_message(source_name: str) -> str:
+    return build_guidance_message(
+        what=f'Page text for "{source_name}" is invalid.',
+        why="Stored page text must be a list of pages.",
+        fix="Re-run ingestion to rebuild page text and highlights.",
+        example='{"upload_id":"<checksum>"}',
+    )
+
+
+def _page_text_count_message(source_name: str, expected: int, found: int) -> str:
+    return build_guidance_message(
+        what=f'Page text for "{source_name}" expected {expected} pages but found {found}.',
+        why="Highlight anchors require a page text entry for every page.",
+        fix="Re-run ingestion to rebuild page text and highlights.",
+        example='{"upload_id":"<checksum>"}',
     )
 
 

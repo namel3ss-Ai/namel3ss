@@ -7,6 +7,7 @@
     meta: null,
     snippet: null,
     pageText: null,
+    pageNotice: null,
     pageLabel: null,
     prevButton: null,
     nextButton: null,
@@ -17,6 +18,7 @@
     pageNumber: null,
     pageCount: null,
     entrySnippet: null,
+    chunkId: null,
   };
 
   function renderChatElement(el, handleAction) {
@@ -118,19 +120,21 @@
 
   function resolveCitationTarget(entry) {
     if (!entry) return null;
-    const docId =
+    const chunkId = textValue(entry.chunk_id) || textValue(entry.source_id) || null;
+    let documentId =
       textValue(entry.document_id) ||
       textValue(entry.documentId) ||
       textValue(entry.upload_id) ||
       null;
     const pageNumber = toPageNumber(entry.page_number || entry.page);
-    if (docId && pageNumber) return { documentId: docId, pageNumber: pageNumber };
-    const chunkId = textValue(entry.chunk_id) || textValue(entry.source_id);
-    if (chunkId && pageNumber) {
+    if (!documentId && chunkId) {
       const parts = chunkId.split(":");
       if (parts.length > 1 && parts[0]) {
-        return { documentId: parts[0], pageNumber: pageNumber };
+        documentId = parts[0];
       }
+    }
+    if (documentId && pageNumber) {
+      return { documentId: documentId, pageNumber: pageNumber, chunkId: chunkId };
     }
     return null;
   }
@@ -200,9 +204,14 @@
     const textLabel = document.createElement("div");
     textLabel.className = "ui-citation-preview-label";
     textLabel.textContent = "Page text";
+    const notice = document.createElement("div");
+    notice.className = "ui-citation-preview-notice";
+    notice.textContent = "";
+    notice.hidden = true;
     const pageText = document.createElement("div");
     pageText.className = "ui-citation-preview-text";
     textSection.appendChild(textLabel);
+    textSection.appendChild(notice);
     textSection.appendChild(pageText);
     panel.appendChild(textSection);
 
@@ -247,6 +256,7 @@
     previewState.meta = meta;
     previewState.snippet = snippet;
     previewState.pageText = pageText;
+    previewState.pageNotice = notice;
     previewState.pageLabel = pageLabel;
     previewState.prevButton = prevBtn;
     previewState.nextButton = nextBtn;
@@ -265,11 +275,12 @@
     const preview = ensureCitationPreview();
     preview.returnFocus = opener || document.activeElement;
     preview.entrySnippet = typeof entry.snippet === "string" ? entry.snippet : "";
+    preview.chunkId = target.chunkId || null;
     preview.title.textContent = entry.title || "Source";
     preview.container.classList.remove("hidden");
     preview.container.setAttribute("aria-hidden", "false");
     preview.panel.focus();
-    loadPreviewPage(target.documentId, target.pageNumber);
+    loadPreviewPage(target.documentId, target.pageNumber, preview.chunkId);
   }
 
   function closeCitationPreview() {
@@ -281,6 +292,7 @@
     preview.pageNumber = null;
     preview.pageCount = null;
     preview.entrySnippet = null;
+    preview.chunkId = null;
     if (preview.returnFocus && preview.returnFocus.focus) {
       preview.returnFocus.focus();
     }
@@ -292,10 +304,10 @@
     if (!preview.documentId || !preview.pageNumber || !preview.pageCount) return;
     const nextPage = preview.pageNumber + delta;
     if (nextPage < 1 || nextPage > preview.pageCount) return;
-    loadPreviewPage(preview.documentId, nextPage);
+    loadPreviewPage(preview.documentId, nextPage, preview.chunkId);
   }
 
-  async function loadPreviewPage(documentId, pageNumber) {
+  async function loadPreviewPage(documentId, pageNumber, chunkId) {
     const preview = ensureCitationPreview();
     preview.documentId = documentId;
     preview.pageNumber = pageNumber;
@@ -305,11 +317,19 @@
     preview.prevButton.disabled = true;
     preview.nextButton.disabled = true;
     preview.pageText.textContent = "";
+    preview.pageNotice.textContent = "";
+    preview.pageNotice.hidden = true;
     preview.snippet.textContent = "Loading snippet...";
     preview.frame.removeAttribute("src");
 
     try {
-      const url = `/api/documents/${encodeURIComponent(documentId)}/pages/${pageNumber}`;
+      const params = new URLSearchParams();
+      if (chunkId) params.set("chunk_id", chunkId);
+      const query = params.toString();
+      const url =
+        query.length > 0
+          ? `/api/documents/${encodeURIComponent(documentId)}/pages/${pageNumber}?${query}`
+          : `/api/documents/${encodeURIComponent(documentId)}/pages/${pageNumber}`;
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`Preview request failed (${response.status})`);
@@ -330,7 +350,9 @@
       preview.nextButton.disabled = preview.pageNumber >= pageCount;
       preview.frame.src = payload.pdf_url || `/api/documents/${encodeURIComponent(documentId)}/pdf#page=${preview.pageNumber}`;
       const pageText = typeof page.text === "string" ? page.text : "";
-      preview.pageText.textContent = pageText || "No extracted text for this page.";
+      const highlights = Array.isArray(payload.highlights) ? payload.highlights : [];
+      renderPageText(preview.pageText, pageText, highlights);
+      setHighlightNotice(preview.pageNotice, highlights);
       preview.snippet.textContent = formatSnippet(preview.entrySnippet, pageText);
     } catch (err) {
       preview.error.textContent = err && err.message ? err.message : "Unable to load preview.";
@@ -347,6 +369,77 @@
       return `${trimmed.slice(0, 320)}...`;
     }
     return trimmed;
+  }
+
+  function renderPageText(container, pageText, highlights) {
+    if (!container) return;
+    const text = typeof pageText === "string" ? pageText : "";
+    container.textContent = "";
+    if (!text) {
+      container.textContent = "No extracted text for this page.";
+      return;
+    }
+    const ranges = normalizeHighlightRanges(highlights, text.length);
+    if (!ranges.length) {
+      container.textContent = text;
+      return;
+    }
+    const fragment = document.createDocumentFragment();
+    let cursor = 0;
+    ranges.forEach((range) => {
+      if (range.start > cursor) {
+        fragment.appendChild(document.createTextNode(text.slice(cursor, range.start)));
+      }
+      const mark = document.createElement("mark");
+      mark.className = "ui-citation-highlight";
+      mark.textContent = text.slice(range.start, range.end);
+      fragment.appendChild(mark);
+      cursor = range.end;
+    });
+    if (cursor < text.length) {
+      fragment.appendChild(document.createTextNode(text.slice(cursor)));
+    }
+    container.appendChild(fragment);
+  }
+
+  function normalizeHighlightRanges(highlights, length) {
+    const items = Array.isArray(highlights) ? highlights : [];
+    const ranges = [];
+    items.forEach((item) => {
+      if (!item || item.status !== "exact") return;
+      const start = Number(item.start_char);
+      const end = Number(item.end_char);
+      if (!Number.isFinite(start) || !Number.isFinite(end)) return;
+      const startValue = Math.max(0, Math.trunc(start));
+      const endValue = Math.min(length, Math.trunc(end));
+      if (endValue <= startValue) return;
+      ranges.push({ start: startValue, end: endValue });
+    });
+    ranges.sort((a, b) => (a.start - b.start) || (a.end - b.end));
+    const merged = [];
+    ranges.forEach((range) => {
+      const last = merged[merged.length - 1];
+      if (!last || range.start > last.end) {
+        merged.push({ start: range.start, end: range.end });
+      } else if (range.end > last.end) {
+        last.end = range.end;
+      }
+    });
+    return merged;
+  }
+
+  function setHighlightNotice(notice, highlights) {
+    if (!notice) return;
+    const items = Array.isArray(highlights) ? highlights : [];
+    const hasExact = items.some((item) => item && item.status === "exact");
+    const hasUnavailable = items.some((item) => item && item.status === "unavailable");
+    if (hasUnavailable && !hasExact) {
+      notice.textContent = "Highlight unavailable for this citation.";
+      notice.hidden = false;
+      return;
+    }
+    notice.textContent = "";
+    notice.hidden = true;
   }
 
   function normalizeComposerFields(child) {

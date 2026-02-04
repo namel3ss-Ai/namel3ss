@@ -66,6 +66,7 @@ def run_ingestion(
             phase=PHASE_DEEP,
             max_chars=DEEP_SCAN_MAX_CHARS,
             overlap=DEEP_SCAN_OVERLAP,
+            include_highlights=True,
         )
         update_index(state, upload_id=upload_id, chunks=chunks, low_quality=prepared.status == "warn")
     return {
@@ -122,6 +123,7 @@ def run_ingestion_progressive(
         phase=PHASE_QUICK,
         max_chars=QUICK_SCAN_MAX_CHARS,
         overlap=QUICK_SCAN_OVERLAP,
+        include_highlights=True,
     )
     update_index(state, upload_id=upload_id, chunks=chunks, low_quality=prepared.status == "warn")
     report["phases"]["quick"] = phase_summary("complete", chunks, result_status=prepared.status)
@@ -370,6 +372,7 @@ def _prepare_ingestion(
         },
     }
     sanitized_pages = sanitized.split("\f") if "\f" in sanitized else [sanitized]
+    report["page_text"] = list(sanitized_pages)
     return SimpleNamespace(
         upload_id=upload_id,
         metadata=metadata,

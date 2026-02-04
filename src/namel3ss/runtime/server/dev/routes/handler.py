@@ -15,9 +15,10 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
         pass
 
     def do_GET(self) -> None:  # noqa: N802
-        path = urlparse(self.path).path
+        raw_path = self.path
+        path = urlparse(raw_path).path
         if path.startswith("/api/"):
-            self._handle_api_get(path)
+            self._handle_api_get(path, raw_path)
             return
         if core.handle_static(self, path):
             return
@@ -53,7 +54,7 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
             return
         self.send_error(404)
 
-    def _handle_api_get(self, path: str) -> None:
+    def _handle_api_get(self, path: str, raw_path: str) -> None:
         if studio.handle_session_get(self, path):
             return
         if studio.handle_ui_get(self, path):
@@ -68,7 +69,7 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
             return
         if ingestion.handle_uploads_get(self, path):
             return
-        if documents.handle_documents_get(self, path):
+        if documents.handle_documents_get(self, raw_path):
             return
         if core.handle_observability_get(self, path):
             return

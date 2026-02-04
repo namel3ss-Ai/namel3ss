@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Callable
 
 from namel3ss.ingestion.chunk import chunk_pages
+from namel3ss.ingestion.highlight import attach_highlight_anchors
 from namel3ss.ingestion.keywords import extract_keywords
 from namel3ss.ingestion.store import store_report, update_index
 from namel3ss.secrets import collect_secret_values
@@ -26,6 +27,7 @@ def chunk_with_phase(
     phase: str | None,
     max_chars: int,
     overlap: int,
+    include_highlights: bool = False,
 ) -> list[dict]:
     chunks = chunk_pages(pages, max_chars=max_chars, overlap=overlap)
     for chunk in chunks:
@@ -34,6 +36,14 @@ def chunk_with_phase(
         chunk["keywords"] = extract_keywords(str(chunk.get("text") or ""))
         if phase:
             chunk["ingestion_phase"] = phase
+    if include_highlights:
+        attach_highlight_anchors(
+            pages,
+            chunks,
+            document_id=document_id,
+            max_chars=max_chars,
+            overlap=overlap,
+        )
     return chunks
 
 
@@ -100,6 +110,8 @@ def deep_scan_job_handler(prepare_ingestion: Callable[..., object]) -> Callable[
                 app_path=getattr(ctx, "app_path", None),
                 secret_values=secret_values,
             )
+            if not isinstance(report.get("page_text"), list):
+                report["page_text"] = list(prepared.sanitized_pages)
             deep_chunks = chunk_with_phase(
                 prepared.sanitized_pages,
                 document_id=upload_id,
@@ -107,6 +119,7 @@ def deep_scan_job_handler(prepare_ingestion: Callable[..., object]) -> Callable[
                 phase=PHASE_DEEP,
                 max_chars=DEEP_SCAN_MAX_CHARS,
                 overlap=DEEP_SCAN_OVERLAP,
+                include_highlights=True,
             )
             update_index(
                 ctx.state,

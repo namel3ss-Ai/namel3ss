@@ -87,6 +87,14 @@ def test_pdf_page_provenance_multi_page(tmp_path: Path) -> None:
             "source_name": "sample.pdf",
             "ingestion_phase": "deep",
             "keywords": extract_keywords(page_one),
+            "highlight": {
+                "document_id": metadata["checksum"],
+                "page_number": 1,
+                "chunk_id": f"{metadata['checksum']}:0",
+                "start_char": 0,
+                "end_char": len(page_one),
+                "status": "exact",
+            },
         },
         {
             "chunk_index": 1,
@@ -97,6 +105,14 @@ def test_pdf_page_provenance_multi_page(tmp_path: Path) -> None:
             "source_name": "sample.pdf",
             "ingestion_phase": "deep",
             "keywords": extract_keywords(page_two),
+            "highlight": {
+                "document_id": metadata["checksum"],
+                "page_number": 2,
+                "chunk_id": f"{metadata['checksum']}:1",
+                "start_char": 0,
+                "end_char": len(page_two),
+                "status": "exact",
+            },
         },
     ]
     assert result["chunks"] == expected_chunks
@@ -119,6 +135,14 @@ def test_pdf_page_provenance_multi_page(tmp_path: Path) -> None:
             "low_quality": False,
             "ingestion_phase": "deep",
             "keywords": extract_keywords(page_one),
+            "highlight": {
+                "document_id": metadata["checksum"],
+                "page_number": 1,
+                "chunk_id": f"{metadata['checksum']}:0",
+                "start_char": 0,
+                "end_char": len(page_one),
+                "status": "exact",
+            },
         },
         {
             "upload_id": metadata["checksum"],
@@ -133,6 +157,14 @@ def test_pdf_page_provenance_multi_page(tmp_path: Path) -> None:
             "low_quality": False,
             "ingestion_phase": "deep",
             "keywords": extract_keywords(page_two),
+            "highlight": {
+                "document_id": metadata["checksum"],
+                "page_number": 2,
+                "chunk_id": f"{metadata['checksum']}:1",
+                "start_char": 0,
+                "end_char": len(page_two),
+                "status": "exact",
+            },
         },
     ]
 
@@ -224,5 +256,13 @@ def test_text_ingestion_single_page_provenance_is_compatible(tmp_path: Path) -> 
             "source_name": "notes.txt",
             "ingestion_phase": "deep",
             "keywords": extract_keywords(text),
+            "highlight": {
+                "document_id": metadata["checksum"],
+                "page_number": 1,
+                "chunk_id": f"{metadata['checksum']}:0",
+                "start_char": 0,
+                "end_char": len(text),
+                "status": "exact",
+            },
         }
     ]

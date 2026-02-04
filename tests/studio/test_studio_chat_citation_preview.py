@@ -6,6 +6,9 @@ def test_chat_citation_preview_wiring() -> None:
     assert "openCitationPreview" in js
     assert "ui-citation-preview" in js
     assert "Open page" in js
+    assert "chunk_id" in js
+    assert "ui-citation-highlight" in js
     css = Path("src/namel3ss/studio/web/studio_ui.css").read_text(encoding="utf-8")
     assert ".ui-citation-preview-frame" in css
     assert ".ui-chat-citation-actions" in css
+    assert ".ui-citation-highlight" in css
