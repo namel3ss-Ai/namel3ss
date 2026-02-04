@@ -44,6 +44,9 @@ def run_retrieval(
             blocked += 1
             continue
         chunk_id = entry.get("chunk_id")
+        chunk_index = entry.get("chunk_index")
+        if not isinstance(chunk_index, int) or isinstance(chunk_index, bool):
+            chunk_index = entry.get("order")
         clean_text = sanitize_text(
             text_value,
             project_root=project_root,
@@ -52,11 +55,22 @@ def run_retrieval(
         )
         result = {
             "upload_id": upload_id,
-            "chunk_id": str(chunk_id or f"{upload_id}:{entry.get('order')}"),
+            "chunk_id": str(chunk_id or f"{upload_id}:{chunk_index}"),
             "quality": quality,
             "low_quality": quality == "warn",
             "text": clean_text,
         }
+        document_id = entry.get("document_id")
+        if isinstance(document_id, str) and document_id:
+            result["document_id"] = document_id
+        source_name = entry.get("source_name")
+        if isinstance(source_name, str) and source_name:
+            result["source_name"] = source_name
+        page_number = entry.get("page_number")
+        if isinstance(page_number, int) and not isinstance(page_number, bool):
+            result["page_number"] = page_number
+        if isinstance(chunk_index, int) and not isinstance(chunk_index, bool):
+            result["chunk_index"] = chunk_index
         if quality == "pass":
             pass_entries.append(result)
         else:

@@ -37,10 +37,20 @@ def update_index(
         raise Namel3ssError(_index_chunks_shape_message())
     filtered = [entry for entry in entries if entry.get("upload_id") != upload_id]
     for chunk in chunks:
+        document_id = _string_value(chunk.get("document_id"))
+        source_name = _string_value(chunk.get("source_name"))
+        page_number = _page_number_value(chunk.get("page_number"))
+        chunk_index = _chunk_index_value(chunk.get("chunk_index"))
+        if document_id is None or source_name is None or page_number is None or chunk_index is None:
+            raise Namel3ssError(_chunk_provenance_message())
         entry = {
             "upload_id": upload_id,
-            "chunk_id": f"{upload_id}:{chunk.get('index')}",
-            "order": chunk.get("index"),
+            "document_id": document_id,
+            "source_name": source_name,
+            "page_number": page_number,
+            "chunk_index": chunk_index,
+            "chunk_id": f"{upload_id}:{chunk_index}",
+            "order": chunk_index,
             "text": chunk.get("text"),
             "chars": chunk.get("chars"),
             "low_quality": bool(low_quality),
@@ -96,6 +106,39 @@ def _index_chunks_shape_message() -> str:
         fix="Replace state.index.chunks with a list.",
         example='{"index":{"chunks":[]}}',
     )
+
+
+def _chunk_provenance_message() -> str:
+    return build_guidance_message(
+        what="Indexed chunks are missing page provenance.",
+        why="Ingestion must include document_id, source_name, page_number, and chunk_index for every chunk.",
+        fix="Re-run ingestion to rebuild chunks with provenance.",
+        example='{"upload_id":"<checksum>"}',
+    )
+
+
+def _string_value(value: object) -> str | None:
+    if isinstance(value, str):
+        cleaned = value.strip()
+        if cleaned:
+            return cleaned
+    return None
+
+
+def _page_number_value(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int) and value > 0:
+        return value
+    return None
+
+
+def _chunk_index_value(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int) and value >= 0:
+        return value
+    return None
 
 
 __all__ = ["store_report", "update_index", "drop_index"]

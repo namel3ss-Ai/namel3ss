@@ -347,18 +347,22 @@ def _ingestion_traces(report: dict) -> list[dict]:
     method_used = report.get("method_used")
     status = report.get("status")
     reasons = report.get("reasons")
+    provenance = report.get("provenance") if isinstance(report.get("provenance"), dict) else {}
+    source_name = provenance.get("source_name") if isinstance(provenance, dict) else None
     return [
         {
             "type": TraceEventType.INGESTION_STARTED,
             "upload_id": upload_id,
             "method": method_used,
             "detected": detected,
+            "source_name": source_name,
         },
         {
             "type": TraceEventType.INGESTION_QUALITY_GATE,
             "upload_id": upload_id,
             "status": status,
             "reasons": reasons,
+            "source_name": source_name,
         },
     ]
 

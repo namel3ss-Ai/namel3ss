@@ -4,9 +4,9 @@ from types import SimpleNamespace
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
-from namel3ss.ingestion.chunk import chunk_text
+from namel3ss.ingestion.chunk import chunk_pages
 from namel3ss.ingestion.detect import detect_upload
-from namel3ss.ingestion.extract import extract_fallback, extract_text
+from namel3ss.ingestion.extract import extract_pages, extract_pages_fallback
 from namel3ss.ingestion.gate import gate_quality, should_fallback
 from namel3ss.ingestion.gate_probe import probe_content
 from namel3ss.ingestion.normalize import normalize_text, preview_text, sanitize_text
@@ -40,19 +40,20 @@ def run_ingestion(
     probe = probe_content(content, metadata=metadata, detected=detected)
     probe_blocked = probe.get("status") == "block"
     normalized: str | None = None
-    text = ""
     method_used = "primary"
+    pages: list[str] = []
     if not probe_blocked:
         if resolved_mode in {"layout", "ocr"}:
-            text, method_used = extract_text(content, detected=detected, mode=resolved_mode)
-            primary_signals = compute_signals(normalize_text(text), detected=detected)
+            pages, method_used = extract_pages(content, detected=detected, mode=resolved_mode)
+            normalized = normalize_text(_join_pages(pages))
         else:
-            text, method_used = extract_text(content, detected=detected, mode="primary")
-            normalized_primary = normalize_text(text)
+            pages, method_used = extract_pages(content, detected=detected, mode="primary")
+            normalized_primary = normalize_text(_join_pages(pages))
             primary_signals = compute_signals(normalized_primary, detected=detected)
             if should_fallback(primary_signals, detected):
-                text, method_used = extract_fallback(content, detected=detected)
-        normalized = normalize_text(text)
+                pages, method_used = extract_pages_fallback(content, detected=detected)
+            normalized = normalize_text(_join_pages(pages))
+        pages = _validate_page_provenance(pages=pages, detected=detected, source_name=_source_name_from_metadata(metadata))
     normalized_for_signals = normalized or ""
     signals = compute_signals(normalized_for_signals, detected=detected)
     status, reasons = gate_quality(signals)
@@ -76,6 +77,7 @@ def run_ingestion(
         app_path=app_path,
         secret_values=secret_values,
     )
+    source_name = _source_name_from_metadata(metadata)
     report = {
         "upload_id": upload_id,
         "status": status,
@@ -90,13 +92,21 @@ def run_ingestion(
         ),
         "reasons": list(reasons),
         "gate": gate,
+        "provenance": {
+            "document_id": upload_id,
+            "source_name": source_name,
+        },
     }
     store_report(state, upload_id=upload_id, report=report)
     if status == "block":
         drop_index(state, upload_id=upload_id)
         chunks: list[dict] = []
     else:
-        chunks = chunk_text(sanitized)
+        sanitized_pages = sanitized.split("\f") if "\f" in sanitized else [sanitized]
+        chunks = chunk_pages(sanitized_pages)
+        for chunk in chunks:
+            chunk["document_id"] = upload_id
+            chunk["source_name"] = source_name
         update_index(state, upload_id=upload_id, chunks=chunks, low_quality=status == "warn")
     return {
         "report": report,
@@ -139,6 +149,51 @@ def _read_upload_bytes(ctx, metadata: dict) -> bytes:
         return target.read_bytes()
     except OSError:
         raise Namel3ssError(_missing_file_message()) from None
+
+
+def _join_pages(pages: list[str]) -> str:
+    if not pages:
+        return ""
+    return "\f".join(pages)
+
+
+def _source_name_from_metadata(metadata: dict) -> str:
+    name = metadata.get("name")
+    if isinstance(name, str) and name.strip():
+        return name.strip()
+    return "upload"
+
+
+def _validate_page_provenance(*, pages: list[str], detected: dict, source_name: str) -> list[str]:
+    kind = str(detected.get("type") or "")
+    if kind != "pdf":
+        return pages if pages else [""]
+    page_count = detected.get("page_count")
+    if not isinstance(page_count, int) or page_count <= 0:
+        raise Namel3ssError(_pdf_page_count_message(source_name))
+    if not pages:
+        pages = [""]
+    if len(pages) != page_count:
+        raise Namel3ssError(_pdf_page_mismatch_message(source_name, page_count, len(pages)))
+    return pages
+
+
+def _pdf_page_count_message(source_name: str) -> str:
+    return build_guidance_message(
+        what=f'PDF "{source_name}" is missing page metadata.',
+        why="Ingestion requires deterministic page numbers for every chunk.",
+        fix="Provide a valid PDF with readable page objects.",
+        example='{"upload_id":"<checksum>"}',
+    )
+
+
+def _pdf_page_mismatch_message(source_name: str, expected: int, found: int) -> str:
+    return build_guidance_message(
+        what=f'Page provenance for "{source_name}" expected {expected} pages but found {found}.',
+        why="Ingestion requires deterministic page numbers for every chunk.",
+        fix="Provide a PDF with readable page structure or convert it to text with form-feed page breaks.",
+        example='{"upload_id":"<checksum>"}',
+    )
 
 
 def _upload_id_message() -> str:

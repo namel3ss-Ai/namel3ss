@@ -6,16 +6,32 @@ def chunk_text(text: str, *, max_chars: int = 800, overlap: int = 100) -> list[d
         return []
     paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
     chunks: list[dict] = []
-    index = 0
+    chunk_index = 0
     for para in paragraphs:
         for part in _split_with_overlap(para, max_chars=max_chars, overlap=overlap):
             chunk = {
-                "index": index,
+                "chunk_index": chunk_index,
                 "text": part,
                 "chars": len(part),
             }
             chunks.append(chunk)
-            index += 1
+            chunk_index += 1
+    return chunks
+
+
+def chunk_pages(pages: list[str], *, max_chars: int = 800, overlap: int = 100) -> list[dict]:
+    if not pages:
+        return []
+    chunks: list[dict] = []
+    chunk_index = 0
+    for page_number, page in enumerate(pages, start=1):
+        page_chunks = chunk_text(page or "", max_chars=max_chars, overlap=overlap)
+        for chunk in page_chunks:
+            entry = dict(chunk)
+            entry["chunk_index"] = chunk_index
+            entry["page_number"] = page_number
+            chunks.append(entry)
+            chunk_index += 1
     return chunks
 
 
@@ -38,4 +54,4 @@ def _split_with_overlap(text: str, *, max_chars: int, overlap: int) -> list[str]
     return output
 
 
-__all__ = ["chunk_text"]
+__all__ = ["chunk_pages", "chunk_text"]

@@ -102,7 +102,7 @@ def test_chunk_order_is_stable() -> None:
     first = chunk_text(text, max_chars=10, overlap=2)
     second = chunk_text(text, max_chars=10, overlap=2)
     assert first == second
-    assert [chunk["index"] for chunk in first] == list(range(len(first)))
+    assert [chunk["chunk_index"] for chunk in first] == list(range(len(first)))
 
 
 def test_preview_scrubs_paths() -> None:

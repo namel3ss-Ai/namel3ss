@@ -7,6 +7,7 @@ Ingestion converts uploaded files into clean, deterministic text chunks that can
 - Extracts text deterministically for the detected type.
 - Computes quality signals and applies a quality gate.
 - Normalizes and chunks text for indexing when allowed.
+- Captures page-level provenance for each chunk.
 
 ## Quality gate
 Each upload produces exactly one status:
@@ -28,6 +29,29 @@ Report fields:
 - `signals`
 - `preview`
 - `reasons`
+- `provenance`
+
+Provenance fields:
+- `document_id`
+- `source_name`
+
+Chunk entries live in:
+
+```
+state.index.chunks
+```
+
+Chunk fields:
+- `upload_id`
+- `document_id`
+- `source_name`
+- `page_number`
+- `chunk_index`
+- `chunk_id`
+- `order`
+- `text`
+- `chars`
+- `low_quality`
 
 ## Running ingestion
 Ingestion runs through a deterministic UI action:

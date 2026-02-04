@@ -22,6 +22,10 @@ retrieval_run { query, limit? }
 
 Results include:
 - `upload_id`
+- `document_id`
+- `source_name`
+- `page_number`
+- `chunk_index`
 - `chunk_id`
 - `quality` (`pass` or `warn`)
 - `low_quality` (true when quality is `warn`)
