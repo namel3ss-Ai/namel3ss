@@ -7,7 +7,7 @@ from namel3ss.ir.lowering.page_list import _default_list_primary, _list_id_field
 from namel3ss.runtime.records.service import build_record_scope
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.schema import records as schema
-from namel3ss.ui.manifest.actions import _form_action_id
+from namel3ss.ui.manifest.actions import _allocate_action_id, _form_action_id
 from namel3ss.ui.manifest.canonical import _element_id
 from namel3ss.ui.manifest.origin import _attach_origin
 from namel3ss.ui.manifest_chart import _build_chart_element, _resolve_state_list, _state_path_label
@@ -254,6 +254,7 @@ def build_list_item(
             "variant": item.variant,
             "item": _list_item_mapping(item.item),
             "rows": rows,
+            "empty_state": _empty_state_for_list(item.empty_text),
             **base,
         }
         if item.empty_text:
