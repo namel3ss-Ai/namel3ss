@@ -15,6 +15,12 @@ from namel3ss.ir import nodes as ir
 from namel3ss.pipelines.model import PipelineStepResult, pipeline_step_id
 from namel3ss.pipelines.registry import pipeline_definitions
 from namel3ss.pipelines.runner import run_pipeline
+from namel3ss.runtime.answer.traces import (
+    answer_explain_from_error,
+    answer_trace_from_error,
+    answer_trace_from_steps,
+    build_answer_explain_trace,
+)
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.runtime.values.coerce import require_type
@@ -83,6 +89,8 @@ def _run_pipeline(
         return _run_ingestion(ctx, payload, expr)
     if name == "retrieval":
         return _run_retrieval(ctx, payload, expr)
+    if name == "answer":
+        return _run_answer(ctx, payload, expr)
     raise Namel3ssError(
         build_guidance_message(
             what=f'Unknown pipeline "{name}".',
@@ -147,6 +155,38 @@ def _run_retrieval(ctx: ExecutionContext, payload: dict, expr: ir.CallPipelineEx
         }
         output["report"] = report
     ctx.traces.extend(_retrieval_traces(report if isinstance(report, dict) else {}))
+    return output, result.steps
+
+
+def _run_answer(ctx: ExecutionContext, payload: dict, expr: ir.CallPipelineExpr) -> tuple[dict, list[PipelineStepResult]]:
+    _require_uploads_capability(ctx, expr)
+    policy = load_ingestion_policy(
+        project_root=ctx.project_root,
+        app_path=ctx.app_path,
+        policy_decl=getattr(ctx, "policy", None),
+    )
+    decision = evaluate_ingestion_policy(policy, ACTION_RETRIEVAL_INCLUDE_WARN, ctx.identity)
+    ctx.traces.append(policy_trace(ACTION_RETRIEVAL_INCLUDE_WARN, decision))
+    try:
+        result = run_pipeline(ctx, name="answer", payload=payload)
+    except Exception as exc:
+        trace = answer_trace_from_error(exc)
+        if trace is not None:
+            ctx.traces.append(trace)
+        explain_trace = answer_explain_from_error(exc)
+        if explain_trace is not None:
+            ctx.traces.append(explain_trace)
+        raise
+    output = result.output
+    report = output.get("report") if isinstance(output, dict) else None
+    if not isinstance(report, dict):
+        raise Namel3ssError("Answer report is missing.", line=expr.line, column=expr.column)
+    trace = answer_trace_from_steps(result.steps)
+    if trace is not None:
+        ctx.traces.append(trace)
+    explain_bundle = report.get("explain")
+    if isinstance(explain_bundle, dict):
+        ctx.traces.append(build_answer_explain_trace(explain_bundle))
     return output, result.steps
 
 
@@ -347,20 +387,51 @@ def _ingestion_traces(report: dict) -> list[dict]:
     method_used = report.get("method_used")
     status = report.get("status")
     reasons = report.get("reasons")
-    return [
+    provenance = report.get("provenance") if isinstance(report.get("provenance"), dict) else {}
+    source_name = provenance.get("source_name") if isinstance(provenance, dict) else None
+    traces = [
         {
             "type": TraceEventType.INGESTION_STARTED,
             "upload_id": upload_id,
             "method": method_used,
             "detected": detected,
+            "source_name": source_name,
         },
+    ]
+    traces.extend(_progress_traces(report))
+    traces.append(
         {
             "type": TraceEventType.INGESTION_QUALITY_GATE,
             "upload_id": upload_id,
             "status": status,
             "reasons": reasons,
-        },
-    ]
+            "source_name": source_name,
+        }
+    )
+    return traces
+
+
+def _progress_traces(report: dict) -> list[dict]:
+    events = report.get("progress")
+    if not isinstance(events, list):
+        return []
+    traces: list[dict] = []
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        if event.get("phase") != "quick":
+            continue
+        trace = {
+            "type": TraceEventType.INGESTION_PROGRESS,
+            "title": event.get("title"),
+            "upload_id": event.get("upload_id"),
+            "source_name": event.get("source_name"),
+            "ingestion_phase": event.get("phase"),
+        }
+        if "status" in event:
+            trace["status"] = event.get("status")
+        traces.append(trace)
+    return traces
 
 
 def _retrieval_traces(result: dict) -> list[dict]:
@@ -370,9 +441,18 @@ def _retrieval_traces(result: dict) -> list[dict]:
     warn_allowed = result.get("warn_allowed") if isinstance(result, dict) else None
     excluded_warn = result.get("excluded_warn") if isinstance(result, dict) else None
     warn_policy = result.get("warn_policy") if isinstance(result, dict) else None
+    tier = result.get("tier") if isinstance(result, dict) else None
     return [
         {
             "type": TraceEventType.RETRIEVAL_STARTED,
+        },
+        {
+            "type": TraceEventType.RETRIEVAL_TIER_SELECTED,
+            "tier": tier.get("requested") if isinstance(tier, dict) else None,
+            "selected": tier.get("selected") if isinstance(tier, dict) else None,
+            "reason": tier.get("reason") if isinstance(tier, dict) else None,
+            "available": tier.get("available") if isinstance(tier, dict) else None,
+            "counts": tier.get("counts") if isinstance(tier, dict) else None,
         },
         {
             "type": TraceEventType.RETRIEVAL_QUALITY_POLICY,
@@ -384,6 +464,8 @@ def _retrieval_traces(result: dict) -> list[dict]:
             "warn_policy": warn_policy,
         },
     ]
+
+
 
 
 __all__ = ["execute_pipeline_call"]

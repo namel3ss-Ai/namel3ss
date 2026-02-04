@@ -329,7 +329,7 @@ def _lint_refs_ast(ast_program, flow_names: set[str], record_names: set[str]) ->
                         )
                     )
             if isinstance(item, ast.TableItem):
-                if item.record_name not in record_names:
+                if item.record_name and item.record_name not in record_names:
                     findings.append(
                         Finding(
                             code="refs.unknown_record",
@@ -350,7 +350,7 @@ def _lint_refs_ast(ast_program, flow_names: set[str], record_names: set[str]) ->
                             )
                         )
             if isinstance(item, ast.ListItem):
-                if item.record_name not in record_names:
+                if item.record_name and item.record_name not in record_names:
                     findings.append(
                         Finding(
                             code="refs.unknown_record",

@@ -379,6 +379,11 @@ flow "resolve_case": requires true
     chunk.upload_id is not equal to case_key
   let new_chunk is map:
     "upload_id" is case_key
+    "document_id" is case_key
+    "source_name" is case_key
+    "page_number" is 1
+    "chunk_index" is 0
+    "ingestion_phase" is "deep"
     "chunk_id" is chunk_id
     "order" is 0
     "text" is archive_text

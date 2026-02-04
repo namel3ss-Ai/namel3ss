@@ -5,7 +5,7 @@ from typing import List
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.lang.keywords import is_keyword
-from namel3ss.parser.decl.page_common import _parse_boolean_value, _parse_string_value
+from namel3ss.parser.decl.page_common import _is_visibility_rule_start, _parse_boolean_value, _parse_string_value, _parse_visibility_rule_line
 from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
 
@@ -13,15 +13,22 @@ def parse_form_block(
     parser,
     *,
     allow_pattern_params: bool = False,
-) -> tuple[List[ast.FormGroup] | None, List[ast.FormFieldConfig] | None]:
+) -> tuple[List[ast.FormGroup] | None, List[ast.FormFieldConfig] | None, ast.VisibilityRule | None]:
     parser._expect("NEWLINE", "Expected newline after form header")
     parser._expect("INDENT", "Expected indented form block")
     groups: List[ast.FormGroup] | None = None
     fields: List[ast.FormFieldConfig] | None = None
+    visibility_rule: ast.VisibilityRule | None = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
         tok = parser._current()
+        if _is_visibility_rule_start(parser):
+            if visibility_rule is not None:
+                raise Namel3ssError("Visibility blocks may only declare one only-when rule.", line=tok.line, column=tok.column)
+            visibility_rule = _parse_visibility_rule_line(parser, allow_pattern_params=allow_pattern_params)
+            parser._match("NEWLINE")
+            continue
         if tok.type == "IDENT" and tok.value == "groups":
             if groups is not None:
                 raise Namel3ssError("Groups block is declared more than once", line=tok.line, column=tok.column)
@@ -40,7 +47,7 @@ def parse_form_block(
             column=tok.column,
         )
     parser._expect("DEDENT", "Expected end of form block")
-    return groups, fields
+    return groups, fields, visibility_rule
 
 
 def _parse_form_groups_block(parser, *, allow_pattern_params: bool) -> List[ast.FormGroup]:

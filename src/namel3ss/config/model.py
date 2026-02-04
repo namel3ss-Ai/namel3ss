@@ -31,6 +31,22 @@ class MistralConfig:
 
 
 @dataclass
+class AnswerConfig:
+    provider: str = "mock"
+    model: str = "mock-model"
+
+
+@dataclass
+class EmbeddingConfig:
+    provider: str = "hash"
+    model: str = "hash"
+    version: str = "v1"
+    dims: int = 64
+    precision: int = 6
+    candidate_limit: int = 50
+
+
+@dataclass
 class PersistenceConfig:
     target: str = "memory"
     db_path: str = ".namel3ss/data.db"
@@ -100,6 +116,8 @@ class AppConfig:
     anthropic: AnthropicConfig = field(default_factory=AnthropicConfig)
     gemini: GeminiConfig = field(default_factory=GeminiConfig)
     mistral: MistralConfig = field(default_factory=MistralConfig)
+    answer: AnswerConfig = field(default_factory=AnswerConfig)
+    embedding: EmbeddingConfig = field(default_factory=EmbeddingConfig)
     persistence: PersistenceConfig = field(default_factory=PersistenceConfig)
     identity: IdentityConfig = field(default_factory=IdentityConfig)
     authentication: AuthenticationConfig = field(default_factory=AuthenticationConfig)
@@ -118,6 +136,8 @@ __all__ = [
     "AnthropicConfig",
     "GeminiConfig",
     "MistralConfig",
+    "AnswerConfig",
+    "EmbeddingConfig",
     "PersistenceConfig",
     "IdentityConfig",
     "AuthenticationConfig",

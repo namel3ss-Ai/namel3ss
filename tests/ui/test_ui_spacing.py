@@ -7,10 +7,19 @@ BASE_BODY = '''record "User":
   email text
   age number
 
+contract flow "send":
+  input:
+    message is text
+    question is text
+  output:
+    result is text
+
 flow "send":
   return "ok"
 
 page "home":
+  input text as question
+    send to flow "send"
   compose stats:
     section "Overview":
       row:
@@ -69,6 +78,7 @@ def test_spacing_applies_to_layout_and_components():
     manifest = build_manifest(program, state={})
     by_type = _by_type(manifest)
     required = [
+        "input",
         "compose",
         "section",
         "row",

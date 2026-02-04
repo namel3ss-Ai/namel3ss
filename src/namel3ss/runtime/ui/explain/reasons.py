@@ -135,6 +135,29 @@ def visibility_reasons(visibility: dict | None, visible: bool) -> list[str]:
     return reasons
 
 
+def availability_reasons(availability: dict | None, enabled: bool | None) -> list[str]:
+    if availability is None:
+        return [] if enabled is not False else ["action disabled because availability result is false"]
+    reasons: list[str] = []
+    predicate = availability.get("predicate") if isinstance(availability, dict) else None
+    state_paths = availability.get("state_paths") if isinstance(availability, dict) else None
+    result = availability.get("result") if isinstance(availability, dict) else None
+    if predicate:
+        reasons.append(f"availability predicate {predicate}")
+    if state_paths:
+        joined = ", ".join(str(path) for path in state_paths)
+        reasons.append(f"availability paths {joined}")
+    if isinstance(result, bool):
+        result_text = "true" if result else "false"
+        reasons.append(f"availability result {result_text}")
+    if enabled is True:
+        if isinstance(result, bool):
+            reasons.append("action enabled because availability result is true")
+    elif enabled is False:
+        reasons.append("action disabled because availability result is false")
+    return reasons
+
+
 __all__ = [
     "ACTION_AVAILABLE",
     "ACTION_NOT_AVAILABLE",
@@ -146,5 +169,6 @@ __all__ = [
     "declared_in_page",
     "evaluate_requires",
     "format_requires",
+    "availability_reasons",
     "visibility_reasons",
 ]

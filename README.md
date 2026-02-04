@@ -39,6 +39,17 @@ Try it in 60 seconds: [docs/quickstart.md](docs/quickstart.md).
 - Demos: [src/namel3ss/demos](src/namel3ss/demos)
 - Studio (inspection UI): [docs/studio.md](docs/studio.md)
 
+## RAG support (deterministic)
+
+namel3ss supports production-grade retrieval-augmented generation as a first-class pattern:
+- Deterministic ingestion and retrieval
+- Answering with mandatory citations
+- PDF page preview and exact source highlighting
+- Explain mode for auditable selection
+- Optional embeddings (runtime config only, no grammar changes)
+
+See the canonical overview: [docs/rag/overview.md](docs/rag/overview.md)
+
 ## Core stable
 
 Core stable is the graduation gate for the language surface, compiler determinism, and safety guards.
@@ -51,8 +62,8 @@ Use this for development and testing.
 
 ```bash
 python3 -m venv .venv && . .venv/bin/activate
-python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
-python -m namel3ss --help
+python3 -m pip install --upgrade pip && python3 -m pip install -e ".[dev]"
+python3 -m namel3ss --help
 ```
 
 ### Run with Docker (isolated runtime)
@@ -94,20 +105,20 @@ docker run --rm namel3ss:local n3 --help
 
 Install (source, editable):
 ```bash
-python -m pip install --upgrade pip
-python -m pip install -e ".[dev]"
+python3 -m pip install --upgrade pip
+python3 -m pip install -e ".[dev]"
 ```
 
 Verify CLI and package:
 ```bash
 n3 --version
 n3 doc
-python tools/package_verify.py
+python3 tools/package_verify.py
 ```
 
 Verify embedding (C example, requires C toolchain + cargo):
 ```bash
-python -m pytest -q tests/embed/test_embed_c_example.py
+python3 -m pytest -q tests/embed/test_embed_c_example.py
 ```
 
 ## Browser Protocol
@@ -227,7 +238,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 Summary:
 - Clone the repo.
 - Create and activate a virtual environment.
-- Install editable + run tests (`python -m pytest -q`).
+- Install editable + run tests (`python3 -m pytest -q`).
 
 ## Troubleshooting
 

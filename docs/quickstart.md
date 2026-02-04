@@ -120,7 +120,8 @@ Bundled templates you can scaffold immediately:
 Bundled examples live inside the distribution and are not copied unless you ask.
 
 - List templates and examples: `n3 new`
-- Scaffold an example: `n3 new example <name>`
+- Scaffold the `hello_flow` example: `n3 new example hello_flow`
+- Other examples are copy-folder only (see `src/namel3ss/examples`).
 
 ## Studio tips
 

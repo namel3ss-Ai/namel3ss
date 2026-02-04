@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -43,6 +44,40 @@ def read_version(repo_root: Path) -> str:
     if not version_path.exists():
         raise RuntimeError("VERSION file not found.")
     return version_path.read_text(encoding="utf-8").strip()
+
+
+def read_changelog(repo_root: Path) -> str:
+    changelog_path = repo_root / "CHANGELOG.md"
+    if not changelog_path.exists():
+        raise RuntimeError("CHANGELOG.md not found.")
+    return changelog_path.read_text(encoding="utf-8")
+
+
+def extract_notes(changelog: str, version: str) -> str:
+    pattern = re.compile(rf"^##\\s+v?{re.escape(version)}\\b", re.MULTILINE)
+    match = pattern.search(changelog)
+    if not match:
+        raise RuntimeError(f"Release notes for v{version} were not found in CHANGELOG.md.")
+    start = match.start()
+    following = changelog[match.end() :]
+    next_match = re.search(r"^##\\s+", following, re.MULTILINE)
+    end = match.end() + (next_match.start() if next_match else len(following))
+    return changelog[start:end].strip()
+
+
+def notes_include_runtime_statement(notes: str) -> bool:
+    lowered = notes.lower()
+    required_phrases = (
+        "no grammar/runtime changes",
+        "no grammar changes",
+        "no runtime changes",
+        "no language changes",
+        "grammar/runtime: none",
+        "grammar: none",
+        "runtime: none",
+        "language: none",
+    )
+    return any(phrase in lowered for phrase in required_phrases)
 
 
 def normalize_tag(tag: str) -> str:
@@ -142,6 +177,14 @@ def run_checks(ctx: GuardContext, repo_root: Path, require_ci: bool, workflow: s
         if not token:
             raise RuntimeError("GITHUB_TOKEN is required to verify CI status.")
         require_ci_success(ctx.repo, ctx.head_sha, token, workflow)
+
+    changelog = read_changelog(repo_root)
+    notes = extract_notes(changelog, ctx.version)
+    if not notes_include_runtime_statement(notes):
+        raise RuntimeError(
+            f"Release notes for v{ctx.version} must state grammar/runtime change status. "
+            "Add a line like 'No grammar/runtime changes.' to CHANGELOG.md."
+        )
 
 
 def main() -> int:

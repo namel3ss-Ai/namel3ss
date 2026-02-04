@@ -18,6 +18,7 @@ def parse_program(parser) -> ast.Program:
     ui_settings = default_ui_settings_with_meta()
     ui_line = None
     ui_column = None
+    ui_active_page_rules = None
     capabilities: list[str] = []
     policy: ast.PolicyDecl | None = None
     packs: list[str] = []
@@ -264,7 +265,7 @@ def parse_program(parser) -> ast.Program:
                     line=tok.line,
                     column=tok.column,
                 )
-            ui_settings, ui_line, ui_column = rule.parse(parser)
+            ui_settings, ui_active_page_rules, ui_line, ui_column = rule.parse(parser)
             continue
         raise Namel3ssError("Unexpected top-level token", line=tok.line, column=tok.column)
     if parser.require_spec and not parser.allow_capsule:
@@ -298,6 +299,7 @@ def parse_program(parser) -> ast.Program:
         ui_settings=ui_settings,
         ui_line=ui_line,
         ui_column=ui_column,
+        ui_active_page_rules=ui_active_page_rules,
         capabilities=capabilities,
         records=records,
         functions=functions,

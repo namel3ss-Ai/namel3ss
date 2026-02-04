@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.ir.lowering.expressions import _lower_expression
 from namel3ss.ir.lowering.flow_refs import unknown_flow_message
 from namel3ss.ir.lowering.page_actions import _validate_overlay_action
-from namel3ss.ir.model.pages import TableColumnDirective, TablePagination, TableRowAction, TableSort
+from namel3ss.ir.model.pages import ActionAvailabilityRule, TableColumnDirective, TablePagination, TableRowAction, TableSort
 from namel3ss.schema import records as schema
 
 
@@ -93,6 +94,67 @@ def _lower_table_columns(
     ]
 
 
+def _lower_state_table_columns(
+    columns: list[ast.TableColumnDirective] | None,
+    *,
+    line: int | None,
+    column: int | None,
+) -> list[TableColumnDirective]:
+    if not columns:
+        raise Namel3ssError("State tables require columns", line=line, column=column)
+    include_directives: dict[str, ast.TableColumnDirective] = {}
+    label_directives: dict[str, ast.TableColumnDirective] = {}
+    for directive in columns:
+        if directive.kind == "include":
+            if directive.name in include_directives:
+                raise Namel3ssError(
+                    f"Column '{directive.name}' is included more than once",
+                    line=directive.line,
+                    column=directive.column,
+                )
+            include_directives[directive.name] = directive
+            continue
+        if directive.kind == "label":
+            if directive.name in label_directives:
+                raise Namel3ssError(
+                    f"Column '{directive.name}' label is declared more than once",
+                    line=directive.line,
+                    column=directive.column,
+                )
+            label_directives[directive.name] = directive
+            continue
+        if directive.kind == "exclude":
+            raise Namel3ssError(
+                "State tables do not support exclude directives",
+                line=directive.line,
+                column=directive.column,
+            )
+        raise Namel3ssError(
+            f"Unsupported columns directive '{directive.kind}'",
+            line=directive.line,
+            column=directive.column,
+        )
+    if not include_directives:
+        raise Namel3ssError("State tables require include columns", line=line, column=column)
+    for name, directive in label_directives.items():
+        if name not in include_directives:
+            raise Namel3ssError(
+                f"Column '{name}' is labeled but not included",
+                line=directive.line,
+                column=directive.column,
+            )
+    return [
+        TableColumnDirective(
+            kind=directive.kind,
+            name=directive.name,
+            label=directive.label,
+            line=directive.line,
+            column=directive.column,
+        )
+        for directive in columns
+    ]
+
+
 def _lower_table_sort(sort: ast.TableSort | None, record: schema.RecordSchema) -> TableSort | None:
     if sort is None:
         return None
@@ -146,12 +208,14 @@ def _lower_table_row_actions(
                 column=action.column,
             )
         seen_labels.add(action.label)
+        availability_rule = _lower_action_availability_rule(getattr(action, "availability_rule", None))
         lowered.append(
             TableRowAction(
                 label=action.label,
                 flow_name=action.flow_name,
                 kind=action.kind,
                 target=action.target,
+                availability_rule=availability_rule,
                 line=action.line,
                 column=action.column,
             )
@@ -159,8 +223,20 @@ def _lower_table_row_actions(
     return lowered
 
 
+def _lower_action_availability_rule(rule: ast.ActionAvailabilityRule | None) -> ActionAvailabilityRule | None:
+    if rule is None:
+        return None
+    return ActionAvailabilityRule(
+        path=_lower_expression(rule.path),
+        value=_lower_expression(rule.value),
+        line=rule.line,
+        column=rule.column,
+    )
+
+
 __all__ = [
     "_lower_table_columns",
+    "_lower_state_table_columns",
     "_lower_table_sort",
     "_lower_table_pagination",
     "_lower_table_row_actions",

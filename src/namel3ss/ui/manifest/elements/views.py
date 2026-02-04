@@ -10,7 +10,7 @@ from namel3ss.schema import records as schema
 from namel3ss.ui.manifest.actions import _allocate_action_id, _form_action_id, _ingestion_action_id, _upload_action_id
 from namel3ss.ui.manifest.canonical import _element_id
 from namel3ss.ui.manifest.origin import _attach_origin
-from namel3ss.ui.manifest_chart import _build_chart_element
+from namel3ss.ui.manifest_chart import _build_chart_element, _resolve_state_list, _state_path_label
 from namel3ss.ui.manifest_chat import _chat_item_kind, _chat_item_to_manifest
 from namel3ss.ui.manifest_form import _build_form_element
 from namel3ss.ui.manifest_list import (
@@ -18,6 +18,7 @@ from namel3ss.ui.manifest_list import (
     _list_id,
     _list_id_field,
     _list_item_mapping,
+    _list_state_id,
 )
 from namel3ss.ui.manifest.state_defaults import StateContext
 from namel3ss.ui.manifest.visibility import apply_visibility, evaluate_visibility
@@ -25,9 +26,11 @@ from namel3ss.ui.manifest_table import (
     _apply_table_pagination,
     _apply_table_sort,
     _build_row_actions,
+    _resolve_state_table_columns,
     _resolve_table_columns,
     _table_id,
     _table_id_field,
+    _table_state_id,
 )
 from namel3ss.validation import ValidationMode
 
@@ -160,45 +163,79 @@ def build_table_item(
     path: List[int],
     store: Storage | None,
     identity: dict | None,
+    state_ctx: StateContext,
+    mode: ValidationMode,
+    warnings: list | None,
 ) -> tuple[dict, Dict[str, dict]]:
     index = path[-1] if path else 0
-    record = _require_record(item.record_name, record_map, item)
-    table_id = _table_id(page_slug, item.record_name)
     element_id = _element_id(page_slug, "table", path)
-    rows: list[dict] = []
-    if store is not None:
-        scope = build_record_scope(record, identity)
-        rows = store.list_records(record, scope=scope)[:20]
-    columns = _resolve_table_columns(record, item.columns)
-    if item.sort:
-        rows = _apply_table_sort(rows, item.sort, record)
-    if item.pagination:
-        rows = _apply_table_pagination(rows, item.pagination)
-    row_actions, action_entries = _build_row_actions(element_id, page_slug, item.row_actions)
     base = _base_element(element_id, page_name, page_slug, index, item)
+    if item.record_name:
+        record = _require_record(item.record_name, record_map, item)
+        table_id = _table_id(page_slug, item.record_name)
+        rows: list[dict] = []
+        if store is not None:
+            scope = build_record_scope(record, identity)
+            rows = store.list_records(record, scope=scope)[:20]
+        columns = _resolve_table_columns(record, item.columns)
+        if item.sort:
+            rows = _apply_table_sort(rows, item.sort, record)
+        if item.pagination:
+            rows = _apply_table_pagination(rows, item.pagination)
+        row_actions, action_entries = _build_row_actions(
+            element_id,
+            page_slug,
+            item.row_actions,
+            state_ctx,
+            mode,
+            warnings,
+        )
+        element = {
+            "type": "table",
+            "id": table_id,
+            "record": record.name,
+            "columns": columns,
+            "rows": rows,
+            **base,
+        }
+        if item.empty_text:
+            element["empty_text"] = item.empty_text
+        if item.columns:
+            element["columns_configured"] = True
+        if item.sort:
+            element["sort"] = {"by": item.sort.by, "order": item.sort.order}
+        if item.pagination:
+            element["pagination"] = {"page_size": item.pagination.page_size}
+        if item.selection is not None:
+            element["selection"] = item.selection
+        if row_actions:
+            element["row_actions"] = row_actions
+        if row_actions or (item.selection in {"single", "multi"}):
+            element["id_field"] = _table_id_field(record)
+        return _attach_origin(element, item), action_entries
+    source_label = _state_path_label(item.source)
+    rows = _resolve_state_list(
+        item.source,
+        state_ctx,
+        mode,
+        warnings,
+        item.line,
+        item.column,
+        label="Table source",
+    )
+    columns = _resolve_state_table_columns(item.columns or [])
     element = {
         "type": "table",
-        "id": table_id,
-        "record": record.name,
+        "id": _table_state_id(page_slug, source_label),
+        "source": source_label,
         "columns": columns,
         "rows": rows,
         **base,
     }
     if item.empty_text:
         element["empty_text"] = item.empty_text
-    if item.columns:
-        element["columns_configured"] = True
-    if item.sort:
-        element["sort"] = {"by": item.sort.by, "order": item.sort.order}
-    if item.pagination:
-        element["pagination"] = {"page_size": item.pagination.page_size}
-    if item.selection is not None:
-        element["selection"] = item.selection
-    if row_actions:
-        element["row_actions"] = row_actions
-    if row_actions or (item.selection in {"single", "multi"}):
-        element["id_field"] = _table_id_field(record)
-    return _attach_origin(element, item), action_entries
+    element["columns_configured"] = True
+    return _attach_origin(element, item), {}
 
 
 def build_list_item(
@@ -210,21 +247,53 @@ def build_list_item(
     path: List[int],
     store: Storage | None,
     identity: dict | None,
+    state_ctx: StateContext,
+    mode: ValidationMode,
+    warnings: list | None,
 ) -> tuple[dict, Dict[str, dict]]:
     index = path[-1] if path else 0
-    record = _require_record(item.record_name, record_map, item)
-    list_id = _list_id(page_slug, item.record_name)
     element_id = _element_id(page_slug, "list", path)
-    rows: list[dict] = []
-    if store is not None:
-        scope = build_record_scope(record, identity)
-        rows = store.list_records(record, scope=scope)[:20]
-    action_entries, action_map = _build_list_actions(element_id, item.actions)
     base = _base_element(element_id, page_name, page_slug, index, item)
+    if item.record_name:
+        record = _require_record(item.record_name, record_map, item)
+        list_id = _list_id(page_slug, item.record_name)
+        rows: list[dict] = []
+        if store is not None:
+            scope = build_record_scope(record, identity)
+            rows = store.list_records(record, scope=scope)[:20]
+        action_entries, action_map = _build_list_actions(element_id, page_slug, item.actions, state_ctx, mode, warnings)
+        element = {
+            "type": "list",
+            "id": list_id,
+            "record": record.name,
+            "variant": item.variant,
+            "item": _list_item_mapping(item.item),
+            "rows": rows,
+            **base,
+        }
+        if item.empty_text:
+            element["empty_text"] = item.empty_text
+        if item.selection is not None:
+            element["selection"] = item.selection
+        if action_entries:
+            element["actions"] = action_entries
+        if action_entries or (item.selection in {"single", "multi"}):
+            element["id_field"] = _list_id_field(record)
+        return _attach_origin(element, item), action_map
+    source_label = _state_path_label(item.source)
+    rows = _resolve_state_list(
+        item.source,
+        state_ctx,
+        mode,
+        warnings,
+        item.line,
+        item.column,
+        label="List source",
+    )
     element = {
         "type": "list",
-        "id": list_id,
-        "record": record.name,
+        "id": _list_state_id(page_slug, source_label),
+        "source": source_label,
         "variant": item.variant,
         "item": _list_item_mapping(item.item),
         "rows": rows,
@@ -232,13 +301,7 @@ def build_list_item(
     }
     if item.empty_text:
         element["empty_text"] = item.empty_text
-    if item.selection is not None:
-        element["selection"] = item.selection
-    if action_entries:
-        element["actions"] = action_entries
-    if action_entries or (item.selection in {"single", "multi"}):
-        element["id_field"] = _list_id_field(record)
-    return _attach_origin(element, item), action_map
+    return _attach_origin(element, item), {}
 
 
 def build_chart_item(
@@ -371,6 +434,7 @@ def build_tabs_item(
         labels.append(tab.label)
         tab_predicate_visible, tab_visibility = evaluate_visibility(
             getattr(tab, "visibility", None),
+            getattr(tab, "visibility_rule", None),
             state_ctx,
             mode,
             warnings,

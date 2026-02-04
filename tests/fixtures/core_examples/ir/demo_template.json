@@ -39,6 +39,7 @@
             "line": 23,
             "type": "AttrAccess"
           },
+          "input_mode": "text",
           "line": 23,
           "target": "reply",
           "type": "AskAIStmt"
@@ -217,6 +218,7 @@
           "children": [
             {
               "column": 5,
+              "fields": [],
               "flow_name": "ask_ai",
               "line": 41,
               "type": "ChatComposerItem",
@@ -283,6 +285,7 @@
                   "row_actions": null,
                   "selection": null,
                   "sort": null,
+                  "source": null,
                   "type": "TableItem",
                   "visibility": null
                 }
@@ -307,6 +310,7 @@
                   "row_actions": null,
                   "selection": null,
                   "sort": null,
+                  "source": null,
                   "type": "TableItem",
                   "visibility": null
                 }

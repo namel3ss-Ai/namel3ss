@@ -167,7 +167,7 @@ page "composition":
   section "Retrieval":
     text is "Submit a query, then run retrieval."
     chat:
-      composer calls flow "run_retrieval"
+      composer sends to flow "run_retrieval"
     table is "RetrievalReport":
       columns:
         include query

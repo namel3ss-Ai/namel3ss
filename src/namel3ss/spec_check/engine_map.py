@@ -17,6 +17,7 @@ SPEC_CAPABILITIES: dict[str, frozenset[str]] = {
             "scheduling",
             "uploads",
             "secrets",
+            "embedding",
             "agents_v1",
             "identity_v1",
             "theme_v1",

@@ -92,6 +92,26 @@ _CAPABILITIES = (
         examples=(),
     ),
     _cap(
+        cap_id="compute.ordering",
+        title="Deterministic ordering",
+        category="compute",
+        status=STATUS_SHIPPED,
+        tests=(
+            "tests/runtime/test_deterministic_ranking.py",
+        ),
+        examples=(),
+    ),
+    _cap(
+        cap_id="compute.top_k",
+        title="Deterministic top-K selection",
+        category="compute",
+        status=STATUS_SHIPPED,
+        tests=(
+            "tests/runtime/test_deterministic_ranking.py",
+        ),
+        examples=(),
+    ),
+    _cap(
         cap_id="runtime.tools",
         title="Tool declarations and purity gating",
         category="tools",
@@ -179,6 +199,16 @@ _CAPABILITIES = (
         tests=(
             "tests/runtime/test_ai_execution.py",
             "tests/runtime/test_agents_parallel.py",
+        ),
+        examples=(),
+    ),
+    _cap(
+        cap_id="ai.structured_input",
+        title="Structured input for AI calls",
+        category="ai",
+        status=STATUS_SHIPPED,
+        tests=(
+            "tests/runtime/test_ai_structured_input.py",
         ),
         examples=(),
     ),

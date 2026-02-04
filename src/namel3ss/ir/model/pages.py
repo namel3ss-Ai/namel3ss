@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import List
 
 from namel3ss.ir.model.base import Node
-from namel3ss.ir.model.expressions import Expression, StatePath
+from namel3ss.ir.model.expressions import Expression, Literal, StatePath
 
 
 @dataclass
@@ -14,11 +14,51 @@ class Page(Node):
     requires: Expression | None = None
     purpose: str | None = None
     state_defaults: dict | None = None
+    status: "StatusBlock" | None = None
 
 
 @dataclass
 class PageItem(Node):
     visibility: StatePath | None = field(default=None, kw_only=True)
+    visibility_rule: "VisibilityRule" | None = field(default=None, kw_only=True)
+
+
+@dataclass
+class VisibilityRule(Node):
+    path: StatePath
+    value: Literal
+
+
+@dataclass
+class ActionAvailabilityRule(Node):
+    path: StatePath
+    value: Literal
+
+
+@dataclass
+class ActivePageRule(Node):
+    page_name: str
+    path: StatePath
+    value: Literal
+
+
+@dataclass
+class StatusCondition(Node):
+    path: StatePath
+    kind: str  # equals | empty
+    value: Literal | None = None
+
+
+@dataclass
+class StatusCase(Node):
+    name: str  # loading | empty | error
+    condition: StatusCondition
+    items: list["PageItem"]
+
+
+@dataclass
+class StatusBlock(Node):
+    cases: list[StatusCase]
 
 
 @dataclass
@@ -71,6 +111,13 @@ class TitleItem(PageItem):
 @dataclass
 class TextItem(PageItem):
     value: str
+
+
+@dataclass
+class TextInputItem(PageItem):
+    name: str
+    flow_name: str
+    availability_rule: ActionAvailabilityRule | None = field(default=None, kw_only=True)
 
 
 @dataclass
@@ -129,11 +176,13 @@ class TableRowAction(Node):
     flow_name: str | None = None
     kind: str = "call_flow"
     target: str | None = None
+    availability_rule: ActionAvailabilityRule | None = field(default=None, kw_only=True)
 
 
 @dataclass
 class TableItem(PageItem):
-    record_name: str
+    record_name: str | None = None
+    source: StatePath | None = None
     columns: List[TableColumnDirective] | None = None
     empty_text: str | None = None
     sort: TableSort | None = None
@@ -156,13 +205,15 @@ class ListAction(Node):
     flow_name: str | None = None
     kind: str = "call_flow"
     target: str | None = None
+    availability_rule: ActionAvailabilityRule | None = field(default=None, kw_only=True)
 
 
 @dataclass
 class ListItem(PageItem):
-    record_name: str
     variant: str
     item: ListItemMapping
+    record_name: str | None = None
+    source: StatePath | None = None
     empty_text: str | None = None
     selection: str | None = None
     actions: List[ListAction] | None = None
@@ -184,8 +235,19 @@ class ChatMessagesItem(PageItem):
 
 
 @dataclass
+class ChatComposerField(Node):
+    name: str
+    type_name: str
+    type_was_alias: bool = False
+    raw_type_name: str | None = None
+    type_line: int | None = None
+    type_column: int | None = None
+
+
+@dataclass
 class ChatComposerItem(PageItem):
     flow_name: str
+    fields: list[ChatComposerField] = field(default_factory=list)
 
 
 @dataclass
@@ -214,6 +276,7 @@ class TabItem(Node):
     label: str
     children: List["PageItem"]
     visibility: StatePath | None = field(default=None, kw_only=True)
+    visibility_rule: VisibilityRule | None = field(default=None, kw_only=True)
 
 
 @dataclass
@@ -238,6 +301,7 @@ class DrawerItem(PageItem):
 class ButtonItem(PageItem):
     label: str
     flow_name: str
+    availability_rule: ActionAvailabilityRule | None = field(default=None, kw_only=True)
 
 
 @dataclass
@@ -258,6 +322,7 @@ class CardAction(Node):
     flow_name: str | None = None
     kind: str = "call_flow"
     target: str | None = None
+    availability_rule: ActionAvailabilityRule | None = field(default=None, kw_only=True)
 
 
 @dataclass

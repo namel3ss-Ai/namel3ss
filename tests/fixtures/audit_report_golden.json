@@ -310,6 +310,9 @@
         "included_warn": false,
         "preferred_quality": "pass",
         "query": "invoice",
+        "query_keywords": [
+          "invoice"
+        ],
         "results": [],
         "warn_policy": {
           "action": "retrieval.include_warn",

@@ -354,13 +354,13 @@ This checklist expands on the existing `docs/beta-checklist.md`:
 
 ### Code Quality
 - [ ] Graduation tests pass (tests/graduation)
-- [ ] Line limit tool passes (python tools/line_limit_check.py)
-- [ ] Responsibility check passes (python tools/responsibility_check.py)
+- [ ] Line limit tool passes (python3 tools/line_limit_check.py)
+- [ ] Responsibility check passes (python3 tools/responsibility_check.py)
 - [ ] Golden tests unchanged for phase 0
 - [ ] Trace contract tests pass
 - [ ] No bracket characters in human text lines
 - [ ] Determinism tests pass across repeated runs
-- [ ] Compile check passes (python -m compileall src -q)
+- [ ] Compile check passes (python3 -m compileall src -q)
 - [ ] All pytest tests pass (pytest -q)
 
 ### Capability Matrix

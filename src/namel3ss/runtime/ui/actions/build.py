@@ -29,8 +29,11 @@ from namel3ss.runtime.ui.actions.upload_select import handle_upload_select_actio
 from namel3ss.runtime.ui.actions.upload_replace import handle_upload_replace_action
 from namel3ss.runtime.ui.actions.validate import (
     action_payload_message,
+    action_disabled_message,
     ensure_json_serializable,
     normalize_submit_payload,
+    text_input_missing_message,
+    text_input_type_message,
     unknown_action_message,
 )
 
@@ -90,6 +93,12 @@ def handle_action(
         raise Namel3ssError(unknown_action_message(action_id, actions))
 
     action = actions[action_id]
+    if action.get("enabled") is False:
+        predicate = None
+        availability = action.get("availability")
+        if isinstance(availability, dict):
+            predicate = availability.get("predicate")
+        raise Namel3ssError(action_disabled_message(action_id, predicate))
     action_type = action.get("type")
     obs = None
     owns_obs = False
@@ -301,6 +310,13 @@ def _handle_call_flow(
     flow_name = action.get("flow")
     if not isinstance(flow_name, str):
         raise Namel3ssError("Invalid flow reference in action")
+    input_field = action.get("input_field")
+    if isinstance(input_field, str):
+        if input_field not in payload:
+            raise Namel3ssError(text_input_missing_message(input_field))
+        value = payload.get(input_field)
+        if not isinstance(value, str):
+            raise Namel3ssError(text_input_type_message(input_field))
     outcome = build_flow_payload(
         program_ir,
         flow_name,

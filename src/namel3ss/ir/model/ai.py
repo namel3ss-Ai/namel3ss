@@ -29,3 +29,4 @@ class AskAIStmt(Statement):
     ai_name: str
     input_expr: Expression
     target: str
+    input_mode: str = "text"

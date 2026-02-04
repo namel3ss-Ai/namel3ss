@@ -1,33 +1,227 @@
-# namel3ss Grammar Contract
+# namel3ss Grammar and Behavior Contract
 
-> This document defines the frozen grammar and semantics of namel3ss. Changes require explicit compatibility review.
+This document defines the frozen grammar and semantics of namel3ss.
+Changes require explicit compatibility review.
+This document is the authoritative contract for namel3ss grammar and behavior. It freezes the language surface and determinism guarantees. Any conflict between this document and other docs, tests, or code is a bug.
 
-## Scope
-- The rules below are authoritative for all parsers, builders, and tooling.
-- Reserved words, identifiers, expressions, and match blocks follow a single canonical form.
-- Static vs runtime responsibilities are fixed; any change must go through compatibility review.
+## Authority and scope
+- This contract is normative for parsers, validators, the runtime, and the Studio renderer.
+- Only the forms shown here are allowed. Variants, aliases, and alternate spellings are forbidden.
+- This contract documents current behavior only. It does not propose new features.
 
-## Identifiers (bare or quoted, everywhere)
-- Names may be bare (`[A-Za-z_][A-Za-z0-9_]*`) or quoted strings.
-- Reserved words must be quoted when used as identifiers.
-- Dot-qualified references use the same rule for every segment; keywords are allowed when quoted.
+## Determinism guarantees
+- Same program + same inputs → same outputs.
+- UI manifests are fully replayable and deterministic.
+- Action identifiers are deterministic and stable for the same program.
+- Evaluation order is stable and defined by source order or by a documented deterministic order.
+- State changes occur only through explicit statements.
+- No timestamps, randomness, environment dependence, or hidden state are allowed in language semantics.
 
-## Expressions (existence checked only at runtime)
-- Expression grammar is stable; parsing never validates runtime existence of state, identity, records, or flows.
-- `state.*` paths and attribute access are accepted syntactically; missing data is a runtime or build-time semantic concern.
-- Static validation may warn about undeclared paths but cannot reject syntactically valid expressions.
+## Canonical grammar surface
 
-## Match grammar (single canonical form)
-- `match <expression>:` must include a `with:` block containing `when` arms; `otherwise` is optional.
-- No alternate syntaxes are permitted; absence of `with:` is a parse error.
-- `when` arms use the same expression grammar; ordering and exhaustiveness are runtime semantics.
+### Top-level declarations (allowed)
+The only allowed top-level declarations are:
+- `spec`
+- `define function`
+- `contract`
+- `use`
+- `capsule`
+- `identity`
+- `app`
+- `capabilities`
+- `policy`
+- `packs`
+- `foreign`
+- `tool`
+- `team of agents`
+- `agent`
+- `ai`
+- `record`
+- `flow`
+- `job`
+- `page`
+- `ui`
+- `ui_pack`
+- `pattern`
 
-## Validation phases (parse / build / runtime)
-- **Parse**: Enforces grammar and token rules only; succeeds if the source conforms to this contract.
-- **Build (STATIC)**: Performs structural validation, shape checks, and emits warnings for runtime-only requirements; must not require environment, identity, secrets, or data presence.
-- **Runtime (RUNTIME)**: Enforces identity, permissions, trust, capability checks, and data existence; failures here are errors, not warnings.
+Canonical examples:
+```
+spec is "1.0"
 
-## Change control
-- Grammar or semantic changes are breaking and require an explicit compatibility review and RFC.
-- The `docs/grammar/current.md` file is a historical snapshot and not a contract.
-- Contract tests (`tests/parser/test_grammar_current.py` and related grammar checks) must stay green to ship.
+app:
+  theme is "light"
+
+ui:
+  theme is "light"
+
+capabilities:
+  http
+  jobs
+
+policy
+  allow ingestion.run
+
+packs:
+  "builtin.text"
+
+identity "user":
+  subject is text
+
+team of agents
+  "planner"
+  "reviewer"
+
+ai "assistant":
+  model is "gpt-4o"
+
+agent "planner":
+  ai is "assistant"
+
+tool "lookup":
+  implemented using python
+  input:
+    query is text
+  output:
+    result is text
+
+foreign python function "calculate":
+  input:
+    amount is number
+  output is number
+
+record "User":
+  name text
+  email text must be unique
+
+flow "init":
+  return "ok"
+
+job "nightly":
+  return "ok"
+
+page "home":
+  title is "Home"
+
+ui_pack "core":
+  version is "1.0"
+  fragment "banner":
+    title is "Hello"
+
+pattern "Empty State":
+  parameters:
+    heading is text
+  title is param.heading
+
+define function "slug":
+  input:
+    value is text
+  output:
+    result is text
+  return value
+
+contract flow "start":
+  input:
+    name is text
+  output:
+    result is text
+
+use "inventory" as inv
+```
+
+### Identifiers
+- Identifiers are bare names or quoted strings.
+- Reserved words are not identifiers unless escaped with backticks.
+- The reserved word list is fixed in `docs/language/reserved-words.md`.
+- Dot-qualified names use the same identifier rules for each segment.
+
+### Expressions
+- Literals are text, number, boolean, or null.
+- State paths use `state.<path>` with dot notation.
+- Expression syntax is fixed; no new operators or forms are allowed.
+
+### Records
+Canonical form:
+```
+record "User":
+  name text
+  email text must be unique
+```
+
+### Flows and statements
+Canonical forms:
+```
+flow "demo":
+  let value is 1
+  set state.count to value
+  if state.ready:
+    return "ok"
+  match state.status:
+    with:
+      when "ok":
+        return "ok"
+      otherwise:
+        return "no"
+  repeat up to 3 times:
+    return "done"
+  for each item in state.items:
+    return item
+  order state.items by score from highest to lowest
+  keep first 5 items
+  try:
+    return "ok"
+  catch:
+    return "error"
+  save "User"
+  create "User" with state.user as user
+  find "User" where email is "a@b.com"
+  update "User" where id is 1 set:
+    status is "ready"
+  delete "User" where id is 1
+```
+
+### Pages and UI
+Canonical forms:
+```
+page "home":
+  title is "Home"
+  text is "Welcome"
+  button "Run":
+    calls flow "demo"
+  link "Settings" to page "settings"
+
+ui:
+  pages:
+    active page:
+      is "home" only when state.page is "home"
+```
+
+UI elements and their canonical spellings are frozen in `docs/ui-dsl.md`. Any conflict between this contract and `docs/ui-dsl.md` is a bug.
+
+## Allowed vs forbidden rules
+Allowed:
+- Only the keywords and forms listed in this contract.
+- Equality-only comparisons in grammar-limited surfaces that require `is`.
+- Dot-qualified state paths with `state.<path>`.
+
+Forbidden:
+- Alternate spellings or aliases for any keyword.
+- One-line button syntax (`button "Run" calls flow "demo"`).
+- Match blocks without `with:`.
+- Implicit defaults that change semantics.
+- Grammar extensions outside this contract.
+- UI or flow syntax that introduces expression logic where the grammar does not allow it.
+
+## Stability and breaking-change policy
+- Any change to grammar, reserved words, or determinism guarantees is a breaking change.
+- The following are frozen: grammar keywords, canonical spellings, determinism guarantees, and evaluation order rules.
+- Allowed changes are limited to clarifying documentation and error messages that do not change behavior.
+- Any breaking change requires an RFC and a contract amendment before code changes.
+- Backward compatibility policy is fixed in `docs/language/backward_compatibility.md`.
+
+## Contribution rules
+- Grammar expansion is rejected by default.
+- New syntax requires an explicit contract amendment and an approved RFC.
+- Refactors must not change observable behavior.
+- Docs, tests, and code must agree with this contract.
+- Contract tests must remain green for any change to ship.
+- Contributions that touch grammar or validation must cite this contract in the change description.

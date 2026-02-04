@@ -15,6 +15,7 @@ class SessionState:
     runtime_theme: str | None = None
     memory_manager: MemoryManager | None = None
     data_effects: dict | None = None
+    last_answer_explain: dict | None = None
 
     def ensure_store(self, config: AppConfig | None = None) -> Storage:
         if self.store is None:

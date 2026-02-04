@@ -44,12 +44,16 @@ def _build_chat_composer(
     index: int,
 ) -> tuple[dict, dict]:
     action_id = f"{element_id}.composer"
+    fields = _composer_fields(item)
+    action_payload = {"type": "call_flow", "flow": item.flow_name}
+    if fields:
+        action_payload["fields"] = fields
     element = {
         "type": "composer",
         "flow": item.flow_name,
         "id": action_id,
         "action_id": action_id,
-        "action": {"type": "call_flow", "flow": item.flow_name},
+        "action": action_payload,
         "element_id": element_id,
         "page": page_name,
         "page_slug": page_slug,
@@ -57,7 +61,12 @@ def _build_chat_composer(
         "line": item.line,
         "column": item.column,
     }
-    return element, {action_id: {"id": action_id, "type": "call_flow", "flow": item.flow_name}}
+    if fields:
+        element["fields"] = fields
+    action_entry = {"id": action_id, "type": "call_flow", "flow": item.flow_name}
+    if fields:
+        action_entry["fields"] = fields
+    return element, {action_id: action_entry}
 
 
 def _build_chat_thinking(
@@ -153,6 +162,16 @@ def _chat_item_kind(item: ir.PageItem) -> str | None:
     if isinstance(item, ir.ChatMemoryItem):
         return "memory"
     return None
+
+
+def _composer_fields(item: ir.ChatComposerItem) -> list[dict] | None:
+    extra_fields = list(getattr(item, "fields", []) or [])
+    if not extra_fields:
+        return None
+    fields: list[dict] = [{"name": "message", "type": "text"}]
+    for field in extra_fields:
+        fields.append({"name": field.name, "type": field.type_name})
+    return fields
 
 
 def _chat_item_to_manifest(

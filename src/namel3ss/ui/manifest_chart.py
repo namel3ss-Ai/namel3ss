@@ -48,7 +48,15 @@ def _build_chart_element(
         source_label = record.name
     elif item.source:
         source_label = _state_path_label(item.source)
-        rows = _resolve_state_list(item.source, state_ctx, mode, warnings, item.line, item.column)
+        rows = _resolve_state_list(
+            item.source,
+            state_ctx,
+            mode,
+            warnings,
+            item.line,
+            item.column,
+            label="Chart source",
+        )
     x, y = _resolve_mapping(chart_type, item, record, rows)
     explain = item.explain or _auto_explain(chart_type, source_label or "data", x, y)
 
@@ -225,6 +233,8 @@ def _resolve_state_list(
     warnings: list | None,
     line: int | None,
     column: int | None,
+    *,
+    label: str,
 ) -> list[dict]:
     path = source.path
     value, _ = state_ctx.value(path, default=[], register_default=False)
@@ -240,7 +250,7 @@ def _resolve_state_list(
             enforced_at="runtime",
         )
     if not isinstance(value, list):
-        raise Namel3ssError("Chart source must be a list", line=line, column=column)
+        raise Namel3ssError(f"{label} must be a list", line=line, column=column)
     for idx, entry in enumerate(value):
         if not isinstance(entry, dict):
             raise Namel3ssError(f"Row {idx} must be an object", line=line, column=column)

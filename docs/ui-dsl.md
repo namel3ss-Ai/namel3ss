@@ -67,10 +67,14 @@ Content:
 Data/UI bindings:
 - `form is "RecordName"` auto-fields from record; optional `groups`/`help`/`readonly`; submits as `submit_form` action.
 - `table is "RecordName"` displays records; optional `columns`/`empty_state`/`sort`/`pagination`/`selection`/`row_actions`.
+- `table from state <path>` displays a read-only table from state; requires `columns` with `include` entries; no sort, pagination, selection, or row actions.
 - `list is "RecordName"` displays records; optional `variant`/`item` mapping/`empty_state`/`selection`/`actions`.
+- `list from state <path>` displays a read-only list from state; requires an `item` mapping; no selection or actions.
 - `chart is "RecordName"` or `chart from is state.<path>` read-only visualization (`summary`/`bar`/`line`), optional `type`/`x`/`y`/`explain`; must be paired with a table or list using the same data source.
 - `messages from is state.<path>` renders a message list from state (role/content).
-- `composer calls flow "flow_name"` emits a `call_flow` action with `message` payload.
+- `composer sends to flow "flow_name"` emits a `call_flow` action with `message` payload.
+- `composer sends to flow "flow_name"` may declare extra fields with a `send` block; indented lines inherit `send` to avoid repetition.
+- `input text as <name>` with body `send to flow "<flow>"` renders a single-line input and emits a `call_flow` action with payload named `<name>`; the flow must declare a matching text input field (flow input block or contract).
 - `thinking when is state.<path>` UI-only indicator bound to state.
 - `citations from is state.<path>` display-only citations list from state.
 - `memory from is state.<path> [lane is "my"|"team"|"system"]` display-only memory list from state.
@@ -81,6 +85,20 @@ Data/UI bindings:
 - `use pattern "pattern_name"` static expansion of a UI pattern.
 - Record/flow names may be module-qualified (for example `inv.Product`, `inv.seed_item`) when using Capsules.
 
+Structured composer:
+```
+page "home":
+  chat:
+    composer sends to flow "ask"
+      send category as text
+          language as text
+```
+Rules:
+- Message is always included.
+- Extra fields are text-only today.
+- Flow inputs must match `message` plus the declared extra fields.
+- Payload field order follows the declaration order.
+
 Nesting rules:
 - `row` -> `column` only.
 - `chat` -> `messages`, `composer`, `thinking`, `citations`, `memory` only.
@@ -89,6 +107,16 @@ Nesting rules:
 - `card_group` -> `card` only.
 - Others may contain any page items.
 - Pages remain declarative: no let/set/if/match inside pages.
+
+Show blocks:
+- `show` can group tables and lists under one verb using indentation.
+- `show` only supports `table` and `list` entries.
+- Example:
+```
+page "home":
+  show table from state matches
+       list from state selected
+```
 
 UI packs:
 - `ui_pack` declares a version and one or more fragments.
@@ -144,6 +172,28 @@ Built-in patterns:
 - `Results Layout` (params: `record_name` record, optional `layout` text, optional `filters_title`/`filters_guidance`, optional empty-state params `empty_title`, `empty_guidance`, `empty_action_label`, `empty_action_flow`)
 - `Status Banner` (params: `tone` text, `heading` text, optional `message` text, optional `action_label`/`action_flow`)
 
+## 3.4) Navigation
+Navigation can be declared as state-driven in the global `ui:` block.
+
+Example:
+```
+ui:
+  pages:
+    active page:
+      is "home" only when state.page is "home"
+      is "results" only when state.page is "results"
+```
+
+Rules:
+- `active page` appears once inside `ui: pages:`.
+- Each rule uses `is "<page>" only when state.<path> is <literal>`.
+- Rules are evaluated in source order; the first match wins.
+- If no rule matches, the first declared page is selected.
+- State paths use dot notation only.
+- Text literals are quoted; numbers and booleans are unquoted.
+- Unknown page names and undeclared state paths are build-time errors.
+- When `active page` is present, state selects the page and the UI reflects it.
+
 ## 3.1) Media
 - Media assets live in a locked `media/` folder at the app root (next to app.ai).
 - References use the base name only (no extensions, no paths).
@@ -160,9 +210,13 @@ Built-in patterns:
 
 ## 3.2) Visibility
 - Optional `visibility is state.<path>`, `when is state.<path>`, or `visible_when is state.<path>` may be appended to any page item or `tab` header.
+- Optional `only when state.<path> is <literal>` may be declared as a single indented line inside a page item block (or directly under a single-line item).
+- Text literals use quotes; numbers and booleans are unquoted.
+- `only when` cannot be combined with `visibility`, `when`, or `visible_when` on the same item.
 - Visibility predicates are read-only state paths only (no expressions, operators, or function calls).
 - Paths must include at least one segment after `state.`.
-- Evaluation is deterministic: a path is visible only when the state value exists and is truthy.
+- For `visibility`/`when`/`visible_when`, a path is visible only when the state value exists and is truthy.
+- For `only when`, missing state paths or type mismatches fail at build time.
 - Elements with `visibility` still appear in the manifest with `visible: true|false`; hidden elements do not emit actions.
 - UI explain output includes the predicate, referenced state paths, evaluated result, and the visibility reason.
 
@@ -172,23 +226,66 @@ page "home":
   title is "Results" when is state.results.ready
   section "Results" visible_when is state.results.present:
     table is "Result"
+  text is "Loading"
+    only when state.status is "loading"
 ```
+
+## 3.3) Status patterns
+Status blocks provide built-in loading/empty/error patterns that render before normal UI.
+
+Grammar:
+```
+page "home":
+  status:
+    loading when state.status is "loading"
+      text is "Loading"
+
+    empty when state.items is empty
+      text is "No results"
+
+    error when state.status is "error"
+      text is "Something went wrong"
+```
+
+Rules:
+- Only one `status` block may appear per page.
+- Status names must be `loading`, `empty`, or `error`.
+- Conditions use `state.<path> is <literal>` or `state.<path> is empty` only.
+- Empty checks only apply to list/map values; other types fail at build time.
+- Status blocks evaluate before normal UI blocks.
+- If exactly one status matches, only that block renders.
+- If none matches, the normal page UI renders.
+- If more than one matches, build fails with a deterministic error.
 
 ## 4) Data binding & actions
 - Forms bind to records; payload is `{values: {...}}`.
 - Buttons call flows by name; links navigate to pages; actions are deterministic (`call_flow`, `submit_form`, `open_page`).
 - Overlays open/close via actions (`open_modal`, `close_modal`, `open_drawer`, `close_drawer`).
 - Chat elements bind to explicit state paths; list ordering is preserved as provided.
-- Composer submissions call flows and include `{message: "<text>"}` in payload.
+- Composer submissions call flows and include `{message: "<text>"}` plus any declared extra fields in the same payload.
+- Text input submissions call flows and include `{<name>: "<text>"}` in payload; empty inputs do not emit actions.
 - UI-only state (selection, tabs active, modal/drawer open) never triggers flows.
 - State is visible in Studio; UI manifest lists actions and elements with stable IDs.
 
-## 4.1) UI explanation output
+## 4.1) Action availability
+- Actions can declare a single availability rule nested under the action line.
+- Availability uses equality only and accepts literal text in quotes, number, or boolean values.
+- Availability is separate from visibility; it disables the action without hiding it, and disabled actions are rejected at runtime.
+
+Example:
+```
+page "home":
+  button "Submit":
+    calls flow "submit_flow"
+      only when state.status is "ready"
+```
+
+## 4.2) UI explanation output
 - The ui manifest can be explained with `n3 see`.
 - Output is deterministic, bounded, and lists pages, elements, bindings, and action availability.
 - Pack origin metadata is included when elements are expanded from a `ui_pack`.
 
-## 4.2) Upload requests
+## 4.3) Upload requests
 - `upload <name>` declares intent to request a file from the user.
 - Uploads are request-only; no upload occurs until runtime bindings are provided.
 - When a file is selected, the client posts bytes to `/api/upload` and uses the returned metadata to update state.
@@ -262,9 +359,11 @@ page "home":
   - No timestamps or random ids in explain traces.
 - Not supported:
   - Branching, loops, expressions/functions, or hidden side effects.
+  - Ordering and keep first statements; those belong to normal flows, not UI DSL actions.
+  - Ask AI and structured AI input statements; those belong to normal flows, not UI DSL actions.
   - Orchestration (fan-out/fan-in), merge policies, or flow/pipeline calls.
 - Triggering from UI:
-  - `button "Label":` use either `calls flow "<name>"` (existing) or `runs "<name>"` (alias) to bind to a flow.
+  - `button "Label":` use `calls flow "<name>"` to bind to a flow.
   - Unknown flow references error with fix hints; runtime surfaces disabled affordance if requirements are unmet.
 - Flow actions run normal flows; those flows may enqueue background jobs or invoke backend capabilities when explicitly enabled.
 

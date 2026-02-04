@@ -52,6 +52,7 @@ class Program(Node):
     ui_patterns: List[UIPatternDecl]
     uses: List[UseDecl]
     capsule: Optional[CapsuleDecl]
+    ui_active_page_rules: list["ActivePageRule"] | None = None
     policy: PolicyDecl | None = None
     agent_team: "AgentTeamDecl | None" = None
     identity: Optional[IdentityDecl] = None

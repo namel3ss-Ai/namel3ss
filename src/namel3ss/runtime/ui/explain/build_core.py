@@ -27,6 +27,7 @@ from .reasons import (
     ACTION_NOT_AVAILABLE,
     action_reason_line,
     action_status,
+    availability_reasons,
     declared_in_pack,
     declared_in_pattern,
     declared_in_page,
@@ -85,11 +86,16 @@ def _build_actions(manifest: dict, flow_requires: dict[str, object], identity: d
         action_type = str(entry.get("type") or "")
         flow = entry.get("flow") if action_type == "call_flow" else None
         record = entry.get("record") if action_type == "submit_form" else None
+        availability = entry.get("availability") if isinstance(entry, dict) else None
+        enabled_flag = entry.get("enabled") if isinstance(entry, dict) else None
         requires_expr = flow_requires.get(flow) if flow else None
         requires_text = format_requires(requires_expr)
         evaluated = evaluate_requires(requires_expr, identity, state)
         status, reason_list = action_status(requires_text, evaluated)
-        reasons = list(reason_list)
+        reasons = availability_reasons(availability, enabled_flag if isinstance(enabled_flag, bool) else None)
+        reasons.extend(reason_list)
+        if enabled_flag is False:
+            status = ACTION_NOT_AVAILABLE
         if action_type == "upload_select":
             reasons.append("upload selected (metadata only)")
         if action_type == "ingestion_run":

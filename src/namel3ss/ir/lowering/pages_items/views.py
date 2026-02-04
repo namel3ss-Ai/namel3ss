@@ -5,8 +5,11 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir.lowering.page_chart import _lower_chart_item
 from namel3ss.ir.lowering.page_chat import _lower_chat_item
 from namel3ss.ir.lowering.page_form import _lower_form_fields, _lower_form_groups
-from namel3ss.ir.lowering.page_list import _lower_list_actions, _lower_list_item_mapping
+from namel3ss.ir.lowering.page_list import _lower_list_actions, _lower_list_item_mapping, _lower_state_list_item_mapping
+from namel3ss.ir.lowering.expressions import _lower_expression
+from namel3ss.ir.model.expressions import StatePath as IRStatePath
 from namel3ss.ir.lowering.pages_table import (
+    _lower_state_table_columns,
     _lower_table_columns,
     _lower_table_pagination,
     _lower_table_row_actions,
@@ -99,26 +102,57 @@ def lower_table_item(
     *,
     attach_origin,
 ) -> TableItem:
-    if item.record_name not in record_map:
-        raise Namel3ssError(
-            f"Page '{page_name}' references unknown record '{item.record_name}'",
-            line=item.line,
-            column=item.column,
+    source = _lower_expression(item.source) if item.source else None
+    if source is not None and not isinstance(source, IRStatePath):
+        raise Namel3ssError("Tables must bind to state.<path>", line=item.line, column=item.column)
+    if item.record_name and source is not None:
+        raise Namel3ssError("Tables must use either a record or state source, not both", line=item.line, column=item.column)
+    if not item.record_name and source is None:
+        raise Namel3ssError("Tables must use a record or state source", line=item.line, column=item.column)
+    if item.record_name:
+        if item.record_name not in record_map:
+            raise Namel3ssError(
+                f"Page '{page_name}' references unknown record '{item.record_name}'",
+                line=item.line,
+                column=item.column,
+            )
+        record = record_map[item.record_name]
+        columns = _lower_table_columns(item.columns, record)
+        sort = _lower_table_sort(item.sort, record)
+        pagination = _lower_table_pagination(item.pagination)
+        row_actions = _lower_table_row_actions(item.row_actions, flow_names, page_name, overlays)
+        return attach_origin(
+            TableItem(
+                record_name=item.record_name,
+                source=None,
+                columns=columns,
+                empty_text=item.empty_text,
+                sort=sort,
+                pagination=pagination,
+                selection=item.selection,
+                row_actions=row_actions,
+                line=item.line,
+                column=item.column,
+            ),
+            item,
         )
-    record = record_map[item.record_name]
-    columns = _lower_table_columns(item.columns, record)
-    sort = _lower_table_sort(item.sort, record)
-    pagination = _lower_table_pagination(item.pagination)
-    row_actions = _lower_table_row_actions(item.row_actions, flow_names, page_name, overlays)
+    if item.sort or item.pagination:
+        raise Namel3ssError("State tables do not support sorting or pagination", line=item.line, column=item.column)
+    if item.selection is not None:
+        raise Namel3ssError("State tables do not support selection", line=item.line, column=item.column)
+    if item.row_actions:
+        raise Namel3ssError("State tables do not support row actions", line=item.line, column=item.column)
+    columns = _lower_state_table_columns(item.columns, line=item.line, column=item.column)
     return attach_origin(
         TableItem(
-            record_name=item.record_name,
+            record_name=None,
+            source=source,
             columns=columns,
             empty_text=item.empty_text,
-            sort=sort,
-            pagination=pagination,
-            selection=item.selection,
-            row_actions=row_actions,
+            sort=None,
+            pagination=None,
+            selection=None,
+            row_actions=None,
             line=item.line,
             column=item.column,
         ),
@@ -136,24 +170,52 @@ def lower_list_item(
     *,
     attach_origin,
 ) -> ListItem:
-    if item.record_name not in record_map:
-        raise Namel3ssError(
-            f"Page '{page_name}' references unknown record '{item.record_name}'",
-            line=item.line,
-            column=item.column,
-        )
-    record = record_map[item.record_name]
+    source = _lower_expression(item.source) if item.source else None
+    if source is not None and not isinstance(source, IRStatePath):
+        raise Namel3ssError("Lists must bind to state.<path>", line=item.line, column=item.column)
+    if item.record_name and source is not None:
+        raise Namel3ssError("Lists must use either a record or state source, not both", line=item.line, column=item.column)
+    if not item.record_name and source is None:
+        raise Namel3ssError("Lists must use a record or state source", line=item.line, column=item.column)
     variant = item.variant or "two_line"
-    mapping = _lower_list_item_mapping(item.item, record, variant, item.line, item.column)
-    actions = _lower_list_actions(item.actions, flow_names, page_name, overlays)
+    if item.record_name:
+        if item.record_name not in record_map:
+            raise Namel3ssError(
+                f"Page '{page_name}' references unknown record '{item.record_name}'",
+                line=item.line,
+                column=item.column,
+            )
+        record = record_map[item.record_name]
+        mapping = _lower_list_item_mapping(item.item, record, variant, item.line, item.column)
+        actions = _lower_list_actions(item.actions, flow_names, page_name, overlays)
+        return attach_origin(
+            ListItem(
+                record_name=item.record_name,
+                source=None,
+                variant=variant,
+                item=mapping,
+                empty_text=item.empty_text,
+                selection=item.selection,
+                actions=actions,
+                line=item.line,
+                column=item.column,
+            ),
+            item,
+        )
+    if item.selection is not None:
+        raise Namel3ssError("State lists do not support selection", line=item.line, column=item.column)
+    if item.actions:
+        raise Namel3ssError("State lists do not support actions", line=item.line, column=item.column)
+    mapping = _lower_state_list_item_mapping(item.item, variant=variant, line=item.line, column=item.column)
     return attach_origin(
         ListItem(
-            record_name=item.record_name,
+            record_name=None,
+            source=source,
             variant=variant,
             item=mapping,
             empty_text=item.empty_text,
-            selection=item.selection,
-            actions=actions,
+            selection=None,
+            actions=None,
             line=item.line,
             column=item.column,
         ),

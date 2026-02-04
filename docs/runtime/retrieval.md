@@ -2,6 +2,8 @@
 
 Retrieval returns ingested text chunks in a deterministic, quality-aware order. It never returns blocked content.
 
+For the full end-to-end RAG workflow and explain mode, see [docs/rag/overview.md](docs/rag/overview.md).
+
 ## Quality-aware ordering
 - `pass`: returned first.
 - `warn`: returned only when no `pass` results exist and policy allows warned retrieval.
@@ -22,6 +24,10 @@ retrieval_run { query, limit? }
 
 Results include:
 - `upload_id`
+- `document_id`
+- `source_name`
+- `page_number`
+- `chunk_index`
 - `chunk_id`
 - `quality` (`pass` or `warn`)
 - `low_quality` (true when quality is `warn`)

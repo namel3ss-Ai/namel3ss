@@ -15,6 +15,7 @@ from .model import (
     build_image_item,
     build_link_item,
     build_text_item,
+    build_text_input_item,
     build_title_item,
 )
 from .normalize import (
@@ -42,5 +43,6 @@ __all__ = [
     "build_row_item",
     "build_section_item",
     "build_text_item",
+    "build_text_input_item",
     "build_title_item",
 ]

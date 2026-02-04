@@ -27,6 +27,18 @@ class Set(Statement):
 
 
 @dataclass
+class OrderList(Statement):
+    target: Assignable
+    field: str
+    direction: str
+
+
+@dataclass
+class KeepFirst(Statement):
+    count: Expression
+
+
+@dataclass
 class If(Statement):
     condition: Expression
     then_body: List[Statement]
@@ -43,6 +55,7 @@ class AskAIStmt(Statement):
     ai_name: str
     input_expr: Expression
     target: str
+    input_mode: str = "text"
 
 
 @dataclass
@@ -50,12 +63,14 @@ class RunAgentStmt(Statement):
     agent_name: str
     input_expr: Expression
     target: str
+    input_mode: str = "text"
 
 
 @dataclass
 class ParallelAgentEntry(Node):
     agent_name: str
     input_expr: Expression
+    input_mode: str = "text"
 
 
 @dataclass

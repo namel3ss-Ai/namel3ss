@@ -109,6 +109,7 @@ def _lower_statement(stmt: ast.Statement) -> list[ast.Statement]:
                 ai_name=stmt.ai_name,
                 input_expr=_lower_expression(stmt.input_expr),
                 target=stmt.target,
+                input_mode=getattr(stmt, "input_mode", "text"),
                 line=stmt.line,
                 column=stmt.column,
             )
@@ -119,6 +120,7 @@ def _lower_statement(stmt: ast.Statement) -> list[ast.Statement]:
                 agent_name=stmt.agent_name,
                 input_expr=_lower_expression(stmt.input_expr),
                 target=stmt.target,
+                input_mode=getattr(stmt, "input_mode", "text"),
                 line=stmt.line,
                 column=stmt.column,
             )
@@ -128,6 +130,7 @@ def _lower_statement(stmt: ast.Statement) -> list[ast.Statement]:
             ast.ParallelAgentEntry(
                 agent_name=entry.agent_name,
                 input_expr=_lower_expression(entry.input_expr),
+                input_mode=getattr(entry, "input_mode", "text"),
                 line=entry.line,
                 column=entry.column,
             )

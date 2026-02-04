@@ -34,7 +34,9 @@ from namel3ss.ui.manifest.actions import (
 from namel3ss.ui.manifest.canonical import _slugify
 from namel3ss.ui.manifest.accessibility import apply_accessibility_contract
 from namel3ss.ui.manifest.elements import _build_children
+from namel3ss.ui.manifest.navigation import select_active_page
 from namel3ss.ui.manifest.state_defaults import StateContext, StateDefaults
+from namel3ss.ui.manifest.status import select_status_items
 from namel3ss.ui.manifest.validation import (
     append_copy_warnings,
     append_consistency_warnings,
@@ -117,8 +119,17 @@ def build_manifest(
             warnings=warnings,
         )
         page_slug = _slugify(page.name)
+        status_items = select_status_items(
+            getattr(page, "status", None),
+            state_ctx,
+            mode,
+            warnings,
+            line=page.line,
+            column=page.column,
+        )
+        items = status_items if status_items is not None else page.items
         elements, action_entries = _build_children(
-            page.items,
+            items,
             record_map,
             page.name,
             page_slug,
@@ -153,6 +164,12 @@ def build_manifest(
         defaults_snapshot = state_ctx.defaults_snapshot()
         if defaults_snapshot:
             manifest_state_defaults_pages[page_slug] = defaults_snapshot
+    navigation_state = StateContext(deepcopy(state_base), StateDefaults(app_defaults))
+    navigation = select_active_page(
+        getattr(program, "ui_active_page_rules", None),
+        pages=pages,
+        state_ctx=navigation_state,
+    )
     apply_spacing_to_pages(pages, ui_settings.get("density", UI_DEFAULTS["density"]))
     validate_ui_contrast(theme_setting, ui_settings.get("accent_color", ""), raw_ui_settings)
     if theme_current != theme_setting:
@@ -189,6 +206,8 @@ def build_manifest(
             "settings": ui_settings,
         },
     }
+    if navigation:
+        manifest["navigation"] = navigation
     agent_team = build_agent_team_intent(program)
     if agent_team is not None:
         manifest["agent_team"] = agent_team

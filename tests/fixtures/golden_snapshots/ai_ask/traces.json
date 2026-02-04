@@ -3491,6 +3491,8 @@
       }
     ],
     "input": "Hello",
+    "input_format": "text",
+    "input_structured": null,
     "memory": {
       "profile": [],
       "semantic": [],

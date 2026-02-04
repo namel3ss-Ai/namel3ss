@@ -135,10 +135,17 @@ def _accessibility_for_element(element: dict, kind: str) -> dict | None:
         return _accessibility_with_label("link", element.get("label"))
     if kind == "upload":
         return _accessibility_with_label("button", element.get("name"))
+    if kind == "input":
+        name = element.get("name")
+        label = label_from_identifier(str(name)) if isinstance(name, str) else name
+        return _accessibility_with_label("textbox", label)
     if kind == "composer":
         return _accessibility_with_label("textbox", element.get("flow"))
     if kind in {"table", "list"}:
-        return _accessibility_with_label(kind, _label_from_record(element.get("record")))
+        record = element.get("record")
+        if record:
+            return _accessibility_with_label(kind, _label_from_record(record))
+        return _accessibility_with_label(kind, element.get("source"))
     if kind == "view":
         representation = element.get("representation") or ""
         role = "table" if representation == "table" else "list"

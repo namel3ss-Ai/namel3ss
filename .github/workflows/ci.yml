@@ -30,14 +30,8 @@ jobs:
       - name: Compile check
         run: python -m compileall src -q -x '.*namel3ss/runtime/build.*'
 
-      - name: Executable spec suite
-        run: python -m pytest -q tests/spec
-
-      - name: Invariant catalog + legacy syntax scan
-        run: python -m pytest -q tests/invariants/test_invariant_catalog.py tests/invariants/test_legacy_syntax_scan.py
-
-      - name: Trace schema v1
-        run: python -m pytest -q tests/traces/test_trace_schema_v1.py
+      - name: Spec freeze guard
+        run: python tools/spec_freeze_check.py
 
       - name: Run tests
         shell: bash
@@ -65,9 +59,6 @@ jobs:
 
       - name: Package verification
         run: python tools/package_verify.py
-
-      - name: Embed example (C)
-        run: python -m pytest -q tests/embed/test_embed_c_example.py
 
       - name: Benchmark report
         run: python tools/bench.py --out .namel3ss/ci_artifacts/bench_report.json --iterations 1 --timing deterministic

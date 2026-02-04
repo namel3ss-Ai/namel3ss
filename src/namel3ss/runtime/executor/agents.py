@@ -8,6 +8,7 @@ from namel3ss.runtime.ai.trace import AITrace
 from namel3ss.runtime.executor.ai_runner import run_ai_with_tools, _flush_pending_tool_traces
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.executor.parallel.isolation import ensure_agent_call_allowed
+from namel3ss.runtime.ai.input_format import prepare_ai_input
 import namel3ss.runtime.memory.api as memory_api
 from namel3ss.runtime.memory.api import MemoryManager
 from namel3ss.runtime.memory_explain import append_explanation_events
@@ -21,7 +22,7 @@ from namel3ss.traces.builders import (
     build_memory_write,
 )
 from namel3ss.traces.redact import redact_memory_context
-from namel3ss.runtime.values.normalize import ensure_object, unwrap_text
+from namel3ss.runtime.values.normalize import ensure_object
 
 
 def execute_run_agent(ctx: ExecutionContext, stmt: ir.RunAgentStmt) -> None:
@@ -55,6 +56,7 @@ def execute_run_agent(ctx: ExecutionContext, stmt: ir.RunAgentStmt) -> None:
             ctx,
             stmt.agent_name,
             stmt.input_expr,
+            getattr(stmt, "input_mode", "text"),
             stmt.line,
             stmt.column,
             agent_id=agent_id,
@@ -152,6 +154,7 @@ def execute_run_agents_parallel(ctx: ExecutionContext, stmt: ir.RunAgentsParalle
                 ctx,
                 entry.agent_name,
                 entry.input_expr,
+                getattr(entry, "input_mode", "text"),
                 entry.line,
                 entry.column,
                 agent_id=agent_id,
@@ -234,6 +237,7 @@ def run_agent_call(
     ctx: ExecutionContext,
     agent_name: str,
     input_expr,
+    input_mode: str,
     line: int | None,
     column: int | None,
     *,
@@ -252,10 +256,13 @@ def run_agent_call(
     ai_profile = ctx.ai_profiles.get(agent.ai_name)
     if ai_profile is None:
         raise Namel3ssError(f"Agent '{agent.name}' references unknown AI '{agent.ai_name}'", line=line, column=column)
-    user_input = evaluate_expression(ctx, input_expr)
-    user_input = unwrap_text(user_input)
-    if not isinstance(user_input, str):
-        raise Namel3ssError("Agent input must be a string", line=line, column=column)
+    input_value = evaluate_expression(ctx, input_expr)
+    input_text, input_structured, input_format = prepare_ai_input(
+        input_value,
+        mode=input_mode,
+        line=line,
+        column=column,
+    )
     record_step(
         ctx,
         kind="ai_call",
@@ -276,7 +283,7 @@ def run_agent_call(
     recall_pack = memory_api.recall_with_events(
         ctx.memory_manager,
         profile_override,
-        user_input,
+        input_text,
         ctx.state,
         identity=ctx.identity,
         project_root=ctx.project_root,
@@ -293,7 +300,7 @@ def run_agent_call(
         build_memory_recall(
             ai_profile=profile_override.name,
             session=ctx.memory_manager.session_id(ctx.state),
-            query=user_input,
+            query=input_text,
             recalled=recalled,
             policy=_memory_policy(
                 profile_override,
@@ -315,17 +322,19 @@ def run_agent_call(
     response_output, canonical_events = run_ai_with_tools(
         ctx,
         profile_override,
-        user_input,
+        input_text,
         memory_context,
         tool_events,
         canonical_events=canonical_events,
         agent_name=agent.name,
+        input_format=input_format,
+        input_structured=input_structured,
     )
     record_pack = memory_api.record_with_events(
         ctx.memory_manager,
         profile_override,
         ctx.state,
-        user_input,
+        input_text,
         response_output,
         tool_events,
         identity=ctx.identity,
@@ -352,7 +361,9 @@ def run_agent_call(
         agent_name=agent.name,
         model=profile_override.model,
         system_prompt=profile_override.system_prompt,
-        input=user_input,
+        input=input_text,
+        input_structured=input_structured,
+        input_format=input_format,
         output=response_output,
         memory=redact_memory_context(memory_context),
         tool_calls=[e for e in tool_events if e.get("type") == "call"],
@@ -375,6 +386,8 @@ def _trace_to_dict(trace: AITrace) -> dict:
         "model": trace.model,
         "system_prompt": trace.system_prompt,
         "input": trace.input,
+        "input_structured": getattr(trace, "input_structured", None),
+        "input_format": getattr(trace, "input_format", None),
         "output": trace.output,
         "memory": trace.memory,
         "tool_calls": trace.tool_calls,

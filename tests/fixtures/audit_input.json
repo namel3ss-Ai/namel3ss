@@ -5,12 +5,22 @@
         {
           "order": 1,
           "text": "Invoice for customer",
-          "upload_id": "u_warn"
+          "upload_id": "u_warn",
+          "document_id": "u_warn",
+          "source_name": "warn.txt",
+          "page_number": 1,
+          "chunk_index": 0,
+          "ingestion_phase": "deep"
         },
         {
           "order": 1,
           "text": "Invoice blocked content",
-          "upload_id": "u_block"
+          "upload_id": "u_block",
+          "document_id": "u_block",
+          "source_name": "receipt.txt",
+          "page_number": 1,
+          "chunk_index": 0,
+          "ingestion_phase": "deep"
         }
       ]
     },

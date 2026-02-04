@@ -26,7 +26,40 @@ def test_button_calls_missing_flow():
     message = str(exc.value).lower()
     assert "unknown flow" in message
     assert "calls flow" in message
-    assert "runs" in message
+
+
+def test_text_input_requires_flow_input():
+    source = '''flow "answer":
+  return "ok"
+
+page "home":
+  input text as question
+    send to flow "answer"
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "text input" in str(exc.value).lower()
+    assert "input" in str(exc.value).lower()
+
+
+def test_text_input_requires_text_field():
+    source = '''contract flow "answer":
+  input:
+    question is number
+  output:
+    result is text
+
+flow "answer":
+  return "ok"
+
+page "home":
+  input text as question
+    send to flow "answer"
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "text" in str(exc.value).lower()
+    assert "question" in str(exc.value).lower()
 
 
 def test_illegal_statement_in_page_block_errors():
@@ -64,6 +97,29 @@ page "home":
     with pytest.raises(Namel3ssError) as exc:
         parse_program(source)
     assert "page_size must be a positive integer" in str(exc.value).lower()
+
+
+def test_state_table_requires_columns():
+    source = '''page "home":
+  table from state metrics
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "state tables require columns" in str(exc.value).lower()
+
+
+def test_state_table_disallows_sorting():
+    source = '''page "home":
+  table from state metrics:
+    columns:
+      include name
+    sort:
+      by is name
+      order is asc
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "state tables do not support sorting" in str(exc.value).lower()
 
 
 def test_row_action_unknown_flow_errors():
@@ -172,6 +228,32 @@ page "home":
     assert "unknown flow" in str(exc.value).lower()
 
 
+def test_state_list_requires_item_mapping():
+    source = '''page "home":
+  list from state items
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "state lists require item mapping" in str(exc.value).lower()
+
+
+def test_state_list_disallows_actions():
+    source = '''flow "open_item":
+  return "ok"
+
+page "home":
+  list from state items:
+    item:
+      primary is name
+    actions:
+      action "Open":
+        calls flow "open_item"
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "state lists do not support actions" in str(exc.value).lower()
+
+
 def test_chat_composer_unknown_flow_errors():
     source = '''page "home":
   chat:
@@ -180,6 +262,67 @@ def test_chat_composer_unknown_flow_errors():
     with pytest.raises(Namel3ssError) as exc:
         lower_ir_program(source)
     assert "unknown flow" in str(exc.value).lower()
+
+
+def test_chat_composer_structured_requires_flow_inputs():
+    source = '''flow "ask_flow":
+  return "ok"
+
+page "home":
+  chat:
+    composer sends to flow "ask_flow"
+      send category as text
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    message = str(exc.value).lower()
+    assert "extra fields" in message
+    assert "flow inputs" in message
+
+
+def test_chat_composer_structured_mismatched_inputs_error():
+    source = '''contract flow "ask_flow":
+  input:
+    message is text
+    category is text
+  output:
+    result is text
+
+flow "ask_flow":
+  return "ok"
+
+page "home":
+  chat:
+    composer sends to flow "ask_flow"
+      send category as text
+          language as text
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    message = str(exc.value).lower()
+    assert "missing" in message
+    assert "language" in message
+
+
+def test_chat_composer_structured_type_mismatch_error():
+    source = '''contract flow "ask_flow":
+  input:
+    message is number
+  output:
+    result is text
+
+flow "ask_flow":
+  return "ok"
+
+page "home":
+  chat:
+    composer sends to flow "ask_flow"
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    message = str(exc.value).lower()
+    assert "message" in message
+    assert "text" in message
 
 
 def test_form_group_unknown_field_errors():
@@ -332,3 +475,17 @@ def test_link_unknown_page_errors():
     with pytest.raises(Namel3ssError) as exc:
         lower_ir_program(source)
     assert "unknown page" in str(exc.value).lower()
+
+
+def test_action_availability_requires_is_comparator():
+    source = '''flow "submit_flow":
+  return "ok"
+
+page "home":
+  button "Submit":
+    calls flow "submit_flow"
+      only when state.status equals "ready"
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        parse_program(source)
+    assert "Expected 'is' after state path" in str(exc.value)

@@ -173,7 +173,7 @@ page "home":
     assert helper_manifest.get("ui") == studio_manifest.get("ui")
 
 
-def test_button_runs_flow_alias():
+def test_button_calls_flow():
     source = '''
 spec is "1.0"
 
@@ -182,7 +182,7 @@ flow "create_ticket":
 
 page "home":
   button "New Ticket":
-    runs "create_ticket"
+    calls flow "create_ticket"
 '''.lstrip()
     manifest = build_manifest(lower_ir_program(source), state={}, store=None)
     button = manifest["pages"][0]["elements"][0]
@@ -190,13 +190,13 @@ page "home":
     assert manifest["actions"]["page.home.button.new_ticket"]["flow"] == "create_ticket"
 
 
-def test_button_runs_missing_flow_errors():
+def test_button_calls_missing_flow_errors():
     source = '''
 spec is "1.0"
 
 page "home":
   button "New Ticket":
-    runs "create_ticket"
+    calls flow "create_ticket"
     '''.lstrip()
     with pytest.raises(Namel3ssError) as exc:
         lower_ir_program(source)

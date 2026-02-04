@@ -21,7 +21,7 @@ def unknown_flow_message(name: str, flow_names: set[str], page_name: str) -> str
     return build_guidance_message(
         what=f"Page '{page_name}' references unknown flow '{name}'.{hint}",
         why=why,
-        fix='Use `calls flow "<name>"` or `runs "<name>"` with an existing flow name.',
+        fix='Use `calls flow "<name>"` with an existing flow name.',
         example=example,
     )
 

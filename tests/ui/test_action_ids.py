@@ -36,3 +36,25 @@ flow "create_user":
     assert ids[0].startswith("page.home.form.user")
     manifest_two = build_manifest(program, state={})
     assert sorted(manifest_two["actions"].keys()) == ids
+
+
+def test_input_action_id_is_slugified():
+    source = '''contract flow "answer":
+  input:
+    question is text
+  output:
+    result is text
+
+flow "answer":
+  return "ok"
+
+page "home":
+  input text as question
+    send to flow "answer"
+'''
+    program = lower_ir_program(source)
+    manifest = build_manifest(program)
+    actions = manifest["actions"]
+    assert "page.home.input.question" in actions
+    input_el = manifest["pages"][0]["elements"][0]
+    assert input_el["action_id"] == "page.home.input.question"

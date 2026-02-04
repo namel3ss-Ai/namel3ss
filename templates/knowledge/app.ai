@@ -463,7 +463,7 @@ page "Knowledge":
     text is "Ask a question; responses are grounded in retrieved sources."
     chat:
       messages from is state.chat.messages
-      composer calls flow "answer_query"
+      composer sends to flow "answer_query"
       thinking when is state.chat.thinking
       citations from is state.chat.citations
     table is "Answer":

@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.ir.lowering.expressions import _lower_expression
 from namel3ss.ir.lowering.flow_refs import unknown_flow_message
-from namel3ss.ir.model.pages import ListAction, ListItemMapping
+from namel3ss.ir.model.pages import ActionAvailabilityRule, ListAction, ListItemMapping
 from namel3ss.ir.lowering.page_actions import _validate_overlay_action
 from namel3ss.schema import records as schema
 
@@ -42,6 +43,31 @@ def _lower_list_item_mapping(
                 line=mapping.line,
                 column=mapping.column,
             )
+    return ListItemMapping(
+        primary=mapping.primary,
+        secondary=mapping.secondary,
+        meta=mapping.meta,
+        icon=mapping.icon,
+        line=mapping.line,
+        column=mapping.column,
+    )
+
+
+def _lower_state_list_item_mapping(
+    mapping: ast.ListItemMapping | None,
+    *,
+    variant: str,
+    line: int,
+    column: int,
+) -> ListItemMapping:
+    if mapping is None:
+        raise Namel3ssError("State lists require item mapping", line=line, column=column)
+    if mapping.icon and variant != "icon":
+        raise Namel3ssError(
+            "List icon requires variant 'icon'",
+            line=mapping.line,
+            column=mapping.column,
+        )
     return ListItemMapping(
         primary=mapping.primary,
         secondary=mapping.secondary,
@@ -98,12 +124,14 @@ def _lower_list_actions(
                 column=action.column,
             )
         seen_labels.add(action.label)
+        availability_rule = _lower_action_availability_rule(getattr(action, "availability_rule", None))
         lowered.append(
             ListAction(
                 label=action.label,
                 flow_name=action.flow_name,
                 kind=action.kind,
                 target=action.target,
+                availability_rule=availability_rule,
                 line=action.line,
                 column=action.column,
             )
@@ -111,8 +139,20 @@ def _lower_list_actions(
     return lowered
 
 
+def _lower_action_availability_rule(rule: ast.ActionAvailabilityRule | None) -> ActionAvailabilityRule | None:
+    if rule is None:
+        return None
+    return ActionAvailabilityRule(
+        path=_lower_expression(rule.path),
+        value=_lower_expression(rule.value),
+        line=rule.line,
+        column=rule.column,
+    )
+
+
 __all__ = [
     "_lower_list_item_mapping",
+    "_lower_state_list_item_mapping",
     "_lower_list_actions",
     "_default_list_primary",
     "_list_id_field",

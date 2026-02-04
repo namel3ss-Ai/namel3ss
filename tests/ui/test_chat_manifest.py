@@ -36,6 +36,24 @@ STATE = {
     }
 }
 
+STRUCTURED_SOURCE = '''contract flow "ask_flow":
+  input:
+    message is text
+    category is text
+    language is text
+  output:
+    result is text
+
+flow "ask_flow":
+  return "ok"
+
+page "home":
+  chat:
+    composer sends to flow "ask_flow"
+      send category as text
+          language as text
+'''
+
 
 def _chat_children(manifest: dict) -> dict:
     chat = next(el for el in manifest["pages"][0]["elements"] if el["type"] == "chat")
@@ -74,6 +92,24 @@ def test_chat_manifest_is_deterministic():
     manifest_one = build_manifest(program, state=STATE)
     manifest_two = build_manifest(program, state=STATE)
     assert manifest_one == manifest_two
+
+
+def test_chat_manifest_structured_fields_and_action_ids():
+    program = lower_ir_program(STRUCTURED_SOURCE)
+    manifest = build_manifest(program, state=STATE)
+    children = _chat_children(manifest)
+    composer = children["composer"]
+    action_id = composer["action_id"]
+    assert action_id == "page.home.composer.0.0.composer"
+    fields = composer["fields"]
+    assert fields == [
+        {"name": "message", "type": "text"},
+        {"name": "category", "type": "text"},
+        {"name": "language", "type": "text"},
+    ]
+    assert manifest["actions"][action_id]["fields"] == fields
+    manifest_second = build_manifest(program, state=STATE)
+    assert manifest == manifest_second
 
 
 def test_chat_manifest_invalid_messages_error():

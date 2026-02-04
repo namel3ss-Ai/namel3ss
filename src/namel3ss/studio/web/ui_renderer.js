@@ -2,6 +2,8 @@ let renderUI = (manifest) => {
   const select = document.getElementById("pageSelect");
   const uiContainer = document.getElementById("ui");
   const pages = manifest.pages || [];
+  const navigation = manifest.navigation || {};
+  const activePage = navigation.active_page || null;
   const emptyMessage = "Run your app to see it here.";
   const collectionRender = window.N3UIRender || {};
   const renderListElement = collectionRender.renderListElement;
@@ -31,6 +33,9 @@ let renderUI = (manifest) => {
     const entry = resolvePageEntry(value);
     return entry ? entry.slug : "";
   }
+
+  const activeSlug = activePage ? resolvePageSlug(activePage.slug || activePage.name) : "";
+  const navigationLocked = Boolean(activeSlug);
 
   function readRouteSlug() {
     if (typeof window === "undefined") return "";
@@ -67,7 +72,7 @@ let renderUI = (manifest) => {
   const currentSelection = select ? select.value : "";
   const urlSelection = readRouteSlug();
   const initialSelection =
-    urlSelection || resolvePageSlug(currentSelection) || (pageEntries[0] ? pageEntries[0].slug : "");
+    activeSlug || urlSelection || resolvePageSlug(currentSelection) || (pageEntries[0] ? pageEntries[0].slug : "");
   if (select) {
     select.innerHTML = "";
     pageEntries.forEach((entry, idx) => {
@@ -79,6 +84,7 @@ let renderUI = (manifest) => {
       }
       select.appendChild(opt);
     });
+    select.disabled = navigationLocked;
   }
   function renderChildren(container, children, pageName) {
     (children || []).forEach((child) => {
@@ -146,6 +152,7 @@ let renderUI = (manifest) => {
     entry.returnFocus = null;
   }
   function navigateToPage(value) {
+    if (navigationLocked) return;
     const slug = resolvePageSlug(value);
     if (!slug) return;
     if (select) {
@@ -156,6 +163,7 @@ let renderUI = (manifest) => {
   }
   function handleAction(action, payload, opener) {
     if (!action || !action.id) return;
+    if (action.enabled === false) return { ok: false };
     const actionType = action.type || "call_flow";
     if (actionType === "open_modal" || actionType === "open_drawer") {
       openOverlay(action.target, opener);
@@ -166,6 +174,7 @@ let renderUI = (manifest) => {
       return { ok: true };
     }
     if (actionType === "open_page") {
+      if (navigationLocked) return { ok: false };
       navigateToPage(action.target);
       return { ok: true };
     }
@@ -349,12 +358,15 @@ let renderUI = (manifest) => {
         const actions = document.createElement("div");
         actions.className = "ui-card-actions";
         el.actions.forEach((action) => {
+          const enabled = action.enabled !== false;
           const btn = document.createElement("button");
           btn.type = "button";
           btn.className = "btn small";
           btn.textContent = action.label || "Run";
+          btn.disabled = !enabled;
           btn.onclick = (e) => {
             e.stopPropagation();
+            if (!enabled) return;
             handleAction(action, {}, e.currentTarget);
           };
           actions.appendChild(btn);
@@ -422,14 +434,63 @@ let renderUI = (manifest) => {
         p.textContent = value;
         wrapper.appendChild(p);
       }
+    } else if (el.type === "error") {
+      const box = document.createElement("div");
+      box.className = "empty-state status-error";
+      const message = typeof el.message === "string" ? el.message : String(el.message || "");
+      const text = document.createElement("div");
+      text.textContent = message;
+      box.appendChild(text);
+      wrapper.appendChild(box);
+    } else if (el.type === "input") {
+      const form = document.createElement("form");
+      form.className = "ui-element ui-input";
+      const input = document.createElement("input");
+      input.type = "text";
+      const enabled = el.enabled !== false;
+      const labelText = el.name ? String(el.name) : "Input";
+      input.placeholder = labelText;
+      input.setAttribute("aria-label", labelText);
+      input.disabled = !enabled;
+      const button = document.createElement("button");
+      button.type = "submit";
+      button.className = "btn small";
+      button.textContent = "Send";
+      button.disabled = !enabled;
+      form.appendChild(input);
+      form.appendChild(button);
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        if (!enabled) return;
+        const value = input.value || "";
+        if (!value) return;
+        const action = el.action || {};
+        const actionId = el.action_id || el.id;
+        const inputField = action.input_field || el.name || "input";
+        await handleAction(
+          {
+            id: actionId,
+            type: action.type || "call_flow",
+            flow: action.flow,
+            target: action.target,
+          },
+          { [inputField]: value },
+          button
+        );
+        input.value = "";
+      };
+      return form;
     } else if (el.type === "button") {
       const actions = document.createElement("div");
       actions.className = "ui-buttons";
       const btn = document.createElement("button");
+      const enabled = el.enabled !== false;
       btn.className = "btn primary";
       btn.textContent = el.label;
+      btn.disabled = !enabled;
       btn.onclick = (e) => {
         e.stopPropagation();
+        if (!enabled) return;
         const action = el.action || {};
         const actionId = el.action_id || el.id;
         handleAction(

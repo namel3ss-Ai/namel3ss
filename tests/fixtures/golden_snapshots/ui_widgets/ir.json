@@ -116,6 +116,7 @@
                           "row_actions": null,
                           "selection": null,
                           "sort": null,
+                          "source": null,
                           "type": "TableItem",
                           "visibility": null
                         }

@@ -3782,7 +3782,7 @@
     "schema_version": "production",
     "state": {},
     "status": "ok",
-    "trace_hash": "a09dd9ef43c17597a4fc4a9efcffcddf473cae60b2f09294330622c6c7401f60",
+    "trace_hash": "f0cc59a8e744ee54f45757ac04ffa6cf10e549f0ba015467aab0ed4f4384feb7",
     "trace_schema_version": "2024-10-01",
     "traces": [
       {
@@ -7550,6 +7550,8 @@
           }
         ],
         "input": "Task",
+        "input_format": "text",
+        "input_structured": null,
         "memory": {
           "profile": [],
           "semantic": [],
@@ -15085,6 +15087,8 @@
         }
       ],
       "input": "Task",
+      "input_format": "text",
+      "input_structured": null,
       "memory": {
         "profile": [],
         "semantic": [],

@@ -93,3 +93,4 @@ patterns/**/.namel3ss/**
 *.tmp
 *.swp
 .python-version
+tmp_pytest/

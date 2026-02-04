@@ -9,6 +9,7 @@ from namel3ss.ir import nodes as ir
 from namel3ss.runtime.ai.providers.registry import get_provider
 from namel3ss.runtime.ai.providers._shared.parse import normalize_ai_text
 from namel3ss.runtime.ai.trace import AITrace
+from namel3ss.runtime.ai.input_format import prepare_ai_input
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
 from namel3ss.runtime.executor.parallel.isolation import ensure_ai_call_allowed
@@ -17,7 +18,6 @@ from namel3ss.runtime.providers.capabilities import get_provider_capabilities
 from namel3ss.runtime.tools.field_schema import build_json_schema
 from namel3ss.runtime.tools.executor import execute_tool_call_with_outcome
 from namel3ss.runtime.boundary import mark_boundary
-from namel3ss.runtime.values.normalize import unwrap_text
 import namel3ss.runtime.memory.api as memory_api
 from namel3ss.runtime.memory.api import MemoryManager
 from namel3ss.runtime.memory_explain import append_explanation_events
@@ -44,10 +44,13 @@ def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
                 column=expr.column,
             )
         profile = ctx.ai_profiles[expr.ai_name]
-        user_input = evaluate_expression(ctx, expr.input_expr)
-        user_input = unwrap_text(user_input)
-        if not isinstance(user_input, str):
-            raise Namel3ssError("AI input must be a string", line=expr.line, column=expr.column)
+        input_value = evaluate_expression(ctx, expr.input_expr)
+        input_text, input_structured, input_format = prepare_ai_input(
+            input_value,
+            mode=getattr(expr, "input_mode", "text"),
+            line=expr.line,
+            column=expr.column,
+        )
         record_step(
             ctx,
             kind="ai_call",
@@ -59,7 +62,7 @@ def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
             recall_pack = memory_api.recall_with_events(
                 ctx.memory_manager,
                 profile,
-                user_input,
+                input_text,
                 ctx.state,
                 identity=ctx.identity,
                 project_root=ctx.project_root,
@@ -71,16 +74,18 @@ def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
         memory_context = recall_pack.payload
         recall_events = recall_pack.events
         recall_meta = recall_pack.meta
-        recalled = _flatten_memory_context(memory_context)
+        recalled: list[dict] = []
+        for key in ("short_term", "semantic", "profile"):
+            recalled.extend(memory_context.get(key, []))
         deterministic_hash = recall_pack.proof.get("recall_hash") or ctx.memory_manager.recall_hash(recalled)
         canonical_events: list[dict] = []
         canonical_events.append(
             build_memory_recall(
                 ai_profile=profile.name,
                 session=ctx.memory_manager.session_id(ctx.state),
-                query=user_input,
+                query=input_text,
                 recalled=recalled,
-                policy=_memory_policy(profile, ctx.memory_manager),
+                policy=ctx.memory_manager.policy_snapshot(profile),
                 deterministic_hash=deterministic_hash,
                 spaces_consulted=recall_meta.get("spaces_consulted"),
                 recall_counts=recall_meta.get("recall_counts"),
@@ -94,18 +99,20 @@ def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
         response_output, canonical_events = run_ai_with_tools(
             ctx,
             profile,
-            user_input,
+            input_text,
             memory_context,
             tool_events,
             canonical_events=canonical_events,
             agent_name=None,
+            input_format=input_format,
+            input_structured=input_structured,
         )
         try:
             record_pack = memory_api.record_with_events(
                 ctx.memory_manager,
                 profile,
                 ctx.state,
-                user_input,
+                input_text,
                 response_output,
                 tool_events,
                 identity=ctx.identity,
@@ -134,7 +141,9 @@ def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
             agent_name=None,
             model=profile.model,
             system_prompt=profile.system_prompt,
-            input=user_input,
+            input=input_text,
+            input_structured=input_structured,
+            input_format=input_format,
             output=response_output,
             memory=redact_memory_context(memory_context),
             tool_calls=[e for e in tool_events if e.get("type") == "call"],
@@ -170,6 +179,8 @@ def run_ai_with_tools(
     *,
     canonical_events: list[dict] | None = None,
     agent_name: str | None = None,
+    input_format: str | None = None,
+    input_structured: object | None = None,
 ) -> tuple[str, list[dict]]:
     provider_name = (getattr(profile, "provider", "mock") or "mock").lower()
     secret_values = collect_secret_values(ctx.config)
@@ -194,7 +205,6 @@ def run_ai_with_tools(
     )
     provider = _resolve_provider(ctx, provider_name)
     capabilities = get_provider_capabilities(provider_name)
-
     def _text_only_call():
         response = provider.ask(
             model=profile.model,
@@ -290,7 +300,6 @@ def run_ai_with_tools(
         policy = ToolCallPolicy(allow_tools=True, max_calls=3, strict_json=True, retry_on_parse_error=False, max_total_turns=6)
         def _tool_executor(tool_name: str, args: dict[str, object]):
             return execute_tool_call_with_outcome(ctx, tool_name, dict(args))
-
         previous_source = ctx.tool_call_source
         ctx.tool_call_source = "ai"
         try:
@@ -379,19 +388,10 @@ def run_ai_with_tools(
             memory_context,
             tool_events,
             canonical_events,
+            input_format=input_format,
+            input_structured=input_structured,
         )
         raise
-
-
-def _flatten_memory_context(context: dict) -> list[dict]:
-    ordered: list[dict] = []
-    for key in ("short_term", "semantic", "profile"):
-        ordered.extend(context.get(key, []))
-    return ordered
-
-
-def _memory_policy(profile: ir.AIDecl, memory_manager: MemoryManager) -> dict:
-    return memory_manager.policy_snapshot(profile)
 
 
 def _resolve_provider(ctx: ExecutionContext, provider_name: str):
@@ -478,6 +478,9 @@ def _append_ai_error_trace(
     memory_context: dict,
     tool_events: list[dict],
     canonical_events: list[dict],
+    *,
+    input_format: str | None = None,
+    input_structured: object | None = None,
 ) -> None:
     trace = AITrace(
         ai_name=profile.name,
@@ -486,6 +489,8 @@ def _append_ai_error_trace(
         model=profile.model,
         system_prompt=profile.system_prompt,
         input=user_input,
+        input_structured=input_structured,
+        input_format=input_format,
         output="",
         memory=redact_memory_context(memory_context),
         tool_calls=[e for e in tool_events if e.get("type") == "call"],
