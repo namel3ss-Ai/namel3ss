@@ -119,6 +119,29 @@ def test_embeddings_cached_by_chunk_hash(tmp_path: Path) -> None:
     assert records[chunk["chunk_hash"]].vector == embed_text(chunk["text"], model)
 
 
+def test_embeddings_only_for_deep_chunks(tmp_path: Path) -> None:
+    config = _embedding_config(candidate_limit=2)
+    app_path = tmp_path / "app.ai"
+    deep_chunk = _chunk("doc-1", "alpha content", page_number=1, chunk_index=0, phase="deep")
+    quick_chunk = _chunk("doc-1", "beta content", page_number=2, chunk_index=1, phase="quick")
+    store_chunk_embeddings(
+        [deep_chunk, quick_chunk],
+        upload_id="doc-1",
+        config=config,
+        project_root=str(tmp_path),
+        app_path=app_path.as_posix(),
+        capabilities=("embedding",),
+    )
+    model = resolve_embedding_model(config)
+    store = get_embedding_store(config, project_root=str(tmp_path), app_path=app_path.as_posix())
+    records = store.get_records(
+        model_id=model.model_id,
+        chunk_hashes=[deep_chunk["chunk_hash"], quick_chunk["chunk_hash"]],
+    )
+    assert deep_chunk["chunk_hash"] in records
+    assert quick_chunk["chunk_hash"] not in records
+
+
 def test_embedding_disabled_does_not_change_retrieval(tmp_path: Path) -> None:
     config = _embedding_config(candidate_limit=2)
     app_path = tmp_path / "app.ai"
