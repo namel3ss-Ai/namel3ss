@@ -50,6 +50,16 @@ def answer_trace_from_error(error: Exception) -> dict | None:
     )
 
 
+def answer_explain_from_error(error: Exception) -> dict | None:
+    details = getattr(error, "details", None)
+    if not isinstance(details, dict):
+        return None
+    explain = details.get("answer_explain")
+    if not isinstance(explain, dict):
+        return None
+    return build_answer_explain_trace(explain)
+
+
 def build_answer_trace(
     chunk_ids: list[str],
     prompt_hash: str | None,
@@ -65,4 +75,32 @@ def build_answer_trace(
     }
 
 
-__all__ = ["answer_trace_from_error", "answer_trace_from_steps", "build_answer_trace"]
+def build_answer_explain_trace(explain: dict) -> dict:
+    return {
+        "type": TraceEventType.ANSWER_EXPLAIN,
+        "explain": dict(explain),
+    }
+
+
+def extract_answer_explain(traces: list[dict] | None) -> dict | None:
+    if not isinstance(traces, list):
+        return None
+    for trace in reversed(traces):
+        if not isinstance(trace, dict):
+            continue
+        if trace.get("type") != TraceEventType.ANSWER_EXPLAIN:
+            continue
+        explain = trace.get("explain")
+        if isinstance(explain, dict):
+            return dict(explain)
+    return None
+
+
+__all__ = [
+    "answer_explain_from_error",
+    "answer_trace_from_error",
+    "answer_trace_from_steps",
+    "build_answer_explain_trace",
+    "build_answer_trace",
+    "extract_answer_explain",
+]

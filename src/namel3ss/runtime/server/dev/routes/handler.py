@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 from namel3ss.errors.payload import build_error_payload
 from namel3ss.runtime.server.dev.state import BrowserAppState
 
-from . import core, documents, health, ingestion, packs, studio
+from . import answer_explain, core, documents, health, ingestion, packs, studio
 
 
 class BrowserRequestHandler(BaseHTTPRequestHandler):
@@ -55,6 +55,8 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
         self.send_error(404)
 
     def _handle_api_get(self, path: str, raw_path: str) -> None:
+        if answer_explain.handle_answer_explain_get(self, path):
+            return
         if studio.handle_session_get(self, path):
             return
         if studio.handle_ui_get(self, path):

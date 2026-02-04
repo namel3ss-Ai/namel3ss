@@ -79,6 +79,7 @@ class TraceEventType:
     RETRIEVAL_TIER_SELECTED = "retrieval_tier_selected"
     RETRIEVAL_QUALITY_POLICY = "retrieval_quality_policy"
     ANSWER_VALIDATION = "answer_validation"
+    ANSWER_EXPLAIN = "answer_explain"
     PIPELINE_STARTED = "pipeline_started"
     PIPELINE_STEP = "pipeline_step"
     PIPELINE_FINISHED = "pipeline_finished"

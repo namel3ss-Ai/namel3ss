@@ -15,7 +15,12 @@ from namel3ss.ir import nodes as ir
 from namel3ss.pipelines.model import PipelineStepResult, pipeline_step_id
 from namel3ss.pipelines.registry import pipeline_definitions
 from namel3ss.pipelines.runner import run_pipeline
-from namel3ss.runtime.answer.traces import answer_trace_from_error, answer_trace_from_steps
+from namel3ss.runtime.answer.traces import (
+    answer_explain_from_error,
+    answer_trace_from_error,
+    answer_trace_from_steps,
+    build_answer_explain_trace,
+)
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.runtime.values.coerce import require_type
@@ -168,6 +173,9 @@ def _run_answer(ctx: ExecutionContext, payload: dict, expr: ir.CallPipelineExpr)
         trace = answer_trace_from_error(exc)
         if trace is not None:
             ctx.traces.append(trace)
+        explain_trace = answer_explain_from_error(exc)
+        if explain_trace is not None:
+            ctx.traces.append(explain_trace)
         raise
     output = result.output
     report = output.get("report") if isinstance(output, dict) else None
@@ -176,6 +184,9 @@ def _run_answer(ctx: ExecutionContext, payload: dict, expr: ir.CallPipelineExpr)
     trace = answer_trace_from_steps(result.steps)
     if trace is not None:
         ctx.traces.append(trace)
+    explain_bundle = report.get("explain")
+    if isinstance(explain_bundle, dict):
+        ctx.traces.append(build_answer_explain_trace(explain_bundle))
     return output, result.steps
 
 

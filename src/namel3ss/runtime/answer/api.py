@@ -55,6 +55,7 @@ def run_answer(
         query=normalized_query,
         limit=limit,
         tier=tier,
+        explain=True,
         state=state,
         project_root=project_root,
         app_path=app_path,
@@ -63,9 +64,21 @@ def run_answer(
         policy_decision=policy_decision,
         policy_decl=policy_decl,
     )
+    explain_base = _require_explain_bundle(retrieval)
     results = retrieval.get("results") if isinstance(retrieval, dict) else []
     if not isinstance(results, list) or not results:
-        raise Namel3ssError(_no_sources_message(), details=_answer_trace_details([], None, 0, "no_sources"))
+        explain_bundle = _with_answer_validation(
+            explain_base,
+            status="no_sources",
+            prompt_hash=None,
+            citation_count=0,
+            unknown_citations=[],
+            retrieved_chunk_ids=[],
+        )
+        raise Namel3ssError(
+            _no_sources_message(),
+            details=_answer_trace_details([], None, 0, "no_sources", explain_bundle),
+        )
     chunk_ids = _chunk_ids(results)
     prompt = build_answer_prompt(normalized_query, results)
     prompt_hash = hash_answer_prompt(prompt)
@@ -82,13 +95,22 @@ def run_answer(
     )
     raw_output = response.output if hasattr(response, "output") else response
     output_text = normalize_ai_text(raw_output, provider_name=resolved_provider_name, secret_values=secrets)
-    citations = _validate_citations(output_text, chunk_ids, prompt_hash)
+    citations = _validate_citations(output_text, chunk_ids, prompt_hash, explain_base)
     answer_text = output_text.strip()
+    explain_bundle = _with_answer_validation(
+        explain_base,
+        status="ok",
+        prompt_hash=prompt_hash,
+        citation_count=len(citations),
+        unknown_citations=[],
+        retrieved_chunk_ids=chunk_ids,
+    )
     report = {
         "answer_text": answer_text,
         "citations": citations,
         "confidence": _confidence_score(len(citations), len(results)),
         "source_count": len(results),
+        "explain": explain_bundle,
     }
     meta = {
         "prompt_hash": prompt_hash,
@@ -157,20 +179,41 @@ def _format_source(entry: dict, idx: int) -> list[str]:
     return lines
 
 
-def _validate_citations(output_text: str, chunk_ids: list[str], prompt_hash: str) -> list[str]:
+def _validate_citations(
+    output_text: str,
+    chunk_ids: list[str],
+    prompt_hash: str,
+    explain_base: dict | None,
+) -> list[str]:
     citations = parse_citations(output_text)
     if not citations:
+        explain_bundle = _with_answer_validation(
+            explain_base,
+            status="missing_citations",
+            prompt_hash=prompt_hash,
+            citation_count=0,
+            unknown_citations=[],
+            retrieved_chunk_ids=chunk_ids,
+        )
         raise Namel3ssError(
             _missing_citations_message(),
-            details=_answer_trace_details(chunk_ids, prompt_hash, 0, "missing_citations"),
+            details=_answer_trace_details(chunk_ids, prompt_hash, 0, "missing_citations", explain_bundle),
         )
     allowed = set(chunk_ids)
     unknown = [item for item in citations if item not in allowed]
     if unknown:
         unknown_sorted = sorted(set(unknown))
+        explain_bundle = _with_answer_validation(
+            explain_base,
+            status="unknown_citations",
+            prompt_hash=prompt_hash,
+            citation_count=len(citations),
+            unknown_citations=unknown_sorted,
+            retrieved_chunk_ids=chunk_ids,
+        )
         raise Namel3ssError(
             _unknown_citations_message(unknown_sorted),
-            details=_answer_trace_details(chunk_ids, prompt_hash, len(citations), "unknown_citations"),
+            details=_answer_trace_details(chunk_ids, prompt_hash, len(citations), "unknown_citations", explain_bundle),
         )
     return citations
 
@@ -246,8 +289,23 @@ def _unknown_citations_message(unknown: list[str]) -> str:
     )
 
 
-def _answer_trace_details(chunk_ids: list[str], prompt_hash: str | None, citation_count: int, status: str) -> dict:
-    return {
+def _missing_explain_message() -> str:
+    return build_guidance_message(
+        what="Answer explain data is missing.",
+        why="Explain bundles must be emitted for every answer request.",
+        fix="Re-run the request and check retrieval output.",
+        example='{"query":"invoice"}',
+    )
+
+
+def _answer_trace_details(
+    chunk_ids: list[str],
+    prompt_hash: str | None,
+    citation_count: int,
+    status: str,
+    explain: dict | None = None,
+) -> dict:
+    details = {
         "answer_trace": {
             "chunk_ids": list(chunk_ids),
             "prompt_hash": prompt_hash,
@@ -255,6 +313,40 @@ def _answer_trace_details(chunk_ids: list[str], prompt_hash: str | None, citatio
             "status": status,
         }
     }
+    if isinstance(explain, dict):
+        details["answer_explain"] = explain
+    return details
+
+
+def _require_explain_bundle(retrieval: dict | None) -> dict:
+    if not isinstance(retrieval, dict):
+        raise Namel3ssError(_missing_explain_message())
+    explain = retrieval.get("explain")
+    if not isinstance(explain, dict):
+        raise Namel3ssError(_missing_explain_message())
+    return dict(explain)
+
+
+def _with_answer_validation(
+    explain: dict | None,
+    *,
+    status: str,
+    prompt_hash: str | None,
+    citation_count: int,
+    unknown_citations: list[str],
+    retrieved_chunk_ids: list[str],
+) -> dict | None:
+    if not isinstance(explain, dict):
+        return None
+    payload = dict(explain)
+    payload["answer_validation"] = {
+        "status": status,
+        "citation_count": citation_count,
+        "unknown_citations": list(unknown_citations),
+        "prompt_hash": prompt_hash,
+        "retrieved_chunk_ids": list(retrieved_chunk_ids),
+    }
+    return payload
 
 
 __all__ = ["ANSWER_SYSTEM_PROMPT", "build_answer_prompt", "hash_answer_prompt", "parse_citations", "run_answer"]

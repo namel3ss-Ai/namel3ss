@@ -20,7 +20,7 @@ from namel3ss.runtime.data.data_routes import (
 )
 from namel3ss.runtime.deploy_routes import get_build_payload, get_deploy_payload
 from namel3ss.runtime.dev_server import BrowserAppState
-from namel3ss.runtime.server.prod import documents
+from namel3ss.runtime.server.prod import answer_explain, documents
 from namel3ss.ui.external.serve import resolve_external_ui_file
 from namel3ss.utils.json_tools import dumps as json_dumps
 from namel3ss.version import get_version
@@ -69,6 +69,8 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
         if path == "/api/uploads":
             response, status = self._handle_upload_list()
             self._respond_json(response, status=status)
+            return
+        if answer_explain.handle_answer_explain_get(self, path):
             return
         if documents.handle_documents_get(self, raw_path):
             return

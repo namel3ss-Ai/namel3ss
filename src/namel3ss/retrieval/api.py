@@ -12,6 +12,7 @@ from namel3ss.ingestion.policy import (
     evaluate_ingestion_policy,
     load_ingestion_policy,
 )
+from namel3ss.retrieval.explain import RetrievalExplainBuilder
 
 
 def run_retrieval(
@@ -22,6 +23,7 @@ def run_retrieval(
     app_path: str | None,
     limit: int | None = None,
     tier: str | None = None,
+    explain: bool = False,
     secret_values: list[str] | None = None,
     identity: dict | None = None,
     policy_decision: PolicyDecision | None = None,
@@ -32,6 +34,12 @@ def run_retrieval(
     query_text = _normalize_query(query)
     query_keywords = extract_keywords(query_text)
     tier_request = _normalize_tier(tier)
+    explain_query = (
+        sanitize_text(query_text, project_root=project_root, app_path=app_path, secret_values=secret_values)
+        if explain
+        else query_text
+    )
+    explain_builder = RetrievalExplainBuilder(explain_query, tier_request, limit) if explain else None
     entries = _read_index_entries(state)
     status_map = _read_ingestion_status(state)
     pass_entries: list[tuple[dict, int]] = []
@@ -40,12 +48,30 @@ def run_retrieval(
     for index, entry in enumerate(entries):
         if not isinstance(entry, dict):
             continue
-        text = entry.get("text")
-        text_value = text if isinstance(text, str) else ""
         upload_id = str(entry.get("upload_id") or "")
         quality = _quality_for_upload(status_map, upload_id)
+        text = entry.get("text")
+        text_value = text if isinstance(text, str) else ""
         if quality == "block":
             blocked += 1
+            if explain_builder is not None:
+                overlap = _safe_keyword_overlap(
+                    entry,
+                    text_value,
+                    query_keywords,
+                    project_root=project_root,
+                    app_path=app_path,
+                    secret_values=secret_values,
+                )
+                candidate = _candidate_fields(entry, upload_id=upload_id, keyword_overlap=overlap)
+                explain_builder.add_blocked(
+                    chunk_id=candidate["chunk_id"],
+                    ingestion_phase=candidate["ingestion_phase"],
+                    keyword_overlap=candidate["keyword_overlap"],
+                    page_number=candidate["page_number"],
+                    chunk_index=candidate["chunk_index"],
+                    order_index=index,
+                )
             continue
         chunk_id = entry.get("chunk_id")
         chunk_index = _require_chunk_index(entry)
@@ -65,8 +91,28 @@ def run_retrieval(
         if query_text:
             if query_keywords:
                 if overlap == 0 and query_text not in text_value.lower():
+                    if explain_builder is not None:
+                        explain_builder.add_filtered(
+                            chunk_id=str(chunk_id or f"{upload_id}:{chunk_index}"),
+                            ingestion_phase=ingestion_phase,
+                            keyword_overlap=overlap,
+                            page_number=page_number,
+                            chunk_index=chunk_index,
+                            order_index=index,
+                            quality=quality,
+                        )
                     continue
             elif query_text not in text_value.lower():
+                if explain_builder is not None:
+                    explain_builder.add_filtered(
+                        chunk_id=str(chunk_id or f"{upload_id}:{chunk_index}"),
+                        ingestion_phase=ingestion_phase,
+                        keyword_overlap=overlap,
+                        page_number=page_number,
+                        chunk_index=chunk_index,
+                        order_index=index,
+                        quality=quality,
+                    )
                 continue
         result = {
             "upload_id": upload_id,
@@ -88,6 +134,18 @@ def run_retrieval(
             pass_entries.append((result, index))
         else:
             warn_entries.append((result, index))
+        if explain_builder is not None:
+            rank_key = _entry_sort_key((result, index))
+            explain_builder.add_candidate(
+                chunk_id=result["chunk_id"],
+                ingestion_phase=ingestion_phase,
+                keyword_overlap=overlap,
+                page_number=page_number,
+                chunk_index=chunk_index,
+                order_index=index,
+                quality=quality,
+                rank_key=rank_key,
+            )
     pass_selected, pass_selection = _select_tier(pass_entries, tier_request)
     warn_selected, warn_selection = _select_tier(warn_entries, tier_request)
     decision = policy_decision or _resolve_warn_policy(
@@ -103,22 +161,28 @@ def run_retrieval(
         included_warn = False
         preferred = "pass"
         tier_selection = pass_selection
+        explain_quality = "pass"
+        explain_selection = pass_selected
     elif warn_allowed:
         results = warn_selected
         included_warn = bool(warn_selected)
         preferred = "warn" if warn_selected else "pass"
         tier_selection = warn_selection
+        explain_quality = "warn"
+        explain_selection = warn_selected
     else:
         results = []
         included_warn = False
         preferred = "pass"
         excluded_warn = len(warn_selected)
         tier_selection = pass_selection if pass_entries else warn_selection
+        explain_quality = "pass"
+        explain_selection = pass_selected
     if limit is not None:
         if not isinstance(limit, int) or isinstance(limit, bool) or limit < 0:
             raise Namel3ssError(_limit_message())
         results = results[:limit]
-    return {
+    response = {
         "query": query_text,
         "query_keywords": query_keywords,
         "preferred_quality": preferred,
@@ -130,6 +194,14 @@ def run_retrieval(
         "tier": _tier_summary(tier_request, tier_selection),
         "results": results,
     }
+    if explain_builder is not None:
+        response["explain"] = explain_builder.finalize(
+            selected=results,
+            selection_candidates=explain_selection,
+            chosen_quality=explain_quality,
+            warn_allowed=warn_allowed,
+        )
+    return response
 
 
 def _normalize_query(query: str | None) -> str:
@@ -373,6 +445,37 @@ def _phase_counts(entries: list[tuple[dict, int]]) -> dict:
         if phase in counts:
             counts[phase] += 1
     return counts
+
+
+def _safe_keyword_overlap(
+    entry: dict,
+    text_value: str,
+    query_keywords: list[str],
+    *,
+    project_root: str | None,
+    app_path: str | None,
+    secret_values: list[str] | None,
+) -> int:
+    if not query_keywords:
+        return 0
+    keywords = normalize_keywords(entry.get("keywords"))
+    if keywords is None:
+        cleaned = sanitize_text(text_value, project_root=project_root, app_path=app_path, secret_values=secret_values)
+        keywords = extract_keywords(cleaned) if cleaned else []
+    matches = keyword_matches(query_keywords, keywords)
+    return len(matches)
+
+
+def _candidate_fields(entry: dict, *, upload_id: str, keyword_overlap: int) -> dict:
+    chunk_index = _coerce_int(entry.get("chunk_index")) or 0
+    chunk_id = entry.get("chunk_id")
+    return {
+        "chunk_id": str(chunk_id or f"{upload_id}:{chunk_index}"),
+        "ingestion_phase": str(entry.get("ingestion_phase") or ""),
+        "keyword_overlap": int(keyword_overlap),
+        "page_number": _coerce_int(entry.get("page_number")) or 0,
+        "chunk_index": chunk_index,
+    }
 
 
 __all__ = ["run_retrieval"]
