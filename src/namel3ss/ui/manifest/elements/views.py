@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import Dict, List
-
 from namel3ss.ir import nodes as ir
 from namel3ss.ir.lowering.page_list import _default_list_primary, _list_id_field as _list_id_field_ir
 from namel3ss.runtime.records.service import build_record_scope
@@ -9,6 +8,7 @@ from namel3ss.runtime.storage.base import Storage
 from namel3ss.schema import records as schema
 from namel3ss.ui.manifest.actions import _allocate_action_id, _form_action_id, _ingestion_action_id, _upload_action_id
 from namel3ss.ui.manifest.canonical import _element_id
+from namel3ss.ui.manifest.empty_state import _empty_state_for_list, _empty_state_for_table
 from namel3ss.ui.manifest.origin import _attach_origin
 from namel3ss.ui.manifest_chart import _build_chart_element, _resolve_state_list, _state_path_label
 from namel3ss.ui.manifest_chat import _chat_item_kind, _chat_item_to_manifest
@@ -33,28 +33,7 @@ from namel3ss.ui.manifest_table import (
     _table_state_id,
 )
 from namel3ss.validation import ValidationMode
-
 from .base import _base_element, _require_record, _stable_rows_by_id, _view_representation
-
-# Default empty-state content for list/table when app does not specify empty_text.
-# Keeps manifest deterministic and ensures empty collections render an empty state.
-_DEFAULT_EMPTY_STATE_LIST = {"title": "No items", "text": "There are no items to display."}
-_DEFAULT_EMPTY_STATE_TABLE = {"title": "No rows", "text": "There are no rows to display."}
-
-
-def _empty_state_for_list(empty_text: str | None) -> dict:
-    """Return deterministic empty_state dict for a list element."""
-    if empty_text:
-        return {"title": "No items", "text": empty_text}
-    return dict(_DEFAULT_EMPTY_STATE_LIST)
-
-
-def _empty_state_for_table(empty_text: str | None) -> dict:
-    """Return deterministic empty_state dict for a table element."""
-    if empty_text:
-        return {"title": "No rows", "text": empty_text}
-    return dict(_DEFAULT_EMPTY_STATE_TABLE)
-
 
 def build_view_item(
     item: ir.ViewItem,
@@ -291,6 +270,7 @@ def build_list_item(
             "variant": item.variant,
             "item": _list_item_mapping(item.item),
             "rows": rows,
+            "empty_state": _empty_state_for_list(item.empty_text),
             **base,
         }
         if item.empty_text:
