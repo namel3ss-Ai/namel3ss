@@ -126,6 +126,8 @@ def _run_retrieval(ctx, definition, payload: dict) -> PipelineRunResult:
         secret_values=collect_secret_values(ctx.config),
         identity=ctx.identity,
         policy_decl=getattr(ctx, "policy", None),
+        config=ctx.config,
+        capabilities=ctx.capabilities,
     )
     excluded_blocked = int(result.get("excluded_blocked") or 0) if isinstance(result, dict) else 0
     excluded_warn = int(result.get("excluded_warn") or 0) if isinstance(result, dict) else 0
@@ -184,6 +186,7 @@ def _run_answer(ctx, definition, payload: dict) -> PipelineRunResult:
         config=ctx.config,
         identity=ctx.identity,
         policy_decl=getattr(ctx, "policy", None),
+        capabilities=ctx.capabilities,
     )
     source_count = int(report.get("source_count") or 0) if isinstance(report, dict) else 0
     retrieve_summary = {

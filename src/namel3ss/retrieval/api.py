@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from decimal import Decimal
-
+from namel3ss.config.model import AppConfig
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ingestion.keywords import extract_keywords, keyword_matches, normalize_keywords
@@ -12,7 +11,9 @@ from namel3ss.ingestion.policy import (
     evaluate_ingestion_policy,
     load_ingestion_policy,
 )
+from namel3ss.retrieval.embedding_plan import build_embedding_plan
 from namel3ss.retrieval.explain import RetrievalExplainBuilder
+from namel3ss.retrieval.ordering import coerce_int, ordering_label, rank_key, select_tier
 
 
 def run_retrieval(
@@ -28,6 +29,8 @@ def run_retrieval(
     identity: dict | None = None,
     policy_decision: PolicyDecision | None = None,
     policy_decl: object | None = None,
+    config: AppConfig | None = None,
+    capabilities: tuple[str, ...] | list[str] | None = None,
 ) -> dict:
     if not isinstance(state, dict):
         raise Namel3ssError(_state_type_message())
@@ -42,6 +45,15 @@ def run_retrieval(
     explain_builder = RetrievalExplainBuilder(explain_query, tier_request, limit) if explain else None
     entries = _read_index_entries(state)
     status_map = _read_ingestion_status(state)
+    embedding_plan = build_embedding_plan(
+        entries,
+        query_text=query_text,
+        config=config,
+        project_root=project_root,
+        app_path=app_path,
+        capabilities=capabilities,
+    )
+    ordering = ordering_label(embedding_plan.enabled)
     pass_entries: list[tuple[dict, int]] = []
     warn_entries: list[tuple[dict, int]] = []
     blocked = 0
@@ -64,6 +76,7 @@ def run_retrieval(
                     secret_values=secret_values,
                 )
                 candidate = _candidate_fields(entry, upload_id=upload_id, keyword_overlap=overlap)
+                vector_score = embedding_plan.score_for(candidate["chunk_id"])
                 explain_builder.add_blocked(
                     chunk_id=candidate["chunk_id"],
                     ingestion_phase=candidate["ingestion_phase"],
@@ -71,10 +84,14 @@ def run_retrieval(
                     page_number=candidate["page_number"],
                     chunk_index=candidate["chunk_index"],
                     order_index=index,
+                    vector_score=vector_score,
                 )
             continue
         chunk_id = entry.get("chunk_id")
         chunk_index = _require_chunk_index(entry)
+        chunk_id_value = str(chunk_id or f"{upload_id}:{chunk_index}")
+        embedding_score = embedding_plan.score_for(chunk_id_value)
+        embedding_candidate = embedding_plan.is_candidate(chunk_id_value)
         clean_text = sanitize_text(
             text_value,
             project_root=project_root,
@@ -90,33 +107,35 @@ def run_retrieval(
         overlap = len(matches)
         if query_text:
             if query_keywords:
-                if overlap == 0 and query_text not in text_value.lower():
+                if overlap == 0 and query_text not in text_value.lower() and not embedding_candidate:
                     if explain_builder is not None:
                         explain_builder.add_filtered(
-                            chunk_id=str(chunk_id or f"{upload_id}:{chunk_index}"),
+                            chunk_id=chunk_id_value,
                             ingestion_phase=ingestion_phase,
                             keyword_overlap=overlap,
                             page_number=page_number,
                             chunk_index=chunk_index,
                             order_index=index,
                             quality=quality,
+                            vector_score=embedding_score,
                         )
                     continue
-            elif query_text not in text_value.lower():
+            elif query_text not in text_value.lower() and not embedding_candidate:
                 if explain_builder is not None:
                     explain_builder.add_filtered(
-                        chunk_id=str(chunk_id or f"{upload_id}:{chunk_index}"),
+                        chunk_id=chunk_id_value,
                         ingestion_phase=ingestion_phase,
                         keyword_overlap=overlap,
                         page_number=page_number,
                         chunk_index=chunk_index,
                         order_index=index,
                         quality=quality,
+                        vector_score=embedding_score,
                     )
                 continue
         result = {
             "upload_id": upload_id,
-            "chunk_id": str(chunk_id or f"{upload_id}:{chunk_index}"),
+            "chunk_id": chunk_id_value,
             "quality": quality,
             "low_quality": quality == "warn",
             "text": clean_text,
@@ -135,7 +154,7 @@ def run_retrieval(
         else:
             warn_entries.append((result, index))
         if explain_builder is not None:
-            rank_key = _entry_sort_key((result, index))
+            candidate_rank_key = rank_key(result, index, tie_break_chunk_id=embedding_plan.enabled)
             explain_builder.add_candidate(
                 chunk_id=result["chunk_id"],
                 ingestion_phase=ingestion_phase,
@@ -144,10 +163,11 @@ def run_retrieval(
                 chunk_index=chunk_index,
                 order_index=index,
                 quality=quality,
-                rank_key=rank_key,
+                rank_key=candidate_rank_key,
+                vector_score=embedding_score,
             )
-    pass_selected, pass_selection = _select_tier(pass_entries, tier_request)
-    warn_selected, warn_selection = _select_tier(warn_entries, tier_request)
+    pass_selected, pass_selection = select_tier(pass_entries, tier_request, tie_break_chunk_id=embedding_plan.enabled)
+    warn_selected, warn_selection = select_tier(warn_entries, tier_request, tie_break_chunk_id=embedding_plan.enabled)
     decision = policy_decision or _resolve_warn_policy(
         project_root=project_root,
         app_path=app_path,
@@ -200,6 +220,8 @@ def run_retrieval(
             selection_candidates=explain_selection,
             chosen_quality=explain_quality,
             warn_allowed=warn_allowed,
+            embedding=embedding_plan.explain_payload(),
+            ordering=ordering,
         )
     return response
 
@@ -351,14 +373,14 @@ def _require_string_field(entry: dict, field: str) -> str:
 
 
 def _require_page_number(entry: dict) -> int:
-    value = _coerce_int(entry.get("page_number"))
+    value = coerce_int(entry.get("page_number"))
     if value is not None and value > 0:
         return value
     raise Namel3ssError(_missing_field_message("page_number"))
 
 
 def _require_chunk_index(entry: dict) -> int:
-    value = _coerce_int(entry.get("chunk_index"))
+    value = coerce_int(entry.get("chunk_index"))
     if value is not None and value >= 0:
         return value
     raise Namel3ssError(_missing_field_message("chunk_index"))
@@ -385,68 +407,6 @@ def _require_keywords(entry: dict, text_value: str) -> tuple[list[str], str]:
     return normalized, "stored"
 
 
-def _select_tier(
-    entries: list[tuple[dict, int]],
-    tier_request: str,
-) -> tuple[list[dict], dict]:
-    available = _phase_counts(entries)
-    phases = [phase for phase in ("deep", "quick") if available.get(phase)]
-    ordered = _order_entries(entries)
-    selection: dict = {"available": phases, "counts": available}
-    if tier_request == "quick-only":
-        selection.update({"selected": "quick", "reason": "tier_requested"})
-        return [entry for entry in ordered if entry.get("ingestion_phase") == "quick"], selection
-    if tier_request == "deep-only":
-        selection.update({"selected": "deep", "reason": "tier_requested"})
-        return [entry for entry in ordered if entry.get("ingestion_phase") == "deep"], selection
-    if available.get("deep") and available.get("quick"):
-        selection.update({"selected": "deep_then_quick", "reason": "deep_and_quick_available"})
-        return ordered, selection
-    if available.get("deep"):
-        selection.update({"selected": "deep", "reason": "deep_available"})
-        return [entry for entry in ordered if entry.get("ingestion_phase") == "deep"], selection
-    if available.get("quick"):
-        selection.update({"selected": "quick", "reason": "quick_only_available"})
-        return [entry for entry in ordered if entry.get("ingestion_phase") == "quick"], selection
-    selection.update({"selected": "none", "reason": "no_chunks"})
-    return [], selection
-
-
-def _order_entries(entries: list[tuple[dict, int]]) -> list[dict]:
-    ordered = sorted(entries, key=_entry_sort_key)
-    return [entry for entry, _ in ordered]
-
-
-def _entry_sort_key(item: tuple[dict, int]) -> tuple[int, int, int, int, int]:
-    entry, order = item
-    phase = entry.get("ingestion_phase")
-    phase_rank = 0 if phase == "deep" else 1
-    overlap = int(entry.get("keyword_overlap") or 0)
-    page_number = _coerce_int(entry.get("page_number")) or 0
-    chunk_index = _coerce_int(entry.get("chunk_index")) or 0
-    return (phase_rank, -overlap, page_number, chunk_index, order)
-
-
-def _coerce_int(value: object) -> int | None:
-    if isinstance(value, bool):
-        return None
-    if isinstance(value, int):
-        return value
-    if isinstance(value, Decimal):
-        if value == value.to_integral_value():
-            return int(value)
-    return None
-
-
-def _phase_counts(entries: list[tuple[dict, int]]) -> dict:
-    counts = {"deep": 0, "quick": 0}
-    for entry, _ in entries:
-        phase = entry.get("ingestion_phase")
-        if phase in counts:
-            counts[phase] += 1
-    return counts
-
-
 def _safe_keyword_overlap(
     entry: dict,
     text_value: str,
@@ -467,13 +427,13 @@ def _safe_keyword_overlap(
 
 
 def _candidate_fields(entry: dict, *, upload_id: str, keyword_overlap: int) -> dict:
-    chunk_index = _coerce_int(entry.get("chunk_index")) or 0
+    chunk_index = coerce_int(entry.get("chunk_index")) or 0
     chunk_id = entry.get("chunk_id")
     return {
         "chunk_id": str(chunk_id or f"{upload_id}:{chunk_index}"),
         "ingestion_phase": str(entry.get("ingestion_phase") or ""),
         "keyword_overlap": int(keyword_overlap),
-        "page_number": _coerce_int(entry.get("page_number")) or 0,
+        "page_number": coerce_int(entry.get("page_number")) or 0,
         "chunk_index": chunk_index,
     }
 

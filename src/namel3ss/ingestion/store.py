@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.ingestion.hash import hash_chunk
 from namel3ss.ingestion.keywords import normalize_keywords
 
 
@@ -44,6 +45,7 @@ def update_index(
         chunk_index = _chunk_index_value(chunk.get("chunk_index"))
         phase = _phase_value(chunk.get("ingestion_phase"))
         keywords = _keywords_value(chunk.get("keywords"))
+        chunk_hash = _string_value(chunk.get("chunk_hash"))
         if (
             document_id is None
             or source_name is None
@@ -53,6 +55,13 @@ def update_index(
             or keywords is None
         ):
             raise Namel3ssError(_chunk_provenance_message())
+        if chunk_hash is None:
+            chunk_hash = hash_chunk(
+                document_id=document_id,
+                page_number=page_number,
+                chunk_index=chunk_index,
+                text=str(chunk.get("text") or ""),
+            )
         chunk_id = f"{upload_id}:{chunk_index}"
         highlight = _highlight_value(
             chunk.get("highlight"),
@@ -67,6 +76,7 @@ def update_index(
             "page_number": page_number,
             "chunk_index": chunk_index,
             "chunk_id": chunk_id,
+            "chunk_hash": chunk_hash,
             "order": chunk_index,
             "text": chunk.get("text"),
             "chars": chunk.get("chars"),

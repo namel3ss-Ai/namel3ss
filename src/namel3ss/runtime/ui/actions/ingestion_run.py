@@ -183,6 +183,7 @@ def _build_job_context(program_ir, state: dict, traces: list[dict], *, config: A
         observability=None,
         state=state,
         config=config,
+        capabilities=getattr(program_ir, "capabilities", ()) or (),
         project_root=getattr(program_ir, "project_root", None),
         app_path=getattr(program_ir, "app_path", None),
     )

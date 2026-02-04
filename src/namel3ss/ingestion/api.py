@@ -4,7 +4,9 @@ from types import SimpleNamespace
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.config.model import AppConfig
 from namel3ss.ingestion.detect import detect_upload
+from namel3ss.ingestion.embeddings import store_chunk_embeddings
 from namel3ss.ingestion.extract import extract_pages, extract_pages_fallback
 from namel3ss.ingestion.gate import gate_quality, should_fallback
 from namel3ss.ingestion.gate_probe import probe_content
@@ -42,6 +44,8 @@ def run_ingestion(
     project_root: str | None,
     app_path: str | None,
     secret_values: list[str] | None = None,
+    capabilities: tuple[str, ...] | list[str] | None = None,
+    config: AppConfig | None = None,
 ) -> dict:
     if not isinstance(upload_id, str) or not upload_id.strip():
         raise Namel3ssError(_upload_id_message())
@@ -67,6 +71,14 @@ def run_ingestion(
             max_chars=DEEP_SCAN_MAX_CHARS,
             overlap=DEEP_SCAN_OVERLAP,
             include_highlights=True,
+        )
+        store_chunk_embeddings(
+            chunks,
+            upload_id=upload_id,
+            config=config,
+            project_root=project_root,
+            app_path=app_path,
+            capabilities=capabilities,
         )
         update_index(state, upload_id=upload_id, chunks=chunks, low_quality=prepared.status == "warn")
     return {

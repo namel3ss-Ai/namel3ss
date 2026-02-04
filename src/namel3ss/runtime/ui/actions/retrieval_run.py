@@ -55,6 +55,8 @@ def handle_retrieval_run_action(
         secret_values=secret_values,
         identity=identity,
         policy_decision=decision,
+        config=config,
+        capabilities=getattr(program_ir, "capabilities", ()) or (),
     )
     traces = [policy_trace(ACTION_RETRIEVAL_INCLUDE_WARN, decision)]
     traces.extend(_build_traces(result))

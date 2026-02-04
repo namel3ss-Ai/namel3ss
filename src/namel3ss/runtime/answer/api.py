@@ -44,6 +44,7 @@ def run_answer(
     identity: dict | None = None,
     policy_decision: PolicyDecision | None = None,
     policy_decl: object | None = None,
+    capabilities: tuple[str, ...] | list[str] | None = None,
 ) -> tuple[dict, dict]:
     resolved_config = config or load_config(
         app_path=app_path if isinstance(app_path, str) else None,
@@ -63,6 +64,8 @@ def run_answer(
         identity=identity,
         policy_decision=policy_decision,
         policy_decl=policy_decl,
+        config=resolved_config,
+        capabilities=capabilities,
     )
     explain_base = _require_explain_bundle(retrieval)
     results = retrieval.get("results") if isinstance(retrieval, dict) else []

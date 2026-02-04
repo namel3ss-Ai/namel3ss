@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import Callable
 
 from namel3ss.ingestion.chunk import chunk_pages
+from namel3ss.ingestion.hash import hash_chunk
+from namel3ss.ingestion.embeddings import store_chunk_embeddings
 from namel3ss.ingestion.highlight import attach_highlight_anchors
 from namel3ss.ingestion.keywords import extract_keywords
 from namel3ss.ingestion.store import store_report, update_index
@@ -36,6 +38,16 @@ def chunk_with_phase(
         chunk["keywords"] = extract_keywords(str(chunk.get("text") or ""))
         if phase:
             chunk["ingestion_phase"] = phase
+        page_number = chunk.get("page_number")
+        chunk_index = chunk.get("chunk_index")
+        text = str(chunk.get("text") or "")
+        if isinstance(page_number, int) and isinstance(chunk_index, int):
+            chunk["chunk_hash"] = hash_chunk(
+                document_id=document_id,
+                page_number=page_number,
+                chunk_index=chunk_index,
+                text=text,
+            )
     if include_highlights:
         attach_highlight_anchors(
             pages,
@@ -120,6 +132,14 @@ def deep_scan_job_handler(prepare_ingestion: Callable[..., object]) -> Callable[
                 max_chars=DEEP_SCAN_MAX_CHARS,
                 overlap=DEEP_SCAN_OVERLAP,
                 include_highlights=True,
+            )
+            store_chunk_embeddings(
+                deep_chunks,
+                upload_id=upload_id,
+                config=getattr(ctx, "config", None),
+                project_root=getattr(ctx, "project_root", None),
+                app_path=getattr(ctx, "app_path", None),
+                capabilities=getattr(ctx, "capabilities", None),
             )
             update_index(
                 ctx.state,

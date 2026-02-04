@@ -10,22 +10,15 @@ from namel3ss.config.env_loader import apply_env_overrides, normalize_target
 from namel3ss.config.model import AppConfig
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
-
-
 CONFIG_FILENAME = "namel3ss.toml"
-
-
 @dataclass(frozen=True)
 class ConfigSource:
     kind: str
     path: str | None = None
 
-
 def load_config(app_path: Path | None = None, root: Path | None = None) -> AppConfig:
     config, _ = resolve_config(app_path=app_path, root=root)
     return config
-
-
 def resolve_config(
     app_path: Path | None = None,
     root: Path | None = None,
@@ -51,15 +44,12 @@ def resolve_config(
     if apply_env_overrides(config):
         sources.append(ConfigSource(kind="env", path=None))
     return config, sources
-
-
 def _resolve_root(app_path: Path | None, root: Path | None) -> Path | None:
     if root:
         return Path(root).resolve()
     if app_path:
         return Path(app_path).resolve().parent
     return None
-
 
 def _apply_toml_config(config: AppConfig, data: Dict[str, Any]) -> None:
     if not isinstance(data, dict):
@@ -70,6 +60,7 @@ def _apply_toml_config(config: AppConfig, data: Dict[str, Any]) -> None:
     _apply_provider_toml(config, data.get("gemini"), provider="gemini")
     _apply_provider_toml(config, data.get("mistral"), provider="mistral")
     _apply_answer_toml(config, data.get("answer"))
+    _apply_embedding_toml(config, data.get("embedding"))
     _apply_persistence_toml(config, data.get("persistence"))
     _apply_identity_toml(config, data.get("identity"))
     _apply_authentication_toml(config, data.get("authentication") or data.get("auth"))
@@ -79,7 +70,6 @@ def _apply_toml_config(config: AppConfig, data: Dict[str, Any]) -> None:
     _apply_memory_packs_toml(config, data.get("memory_packs"))
     _apply_registries_toml(config, data.get("registries"))
     _apply_capability_overrides_toml(config, data.get("capability_overrides"))
-
 
 def _apply_ollama_toml(config: AppConfig, table: Any) -> None:
     if not isinstance(table, dict):
@@ -93,7 +83,6 @@ def _apply_ollama_toml(config: AppConfig, table: Any) -> None:
             config.ollama.timeout_seconds = int(timeout)
         except (TypeError, ValueError) as err:
             raise Namel3ssError("ollama.timeout_seconds must be an integer") from err
-
 
 def _apply_provider_toml(config: AppConfig, table: Any, *, provider: str) -> None:
     if not isinstance(table, dict):
@@ -114,6 +103,37 @@ def _apply_answer_toml(config: AppConfig, table: Any) -> None:
     model = table.get("model")
     if model is not None:
         config.answer.model = str(model)
+
+def _apply_embedding_toml(config: AppConfig, table: Any) -> None:
+    if not isinstance(table, dict):
+        return
+    provider = table.get("provider")
+    if provider is not None:
+        config.embedding.provider = str(provider)
+    model = table.get("model")
+    if model is not None:
+        config.embedding.model = str(model)
+    version = table.get("version")
+    if version is not None:
+        config.embedding.version = str(version)
+    dims = table.get("dims")
+    if dims is not None:
+        try:
+            config.embedding.dims = int(dims)
+        except (TypeError, ValueError) as err:
+            raise Namel3ssError("embedding.dims must be an integer") from err
+    precision = table.get("precision")
+    if precision is not None:
+        try:
+            config.embedding.precision = int(precision)
+        except (TypeError, ValueError) as err:
+            raise Namel3ssError("embedding.precision must be an integer") from err
+    candidate_limit = table.get("candidate_limit") or table.get("candidate_max")
+    if candidate_limit is not None:
+        try:
+            config.embedding.candidate_limit = int(candidate_limit)
+        except (TypeError, ValueError) as err:
+            raise Namel3ssError("embedding.candidate_limit must be an integer") from err
 def _apply_persistence_toml(config: AppConfig, table: Any) -> None:
     if not isinstance(table, dict):
         return
@@ -183,7 +203,6 @@ def _apply_authentication_toml(config: AppConfig, table: Any) -> None:
             raise Namel3ssError("authentication.credentials_json must be a JSON object")
         _apply_authentication_credentials(config, parsed, label="authentication.credentials_json")
 
-
 def _apply_authentication_credentials(config: AppConfig, payload: dict, *, label: str) -> None:
     username = payload.get("username")
     password = payload.get("password")
@@ -233,7 +252,6 @@ def _apply_python_tools_toml(config: AppConfig, table: Any) -> None:
             raise Namel3ssError("python_tools.service_handshake_required must be true or false")
         config.python_tools.service_handshake_required = handshake_required
 
-
 def _apply_foreign_toml(config: AppConfig, table: Any) -> None:
     if not isinstance(table, dict):
         return
@@ -248,7 +266,6 @@ def _apply_foreign_toml(config: AppConfig, table: Any) -> None:
             raise Namel3ssError("foreign.allow must be true or false")
         config.foreign.allow = allow
 
-
 def _apply_tool_packs_toml(config: AppConfig, table: Any) -> None:
     if not isinstance(table, dict):
         return
@@ -262,7 +279,6 @@ def _apply_tool_packs_toml(config: AppConfig, table: Any) -> None:
     if pinned is not None:
         config.tool_packs.pinned_tools = _ensure_str_map(pinned, "tool_packs.pinned_tools")
 
-
 def _apply_memory_packs_toml(config: AppConfig, table: Any) -> None:
     if not isinstance(table, dict):
         return
@@ -272,7 +288,6 @@ def _apply_memory_packs_toml(config: AppConfig, table: Any) -> None:
     overrides = table.get("agent_overrides") or table.get("agent_packs") or table.get("agents")
     if overrides is not None:
         config.memory_packs.agent_overrides = _ensure_str_map(overrides, "memory_packs.agent_overrides")
-
 
 def _apply_registries_toml(config: AppConfig, table: Any) -> None:
     from namel3ss.config.model import RegistrySourceConfig, RegistriesConfig
@@ -307,7 +322,6 @@ def _apply_registries_toml(config: AppConfig, table: Any) -> None:
         parsed_default = _ensure_str_list(default, "registries.default")
     config.registries = RegistriesConfig(sources=parsed_sources, default=parsed_default)
 
-
 def _apply_capability_overrides_toml(config: AppConfig, table: Any) -> None:
     if table is None:
         return
@@ -322,18 +336,15 @@ def _apply_capability_overrides_toml(config: AppConfig, table: Any) -> None:
         overrides[key] = normalize_overrides(value, label=f'"{key}"')
     config.capability_overrides = overrides
 
-
 def _ensure_str_list(value: Any, label: str) -> list[str]:
     if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
         raise Namel3ssError(f"{label} must be a list of strings")
     return [str(item) for item in value]
 
-
 def _ensure_str_map(value: Any, label: str) -> dict[str, str]:
     if not isinstance(value, dict) or any(not isinstance(k, str) or not isinstance(v, str) for k, v in value.items()):
         raise Namel3ssError(f"{label} must be a mapping of strings to strings")
     return {str(k): str(v) for k, v in value.items()}
-
 
 def _parse_toml(text: str, path: Path) -> Dict[str, Any]:
     try:
@@ -352,7 +363,6 @@ def _parse_toml(text: str, path: Path) -> Dict[str, Any]:
             )
         ) from err
     return data if isinstance(data, dict) else {}
-
 
 def _parse_toml_minimal(text: str, path: Path) -> Dict[str, Any]:
     current = None
@@ -386,7 +396,6 @@ def _parse_toml_minimal(text: str, path: Path) -> Dict[str, Any]:
         value = value.strip()
         data[current][key] = _parse_toml_value(value, line_num, path)
     return data
-
 
 def _parse_toml_value(value: str, line_num: int, path: Path) -> Any:
     lowered = value.lower()
@@ -433,7 +442,6 @@ def _parse_toml_value(value: str, line_num: int, path: Path) -> Any:
         column=1,
     )
 
-
 def _parse_inline_table(value: str, line_num: int, path: Path) -> Dict[str, Any]:
     inner = value[1:-1].strip()
     if not inner:
@@ -457,7 +465,6 @@ def _parse_inline_table(value: str, line_num: int, path: Path) -> Dict[str, Any]
         raw_value = raw_value.strip()
         table[key] = _parse_toml_value(raw_value, line_num, path)
     return table
-
 
 def _split_inline_parts(text: str) -> list[str]:
     parts: list[str] = []
@@ -488,6 +495,5 @@ def _split_inline_parts(text: str) -> list[str]:
     if part:
         parts.append(part)
     return parts
-
 
 __all__ = ["load_config", "resolve_config", "ConfigSource", "CONFIG_FILENAME"]

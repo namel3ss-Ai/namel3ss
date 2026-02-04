@@ -9,6 +9,7 @@ import pytest
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ingestion.api import run_ingestion
+from namel3ss.ingestion.hash import hash_chunk
 from namel3ss.ingestion.keywords import extract_keywords
 from namel3ss.runtime.backend.upload_store import store_upload
 
@@ -76,6 +77,18 @@ def test_pdf_page_provenance_multi_page(tmp_path: Path) -> None:
         app_path=(tmp_path / "app.ai").as_posix(),
     )
 
+    chunk_hash_one = hash_chunk(
+        document_id=metadata["checksum"],
+        page_number=1,
+        chunk_index=0,
+        text=page_one,
+    )
+    chunk_hash_two = hash_chunk(
+        document_id=metadata["checksum"],
+        page_number=2,
+        chunk_index=1,
+        text=page_two,
+    )
     assert result["status"] == "pass"
     expected_chunks = [
         {
@@ -86,6 +99,7 @@ def test_pdf_page_provenance_multi_page(tmp_path: Path) -> None:
             "document_id": metadata["checksum"],
             "source_name": "sample.pdf",
             "ingestion_phase": "deep",
+            "chunk_hash": chunk_hash_one,
             "keywords": extract_keywords(page_one),
             "highlight": {
                 "document_id": metadata["checksum"],
@@ -104,6 +118,7 @@ def test_pdf_page_provenance_multi_page(tmp_path: Path) -> None:
             "document_id": metadata["checksum"],
             "source_name": "sample.pdf",
             "ingestion_phase": "deep",
+            "chunk_hash": chunk_hash_two,
             "keywords": extract_keywords(page_two),
             "highlight": {
                 "document_id": metadata["checksum"],
@@ -129,6 +144,7 @@ def test_pdf_page_provenance_multi_page(tmp_path: Path) -> None:
             "page_number": 1,
             "chunk_index": 0,
             "chunk_id": f"{metadata['checksum']}:0",
+            "chunk_hash": chunk_hash_one,
             "order": 0,
             "text": page_one,
             "chars": len(page_one),
@@ -151,6 +167,7 @@ def test_pdf_page_provenance_multi_page(tmp_path: Path) -> None:
             "page_number": 2,
             "chunk_index": 1,
             "chunk_id": f"{metadata['checksum']}:1",
+            "chunk_hash": chunk_hash_two,
             "order": 1,
             "text": page_two,
             "chars": len(page_two),
@@ -246,6 +263,12 @@ def test_text_ingestion_single_page_provenance_is_compatible(tmp_path: Path) -> 
         app_path=(tmp_path / "app.ai").as_posix(),
     )
     text = payload.decode("utf-8")
+    chunk_hash = hash_chunk(
+        document_id=metadata["checksum"],
+        page_number=1,
+        chunk_index=0,
+        text=text,
+    )
     assert result["chunks"] == [
         {
             "chunk_index": 0,
@@ -255,6 +278,7 @@ def test_text_ingestion_single_page_provenance_is_compatible(tmp_path: Path) -> 
             "document_id": metadata["checksum"],
             "source_name": "notes.txt",
             "ingestion_phase": "deep",
+            "chunk_hash": chunk_hash,
             "keywords": extract_keywords(text),
             "highlight": {
                 "document_id": metadata["checksum"],

@@ -18,6 +18,12 @@ ENV_AUTH_IDENTITY_JSON = "N3_AUTH_IDENTITY_JSON"
 ENV_AUTH_CREDENTIALS_JSON = "N3_AUTH_CREDENTIALS_JSON"
 ENV_ANSWER_PROVIDER = "N3_ANSWER_PROVIDER"
 ENV_ANSWER_MODEL = "N3_ANSWER_MODEL"
+ENV_EMBEDDING_PROVIDER = "N3_EMBEDDING_PROVIDER"
+ENV_EMBEDDING_MODEL = "N3_EMBEDDING_MODEL"
+ENV_EMBEDDING_VERSION = "N3_EMBEDDING_VERSION"
+ENV_EMBEDDING_DIMS = "N3_EMBEDDING_DIMS"
+ENV_EMBEDDING_PRECISION = "N3_EMBEDDING_PRECISION"
+ENV_EMBEDDING_CANDIDATE_LIMIT = "N3_EMBEDDING_CANDIDATE_LIMIT"
 RESERVED_TRUE_VALUES = {"1", "true", "yes", "on"}
 
 
@@ -61,6 +67,39 @@ def apply_env_overrides(config: AppConfig) -> bool:
     answer_model = os.getenv(ENV_ANSWER_MODEL)
     if answer_model:
         config.answer.model = answer_model
+        used = True
+    embedding_provider = os.getenv(ENV_EMBEDDING_PROVIDER)
+    if embedding_provider:
+        config.embedding.provider = embedding_provider
+        used = True
+    embedding_model = os.getenv(ENV_EMBEDDING_MODEL)
+    if embedding_model:
+        config.embedding.model = embedding_model
+        used = True
+    embedding_version = os.getenv(ENV_EMBEDDING_VERSION)
+    if embedding_version:
+        config.embedding.version = embedding_version
+        used = True
+    embedding_dims = os.getenv(ENV_EMBEDDING_DIMS)
+    if embedding_dims:
+        try:
+            config.embedding.dims = int(embedding_dims)
+        except ValueError as err:
+            raise Namel3ssError("N3_EMBEDDING_DIMS must be an integer") from err
+        used = True
+    embedding_precision = os.getenv(ENV_EMBEDDING_PRECISION)
+    if embedding_precision:
+        try:
+            config.embedding.precision = int(embedding_precision)
+        except ValueError as err:
+            raise Namel3ssError("N3_EMBEDDING_PRECISION must be an integer") from err
+        used = True
+    embedding_candidate_limit = os.getenv(ENV_EMBEDDING_CANDIDATE_LIMIT)
+    if embedding_candidate_limit:
+        try:
+            config.embedding.candidate_limit = int(embedding_candidate_limit)
+        except ValueError as err:
+            raise Namel3ssError("N3_EMBEDDING_CANDIDATE_LIMIT must be an integer") from err
         used = True
     target = os.getenv("N3_PERSIST_TARGET")
     if target:
@@ -236,6 +275,12 @@ __all__ = [
     "ENV_AUTH_CREDENTIALS_JSON",
     "ENV_ANSWER_PROVIDER",
     "ENV_ANSWER_MODEL",
+    "ENV_EMBEDDING_PROVIDER",
+    "ENV_EMBEDDING_MODEL",
+    "ENV_EMBEDDING_VERSION",
+    "ENV_EMBEDDING_DIMS",
+    "ENV_EMBEDDING_PRECISION",
+    "ENV_EMBEDDING_CANDIDATE_LIMIT",
     "RESERVED_TRUE_VALUES",
     "apply_env_overrides",
     "normalize_target",

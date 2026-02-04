@@ -18,6 +18,7 @@ class _ExplainCandidate:
     keyword_overlap: int
     page_number: int
     chunk_index: int
+    vector_score: float | None
     decision: str | None
     reason: str | None
     rank_key: tuple | None
@@ -41,6 +42,7 @@ class RetrievalExplainBuilder:
         page_number: int,
         chunk_index: int,
         order_index: int,
+        vector_score: float | None = None,
     ) -> None:
         self._candidates.append(
             _ExplainCandidate(
@@ -49,6 +51,7 @@ class RetrievalExplainBuilder:
                 keyword_overlap=keyword_overlap,
                 page_number=page_number,
                 chunk_index=chunk_index,
+                vector_score=vector_score,
                 decision="excluded",
                 reason="blocked",
                 rank_key=None,
@@ -67,6 +70,7 @@ class RetrievalExplainBuilder:
         chunk_index: int,
         order_index: int,
         quality: str,
+        vector_score: float | None = None,
     ) -> None:
         self._candidates.append(
             _ExplainCandidate(
@@ -75,6 +79,7 @@ class RetrievalExplainBuilder:
                 keyword_overlap=keyword_overlap,
                 page_number=page_number,
                 chunk_index=chunk_index,
+                vector_score=vector_score,
                 decision="excluded",
                 reason="filtered",
                 rank_key=None,
@@ -94,6 +99,7 @@ class RetrievalExplainBuilder:
         order_index: int,
         quality: str,
         rank_key: tuple,
+        vector_score: float | None = None,
     ) -> None:
         self._candidates.append(
             _ExplainCandidate(
@@ -102,6 +108,7 @@ class RetrievalExplainBuilder:
                 keyword_overlap=keyword_overlap,
                 page_number=page_number,
                 chunk_index=chunk_index,
+                vector_score=vector_score,
                 decision=None,
                 reason=None,
                 rank_key=rank_key,
@@ -117,6 +124,8 @@ class RetrievalExplainBuilder:
         selection_candidates: list[dict],
         chosen_quality: str | None,
         warn_allowed: bool,
+        embedding: dict | None = None,
+        ordering: str | None = None,
     ) -> dict:
         selected_ids = _chunk_ids(selected)
         selection_ids = _chunk_ids(selection_candidates)
@@ -147,13 +156,15 @@ class RetrievalExplainBuilder:
                 candidate.reason = "tier"
         ordered = _ordered_candidates(self._candidates)
         output = [_candidate_payload(item) for item in ordered]
+        embedding_payload = embedding if isinstance(embedding, dict) else _default_embedding_payload()
         return {
             "query": self.query,
             "retrieval_mode": normalize_retrieval_mode(self.tier_request),
             "candidate_count": len(output),
             "candidates": output,
             "final_selection": [item.get("chunk_id") for item in selected if isinstance(item, dict)],
-            "ordering": "ingestion_phase, keyword_overlap, page_number, chunk_index",
+            "ordering": ordering or "ingestion_phase, keyword_overlap, page_number, chunk_index",
+            "embedding": embedding_payload,
         }
 
 
@@ -172,6 +183,7 @@ def _candidate_payload(item: _ExplainCandidate) -> dict:
         "keyword_overlap": item.keyword_overlap,
         "page_number": item.page_number,
         "chunk_index": item.chunk_index,
+        "vector_score": item.vector_score,
         "decision": item.decision or "excluded",
         "reason": item.reason or "unknown",
     }
@@ -187,6 +199,10 @@ def _chunk_ids(entries: list[dict]) -> set[str]:
             continue
         ids.add(str(value))
     return ids
+
+
+def _default_embedding_payload() -> dict:
+    return {"enabled": False, "model_id": None, "candidate_count": 0, "candidates": []}
 
 
 __all__ = ["RetrievalExplainBuilder", "normalize_retrieval_mode"]
