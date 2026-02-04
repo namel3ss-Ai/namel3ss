@@ -41,7 +41,14 @@ def update_index(
         source_name = _string_value(chunk.get("source_name"))
         page_number = _page_number_value(chunk.get("page_number"))
         chunk_index = _chunk_index_value(chunk.get("chunk_index"))
-        if document_id is None or source_name is None or page_number is None or chunk_index is None:
+        phase = _phase_value(chunk.get("ingestion_phase"))
+        if (
+            document_id is None
+            or source_name is None
+            or page_number is None
+            or chunk_index is None
+            or phase is None
+        ):
             raise Namel3ssError(_chunk_provenance_message())
         entry = {
             "upload_id": upload_id,
@@ -54,6 +61,7 @@ def update_index(
             "text": chunk.get("text"),
             "chars": chunk.get("chars"),
             "low_quality": bool(low_quality),
+            "ingestion_phase": phase,
         }
         filtered.append(entry)
     index["chunks"] = filtered
@@ -111,8 +119,8 @@ def _index_chunks_shape_message() -> str:
 def _chunk_provenance_message() -> str:
     return build_guidance_message(
         what="Indexed chunks are missing page provenance.",
-        why="Ingestion must include document_id, source_name, page_number, and chunk_index for every chunk.",
-        fix="Re-run ingestion to rebuild chunks with provenance.",
+        why="Ingestion must include document_id, source_name, page_number, chunk_index, and ingestion_phase for every chunk.",
+        fix="Re-run ingestion to rebuild chunks with provenance and phase metadata.",
         example='{"upload_id":"<checksum>"}',
     )
 
@@ -138,6 +146,15 @@ def _chunk_index_value(value: object) -> int | None:
         return None
     if isinstance(value, int) and value >= 0:
         return value
+    return None
+
+
+def _phase_value(value: object) -> str | None:
+    if not isinstance(value, str):
+        return None
+    phase = value.strip().lower()
+    if phase in {"quick", "deep"}:
+        return phase
     return None
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 from namel3ss.errors.base import Namel3ssError
-from namel3ss.ingestion.api import run_ingestion
+from namel3ss.ingestion.api import run_ingestion_progressive
 from namel3ss.ingestion.api import _resolve_metadata  # internal helper
 from namel3ss.pipelines.model import (
     PipelineRunResult,
@@ -41,13 +41,14 @@ def _run_ingestion(ctx, definition, payload: dict) -> PipelineRunResult:
     steps.append(_build_step(definition, 1, accept_summary, status="ok"))
 
     secret_list = collect_secret_values(ctx.config)
-    result = run_ingestion(
+    result = run_ingestion_progressive(
         upload_id=upload_id,
         mode=str(payload.get("mode")) if isinstance(payload.get("mode"), str) else None,
         state=ctx.state,
         project_root=ctx.project_root,
         app_path=ctx.app_path,
         secret_values=secret_list,
+        job_ctx=ctx,
     )
     report = result.get("report") if isinstance(result, dict) else None
     if not isinstance(report, dict):
@@ -115,6 +116,7 @@ def _run_retrieval(ctx, definition, payload: dict) -> PipelineRunResult:
     result = run_retrieval(
         query=query,
         limit=limit,
+        tier=payload.get("tier"),
         state=_retrieval_state_view(ctx.state, payload),
         project_root=ctx.project_root,
         app_path=ctx.app_path,
@@ -139,8 +141,8 @@ def _run_retrieval(ctx, definition, payload: dict) -> PipelineRunResult:
     steps.append(_build_step(definition, 3, retrieve_summary, status="ok"))
 
     rank_summary = {
-        "ordering": "index_order",
-        "tie_break": "ingestion_order",
+        "ordering": "phase_page_chunk",
+        "tie_break": "index_order",
     }
     steps.append(_build_step(definition, 4, rank_summary, status="ok"))
 

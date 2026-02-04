@@ -349,7 +349,7 @@ def _ingestion_traces(report: dict) -> list[dict]:
     reasons = report.get("reasons")
     provenance = report.get("provenance") if isinstance(report.get("provenance"), dict) else {}
     source_name = provenance.get("source_name") if isinstance(provenance, dict) else None
-    return [
+    traces = [
         {
             "type": TraceEventType.INGESTION_STARTED,
             "upload_id": upload_id,
@@ -357,14 +357,41 @@ def _ingestion_traces(report: dict) -> list[dict]:
             "detected": detected,
             "source_name": source_name,
         },
+    ]
+    traces.extend(_progress_traces(report))
+    traces.append(
         {
             "type": TraceEventType.INGESTION_QUALITY_GATE,
             "upload_id": upload_id,
             "status": status,
             "reasons": reasons,
             "source_name": source_name,
-        },
-    ]
+        }
+    )
+    return traces
+
+
+def _progress_traces(report: dict) -> list[dict]:
+    events = report.get("progress")
+    if not isinstance(events, list):
+        return []
+    traces: list[dict] = []
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        if event.get("phase") != "quick":
+            continue
+        trace = {
+            "type": TraceEventType.INGESTION_PROGRESS,
+            "title": event.get("title"),
+            "upload_id": event.get("upload_id"),
+            "source_name": event.get("source_name"),
+            "ingestion_phase": event.get("phase"),
+        }
+        if "status" in event:
+            trace["status"] = event.get("status")
+        traces.append(trace)
+    return traces
 
 
 def _retrieval_traces(result: dict) -> list[dict]:
@@ -374,9 +401,18 @@ def _retrieval_traces(result: dict) -> list[dict]:
     warn_allowed = result.get("warn_allowed") if isinstance(result, dict) else None
     excluded_warn = result.get("excluded_warn") if isinstance(result, dict) else None
     warn_policy = result.get("warn_policy") if isinstance(result, dict) else None
+    tier = result.get("tier") if isinstance(result, dict) else None
     return [
         {
             "type": TraceEventType.RETRIEVAL_STARTED,
+        },
+        {
+            "type": TraceEventType.RETRIEVAL_TIER_SELECTED,
+            "tier": tier.get("requested") if isinstance(tier, dict) else None,
+            "selected": tier.get("selected") if isinstance(tier, dict) else None,
+            "reason": tier.get("reason") if isinstance(tier, dict) else None,
+            "available": tier.get("available") if isinstance(tier, dict) else None,
+            "counts": tier.get("counts") if isinstance(tier, dict) else None,
         },
         {
             "type": TraceEventType.RETRIEVAL_QUALITY_POLICY,

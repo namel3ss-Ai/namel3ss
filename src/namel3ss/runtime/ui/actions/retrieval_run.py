@@ -38,6 +38,7 @@ def handle_retrieval_run_action(
         raise Namel3ssError(_payload_type_message())
     query = payload.get("query")
     limit = payload.get("limit")
+    tier = payload.get("tier")
     policy = load_ingestion_policy(
         project_root=getattr(program_ir, "project_root", None),
         app_path=getattr(program_ir, "app_path", None),
@@ -47,6 +48,7 @@ def handle_retrieval_run_action(
     result = run_retrieval(
         query=query,
         limit=limit,
+        tier=tier,
         state=state,
         project_root=getattr(program_ir, "project_root", None),
         app_path=getattr(program_ir, "app_path", None),
@@ -85,9 +87,18 @@ def _build_traces(result: dict) -> list[dict]:
     warn_allowed = result.get("warn_allowed")
     excluded_warn = result.get("excluded_warn")
     warn_policy = result.get("warn_policy")
+    tier = result.get("tier") if isinstance(result.get("tier"), dict) else {}
     return [
         {
             "type": TraceEventType.RETRIEVAL_STARTED,
+        },
+        {
+            "type": TraceEventType.RETRIEVAL_TIER_SELECTED,
+            "tier": tier.get("requested"),
+            "selected": tier.get("selected"),
+            "reason": tier.get("reason"),
+            "available": tier.get("available"),
+            "counts": tier.get("counts"),
         },
         {
             "type": TraceEventType.RETRIEVAL_QUALITY_POLICY,
@@ -118,9 +129,9 @@ def _require_uploads_capability(program_ir) -> None:
 def _payload_type_message() -> str:
     return build_guidance_message(
         what="Retrieval payload must be an object.",
-        why="Retrieval expects an object with query and optional limit.",
-        fix='Send {"query":"..."} or include {"limit":10}.',
-        example='{"query":"invoice","limit":5}',
+        why="Retrieval expects an object with query, optional limit, and optional tier.",
+        fix='Send {"query":"..."} or include {"limit":10,"tier":"auto"}.',
+        example='{"query":"invoice","limit":5,"tier":"auto"}',
     )
 
 

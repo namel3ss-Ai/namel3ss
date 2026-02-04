@@ -84,6 +84,7 @@ def test_pdf_page_provenance_multi_page(tmp_path: Path) -> None:
             "page_number": 1,
             "document_id": metadata["checksum"],
             "source_name": "sample.pdf",
+            "ingestion_phase": "deep",
         },
         {
             "chunk_index": 1,
@@ -92,6 +93,7 @@ def test_pdf_page_provenance_multi_page(tmp_path: Path) -> None:
             "page_number": 2,
             "document_id": metadata["checksum"],
             "source_name": "sample.pdf",
+            "ingestion_phase": "deep",
         },
     ]
     assert result["chunks"] == expected_chunks
@@ -112,6 +114,7 @@ def test_pdf_page_provenance_multi_page(tmp_path: Path) -> None:
             "text": page_one,
             "chars": len(page_one),
             "low_quality": False,
+            "ingestion_phase": "deep",
         },
         {
             "upload_id": metadata["checksum"],
@@ -124,6 +127,7 @@ def test_pdf_page_provenance_multi_page(tmp_path: Path) -> None:
             "text": page_two,
             "chars": len(page_two),
             "low_quality": False,
+            "ingestion_phase": "deep",
         },
     ]
 
@@ -213,5 +217,6 @@ def test_text_ingestion_single_page_provenance_is_compatible(tmp_path: Path) -> 
             "page_number": 1,
             "document_id": metadata["checksum"],
             "source_name": "notes.txt",
+            "ingestion_phase": "deep",
         }
     ]

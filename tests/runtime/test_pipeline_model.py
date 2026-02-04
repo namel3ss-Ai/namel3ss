@@ -89,8 +89,24 @@ def test_pipeline_retrieval_ordering_is_deterministic(tmp_path: Path) -> None:
     }
     index = {
         "chunks": [
-            {"upload_id": "u1", "order": 0, "text": "invoice one"},
-            {"upload_id": "u2", "order": 0, "text": "invoice two"},
+            {
+                "upload_id": "u1",
+                "document_id": "u1",
+                "source_name": "one.txt",
+                "page_number": 1,
+                "chunk_index": 0,
+                "ingestion_phase": "deep",
+                "text": "invoice one",
+            },
+            {
+                "upload_id": "u2",
+                "document_id": "u2",
+                "source_name": "two.txt",
+                "page_number": 2,
+                "chunk_index": 0,
+                "ingestion_phase": "deep",
+                "text": "invoice two",
+            },
         ]
     }
 

@@ -51,6 +51,7 @@ def _PIPELINE_CONTRACTS() -> dict[str, ContractDecl]:
                 inputs=[
                     _field("query", "text", required=False),
                     _field("limit", "number", required=False),
+                    _field("tier", "text", required=False),
                     _field("ingestion", "json", required=False),
                     _field("index", "json", required=False),
                 ],
