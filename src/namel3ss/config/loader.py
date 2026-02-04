@@ -69,6 +69,7 @@ def _apply_toml_config(config: AppConfig, data: Dict[str, Any]) -> None:
     _apply_provider_toml(config, data.get("anthropic"), provider="anthropic")
     _apply_provider_toml(config, data.get("gemini"), provider="gemini")
     _apply_provider_toml(config, data.get("mistral"), provider="mistral")
+    _apply_answer_toml(config, data.get("answer"))
     _apply_persistence_toml(config, data.get("persistence"))
     _apply_identity_toml(config, data.get("identity"))
     _apply_authentication_toml(config, data.get("authentication") or data.get("auth"))
@@ -104,8 +105,15 @@ def _apply_provider_toml(config: AppConfig, table: Any, *, provider: str) -> Non
         base_url = table.get("base_url")
         if base_url is not None:
             config.openai.base_url = str(base_url)
-
-
+def _apply_answer_toml(config: AppConfig, table: Any) -> None:
+    if not isinstance(table, dict):
+        return
+    provider = table.get("provider")
+    if provider is not None:
+        config.answer.provider = str(provider)
+    model = table.get("model")
+    if model is not None:
+        config.answer.model = str(model)
 def _apply_persistence_toml(config: AppConfig, table: Any) -> None:
     if not isinstance(table, dict):
         return
@@ -129,8 +137,6 @@ def _apply_persistence_toml(config: AppConfig, table: Any) -> None:
             config.persistence.replica_urls = [str(item) for item in replicas if item is not None]
         else:
             config.persistence.replica_urls = [str(replicas)]
-
-
 def _apply_identity_toml(config: AppConfig, table: Any) -> None:
     if not isinstance(table, dict):
         return
@@ -138,8 +144,6 @@ def _apply_identity_toml(config: AppConfig, table: Any) -> None:
         if value is None:
             continue
         config.identity.defaults[str(key)] = value
-
-
 def _apply_authentication_toml(config: AppConfig, table: Any) -> None:
     if not isinstance(table, dict):
         return
@@ -192,8 +196,6 @@ def _apply_authentication_credentials(config: AppConfig, payload: dict, *, label
         config.authentication.identity = dict(identity)
     elif identity is not None:
         config.authentication.identity = _parse_auth_identity_json(identity, label=f"{label}.identity")
-
-
 def _parse_auth_identity_json(value: object, *, label: str) -> dict:
     if isinstance(value, dict):
         return dict(value)
@@ -213,8 +215,6 @@ def _parse_auth_identity_json(value: object, *, label: str) -> dict:
     if not isinstance(parsed, dict):
         raise Namel3ssError(f"{label} must be a JSON object string")
     return dict(parsed)
-
-
 def _apply_python_tools_toml(config: AppConfig, table: Any) -> None:
     if not isinstance(table, dict):
         return

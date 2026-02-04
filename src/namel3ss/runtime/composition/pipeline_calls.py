@@ -15,6 +15,7 @@ from namel3ss.ir import nodes as ir
 from namel3ss.pipelines.model import PipelineStepResult, pipeline_step_id
 from namel3ss.pipelines.registry import pipeline_definitions
 from namel3ss.pipelines.runner import run_pipeline
+from namel3ss.runtime.answer.traces import answer_trace_from_error, answer_trace_from_steps
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.runtime.values.coerce import require_type
@@ -83,6 +84,8 @@ def _run_pipeline(
         return _run_ingestion(ctx, payload, expr)
     if name == "retrieval":
         return _run_retrieval(ctx, payload, expr)
+    if name == "answer":
+        return _run_answer(ctx, payload, expr)
     raise Namel3ssError(
         build_guidance_message(
             what=f'Unknown pipeline "{name}".',
@@ -147,6 +150,32 @@ def _run_retrieval(ctx: ExecutionContext, payload: dict, expr: ir.CallPipelineEx
         }
         output["report"] = report
     ctx.traces.extend(_retrieval_traces(report if isinstance(report, dict) else {}))
+    return output, result.steps
+
+
+def _run_answer(ctx: ExecutionContext, payload: dict, expr: ir.CallPipelineExpr) -> tuple[dict, list[PipelineStepResult]]:
+    _require_uploads_capability(ctx, expr)
+    policy = load_ingestion_policy(
+        project_root=ctx.project_root,
+        app_path=ctx.app_path,
+        policy_decl=getattr(ctx, "policy", None),
+    )
+    decision = evaluate_ingestion_policy(policy, ACTION_RETRIEVAL_INCLUDE_WARN, ctx.identity)
+    ctx.traces.append(policy_trace(ACTION_RETRIEVAL_INCLUDE_WARN, decision))
+    try:
+        result = run_pipeline(ctx, name="answer", payload=payload)
+    except Exception as exc:
+        trace = answer_trace_from_error(exc)
+        if trace is not None:
+            ctx.traces.append(trace)
+        raise
+    output = result.output
+    report = output.get("report") if isinstance(output, dict) else None
+    if not isinstance(report, dict):
+        raise Namel3ssError("Answer report is missing.", line=expr.line, column=expr.column)
+    trace = answer_trace_from_steps(result.steps)
+    if trace is not None:
+        ctx.traces.append(trace)
     return output, result.steps
 
 
@@ -424,6 +453,8 @@ def _retrieval_traces(result: dict) -> list[dict]:
             "warn_policy": warn_policy,
         },
     ]
+
+
 
 
 __all__ = ["execute_pipeline_call"]

@@ -16,6 +16,8 @@ ENV_AUTH_USERNAME = "N3_AUTH_USERNAME"
 ENV_AUTH_PASSWORD = "N3_AUTH_PASSWORD"
 ENV_AUTH_IDENTITY_JSON = "N3_AUTH_IDENTITY_JSON"
 ENV_AUTH_CREDENTIALS_JSON = "N3_AUTH_CREDENTIALS_JSON"
+ENV_ANSWER_PROVIDER = "N3_ANSWER_PROVIDER"
+ENV_ANSWER_MODEL = "N3_ANSWER_MODEL"
 RESERVED_TRUE_VALUES = {"1", "true", "yes", "on"}
 
 
@@ -51,6 +53,14 @@ def apply_env_overrides(config: AppConfig) -> bool:
     mistral_key = os.getenv("NAMEL3SS_MISTRAL_API_KEY")
     if mistral_key:
         config.mistral.api_key = mistral_key
+        used = True
+    answer_provider = os.getenv(ENV_ANSWER_PROVIDER)
+    if answer_provider:
+        config.answer.provider = answer_provider
+        used = True
+    answer_model = os.getenv(ENV_ANSWER_MODEL)
+    if answer_model:
+        config.answer.model = answer_model
         used = True
     target = os.getenv("N3_PERSIST_TARGET")
     if target:
@@ -224,6 +234,8 @@ __all__ = [
     "ENV_AUTH_PASSWORD",
     "ENV_AUTH_IDENTITY_JSON",
     "ENV_AUTH_CREDENTIALS_JSON",
+    "ENV_ANSWER_PROVIDER",
+    "ENV_ANSWER_MODEL",
     "RESERVED_TRUE_VALUES",
     "apply_env_overrides",
     "normalize_target",

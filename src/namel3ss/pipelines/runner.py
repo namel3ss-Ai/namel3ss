@@ -14,6 +14,7 @@ from namel3ss.pipelines.model import (
 )
 from namel3ss.pipelines.registry import pipeline_definitions
 from namel3ss.retrieval.api import run_retrieval
+from namel3ss.runtime.answer.api import run_answer
 from namel3ss.secrets import collect_secret_values
 
 
@@ -25,6 +26,8 @@ def run_pipeline(ctx, *, name: str, payload: dict) -> PipelineRunResult:
         return _run_ingestion(ctx, definition, payload)
     if name == "retrieval":
         return _run_retrieval(ctx, definition, payload)
+    if name == "answer":
+        return _run_answer(ctx, definition, payload)
     raise Namel3ssError(f'Unknown pipeline "{name}".')
 
 
@@ -157,6 +160,55 @@ def _run_retrieval(ctx, definition, payload: dict) -> PipelineRunResult:
     steps.append(_build_step(definition, 6, report_summary, status="ok"))
 
     return PipelineRunResult(output={"report": result}, steps=steps, status="ok")
+
+
+def _run_answer(ctx, definition, payload: dict) -> PipelineRunResult:
+    steps: list[PipelineStepResult] = []
+    query = payload.get("query")
+    limit = payload.get("limit")
+    tier = payload.get("tier")
+    accept_summary = {
+        "query": str(query or ""),
+        "limit": limit,
+        "tier": str(tier or ""),
+    }
+    steps.append(_build_step(definition, 1, accept_summary, status="ok"))
+
+    report, meta = run_answer(
+        query=query,
+        limit=limit,
+        tier=tier,
+        state=_retrieval_state_view(ctx.state, payload),
+        project_root=ctx.project_root,
+        app_path=ctx.app_path,
+        config=ctx.config,
+        identity=ctx.identity,
+        policy_decl=getattr(ctx, "policy", None),
+    )
+    source_count = int(report.get("source_count") or 0) if isinstance(report, dict) else 0
+    retrieve_summary = {
+        "result_count": source_count,
+        "chunk_ids": list(meta.get("chunk_ids") or []),
+    }
+    steps.append(_build_step(definition, 2, retrieve_summary, status="ok"))
+
+    prompt_summary = {"prompt_hash": str(meta.get("prompt_hash") or "")}
+    steps.append(_build_step(definition, 3, prompt_summary, status="ok"))
+
+    validate_summary = {
+        "status": str(meta.get("validation_status") or ""),
+        "citation_count": int(meta.get("citation_count") or 0),
+    }
+    steps.append(_build_step(definition, 4, validate_summary, status="ok"))
+
+    confidence = report.get("confidence") if isinstance(report, dict) else 0.0
+    report_summary = {
+        "source_count": source_count,
+        "confidence": float(confidence or 0.0),
+    }
+    steps.append(_build_step(definition, 5, report_summary, status="ok"))
+
+    return PipelineRunResult(output={"report": report}, steps=steps, status="ok")
 
 
 def _retrieval_state_view(state: dict, payload: dict) -> dict:
