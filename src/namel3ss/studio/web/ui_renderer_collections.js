@@ -45,7 +45,20 @@
 
     if (!rows.length) {
       const empty = document.createElement("div");
-      empty.textContent = el.empty_text || "No items yet.";
+      empty.className = "ui-empty-state";
+      const emptyState = el.empty_state || {};
+      const title = emptyState.title;
+      const text = emptyState.text || el.empty_text || "No items yet.";
+      if (title) {
+        const titleEl = document.createElement("div");
+        titleEl.className = "ui-empty-state-title";
+        titleEl.textContent = title;
+        empty.appendChild(titleEl);
+      }
+      const textEl = document.createElement("div");
+      textEl.className = "ui-empty-state-text";
+      textEl.textContent = text;
+      empty.appendChild(textEl);
       listWrap.appendChild(empty);
       wrapper.appendChild(listWrap);
       return wrapper;
@@ -165,7 +178,20 @@
     }
     if (!displayRows.length) {
       const empty = document.createElement("div");
-      empty.textContent = el.empty_text || "No rows yet.";
+      empty.className = "ui-empty-state";
+      const emptyState = el.empty_state || {};
+      const title = emptyState.title;
+      const text = emptyState.text || el.empty_text || "No rows yet.";
+      if (title) {
+        const titleEl = document.createElement("div");
+        titleEl.className = "ui-empty-state-title";
+        titleEl.textContent = title;
+        empty.appendChild(titleEl);
+      }
+      const textEl = document.createElement("div");
+      textEl.className = "ui-empty-state-text";
+      textEl.textContent = text;
+      empty.appendChild(textEl);
       wrapper.appendChild(empty);
       return wrapper;
     }

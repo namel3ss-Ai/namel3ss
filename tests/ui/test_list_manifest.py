@@ -84,3 +84,26 @@ def test_list_default_primary_falls_back_to_id():
     manifest = build_manifest(program, state={}, store=MemoryStore())
     list_el = next(el for el in manifest["pages"][0]["elements"] if el["type"] == "list")
     assert list_el["item"]["primary"] == "_id"
+
+
+def test_list_manifest_empty_state_always_present():
+    """Empty collections get a deterministic empty_state so the UI can render an empty state."""
+    program = lower_ir_program(DEFAULT_SOURCE)
+    manifest = build_manifest(program, state={}, store=MemoryStore())
+    list_el = next(el for el in manifest["pages"][0]["elements"] if el["type"] == "list")
+    assert "empty_state" in list_el
+    assert list_el["empty_state"]["title"] == "No items"
+    assert list_el["empty_state"]["text"] == "There are no items to display."
+    assert len(list_el["rows"]) == 0
+    # Manifest remains stable across runs
+    assert manifest == build_manifest(program, state={}, store=MemoryStore())
+
+
+def test_list_manifest_empty_state_uses_app_empty_text_when_set():
+    """When the app sets empty_text, empty_state.text uses it."""
+    program = lower_ir_program(ACTION_SOURCE)
+    manifest = build_manifest(program, state={}, store=MemoryStore())
+    list_el = next(el for el in manifest["pages"][0]["elements"] if el["type"] == "list")
+    assert list_el["empty_state"]["title"] == "No items"
+    assert list_el["empty_state"]["text"] == "No orders yet."
+    assert list_el["empty_text"] == "No orders yet."

@@ -201,6 +201,10 @@
               },
               "record": "IngestionReport",
               "rows": [],
+              "empty_state": {
+                "title": "No rows",
+                "text": "There are no rows to display."
+              },
               "spacing": {
                 "cell_gap": "s",
                 "header_gap": "m",
@@ -302,6 +306,10 @@
               },
               "record": "RetrievalReport",
               "rows": [],
+              "empty_state": {
+                "title": "No rows",
+                "text": "There are no rows to display."
+              },
               "spacing": {
                 "cell_gap": "s",
                 "header_gap": "m",
