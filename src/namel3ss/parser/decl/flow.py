@@ -3,8 +3,8 @@ from __future__ import annotations
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
-from namel3ss.parser.stmt.common import parse_statements
 from namel3ss.parser.decl.flow_steps import parse_flow_steps
+from namel3ss.parser.decl.flow_ai import parse_flow_ai_block
 from namel3ss.purity import EFFECTFUL_VALUE, normalize_purity
 
 
@@ -42,7 +42,7 @@ def parse_flow(parser) -> ast.Flow:
                 line=flow_tok.line,
                 column=flow_tok.column,
             )
-        body = parse_statements(parser, until={"DEDENT"})
+        body, ai_metadata = _parse_flow_body(parser)
         parser._expect("DEDENT", "Expected block end")
         while parser._match("NEWLINE"):
             pass
@@ -54,12 +54,13 @@ def parse_flow(parser) -> ast.Flow:
             purity=purity,
             declarative=False,
             steps=None,
+            ai_metadata=ai_metadata,
             line=flow_tok.line,
             column=flow_tok.column,
         )
     parser._expect("NEWLINE", "Expected newline after flow header")
     parser._expect("INDENT", "Expected indented block for flow steps")
-    steps = parse_flow_steps(parser)
+    steps, ai_metadata = parse_flow_steps(parser)
     parser._expect("DEDENT", "Expected end of flow steps")
     while parser._match("NEWLINE"):
         pass
@@ -71,6 +72,7 @@ def parse_flow(parser) -> ast.Flow:
         purity=purity,
         declarative=True,
         steps=steps,
+        ai_metadata=ai_metadata,
         line=flow_tok.line,
         column=flow_tok.column,
     )
@@ -141,6 +143,35 @@ def _parse_flow_header_flags(parser, requires_expr, audited, purity, purity_set,
             continue
         break
     return requires_expr, audited, purity, purity_set
+
+
+def _parse_flow_body(parser) -> tuple[list[ast.Statement], ast.AIFlowMetadata | None]:
+    body: list[ast.Statement] = []
+    ai_metadata: ast.AIFlowMetadata | None = None
+    while parser._current().type != "DEDENT":
+        if parser._match("NEWLINE"):
+            continue
+        tok = parser._current()
+        if tok.type == "AI":
+            if ai_metadata is not None:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Flow declares ai more than once.",
+                        why="Each flow may only declare a single ai block.",
+                        fix="Keep a single ai block in the flow.",
+                        example='flow \"summarise\":\\n  ai:\\n    model is \"gpt-4\"\\n    prompt is \"Summarise the input.\"',
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            ai_metadata = parse_flow_ai_block(parser)
+            continue
+        stmt = parser._parse_statement()
+        if isinstance(stmt, list):
+            body.extend(stmt)
+        else:
+            body.append(stmt)
+    return body, ai_metadata
 
 
 __all__ = ["parse_flow"]

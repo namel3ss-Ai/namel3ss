@@ -5,7 +5,9 @@ import sys
 
 from namel3ss.cli.aliases import canonical_command
 from namel3ss.cli.app_handler import handle_app_commands
+from namel3ss.cli.auth_mode import run_auth_command
 from namel3ss.cli.artifacts_mode import run_artifacts_clean, run_artifacts_status
+from namel3ss.cli.audit_mode import run_audit_command
 from namel3ss.cli.browser_mode import run_dev_command, run_preview_command
 from namel3ss.cli.build_mode import run_build_command
 from namel3ss.cli.constants import ROOT_APP_COMMANDS
@@ -16,6 +18,8 @@ from namel3ss.cli.editor_mode import run_editor_command
 from namel3ss.cli.eval_mode import run_eval_command
 from namel3ss.cli.exists_mode import run_exists_command
 from namel3ss.cli.explain_mode import run_explain_command
+from namel3ss.cli.conventions_mode import run_conventions_command
+from namel3ss.cli.docs_mode import run_docs_command
 from namel3ss.cli.expr_check_mode import run_expr_check_command
 from namel3ss.cli.first_run import is_first_run
 from namel3ss.cli.fix_mode import run_fix_command
@@ -23,11 +27,18 @@ from namel3ss.cli.how_mode import run_how_command
 from namel3ss.cli.kit_mode import run_kit_command
 from namel3ss.cli.memory_mode import run_memory_command
 from namel3ss.cli.migrate_mode import run_migrate_command
+from namel3ss.cli.metrics_mode import run_metrics_command
 from namel3ss.cli.observe_mode import run_observe_command
+from namel3ss.cli.formats_mode import run_formats_command
+from namel3ss.cli.plugin_mode import run_plugin_command
+from namel3ss.cli.prompts_mode import run_prompts_command
+from namel3ss.cli.sandbox_mode import run_sandbox_command
+from namel3ss.cli.sensitive_mode import run_sensitive_command
 from namel3ss.cli.packs_mode import run_packs
 from namel3ss.cli.pattern_mode import run_pattern
 from namel3ss.cli.persist_mode import run_data, run_persist
 from namel3ss.cli.pkg_mode import run_pkg
+from namel3ss.cli.sdk_mode import run_sdk_command
 from namel3ss.cli.promote_mode import run_promote_command
 from namel3ss.cli.proof_mode import run_proof_command
 from namel3ss.cli.readability_mode import run_readability_command
@@ -127,6 +138,8 @@ def main(argv: list[str] | None = None) -> int:
             from namel3ss.cli.doc_mode import run_doc_command
 
             return run_doc_command(args[1:])
+        if cmd == "docs":
+            return run_docs_command(args[1:])
         if cmd == "version":
             print_version()
             return 0
@@ -167,6 +180,20 @@ def main(argv: list[str] | None = None) -> int:
             return run_secrets_command(args[1:])
         if cmd == "observe":
             return run_observe_command(args[1:])
+        if cmd == "metrics":
+            return run_metrics_command(args[1:])
+        if cmd == "conventions":
+            return run_conventions_command(args[1:])
+        if cmd == "formats":
+            return run_formats_command(args[1:])
+        if cmd == "audit":
+            return run_audit_command(args[1:])
+        if cmd == "auth":
+            return run_auth_command(args[1:])
+        if cmd == "prompts":
+            return run_prompts_command(args[1:])
+        if cmd == "sensitive":
+            return run_sensitive_command(args[1:])
         if cmd == "explain":
             return run_explain_command(args[1:])
         if cmd == "why":
@@ -197,8 +224,14 @@ def main(argv: list[str] | None = None) -> int:
             return run_deps(args[1:])
         if cmd == "tools":
             return run_tools(args[1:])
+        if cmd == "sandbox":
+            return run_sandbox_command(args[1:])
+        if cmd == "plugin":
+            return run_plugin_command(args[1:])
         if cmd == "packs":
             return run_packs(args[1:])
+        if cmd == "sdk":
+            return run_sdk_command(args[1:])
         if cmd == "registry":
             return run_registry(args[1:])
         if cmd == "discover":

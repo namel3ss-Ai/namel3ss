@@ -11,7 +11,7 @@ import pytest
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.backend.upload_handler import handle_upload, handle_upload_list
 from namel3ss.runtime.backend.upload_store import normalize_hash_bytes, store_upload
-from namel3ss.utils.slugify import slugify_text
+from namel3ss.persistence.local_store import LocalStore
 
 
 def _ctx(tmp_path: Path, *, capabilities: tuple[str, ...] = ("uploads",)) -> SimpleNamespace:
@@ -44,12 +44,12 @@ def test_store_upload_scoped_and_indexed(tmp_path: Path) -> None:
         stream=io.BytesIO(payload),
     )
     checksum = hashlib.sha256(payload).hexdigest()
-    scope = slugify_text("app.ai")
-    expected_name = f"report-{checksum[:12]}.txt"
-    expected_path = f"{scope}/uploads/{expected_name}"
+    store = LocalStore(tmp_path, tmp_path / "app.ai")
+    expected_path = f"uploads/{store.project_name}/{checksum}"
 
     assert metadata["bytes"] == len(payload)
     assert metadata["checksum"] == checksum
+    assert metadata["upload_id"] == checksum
     assert metadata["stored_path"] == expected_path
     assert str(tmp_path) not in metadata["stored_path"]
     preview = metadata.get("preview", {})
@@ -59,11 +59,11 @@ def test_store_upload_scoped_and_indexed(tmp_path: Path) -> None:
     assert preview.get("checksum") == checksum
     assert preview.get("item_count") == 1
 
-    target = tmp_path / ".namel3ss" / "files" / scope / "uploads" / expected_name
+    target = tmp_path / ".namel3ss" / "uploads" / store.project_name / checksum
     assert target.exists()
 
-    index_path = target.parent / "index.json"
-    index = json.loads(index_path.read_text(encoding="utf-8"))
+    uploads_path = tmp_path / ".namel3ss" / "persist" / store.project_name / "uploads.json"
+    index = json.loads(uploads_path.read_text(encoding="utf-8"))
     assert index
     assert index[0]["stored_path"] == expected_path
 

@@ -35,6 +35,10 @@ def _merge_programs(
     combined_records = list(app_ast.records)
     combined_functions = list(getattr(app_ast, "functions", []))
     combined_flows = list(app_ast.flows)
+    combined_routes = list(getattr(app_ast, "routes", []) or [])
+    combined_crud = list(getattr(app_ast, "crud", []) or [])
+    combined_prompts = list(getattr(app_ast, "prompts", []) or [])
+    combined_ai_flows = list(getattr(app_ast, "ai_flows", []) or [])
     combined_jobs = list(getattr(app_ast, "jobs", []))
     combined_pages = list(app_ast.pages)
     combined_ui_packs = list(getattr(app_ast, "ui_packs", []))
@@ -79,6 +83,10 @@ def _merge_programs(
             combined_records.extend(program.records)
             combined_functions.extend(getattr(program, "functions", []))
             combined_flows.extend(program.flows)
+            combined_routes.extend(getattr(program, "routes", []) or [])
+            combined_crud.extend(getattr(program, "crud", []) or [])
+            combined_prompts.extend(getattr(program, "prompts", []) or [])
+            combined_ai_flows.extend(getattr(program, "ai_flows", []) or [])
             combined_jobs.extend(getattr(program, "jobs", []))
             combined_ais.extend(program.ais)
             combined_tools.extend(program.tools)
@@ -103,6 +111,10 @@ def _merge_programs(
         functions=combined_functions,
         contracts=list(getattr(app_ast, "contracts", []) or []),
         flows=combined_flows,
+        routes=combined_routes,
+        crud=combined_crud,
+        prompts=combined_prompts,
+        ai_flows=combined_ai_flows,
         jobs=combined_jobs,
         pages=combined_pages,
         ui_packs=combined_ui_packs,

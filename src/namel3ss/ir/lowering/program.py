@@ -1,7 +1,5 @@
 from __future__ import annotations
-
 from typing import Dict, List
-
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
@@ -11,6 +9,14 @@ from namel3ss.ir.lowering.flow import lower_flow
 from namel3ss.ir.lowering.expressions import _lower_expression
 from namel3ss.ir.lowering.contracts import lower_flow_contracts
 from namel3ss.ir.lowering.jobs import lower_jobs
+from namel3ss.ir.lowering.routes import lower_routes
+from namel3ss.ir.lowering.prompts import lower_prompts
+from namel3ss.ir.lowering.ai_flows import lower_ai_flows
+from namel3ss.ir.lowering.crud import lower_crud
+from namel3ss.compiler.routes import validate_routes
+from namel3ss.compiler.prompts import validate_prompts, validate_prompt_references
+from namel3ss.compiler.ai_flows import validate_ai_flows
+from namel3ss.compiler.crud import validate_crud
 from namel3ss.ir.lowering.policy import lower_policy
 from namel3ss.flow_contract import (
     validate_declarative_flows,
@@ -101,6 +107,15 @@ def lower_program(program: ast.Program) -> Program:
     job_irs = lower_jobs(getattr(program, "jobs", []), agent_map)
     record_map: Dict[str, schema.RecordSchema] = {rec.name: rec for rec in record_schemas}
     flow_names = validate_flow_names(flow_irs)
+    prompt_names = validate_prompts(getattr(program, "prompts", []) or [])
+    validate_prompt_references(
+        getattr(program, "flows", []) or [],
+        getattr(program, "ai_flows", []) or [],
+        prompt_names=prompt_names,
+    )
+    validate_ai_flows(getattr(program, "ai_flows", []) or [], record_names=set(record_map.keys()))
+    validate_crud(getattr(program, "crud", []) or [], record_names=set(record_map.keys()))
+    validate_routes(getattr(program, "routes", []) or [], record_names=set(record_map.keys()), flow_names=set(flow_names))
     validate_flow_contracts(flow_irs, flow_contracts)
     validate_flow_composition(flow_irs, flow_contracts, pipeline_contracts())
     validate_flow_purity(flow_irs, flow_contracts)
@@ -140,6 +155,10 @@ def lower_program(program: ast.Program) -> Program:
         functions=function_map,
         flow_contracts=flow_contracts,
         flows=flow_irs,
+        routes=lower_routes(getattr(program, "routes", []) or []),
+        crud=lower_crud(getattr(program, "crud", []) or []),
+        prompts=lower_prompts(getattr(program, "prompts", []) or []),
+        ai_flows=lower_ai_flows(getattr(program, "ai_flows", []) or []),
         jobs=job_irs,
         pages=pages,
         ais=ai_map,

@@ -9,7 +9,10 @@ from namel3ss.ir import nodes as ir
 from namel3ss.runtime.audit.recorder import record_audit_entry
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.execution.recorder import record_step
+from namel3ss.runtime.sandbox.runner import run_sandbox_flow
 from namel3ss.runtime.values.coerce import require_type
+from namel3ss.security_encryption import load_encryption_service
+from namel3ss.runtime.security.sensitive_audit import record_sensitive_access, resolve_actor
 from namel3ss.secrets import collect_secret_values
 from namel3ss.traces.schema import TraceEventType
 from namel3ss.purity import is_pure, pure_effect_message
@@ -174,10 +177,19 @@ def _run_flow(ctx: ExecutionContext, flow: ir.Flow, input_payload: dict, flow_ca
     parent_statement = getattr(ctx, "current_statement", None)
     parent_statement_index = getattr(ctx, "current_statement_index", None)
     parent_flow_call_id = getattr(ctx, "flow_call_id", None)
+    parent_sensitive = getattr(ctx, "sensitive", False)
 
     call_locals = {"input": input_payload}
     if isinstance(parent_locals, dict) and "secrets" in parent_locals:
         call_locals["secrets"] = parent_locals["secrets"]
+
+    flow_sensitive = False
+    sensitive_config = getattr(ctx, "sensitive_config", None)
+    if sensitive_config is not None and sensitive_config.is_sensitive(flow.name):
+        flow_sensitive = True
+    ctx.sensitive = parent_sensitive or flow_sensitive
+    if ctx.sensitive and ctx.encryption_service is None:
+        ctx.encryption_service = load_encryption_service(ctx.project_root, ctx.app_path, required=True)
 
     ctx.flow = flow
     ctx.locals = call_locals
@@ -199,7 +211,32 @@ def _run_flow(ctx: ExecutionContext, flow: ir.Flow, input_payload: dict, flow_ca
                 line=flow.line,
                 column=flow.column,
             )
-        if getattr(flow, "declarative", False):
+        sandbox_flow = None
+        if getattr(ctx, "sandbox_config", None):
+            sandbox_flow = ctx.sandbox_config.flow_for(flow.name)
+        if sandbox_flow is not None:
+            inputs = dict(ctx.locals.get("input") or {})
+            payload = {
+                "inputs": inputs,
+                "input": inputs,
+                "state": dict(ctx.state or {}),
+                "identity": dict(ctx.identity or {}),
+            }
+            sandbox_result = run_sandbox_flow(
+                project_root=ctx.project_root,
+                app_path=ctx.app_path,
+                flow_name=flow.name,
+                payload=payload,
+            )
+            if not sandbox_result.get("ok"):
+                error = sandbox_result.get("error") or {}
+                raise Namel3ssError(
+                    error.get("message") or "Sandbox execution failed.",
+                    line=flow.line,
+                    column=flow.column,
+                )
+            ctx.last_value = sandbox_result.get("result")
+        elif getattr(flow, "declarative", False):
             from namel3ss.runtime.flow.runner import run_declarative_flow
 
             run_declarative_flow(ctx)
@@ -220,6 +257,16 @@ def _run_flow(ctx: ExecutionContext, flow: ir.Flow, input_payload: dict, flow_ca
         ctx.current_statement = parent_statement
         ctx.current_statement_index = parent_statement_index
         ctx.flow_call_id = parent_flow_call_id
+        ctx.sensitive = parent_sensitive
+        if flow_sensitive:
+            record_sensitive_access(
+                project_root=ctx.project_root,
+                app_path=ctx.app_path,
+                flow_name=flow.name,
+                user=resolve_actor(ctx.identity),
+                action="flow_call",
+                step_count=getattr(ctx, "execution_step_counter", 0),
+            )
 
     return result_value
 

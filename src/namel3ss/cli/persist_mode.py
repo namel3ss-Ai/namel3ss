@@ -14,6 +14,7 @@ from namel3ss.runtime.data.data_export import export_payload
 from namel3ss.runtime.data.data_import import import_payload
 from namel3ss.runtime.storage.factory import DEFAULT_DB_PATH, create_store
 from namel3ss.runtime.storage.metadata import PersistenceMetadata
+from namel3ss.persistence.local_store import LocalStore
 
 DEFAULT_DB_PATH_POSIX = DEFAULT_DB_PATH.as_posix()
 
@@ -35,7 +36,45 @@ def run_data(app_path: str | None, args: list[str], *, alias: str = "data") -> i
 
 
 def run_persist(app_path: str | None, args: list[str]) -> int:
+    if args and args[0] == "list":
+        return _list_persist(resolve_app_path(app_path).as_posix(), args[1:])
     return run_data(app_path, args, alias="persist")
+
+
+def _list_persist(app_path: str, args: list[str]) -> int:
+    json_mode = "--json" in args
+    app = Path(app_path)
+    store = LocalStore(app.parent, app)
+    definitions = store.load_definitions()
+    uploads = store.load_uploads()
+    datasets = store.load_datasets()
+    payload = {
+        "definitions": definitions.as_dict(),
+        "uploads": uploads,
+        "datasets": datasets,
+    }
+    if json_mode:
+        print(canonical_json_dumps(payload, pretty=True, drop_run_keys=False))
+        return 0
+    print("Persisted definitions:")
+    print(f"Routes: {len(definitions.routes)}")
+    print(f"Flows: {len(definitions.flows)}")
+    print(f"Models: {len(definitions.models)}")
+    print(f"Uploads: {len(uploads)}")
+    print(f"Datasets: {len(datasets)}")
+    if definitions.routes:
+        print("Route names:")
+        for route in definitions.routes:
+            print(f"- {route.get('name')}")
+    if uploads:
+        print("Upload ids:")
+        for upload in uploads:
+            print(f"- {upload.get('upload_id') or upload.get('checksum')}")
+    if datasets:
+        print("Datasets:")
+        for entry in datasets:
+            print(f"- {entry.get('dataset_id') or entry.get('name')}")
+    return 0
 
 
 def _status(app_path: str) -> int:

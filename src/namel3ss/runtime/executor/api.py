@@ -74,6 +74,7 @@ def execute_program_flow(
     identity: dict | None = None,
     auth_context: object | None = None,
     action_id: str | None = None,
+    route_name: str | None = None,
     observability: ObservabilityContext | None = None,
 ) -> ExecutionResult:
     validate_spec_version(program)
@@ -186,7 +187,7 @@ def execute_program_flow(
     except Exception as err:
         status = "error"
         error = err
-        if resolved_root:
+        if resolved_root and not executor.ctx.sensitive:
             record_event(
                 Path(resolved_root),
                 {
@@ -204,7 +205,7 @@ def execute_program_flow(
             obs.end_span(executor.ctx, span_id, status=status)
         if obs and owns_observability:
             obs.flush()
-        if resolved_root:
+        if resolved_root and not executor.ctx.sensitive:
             record_event(
                 Path(resolved_root),
                 {
@@ -218,6 +219,19 @@ def execute_program_flow(
                     "output_summary": summarize_value(result.last_value if result else None, secret_values=secret_values),
                 },
                 secret_values=secret_values,
+            )
+        if resolved_root and executor.ctx.sensitive:
+            from namel3ss.runtime.security.sensitive_audit import record_sensitive_access, resolve_actor
+
+            action_label = "action" if action_id else ("route" if route_name else "flow")
+            record_sensitive_access(
+                project_root=resolved_root,
+                app_path=getattr(program, "app_path", None),
+                flow_name=flow_name,
+                user=resolve_actor(executor.ctx.identity),
+                action=action_label,
+                step_count=getattr(executor.ctx, "execution_step_counter", 0),
+                route_name=route_name,
             )
     if error:
         raise error

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import time
 import uuid
-from pathlib import Path
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
@@ -30,8 +29,8 @@ from namel3ss.traces.builders import (
     build_memory_write,
 )
 from namel3ss.traces.redact import redact_memory_context
-from namel3ss.observe import record_event, summarize_value
 from namel3ss.secrets import collect_secret_values
+from namel3ss.runtime.executor.ai_observability import record_ai_event, record_ai_metrics
 
 
 def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
@@ -44,6 +43,9 @@ def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
                 column=expr.column,
             )
         profile = ctx.ai_profiles[expr.ai_name]
+        manager = getattr(ctx, "model_manager", None)
+        if manager is not None:
+            manager.ensure_model(profile.model, project_root=ctx.project_root, app_path=ctx.app_path)
         input_value = evaluate_expression(ctx, expr.input_expr)
         input_text, input_structured, input_format = prepare_ai_input(
             input_value,
@@ -184,6 +186,7 @@ def run_ai_with_tools(
 ) -> tuple[str, list[dict]]:
     provider_name = (getattr(profile, "provider", "mock") or "mock").lower()
     secret_values = collect_secret_values(ctx.config)
+    start_step = getattr(ctx, "execution_step_counter", 0)
     call_id = uuid.uuid4().hex
     canonical_events = canonical_events or []
     ai_start = time.monotonic()
@@ -232,7 +235,7 @@ def run_ai_with_tools(
                     tokens_out=None,
                 )
             )
-            _record_ai_event(
+            record_ai_event(
                 ctx,
                 profile.name,
                 provider_name,
@@ -242,6 +245,12 @@ def run_ai_with_tools(
                 output_text=output_text,
                 started_at=wall_start,
                 duration_ms=duration_ms,
+            )
+            record_ai_metrics(
+                ctx,
+                input_text=user_input,
+                output_text=output_text,
+                start_step=start_step,
             )
             ctx.last_ai_provider = provider_name
             return output_text, canonical_events
@@ -265,7 +274,7 @@ def run_ai_with_tools(
                     tokens_out=None,
                 )
             )
-            _record_ai_event(
+            record_ai_event(
                 ctx,
                 profile.name,
                 provider_name,
@@ -275,6 +284,12 @@ def run_ai_with_tools(
                 output_text=output_text,
                 started_at=wall_start,
                 duration_ms=duration_ms,
+            )
+            record_ai_metrics(
+                ctx,
+                input_text=user_input,
+                output_text=output_text,
+                start_step=start_step,
             )
             ctx.last_ai_provider = provider_name
             return output_text, canonical_events
@@ -330,7 +345,7 @@ def run_ai_with_tools(
                 tokens_out=None,
             )
         )
-        _record_ai_event(
+        record_ai_event(
             ctx,
             profile.name,
             provider_name,
@@ -340,6 +355,12 @@ def run_ai_with_tools(
             output_text=output_text,
             started_at=wall_start,
             duration_ms=duration_ms,
+        )
+        record_ai_metrics(
+            ctx,
+            input_text=user_input,
+            output_text=output_text,
+            start_step=start_step,
         )
         ctx.last_ai_provider = provider_name
         return output_text, canonical_events
@@ -368,7 +389,7 @@ def run_ai_with_tools(
                 )
             )
             ai_failed_emitted = True
-        _record_ai_event(
+        record_ai_event(
             ctx,
             profile.name,
             provider_name,
@@ -402,41 +423,6 @@ def _resolve_provider(ctx: ExecutionContext, provider_name: str):
     provider = get_provider(key, ctx.config)
     ctx.provider_cache[key] = provider
     return provider
-
-
-def _record_ai_event(
-    ctx: ExecutionContext,
-    ai_name: str,
-    provider: str,
-    model: str,
-    *,
-    status: str,
-    input_text: str,
-    output_text: str | None,
-    started_at: float,
-    duration_ms: int,
-    error: Exception | None = None,
-) -> None:
-    if not ctx.project_root:
-        return
-    secret_values = collect_secret_values(ctx.config)
-    event = {
-        "type": "ai_call",
-        "flow_name": getattr(ctx.flow, "name", None),
-        "ai_name": ai_name,
-        "provider": provider,
-        "model": model,
-        "status": status,
-        "time_start": started_at,
-        "time_end": started_at + (duration_ms / 1000.0),
-        "duration_ms": duration_ms,
-        "redacted_input_summary": summarize_value(input_text, secret_values=secret_values),
-        "redacted_output_summary": summarize_value(output_text or "", secret_values=secret_values),
-    }
-    if error:
-        event["error_type"] = error.__class__.__name__
-        event["error_message"] = str(error)
-    record_event(Path(ctx.project_root), event, secret_values=secret_values)
 
 
 def _flush_pending_tool_traces(ctx: ExecutionContext) -> None:

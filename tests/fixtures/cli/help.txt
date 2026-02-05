@@ -38,6 +38,18 @@ Advanced
   n3 graph | exports <file.ai>    # dependency graph or exports (use --json)
   n3 data | persist <file.ai> ... # data status, reset, export, import
   n3 secrets | observe | explain  # secrets, observability, engine explain
+  n3 docs [file.ai]               # API docs portal and spec
+  n3 sdk generate --lang L ...     # client SDK generation (python, typescript, go, rust)
+  n3 sdk postman --out FILE        # Postman collection
+  n3 metrics [file.ai]             # AI metrics summary
+  n3 prompts list [file.ai]        # list prompt templates
+  n3 conventions check [file.ai]   # conventions config summary
+  n3 formats list [file.ai]        # response formats summary
+  n3 audit [file.ai]               # sensitive audit log
+  n3 auth [file.ai]                # route permissions config
+  n3 sensitive [file.ai]           # manage sensitive flows and keys
+  n3 sandbox [file.ai]             # sandbox build/run helpers
+  n3 plugin new <lang> <name>      # scaffold a plugin project
   n3 memory | kit | exists        # memory recall, adoption kit, contract status
   n3 tools | packs | registry     # tool and pack management commands
   n3 pkg | pattern | test | eval  # packages, patterns, tests, evaluation

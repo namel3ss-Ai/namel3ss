@@ -6,6 +6,8 @@ import json
 
 from namel3ss.evals.loader import load_eval_suite
 from namel3ss.evals.runner import render_eval_text, run_eval_suite
+from namel3ss.evals.prompt_eval import run_prompt_eval
+from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 
@@ -24,6 +26,8 @@ class _EvalParams:
 
 
 def run_eval_command(args: list[str]) -> int:
+    if args and args[0] == "prompt":
+        return _run_prompt_eval_command(args[1:])
     params = _parse_args(args)
     suite = load_eval_suite(params.suite_path)
     report = run_eval_suite(suite, fast=params.fast)
@@ -37,6 +41,68 @@ def run_eval_command(args: list[str]) -> int:
     if not params.fast:
         print(text)
     return 0 if report.status == "pass" else 1
+
+
+def _run_prompt_eval_command(args: list[str]) -> int:
+    prompt_name = None
+    input_path: Path | None = None
+    app_arg: str | None = None
+    out_dir: Path | None = None
+    json_mode = False
+    idx = 0
+    while idx < len(args):
+        arg = args[idx]
+        if arg == "--input":
+            if idx + 1 >= len(args):
+                raise Namel3ssError(_missing_prompt_flag("--input"))
+            input_path = Path(args[idx + 1])
+            idx += 2
+            continue
+        if arg == "--out-dir":
+            if idx + 1 >= len(args):
+                raise Namel3ssError(_missing_prompt_flag("--out-dir"))
+            out_dir = Path(args[idx + 1])
+            idx += 2
+            continue
+        if arg == "--app":
+            if idx + 1 >= len(args):
+                raise Namel3ssError(_missing_prompt_flag("--app"))
+            app_arg = args[idx + 1]
+            idx += 2
+            continue
+        if arg == "--json":
+            json_mode = True
+            idx += 1
+            continue
+        if arg.startswith("--"):
+            raise Namel3ssError(_unknown_prompt_flag(arg))
+        if prompt_name is None:
+            prompt_name = arg
+            idx += 1
+            continue
+        raise Namel3ssError(_too_many_prompt_args_message())
+    if not prompt_name:
+        raise Namel3ssError(_missing_prompt_name_message())
+    if input_path is None:
+        raise Namel3ssError(_missing_prompt_flag("--input"))
+    app_path = resolve_app_path(app_arg)
+    payload = run_prompt_eval(
+        prompt_name=prompt_name,
+        input_path=input_path,
+        app_path=Path(app_path),
+        out_dir=out_dir,
+    )
+    if json_mode:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+        return 0
+    summary = payload.get("summary") if isinstance(payload, dict) else None
+    if isinstance(summary, dict):
+        print(f'Prompt "{prompt_name}" evaluation')
+        for key in sorted(summary.keys()):
+            print(f"  {key}: {summary[key]}")
+    else:
+        print(f'Prompt "{prompt_name}" evaluation complete.')
+    return 0
 
 
 def _parse_args(args: list[str]) -> _EvalParams:
@@ -127,6 +193,47 @@ def _too_many_args_message() -> str:
         why="Provide a suite.json file or a directory containing suite.json.",
         fix="Remove the extra arguments.",
         example="n3 eval evals",
+    )
+
+
+def _missing_prompt_name_message() -> str:
+    return build_guidance_message(
+        what="Prompt name is missing.",
+        why="Prompt eval needs a prompt name.",
+        fix="Provide the prompt name after 'prompt'.",
+        example="n3 eval prompt summary_prompt --input samples.json",
+    )
+
+
+def _missing_prompt_flag(flag: str) -> str:
+    example = "n3 eval prompt summary_prompt --input samples.json"
+    if flag == "--out-dir":
+        example = "n3 eval prompt summary_prompt --input samples.json --out-dir .namel3ss/observability/evals"
+    if flag == "--app":
+        example = "n3 eval prompt summary_prompt --input samples.json --app app.ai"
+    return build_guidance_message(
+        what=f"{flag} flag is missing a value.",
+        why="Prompt eval needs a value for this flag.",
+        fix=f"Provide a value after {flag}.",
+        example=example,
+    )
+
+
+def _unknown_prompt_flag(flag: str) -> str:
+    return build_guidance_message(
+        what=f"Unknown flag '{flag}'.",
+        why="Prompt eval supports --input, --out-dir, --app, and --json.",
+        fix="Remove the unsupported flag.",
+        example="n3 eval prompt summary_prompt --input samples.json",
+    )
+
+
+def _too_many_prompt_args_message() -> str:
+    return build_guidance_message(
+        what="eval prompt accepts at most one prompt name.",
+        why="Provide a single prompt name.",
+        fix="Remove the extra arguments.",
+        example="n3 eval prompt summary_prompt --input samples.json",
     )
 
 

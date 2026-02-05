@@ -29,11 +29,9 @@ from namel3ss.ingestion.progressive import (
 from namel3ss.ingestion.signals import compute_signals
 from namel3ss.ingestion.store import drop_index, store_report, update_index
 from namel3ss.runtime.backend.job_queue import enqueue_system_job, register_system_job
+from namel3ss.persistence.local_store import LocalStore
 from namel3ss.runtime.backend.upload_store import list_uploads
 from pathlib import Path
-
-from namel3ss.runtime.persistence_paths import resolve_persistence_root, resolve_project_root
-from namel3ss.utils.slugify import slugify_text
 
 
 def run_ingestion(
@@ -180,13 +178,8 @@ def _read_upload_bytes(ctx, metadata: dict) -> bytes:
     stored_path = metadata.get("stored_path")
     if not isinstance(stored_path, str) or not stored_path:
         raise Namel3ssError(_stored_path_message())
-    filename = stored_path.split("/")[-1]
-    root = resolve_persistence_root(ctx.project_root, ctx.app_path, allow_create=False)
-    if root is None:
-        raise Namel3ssError(_missing_root_message())
-    scope = _scope_name(ctx.project_root, ctx.app_path)
-    uploads_root = root / ".namel3ss" / "files" / scope / "uploads"
-    target = uploads_root / filename
+    store = LocalStore(ctx.project_root, ctx.app_path)
+    target = _resolve_stored_path(store.uploads_root.parent.parent, stored_path)
     try:
         return target.read_bytes()
     except OSError:
@@ -292,18 +285,16 @@ def _missing_file_message() -> str:
     )
 
 
-def _scope_name(project_root: str | None, app_path: str | None) -> str:
-    if app_path:
-        path = Path(app_path)
-        root = resolve_project_root(project_root, path)
-        if root:
-            try:
-                rel = path.resolve().relative_to(root.resolve())
-                return slugify_text(rel.as_posix())
-            except Exception:
-                pass
-        return slugify_text(path.name)
-    return "app"
+def _resolve_stored_path(root: Path, stored_path: str) -> Path:
+    posix = Path(*Path(stored_path).parts)
+    if stored_path.startswith("/") or ".." in posix.parts:
+        raise Namel3ssError(_stored_path_message())
+    target = root / posix
+    root_resolved = root.resolve(strict=False)
+    target_resolved = target.resolve(strict=False)
+    if not str(target_resolved).startswith(str(root_resolved)):
+        raise Namel3ssError(_stored_path_message())
+    return target
 
 
 def _prepare_ingestion(

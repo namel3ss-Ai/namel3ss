@@ -8,6 +8,15 @@ from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.cli.proofs import load_active_proof, load_proof_state, proof_dir, read_proof
 from namel3ss.cli.promotion_state import load_state
 from namel3ss.cli.why_mode import build_why_lines, build_why_payload
+from namel3ss.cli.explain_summary import (
+    summarize_ai_flows,
+    summarize_ai_metadata,
+    summarize_capsules,
+    summarize_crud,
+    summarize_datasets,
+    summarize_prompts,
+    summarize_routes,
+)
 from namel3ss.config.loader import load_config
 from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.base import Namel3ssError
@@ -266,7 +275,7 @@ def _assemble_explain_payload(
             getattr(project.program, "app_path", None),
             policy_decl=getattr(project.program, "policy", None),
         ),
-        "capsules": _summarize_capsules(proof),
+        "capsules": summarize_capsules(proof),
         "governance": proof.get("governance") or _load_governance(project_root),
         "composition": composition,
         "tools": collect_tool_reports(
@@ -278,6 +287,12 @@ def _assemble_explain_payload(
         "flows": len(project.program.flows),
         "pages": len(project.program.pages),
         "records": len(project.program.records),
+        "routes": summarize_routes(project.program),
+        "crud": summarize_crud(project.program),
+        "prompts": summarize_prompts(project.program),
+        "ai_flows": summarize_ai_flows(project.program),
+        "ai_metadata": summarize_ai_metadata(project.program),
+        "datasets": summarize_datasets(project.program),
     }
     enabled = observability_enabled() if include_observability is None else include_observability
     if enabled:
@@ -312,22 +327,6 @@ def _latest_proof_id(project_root: Path) -> str | None:
     if not proofs:
         return None
     return proofs[-1].stem
-
-
-def _summarize_capsules(proof: dict) -> list[dict]:
-    capsules = proof.get("capsules", {})
-    modules = capsules.get("modules", []) if isinstance(capsules, dict) else []
-    summary = []
-    for module in modules:
-        if not isinstance(module, dict):
-            continue
-        source = module.get("source", {})
-        entry = {
-            "name": module.get("name"),
-            "source": source.get("kind") if isinstance(source, dict) else None,
-        }
-        summary.append(entry)
-    return summary
 
 
 def _load_governance(project_root) -> dict:

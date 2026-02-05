@@ -12,6 +12,9 @@ from namel3ss.runtime.preferences.factory import preference_store_for_app, app_p
 from namel3ss.runtime.run_pipeline import build_flow_payload, finalize_run_payload
 from namel3ss.runtime.auth import resolve_auth_context
 from namel3ss.secrets import collect_secret_values
+from namel3ss.runtime.security import load_sensitive_config
+from namel3ss.security_encryption import load_encryption_service
+from namel3ss.runtime.security.encryption_utils import encrypt_run_payload
 
 
 def run_flow(
@@ -107,6 +110,12 @@ def _write_last_run(program_ir, payload: dict) -> None:
     contract = ArtifactContract(root / ".namel3ss")
     last_json = contract.prepare_file("run/last.json")
     canonical_payload = canonicalize_run_payload(payload)
+    sensitive_config = load_sensitive_config(project_root, getattr(program_ir, "app_path", None))
+    flow_name = canonical_payload.get("flow_name") if isinstance(canonical_payload, dict) else None
+    if sensitive_config.is_sensitive(flow_name):
+        service = load_encryption_service(project_root, getattr(program_ir, "app_path", None), required=True)
+        if service and isinstance(canonical_payload, dict):
+            canonical_payload = encrypt_run_payload(canonical_payload, service)
     last_json.write_text(canonical_json_dumps(canonical_payload, pretty=True), encoding="utf-8")
 
 

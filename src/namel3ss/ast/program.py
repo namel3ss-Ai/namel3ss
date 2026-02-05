@@ -11,6 +11,11 @@ from namel3ss.ast.identity import IdentityDecl
 from namel3ss.ast.policy import PolicyDecl
 from namel3ss.ast.ui_packs import UIPackDecl
 from namel3ss.ast.ui_patterns import UIPatternDecl
+from namel3ss.ast.ai import AIFlowMetadata
+from namel3ss.ast.routes import RouteDefinition
+from namel3ss.ast.crud import CrudDefinition
+from namel3ss.ast.prompts import PromptDefinition
+from namel3ss.ast.ai_flows import AIFlowDefinition
 if TYPE_CHECKING:  # pragma: no cover - typing-only
     from namel3ss.ast.flow_steps import FlowStep
     from namel3ss.ast.contracts import ContractDecl
@@ -25,6 +30,7 @@ class Flow(Node):
     purity: str = "effectful"
     steps: List["FlowStep"] | None = None
     declarative: bool = False
+    ai_metadata: AIFlowMetadata | None = None
 
 
 @dataclass
@@ -43,6 +49,10 @@ class Program(Node):
     functions: List["FunctionDecl"]
     contracts: List["ContractDecl"]
     flows: List[Flow]
+    routes: List[RouteDefinition]
+    crud: List[CrudDefinition]
+    prompts: List[PromptDefinition]
+    ai_flows: List[AIFlowDefinition]
     jobs: List[JobDecl]
     pages: List["PageDecl"]
     ais: List["AIDecl"]

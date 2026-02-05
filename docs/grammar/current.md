@@ -3,6 +3,16 @@
 
 Derived from source files under `src/namel3ss/lexer` and `src/namel3ss/parser`.
 
+## Docs and SDKs
+
+This phase adds no new grammar. Use the CLI to generate docs and SDKs from existing routes:
+- `n3 docs` for the local docs portal
+- `n3 sdk generate --lang python|typescript|go|rust --out-dir sdk`
+- `n3 sdk postman --out postman.json`
+- `n3 metrics` and `n3 prompts list` for AI metadata
+- `n3 conventions check` and `n3 formats list` for route conventions
+- `n3 plugin new` for plugin scaffolding
+
 ## Lexer Summary
 - Identifiers: `[A-Za-z_][A-Za-z0-9_]*`; if the text matches a reserved word, it is emitted as that keyword token (not `IDENT`).
 - Escaped identifiers: `` `name` ``; backtick-escaped identifiers are emitted as `IDENT_ESCAPED` with the unescaped text value.
@@ -10,7 +20,7 @@ Derived from source files under `src/namel3ss/lexer` and `src/namel3ss/parser`.
 - Numbers: digits with optional fractional part; minus is its own token (unary minus is handled by the parser).
 - Comments: whole-line comments only; a line whose first non-space character is `#` is skipped.
 - Indentation: significant; indentation changes emit `INDENT`/`DEDENT`, inconsistent spacing raises a lexer error.
-- Punctuation tokens: `:` `.` `+` `-` `*` `**` `/` `%` `=` `(` `)` `[` `]` `,`.
+- Punctuation tokens: `:` `.` `+` `-` `*` `**` `/` `%` `=` `(` `)` `[` `]` `,` `<` `>`.
 
 ## Reserved Words (KEYWORDS)
 ```
@@ -128,7 +138,8 @@ enqueue
 
 Top-level declarations (`src/namel3ss/parser/grammar_table.py`):
 - `spec`, `define` (function), `use`, `capsule`, `identity`, `app`, `capabilities`, `policy`, `packs`, `foreign`, `tool`,
-  `agent`, `team of agents`, `ai`, `record`, `flow`, `job`, `page`, `ui`, `ui_pack`.
+  `agent`, `team of agents`, `ai`, `record`, `crud`, `prompt`, `llm_call`, `rag`, `classification`, `summarise`,
+  `route`, `flow`, `job`, `page`, `ui`, `ui_pack`.
 
 Statements (`src/namel3ss/parser/grammar_table.py`):
 - `start`, `plan`, `review`, `timeline`, `compute`, `increment`, `attempt` (two forms), agent verb calls,

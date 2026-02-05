@@ -10,6 +10,7 @@ from namel3ss.runtime.executor.traces import _trace_summaries
 from namel3ss.tools_with.api import build_tools_pack
 from namel3ss.schema.evolution import write_workspace_snapshot
 from namel3ss.security import redact_sensitive_payload, resolve_secret_values
+from namel3ss.runtime.security.encryption_utils import encrypt_execution_pack
 
 
 def _persist_execution_artifacts(ctx: ExecutionContext, *, ok: bool, error: Exception | None) -> None:
@@ -19,8 +20,11 @@ def _persist_execution_artifacts(ctx: ExecutionContext, *, ok: bool, error: Exce
         pack = _build_execution_pack(ctx, ok=ok, error=error)
         secret_values = resolve_secret_values(config=ctx.config)
         redacted = redact_sensitive_payload(pack, secret_values)
-        plain_text = build_plain_text(redacted if isinstance(redacted, dict) else pack)
-        write_last_execution(Path(ctx.project_root), redacted, plain_text)
+        encrypted = redacted
+        if ctx.sensitive and ctx.encryption_service and isinstance(redacted, dict):
+            encrypted = encrypt_execution_pack(redacted, ctx.encryption_service)
+        plain_text = build_plain_text(encrypted if isinstance(encrypted, dict) else pack)
+        write_last_execution(Path(ctx.project_root), encrypted, plain_text)
         if ok:
             write_workspace_snapshot(
                 ctx.schemas.values(),

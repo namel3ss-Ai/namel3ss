@@ -148,6 +148,16 @@ class Lexer:
                 i += 1
                 column += 1
                 continue
+            if ch == "<":
+                tokens.append(Token("LT", "<", line_no, column))
+                i += 1
+                column += 1
+                continue
+            if ch == ">":
+                tokens.append(Token("GT", ">", line_no, column))
+                i += 1
+                column += 1
+                continue
             if ch == "`":
                 value, consumed = self._read_escaped_identifier(text[i:], line_no, column)
                 tokens.append(Token(ESCAPED_IDENTIFIER, value, line_no, column, escaped=True))

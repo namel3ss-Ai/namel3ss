@@ -1,0 +1,98 @@
+from __future__ import annotations
+
+from namel3ss.docs.sdk_shared import _camel_case, _collect_operations, _resolve_base_url
+
+
+def generate_typescript_client(spec: dict) -> str:
+    operations = _collect_operations(spec)
+    base_url = _resolve_base_url(spec)
+    lines: list[str] = []
+    lines.append("export type Json = Record<string, unknown>;")
+    lines.append("export type ErrorEnvelope = { code: string; message: string; remediation: string };")
+    lines.append("")
+    lines.append("export class ApiError extends Error {")
+    lines.append("  code: string;")
+    lines.append("  remediation: string;")
+    lines.append("  status: number;")
+    lines.append("  constructor(envelope: ErrorEnvelope, status: number) {")
+    lines.append("    super(`${envelope.code}: ${envelope.message}`);")
+    lines.append("    this.code = envelope.code;")
+    lines.append("    this.remediation = envelope.remediation;")
+    lines.append("    this.status = status;")
+    lines.append("  }")
+    lines.append("}")
+    lines.append("")
+    lines.append("function decodeToon(token: string): Json {")
+    lines.append("  const pad = \"=\".repeat((4 - (token.length % 4)) % 4);")
+    lines.append("  const padded = token + pad;")
+    lines.append("  let raw = \"\";")
+    lines.append("  if (typeof Buffer !== \"undefined\") {")
+    lines.append("    raw = Buffer.from(padded, \"base64\").toString(\"utf-8\");")
+    lines.append("  } else if (typeof atob !== \"undefined\") {")
+    lines.append("    raw = atob(padded);")
+    lines.append("  }")
+    lines.append("  return raw ? (JSON.parse(raw) as Json) : {};")
+    lines.append("}")
+    lines.append("")
+    lines.append("export class Client {")
+    lines.append(f'  private baseUrl: string = \"{base_url}\";')
+    lines.append("")
+    lines.append("  constructor(baseUrl?: string) {")
+    lines.append("    if (baseUrl) {")
+    lines.append("      this.baseUrl = baseUrl.replace(/\\/$/, \"\");")
+    lines.append("    }")
+    lines.append("  }")
+    lines.append("")
+    if not operations:
+        lines.append("}")
+        return "\n".join(lines) + "\n"
+    for op in operations:
+        method_name = _camel_case(op.name)
+        lines.append(
+            f"  async {method_name}(path: Record<string, unknown> = {{}}, query: Record<string, unknown> = {{}}, body?: Json, format?: string): Promise<Json> {{"
+        )
+        lines.append(f'    const pathTemplate = \"{op.path}\";')
+        lines.append("    const renderedPath = pathTemplate.replace(/\\{(\\w+)\\}/g, (_, key) => String(path[key]));")
+        lines.append("    const url = new URL(this.baseUrl + renderedPath);")
+        lines.append("    if (format) {")
+        lines.append("      query[\"format\"] = format;")
+        lines.append("    }")
+        lines.append("    Object.entries(query).forEach(([key, value]) => {")
+        lines.append("      if (value !== undefined && value !== null) {")
+        lines.append("        url.searchParams.append(key, String(value));")
+        lines.append("      }")
+        lines.append("    });")
+        lines.append("    const headers: Record<string, string> = {};")
+        if op.request_schema and op.method.upper() not in {"GET", "HEAD"}:
+            lines.append("    headers[\"Content-Type\"] = \"application/json\";")
+            lines.append("    const response = await fetch(url.toString(), {")
+            lines.append(f'      method: \"{op.method.upper()}\",')
+            lines.append("      headers,")
+            lines.append("      body: body ? JSON.stringify(body) : undefined,")
+            lines.append("    });")
+        else:
+            lines.append("    const response = await fetch(url.toString(), {")
+            lines.append(f'      method: \"{op.method.upper()}\",')
+            lines.append("      headers,")
+            lines.append("    });")
+        lines.append("    if (!response.ok) {")
+        lines.append("      let envelope: ErrorEnvelope = { code: \"http_error\", message: \"Request failed\", remediation: \"Check the request and try again.\" };")
+        lines.append("      try {")
+        lines.append("        envelope = (await response.json()) as ErrorEnvelope;")
+        lines.append("      } catch {")
+        lines.append("        // ignore parsing failures")
+        lines.append("      }")
+        lines.append("      throw new ApiError(envelope, response.status);")
+        lines.append("    }")
+        lines.append("    if (format === \"toon\") {")
+        lines.append("      const text = await response.text();")
+        lines.append("      return decodeToon(text);")
+        lines.append("    }")
+        lines.append("    return response.json() as Promise<Json>;")
+        lines.append("  }")
+        lines.append("")
+    lines.append("}")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+__all__ = ["generate_typescript_client"]

@@ -15,6 +15,17 @@ class AIMemory(Node):
 
 
 @dataclass
+class AIFlowMetadata(Node):
+    model: str
+    prompt: str
+    dataset: Optional[str] = None
+    kind: Optional[str] = None
+    output_type: Optional[str] = None
+    labels: Optional[List[str]] = None
+    sources: Optional[List[str]] = None
+
+
+@dataclass
 class AIDecl(Node):
     name: str
     model: str
@@ -30,3 +41,6 @@ class AskAIStmt(Statement):
     input_expr: Expression
     target: str
     input_mode: str = "text"
+
+
+__all__ = ["AIFlowMetadata", "AIMemory", "AIDecl", "AskAIStmt"]

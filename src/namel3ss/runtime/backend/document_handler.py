@@ -16,8 +16,8 @@ from namel3ss.ingestion.policy import (
 )
 from namel3ss.runtime.backend.upload_contract import clean_upload_filename
 from namel3ss.runtime.backend.document_highlight import fallback_highlights, highlights_from_state
+from namel3ss.persistence.local_store import LocalStore
 from namel3ss.runtime.backend.upload_store import list_uploads
-from namel3ss.runtime.persistence_paths import resolve_persistence_root
 from namel3ss.secrets import collect_secret_values
 
 
@@ -137,10 +137,8 @@ def _read_upload_bytes(ctx, metadata: dict) -> bytes:
     stored_path = metadata.get("stored_path")
     if not isinstance(stored_path, str) or not stored_path:
         raise Namel3ssError(_stored_path_message())
-    root = resolve_persistence_root(getattr(ctx, "project_root", None), getattr(ctx, "app_path", None), allow_create=False)
-    if root is None:
-        raise Namel3ssError(_missing_root_message())
-    base = root / ".namel3ss" / "files"
+    store = LocalStore(getattr(ctx, "project_root", None), getattr(ctx, "app_path", None))
+    base = store.uploads_root.parent.parent
     target = _resolve_stored_path(base, stored_path)
     try:
         return target.read_bytes()

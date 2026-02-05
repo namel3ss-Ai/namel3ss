@@ -4,9 +4,18 @@ from namel3ss.ast import nodes as ast
 from namel3ss.parser.sugar.lowering.expressions import _lower_expression
 from namel3ss.parser.sugar.lowering.flow_steps import _lower_flow_steps
 from namel3ss.parser.sugar.lowering.statements import _lower_statements
+from namel3ss.parser.sugar.lowering.ai_flows import ai_flow_to_flow, lower_ai_flow
+from namel3ss.parser.sugar.lowering.crud import expand_crud_routes
 
 
 def lower_program(program: ast.Program) -> ast.Program:
+    lowered_ai_flows = [lower_ai_flow(flow) for flow in getattr(program, "ai_flows", []) or []]
+    lowered_prompts = [_lower_prompt(prompt) for prompt in getattr(program, "prompts", []) or []]
+    lowered_crud = [_lower_crud(crud) for crud in getattr(program, "crud", []) or []]
+    expanded_routes = list(getattr(program, "routes", []) or [])
+    expanded_routes.extend(expand_crud_routes(lowered_crud))
+    expanded_flows = [_lower_flow(flow) for flow in program.flows]
+    expanded_flows.extend(ai_flow_to_flow(flow) for flow in lowered_ai_flows)
     lowered = ast.Program(
         spec_version=program.spec_version,
         app_theme=program.app_theme,
@@ -24,7 +33,11 @@ def lower_program(program: ast.Program) -> ast.Program:
         records=[_lower_record(record) for record in program.records],
         functions=[_lower_function(func) for func in getattr(program, "functions", [])],
         contracts=[_lower_contract(contract) for contract in getattr(program, "contracts", [])],
-        flows=[_lower_flow(flow) for flow in program.flows],
+        flows=expanded_flows,
+        routes=expanded_routes,
+        crud=lowered_crud,
+        prompts=lowered_prompts,
+        ai_flows=lowered_ai_flows,
         jobs=[_lower_job(job) for job in getattr(program, "jobs", [])],
         pages=[_lower_page(page) for page in program.pages],
         ui_packs=[_lower_ui_pack(pack) for pack in getattr(program, "ui_packs", [])],
@@ -69,6 +82,7 @@ def _lower_flow(flow: ast.Flow) -> ast.Flow:
         purity=getattr(flow, "purity", "effectful"),
         steps=_lower_flow_steps(getattr(flow, "steps", None)),
         declarative=bool(getattr(flow, "declarative", False)),
+        ai_metadata=getattr(flow, "ai_metadata", None),
         line=flow.line,
         column=flow.column,
     )
@@ -81,6 +95,25 @@ def _lower_job(job: ast.JobDecl) -> ast.JobDecl:
         when=_lower_expression(job.when) if job.when else None,
         line=job.line,
         column=job.column,
+    )
+
+
+def _lower_prompt(prompt: ast.PromptDefinition) -> ast.PromptDefinition:
+    return ast.PromptDefinition(
+        name=prompt.name,
+        version=prompt.version,
+        text=prompt.text,
+        description=prompt.description,
+        line=prompt.line,
+        column=prompt.column,
+    )
+
+
+def _lower_crud(crud: ast.CrudDefinition) -> ast.CrudDefinition:
+    return ast.CrudDefinition(
+        record_name=crud.record_name,
+        line=crud.line,
+        column=crud.column,
     )
 
 

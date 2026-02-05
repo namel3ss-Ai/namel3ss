@@ -7,12 +7,16 @@ from namel3ss.ir.model.base import Node
 from namel3ss.ir.model.statements import Statement
 from namel3ss.ir.model.pages import Page
 from namel3ss.ir.model.expressions import Expression
-from namel3ss.ir.model.ai import AIDecl
+from namel3ss.ir.model.ai import AIDecl, AIFlowMetadata
 from namel3ss.ir.model.agents import AgentDecl, AgentTeam
 from namel3ss.ir.model.jobs import JobDecl
 from namel3ss.ir.model.policy import PolicyDecl
 from namel3ss.ir.model.contracts import ContractDecl
 from namel3ss.ir.model.tools import ToolDecl
+from namel3ss.ir.model.routes import RouteDefinition
+from namel3ss.ir.model.prompts import PromptDefinition
+from namel3ss.ir.model.crud import CrudDefinition
+from namel3ss.ir.model.ai_flows import AIFlowDefinition
 from namel3ss.ir.functions.model import FunctionDecl
 from namel3ss.schema import records as schema
 if TYPE_CHECKING:  # pragma: no cover - typing-only
@@ -29,6 +33,7 @@ class Flow(Node):
     purity: str = "effectful"
     steps: List["FlowStep"] | None = None
     declarative: bool = False
+    ai_metadata: AIFlowMetadata | None = None
 
 
 @dataclass
@@ -44,6 +49,10 @@ class Program(Node):
     functions: Dict[str, FunctionDecl]
     flow_contracts: Dict[str, ContractDecl]
     flows: List[Flow]
+    routes: List[RouteDefinition]
+    crud: List[CrudDefinition]
+    prompts: List[PromptDefinition]
+    ai_flows: List[AIFlowDefinition]
     jobs: List[JobDecl]
     pages: List[Page]
     ais: Dict[str, AIDecl]

@@ -71,6 +71,11 @@ class ExecutionContext:
     config: AppConfig
     provider_cache: Dict[str, AIProvider]
     runtime_theme: str | None
+    sensitive: bool = False
+    sensitive_config: object | None = None
+    encryption_service: object | None = None
+    model_manager: object | None = None
+    sandbox_config: object | None = None
     last_order_target: ir.Assignable | None = None
     flow_map: Dict[str, ir.Flow] = field(default_factory=dict)
     flow_contracts: Dict[str, ir.ContractDecl] = field(default_factory=dict)

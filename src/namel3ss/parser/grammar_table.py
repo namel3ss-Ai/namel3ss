@@ -65,13 +65,17 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
     from namel3ss.parser.decl.function import parse_function_decl
     from namel3ss.parser.decl.identity import parse_identity
     from namel3ss.parser.decl.page import parse_page
+    from namel3ss.parser.decl.prompt import parse_prompt_decl
     from namel3ss.parser.decl.record import parse_record
+    from namel3ss.parser.decl.route import parse_route_decl
     from namel3ss.parser.decl.spec import parse_spec_decl
     from namel3ss.parser.decl.tool import parse_tool
     from namel3ss.parser.decl.ui import parse_ui_decl
     from namel3ss.parser.decl.ui_pack import parse_ui_pack_decl
     from namel3ss.parser.decl.ui_pattern import parse_ui_pattern_decl
     from namel3ss.parser.decl.use import parse_use_decl
+    from namel3ss.parser.decl.crud import parse_crud_decl
+    from namel3ss.parser.decl.ai_flow import parse_ai_flow_decl
 
     return (
         TopLevelRule("spec", "SPEC", parse_spec_decl),
@@ -90,6 +94,13 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
         TopLevelRule("agent", "AGENT", parse_agent_decl),
         TopLevelRule("ai", "AI", parse_ai_decl),
         TopLevelRule("record", "RECORD", parse_record),
+        TopLevelRule("crud", "IDENT", parse_crud_decl, token_value="crud"),
+        TopLevelRule("prompt", "IDENT", parse_prompt_decl, token_value="prompt"),
+        TopLevelRule("llm_call", "IDENT", parse_ai_flow_decl, token_value="llm_call"),
+        TopLevelRule("rag", "IDENT", parse_ai_flow_decl, token_value="rag"),
+        TopLevelRule("classification", "IDENT", parse_ai_flow_decl, token_value="classification"),
+        TopLevelRule("summarise", "IDENT", parse_ai_flow_decl, token_value="summarise"),
+        TopLevelRule("route", "IDENT", parse_route_decl, token_value="route"),
         TopLevelRule("flow", "FLOW", parse_flow),
         TopLevelRule("job", "JOB", parse_job),
         TopLevelRule("page", "PAGE", parse_page),

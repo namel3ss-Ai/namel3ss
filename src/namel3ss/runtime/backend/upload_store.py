@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import hashlib
 import io
-import json
 from pathlib import Path
 
-from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.base import Namel3ssError
-from namel3ss.runtime.backend.file_store import _file_root, _scope_name
+from namel3ss.persistence.local_store import LocalStore
+from namel3ss.persistence.dataset_inference import infer_dataset_schema
 from namel3ss.runtime.backend.upload_contract import (
     DEFAULT_CONTENT_TYPE,
     UPLOAD_ERROR_STREAM,
@@ -18,7 +17,6 @@ from namel3ss.runtime.backend.upload_contract import (
     clean_upload_filename,
     upload_error_details,
 )
-from namel3ss.utils.slugify import slugify_text
 
 
 def normalize_hash_bytes(data: bytes) -> bytes:
@@ -47,46 +45,41 @@ def store_upload(
     stream: io.BufferedReader | list[bytes] | tuple[bytes, ...] | object,
     progress=None,
 ) -> dict:
-    uploads_root = _uploads_root(ctx)
+    store = LocalStore(getattr(ctx, "project_root", None), getattr(ctx, "app_path", None))
+    uploads_root = store.uploads_root
     uploads_root.mkdir(parents=True, exist_ok=True)
     original_name = clean_upload_filename(filename)
-    base, ext = _split_filename(original_name)
-    safe_base = slugify_text(base) or "upload"
-    temp_name = f".pending-{safe_base}{ext}"
-    temp_path = uploads_root / temp_name
+    temp_path = uploads_root / ".pending"
     preview_counter = UploadPreviewCounter.for_upload(filename=original_name, content_type=content_type)
     size, checksum = _write_stream(temp_path, stream, progress=progress, preview=preview_counter)
-    final_name = f"{safe_base}-{checksum[:12]}{ext}"
-    final_path = uploads_root / final_name
+    final_path = store.upload_path_for(checksum)
     if temp_path != final_path:
-        final_path.parent.mkdir(parents=True, exist_ok=True)
-        temp_path.replace(final_path)
-    scope = _scope_name(ctx.project_root, ctx.app_path)
-    stored_path = f"{scope}/uploads/{final_name}"
+        if final_path.exists():
+            temp_path.unlink(missing_ok=True)
+        else:
+            temp_path.replace(final_path)
+    stored_path = f"uploads/{store.project_name}/{checksum}"
     metadata = {
+        "upload_id": checksum,
         "name": original_name,
         "content_type": (content_type or DEFAULT_CONTENT_TYPE).strip() or DEFAULT_CONTENT_TYPE,
+        "type": (content_type or DEFAULT_CONTENT_TYPE).strip() or DEFAULT_CONTENT_TYPE,
         "bytes": size,
+        "size": size,
         "checksum": checksum,
         "stored_path": stored_path,
+        "path": stored_path,
+        "owner": "anonymous",
     }
     metadata["preview"] = build_upload_preview(metadata, preview_counter.snapshot())
-    _update_index(uploads_root, metadata)
+    store.upsert_upload(metadata)
+    _maybe_register_dataset(store, metadata)
     return metadata
 
 
 def list_uploads(ctx) -> list[dict]:
-    uploads_root = _uploads_root(ctx)
-    index_path = uploads_root / "index.json"
-    if not index_path.exists():
-        return []
-    try:
-        raw = json.loads(index_path.read_text(encoding="utf-8"))
-    except Exception:
-        return []
-    if not isinstance(raw, list):
-        return []
-    entries = [item for item in raw if isinstance(item, dict)]
+    store = LocalStore(getattr(ctx, "project_root", None), getattr(ctx, "app_path", None))
+    entries = store.load_uploads()
     normalized: list[dict] = []
     for entry in entries:
         item = dict(entry)
@@ -99,13 +92,13 @@ def list_uploads(ctx) -> list[dict]:
             size = item.get("bytes")
             progress_value = build_progress(size if isinstance(size, int) else 0, size if isinstance(size, int) else None)
             item["progress"] = progress_value
+        if "upload_id" not in item and isinstance(item.get("checksum"), str):
+            item["upload_id"] = item.get("checksum")
+        if "path" not in item and isinstance(item.get("stored_path"), str):
+            item["path"] = item.get("stored_path")
         normalized.append(item)
+    normalized.sort(key=lambda item: (str(item.get("stored_path", "")), str(item.get("checksum", ""))))
     return normalized
-
-
-def _uploads_root(ctx) -> Path:
-    root = _file_root(ctx)
-    return root / "uploads"
 
 
 def _write_stream(path: Path, stream: object, *, progress=None, preview: UploadPreviewCounter | None = None) -> tuple[int, str]:
@@ -155,37 +148,28 @@ def _write_stream(path: Path, stream: object, *, progress=None, preview: UploadP
     return size, hasher.hexdigest()
 
 
-def _split_filename(name: str) -> tuple[str, str]:
-    path = Path(name)
-    suffix = path.suffix.lower()
-    if suffix and not _safe_suffix(suffix):
-        suffix = ""
-    return path.stem, suffix
-
-
-def _safe_suffix(value: str) -> bool:
-    if not value.startswith("."):
-        return False
-    for ch in value[1:]:
-        if not (ch.isalnum() or ch == "."):
-            return False
-    return True
-
-
-def _update_index(root: Path, entry: dict) -> None:
-    index_path = root / "index.json"
-    entries: list[dict] = []
-    if index_path.exists():
-        try:
-            raw = json.loads(index_path.read_text(encoding="utf-8"))
-        except Exception:
-            raw = []
-        if isinstance(raw, list):
-            entries = [item for item in raw if isinstance(item, dict)]
-    entries = [item for item in entries if item.get("stored_path") != entry.get("stored_path")]
-    entries.append(entry)
-    entries.sort(key=lambda item: (str(item.get("stored_path", "")), str(item.get("checksum", ""))))
-    index_path.write_text(canonical_json_dumps(entries, pretty=True), encoding="utf-8")
+def _maybe_register_dataset(store: LocalStore, metadata: dict) -> None:
+    upload_id = metadata.get("checksum")
+    if not isinstance(upload_id, str) or not upload_id:
+        return
+    path = store.upload_path_for(upload_id)
+    if not path.exists():
+        return
+    schema = infer_dataset_schema(
+        filename=metadata.get("name"),
+        content_type=metadata.get("content_type"),
+        data=path.read_bytes(),
+    )
+    if not schema:
+        return
+    dataset = {
+        "dataset_id": upload_id,
+        "name": metadata.get("name") or upload_id,
+        "schema": schema,
+        "source": upload_id,
+        "owner": "anonymous",
+    }
+    store.upsert_dataset(dataset)
 
 
 __all__ = ["list_uploads", "normalize_hash_bytes", "store_upload"]

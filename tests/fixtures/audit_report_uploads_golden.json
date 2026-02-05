@@ -127,7 +127,7 @@
       "id": "upload:event:6:upload_stored",
       "inputs": {
         "name": "report.txt",
-        "stored_path": "app/uploads/report-u_ok.txt"
+        "stored_path": "uploads/app/u_ok"
       },
       "outcome": {
         "stored": true

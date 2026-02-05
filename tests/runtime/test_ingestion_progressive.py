@@ -134,7 +134,7 @@ def test_deep_scan_failure_preserves_quick_scan(tmp_path: Path) -> None:
 
     # Remove the stored upload to force a deep scan failure.
     stored_path = metadata.get("stored_path", "")
-    target = Path(str(tmp_path)) / ".namel3ss" / "files" / Path(str(stored_path))
+    target = Path(str(tmp_path)) / ".namel3ss" / Path(str(stored_path))
     target.unlink(missing_ok=True)
 
     run_job_queue(job_ctx)

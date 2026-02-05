@@ -76,7 +76,8 @@ from namel3ss.ir.functions.model import (
     FunctionParam,
     FunctionSignature,
 )
-from namel3ss.ir.model.ai import AIDecl, AIMemory, AskAIStmt
+from namel3ss.ir.model.ai import AIDecl, AIMemory, AskAIStmt, AIFlowMetadata
+from namel3ss.ir.model.ai_flows import AIFlowDefinition
 from namel3ss.ir.model.agents import (
     AgentDecl,
     AgentMergePolicy,
@@ -142,6 +143,9 @@ from namel3ss.ir.model.pages import (
     TitleItem,
 )
 from namel3ss.ir.model.tools import ToolDecl, ToolField
+from namel3ss.ir.model.prompts import PromptDefinition
+from namel3ss.ir.model.crud import CrudDefinition
+from namel3ss.ir.model.routes import RouteDefinition, RouteField
 
 __all__ = [
     "Expression",
@@ -213,6 +217,8 @@ __all__ = [
     "AIDecl",
     "AIMemory",
     "AskAIStmt",
+    "AIFlowMetadata",
+    "AIFlowDefinition",
     "AgentDecl",
     "AgentTeam",
     "AgentTeamMember",
@@ -275,4 +281,8 @@ __all__ = [
     "TitleItem",
     "ToolDecl",
     "ToolField",
+    "PromptDefinition",
+    "CrudDefinition",
+    "RouteDefinition",
+    "RouteField",
 ]

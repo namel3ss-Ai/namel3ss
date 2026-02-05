@@ -8,6 +8,8 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.dev_server import BrowserAppState
 from namel3ss.runtime.server.prod.routes import ProductionRequestHandler
+from namel3ss.runtime.router.refresh import refresh_routes
+from namel3ss.runtime.router.registry import RouteRegistry
 
 
 DEFAULT_START_PORT = 8787
@@ -48,6 +50,11 @@ class ProductionRunner:
         server.build_id = self.build_id  # type: ignore[attr-defined]
         server.web_root = self.web_root  # type: ignore[attr-defined]
         server.app_state = self.app_state  # type: ignore[attr-defined]
+        self.app_state._refresh_if_needed()
+        registry = RouteRegistry()
+        if self.app_state.program is not None:
+            refresh_routes(program=self.app_state.program, registry=registry, revision=self.app_state.revision, logger=print)
+        server.route_registry = registry  # type: ignore[attr-defined]
         self.server = server
         if background:
             thread = threading.Thread(target=server.serve_forever, daemon=True)
