@@ -14,11 +14,14 @@ from namel3ss.runtime.executor.ai_runner_support import (
     run_shadow_compare,
 )
 from namel3ss.runtime.executor.context import ExecutionContext
-from namel3ss.runtime.executor.provider_utils import _resolve_provider, _seed_from_structured_input
+from namel3ss.runtime.executor.provider_utils import (
+    _resolve_provider,
+    _resolve_provider_capabilities,
+    _seed_from_structured_input,
+)
 from namel3ss.runtime.explainability.logger import append_explain_entry
 from namel3ss.runtime.explainability.seed_manager import resolve_ai_call_seed
 from namel3ss.runtime.performance.state import run_cached_ai_text_call
-from namel3ss.runtime.providers.capabilities import get_provider_capabilities
 from namel3ss.runtime.tools.executor import execute_tool_call_with_outcome
 from namel3ss.runtime.tools.field_schema import build_json_schema
 from namel3ss.secrets import collect_secret_values
@@ -113,7 +116,7 @@ def run_ai_with_tools(
         },
     )
     provider = _resolve_provider(ctx, provider_name)
-    capabilities = get_provider_capabilities(provider_name)
+    capabilities = _resolve_provider_capabilities(provider_name)
 
     def _text_only_call():
         response = provider.ask(

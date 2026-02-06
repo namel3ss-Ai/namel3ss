@@ -29,6 +29,11 @@ _KNOWN_ENV_VARS = {
     "N3_AUTH_PASSWORD",
 }
 
+_SAFE_LITERAL_KEYS = {
+    "event_type",
+    "stream_channel",
+}
+
 
 def collect_secret_values(config: AppConfig | None = None) -> list[str]:
     values: list[str] = []
@@ -61,12 +66,25 @@ def redact_text(text: str, secret_values: Iterable[str]) -> str:
     return redacted
 
 
-def redact_payload(value: object, secret_values: Iterable[str]) -> object:
+def redact_payload(
+    value: object,
+    secret_values: Iterable[str],
+    *,
+    _parent_key: str | None = None,
+) -> object:
     if isinstance(value, dict):
-        return {key: redact_payload(val, secret_values) for key, val in value.items()}
+        return {
+            key: redact_payload(val, secret_values, _parent_key=str(key))
+            for key, val in value.items()
+        }
     if isinstance(value, list):
-        return [redact_payload(item, secret_values) for item in value]
+        return [
+            redact_payload(item, secret_values, _parent_key=_parent_key)
+            for item in value
+        ]
     if isinstance(value, str):
+        if _parent_key in _SAFE_LITERAL_KEYS:
+            return value
         return redact_text(value, secret_values)
     return value
 
