@@ -8,7 +8,10 @@ from namel3ss.cli.main import main as cli_main
 
 def _write_app(tmp_path: Path) -> Path:
     app = tmp_path / "app.ai"
-    app.write_text('spec is "1.0"\n\nflow "demo_flow":\n  return "ok"\n', encoding="utf-8")
+    app.write_text(
+        'spec is "1.0"\n\ncapabilities:\n  versioning_quality_mlops\n\nflow "demo_flow":\n  return "ok"\n',
+        encoding="utf-8",
+    )
     return app
 
 

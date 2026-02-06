@@ -60,6 +60,7 @@ RESERVED = {
     "audit",
     "auth",
     "secret",
+    "security",
     "policy",
     "prompts",
     "sensitive",
@@ -95,6 +96,7 @@ RESERVED = {
     "scaffold",
     "package",
     "tutorial",
+    "playground",
     "lsp",
 }
 

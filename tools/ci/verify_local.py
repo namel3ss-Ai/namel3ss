@@ -64,6 +64,7 @@ def _check_git_clean() -> None:
 def main() -> int:
     os.chdir(_repo_root())
     _print_header()
+    _run_command("Security hardening scan", [sys.executable, "tools/security_hardening_scan.py"])
     _run_command("Line limit check", [sys.executable, "tools/line_limit_check.py"])
     _run_command("Single responsibility check", [sys.executable, "tools/responsibility_check.py"])
     _run_command(

@@ -213,7 +213,7 @@ def _print_human(payload: dict[str, object]) -> None:
 def _print_usage() -> None:
     print(
         "Usage:\n"
-        "  n3 compile --lang <c|rust|wasm> --flow <flow_name> [--out DIR] [--build] [app.ai] [--json]\n"
+        "  n3 compile --lang <c|python|rust|wasm> --flow <flow_name> [--out DIR] [--build] [app.ai] [--json]\n"
         "  n3 compile list [app.ai] [--json]\n"
         "  n3 compile clean [--out DIR] [app.ai] [--json]\n"
         "  n3 compile help"

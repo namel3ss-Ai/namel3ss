@@ -70,6 +70,7 @@ def run_run_command(args: list[str]) -> int:
                 debug=False,
                 watch_sources=False,
                 engine_target=target.name,
+                headless=params.headless,
             )
             try:
                 runner.bind()
@@ -82,7 +83,11 @@ def run_run_command(args: list[str]) -> int:
                         example="n3 run --port 7341",
                     )
                 ) from err
-            url = f"http://127.0.0.1:{runner.bound_port}/"
+            url = (
+                f"http://127.0.0.1:{runner.bound_port}/api/ui/manifest"
+                if params.headless
+                else f"http://127.0.0.1:{runner.bound_port}/"
+            )
             if params.dry:
                 print(f"App: {url}")
                 return 0
@@ -100,13 +105,14 @@ def run_run_command(args: list[str]) -> int:
                 build_id=build_id,
                 port=port,
                 auto_seed=bool(is_demo and first_run and not params.dry),
+                headless=params.headless,
             )
             if params.dry:
                 print(f"Service runner dry http://127.0.0.1:{port}/health")
                 print(f"Build: {build_id or 'working-copy'}")
                 return 0
             if is_demo:
-                url = f"http://127.0.0.1:{port}/"
+                url = f"http://127.0.0.1:{port}/api/ui/manifest" if params.headless else f"http://127.0.0.1:{port}/"
                 demo_provider = _detect_demo_provider(run_path)
                 if first_run:
                     print(f"Running {DEMO_NAME}")
@@ -114,7 +120,7 @@ def run_run_command(args: list[str]) -> int:
                     if demo_provider == "openai":
                         print("AI provider: OpenAI")
                     print("Press Ctrl+C to stop")
-                    if should_open_url(params.no_open):
+                    if not params.headless and should_open_url(params.no_open):
                         open_url(url)
                 else:
                     print(f"Running {DEMO_NAME} at: {url}")
@@ -159,6 +165,7 @@ class _RunParams:
         json_mode: bool,
         no_open: bool,
         explain: bool,
+        headless: bool,
     ):
         self.app_arg = app_arg
         self.target_raw = target_raw
@@ -168,6 +175,7 @@ class _RunParams:
         self.json_mode = json_mode
         self.no_open = no_open
         self.explain = explain
+        self.headless = headless
 
 
 def _parse_args(args: list[str]) -> _RunParams:
@@ -179,6 +187,7 @@ def _parse_args(args: list[str]) -> _RunParams:
     json_mode = False
     no_open = False
     explain = False
+    headless = False
     i = 0
     while i < len(args):
         arg = args[i]
@@ -243,6 +252,10 @@ def _parse_args(args: list[str]) -> _RunParams:
             no_open = True
             i += 1
             continue
+        if arg == "--headless":
+            headless = True
+            i += 1
+            continue
         if arg == "--first-run":
             i += 1
             continue
@@ -254,7 +267,7 @@ def _parse_args(args: list[str]) -> _RunParams:
             raise Namel3ssError(
                 build_guidance_message(
                     what=f"Unknown flag '{arg}'.",
-                    why="Supported flags: --target, --port, --build, --dry, --json, --explain, --first-run, --no-open.",
+                    why="Supported flags: --target, --port, --build, --dry, --json, --explain, --first-run, --no-open, --headless.",
                     fix="Remove the unsupported flag.",
                     example="n3 run --target local",
                 )
@@ -271,7 +284,7 @@ def _parse_args(args: list[str]) -> _RunParams:
                 example="n3 run app.ai --target local",
             )
         )
-    return _RunParams(app_arg, target, port, build_id, dry, json_mode, no_open, explain)
+    return _RunParams(app_arg, target, port, build_id, dry, json_mode, no_open, explain, headless)
 
 
 def _print_explain_traces(output: dict) -> None:

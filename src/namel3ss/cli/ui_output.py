@@ -59,7 +59,7 @@ Advanced
   n3 type check [file.ai]          # static type check and inference diagnostics
   n3 schema infer|migrate [file.ai] # schema inference and migration plan
   n3 concurrency check [file.ai]   # static checks for async and parallel safety
-  n3 compile ...                   # compile pure flows to c, rust, or wasm projects
+  n3 compile ...                   # compile pure flows to c, python, rust, or wasm projects
   n3 wasm run <module.wasm> ...    # execute wasm module with local runtime
   n3 trigger list|register ...     # manage webhook, upload, timer, and queue triggers
   n3 feedback list [file.ai]       # list user feedback entries
@@ -76,6 +76,7 @@ Advanced
   n3 policy check|enforce ...      # enforce global governance policies
   n3 marketplace ...               # publish, search, and install marketplace items
   n3 tutorial list|run ...         # interactive lessons and progress tracking
+  n3 playground check|run ...      # sandboxed snippet validation and execution
   n3 scaffold test <flow> ...      # generate a flow test skeleton
   n3 package build ...             # deterministic project archive build
   n3 lsp stdio|check ...           # language server and diagnostics

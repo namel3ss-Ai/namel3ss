@@ -30,6 +30,9 @@ jobs:
       - name: Compile check
         run: python -m compileall src -q -x '.*namel3ss/runtime/build.*'
 
+      - name: Security hardening scan
+        run: python tools/security_hardening_scan.py --json .namel3ss/ci_artifacts/security_scan.json
+
       - name: Spec freeze guard
         run: python tools/spec_freeze_check.py
 

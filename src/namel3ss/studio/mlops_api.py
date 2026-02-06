@@ -5,10 +5,12 @@ from pathlib import Path
 
 from namel3ss.mlops import get_mlops_client, load_mlops_config, mlops_snapshot_path
 from namel3ss.retrain import build_retrain_payload
+from namel3ss.runtime.capabilities.feature_gate import require_app_capability
 
 
 def get_mlops_payload(app_path: str) -> dict[str, object]:
     app_file = Path(app_path)
+    require_app_capability(app_file, "versioning_quality_mlops")
     config = load_mlops_config(app_file.parent, app_file, required=False)
     snapshot = _read_snapshot(app_file.parent, app_file)
     return {
@@ -23,6 +25,7 @@ def get_mlops_payload(app_path: str) -> dict[str, object]:
 def apply_mlops_payload(source: str, body: dict, app_path: str) -> dict[str, object]:
     _ = source
     app_file = Path(app_path)
+    require_app_capability(app_file, "versioning_quality_mlops", source_override=source)
     action = _text(body.get("action")) or "status"
 
     if action == "status":

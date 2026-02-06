@@ -40,6 +40,7 @@ from namel3ss.cli.observe_mode import run_observe_command
 from namel3ss.cli.formats_mode import run_formats_command
 from namel3ss.cli.plugin_mode import run_plugin_command
 from namel3ss.cli.package_mode import run_package_command
+from namel3ss.cli.playground_mode import run_playground_command
 from namel3ss.cli.prompts_mode import run_prompts_command
 from namel3ss.cli.retrain_mode import run_retrain_command
 from namel3ss.cli.quality_mode import run_quality_command
@@ -67,6 +68,7 @@ from namel3ss.cli.tutorial_mode import run_tutorial_command
 from namel3ss.cli.schema_mode import run_schema_command
 from namel3ss.cli.model_mode import run_model_command
 from namel3ss.cli.models_mode import run_models_command
+from namel3ss.cli.security_mode import run_security_command
 from namel3ss.cli.tenant_mode import run_tenant_command
 from namel3ss.cli.federation_mode import run_federation_command
 from namel3ss.cli.cluster_mode import run_cluster_command
@@ -249,6 +251,8 @@ def main(argv: list[str] | None = None) -> int:
             return run_auth_command(args[1:])
         if cmd == "secret":
             return run_secret_command(args[1:])
+        if cmd == "security":
+            return run_security_command(args[1:])
         if cmd == "policy":
             return run_policy_command(args[1:])
         if cmd == "prompts":
@@ -279,6 +283,8 @@ def main(argv: list[str] | None = None) -> int:
             return run_mlops_command(args[1:])
         if cmd == "tutorial":
             return run_tutorial_command(args[1:])
+        if cmd == "playground":
+            return run_playground_command(args[1:])
         if cmd == "scaffold":
             return run_scaffold_command(args[1:])
         if cmd == "package":

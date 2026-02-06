@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
@@ -38,6 +39,7 @@ from namel3ss.studio.tutorial_api import get_playground_payload, get_tutorials_p
 from namel3ss.studio.versioning_api import apply_versioning_payload, get_versioning_payload
 from namel3ss.studio.quality_api import apply_quality_payload, get_quality_payload
 from namel3ss.studio.mlops_api import apply_mlops_payload, get_mlops_payload
+from namel3ss.studio.security_api import get_audit_logs_payload, get_security_payload
 from namel3ss.studio.trigger_api import apply_triggers_payload, get_triggers_payload
 from namel3ss.studio.state_api import get_state_payload
 from namel3ss.studio.routes.core import handle_action
@@ -53,15 +55,33 @@ from namel3ss.runtime.data.studio_adapters import (
 
 
 def handle_api_get(handler: Any) -> None:
+    parsed_path = urlparse(handler.path)
+    path = parsed_path.path
+    query = {key: values[-1] for key, values in parse_qs(parsed_path.query).items() if values}
     try:
         source = handler._read_source()
     except Exception as err:  # pragma: no cover - IO error edge
         payload = build_error_payload(f"Cannot read source: {err}", kind="engine")
         handler._respond_json(payload, status=500)
         return
-    if handler.path == "/api/session":
+    if path in {"/api/session", "/api/auth/session"}:
         payload, status, headers = _handle_session(handler, source)
         handler._respond_json(payload, status=status, headers=headers)
+        return
+    if path == "/api/security":
+        payload = get_security_payload(handler.server.app_path)  # type: ignore[attr-defined]
+        status = 200 if payload.get("ok", True) else 400
+        handler._respond_json(payload, status=status)
+        return
+    if path == "/api/audit/logs":
+        payload = get_audit_logs_payload(
+            handler.server.app_path,  # type: ignore[attr-defined]
+            user=str(query.get("user") or ""),
+            action=str(query.get("action") or ""),
+            limit=_query_int(query.get("limit"), default=50),
+            offset=_query_int(query.get("offset"), default=0, minimum=0),
+        )
+        handler._respond_json(payload, status=200)
         return
     if handler.path == "/api/summary":
         _respond_with_source(handler, source, get_summary_payload, kind="parse", include_app_path=True)
@@ -202,6 +222,7 @@ def handle_api_get(handler: Any) -> None:
 
 
 def handle_api_post(handler: Any) -> None:
+    path = urlparse(handler.path).path
     length = int(handler.headers.get("Content-Length", "0"))
     raw_body = handler.rfile.read(length) if length else b""
     try:
@@ -215,11 +236,11 @@ def handle_api_post(handler: Any) -> None:
         payload = build_error_payload(f"Cannot read source: {err}", kind="engine")
         handler._respond_json(payload, status=500)
         return
-    if handler.path == "/api/login":
+    if path in {"/api/login", "/api/auth/login"}:
         payload, status, headers = _handle_login(handler, source, body)
         handler._respond_json(payload, status=status, headers=headers)
         return
-    if handler.path == "/api/logout":
+    if path in {"/api/logout", "/api/auth/logout"}:
         payload, status, headers = _handle_logout(handler, source)
         handler._respond_json(payload, status=status, headers=headers)
         return
@@ -464,5 +485,16 @@ def _trace_run_payload(handler: Any, run_id: str) -> dict:
 
     return get_trace_run_payload(_trace_project_root(handler), getattr(handler.server, "app_path", None), run_id)
 
+
+def _query_int(value: object, *, default: int, minimum: int = 1) -> int:
+    if value is None:
+        return default
+    try:
+        parsed = int(str(value).strip())
+    except Exception:
+        return default
+    if parsed < minimum:
+        return minimum
+    return parsed
 
 __all__ = ["handle_api_get", "handle_api_post"]

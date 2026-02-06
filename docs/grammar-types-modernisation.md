@@ -56,6 +56,7 @@ Legacy aliases still normalize:
 ## Deterministic outputs
 
 - `n3 ast dump` writes canonical CIR JSON.
+- `n3 ast dump` also includes `representation_schema: "program_representation.v1"` for the compiler-facing contract.
 - `n3 type check` emits stable, sorted diagnostics.
 - `n3 schema infer` and `n3 schema migrate` write deterministic artifacts to:
   - `.namel3ss/schema_infer.json`

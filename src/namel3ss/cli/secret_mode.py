@@ -9,7 +9,13 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.errors.render import format_error
 from namel3ss.governance.audit import record_audit_entry
-from namel3ss.governance.secrets import add_secret, get_secret, list_secrets, master_key_path
+from namel3ss.governance.secrets import (
+    add_secret,
+    get_secret,
+    list_secrets,
+    master_key_path,
+    remove_secret,
+)
 
 
 
@@ -89,6 +95,29 @@ def run_secret_command(args: list[str]) -> int:
             )
             return _emit(payload, json_mode=params["json_mode"])
 
+        if params["subcommand"] == "remove":
+            path, removed = remove_secret(
+                project_root=project_root,
+                app_path=app_path,
+                name=params["name"],
+            )
+            payload = {
+                "ok": True,
+                "vault_path": path.as_posix(),
+                "removed": removed,
+                "master_key_path": master_key_path().as_posix(),
+            }
+            record_audit_entry(
+                project_root=project_root,
+                app_path=app_path,
+                user=params["owner"] or "cli",
+                action="secret_remove",
+                resource=str(params["name"]),
+                status="success",
+                details={"vault_path": path.as_posix()},
+            )
+            return _emit(payload, json_mode=params["json_mode"])
+
         raise Namel3ssError(_unknown_subcommand_message(str(params["subcommand"])))
     except Namel3ssError as err:
         print(prepare_cli_text(format_error(err, None)), file=sys.stderr)
@@ -165,6 +194,21 @@ def _parse_args(args: list[str]) -> dict[str, object]:
             "owner": owner,
         }
 
+    if subcommand == "remove":
+        if not positional:
+            raise Namel3ssError(_missing_secret_message(subcommand))
+        name = positional[0]
+        app_arg = positional[1] if len(positional) >= 2 else None
+        if len(positional) > 2:
+            raise Namel3ssError(_too_many_args_message(subcommand))
+        return {
+            "subcommand": subcommand,
+            "app_arg": app_arg,
+            "json_mode": json_mode,
+            "name": name,
+            "owner": owner,
+        }
+
     raise Namel3ssError(_unknown_subcommand_message(subcommand))
 
 
@@ -192,6 +236,13 @@ def _emit(payload: dict[str, object], *, json_mode: bool) -> int:
         print(f"  owner: {secret.get('owner')}")
         print(f"  vault_path: {payload.get('vault_path')}")
         return 0
+    if "removed" in payload and isinstance(payload["removed"], dict):
+        removed = payload["removed"]
+        print("Secret removed")
+        print(f"  name: {removed.get('name')}")
+        print(f"  owner: {removed.get('owner')}")
+        print(f"  vault_path: {payload.get('vault_path')}")
+        return 0
     print(payload.get("value") or "")
     return 0
 
@@ -202,7 +253,8 @@ def _print_usage() -> None:
         "Usage:\n"
         "  n3 secret list [app.ai] [--json]\n"
         "  n3 secret add <name> <value> [--owner USER] [app.ai] [--json]\n"
-        "  n3 secret get <name> [app.ai] [--json]"
+        "  n3 secret get <name> [app.ai] [--json]\n"
+        "  n3 secret remove <name> [app.ai] [--json]"
     )
 
 
@@ -210,7 +262,7 @@ def _print_usage() -> None:
 def _unknown_subcommand_message(subcommand: str) -> str:
     return build_guidance_message(
         what=f"Unknown secret command '{subcommand}'.",
-        why="Supported commands are list, add, and get.",
+        why="Supported commands are list, add, get, and remove.",
         fix="Use one of the supported subcommands.",
         example="n3 secret list --json",
     )
@@ -244,6 +296,13 @@ def _missing_secret_message(subcommand: str) -> str:
             why="Both name and value are required.",
             fix="Provide secret name and value.",
             example="n3 secret add db_password supersecret",
+        )
+    if subcommand == "remove":
+        return build_guidance_message(
+            what="secret remove is missing secret name.",
+            why="remove requires one secret name.",
+            fix="Provide the secret name.",
+            example="n3 secret remove db_password",
         )
     return build_guidance_message(
         what="secret get is missing secret name.",

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import socket
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -58,7 +59,10 @@ def _free_port() -> int:
         return int(sock.getsockname()[1])
 
 
-def test_production_server_serves_build_assets(tmp_path: Path) -> None:
+def test_production_server_serves_build_assets(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.delenv("N3_ENV", raising=False)
+    monkeypatch.delenv("N3_TLS_CERT_PATH", raising=False)
+    monkeypatch.delenv("N3_TLS_KEY_PATH", raising=False)
     app_path = tmp_path / "app.ai"
     app_path.write_text(APP_SOURCE, encoding="utf-8")
     assert run_build_command([app_path.as_posix(), "--target", "service"]) == 0
@@ -97,5 +101,41 @@ def test_production_server_serves_build_assets(tmp_path: Path) -> None:
         )
         assert response.get("ok") is True
         assert response.get("result") == "hi"
+    finally:
+        runner.shutdown()
+
+
+def test_production_server_headless_mode_disables_static_root(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.delenv("N3_ENV", raising=False)
+    monkeypatch.delenv("N3_TLS_CERT_PATH", raising=False)
+    monkeypatch.delenv("N3_TLS_KEY_PATH", raising=False)
+    app_path = tmp_path / "app.ai"
+    app_path.write_text(APP_SOURCE, encoding="utf-8")
+    assert run_build_command([app_path.as_posix(), "--target", "service"]) == 0
+    build_id = read_latest_build_id(tmp_path, "service")
+    assert build_id
+    build_path, meta = load_build_metadata(tmp_path, "service", build_id)
+    app_relative = meta.get("app_relative_path")
+    assert isinstance(app_relative, str)
+    artifacts = meta.get("artifacts") if isinstance(meta, dict) else None
+    runner = ProductionRunner(
+        build_path,
+        tmp_path / app_relative,
+        build_id=build_id,
+        port=_free_port(),
+        artifacts=artifacts if isinstance(artifacts, dict) else None,
+        headless=True,
+    )
+    try:
+        runner.start(background=True)
+        port = runner.bound_port
+        _wait_for_health(port)
+        payload = _fetch_json(f"http://127.0.0.1:{port}/api/ui")
+        assert payload.get("pages")
+        try:
+            urllib.request.urlopen(f"http://127.0.0.1:{port}/")
+            raise AssertionError("headless production mode should not serve static root")
+        except urllib.error.HTTPError as err:
+            assert err.code == 404
     finally:
         runner.shutdown()

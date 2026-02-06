@@ -1,10 +1,24 @@
 from __future__ import annotations
 
+from functools import wraps
 import hashlib
 from pathlib import Path
+import threading
 
-from namel3ss.cli.app_loader import load_program
+from namel3ss.config.dotenv import apply_dotenv, load_dotenv_for_path
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.module_loader import load_project
+from namel3ss.module_loader.source_io import ParseCache
+from namel3ss.secrets import set_audit_root
+
+
+def _locked(method):
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        with self._lock:
+            return method(self, *args, **kwargs)
+
+    return wrapper
 
 
 class ProgramState:
@@ -16,8 +30,11 @@ class ProgramState:
         self.revision = ""
         self.error: Namel3ssError | None = None
         self._watch_snapshot: dict[Path, tuple[int, int]] = {}
+        self._lock = threading.RLock()
+        self.parse_cache: ParseCache = {}
         self._load_program()
 
+    @_locked
     def refresh_if_needed(self) -> bool:
         if not self._should_reload():
             return False
@@ -28,12 +45,15 @@ class ProgramState:
             self.error = err
             return False
 
+    @_locked
     def _load_program(self) -> None:
-        program, sources = load_program(self.app_path.as_posix())
-        self.program = program
-        self.sources = sources
-        self.revision = _compute_revision(sources)
-        self._watch_snapshot = _snapshot_paths(list(sources.keys()))
+        apply_dotenv(load_dotenv_for_path(str(self.app_path)))
+        project = load_project(self.app_path, parse_cache=self.parse_cache)
+        self.program = project.program
+        self.sources = project.sources
+        self.revision = _compute_revision(project.sources)
+        self._watch_snapshot = _snapshot_paths(list(project.sources.keys()))
+        set_audit_root(project.app_path.parent)
         self.error = None
 
     def _should_reload(self) -> bool:

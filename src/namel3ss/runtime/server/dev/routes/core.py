@@ -53,6 +53,8 @@ def respond_bytes(
 
 
 def handle_static(handler: Any, path: str) -> bool:
+    if bool(getattr(handler.server, "headless", False)):  # type: ignore[attr-defined]
+        return False
     file_path, content_type = _resolve_runtime_file(path, handler._mode())
     if not file_path or not content_type:
         return False

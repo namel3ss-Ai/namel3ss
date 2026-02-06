@@ -69,6 +69,7 @@ def test_kept_get_endpoints_return_ok(tmp_path: Path) -> None:
         "/api/version",
         "/api/why",
         "/api/agents",
+        "/api/security",
     ]:
         handler = DummyHandler(path=path, app_path=app_path)
         handle_api_get(handler)
@@ -103,7 +104,6 @@ def test_removed_get_endpoints_404(tmp_path: Path) -> None:
         "/api/trust/secrets",
         "/api/trust/observe?limit=10",
         "/api/trust/explain",
-        "/api/security",
         "/api/pkg/search?q=demo",
         "/api/pkg/info?name=demo",
         "/api/registry/status",

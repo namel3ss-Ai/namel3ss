@@ -79,6 +79,74 @@ def test_cli_secret_vault_add_get_list(tmp_path: Path, capsys, monkeypatch) -> N
     assert listed["secrets"][0]["name"] == "db_password"
 
 
+def test_cli_secret_remove_deletes_entry(tmp_path: Path, capsys, monkeypatch) -> None:
+    _write_app(tmp_path)
+    home = tmp_path / "home"
+    home.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setenv("HOME", home.as_posix())
+    monkeypatch.chdir(tmp_path)
+
+    assert cli_main(["secret", "add", "db_password", "supersecret", "--json"]) == 0
+    _ = json.loads(capsys.readouterr().out)
+
+    assert cli_main(["secret", "remove", "db_password", "--json"]) == 0
+    removed = json.loads(capsys.readouterr().out)
+    assert removed["ok"] is True
+    assert removed["removed"]["name"] == "db_password"
+
+    assert cli_main(["secret", "list", "--json"]) == 0
+    listed = json.loads(capsys.readouterr().out)
+    assert listed["ok"] is True
+    assert listed["count"] == 0
+
+
+def test_cli_security_check_requires_guards(tmp_path: Path, capsys, monkeypatch) -> None:
+    app_path = tmp_path / "app.ai"
+    app_path.write_text(
+        (
+            'spec is "1.0"\n\n'
+            'record "Task":\n'
+            "  fields:\n"
+            "    id is number must be present\n"
+            "    title is text must be present\n\n"
+            'flow "mutate":\n'
+            "  set state.task with:\n"
+            "    id is 1\n"
+            '    title is "Draft"\n'
+            '  create "Task" with state.task as created\n'
+            '  return "ok"\n'
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    assert cli_main(["security", "check", "--json"]) == 1
+    failing = json.loads(capsys.readouterr().out)
+    assert failing["ok"] is False
+    assert any(row["code"] == "requires.flow_missing" for row in failing["violations"])
+
+    app_path.write_text(
+        (
+            'spec is "1.0"\n\n'
+            'record "Task":\n'
+            "  fields:\n"
+            "    id is number must be present\n"
+            "    title is text must be present\n\n"
+            'flow "mutate" requires true:\n'
+            "  set state.task with:\n"
+            "    id is 1\n"
+            '    title is "Draft"\n'
+            '  create "Task" with state.task as created\n'
+            '  return "ok"\n'
+        ),
+        encoding="utf-8",
+    )
+    assert cli_main(["security", "check", "--json"]) == 0
+    passing = json.loads(capsys.readouterr().out)
+    assert passing["ok"] is True
+    assert passing["count"] == 0
+
+
 def test_cli_policy_check_and_audit_filters(tmp_path: Path, capsys, monkeypatch) -> None:
     _write_app(tmp_path)
     home = tmp_path / "home"

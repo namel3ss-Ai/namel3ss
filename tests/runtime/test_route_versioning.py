@@ -135,3 +135,42 @@ def test_versioned_route_selection_and_deprecation_headers(tmp_path: Path) -> No
     rows = [json.loads(line) for line in log_path.read_text(encoding="utf-8").splitlines() if line.strip()]
     assert rows
     assert rows[0]["requested_version"] == "1.0"
+
+
+def test_route_latest_uses_semver_precedence(tmp_path: Path) -> None:
+    app = tmp_path / "app.ai"
+    app.write_text(SOURCE, encoding="utf-8")
+    (tmp_path / "versions.yaml").write_text(
+        "routes:\n"
+        "  users:\n"
+        '    - version: "2.8.0"\n'
+        '      status: "active"\n'
+        '      target: "users_v0_route"\n'
+        '    - version: "2.9.0"\n'
+        '      status: "active"\n'
+        '      target: "users_v1_route"\n'
+        '    - version: "2.10.0"\n'
+        '      status: "active"\n'
+        '      target: "users_v2_route"\n',
+        encoding="utf-8",
+    )
+
+    program, _ = load_program(app.as_posix())
+    registry = RouteRegistry()
+    config = load_version_config(tmp_path, app)
+    registry.update(program.routes, route_version_meta=route_metadata_by_target(config))
+
+    latest = dispatch_route(
+        registry=registry,
+        method="GET",
+        raw_path="/api/users",
+        headers={},
+        rfile=io.BytesIO(b""),
+        program=program,
+        identity=None,
+        auth_context=None,
+        store=None,
+    )
+    assert latest is not None
+    assert latest.status == 200
+    assert latest.payload == {"value": "v2"}

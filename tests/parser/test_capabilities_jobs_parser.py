@@ -55,3 +55,68 @@ flow "demo":
     assert isinstance(stmt, ast.EnqueueJob)
     assert stmt.job_name == "refresh"
     assert stmt.input_expr is not None
+
+
+def test_performance_scalability_capability_parses() -> None:
+    source = '''spec is "1.0"
+
+capabilities:
+  performance_scalability
+
+flow "demo":
+  return "ok"
+'''
+    program = parse(source)
+    assert "performance_scalability" in program.capabilities
+
+
+def test_decoupled_ui_api_capability_parses() -> None:
+    source = '''spec is "1.0"
+
+capabilities:
+  decoupled_ui_api
+
+flow "demo":
+  return "ok"
+'''
+    program = parse(source)
+    assert "decoupled_ui_api" in program.capabilities
+
+
+def test_ecosystem_developer_experience_capability_parses() -> None:
+    source = '''spec is "1.0"
+
+capabilities:
+  ecosystem_developer_experience
+
+flow "demo":
+  return "ok"
+'''
+    program = parse(source)
+    assert "ecosystem_developer_experience" in program.capabilities
+
+
+def test_versioning_quality_mlops_capability_parses() -> None:
+    source = '''spec is "1.0"
+
+capabilities:
+  versioning_quality_mlops
+
+flow "demo":
+  return "ok"
+'''
+    program = parse(source)
+    assert "versioning_quality_mlops" in program.capabilities
+
+
+def test_security_compliance_capability_parses() -> None:
+    source = '''spec is "1.0"
+
+capabilities:
+  security_compliance
+
+flow "demo":
+  return "ok"
+'''
+    program = parse(source)
+    assert "security_compliance" in program.capabilities

@@ -1,11 +1,12 @@
 # Cross-Language Compilation
 
-namel3ss can compile a pure flow into deterministic C, Rust, or WebAssembly project outputs.
+namel3ss can compile a pure flow into deterministic C, Python, Rust, or WebAssembly project outputs.
 
 ## Commands
 
 ```bash
 n3 compile --lang c --flow add --out dist
+n3 compile --lang python --flow add --out dist
 n3 compile --lang rust --flow add --out dist
 n3 compile --lang wasm --flow add --out dist
 n3 compile list
@@ -19,6 +20,7 @@ Use `compilation.yaml` to track target choices per flow.
 
 ```yaml
 flows:
+  add_local: python
   add: rust
   score: wasm
 ```

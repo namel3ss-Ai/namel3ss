@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import threading
 from typing import Iterable
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.auth.route_permissions import RouteRequirement
+from namel3ss.versioning.semver import version_sort_key
 
 
 @dataclass(frozen=True)
@@ -40,6 +42,7 @@ class RouteRegistry:
         self._routes: list[RouteEntry] = []
         self._signatures: dict[str, tuple] = {}
         self._revision: str | None = None
+        self._lock = threading.RLock()
 
     def update(
         self,
@@ -49,53 +52,57 @@ class RouteRegistry:
         requirements: dict[str, RouteRequirement] | None = None,
         route_version_meta: dict[str, dict[str, object]] | None = None,
     ) -> dict[str, list[str]]:
-        if revision is not None and revision == self._revision:
-            return {"added": [], "removed": [], "updated": []}
-        new_entries = _build_entries(
-            routes,
-            requirements=requirements or {},
-            route_version_meta=route_version_meta or {},
-        )
-        diff = _diff_routes(self._signatures, new_entries)
-        self._routes = new_entries
-        self._signatures = {entry.name: _signature(entry) for entry in new_entries}
-        self._revision = revision
-        return diff
+        with self._lock:
+            if revision is not None and revision == self._revision:
+                return {"added": [], "removed": [], "updated": []}
+            new_entries = _build_entries(
+                routes,
+                requirements=requirements or {},
+                route_version_meta=route_version_meta or {},
+            )
+            diff = _diff_routes(self._signatures, new_entries)
+            self._routes = new_entries
+            self._signatures = {entry.name: _signature(entry) for entry in new_entries}
+            self._revision = revision
+            return diff
 
     def match(self, method: str, path: str, *, requested_version: str | None = None) -> RouteMatch | None:
-        if not self._routes:
-            return None
-        normalized = _normalize_path(path)
-        candidates: list[RouteMatch] = []
-        for entry in self._routes:
-            if entry.method != method:
-                continue
-            match = _match_entry(entry, normalized)
-            if match is not None:
-                candidates.append(match)
-        if not candidates:
-            return None
-        selected = _select_match(candidates, requested_version=requested_version)
-        return selected
+        with self._lock:
+            if not self._routes:
+                return None
+            normalized = _normalize_path(path)
+            candidates: list[RouteMatch] = []
+            for entry in self._routes:
+                if entry.method != method:
+                    continue
+                match = _match_entry(entry, normalized)
+                if match is not None:
+                    candidates.append(match)
+            if not candidates:
+                return None
+            selected = _select_match(candidates, requested_version=requested_version)
+            return selected
 
     def removed_version(self, method: str, path: str, requested_version: str) -> RouteEntry | None:
-        if not self._routes:
+        with self._lock:
+            if not self._routes:
+                return None
+            normalized = _normalize_path(path)
+            for entry in self._routes:
+                if entry.method != method:
+                    continue
+                if entry.status != "removed":
+                    continue
+                if (entry.version or "") != requested_version:
+                    continue
+                if _match_entry(entry, normalized) is not None:
+                    return entry
             return None
-        normalized = _normalize_path(path)
-        for entry in self._routes:
-            if entry.method != method:
-                continue
-            if entry.status != "removed":
-                continue
-            if (entry.version or "") != requested_version:
-                continue
-            if _match_entry(entry, normalized) is not None:
-                return entry
-        return None
 
     @property
     def routes(self) -> list[RouteEntry]:
-        return list(self._routes)
+        with self._lock:
+            return list(self._routes)
 
 
 def _build_entries(
@@ -267,8 +274,8 @@ def _select_match(candidates: list[RouteMatch], *, requested_version: str | None
     return sorted(live, key=lambda item: _route_sort_key(item.entry))[-1]
 
 
-def _route_sort_key(entry: RouteEntry) -> tuple[str, str, str]:
-    return (entry.entity_name, entry.version or "", entry.name)
+def _route_sort_key(entry: RouteEntry) -> tuple:
+    return (entry.entity_name, version_sort_key(entry.version), entry.name)
 
 
 def _optional_text(value: object) -> str | None:

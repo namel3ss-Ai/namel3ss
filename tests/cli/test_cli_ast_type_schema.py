@@ -51,6 +51,7 @@ def test_cli_ast_type_schema_commands(tmp_path: Path, capsys, monkeypatch) -> No
     ast_payload = json.loads(capsys.readouterr().out)
     assert ast_payload["ok"] is True
     assert ast_payload["schema"] == "cir.v1"
+    assert ast_payload["representation_schema"] == "program_representation.v1"
 
     assert cli_main(["type", "check", "--json"]) == 0
     type_payload = json.loads(capsys.readouterr().out)

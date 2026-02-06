@@ -12,6 +12,7 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.errors.render import format_error
 from namel3ss.mlops import get_mlops_client
 from namel3ss.quality import run_quality_checks
+from namel3ss.runtime.capabilities.feature_gate import require_app_capability
 
 
 @dataclass(frozen=True)
@@ -36,6 +37,7 @@ def run_mlops_command(args: list[str]) -> int:
             return 0
 
         app_path = resolve_app_path(params.app_arg)
+        require_app_capability(app_path, "versioning_quality_mlops")
         source = app_path.read_text(encoding="utf-8")
 
         if params.subcommand == "register-model":

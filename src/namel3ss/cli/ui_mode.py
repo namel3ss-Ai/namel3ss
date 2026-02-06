@@ -7,6 +7,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.storage.factory import resolve_store
 from namel3ss.runtime.ui.actions import handle_action
 from namel3ss.ui.export.contract import build_contract_manifest, build_ui_contract_payload
+from namel3ss.ui.export.static_bundle import write_static_ui_bundle
 from namel3ss.ui.export.writer import write_ui_exports
 
 
@@ -32,6 +33,13 @@ def export_ui_contract(program_ir) -> dict:
         actions=payload["actions"],
         schema=payload["schema"],
     )
+
+
+def bundle_ui_contract(program_ir, *, output_dir: str | None = None) -> dict:
+    payload = build_ui_contract_payload(program_ir)
+    project_root = _resolve_project_root(program_ir)
+    destination = Path(output_dir).resolve() if output_dir else project_root / ".namel3ss" / "ui_bundle"
+    return write_static_ui_bundle(destination, contract_payload=payload, revision="")
 
 
 def _resolve_project_root(program_ir) -> Path:

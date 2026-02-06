@@ -4,6 +4,7 @@ import threading
 from http.server import HTTPServer
 from pathlib import Path
 
+from namel3ss.runtime.server.concurrency import create_runtime_http_server, load_concurrency_config
 from namel3ss.runtime.server.dev.routes import BrowserRequestHandler
 from namel3ss.runtime.server.dev.state import BrowserAppState
 from namel3ss.runtime.router.refresh import refresh_routes
@@ -23,6 +24,7 @@ class BrowserRunner:
         debug: bool = False,
         watch_sources: bool = True,
         engine_target: str = "local",
+        headless: bool = False,
     ) -> None:
         if mode not in {"dev", "preview", "run"}:
             raise ValueError(f"Unknown browser mode: {mode}")
@@ -33,6 +35,8 @@ class BrowserRunner:
         self._thread: threading.Thread | None = None
         self.server: HTTPServer | None = None
         self.watch_sources = watch_sources
+        self.headless = headless
+        self.concurrency = load_concurrency_config(app_path=self.app_path)
         self.app_state = BrowserAppState(
             self.app_path,
             mode=mode,
@@ -44,10 +48,12 @@ class BrowserRunner:
     def bind(self) -> None:
         if self.server:
             return
-        server = _bind_http_server(self.port, BrowserRequestHandler)
+        server = _bind_http_server(self.port, BrowserRequestHandler, config=self.concurrency)
         self.port = int(server.server_address[1])
         server.browser_mode = self.mode  # type: ignore[attr-defined]
         server.app_state = self.app_state  # type: ignore[attr-defined]
+        server.concurrency = self.concurrency.to_dict()  # type: ignore[attr-defined]
+        server.headless = self.headless  # type: ignore[attr-defined]
         self.app_state._refresh_if_needed()
         registry = RouteRegistry()
         if self.app_state.program is not None:
@@ -82,13 +88,13 @@ class BrowserRunner:
         return self.port
 
 
-def _bind_http_server(port: int, handler) -> HTTPServer:
+def _bind_http_server(port: int, handler, *, config) -> HTTPServer:
     base = port or DEFAULT_BROWSER_PORT
     last_error: Exception | None = None
     for offset in range(0, 20):
         candidate = base + offset
         try:
-            return HTTPServer(("127.0.0.1", candidate), handler)
+            return create_runtime_http_server("127.0.0.1", candidate, handler, config=config)
         except OSError as err:  # pragma: no cover - bind guard
             last_error = err
             continue

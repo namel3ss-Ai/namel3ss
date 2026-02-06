@@ -11,6 +11,8 @@ from namel3ss.studio.session import SessionState
 
 SOURCE = (
     'spec is "1.0"\n\n'
+    "capabilities:\n"
+    "  versioning_quality_mlops\n\n"
     'flow "ask_ai":\n'
     '  return "ok"\n\n'
     'page "home":\n'

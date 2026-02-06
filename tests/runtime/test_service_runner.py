@@ -1,6 +1,7 @@
 import json
 import socket
 import time
+import urllib.error
 import urllib.request
 
 from namel3ss.runtime.service_runner import ServiceRunner
@@ -126,5 +127,42 @@ def test_service_runner_mixed_ui_static_and_action(tmp_path):
         )
         assert response.get("ok") is True
         assert response.get("result") == "hi"
+    finally:
+        runner.shutdown()
+
+
+def test_service_runner_api_first_aliases(tmp_path):
+    app = tmp_path / "app.ai"
+    app.write_text(
+        'spec is "1.0"\n\n'
+        'flow "demo":\n'
+        "  return \"ok\"\n\n"
+        'page "home":\n'
+        '  button "Run":\n'
+        '    calls flow "demo"\n',
+        encoding="utf-8",
+    )
+    runner = ServiceRunner(app, "service", build_id=None, port=_free_port(), headless=True)
+    try:
+        runner.start(background=True)
+        port = runner.bound_port
+        _wait_for_health(port)
+        manifest = _fetch_json(f"http://127.0.0.1:{port}/api/ui/manifest")
+        assert manifest.get("schema_version") == "1"
+        actions = _fetch_json(f"http://127.0.0.1:{port}/api/ui/actions")
+        assert actions.get("schema_version") == "1"
+        state = _fetch_json(f"http://127.0.0.1:{port}/api/ui/state")
+        assert state.get("ok") is True
+        assert state.get("api_version") == "1"
+        result = _post_json(
+            f"http://127.0.0.1:{port}/api/ui/action",
+            {"id": "page.home.button.run", "payload": {}},
+        )
+        assert result.get("ok") is True
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/") as resp:  # noqa: S310
+            resp.read()
+        raise AssertionError("headless service mode should not serve static root")
+    except urllib.error.HTTPError as err:
+        assert err.code == 404
     finally:
         runner.shutdown()

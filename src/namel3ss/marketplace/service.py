@@ -8,7 +8,6 @@ from tempfile import TemporaryDirectory
 import zipfile
 
 from namel3ss.errors.base import Namel3ssError
-from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.governance.policy import check_policies_for_source
 from namel3ss.lint.engine import lint_source
 from namel3ss.marketplace.capabilities import record_installed_item
@@ -26,6 +25,18 @@ from namel3ss.marketplace.index_store import (
     write_ratings,
 )
 from namel3ss.marketplace.manifest import MANIFEST_FILE, MarketplaceItemManifest, load_manifest, validate_manifest_files
+from namel3ss.marketplace.service_messages import (
+    invalid_bundle_message as _invalid_bundle_message,
+    invalid_rating_message as _invalid_rating_message,
+    lint_failed_message as _lint_failed_message,
+    missing_bundle_message as _missing_bundle_message,
+    missing_comment_message as _missing_comment_message,
+    missing_files_message as _missing_files_message,
+    missing_item_message as _missing_item_message,
+    non_deterministic_bundle_message as _non_deterministic_bundle_message,
+    quality_failed_message as _quality_failed_message,
+    registry_root_message as _registry_root_message,
+)
 from namel3ss.runtime.persistence_paths import resolve_persistence_root, resolve_project_root
 from namel3ss.utils.simple_yaml import render_yaml
 
@@ -240,6 +251,34 @@ def rate_item(
     return {"ok": True, "name": name, "version": version, "rating": rating}
 
 
+def comment_item(
+    *,
+    project_root: str | Path | None,
+    app_path: str | Path | None,
+    name: str,
+    version: str,
+    comment: str,
+    registry_override: str | None = None,
+) -> dict[str, object]:
+    text = comment.strip()
+    if not text:
+        raise Namel3ssError(_missing_comment_message())
+    registry_root = marketplace_registry_root(project_root, app_path, override=registry_override)
+    entries = load_index_entries(registry_root)
+    if not any(same_item(entry, name, version) for entry in entries):
+        raise Namel3ssError(_missing_item_message(name, version))
+    ratings = load_ratings(registry_root)
+    ratings.append(
+        {
+            "name": name,
+            "version": version,
+            "rating": 0,
+            "comment": text,
+        }
+    )
+    write_ratings(registry_root, ratings)
+    return {"ok": True, "name": name, "version": version, "comment": text}
+
 
 def item_comments(
     *,
@@ -397,99 +436,12 @@ def _inside(root: Path, target: Path) -> bool:
 
 
 
-def _registry_root_message() -> str:
-    return build_guidance_message(
-        what="Marketplace registry path could not be resolved.",
-        why="The project root is missing.",
-        fix="Run the command from a project with app.ai.",
-        example="n3 marketplace search flow",
-    )
-
-
-
-def _missing_files_message(missing: list[str]) -> str:
-    return build_guidance_message(
-        what="Marketplace manifest references missing files.",
-        why=", ".join(missing),
-        fix="Update manifest/capability files list or add the missing files.",
-        example="files:\n  - app.ai",
-    )
-
-
-
-def _lint_failed_message(path: str, detail: str) -> str:
-    return build_guidance_message(
-        what="Marketplace item lint failed.",
-        why=f"{path}: {detail}",
-        fix="Fix lint errors before publishing.",
-        example="n3 lint app.ai",
-    )
-
-
-
-def _quality_failed_message(path: str, detail: str) -> str:
-    return build_guidance_message(
-        what="Marketplace item quality gate failed.",
-        why=f"{path}: {detail}",
-        fix="Fix quality issues before publishing.",
-        example="n3 quality check app.ai",
-    )
-
-
-def _non_deterministic_bundle_message() -> str:
-    return build_guidance_message(
-        what="Marketplace packaging is not deterministic.",
-        why="The package bytes changed between two consecutive builds.",
-        fix="Remove dynamic fields such as timestamps from package inputs.",
-        example="n3 marketplace publish ./item",
-    )
-
-
-
-def _missing_item_message(name: str, version: str) -> str:
-    return build_guidance_message(
-        what=f'Marketplace item "{name}" was not found.',
-        why=f"Version {version} is not in the registry index.",
-        fix="Search available items and verify the version.",
-        example=f"n3 marketplace search {name}",
-    )
-
-
-
-def _missing_bundle_message(path: Path) -> str:
-    return build_guidance_message(
-        what="Marketplace bundle is missing.",
-        why=f"Expected {path.as_posix()} to exist.",
-        fix="Republish the item.",
-        example="n3 marketplace publish ./item",
-    )
-
-
-
-def _invalid_bundle_message(path: Path) -> str:
-    return build_guidance_message(
-        what="Marketplace bundle is invalid.",
-        why=f"{path.as_posix()} is missing required files.",
-        fix="Republish the item and retry installation.",
-        example="n3 marketplace install demo.item",
-    )
-
-
-
-def _invalid_rating_message() -> str:
-    return build_guidance_message(
-        what="Marketplace rating is invalid.",
-        why="Rating must be an integer from 1 to 5.",
-        fix="Use a value in that range.",
-        example="n3 marketplace rate demo.item 0.1.0 5",
-    )
-
-
 __all__ = [
     "BUNDLES_DIR",
     "INDEX_FILE",
     "RATINGS_FILE",
     "approve_item",
+    "comment_item",
     "install_item",
     "item_comments",
     "marketplace_registry_root",

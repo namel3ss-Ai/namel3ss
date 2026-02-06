@@ -79,3 +79,18 @@ def test_remove_last_active_requires_replacement(tmp_path: Path) -> None:
     config = add_version(config, kind="flow", entity_name="summarise", version="1.0")
     with pytest.raises(Namel3ssError):
         remove_version(config, kind="flow", entity_name="summarise", version="1.0")
+
+
+def test_semver_precedence_is_used_for_latest_resolution() -> None:
+    config = VersionConfig(routes={}, flows={}, models={})
+    config = add_version(config, kind="route", entity_name="users", version="1.9.0")
+    config = add_version(config, kind="route", entity_name="users", version="1.10.0")
+    config = add_version(config, kind="route", entity_name="users", version="2.0.0-rc.1")
+    config = add_version(config, kind="route", entity_name="users", version="2.0.0")
+
+    latest = resolve_target_version(config, kind="route", target_name="users", requested_version=None)
+    assert latest is not None
+    assert latest.entry.version == "2.0.0"
+
+    rows = list_versions(config, kind="routes")
+    assert [row["version"] for row in rows] == ["1.9.0", "1.10.0", "2.0.0-rc.1", "2.0.0"]
