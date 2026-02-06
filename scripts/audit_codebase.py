@@ -32,6 +32,7 @@ CODE_EXTENSIONS = {
     ".txt",
 }
 SKIP_DIRECTORIES = {
+    ".namel3ss",
     ".git",
     ".mypy_cache",
     ".pytest_cache",
