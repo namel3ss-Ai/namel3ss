@@ -78,7 +78,7 @@ def _normalize_target(value: object) -> str:
         build_guidance_message(
             what=f"Unknown compilation target '{text or '<empty>'}'.",
             why=f"Supported targets are: {joined}.",
-            fix="Set each flow target to c, rust, or wasm.",
+            fix=f"Set each flow target to one of: {joined}.",
             example="flows:\n  add: rust",
         )
     )

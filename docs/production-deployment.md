@@ -843,9 +843,44 @@ N3_LOG_LEVEL=DEBUG n3 app.ai studio
 ## Additional Resources
 
 - [Security Best Practices](../SECURITY.md)
-- [Performance Tuning Guide](performance-tuning.md) (to be created)
-- [Monitoring Guide](monitoring-observability.md) (to be created)
-- [Disaster Recovery Procedures](disaster-recovery.md) (to be created)
+- [Quick Deployment Guide](quick-deployment-guide.md)
+- [Production Readiness Roadmap](production-readiness-roadmap.md)
+- [Grammar and Type Modernisation](grammar-types-modernisation.md)
+
+### Operational Commands
+
+Use these deterministic commands during production operations:
+
+```bash
+# Check cluster status and scale based on current load
+n3 cluster status --json
+n3 cluster scale 85 --json
+
+# Perform rolling deployment to a new runtime version
+n3 cluster deploy 1.2.0 --json
+
+# Validate security/compliance config and run retention purge
+n3 security check --json
+n3 security purge --json
+
+# Inspect federation contracts and usage before cross-tenant rollouts
+n3 federation list --json
+```
+
+### Incident Response Quick Runbook
+
+1. Confirm health and error rate:
+   - Query `/health`, `/api/metrics`, and `/api/traces`.
+2. Contain impact:
+   - Scale down noisy traffic paths with `n3 cluster scale`.
+   - Disable unsafe cross-tenant calls by removing the federation contract.
+3. Recover:
+   - Deploy last known good build with `n3 cluster deploy <version>`.
+   - Restore database snapshot if required.
+4. Verify and close:
+   - Re-run smoke tests.
+   - Confirm audit and retention jobs completed.
+   - Log the incident in the operations tracker.
 
 ---
 

@@ -112,6 +112,9 @@ route "upload_document":
 - Feedback list: `n3 feedback list --json`
 - Retrain scheduler: `n3 retrain schedule --json`
 - Canary config: `n3 model canary base candidate 0.1 --shadow --json`
+- Federation contracts: `n3 federation add-contract acme beta get_customer_info --input customer_id:number --output info:text --token token --rate 60 --json`
+- Cluster controls: `n3 cluster status --json`, `n3 cluster scale 85 --json`, and `n3 cluster deploy 1.2.0 --json`
+- Security retention purge: `n3 security purge --json`
 - Marketplace search/install: `n3 marketplace search demo --json` and `n3 marketplace install demo.flow --version 0.1.0 --json`
 - Tutorials: `n3 tutorial list --json` and `n3 tutorial run basics --auto --json`
 - Test scaffold: `n3 scaffold test hello --json`

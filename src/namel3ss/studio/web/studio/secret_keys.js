@@ -11,6 +11,16 @@
       aliases: ["GOOGLE_API_KEY"],
     },
     mistral: { canonical: "NAMEL3SS_MISTRAL_API_KEY", alias: "MISTRAL_API_KEY" },
+    huggingface: {
+      canonical: "NAMEL3SS_HUGGINGFACE_API_KEY",
+      alias: "HUGGINGFACE_API_KEY",
+      aliases: ["HUGGINGFACEHUB_API_TOKEN"],
+    },
+    speech: { canonical: "NAMEL3SS_SPEECH_API_KEY", alias: "SPEECH_API_KEY" },
+    third_party_apis: {
+      canonical: "NAMEL3SS_THIRD_PARTY_APIS_KEY",
+      alias: "THIRD_PARTY_APIS_KEY",
+    },
   };
 
   function normalizeProvider(value) {

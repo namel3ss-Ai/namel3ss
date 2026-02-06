@@ -14,6 +14,7 @@ from namel3ss.cli.build_mode import run_build_command
 from namel3ss.cli.dataset_mode import run_dataset_command
 from namel3ss.cli.constants import ROOT_APP_COMMANDS
 from namel3ss.cli.deps_mode import run_deps
+from namel3ss.cli.dependency_management_mode import run_dependency_root
 from namel3ss.cli.discover_mode import run_discover
 from namel3ss.cli.doctor import run_doctor
 from namel3ss.cli.editor_mode import run_editor_command
@@ -40,6 +41,7 @@ from namel3ss.cli.observe_mode import run_observe_command
 from namel3ss.cli.formats_mode import run_formats_command
 from namel3ss.cli.plugin_mode import run_plugin_command
 from namel3ss.cli.package_mode import run_package_command
+from namel3ss.cli.playground_mode import run_playground_command
 from namel3ss.cli.prompts_mode import run_prompts_command
 from namel3ss.cli.retrain_mode import run_retrain_command
 from namel3ss.cli.quality_mode import run_quality_command
@@ -53,6 +55,7 @@ from namel3ss.cli.sdk_mode import run_sdk_command
 from namel3ss.cli.promote_mode import run_promote_command
 from namel3ss.cli.proof_mode import run_proof_command
 from namel3ss.cli.readability_mode import run_readability_command
+from namel3ss.cli.replay_mode import run_replay_command
 from namel3ss.cli.registry_mode import run_registry
 from namel3ss.cli.reserved_mode import run_reserved_command
 from namel3ss.cli.secret_mode import run_secret_command
@@ -67,6 +70,7 @@ from namel3ss.cli.tutorial_mode import run_tutorial_command
 from namel3ss.cli.schema_mode import run_schema_command
 from namel3ss.cli.model_mode import run_model_command
 from namel3ss.cli.models_mode import run_models_command
+from namel3ss.cli.security_mode import run_security_command
 from namel3ss.cli.tenant_mode import run_tenant_command
 from namel3ss.cli.federation_mode import run_federation_command
 from namel3ss.cli.cluster_mode import run_cluster_command
@@ -82,6 +86,7 @@ from namel3ss.cli.see_mode import run_see_command
 from namel3ss.cli.scaffold_tool_mode import run_scaffold_command
 from namel3ss.cli.status_mode import run_status_command
 from namel3ss.cli.test_mode import run_test_command
+from namel3ss.cli.train_mode import run_train_command
 from namel3ss.cli.text_output import prepare_cli_text, prepare_first_run_text
 from namel3ss.cli.template_shortcuts import (
     TEMPLATE_LIST_COMMAND,
@@ -122,9 +127,6 @@ PACK_SUBCOMMANDS = {
 def main(argv: list[str] | None = None) -> int:
     args = sys.argv[1:] if argv is None else list(argv)
     first_run_args = list(args)
-    if "--old-parser" in args:
-        os.environ["N3_OLD_PARSER"] = "1"
-        args = [arg for arg in args if arg != "--old-parser"]
     if "--first-run" in args:
         os.environ["N3_FIRST_RUN"] = "1"
         args = [arg for arg in args if arg != "--first-run"]
@@ -185,6 +187,8 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if cmd == "run":
             return run_run_command(args[1:])
+        if cmd in {"install", "update", "tree"}:
+            return run_dependency_root(cmd, args[1:])
         if cmd == "dev":
             return run_dev_command(args[1:])
         if cmd == "preview":
@@ -221,6 +225,8 @@ def main(argv: list[str] | None = None) -> int:
             return run_observe_command(args[1:])
         if cmd == "trace":
             return run_trace_command(args[1:])
+        if cmd == "replay":
+            return run_replay_command(args[1:])
         if cmd == "debug":
             return run_debug_command(args[1:])
         if cmd == "observability":
@@ -249,6 +255,8 @@ def main(argv: list[str] | None = None) -> int:
             return run_auth_command(args[1:])
         if cmd == "secret":
             return run_secret_command(args[1:])
+        if cmd == "security":
+            return run_security_command(args[1:])
         if cmd == "policy":
             return run_policy_command(args[1:])
         if cmd == "prompts":
@@ -257,6 +265,8 @@ def main(argv: list[str] | None = None) -> int:
             return run_feedback_command(args[1:])
         if cmd == "dataset":
             return run_dataset_command(args[1:])
+        if cmd == "train":
+            return run_train_command(args[1:])
         if cmd == "retrain":
             return run_retrain_command(args[1:])
         if cmd == "model":
@@ -279,6 +289,8 @@ def main(argv: list[str] | None = None) -> int:
             return run_mlops_command(args[1:])
         if cmd == "tutorial":
             return run_tutorial_command(args[1:])
+        if cmd == "playground":
+            return run_playground_command(args[1:])
         if cmd == "scaffold":
             return run_scaffold_command(args[1:])
         if cmd == "package":

@@ -1,0 +1,10 @@
+{
+  "name": "third_party_apis",
+  "capability_token": "third_party_apis",
+  "supported_modes": ["image", "audio"],
+  "models": [
+    "third_party_apis:aws-rekognition-labels",
+    "third_party_apis:google-vision-labels",
+    "third_party_apis:twilio-speech-to-text"
+  ]
+}

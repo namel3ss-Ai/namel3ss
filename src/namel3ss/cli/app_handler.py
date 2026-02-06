@@ -24,7 +24,7 @@ from namel3ss.cli.secrets_mode import run_secrets_command
 from namel3ss.cli.console_mode import run_console
 from namel3ss.cli.studio_mode import run_studio
 from namel3ss.cli.browser_mode import run_dev_command, run_preview_command
-from namel3ss.cli.ui_mode import export_ui_contract, render_manifest, run_action
+from namel3ss.cli.ui_mode import bundle_ui_contract, export_ui_contract, render_manifest, run_action
 from namel3ss.cli.run_mode import run_run_command
 from namel3ss.cli.type_mode import run_type_command
 from namel3ss.cli.ui_output import print_payload, print_usage
@@ -179,6 +179,21 @@ def handle_app_commands(path: str | None, remainder: list[str], context: dict | 
     if cmd == "ui":
         if tail and tail[0] == "export":
             result = export_ui_contract(program_ir)
+            print(dumps_pretty(result))
+            return 0
+        if tail and tail[0] == "bundle":
+            output_dir = None
+            i = 1
+            while i < len(tail):
+                token = tail[i]
+                if token == "--out":
+                    if i + 1 >= len(tail):
+                        raise Namel3ssError("ui bundle requires a value after --out")
+                    output_dir = tail[i + 1]
+                    i += 2
+                    continue
+                raise Namel3ssError(f"Unknown flag for ui bundle: {token}")
+            result = bundle_ui_contract(program_ir, output_dir=output_dir)
             print(dumps_pretty(result))
             return 0
         manifest = render_manifest(program_ir)

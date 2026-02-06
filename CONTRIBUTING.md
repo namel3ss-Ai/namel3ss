@@ -90,6 +90,12 @@ Enforce line limit:
 python3 tools/line_limit_check.py
 ```
 
+Validate audit and baseline reports:
+```bash
+python3 scripts/audit_codebase.py --check
+python3 scripts/measure_baseline.py --check --timing deterministic
+```
+
 Formatting and linting for `.ai`:
 ```bash
 n3 <your_app.ai> format

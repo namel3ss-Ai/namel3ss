@@ -5,11 +5,14 @@ from typing import Dict, List
 from namel3ss.config.model import AppConfig
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
-from namel3ss.ir import nodes as ir
+from namel3ss.runtime.safe_expression import (
+    UnsupportedSafeExpressionError,
+    evaluate_safe_expression,
+)
 from namel3ss.runtime.validators.constraints import collect_validation_errors
 from namel3ss.schema.identity import IdentitySchema
 from namel3ss.schema.records import FieldSchema, RecordSchema
-from namel3ss.utils.numbers import is_number, to_decimal
+from namel3ss.utils.numbers import is_number
 from namel3ss.validation import ValidationMode, add_warning
 
 
@@ -98,25 +101,18 @@ def _type_errors(fields: List[FieldSchema], identity: dict, name: str) -> List[D
     return errors
 
 
-def _literal_eval(expr: ir.Expression | None) -> object:
-    if expr is None:
-        return None
-    if isinstance(expr, ir.Literal):
-        return expr.value
-    if isinstance(expr, ir.UnaryOp) and expr.op in {"+", "-"}:
-        if isinstance(expr.operand, ir.Literal):
-            value = expr.operand.value
-            if is_number(value):
-                numeric = to_decimal(value)
-                return numeric if expr.op == "+" else -numeric
-    raise Namel3ssError(
-        build_guidance_message(
-            what="Identity constraint requires a literal value.",
-            why="Only literal expressions are supported in identity constraints for now.",
-            fix="Replace the expression with a literal value.",
-            example='field "trust" is number must be greater than 1',
-        )
-    )
+def _literal_eval(expr) -> object:
+    try:
+        return evaluate_safe_expression(expr)
+    except UnsupportedSafeExpressionError as err:
+        raise Namel3ssError(
+            build_guidance_message(
+                what="Identity constraint requires a literal value.",
+                why=str(err),
+                fix="Replace the expression with a literal value.",
+                example='field "trust" is number must be greater than 1',
+            )
+        ) from err
 
 
 def _identity_type_message(field: str, expected: str) -> str:

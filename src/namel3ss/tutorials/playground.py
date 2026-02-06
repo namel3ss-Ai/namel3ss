@@ -8,6 +8,9 @@ from namel3ss.module_loader import load_project
 from namel3ss.purity import is_pure
 from namel3ss.runtime.run_pipeline import build_flow_payload
 
+DEFAULT_PLAYGROUND_TIMEOUT_SECONDS = 5.0
+MAX_PLAYGROUND_TIMEOUT_SECONDS = 30.0
+
 
 def check_snippet(source: str) -> dict[str, object]:
     normalized = _normalize_source(source)
@@ -28,7 +31,7 @@ def run_snippet(
     *,
     flow_name: str | None = None,
     input_payload: dict | None = None,
-    timeout_seconds: float = 1.5,
+    timeout_seconds: float = DEFAULT_PLAYGROUND_TIMEOUT_SECONDS,
 ) -> dict[str, object]:
     context = multiprocessing.get_context("spawn")
     queue = context.Queue()
@@ -110,4 +113,9 @@ def _normalize_source(source: str) -> str:
     return merged if merged.endswith("\n") else merged + "\n"
 
 
-__all__ = ["check_snippet", "run_snippet"]
+__all__ = [
+    "DEFAULT_PLAYGROUND_TIMEOUT_SECONDS",
+    "MAX_PLAYGROUND_TIMEOUT_SECONDS",
+    "check_snippet",
+    "run_snippet",
+]

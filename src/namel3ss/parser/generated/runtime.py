@@ -9,16 +9,16 @@ from namel3ss.parser.generated.grammar_snapshot import GRAMMAR_PATH, GRAMMAR_SHA
 def parse_with_generated_parser(
     source: str,
     *,
-    legacy_parse: Callable[..., ast.Program],
+    parse_impl: Callable[..., ast.Program],
     allow_legacy_type_aliases: bool = True,
     allow_capsule: bool = False,
     require_spec: bool = True,
     lower_sugar: bool = True,
 ) -> ast.Program:
-    # Transitional backend: grammar snapshot is authoritative, and parsing
-    # still delegates to the legacy parser implementation while migration lands.
+    # Grammar snapshot metadata is loaded so parser inputs stay tied to the
+    # committed grammar contract.
     _ = (GRAMMAR_PATH, GRAMMAR_SHA256, RULE_NAMES)
-    return legacy_parse(
+    return parse_impl(
         source,
         allow_legacy_type_aliases=allow_legacy_type_aliases,
         allow_capsule=allow_capsule,

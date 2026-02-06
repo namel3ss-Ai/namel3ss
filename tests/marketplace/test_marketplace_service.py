@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from namel3ss.marketplace import approve_item, install_item, item_comments, publish_item, rate_item, search_items
+from namel3ss.marketplace import approve_item, comment_item, install_item, item_comments, publish_item, rate_item, search_items
 from namel3ss.utils.simple_yaml import parse_yaml
 
 
@@ -61,9 +61,10 @@ def test_marketplace_publish_search_install_and_rate(tmp_path: Path) -> None:
     assert entries[0]["name"] == "demo.flow"
 
     rate_item(project_root=app.parent, app_path=app, name="demo.flow", version="0.1.0", rating=5, comment="useful")
+    comment_item(project_root=app.parent, app_path=app, name="demo.flow", version="0.1.0", comment="text only")
     comments = item_comments(project_root=app.parent, app_path=app, name="demo.flow", version="0.1.0")
     assert comments
-    assert comments[0]["rating"] == 5
+    assert comments[-1]["rating"] == 5
 
 
 def test_marketplace_supports_capability_yaml_manifest(tmp_path: Path) -> None:

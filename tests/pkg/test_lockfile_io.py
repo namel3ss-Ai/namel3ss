@@ -1,7 +1,8 @@
+import json
 from pathlib import Path
 
-from namel3ss.pkg.lockfile import lockfile_to_dict, write_lockfile
-from namel3ss.pkg.types import ChecksumEntry, DependencySpec, Lockfile, LockedPackage, SourceSpec
+from namel3ss.pkg.lockfile import UNIFIED_LOCKFILE_FILENAME, lockfile_to_dict, read_lockfile, write_lockfile
+from namel3ss.pkg.types import ChecksumEntry, DependencySpec, Lockfile, LockedPackage, RuntimeLockEntry, SourceSpec
 
 
 def test_lockfile_orders_roots_and_packages(tmp_path: Path) -> None:
@@ -61,3 +62,51 @@ def test_lockfile_write_is_stable(tmp_path: Path) -> None:
     path = write_lockfile(tmp_path, lockfile)
     second = path.read_text(encoding="utf-8")
     assert first == second
+
+
+def test_lockfile_runtime_section_is_serialized(tmp_path: Path) -> None:
+    source = SourceSpec(scheme="github", owner="owner", repo="demo", ref="v0.1.0")
+    lockfile = Lockfile(
+        lockfile_version=1,
+        roots=[DependencySpec(name="demo", source=source)],
+        packages=[],
+        python_packages=[
+            RuntimeLockEntry(
+                name="requests",
+                version="2.31.0",
+                checksum="a" * 64,
+                source="pypi",
+                dependencies={},
+                trust_tier="community",
+            )
+        ],
+        system_packages=[
+            RuntimeLockEntry(
+                name="postgresql-client",
+                version="13",
+                checksum="b" * 64,
+                source="system",
+                dependencies={},
+                trust_tier="informational",
+            )
+        ],
+    )
+    payload = lockfile_to_dict(lockfile)
+    assert "runtime" in payload
+    assert payload["runtime"]["python"][0]["name"] == "requests"
+    assert payload["runtime"]["system"][0]["name"] == "postgresql-client"
+
+    path = write_lockfile(tmp_path, lockfile)
+    assert path.name == "namel3ss.lock.json"
+    assert (tmp_path / UNIFIED_LOCKFILE_FILENAME).exists()
+
+
+def test_read_lockfile_prefers_unified_filename(tmp_path: Path) -> None:
+    payload = {
+        "lockfile_version": 1,
+        "roots": [],
+        "packages": [],
+    }
+    (tmp_path / UNIFIED_LOCKFILE_FILENAME).write_text(json.dumps(payload), encoding="utf-8")
+    lockfile = read_lockfile(tmp_path)
+    assert lockfile.lockfile_version == 1

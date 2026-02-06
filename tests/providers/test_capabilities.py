@@ -14,11 +14,14 @@ def test_known_provider_capabilities():
     assert openai.supports_system_prompt is True
     assert openai.supports_tools is True
     assert openai.supports_json_mode is False
-    assert openai.supports_streaming is False
+    assert openai.supports_streaming is True
+    assert isinstance(openai.supports_audio, bool)
 
     mock_cap = get_provider_capabilities("mock")
     assert mock_cap.supports_tools is True
     assert mock_cap.supports_system_prompt is True
+    assert mock_cap.supports_audio is True
+    assert mock_cap.supports_streaming is True
 
 
 def test_unknown_provider_is_rejected():
@@ -27,5 +30,17 @@ def test_unknown_provider_is_rejected():
 
 
 def test_registry_names_are_stable():
-    expected = {"mock", "ollama", "openai", "anthropic", "gemini", "mistral"}
+    expected = {
+        "mock",
+        "ollama",
+        "openai",
+        "anthropic",
+        "gemini",
+        "mistral",
+        "huggingface",
+        "local_runner",
+        "vision_gen",
+        "speech",
+        "third_party_apis",
+    }
     assert set(list_known_providers()) == expected

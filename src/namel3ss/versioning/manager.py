@@ -6,6 +6,7 @@ from pathlib import Path
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.persistence_paths import resolve_project_root
 from namel3ss.utils.simple_yaml import parse_yaml, render_yaml
+from namel3ss.versioning.semver import version_sort_key
 from namel3ss.versioning.messages import (
     duplicate_version_message,
     invalid_entity_message,
@@ -164,7 +165,13 @@ def list_versions(config: VersionConfig, *, kind: str | None = None) -> list[dic
                         "deprecation_date": entry.deprecation_date,
                     }
                 )
-    rows.sort(key=lambda row: (str(row["kind"]), str(row["entity"]), str(row["version"])))
+    rows.sort(
+        key=lambda row: (
+            str(row["kind"]),
+            str(row["entity"]),
+            version_sort_key(str(row["version"])),
+        )
+    )
     return rows
 
 
@@ -330,7 +337,7 @@ def resolve_target_version(
 
     eligible = [(entity_name, entry) for entity_name, entry in matches if entry.status != "removed"]
     if not eligible:
-        entity_name, entry = sorted(matches, key=lambda item: item[1].version)[-1]
+        entity_name, entry = sorted(matches, key=lambda item: version_sort_key(item[1].version))[-1]
         return ResolvedVersion(
             kind=normalized_kind,
             entity_name=entity_name,
@@ -339,7 +346,7 @@ def resolve_target_version(
             requested_removed=entry.status == "removed",
         )
 
-    entity_name, entry = sorted(eligible, key=lambda item: item[1].version)[-1]
+    entity_name, entry = sorted(eligible, key=lambda item: version_sort_key(item[1].version))[-1]
     return ResolvedVersion(
         kind=normalized_kind,
         entity_name=entity_name,
@@ -401,7 +408,7 @@ def _parse_section(payload: object, *, path: Path, kind: str) -> dict[str, Versi
 
 
 def _sort_versions(values: list[VersionEntry]) -> tuple[VersionEntry, ...]:
-    return tuple(sorted(values, key=lambda item: item.version))
+    return tuple(sorted(values, key=lambda item: version_sort_key(item.version)))
 
 
 def _copy_section(section: dict[str, VersionSpec]) -> dict[str, VersionSpec]:

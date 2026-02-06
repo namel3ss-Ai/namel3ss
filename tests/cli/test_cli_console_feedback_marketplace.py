@@ -94,3 +94,12 @@ def test_cli_model_canary_and_marketplace(tmp_path: Path, capsys, monkeypatch) -
     assert cli_main(["marketplace", "search", "demo.flow", "--json"]) == 0
     search_payload = json.loads(capsys.readouterr().out)
     assert search_payload["count"] == 1
+
+    assert cli_main(["marketplace", "comment", "demo.flow", "0.1.0", "--comment", "useful", "--json"]) == 0
+    comment_payload = json.loads(capsys.readouterr().out)
+    assert comment_payload["ok"] is True
+    assert comment_payload["comment"] == "useful"
+
+    assert cli_main(["marketplace", "comments", "demo.flow", "0.1.0", "--json"]) == 0
+    comments_payload = json.loads(capsys.readouterr().out)
+    assert comments_payload["count"] == 1

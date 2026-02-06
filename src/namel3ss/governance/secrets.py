@@ -142,6 +142,27 @@ def get_secret(
 
 
 
+def remove_secret(
+    *,
+    project_root: str | Path | None,
+    app_path: str | Path | None,
+    name: str,
+) -> tuple[Path, dict[str, object]]:
+    normalized = normalize_secret_name(name)
+    if not normalized:
+        raise Namel3ssError(_invalid_name_message())
+    path = vault_path(project_root, app_path)
+    if path is None:
+        raise Namel3ssError("Secrets vault path could not be resolved.")
+    entries = load_vault(project_root, app_path).by_name()
+    entry = entries.get(normalized)
+    if entry is None:
+        raise Namel3ssError(_missing_secret_message(normalized))
+    del entries[normalized]
+    _write_vault(path, entries)
+    return path, entry.to_public_dict()
+
+
 def load_decrypted_secrets_map(project_root: str | Path | None, app_path: str | Path | None) -> dict[str, str]:
     vault = load_vault(project_root, app_path)
     if not vault.entries:
@@ -326,5 +347,6 @@ __all__ = [
     "load_decrypted_secrets_map",
     "load_vault",
     "master_key_path",
+    "remove_secret",
     "vault_path",
 ]

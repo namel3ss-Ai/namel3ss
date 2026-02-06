@@ -59,3 +59,31 @@ flow "demo":
     flow = program.flows[0]
     assert isinstance(flow.body[0], ir.RunAgentStmt)
     assert flow.body[0].input_mode == "structured"
+
+
+def test_agents_parse_image_and_audio_input_modes():
+    source = '''spec is "1.0"
+
+capabilities:
+  vision
+  speech
+
+ai "assistant":
+  model is "gpt-4.1"
+
+agent "vision":
+  ai is "assistant"
+
+agent "speech":
+  ai is "assistant"
+
+flow "demo":
+  run agent "vision" with image input: "state.image_path" as image_result
+  run agent "speech" with audio input: "state.audio_path" as audio_result
+'''
+    program = lower_ir_program(source)
+    flow = program.flows[0]
+    assert isinstance(flow.body[0], ir.RunAgentStmt)
+    assert flow.body[0].input_mode == "image"
+    assert isinstance(flow.body[1], ir.RunAgentStmt)
+    assert flow.body[1].input_mode == "audio"

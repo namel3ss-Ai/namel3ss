@@ -39,10 +39,12 @@ from namel3ss.security import activate_security_wall, build_security_wall
 from namel3ss.runtime.security import load_sensitive_config
 from namel3ss.runtime.sandbox.config import load_sandbox_config
 from namel3ss.runtime.sandbox.runner import run_sandbox_flow
+from namel3ss.runtime.security.resource_limits import load_resource_limits
 from namel3ss.security_encryption import load_encryption_service
 from namel3ss.observability.context import ObservabilityContext
 from namel3ss.observability.enablement import resolve_observability_context
 from namel3ss.purity import is_pure
+from namel3ss.runtime.performance.state import build_or_get_performance_state
 
 
 class Executor:
@@ -102,6 +104,11 @@ class Executor:
         encryption_service = load_encryption_service(project_root, app_path, required=sensitive)
         model_manager = load_model_manager(project_root, app_path)
         sandbox_config = load_sandbox_config(project_root, app_path)
+        resource_limits = load_resource_limits(
+            project_root=project_root,
+            app_path=app_path,
+            capabilities=tuple(capabilities or ()),
+        )
         self.ctx = ExecutionContext(
             flow=flow,
             schemas=schemas or {},
@@ -143,6 +150,13 @@ class Executor:
             encryption_service=encryption_service,
             model_manager=model_manager,
             sandbox_config=sandbox_config,
+            resource_limits=resource_limits,
+        )
+        self.ctx.performance_state = build_or_get_performance_state(
+            config=resolved_config,
+            capabilities=tuple(capabilities or ()),
+            project_root=project_root,
+            app_path=app_path,
         )
         self.ctx.calc_assignment_index = _load_calc_assignment_index(app_path)
         self.flow = self.ctx.flow

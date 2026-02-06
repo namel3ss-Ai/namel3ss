@@ -1,0 +1,152 @@
+from __future__ import annotations
+
+import threading
+from http.server import HTTPServer
+from pathlib import Path
+
+from namel3ss.config.loader import load_config
+from namel3ss.errors.base import Namel3ssError
+from namel3ss.runtime.performance.config import normalize_performance_runtime_config
+from namel3ss.runtime.performance.guard import require_performance_capability
+from namel3ss.runtime.router.program_state import ProgramState
+from namel3ss.runtime.router.refresh import refresh_routes
+from namel3ss.runtime.router.registry import RouteRegistry
+from namel3ss.runtime.security.retention_loop import run_retention_loop
+from namel3ss.runtime.server.cluster_control import ClusterControlPlane
+from namel3ss.runtime.server.concurrency import create_runtime_http_server, load_concurrency_config
+from namel3ss.runtime.server.handlers import ServiceRequestHandler
+from namel3ss.runtime.server.service_process_model import configure_server_process_model
+from namel3ss.runtime.server.worker_pool import ServiceActionWorkerPool
+from namel3ss.runtime.service_helpers import seed_flow, should_auto_seed, summarize_program
+from namel3ss.runtime.triggers import run_service_trigger_loop
+from namel3ss.ui.external.detect import resolve_external_ui_root
+
+DEFAULT_SERVICE_PORT = 8787
+
+
+class ServiceRunner:
+    def __init__(
+        self,
+        app_path: Path,
+        target: str,
+        build_id: str | None = None,
+        port: int = DEFAULT_SERVICE_PORT,
+        *,
+        auto_seed: bool = False,
+        seed_flow: str = "seed_demo",
+        headless: bool = False,
+    ):
+        self.app_path = Path(app_path).resolve()
+        self.target = target
+        self.build_id = build_id
+        self.port = port or DEFAULT_SERVICE_PORT
+        self.auto_seed = auto_seed
+        self.seed_flow = seed_flow
+        self.headless = headless
+        self.server: HTTPServer | None = None
+        self._thread: threading.Thread | None = None
+        self._trigger_thread: threading.Thread | None = None
+        self._trigger_stop = threading.Event()
+        self._retention_thread: threading.Thread | None = None
+        self._retention_stop = threading.Event()
+        self._worker_pool: ServiceActionWorkerPool | None = None
+        self._cluster_control: ClusterControlPlane | None = None
+        self.program_summary: dict[str, object] = {}
+        self.concurrency = load_concurrency_config(app_path=self.app_path)
+
+    def start(self, *, background: bool = False) -> None:
+        program_state = ProgramState(self.app_path)
+        program_ir = program_state.program
+        if program_ir is None:
+            raise Namel3ssError("Program failed to load.")
+        runtime_config = normalize_performance_runtime_config(
+            load_config(app_path=self.app_path, root=self.app_path.parent)
+        )
+        require_performance_capability(
+            getattr(program_ir, "capabilities", ()),
+            runtime_config,
+            where="runtime configuration",
+        )
+        self.program_summary = summarize_program(program_ir)
+        if should_auto_seed(program_ir, self.auto_seed, self.seed_flow):
+            seed_flow(program_ir, self.seed_flow)
+        external_ui_root = resolve_external_ui_root(
+            getattr(program_ir, "project_root", None),
+            getattr(program_ir, "app_path", None),
+        )
+        server = create_runtime_http_server("0.0.0.0", self.port, ServiceRequestHandler, config=self.concurrency)
+        server.target = self.target  # type: ignore[attr-defined]
+        server.build_id = self.build_id  # type: ignore[attr-defined]
+        server.app_path = self.app_path.as_posix()  # type: ignore[attr-defined]
+        self._worker_pool = configure_server_process_model(
+            server=server,
+            program_ir=program_ir,
+            app_path=self.app_path,
+            concurrency=self.concurrency,
+        )
+        server.concurrency = self.concurrency.to_dict()  # type: ignore[attr-defined]
+        server.headless = self.headless  # type: ignore[attr-defined]
+        server.program_summary = self.program_summary  # type: ignore[attr-defined]
+        server.program_ir = program_ir  # type: ignore[attr-defined]
+        server.program_state = program_state  # type: ignore[attr-defined]
+        registry = RouteRegistry()
+        refresh_routes(program=program_ir, registry=registry, revision=program_state.revision, logger=print)
+        server.route_registry = registry  # type: ignore[attr-defined]
+        server.external_ui_root = None if self.headless else external_ui_root  # type: ignore[attr-defined]
+        server.external_ui_enabled = bool(not self.headless and external_ui_root is not None)  # type: ignore[attr-defined]
+        self.server = server
+        self._cluster_control = ClusterControlPlane(
+            project_root=self.app_path.parent,
+            app_path=self.app_path,
+            worker_pool=self._worker_pool,
+            server=server,
+        )
+        self._cluster_control.start()
+        self._trigger_stop.clear()
+        self._trigger_thread = threading.Thread(
+            target=run_service_trigger_loop,
+            kwargs={"stop_event": self._trigger_stop, "program_state": program_state, "flow_store": getattr(server, "flow_store", None)},
+            daemon=True,
+        )
+        self._trigger_thread.start()
+        self._retention_stop.clear()
+        self._retention_thread = threading.Thread(
+            target=run_retention_loop,
+            kwargs={"stop_event": self._retention_stop, "program_state": program_state},
+            daemon=True,
+        )
+        self._retention_thread.start()
+        if background:
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            self._thread = thread
+        else:
+            server.serve_forever()
+
+    def shutdown(self) -> None:
+        self._trigger_stop.set()
+        self._retention_stop.set()
+        if self._cluster_control is not None:
+            self._cluster_control.stop()
+            self._cluster_control = None
+        if self.server:
+            try:
+                self.server.shutdown()
+            except Exception:
+                pass
+        if self._thread and self._thread.is_alive():
+            self._thread.join(timeout=1)
+        if self._trigger_thread and self._trigger_thread.is_alive():
+            self._trigger_thread.join(timeout=1)
+        if self._retention_thread and self._retention_thread.is_alive():
+            self._retention_thread.join(timeout=1)
+        if self._worker_pool is not None:
+            self._worker_pool.shutdown()
+            self._worker_pool = None
+
+    @property
+    def bound_port(self) -> int:
+        return int(self.server.server_address[1]) if self.server else self.port
+
+
+__all__ = ["DEFAULT_SERVICE_PORT", "ServiceRunner"]

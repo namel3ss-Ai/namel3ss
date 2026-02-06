@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 import re
 import sys
 from pathlib import Path
@@ -20,6 +21,9 @@ from namel3ss.errors.render import format_error, format_first_run_error
 from namel3ss.runtime.dev_server import BrowserRunner, DEFAULT_BROWSER_PORT
 from namel3ss.runtime.service_runner import DEFAULT_SERVICE_PORT, ServiceRunner
 from namel3ss.cli.text_output import prepare_cli_text, prepare_first_run_text
+from namel3ss.config.loader import load_config
+from namel3ss.runtime.performance.config import PerformanceRuntimeConfig, normalize_performance_runtime_config
+from namel3ss.runtime.performance.guard import require_performance_capability
 from namel3ss.secrets import set_audit_root, set_engine_target
 from namel3ss.traces.plain import format_plain
 from namel3ss.traces.schema import TraceEventType
@@ -50,6 +54,12 @@ def run_run_command(args: list[str]) -> int:
         target = parse_target(params.target_raw or demo_default)
         set_engine_target(target.name)
         set_audit_root(project_root)
+        _apply_performance_env_overrides(params)
+        _validate_performance_settings(
+            app_path=app_path,
+            project_root=project_root,
+            force_check=_has_performance_overrides(params),
+        )
         run_path, build_id = _resolve_run_path(target.name, project_root, app_path, params.build_id)
         if target.name == "local":
             if params.json_mode or params.explain:
@@ -70,6 +80,7 @@ def run_run_command(args: list[str]) -> int:
                 debug=False,
                 watch_sources=False,
                 engine_target=target.name,
+                headless=params.headless,
             )
             try:
                 runner.bind()
@@ -82,7 +93,11 @@ def run_run_command(args: list[str]) -> int:
                         example="n3 run --port 7341",
                     )
                 ) from err
-            url = f"http://127.0.0.1:{runner.bound_port}/"
+            url = (
+                f"http://127.0.0.1:{runner.bound_port}/api/ui/manifest"
+                if params.headless
+                else f"http://127.0.0.1:{runner.bound_port}/"
+            )
             if params.dry:
                 print(f"App: {url}")
                 return 0
@@ -100,13 +115,14 @@ def run_run_command(args: list[str]) -> int:
                 build_id=build_id,
                 port=port,
                 auto_seed=bool(is_demo and first_run and not params.dry),
+                headless=params.headless,
             )
             if params.dry:
                 print(f"Service runner dry http://127.0.0.1:{port}/health")
                 print(f"Build: {build_id or 'working-copy'}")
                 return 0
             if is_demo:
-                url = f"http://127.0.0.1:{port}/"
+                url = f"http://127.0.0.1:{port}/api/ui/manifest" if params.headless else f"http://127.0.0.1:{port}/"
                 demo_provider = _detect_demo_provider(run_path)
                 if first_run:
                     print(f"Running {DEMO_NAME}")
@@ -114,7 +130,7 @@ def run_run_command(args: list[str]) -> int:
                     if demo_provider == "openai":
                         print("AI provider: OpenAI")
                     print("Press Ctrl+C to stop")
-                    if should_open_url(params.no_open):
+                    if not params.headless and should_open_url(params.no_open):
                         open_url(url)
                 else:
                     print(f"Running {DEMO_NAME} at: {url}")
@@ -159,6 +175,11 @@ class _RunParams:
         json_mode: bool,
         no_open: bool,
         explain: bool,
+        headless: bool,
+        async_runtime: bool | None,
+        max_concurrency: int | None,
+        cache_size: int | None,
+        enable_batching: bool | None,
     ):
         self.app_arg = app_arg
         self.target_raw = target_raw
@@ -168,6 +189,11 @@ class _RunParams:
         self.json_mode = json_mode
         self.no_open = no_open
         self.explain = explain
+        self.headless = headless
+        self.async_runtime = async_runtime
+        self.max_concurrency = max_concurrency
+        self.cache_size = cache_size
+        self.enable_batching = enable_batching
 
 
 def _parse_args(args: list[str]) -> _RunParams:
@@ -179,6 +205,11 @@ def _parse_args(args: list[str]) -> _RunParams:
     json_mode = False
     no_open = False
     explain = False
+    headless = False
+    async_runtime: bool | None = None
+    max_concurrency: int | None = None
+    cache_size: int | None = None
+    enable_batching: bool | None = None
     i = 0
     while i < len(args):
         arg = args[i]
@@ -243,6 +274,86 @@ def _parse_args(args: list[str]) -> _RunParams:
             no_open = True
             i += 1
             continue
+        if arg == "--headless":
+            headless = True
+            i += 1
+            continue
+        if arg == "--async-runtime":
+            if i + 1 >= len(args):
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="--async-runtime flag is missing a value.",
+                        why="A boolean value must follow --async-runtime.",
+                        fix="Set true or false after the flag.",
+                        example="n3 run --async-runtime true",
+                    )
+                )
+            async_runtime = _parse_bool_flag("--async-runtime", args[i + 1])
+            i += 2
+            continue
+        if arg == "--max-concurrency":
+            if i + 1 >= len(args):
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="--max-concurrency flag is missing a value.",
+                        why="A positive integer must follow --max-concurrency.",
+                        fix="Provide a value like 8.",
+                        example="n3 run --max-concurrency 8",
+                    )
+                )
+            try:
+                max_concurrency = int(args[i + 1])
+            except ValueError as err:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="--max-concurrency must be an integer.",
+                        why="Concurrency controls require a numeric value.",
+                        fix="Set --max-concurrency to a positive integer.",
+                        example="n3 run --max-concurrency 8",
+                    )
+                ) from err
+            if max_concurrency < 1:
+                raise Namel3ssError("--max-concurrency must be >= 1")
+            i += 2
+            continue
+        if arg == "--cache-size":
+            if i + 1 >= len(args):
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="--cache-size flag is missing a value.",
+                        why="A non-negative integer must follow --cache-size.",
+                        fix="Provide a value like 128.",
+                        example="n3 run --cache-size 128",
+                    )
+                )
+            try:
+                cache_size = int(args[i + 1])
+            except ValueError as err:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="--cache-size must be an integer.",
+                        why="Cache size controls require a numeric value.",
+                        fix="Set --cache-size to a non-negative integer.",
+                        example="n3 run --cache-size 128",
+                    )
+                ) from err
+            if cache_size < 0:
+                raise Namel3ssError("--cache-size must be >= 0")
+            i += 2
+            continue
+        if arg == "--enable-batching":
+            if i + 1 >= len(args):
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="--enable-batching flag is missing a value.",
+                        why="A boolean value must follow --enable-batching.",
+                        fix="Set true or false after the flag.",
+                        example="n3 run --enable-batching true",
+                    )
+                )
+            enable_batching = _parse_bool_flag("--enable-batching", args[i + 1])
+            i += 2
+            continue
         if arg == "--first-run":
             i += 1
             continue
@@ -254,7 +365,7 @@ def _parse_args(args: list[str]) -> _RunParams:
             raise Namel3ssError(
                 build_guidance_message(
                     what=f"Unknown flag '{arg}'.",
-                    why="Supported flags: --target, --port, --build, --dry, --json, --explain, --first-run, --no-open.",
+                    why="Supported flags: --target, --port, --build, --dry, --json, --explain, --first-run, --no-open, --headless, --async-runtime, --max-concurrency, --cache-size, --enable-batching.",
                     fix="Remove the unsupported flag.",
                     example="n3 run --target local",
                 )
@@ -271,7 +382,75 @@ def _parse_args(args: list[str]) -> _RunParams:
                 example="n3 run app.ai --target local",
             )
         )
-    return _RunParams(app_arg, target, port, build_id, dry, json_mode, no_open, explain)
+    return _RunParams(
+        app_arg,
+        target,
+        port,
+        build_id,
+        dry,
+        json_mode,
+        no_open,
+        explain,
+        headless,
+        async_runtime,
+        max_concurrency,
+        cache_size,
+        enable_batching,
+    )
+
+
+def _parse_bool_flag(flag: str, raw: str) -> bool:
+    token = str(raw).strip().lower()
+    if token in {"1", "true", "yes", "on"}:
+        return True
+    if token in {"0", "false", "no", "off"}:
+        return False
+    raise Namel3ssError(f"{flag} must be true or false")
+
+
+def _apply_performance_env_overrides(params: _RunParams) -> None:
+    if params.async_runtime is not None:
+        os.environ["N3_ASYNC_RUNTIME"] = "true" if params.async_runtime else "false"
+    if params.max_concurrency is not None:
+        os.environ["N3_MAX_CONCURRENCY"] = str(int(params.max_concurrency))
+    if params.cache_size is not None:
+        os.environ["N3_CACHE_SIZE"] = str(int(params.cache_size))
+    if params.enable_batching is not None:
+        os.environ["N3_ENABLE_BATCHING"] = "true" if params.enable_batching else "false"
+
+
+def _has_performance_overrides(params: _RunParams) -> bool:
+    return any(
+        value is not None
+        for value in (
+            params.async_runtime,
+            params.max_concurrency,
+            params.cache_size,
+            params.enable_batching,
+        )
+    )
+
+
+def _validate_performance_settings(*, app_path: Path, project_root: Path, force_check: bool) -> None:
+    config = load_config(app_path=app_path, root=project_root)
+    runtime_config = normalize_performance_runtime_config(config)
+    if not runtime_config.enabled and not force_check:
+        return
+    if force_check and not runtime_config.enabled:
+        runtime_config = PerformanceRuntimeConfig(
+            enabled=True,
+            async_runtime=runtime_config.async_runtime,
+            max_concurrency=runtime_config.max_concurrency,
+            cache_size=runtime_config.cache_size,
+            enable_batching=runtime_config.enable_batching,
+            metrics_endpoint=runtime_config.metrics_endpoint,
+        )
+    program_ir, _sources = load_program(app_path.as_posix())
+    require_performance_capability(
+        getattr(program_ir, "capabilities", ()),
+        runtime_config,
+        where="run configuration",
+    )
 
 
 def _print_explain_traces(output: dict) -> None:

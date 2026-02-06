@@ -6,7 +6,10 @@ from typing import Dict, List, Optional, Tuple
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
-from namel3ss.ir import nodes as ir
+from namel3ss.runtime.safe_expression import (
+    UnsupportedSafeExpressionError,
+    evaluate_safe_expression,
+)
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.validators.constraints import collect_validation_errors
 from namel3ss.schema.records import (
@@ -145,18 +148,11 @@ def _get_schema(name: str, schemas: Dict[str, RecordSchema]) -> RecordSchema:
     return schemas[name]
 
 
-def _literal_eval(expr: ir.Expression | None) -> object:
-    if expr is None:
-        return None
-    if isinstance(expr, ir.Literal):
-        return expr.value
-    if isinstance(expr, ir.UnaryOp) and expr.op in {"+", "-"}:
-        if isinstance(expr.operand, ir.Literal):
-            value = expr.operand.value
-            if is_number(value):
-                numeric = to_decimal(value)
-                return numeric if expr.op == "+" else -numeric
-    raise Namel3ssError("Only literal expressions supported in schema constraints for forms")
+def _literal_eval(expr) -> object:
+    try:
+        return evaluate_safe_expression(expr)
+    except UnsupportedSafeExpressionError as err:
+        raise Namel3ssError(str(err)) from err
 
 
 def build_record_scope(schema: RecordSchema, identity: dict | None, now: Decimal | None = None) -> RecordScope:

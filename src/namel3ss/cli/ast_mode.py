@@ -3,11 +3,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 import sys
 
-from namel3ss.cir import build_cir, cir_to_payload
 from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.cli.args import allow_aliases_from_flags
 from namel3ss.cli.devex import parse_project_overrides
 from namel3ss.cli.text_output import prepare_cli_text
+from namel3ss.compiler import (
+    PROGRAM_REPRESENTATION_SCHEMA,
+    build_program_representation,
+    program_representation_to_payload,
+)
 from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
@@ -37,12 +41,13 @@ def run_ast_command(args: list[str]) -> int:
         )
         allow_aliases = allow_aliases_from_flags(args)
         project = load_project(app_path, allow_legacy_type_aliases=allow_aliases)
-        cir = build_cir(project.app_ast)
+        representation = build_program_representation(project.app_ast)
         payload = {
             "ok": True,
             "path": app_path.as_posix(),
             "schema": "cir.v1",
-            "ast": cir_to_payload(cir),
+            "representation_schema": PROGRAM_REPRESENTATION_SCHEMA,
+            "ast": program_representation_to_payload(representation),
         }
         print(canonical_json_dumps(payload, pretty=True, drop_run_keys=False))
         return 0

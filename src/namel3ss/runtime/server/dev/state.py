@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from functools import wraps
 import hashlib
 import json
 from pathlib import Path
+import threading
 
 from namel3ss.config.dotenv import apply_dotenv, load_dotenv_for_path
 from namel3ss.config.loader import load_config
@@ -27,6 +29,15 @@ from namel3ss.ui.settings import UI_ALLOWED_VALUES, UI_DEFAULTS
 from namel3ss.validation import ValidationMode, ValidationWarning
 
 from namel3ss.runtime.server.dev.errors import error_from_exception
+
+
+def _locked(method):
+    @wraps(method)
+    def wrapper(self, *args, **kwargs):
+        with self._lock:
+            return method(self, *args, **kwargs)
+
+    return wrapper
 
 
 class BrowserAppState:
@@ -55,9 +66,11 @@ class BrowserAppState:
         self.error_payload: dict | None = None
         self.revision = ""
         self._watch_snapshot: dict[Path, tuple[int, int]] = {}
+        self._lock = threading.RLock()
         set_audit_root(self.project_root)
         set_engine_target(engine_target)
 
+    @_locked
     def manifest_payload(self, *, identity: dict | None = None, auth_context: object | None = None) -> dict:
         self._refresh_if_needed()
         if self.error_payload:
@@ -99,6 +112,7 @@ class BrowserAppState:
             self.manifest_errors[cache_key] = payload
             return payload
 
+    @_locked
     def state_payload(self, *, identity: dict | None = None) -> dict:
         self._refresh_if_needed()
         if self.error_payload:
@@ -118,6 +132,7 @@ class BrowserAppState:
             payload["effects"] = self.session.data_effects
         return payload
 
+    @_locked
     def status_payload(self) -> dict:
         self._refresh_if_needed()
         if self.error_payload:
@@ -130,6 +145,7 @@ class BrowserAppState:
             return payload
         return {"ok": True, "revision": self.revision}
 
+    @_locked
     def run_action(
         self,
         action_id: str,
@@ -220,6 +236,7 @@ class BrowserAppState:
             return response
         return {"ok": False, "error": "Action failed.", "state": self._state_snapshot(), "revision": self.revision}
 
+    @_locked
     def _refresh_if_needed(self) -> None:
         if not self._should_reload():
             return

@@ -24,7 +24,16 @@ ENV_EMBEDDING_VERSION = "N3_EMBEDDING_VERSION"
 ENV_EMBEDDING_DIMS = "N3_EMBEDDING_DIMS"
 ENV_EMBEDDING_PRECISION = "N3_EMBEDDING_PRECISION"
 ENV_EMBEDDING_CANDIDATE_LIMIT = "N3_EMBEDDING_CANDIDATE_LIMIT"
+ENV_PERFORMANCE_ASYNC_RUNTIME = "N3_ASYNC_RUNTIME"
+ENV_PERFORMANCE_MAX_CONCURRENCY = "N3_MAX_CONCURRENCY"
+ENV_PERFORMANCE_CACHE_SIZE = "N3_CACHE_SIZE"
+ENV_PERFORMANCE_ENABLE_BATCHING = "N3_ENABLE_BATCHING"
+ENV_PERFORMANCE_METRICS_ENDPOINT = "N3_PERFORMANCE_METRICS_ENDPOINT"
+ENV_DETERMINISM_SEED = "N3_DETERMINISM_SEED"
+ENV_DETERMINISM_EXPLAIN = "N3_EXPLAIN"
+ENV_DETERMINISM_REDACT_USER_DATA = "N3_REDACT_USER_DATA"
 RESERVED_TRUE_VALUES = {"1", "true", "yes", "on"}
+RESERVED_FALSE_VALUES = {"0", "false", "no", "off"}
 
 
 def apply_env_overrides(config: AppConfig) -> bool:
@@ -100,6 +109,84 @@ def apply_env_overrides(config: AppConfig) -> bool:
             config.embedding.candidate_limit = int(embedding_candidate_limit)
         except ValueError as err:
             raise Namel3ssError("N3_EMBEDDING_CANDIDATE_LIMIT must be an integer") from err
+        used = True
+    async_runtime = os.getenv(ENV_PERFORMANCE_ASYNC_RUNTIME)
+    if async_runtime is not None:
+        token = async_runtime.strip().lower()
+        if token in RESERVED_TRUE_VALUES:
+            config.performance.async_runtime = True
+        elif token in RESERVED_FALSE_VALUES:
+            config.performance.async_runtime = False
+        else:
+            raise Namel3ssError("N3_ASYNC_RUNTIME must be true or false")
+        used = True
+    max_concurrency = os.getenv(ENV_PERFORMANCE_MAX_CONCURRENCY)
+    if max_concurrency:
+        try:
+            value = int(max_concurrency)
+        except ValueError as err:
+            raise Namel3ssError("N3_MAX_CONCURRENCY must be an integer") from err
+        if value < 1:
+            raise Namel3ssError("N3_MAX_CONCURRENCY must be >= 1")
+        config.performance.max_concurrency = value
+        used = True
+    cache_size = os.getenv(ENV_PERFORMANCE_CACHE_SIZE)
+    if cache_size:
+        try:
+            value = int(cache_size)
+        except ValueError as err:
+            raise Namel3ssError("N3_CACHE_SIZE must be an integer") from err
+        if value < 0:
+            raise Namel3ssError("N3_CACHE_SIZE must be >= 0")
+        config.performance.cache_size = value
+        used = True
+    enable_batching = os.getenv(ENV_PERFORMANCE_ENABLE_BATCHING)
+    if enable_batching is not None:
+        token = enable_batching.strip().lower()
+        if token in RESERVED_TRUE_VALUES:
+            config.performance.enable_batching = True
+        elif token in RESERVED_FALSE_VALUES:
+            config.performance.enable_batching = False
+        else:
+            raise Namel3ssError("N3_ENABLE_BATCHING must be true or false")
+        used = True
+    metrics_endpoint = os.getenv(ENV_PERFORMANCE_METRICS_ENDPOINT)
+    if metrics_endpoint:
+        config.performance.metrics_endpoint = metrics_endpoint
+        used = True
+    determinism_seed = os.getenv(ENV_DETERMINISM_SEED)
+    if determinism_seed is not None:
+        token = determinism_seed.strip()
+        lowered = token.lower()
+        if not token or lowered in {"null", "none"}:
+            config.determinism.seed = None
+        elif token.isdigit():
+            parsed = int(token)
+            if parsed < 0:
+                raise Namel3ssError("N3_DETERMINISM_SEED must be >= 0")
+            config.determinism.seed = parsed
+        else:
+            config.determinism.seed = token
+        used = True
+    determinism_explain = os.getenv(ENV_DETERMINISM_EXPLAIN)
+    if determinism_explain is not None:
+        token = determinism_explain.strip().lower()
+        if token in RESERVED_TRUE_VALUES:
+            config.determinism.explain = True
+        elif token in RESERVED_FALSE_VALUES:
+            config.determinism.explain = False
+        else:
+            raise Namel3ssError("N3_EXPLAIN must be true or false")
+        used = True
+    redact_user_data = os.getenv(ENV_DETERMINISM_REDACT_USER_DATA)
+    if redact_user_data is not None:
+        token = redact_user_data.strip().lower()
+        if token in RESERVED_TRUE_VALUES:
+            config.determinism.redact_user_data = True
+        elif token in RESERVED_FALSE_VALUES:
+            config.determinism.redact_user_data = False
+        else:
+            raise Namel3ssError("N3_REDACT_USER_DATA must be true or false")
         used = True
     target = os.getenv("N3_PERSIST_TARGET")
     if target:
@@ -281,7 +368,16 @@ __all__ = [
     "ENV_EMBEDDING_DIMS",
     "ENV_EMBEDDING_PRECISION",
     "ENV_EMBEDDING_CANDIDATE_LIMIT",
+    "ENV_PERFORMANCE_ASYNC_RUNTIME",
+    "ENV_PERFORMANCE_MAX_CONCURRENCY",
+    "ENV_PERFORMANCE_CACHE_SIZE",
+    "ENV_PERFORMANCE_ENABLE_BATCHING",
+    "ENV_PERFORMANCE_METRICS_ENDPOINT",
+    "ENV_DETERMINISM_SEED",
+    "ENV_DETERMINISM_EXPLAIN",
+    "ENV_DETERMINISM_REDACT_USER_DATA",
     "RESERVED_TRUE_VALUES",
+    "RESERVED_FALSE_VALUES",
     "apply_env_overrides",
     "normalize_target",
 ]

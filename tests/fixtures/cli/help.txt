@@ -41,6 +41,7 @@ Advanced
   n3 data | persist <file.ai> ... # data status, reset, export, import
   n3 secrets | observe | explain  # secrets, observability, engine explain
   n3 trace list|show ...          # list run traces and inspect one run
+  n3 replay [app.ai] [--log ...] # replay explain logs with seed + retrieval metadata checks
   n3 debug pause|step|back|replay # time-travel trace debugger controls
   n3 export traces ...            # export run traces to OTLP endpoint
   n3 observability init [file.ai] # create default observability.yaml
@@ -52,11 +53,12 @@ Advanced
   n3 type check [file.ai]          # static type check and inference diagnostics
   n3 schema infer|migrate [file.ai] # schema inference and migration plan
   n3 concurrency check [file.ai]   # static checks for async and parallel safety
-  n3 compile ...                   # compile pure flows to c, rust, or wasm projects
+  n3 compile ...                   # compile pure flows to c, python, rust, or wasm projects
   n3 wasm run <module.wasm> ...    # execute wasm module with local runtime
   n3 trigger list|register ...     # manage webhook, upload, timer, and queue triggers
   n3 feedback list [file.ai]       # list user feedback entries
   n3 dataset list|history|add-version ... # manage dataset versions and lineage
+  n3 train ...                     # deterministic custom model training and registration
   n3 retrain schedule|list|run ... # schedule, inspect, and execute retrain jobs
   n3 model canary ...              # configure canary/shadow model routing
   n3 models list|add|deprecate ... # manage the local model registry
@@ -69,6 +71,7 @@ Advanced
   n3 policy check|enforce ...      # enforce global governance policies
   n3 marketplace ...               # publish, search, and install marketplace items
   n3 tutorial list|run ...         # interactive lessons and progress tracking
+  n3 playground check|run ...      # sandboxed snippet validation and execution
   n3 scaffold test <flow> ...      # generate a flow test skeleton
   n3 package build ...             # deterministic project archive build
   n3 lsp stdio|check ...           # language server and diagnostics
@@ -78,6 +81,7 @@ Advanced
   n3 audit [file.ai]               # sensitive audit log (or audit list/filter)
   n3 auth [file.ai]                # route permissions + user role commands
   n3 secret list|add|get ...       # encrypted vault commands
+  n3 security check|purge ...      # security posture and retention cleanup
   n3 sensitive [file.ai]           # manage sensitive flows and keys
   n3 sandbox [file.ai]             # sandbox build/run helpers
   n3 plugin new <lang> <name>      # scaffold a plugin project
@@ -90,6 +94,5 @@ Advanced
 Notes:
   file.ai is optional and defaults to ./app.ai when present
   if app.ai is missing: run `n3 <command> <file.ai>` or create app.ai
-  use --old-parser to force legacy parser backend during transition
   legacy forms like `n3 run app.ai --target T --json` and `n3 actions app.ai json` remain supported
   Studio inspects; the browser renders the app

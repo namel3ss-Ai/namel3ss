@@ -8,6 +8,7 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.runtime.executor.signals import _ReturnSignal
+from namel3ss.runtime.explainability.logger import append_job_entry
 from namel3ss.runtime.backend import studio_effect_adapter
 from namel3ss.runtime.backend.logical_clock import current_logical_time
 
@@ -116,6 +117,15 @@ def run_job_queue(ctx) -> None:
         payload = entry.get("payload") if isinstance(entry, dict) else None
         if not isinstance(job_name, str):
             raise Namel3ssError("Job queue entry is invalid")
+        append_job_entry(
+            ctx,
+            event_type="dequeue",
+            job_name=job_name,
+            metadata={
+                "due_time": entry.get("due_time") if isinstance(entry, dict) else None,
+                "order": entry.get("order") if isinstance(entry, dict) else None,
+            },
+        )
         job = ctx.jobs.get(job_name) if getattr(ctx, "jobs", None) else None
         if job is None:
             handler = _SYSTEM_JOBS.get(job_name)
@@ -151,6 +161,12 @@ def _run_job(ctx, job: ir.JobDecl, payload: object) -> None:
         line=job.line,
         column=job.column,
     )
+    append_job_entry(
+        ctx,
+        event_type="start",
+        job_name=job.name,
+        metadata={"kind": "declared"},
+    )
     span_id = None
     obs = getattr(ctx, "observability", None)
     if obs:
@@ -180,6 +196,12 @@ def _run_job(ctx, job: ir.JobDecl, payload: object) -> None:
             obs.end_span(ctx, span_id, status=status)
         if status == "ok":
             output = ctx.last_value
+        append_job_entry(
+            ctx,
+            event_type="finish",
+            job_name=job.name,
+            metadata={"status": status},
+        )
         studio_effect_adapter.record_job_finished(ctx, job_name=job.name, output=output, status=status)
         record_step(
             ctx,
@@ -206,6 +228,12 @@ def _run_system_job(ctx, job_name: str, handler: SystemJobHandler, payload: obje
         line=None,
         column=None,
     )
+    append_job_entry(
+        ctx,
+        event_type="start",
+        job_name=job_name,
+        metadata={"kind": "system"},
+    )
     span_id = None
     obs = getattr(ctx, "observability", None)
     if obs:
@@ -228,6 +256,12 @@ def _run_system_job(ctx, job_name: str, handler: SystemJobHandler, payload: obje
     finally:
         if span_id:
             obs.end_span(ctx, span_id, status=status)
+        append_job_entry(
+            ctx,
+            event_type="finish",
+            job_name=job_name,
+            metadata={"status": status},
+        )
         studio_effect_adapter.record_job_finished(ctx, job_name=job_name, output=output, status=status)
         record_step(
             ctx,
@@ -335,6 +369,16 @@ def _enqueue_entry(
             what=f"job '{job_name}' enqueued{reason_text}",
             line=line,
             column=column,
+        )
+        append_job_entry(
+            ctx,
+            event_type="enqueue",
+            job_name=job_name,
+            metadata={
+                "due_time": int(due_time),
+                "order": int(order),
+                "reason": reason,
+            },
         )
         studio_effect_adapter.record_job_enqueued(ctx, job_name=job_name, payload=payload)
     except Exception:

@@ -20,6 +20,7 @@ class _BrowserParams:
     no_open: bool
     debug: bool
     dry: bool
+    headless: bool
 
 
 def run_dev_command(args: list[str]) -> int:
@@ -41,14 +42,17 @@ def _run_browser_command(mode: str, args: list[str]) -> int:
             missing_message=default_missing_app_message(mode),
         )
         port = params.port or DEFAULT_BROWSER_PORT
-        runner = BrowserRunner(app_path, mode=mode, port=port, debug=params.debug)
-        url = f"http://127.0.0.1:{runner.bound_port}/"
+        runner = BrowserRunner(app_path, mode=mode, port=port, debug=params.debug, headless=params.headless)
+        if params.headless:
+            url = f"http://127.0.0.1:{runner.bound_port}/api/ui/manifest"
+        else:
+            url = f"http://127.0.0.1:{runner.bound_port}/"
         label = "Dev" if mode == "dev" else "Preview"
         if params.dry:
             print(f"{label}: {url}")
             return 0
         print(f"{label}: {url}")
-        if should_open_url(params.no_open):
+        if not params.headless and should_open_url(params.no_open):
             open_url(url)
         try:
             runner.start(background=False)
@@ -67,6 +71,7 @@ def _parse_args(args: list[str], *, allow_debug: bool) -> _BrowserParams:
     no_open = False
     debug = False
     dry = False
+    headless = False
     i = 0
     while i < len(args):
         arg = args[i]
@@ -107,11 +112,15 @@ def _parse_args(args: list[str], *, allow_debug: bool) -> _BrowserParams:
             dry = True
             i += 1
             continue
+        if arg == "--headless":
+            headless = True
+            i += 1
+            continue
         if arg.startswith("--"):
             raise Namel3ssError(
                 build_guidance_message(
                     what=f"Unknown flag '{arg}'.",
-                    why="Supported flags: --port, --no-open, --debug (dev only), --dry.",
+                    why="Supported flags: --port, --no-open, --debug (dev only), --dry, --headless.",
                     fix="Remove the unsupported flag.",
                     example="n3 dev --port 7340",
                 )
@@ -128,7 +137,7 @@ def _parse_args(args: list[str], *, allow_debug: bool) -> _BrowserParams:
                 example="n3 dev app.ai",
             )
         )
-    return _BrowserParams(app_arg=app_arg, port=port, no_open=no_open, debug=debug, dry=dry)
+    return _BrowserParams(app_arg=app_arg, port=port, no_open=no_open, debug=debug, dry=dry, headless=headless)
 
 
 def _missing_flag_value(flag: str) -> str:

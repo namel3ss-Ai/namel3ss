@@ -1,0 +1,19 @@
+{
+  "name": "@namel3ss/ui-client",
+  "version": "0.1.0",
+  "description": "API-first UI client for namel3ss runtimes.",
+  "license": "MIT",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": [
+    "src"
+  ],
+  "keywords": [
+    "namel3ss",
+    "ui",
+    "api"
+  ]
+}

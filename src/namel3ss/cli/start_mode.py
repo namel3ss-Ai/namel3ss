@@ -22,6 +22,7 @@ class _StartParams:
     target_raw: str | None
     port: int | None
     build_id: str | None
+    headless: bool
 
 
 def run_start_command(args: list[str]) -> int:
@@ -75,6 +76,7 @@ def run_start_command(args: list[str]) -> int:
             target=target.name,
             port=port,
             artifacts=artifacts if isinstance(artifacts, dict) else None,
+            headless=params.headless,
         )
         print(f"Start: http://127.0.0.1:{port}/")
         print(f"Build: {build_id}")
@@ -94,6 +96,7 @@ def _parse_args(args: list[str]) -> _StartParams:
     target = None
     port: int | None = None
     build_id = None
+    headless = False
     i = 0
     while i < len(args):
         arg = args[i]
@@ -146,11 +149,15 @@ def _parse_args(args: list[str]) -> _StartParams:
             build_id = args[i + 1]
             i += 2
             continue
+        if arg == "--headless":
+            headless = True
+            i += 1
+            continue
         if arg.startswith("--"):
             raise Namel3ssError(
                 build_guidance_message(
                     what=f"Unknown flag '{arg}'.",
-                    why="Supported flags: --target, --port, --build.",
+                    why="Supported flags: --target, --port, --build, --headless.",
                     fix="Remove the unsupported flag.",
                     example="n3 start --target service",
                 )
@@ -167,7 +174,7 @@ def _parse_args(args: list[str]) -> _StartParams:
                 example="n3 start app.ai",
             )
         )
-    return _StartParams(app_arg=app_arg, target_raw=target, port=port, build_id=build_id)
+    return _StartParams(app_arg=app_arg, target_raw=target, port=port, build_id=build_id, headless=headless)
 
 
 __all__ = ["run_start_command"]

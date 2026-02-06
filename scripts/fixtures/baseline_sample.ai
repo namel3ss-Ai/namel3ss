@@ -1,0 +1,12 @@
+spec is "1.0"
+
+contract flow "add":
+  input:
+    a is number
+    b is number
+  output:
+    result is number
+
+flow "add": purity is "pure"
+  let total is input.a + input.b
+  return total

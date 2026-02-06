@@ -8,7 +8,7 @@ from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.errors.render import format_error
-from namel3ss.marketplace import approve_item, install_item, item_comments, publish_item, rate_item, search_items
+from namel3ss.marketplace import approve_item, comment_item, install_item, item_comments, publish_item, rate_item, search_items
 
 
 KNOWN_OPTIONS = {"--json", "--registry", "--include-pending", "--version", "--comment"}
@@ -37,13 +37,16 @@ def run_marketplace_command(args: list[str]) -> int:
         if cmd == "rate":
             payload, json_mode = _run_rate(tail)
             return _emit(payload, json_mode)
+        if cmd == "comment":
+            payload, json_mode = _run_comment(tail)
+            return _emit(payload, json_mode)
         if cmd == "comments":
             payload, json_mode = _run_comments(tail)
             return _emit(payload, json_mode)
         raise Namel3ssError(
             build_guidance_message(
                 what=f"Unknown marketplace command '{cmd}'.",
-                why="Supported commands are publish, search, install, approve, rate, and comments.",
+                why="Supported commands are publish, search, install, approve, rate, comment, and comments.",
                 fix="Run n3 marketplace help.",
                 example="n3 marketplace search flow",
             )
@@ -229,6 +232,36 @@ def _run_comments(args: list[str]) -> tuple[dict[str, object], bool]:
 
 
 
+def _run_comment(args: list[str]) -> tuple[dict[str, object], bool]:
+    json_mode, registry, options, unknown, positional = _parse_args(args)
+    _ensure_no_unknown(unknown, "comment")
+    _ensure_no_option(options, "--include-pending", "comment")
+    _ensure_no_option(options, "--version", "comment")
+    comment_text = str(options.get("--comment") or "").strip()
+    if len(positional) == 3 and not comment_text:
+        comment_text = positional[2].strip()
+        positional = positional[:2]
+    if len(positional) != 2 or not comment_text:
+        raise Namel3ssError(
+            build_guidance_message(
+                what="marketplace comment needs name, version, and comment text.",
+                why="Comment requires one item target and a non-empty comment.",
+                fix="Pass comment text with --comment or as a third positional value.",
+                example='n3 marketplace comment demo.item 0.1.0 --comment "Useful"',
+            )
+        )
+    app_path = resolve_app_path(None)
+    payload = comment_item(
+        project_root=app_path.parent,
+        app_path=app_path,
+        name=positional[0],
+        version=positional[1],
+        comment=comment_text,
+        registry_override=registry,
+    )
+    return payload, json_mode
+
+
 def _parse_args(args: list[str]) -> tuple[bool, str | None, dict[str, object], list[str], list[str]]:
     json_mode = False
     registry = None
@@ -349,6 +382,7 @@ def _print_usage() -> None:
   n3 marketplace install <name> [--version VERSION] [--include-pending] [--registry PATH] [--json]
   n3 marketplace approve <name> <version> [--registry PATH] [--json]
   n3 marketplace rate <name> <version> <1-5> [--comment TEXT] [--registry PATH] [--json]
+  n3 marketplace comment <name> <version> [--comment TEXT] [--registry PATH] [--json]
   n3 marketplace comments <name> <version> [--registry PATH] [--json]
 """
     print(usage.strip())

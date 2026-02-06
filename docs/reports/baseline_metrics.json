@@ -1,0 +1,26 @@
+{
+  "average_runtime_latency_ms": 0.762,
+  "compile_runs_ms": [
+    3.473,
+    3.473,
+    3.473,
+    3.473,
+    3.473
+  ],
+  "compile_target": "python",
+  "compile_time_ms": 3.473,
+  "flow_name": "add",
+  "iterations": 5,
+  "measured_at": "1970-01-01T00:00:00Z",
+  "memory_usage_kb": 408.875,
+  "runtime_runs_ms": [
+    0.762,
+    0.762,
+    0.762,
+    0.762,
+    0.762
+  ],
+  "sample_program": "scripts/fixtures/baseline_sample.ai",
+  "schema_version": 1,
+  "timing_mode": "deterministic"
+}

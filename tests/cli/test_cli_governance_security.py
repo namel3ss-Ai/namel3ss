@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from namel3ss.cli.main import main as cli_main
@@ -79,6 +80,74 @@ def test_cli_secret_vault_add_get_list(tmp_path: Path, capsys, monkeypatch) -> N
     assert listed["secrets"][0]["name"] == "db_password"
 
 
+def test_cli_secret_remove_deletes_entry(tmp_path: Path, capsys, monkeypatch) -> None:
+    _write_app(tmp_path)
+    home = tmp_path / "home"
+    home.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setenv("HOME", home.as_posix())
+    monkeypatch.chdir(tmp_path)
+
+    assert cli_main(["secret", "add", "db_password", "supersecret", "--json"]) == 0
+    _ = json.loads(capsys.readouterr().out)
+
+    assert cli_main(["secret", "remove", "db_password", "--json"]) == 0
+    removed = json.loads(capsys.readouterr().out)
+    assert removed["ok"] is True
+    assert removed["removed"]["name"] == "db_password"
+
+    assert cli_main(["secret", "list", "--json"]) == 0
+    listed = json.loads(capsys.readouterr().out)
+    assert listed["ok"] is True
+    assert listed["count"] == 0
+
+
+def test_cli_security_check_requires_guards(tmp_path: Path, capsys, monkeypatch) -> None:
+    app_path = tmp_path / "app.ai"
+    app_path.write_text(
+        (
+            'spec is "1.0"\n\n'
+            'record "Task":\n'
+            "  fields:\n"
+            "    id is number must be present\n"
+            "    title is text must be present\n\n"
+            'flow "mutate":\n'
+            "  set state.task with:\n"
+            "    id is 1\n"
+            '    title is "Draft"\n'
+            '  create "Task" with state.task as created\n'
+            '  return "ok"\n'
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    assert cli_main(["security", "check", "--json"]) == 1
+    failing = json.loads(capsys.readouterr().out)
+    assert failing["ok"] is False
+    assert any(row["code"] == "requires.flow_missing" for row in failing["violations"])
+
+    app_path.write_text(
+        (
+            'spec is "1.0"\n\n'
+            'record "Task":\n'
+            "  fields:\n"
+            "    id is number must be present\n"
+            "    title is text must be present\n\n"
+            'flow "mutate" requires true:\n'
+            "  set state.task with:\n"
+            "    id is 1\n"
+            '    title is "Draft"\n'
+            '  create "Task" with state.task as created\n'
+            '  return "ok"\n'
+        ),
+        encoding="utf-8",
+    )
+    assert cli_main(["security", "check", "--json"]) == 0
+    passing = json.loads(capsys.readouterr().out)
+    assert passing["ok"] is True
+    assert passing["count"] == 0
+
+
 def test_cli_policy_check_and_audit_filters(tmp_path: Path, capsys, monkeypatch) -> None:
     _write_app(tmp_path)
     home = tmp_path / "home"
@@ -115,3 +184,35 @@ def test_cli_policy_check_and_audit_filters(tmp_path: Path, capsys, monkeypatch)
     assert audit_filtered["ok"] is True
     assert audit_filtered["count"] >= 1
     assert all(item["action"] == "secret_add" for item in audit_filtered["entries"])
+
+
+def test_cli_security_purge_removes_expired_files(tmp_path: Path, capsys, monkeypatch) -> None:
+    _write_app(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "security.yaml").write_text(
+        (
+            'version: "1.0"\n'
+            "encryption:\n"
+            "  enabled: true\n"
+            '  algorithm: "aes-256-gcm"\n'
+            "  key: env:N3_ENCRYPTION_KEY\n"
+            "resource_limits:\n"
+            "  max_memory_mb: 64\n"
+            "  max_cpu_ms: 5000\n"
+            "retention:\n"
+            "  feedback: 1\n"
+        ),
+        encoding="utf-8",
+    )
+    feedback_file = tmp_path / ".namel3ss" / "feedback.jsonl"
+    feedback_file.parent.mkdir(parents=True, exist_ok=True)
+    feedback_file.write_text('{"flow_name":"demo","input_id":"1","rating":"good","step_count":1}\n', encoding="utf-8")
+    old_epoch = 1_800_000_000.0 - (3 * 86400)
+    os.utime(feedback_file, (old_epoch, old_epoch))
+    monkeypatch.setattr("time.time", lambda: 1_800_000_000.0)
+
+    assert cli_main(["security", "purge", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ok"] is True
+    assert payload["removed_count"] >= 1
+    assert not feedback_file.exists()

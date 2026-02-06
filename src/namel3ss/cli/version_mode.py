@@ -9,6 +9,7 @@ from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.errors.render import format_error
+from namel3ss.runtime.capabilities.feature_gate import require_app_capability
 from namel3ss.versioning import (
     add_version,
     deprecate_version,
@@ -41,6 +42,7 @@ def run_version_command(args: list[str]) -> int:
             return 0
 
         app_path = resolve_app_path(params.app_arg)
+        require_app_capability(app_path, "versioning_quality_mlops")
         config = load_version_config(app_path.parent, app_path)
 
         if params.subcommand == "list":

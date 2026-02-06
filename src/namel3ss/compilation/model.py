@@ -5,9 +5,10 @@ from pathlib import Path
 
 
 TARGET_C = "c"
+TARGET_PYTHON = "python"
 TARGET_RUST = "rust"
 TARGET_WASM = "wasm"
-SUPPORTED_TARGETS = (TARGET_C, TARGET_RUST, TARGET_WASM)
+SUPPORTED_TARGETS = (TARGET_C, TARGET_PYTHON, TARGET_RUST, TARGET_WASM)
 
 
 @dataclass(frozen=True)
@@ -115,6 +116,7 @@ __all__ = [
     "NumericFlowPlan",
     "SUPPORTED_TARGETS",
     "TARGET_C",
+    "TARGET_PYTHON",
     "TARGET_RUST",
     "TARGET_WASM",
     "UnaryNumber",

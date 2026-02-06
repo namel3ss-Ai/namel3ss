@@ -8,6 +8,7 @@ from namel3ss.spec_check.engine_map import ENGINE_SUPPORTED_SPECS, SPEC_CAPABILI
 from namel3ss.spec_check.model import SpecDecision, SpecPack
 from namel3ss.spec_check.normalize import normalize_decision, normalize_list, write_spec_artifacts
 from namel3ss.spec_check.render_plain import render_when
+from namel3ss.runtime.providers.pack_registry import capability_for_provider
 
 
 def derive_required_capabilities(program: Program) -> tuple[str, ...]:
@@ -30,6 +31,27 @@ def derive_required_capabilities(program: Program) -> tuple[str, ...]:
         required.add("uploads")
     if "embedding" in program.capabilities:
         required.add("embedding")
+    if "vision" in program.capabilities:
+        required.add("vision")
+    if "speech" in program.capabilities:
+        required.add("speech")
+    for token in (
+        "huggingface",
+        "local_runner",
+        "vision_gen",
+        "third_party_apis",
+        "training",
+        "streaming",
+        "performance",
+        "performance_scalability",
+    ):
+        if token in program.capabilities:
+            required.add(token)
+    for ai in program.ais.values():
+        provider = str(getattr(ai, "provider", "") or "").strip().lower()
+        capability = capability_for_provider(provider)
+        if capability:
+            required.add(capability)
     for tool in program.tools.values():
         kind = getattr(tool, "kind", None)
         if kind == "http":
@@ -40,6 +62,12 @@ def derive_required_capabilities(program: Program) -> tuple[str, ...]:
         required.add("secrets")
     if "secrets" in program.capabilities:
         required.add("secrets")
+    if _program_uses_ai_mode(program, "image"):
+        required.add("vision")
+    if _program_uses_ai_mode(program, "audio"):
+        required.add("speech")
+    if _program_uses_streaming(program):
+        required.add("streaming")
     if program.agents:
         required.add("agents_v1")
     if program.identity is not None:
@@ -105,6 +133,101 @@ def _program_uses_secrets(program: Program) -> bool:
     for func in program.functions.values():
         if _statements_use_secrets(func.body):
             return True
+    return False
+
+
+def _program_uses_ai_mode(program: Program, mode: str) -> bool:
+    for flow in program.flows:
+        if _statements_use_ai_mode(flow.body, mode):
+            return True
+    for job in program.jobs:
+        if _statements_use_ai_mode(job.body, mode):
+            return True
+    for func in program.functions.values():
+        if _statements_use_ai_mode(func.body, mode):
+            return True
+    return False
+
+
+def _statements_use_ai_mode(statements: list[ir.Statement], mode: str) -> bool:
+    expected = mode.strip().lower()
+    for stmt in statements:
+        if isinstance(stmt, ir.AskAIStmt):
+            if str(getattr(stmt, "input_mode", "text")).strip().lower() == expected:
+                return True
+        if isinstance(stmt, ir.RunAgentStmt):
+            if str(getattr(stmt, "input_mode", "text")).strip().lower() == expected:
+                return True
+        if isinstance(stmt, ir.RunAgentsParallelStmt):
+            if any(str(getattr(entry, "input_mode", "text")).strip().lower() == expected for entry in stmt.entries):
+                return True
+        if isinstance(stmt, ir.If):
+            if _statements_use_ai_mode(stmt.then_body, mode) or _statements_use_ai_mode(stmt.else_body, mode):
+                return True
+        if isinstance(stmt, ir.Repeat):
+            if _statements_use_ai_mode(stmt.body, mode):
+                return True
+        if isinstance(stmt, ir.RepeatWhile):
+            if _statements_use_ai_mode(stmt.body, mode):
+                return True
+        if isinstance(stmt, ir.ForEach):
+            if _statements_use_ai_mode(stmt.body, mode):
+                return True
+        if isinstance(stmt, ir.Match):
+            if any(_statements_use_ai_mode(case.body, mode) for case in stmt.cases):
+                return True
+            if stmt.otherwise and _statements_use_ai_mode(stmt.otherwise, mode):
+                return True
+        if isinstance(stmt, ir.TryCatch):
+            if _statements_use_ai_mode(stmt.try_body, mode) or _statements_use_ai_mode(stmt.catch_body, mode):
+                return True
+        if isinstance(stmt, ir.ParallelBlock):
+            if any(_statements_use_ai_mode(task.body, mode) for task in stmt.tasks):
+                return True
+    return False
+
+
+def _program_uses_streaming(program: Program) -> bool:
+    for flow in program.flows:
+        if _statements_use_streaming(flow.body):
+            return True
+    for job in program.jobs:
+        if _statements_use_streaming(job.body):
+            return True
+    for func in program.functions.values():
+        if _statements_use_streaming(func.body):
+            return True
+    return False
+
+
+def _statements_use_streaming(statements: list[ir.Statement]) -> bool:
+    for stmt in statements:
+        if isinstance(stmt, ir.AskAIStmt):
+            if bool(getattr(stmt, "stream", False)):
+                return True
+        if isinstance(stmt, ir.If):
+            if _statements_use_streaming(stmt.then_body) or _statements_use_streaming(stmt.else_body):
+                return True
+        if isinstance(stmt, ir.Repeat):
+            if _statements_use_streaming(stmt.body):
+                return True
+        if isinstance(stmt, ir.RepeatWhile):
+            if _statements_use_streaming(stmt.body):
+                return True
+        if isinstance(stmt, ir.ForEach):
+            if _statements_use_streaming(stmt.body):
+                return True
+        if isinstance(stmt, ir.Match):
+            if any(_statements_use_streaming(case.body) for case in stmt.cases):
+                return True
+            if stmt.otherwise and _statements_use_streaming(stmt.otherwise):
+                return True
+        if isinstance(stmt, ir.TryCatch):
+            if _statements_use_streaming(stmt.try_body) or _statements_use_streaming(stmt.catch_body):
+                return True
+        if isinstance(stmt, ir.ParallelBlock):
+            if any(_statements_use_streaming(task.body) for task in stmt.tasks):
+                return True
     return False
 
 

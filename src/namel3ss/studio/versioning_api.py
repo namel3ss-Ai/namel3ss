@@ -4,6 +4,7 @@ from pathlib import Path
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.runtime.capabilities.feature_gate import require_app_capability
 from namel3ss.versioning import (
     add_version,
     deprecate_version,
@@ -17,6 +18,7 @@ from namel3ss.versioning import (
 
 def get_versioning_payload(app_path: str) -> dict[str, object]:
     app_file = Path(app_path)
+    require_app_capability(app_file, "versioning_quality_mlops")
     config = load_version_config(app_file.parent, app_file)
     items = list_versions(config)
     deprecated = [item for item in items if str(item.get("status")) == "deprecated"]
@@ -33,6 +35,7 @@ def get_versioning_payload(app_path: str) -> dict[str, object]:
 def apply_versioning_payload(source: str, body: dict, app_path: str) -> dict[str, object]:
     _ = source
     app_file = Path(app_path)
+    require_app_capability(app_file, "versioning_quality_mlops", source_override=source)
     config = load_version_config(app_file.parent, app_file)
     action = _text(body.get("action")) or "list"
 

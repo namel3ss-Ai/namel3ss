@@ -14,10 +14,16 @@ from namel3ss.runtime.data.data_routes import (
 )
 from namel3ss.runtime.deploy_routes import get_build_payload, get_deploy_payload
 from namel3ss.runtime.server.dev.errors import error_from_exception, error_from_message
+from namel3ss.runtime.ui_api import (
+    build_action_result_payload,
+    build_ui_actions_payload,
+    build_ui_manifest_payload,
+    build_ui_state_payload,
+)
 
 
 def handle_session_get(handler: Any, path: str) -> bool:
-    if path != "/api/session":
+    if path not in {"/api/session", "/api/auth/session"}:
         return False
     payload, status, headers = _handle_session_get(handler)
     handler._respond_json(payload, status=status, headers=headers)
@@ -36,6 +42,20 @@ def handle_ui_get(handler: Any, path: str) -> bool:
     return True
 
 
+def handle_ui_manifest_get(handler: Any, path: str) -> bool:
+    if path != "/api/ui/manifest":
+        return False
+    auth_context = _auth_context_or_error(handler, kind="manifest")
+    if auth_context is None:
+        return True
+    state = handler._state()
+    manifest = state.manifest_payload(identity=auth_context.identity, auth_context=auth_context)
+    payload = build_ui_manifest_payload(manifest, revision=state.revision)
+    status = 200 if payload.get("ok", True) else 400
+    handler._respond_json(payload, status=status)
+    return True
+
+
 def handle_state_get(handler: Any, path: str) -> bool:
     if path != "/api/state":
         return False
@@ -43,6 +63,34 @@ def handle_state_get(handler: Any, path: str) -> bool:
     if auth_context is None:
         return True
     payload = handler._state().state_payload(identity=auth_context.identity)
+    status = 200 if payload.get("ok", True) else 400
+    handler._respond_json(payload, status=status)
+    return True
+
+
+def handle_ui_state_get(handler: Any, path: str) -> bool:
+    if path != "/api/ui/state":
+        return False
+    auth_context = _auth_context_or_error(handler, kind="state")
+    if auth_context is None:
+        return True
+    state = handler._state()
+    payload = state.state_payload(identity=auth_context.identity)
+    ui_payload = build_ui_state_payload(payload, revision=state.revision)
+    status = 200 if ui_payload.get("ok", True) else 400
+    handler._respond_json(ui_payload, status=status)
+    return True
+
+
+def handle_ui_actions_get(handler: Any, path: str) -> bool:
+    if path != "/api/ui/actions":
+        return False
+    auth_context = _auth_context_or_error(handler, kind="manifest")
+    if auth_context is None:
+        return True
+    state = handler._state()
+    manifest = state.manifest_payload(identity=auth_context.identity, auth_context=auth_context)
+    payload = build_ui_actions_payload(manifest, revision=state.revision)
     status = 200 if payload.get("ok", True) else 400
     handler._respond_json(payload, status=status)
     return True
@@ -116,6 +164,33 @@ def handle_action_post(handler: Any, body: dict) -> None:
     )
     status = 200 if response.get("ok", True) else 400
     handler._respond_json(response, status=status)
+
+
+def handle_ui_action_post(handler: Any, body: dict) -> None:
+    if not isinstance(body, dict):
+        handler._respond_json(build_error_payload("Body must be a JSON object.", kind="engine"), status=400)
+        return
+    action_id = body.get("id")
+    payload = body.get("payload") or {}
+    if not isinstance(action_id, str):
+        handler._respond_json(build_error_payload("Action id is required.", kind="engine"), status=400)
+        return
+    if not isinstance(payload, dict):
+        handler._respond_json(build_error_payload("Payload must be an object.", kind="engine"), status=400)
+        return
+    auth_context = _auth_context_or_error(handler, kind="engine")
+    if auth_context is None:
+        return
+    state = handler._state()
+    response = state.run_action(
+        action_id,
+        payload,
+        identity=auth_context.identity,
+        auth_context=auth_context,
+    )
+    ui_response = build_action_result_payload(response, revision=state.revision)
+    status = 200 if ui_response.get("ok", False) else 400
+    handler._respond_json(ui_response, status=status)
 
 
 def handle_login_post(handler: Any, body: dict) -> tuple[dict, int, dict[str, str]]:
@@ -290,6 +365,10 @@ __all__ = [
     "handle_migrations_plan_get",
     "handle_migrations_status_get",
     "handle_session_get",
+    "handle_ui_action_post",
+    "handle_ui_actions_get",
     "handle_state_get",
+    "handle_ui_manifest_get",
+    "handle_ui_state_get",
     "handle_ui_get",
 ]

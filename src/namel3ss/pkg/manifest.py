@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -11,6 +12,7 @@ from namel3ss.pkg.versions import parse_constraint, parse_semver
 
 
 MANIFEST_FILENAME = "namel3ss.toml"
+METADATA_FILENAME = "namel3ss.package.json"
 
 
 def load_manifest(root: Path) -> Manifest:
@@ -40,13 +42,64 @@ def load_manifest(root: Path) -> Manifest:
     parsed: Dict[str, DependencySpec] = {}
     for name, value in deps.items():
         parsed[name] = _parse_dependency(name, value)
-    return Manifest(dependencies=parsed, path=path)
+    runtime_python_dependencies, runtime_system_dependencies = _parse_runtime_dependencies(data)
+    package_name, package_version, capabilities = _parse_package_block(data.get("package"))
+    metadata_payload = _load_metadata_payload(root)
+    if metadata_payload is not None:
+        package_name = package_name or _optional_text(metadata_payload.get("name"))
+        package_version = package_version or _optional_text(metadata_payload.get("version"))
+        if not capabilities:
+            capabilities = _parse_capabilities(metadata_payload.get("capabilities"))
+        metadata_deps = metadata_payload.get("dependencies")
+        if isinstance(metadata_deps, dict):
+            for dep_name, dep_value in metadata_deps.items():
+                parsed_dep = _parse_dependency(dep_name, dep_value)
+                existing = parsed.get(dep_name)
+                if existing is None:
+                    parsed[dep_name] = parsed_dep
+                elif existing.source.as_string() != parsed_dep.source.as_string() or existing.constraint_raw != parsed_dep.constraint_raw:
+                    raise Namel3ssError(
+                        build_guidance_message(
+                            what=f"Dependency '{dep_name}' differs between {MANIFEST_FILENAME} and {METADATA_FILENAME}.",
+                            why="The same dependency must resolve to one deterministic source and version constraint.",
+                            fix="Align dependency source/version values in both manifests.",
+                            example=f'{dep_name} = {{ source = "github:owner/repo@v0.1.0", version = "^0.1" }}',
+                        )
+                    )
+    return Manifest(
+        dependencies=parsed,
+        runtime_python_dependencies=runtime_python_dependencies,
+        runtime_system_dependencies=runtime_system_dependencies,
+        package_name=package_name,
+        package_version=package_version,
+        capabilities=capabilities,
+        path=path,
+    )
 
 
 def load_manifest_optional(root: Path) -> Manifest:
     path = root / MANIFEST_FILENAME
     if not path.exists():
-        return Manifest(dependencies={}, path=path)
+        metadata_payload = _load_metadata_payload(root)
+        if metadata_payload is None:
+            return Manifest(dependencies={}, path=path)
+        package_name = _optional_text(metadata_payload.get("name"))
+        package_version = _optional_text(metadata_payload.get("version"))
+        capabilities = _parse_capabilities(metadata_payload.get("capabilities"))
+        dependencies: Dict[str, DependencySpec] = {}
+        raw_deps = metadata_payload.get("dependencies")
+        if isinstance(raw_deps, dict):
+            for name, value in raw_deps.items():
+                dependencies[str(name)] = _parse_dependency(str(name), value)
+        return Manifest(
+            dependencies=dependencies,
+            runtime_python_dependencies=(),
+            runtime_system_dependencies=(),
+            package_name=package_name,
+            package_version=package_version,
+            capabilities=capabilities,
+            path=path,
+        )
     return load_manifest(root)
 
 
@@ -57,7 +110,18 @@ def write_manifest(root: Path, manifest: Manifest) -> Path:
 
 
 def format_manifest(manifest: Manifest) -> str:
-    lines: List[str] = ["[dependencies]"]
+    lines: List[str] = []
+    if manifest.package_name or manifest.package_version or manifest.capabilities:
+        lines.append("[package]")
+        if manifest.package_name:
+            lines.append(f'name = "{manifest.package_name}"')
+        if manifest.package_version:
+            lines.append(f'version = "{manifest.package_version}"')
+        if manifest.capabilities:
+            caps = ", ".join(f'"{item}"' for item in manifest.capabilities)
+            lines.append(f"capabilities = [{caps}]")
+        lines.append("")
+    lines.append("[dependencies]")
     for name in sorted(manifest.dependencies.keys()):
         dep = manifest.dependencies[name]
         source = dep.source.as_string()
@@ -65,6 +129,15 @@ def format_manifest(manifest: Manifest) -> str:
             lines.append(f'{name} = {{ source = "{source}", version = "{dep.constraint_raw}" }}')
         else:
             lines.append(f'{name} = "{source}"')
+    if manifest.runtime_python_dependencies or manifest.runtime_system_dependencies:
+        lines.append("")
+        lines.append("[runtime.dependencies]")
+        if manifest.runtime_python_dependencies:
+            python_values = ", ".join(f'"{value}"' for value in sorted(manifest.runtime_python_dependencies))
+            lines.append(f"python = [{python_values}]")
+        if manifest.runtime_system_dependencies:
+            system_values = ", ".join(f'"{value}"' for value in sorted(manifest.runtime_system_dependencies))
+            lines.append(f"system = [{system_values}]")
     lines.append("")
     return "\n".join(lines)
 
@@ -176,6 +249,8 @@ def _parse_toml_minimal(text: str, path: Path) -> Dict[str, Any]:
 def _parse_toml_value(value: str, line_num: int, path: Path) -> Any:
     if value.startswith('"') and value.endswith('"'):
         return value[1:-1]
+    if value.startswith("[") and value.endswith("]"):
+        return _parse_string_array(value, line_num, path)
     if value.startswith("{") and value.endswith("}"):
         return _parse_inline_table(value, line_num, path)
     raise Namel3ssError(
@@ -255,3 +330,152 @@ def _split_inline_parts(text: str) -> List[str]:
     if part:
         parts.append(part)
     return parts
+
+
+def _parse_package_block(value: object) -> tuple[str | None, str | None, tuple[str, ...]]:
+    if value is None:
+        return None, None, ()
+    if not isinstance(value, dict):
+        raise Namel3ssError(
+            build_guidance_message(
+                what="Package section is not a table.",
+                why="package metadata must be declared under [package].",
+                fix="Use [package] with name/version/capabilities fields.",
+                example='[package]\nname = "inventory"\nversion = "0.1.0"',
+            )
+        )
+    name = _optional_text(value.get("name"))
+    version = _optional_text(value.get("version"))
+    capabilities = _parse_capabilities(value.get("capabilities"))
+    return name, version, capabilities
+
+
+def _parse_runtime_dependencies(data: Dict[str, Any]) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    runtime_value = data.get("runtime")
+    runtime_deps = None
+    if isinstance(runtime_value, dict):
+        runtime_deps = runtime_value.get("dependencies")
+    if runtime_deps is None:
+        runtime_deps = data.get("runtime.dependencies")
+    if runtime_deps is None:
+        return (), ()
+    if not isinstance(runtime_deps, dict):
+        raise Namel3ssError(
+            build_guidance_message(
+                what="runtime.dependencies section is not a table.",
+                why="Runtime dependencies must be declared under [runtime.dependencies].",
+                fix="Use [runtime.dependencies] with python/system arrays.",
+                example='[runtime.dependencies]\npython = ["requests==2.31.0"]',
+            )
+        )
+    python_items = _parse_string_list(runtime_deps.get("python"), label="runtime.dependencies.python")
+    system_items = _parse_string_list(runtime_deps.get("system"), label="runtime.dependencies.system")
+    return tuple(sorted(set(python_items))), tuple(sorted(set(system_items)))
+
+
+def _parse_capabilities(value: object) -> tuple[str, ...]:
+    if value is None:
+        return ()
+    values: list[str] = []
+    if isinstance(value, str):
+        values = [token.strip() for token in value.split(",") if token.strip()]
+    elif isinstance(value, list):
+        for item in value:
+            if isinstance(item, str) and item.strip():
+                values.append(item.strip())
+    else:
+        raise Namel3ssError(
+            build_guidance_message(
+                what="Package capabilities value is invalid.",
+                why="Capabilities must be a string list or comma-separated string.",
+                fix='Use capabilities = ["http", "security_compliance"]',
+                example='capabilities = ["versioning_quality_mlops"]',
+            )
+        )
+    return tuple(sorted(set(values)))
+
+
+def _parse_string_list(value: object, *, label: str) -> list[str]:
+    if value is None:
+        return []
+    if not isinstance(value, list):
+        raise Namel3ssError(
+            build_guidance_message(
+                what=f"{label} is invalid.",
+                why=f"{label} must be a list of strings.",
+                fix="Use a TOML string array.",
+                example='python = ["requests==2.31.0"]',
+            )
+        )
+    output: list[str] = []
+    for item in value:
+        if not isinstance(item, str):
+            raise Namel3ssError(
+                build_guidance_message(
+                    what=f"{label} contains a non-string value.",
+                    why=f"{label} only supports string entries.",
+                    fix="Replace non-string entries with dependency strings.",
+                    example='system = ["postgresql-client@13"]',
+                )
+            )
+        text = item.strip()
+        if text:
+            output.append(text)
+    return output
+
+
+def _optional_text(value: object) -> str | None:
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    return text if text else None
+
+
+def _load_metadata_payload(root: Path) -> dict[str, Any] | None:
+    path = root / METADATA_FILENAME
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as err:
+        raise Namel3ssError(
+            build_guidance_message(
+                what=f"{METADATA_FILENAME} is invalid JSON.",
+                why=f"Unable to parse metadata file: {err}.",
+                fix=f"Fix {METADATA_FILENAME} syntax and retry.",
+                example='{"name":"inventory","version":"0.1.0"}',
+            )
+        ) from err
+    if not isinstance(payload, dict):
+        raise Namel3ssError(
+            build_guidance_message(
+                what=f"{METADATA_FILENAME} must be a JSON object.",
+                why="Top-level metadata must be key/value pairs.",
+                fix="Wrap metadata in a JSON object.",
+                example='{"name":"inventory","version":"0.1.0"}',
+            )
+        )
+    return payload
+
+
+def _parse_string_array(value: str, line_num: int, path: Path) -> list[str]:
+    inner = value[1:-1].strip()
+    if not inner:
+        return []
+    parts = _split_inline_parts(inner)
+    values: list[str] = []
+    for part in parts:
+        text = part.strip()
+        if not (text.startswith('"') and text.endswith('"')):
+            raise Namel3ssError(
+                build_guidance_message(
+                    what=f"Invalid array value in {path.name}.",
+                    why="Only arrays of quoted strings are supported.",
+                    fix='Use values like ["http", "jobs"].',
+                    example='capabilities = ["security_compliance"]',
+                ),
+                line=line_num,
+                column=1,
+            )
+        values.append(text[1:-1])
+    return values

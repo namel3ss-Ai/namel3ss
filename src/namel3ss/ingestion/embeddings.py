@@ -3,6 +3,7 @@ from __future__ import annotations
 from namel3ss.config.loader import load_config
 from namel3ss.config.model import AppConfig
 from namel3ss.ingestion.hash import hash_chunk
+from namel3ss.runtime.performance.batching import batched
 from namel3ss.runtime.embeddings.service import embed_text, embedding_enabled, resolve_embedding_model
 from namel3ss.runtime.embeddings.store import EmbeddingRecord, get_embedding_store
 
@@ -48,25 +49,28 @@ def store_chunk_embeddings(
         return {"enabled": True, "stored": 0, "cached": 0, "model_id": model.model_id}
     existing = store.get_records(model_id=model.model_id, chunk_hashes=[item[1] for item in candidates])
     records: list[EmbeddingRecord] = []
-    for chunk_id, chunk_hash, text in candidates:
-        if chunk_hash in existing:
-            continue
-        try:
-            vector = embed_text(text, model)
-            status = "ok"
-        except Exception:
-            vector = None
-            status = "unavailable"
-        records.append(
-            EmbeddingRecord(
-                chunk_id=chunk_id,
-                chunk_hash=chunk_hash,
-                model_id=model.model_id,
-                dims=model.dims,
-                vector=vector,
-                status=status,
+    uncached = [item for item in candidates if item[1] not in existing]
+    batch_size = 1
+    if bool(getattr(cfg.performance, "enable_batching", False)):
+        batch_size = max(1, min(int(getattr(cfg.performance, "max_concurrency", 1)), 64))
+    for group in batched(uncached, batch_size):
+        for chunk_id, chunk_hash, text in group:
+            try:
+                vector = embed_text(text, model)
+                status = "ok"
+            except Exception:
+                vector = None
+                status = "unavailable"
+            records.append(
+                EmbeddingRecord(
+                    chunk_id=chunk_id,
+                    chunk_hash=chunk_hash,
+                    model_id=model.model_id,
+                    dims=model.dims,
+                    vector=vector,
+                    status=status,
+                )
             )
-        )
     if records:
         store.write_records(records)
     return {

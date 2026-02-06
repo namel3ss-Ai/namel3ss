@@ -41,3 +41,35 @@ ai "assistant":
     )
     with pytest.raises(Namel3ssError):
         lower_program(program)
+
+
+def test_lowering_infers_provider_from_model_prefix():
+    program = parse(
+        '''spec is "1.0"
+
+capabilities:
+  huggingface
+
+ai "assistant":
+  model is "huggingface:bert-base-uncased"
+'''
+    )
+    ir_program = lower_program(program)
+    assert ir_program.ais["assistant"].provider == "huggingface"
+
+
+def test_lowering_rejects_provider_prefix_mismatch():
+    program = parse(
+        '''spec is "1.0"
+
+capabilities:
+  huggingface
+
+ai "assistant":
+  provider is "mistral"
+  model is "huggingface:bert-base-uncased"
+'''
+    )
+    with pytest.raises(Namel3ssError) as err:
+        lower_program(program)
+    assert "does not match model prefix" in str(err.value)

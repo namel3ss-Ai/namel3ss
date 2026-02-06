@@ -7,6 +7,7 @@ from namel3ss.outcome.model import MemoryOutcome, StateOutcome, StoreOutcome
 from namel3ss.runtime.execution.normalize import build_plain_text, write_last_execution
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.executor.traces import _trace_summaries
+from namel3ss.runtime.explainability.logger import persist_explain_log
 from namel3ss.observability.trace_runs import write_trace_run
 from namel3ss.tools_with.api import build_tools_pack
 from namel3ss.schema.evolution import write_workspace_snapshot
@@ -40,6 +41,7 @@ def _persist_execution_artifacts(ctx: ExecutionContext, *, ok: bool, error: Exce
                 project_root=ctx.project_root,
                 store=ctx.store,
             )
+        persist_explain_log(ctx)
     except Exception:
         return
 

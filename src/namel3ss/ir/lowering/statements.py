@@ -171,6 +171,7 @@ def _lower_statement(stmt: ast.Statement, agents) -> IRStatement:
             input_expr=_lower_expression(stmt.input_expr),
             target=stmt.target,
             input_mode=getattr(stmt, "input_mode", "text"),
+            stream=bool(getattr(stmt, "stream", False)),
             line=stmt.line,
             column=stmt.column,
         )

@@ -45,6 +45,21 @@ Quality checks include:
 - Maximum field length.
 - Prompt/system-text disallowed words.
 
+Example `quality.yaml`:
+
+```yaml
+naming:
+  enforce_snake_case: true
+schema:
+  max_field_length: 64
+  required_fields:
+    - id
+prompts:
+  disallow_words:
+    - unsafe
+    - secret
+```
+
 `n3 marketplace publish` and `n3 mlops register-model` enforce quality gates.
 
 ## MLOps

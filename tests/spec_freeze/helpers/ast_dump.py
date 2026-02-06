@@ -28,6 +28,8 @@ def _to_data(value: Any, *, field_name: str | None = None) -> Any:
                 continue
             if field.name == "merge" and field_value is None:
                 continue
+            if field.name == "stream" and field_value is False:
+                continue
             if field.name == "state_defaults" and field_value is None:
                 continue
             if field.name == "status" and field_value is None:

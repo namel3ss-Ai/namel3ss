@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Iterable
 
 from namel3ss.cli.app_path import resolve_app_path
+from namel3ss.cli.dependency_management_mode import run_dependency_subcommand
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.tools.python_env import (
@@ -48,11 +49,13 @@ def run_deps(args: list[str]) -> int:
         return _run_lock(app_root, tail, json_mode=json_mode)
     if cmd == "clean":
         return _run_clean(app_root, tail, json_mode=json_mode)
+    if cmd in {"add", "remove", "update", "tree", "verify", "audit"}:
+        return run_dependency_subcommand(app_root, cmd, tail, json_mode=json_mode)
 
     raise Namel3ssError(
         build_guidance_message(
             what=f"Unknown deps command '{cmd}'.",
-            why="Supported commands are status, install, sync, lock, and clean.",
+            why="Supported commands are add, remove, status, install, sync, lock, update, tree, verify, audit, and clean.",
             fix="Run `n3 deps help` to see usage.",
             example="n3 deps status",
         )
@@ -457,11 +460,17 @@ def _remove_venv(app_root: Path) -> None:
 
 def _print_usage() -> None:
     usage = """Usage:
+  n3 deps add <pkg@version> [--system] [--json]
+  n3 deps remove <pkg==version> [--system] [--json]
   n3 deps status --json            # show python env status
   n3 deps install --force --python PATH --dry-run --json
   n3 deps install --plan --json    # alias for --dry-run
   n3 deps sync --json              # install from lockfile if present
   n3 deps lock --json              # write requirements.lock.txt
+  n3 deps update --json            # update lockfile against index recommendations
+  n3 deps tree --json              # show dependency tree
+  n3 deps verify --json            # verify dependency checksums
+  n3 deps audit --json             # scan vulnerabilities and trust warnings
   n3 deps clean --yes --json       # remove .venv and caches
   Notes:
     flags are optional unless stated

@@ -1,0 +1,10 @@
+{
+  "name": "local_runner",
+  "capability_token": "local_runner",
+  "supported_modes": ["text"],
+  "models": [
+    "local_runner:llama3-8b-q4",
+    "local_runner:mistral-7b-q4",
+    "local_runner:qwen2-7b-q4"
+  ]
+}

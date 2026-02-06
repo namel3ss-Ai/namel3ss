@@ -6,7 +6,8 @@ from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir.model.ai import AIDecl, AIMemory
 from namel3ss.ir.model.tools import ToolDecl
-from namel3ss.runtime.ai.providers.registry import is_supported_provider
+from namel3ss.runtime.ai.providers.registry import infer_provider_from_model, is_supported_provider
+from namel3ss.runtime.providers.pack_registry import provider_pack_names, validate_model_identifier
 
 
 def _lower_ai_decls(ais: List[ast.AIDecl], tools: Dict[str, ToolDecl]) -> Dict[str, AIDecl]:
@@ -16,9 +17,24 @@ def _lower_ai_decls(ais: List[ast.AIDecl], tools: Dict[str, ToolDecl]) -> Dict[s
             raise Namel3ssError(f"Duplicate AI declaration '{ai.name}'", line=ai.line, column=ai.column)
         if not ai.model:
             raise Namel3ssError(f"AI '{ai.name}' must specify a model", line=ai.line, column=ai.column)
-        provider = (ai.provider or "mock").lower()
+        inferred = infer_provider_from_model(ai.model)
+        if ai.provider:
+            provider = ai.provider.lower()
+            if inferred and inferred != provider:
+                raise Namel3ssError(
+                    (
+                        f"AI '{ai.name}' provider '{provider}' does not match model prefix '{inferred}'. "
+                        f"Use provider '{inferred}' or change model."
+                    ),
+                    line=ai.line,
+                    column=ai.column,
+                )
+        else:
+            provider = inferred or "mock"
         if not is_supported_provider(provider):
             raise Namel3ssError(f"Unknown AI provider '{provider}'", line=ai.line, column=ai.column)
+        if provider in set(provider_pack_names()):
+            validate_model_identifier(model_identifier=ai.model, provider_name=provider)
         exposed: List[str] = []
         for tool in ai.exposed_tools:
             if tool not in tools:

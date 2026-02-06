@@ -6,11 +6,18 @@ from namel3ss.tutorials.engine import (
     load_tutorial_progress,
     run_tutorial,
 )
-from namel3ss.tutorials.playground import check_snippet, run_snippet
+from namel3ss.tutorials.playground import (
+    DEFAULT_PLAYGROUND_TIMEOUT_SECONDS,
+    MAX_PLAYGROUND_TIMEOUT_SECONDS,
+    check_snippet,
+    run_snippet,
+)
 
 __all__ = [
     "TutorialDefinition",
     "TutorialStep",
+    "DEFAULT_PLAYGROUND_TIMEOUT_SECONDS",
+    "MAX_PLAYGROUND_TIMEOUT_SECONDS",
     "check_snippet",
     "list_tutorials",
     "load_tutorial",

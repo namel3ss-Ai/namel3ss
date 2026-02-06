@@ -11,6 +11,8 @@ from namel3ss.studio.session import SessionState
 
 SOURCE = (
     'spec is "1.0"\n\n'
+    "capabilities:\n"
+    "  versioning_quality_mlops\n\n"
     'flow "ask_ai":\n'
     '  return "ok"\n\n'
     'page "home":\n'
@@ -132,3 +134,30 @@ def test_mlops_post_returns_400_for_invalid_registry_uri(tmp_path: Path) -> None
     assert isinstance(handler.payload, dict)
     assert handler.payload.get("ok") is False
     assert handler.error is None
+
+
+def test_mlops_post_enforces_quality_gate(tmp_path: Path) -> None:
+    app_path = tmp_path / "app.ai"
+    app_path.write_text(
+        (
+            'spec is "1.0"\n\n'
+            "capabilities:\n"
+            "  versioning_quality_mlops\n\n"
+            'flow "BadFlow":\n'
+            '  return "ok"\n'
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "mlops.yaml").write_text(
+        f"registry_url: {(tmp_path / 'registry_ops.json').as_uri()}\nproject_name: demo\n",
+        encoding="utf-8",
+    )
+    handler = DummyHandler(
+        path="/api/mlops",
+        app_path=app_path,
+        body=b'{"action":"register_model","name":"base","version":"1.0","artifact_uri":"model://base/1.0","experiment_id":"manual"}',
+    )
+    handle_api_post(handler)
+    assert handler.status == 400
+    assert isinstance(handler.payload, dict)
+    assert "quality" in str(handler.payload.get("message", "")).lower()

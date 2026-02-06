@@ -19,10 +19,16 @@ DEFAULT_REQUIRED_FIELDS: tuple[str, ...] = ()
 DEFAULT_DISALLOWED_PROMPT_WORDS: tuple[str, ...] = ()
 _ALLOWED_KEYS = {
     "naming_convention",
+    "naming",
     "max_field_length",
+    "schema",
     "disallowed_prompt_words",
+    "prompts",
     "required_fields",
 }
+_NAMING_ALLOWED_KEYS = {"enforce_snake_case"}
+_SCHEMA_ALLOWED_KEYS = {"max_field_length", "required_fields"}
+_PROMPTS_ALLOWED_KEYS = {"disallow_words", "disallowed_words", "disallowed_prompt_words"}
 _SNAKE_CASE_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 
 
@@ -85,11 +91,18 @@ def load_quality_rules(project_root: str | Path | None, app_path: str | Path | N
         joined = ", ".join(unknown)
         raise Namel3ssError(_invalid_quality_message(path, f"unknown keys: {joined}"))
 
-    naming = str(payload.get("naming_convention") or DEFAULT_NAMING).strip().lower()
-    if naming != "snake_case":
-        raise Namel3ssError(_invalid_quality_message(path, "naming_convention must be snake_case"))
+    naming_block = _mapping(payload.get("naming"), path=path, label="naming", allowed_keys=_NAMING_ALLOWED_KEYS)
+    schema_block = _mapping(payload.get("schema"), path=path, label="schema", allowed_keys=_SCHEMA_ALLOWED_KEYS)
+    prompts_block = _mapping(payload.get("prompts"), path=path, label="prompts", allowed_keys=_PROMPTS_ALLOWED_KEYS)
 
-    max_field_length = payload.get("max_field_length", DEFAULT_MAX_FIELD_LENGTH)
+    naming = str(payload.get("naming_convention") or DEFAULT_NAMING).strip().lower()
+    if naming_block is not None:
+        enforce_snake_case = bool(naming_block.get("enforce_snake_case", True))
+        naming = "snake_case" if enforce_snake_case else "none"
+    if naming not in {"snake_case", "none"}:
+        raise Namel3ssError(_invalid_quality_message(path, "naming_convention must be snake_case or none"))
+
+    max_field_length = (schema_block or {}).get("max_field_length", payload.get("max_field_length", DEFAULT_MAX_FIELD_LENGTH))
     if isinstance(max_field_length, bool):
         raise Namel3ssError(_invalid_quality_message(path, "max_field_length must be a positive number"))
     try:
@@ -99,8 +112,14 @@ def load_quality_rules(project_root: str | Path | None, app_path: str | Path | N
     if max_field_length <= 0:
         raise Namel3ssError(_invalid_quality_message(path, "max_field_length must be a positive number"))
 
-    disallowed_prompt_words = _parse_word_list(payload.get("disallowed_prompt_words"), "disallowed_prompt_words", path)
-    required_fields = _parse_word_list(payload.get("required_fields"), "required_fields", path)
+    prompt_words_source = (prompts_block or {}).get(
+        "disallow_words",
+        (prompts_block or {}).get("disallowed_words", (prompts_block or {}).get("disallowed_prompt_words", payload.get("disallowed_prompt_words"))),
+    )
+    required_fields_source = (schema_block or {}).get("required_fields", payload.get("required_fields"))
+
+    disallowed_prompt_words = _parse_word_list(prompt_words_source, "disallowed_prompt_words", path)
+    required_fields = _parse_word_list(required_fields_source, "required_fields", path)
 
     return QualityRules(
         naming_convention=naming,
@@ -295,6 +314,24 @@ def _check_prompt_bias(issues: list[QualityIssue], entity: str, text: str, rules
             )
 
 
+def _mapping(
+    value: object,
+    *,
+    path: Path,
+    label: str,
+    allowed_keys: set[str],
+) -> dict[str, object] | None:
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        raise Namel3ssError(_invalid_quality_message(path, f"{label} must be a mapping"))
+    unknown = sorted([str(key) for key in value.keys() if str(key) not in allowed_keys])
+    if unknown:
+        joined = ", ".join(unknown)
+        raise Namel3ssError(_invalid_quality_message(path, f"{label} has unknown keys: {joined}"))
+    return value
+
+
 def _parse_word_list(value: object, key: str, path: Path) -> tuple[str, ...]:
     if value is None:
         return ()
@@ -322,12 +359,15 @@ def _invalid_quality_message(path: Path, details: str) -> str:
     return build_guidance_message(
         what="quality.yaml is invalid.",
         why=f"{path.as_posix()} could not be parsed: {details}.",
-        fix="Use naming_convention, max_field_length, disallowed_prompt_words, and required_fields only.",
+        fix="Use naming/schema/prompts blocks or flat naming_convention/max_field_length/disallowed_prompt_words/required_fields keys.",
         example=(
-            "naming_convention: snake_case\n"
-            "max_field_length: 64\n"
-            "disallowed_prompt_words:\n"
-            "  - violent"
+            "naming:\n"
+            "  enforce_snake_case: true\n"
+            "schema:\n"
+            "  max_field_length: 64\n"
+            "prompts:\n"
+            "  disallow_words:\n"
+            "    - violent"
         ),
     )
 

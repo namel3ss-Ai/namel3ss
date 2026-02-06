@@ -67,3 +67,128 @@ flow "demo":
 '''
     program = lower_ir_program(source)
     assert program.capabilities == ("http", "jobs")
+
+
+def test_missing_vision_capability_rejected() -> None:
+    source = '''spec is "1.0"
+
+ai "assistant":
+  provider is "mock"
+  model is "vision-model"
+
+flow "demo":
+  ask ai "assistant" with image input: "assets/photo.png" as reply
+  return reply
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "Missing capabilities" in exc.value.message
+    assert "vision" in exc.value.message
+
+
+def test_missing_speech_capability_rejected() -> None:
+    source = '''spec is "1.0"
+
+ai "assistant":
+  provider is "mock"
+  model is "speech-model"
+
+flow "demo":
+  ask ai "assistant" with audio input: "assets/note.wav" as reply
+  return reply
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "Missing capabilities" in exc.value.message
+    assert "speech" in exc.value.message
+
+
+def test_provider_without_vision_support_rejected() -> None:
+    source = '''spec is "1.0"
+
+capabilities:
+  vision
+
+ai "assistant":
+  provider is "ollama"
+  model is "llama3"
+
+flow "demo":
+  ask ai "assistant" with image input: "assets/photo.png" as reply
+  return reply
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "does not support image input mode" in exc.value.message
+
+
+def test_provider_pack_capability_is_required() -> None:
+    source = '''spec is "1.0"
+
+ai "assistant":
+  model is "huggingface:bert-base-uncased"
+
+flow "demo":
+  ask ai "assistant" with input: "hello" as reply
+  return reply
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "Missing capabilities" in exc.value.message
+    assert "huggingface" in exc.value.message
+
+
+def test_provider_pack_model_mode_mismatch_rejected() -> None:
+    source = '''spec is "1.0"
+
+capabilities:
+  local_runner
+  vision
+
+ai "assistant":
+  provider is "local_runner"
+  model is "local_runner:llama3-8b-q4"
+
+flow "demo":
+  ask ai "assistant" with image input: "assets/photo.png" as reply
+  return reply
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "does not support image mode" in exc.value.message
+
+
+def test_missing_streaming_capability_rejected() -> None:
+    source = '''spec is "1.0"
+
+ai "assistant":
+  provider is "mock"
+  model is "mock-model"
+
+flow "demo":
+  ask ai "assistant" with stream: true and input: "hello" as reply
+  return reply
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "Missing capabilities" in exc.value.message
+    assert "streaming" in exc.value.message
+
+
+def test_provider_without_streaming_support_rejected() -> None:
+    source = '''spec is "1.0"
+
+capabilities:
+  streaming
+
+ai "assistant":
+  provider is "ollama"
+  model is "llama3"
+
+flow "demo":
+  ask ai "assistant" with stream: true and input: "hello" as reply
+  return reply
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "does not support stream=true" in exc.value.message

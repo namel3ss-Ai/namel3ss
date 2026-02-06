@@ -215,6 +215,9 @@ Language & grammar:
 Runtime & backend:
 - [Data and migrations](docs/data.md)
 - [Observability](docs/observability.md)
+- [Model training](docs/training.md)
+- [Streaming responses](docs/streaming.md)
+- [Performance hardening](docs/performance.md)
 - [Browser protocol](docs/runtime/browser-protocol.md)
 
 UI & Studio:

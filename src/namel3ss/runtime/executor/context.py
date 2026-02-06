@@ -76,6 +76,7 @@ class ExecutionContext:
     encryption_service: object | None = None
     model_manager: object | None = None
     sandbox_config: object | None = None
+    resource_limits: object | None = None
     last_order_target: ir.Assignable | None = None
     flow_map: Dict[str, ir.Flow] = field(default_factory=dict)
     flow_contracts: Dict[str, ir.ContractDecl] = field(default_factory=dict)
@@ -109,6 +110,9 @@ class ExecutionContext:
     async_launch_counter: int = 0
     yield_messages: list[dict] = field(default_factory=list)
     yield_sequence: int = 0
+    performance_state: object | None = None
+    explain_log: list[dict] = field(default_factory=list)
+    explain_sequence: int = 0
 
     def __post_init__(self) -> None:
         if not isinstance(self.traces, TraceList):

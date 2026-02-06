@@ -4,6 +4,8 @@
   const net = root.net;
   const setup = root.setup || (root.setup = {});
   const secretsApi = root.secrets || {};
+  const providerSetup = root.providerSetup || {};
+  const dependencySetup = root.dependencySetup || {};
 
   let cachedPayload = null;
   let loading = false;
@@ -15,6 +17,11 @@
     anthropic: "Anthropic",
     gemini: "Gemini",
     mistral: "Mistral",
+    huggingface: "HuggingFace",
+    local_runner: "Local Runner",
+    vision_gen: "Vision Gen",
+    speech: "Speech",
+    third_party_apis: "Third-Party APIs",
   };
 
   function looksLikeSecretValue(value) {
@@ -272,7 +279,7 @@
     return banner;
   }
 
-  function renderSetup(payload) {
+  function renderSetup(payload, providersPayload, dependenciesPayload) {
     const panel = document.getElementById("setup");
     if (!panel) return;
     panel.innerHTML = "";
@@ -312,6 +319,13 @@
       wrapper.appendChild(buildProviderErrorBanner());
     }
 
+    if (providerSetup && typeof providerSetup.renderProviders === "function") {
+      providerSetup.renderProviders(wrapper, providersPayload);
+    }
+    if (dependencySetup && typeof dependencySetup.renderDependencies === "function") {
+      dependencySetup.renderDependencies(wrapper, dependenciesPayload);
+    }
+
     panel.appendChild(wrapper);
     updateBanner(missing);
     updateAiBadge(payload);
@@ -326,7 +340,29 @@
       try {
         const payload = await net.fetchJson("/api/secrets");
         cachedPayload = payload;
-        renderSetup(payload);
+        let providersPayload = null;
+        if (providerSetup && typeof providerSetup.refreshProviders === "function") {
+          try {
+            providersPayload = await providerSetup.refreshProviders();
+          } catch (err) {
+            providersPayload = {
+              ok: false,
+              error: err && err.message ? err.message : "Unable to load providers.",
+            };
+          }
+        }
+        let dependenciesPayload = null;
+        if (dependencySetup && typeof dependencySetup.refreshDependencies === "function") {
+          try {
+            dependenciesPayload = await dependencySetup.refreshDependencies();
+          } catch (err) {
+            dependenciesPayload = {
+              ok: false,
+              error: err && err.message ? err.message : "Unable to load dependencies.",
+            };
+          }
+        }
+        renderSetup(payload, providersPayload, dependenciesPayload);
       } catch (err) {
         const detail = err && err.message ? err.message : "Unable to load secrets.";
         if (panel) dom.showError(panel, detail);

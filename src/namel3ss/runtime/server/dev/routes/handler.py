@@ -33,6 +33,14 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
         path = parsed.path
+        if path == "/api/ui/action":
+            body = self._read_json_body()
+            if body is None:
+                payload = build_error_payload("Invalid JSON body.", kind="engine")
+                self._respond_json(payload, status=400)
+                return
+            studio.handle_ui_action_post(self, body)
+            return
         if path == "/api/action":
             body = self._read_json_body()
             if body is None:
@@ -41,7 +49,7 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
                 return
             self._handle_action_post(body)
             return
-        if path == "/api/login":
+        if path in {"/api/login", "/api/auth/login"}:
             body = self._read_json_body()
             if body is None:
                 payload = build_error_payload("Invalid JSON body.", kind="authentication")
@@ -50,7 +58,7 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
             payload, status, headers = studio.handle_login_post(self, body)
             self._respond_json(payload, status=status, headers=headers)
             return
-        if path == "/api/logout":
+        if path in {"/api/logout", "/api/auth/logout"}:
             payload, status, headers = studio.handle_logout_post(self)
             self._respond_json(payload, status=status, headers=headers)
             return
@@ -66,6 +74,12 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
         if answer_explain.handle_answer_explain_get(self, path):
             return
         if studio.handle_session_get(self, path):
+            return
+        if studio.handle_ui_manifest_get(self, path):
+            return
+        if studio.handle_ui_state_get(self, path):
+            return
+        if studio.handle_ui_actions_get(self, path):
             return
         if studio.handle_ui_get(self, path):
             return

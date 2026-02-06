@@ -13,6 +13,11 @@ capabilities:
   files
   uploads
   secrets
+  vision
+  speech
+  training
+  streaming
+  performance
 ```
 
 ## HTTP calls (read-only)
@@ -132,6 +137,96 @@ Endpoints:
 - `GET /api/uploads` to list stored uploads.
 
 Use `X-Upload-Name` or `?name=` to set a logical filename when the client does not send one.
+
+## Vision and speech (multi-modal AI input)
+Vision and speech capabilities gate image/audio AI input modes.
+
+```ai
+capabilities:
+  vision
+  speech
+```
+
+Use in flows:
+
+```ai
+ask ai "assistant" with image input: state.image_path as image_reply
+ask ai "assistant" with audio input: state.audio_path as audio_reply
+```
+
+Rules:
+- `image` mode requires `vision`.
+- `audio` mode requires `speech`.
+- Provider capability checks run at compile time.
+- Input normalization is deterministic (hash + canonical payload + derived seed).
+- Content filtering is deterministic and explicit.
+
+## Training (custom model fine-tuning)
+Training enables `n3 train` for deterministic, sandboxed custom model fine-tuning.
+
+```ai
+capabilities:
+  training
+```
+
+Example:
+
+```bash
+n3 train --model-base gpt-3.5-turbo \
+  --dataset data/support_tickets.jsonl \
+  --epochs 3 \
+  --learning-rate 2e-5 \
+  --output-name supportbot.faq_model_v2
+```
+
+Rules:
+- Training is disabled unless `training` capability is declared in the app.
+- Training inputs are deterministic: dataset snapshot hash, seed, and split are recorded.
+- Registered model names are immutable; existing names are not overwritten.
+- Training writes artifacts under `models/<output_name>/<version>/` and updates `models_registry.yaml`.
+- Evaluation metrics are written to `docs/reports/training_metrics_<name>_<version>.json`.
+
+## Streaming AI responses
+Streaming is opt-in per AI call and gated by the `streaming` capability.
+
+```ai
+capabilities:
+  streaming
+
+flow "demo":
+  ask ai "assistant" with stream: true and input: "Explain photosynthesis." as reply
+  return reply
+```
+
+Rules:
+- `stream: true` is allowed only on `ask ai`.
+- Providers must explicitly support streaming.
+- Streaming events are emitted in deterministic sequence order.
+- Final output is identical to non-streaming output for the same input and seed.
+
+## Performance runtime controls
+Performance controls are configured outside `.ai` and are gated by `performance`.
+
+```ai
+capabilities:
+  performance
+```
+
+Configure in `namel3ss.toml`:
+
+```toml
+[performance]
+async_runtime = true
+max_concurrency = 8
+cache_size = 128
+enable_batching = true
+```
+
+Rules:
+- Without `performance`, enabled performance settings fail fast with guidance.
+- Deterministic caching keys include model and input payload.
+- Batching preserves request/response ordering.
+- Async execution does not change final results for the same input.
 
 ## Secrets and auth helpers
 Secrets are loaded from `.namel3ss/secrets.json` or environment variables and are always redacted in traces.

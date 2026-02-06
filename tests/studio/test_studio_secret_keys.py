@@ -13,6 +13,13 @@ def test_secret_keys_mapping():
         "GOOGLE_API_KEY",
         "NAMEL3SS_MISTRAL_API_KEY",
         "MISTRAL_API_KEY",
+        "NAMEL3SS_HUGGINGFACE_API_KEY",
+        "HUGGINGFACE_API_KEY",
+        "HUGGINGFACEHUB_API_TOKEN",
+        "NAMEL3SS_SPEECH_API_KEY",
+        "SPEECH_API_KEY",
+        "NAMEL3SS_THIRD_PARTY_APIS_KEY",
+        "THIRD_PARTY_APIS_KEY",
     ]:
         assert token in js
 

@@ -28,6 +28,8 @@ from namel3ss.governance.policy import enforce_policies_for_app, enforce_runtime
 from namel3ss.observability.context import ObservabilityContext
 from namel3ss.observability.enablement import resolve_observability_context
 from namel3ss.pipelines.registry import pipeline_contracts
+from namel3ss.runtime.performance.config import normalize_performance_runtime_config
+from namel3ss.runtime.performance.guard import require_performance_capability
 
 
 def execute_flow(
@@ -120,6 +122,11 @@ def execute_program_flow(
     resolved_config = config or load_config(
         app_path=getattr(program, "app_path", None),
         root=getattr(program, "project_root", None),
+    )
+    require_performance_capability(
+        getattr(program, "capabilities", ()),
+        normalize_performance_runtime_config(resolved_config),
+        where="runtime configuration",
     )
     resolved_root = project_root if isinstance(project_root, (str, type(None))) else str(project_root)
     app_path = app_path_value

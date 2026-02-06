@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import os
 import re
 import sys
@@ -43,7 +44,7 @@ def _compile_sources(paths: list[str], *, rx: re.Pattern[str] | None, quiet: int
         try:
             with tokenize.open(path) as handle:
                 source = handle.read()
-            compile(source, path_text, "exec")
+            ast.parse(source, filename=path_text, mode="exec")
         except Exception as err:
             success = False
             if quiet < 2:

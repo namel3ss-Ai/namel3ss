@@ -21,6 +21,10 @@ from namel3ss.runtime.answer.traces import (
     answer_trace_from_steps,
     build_answer_explain_trace,
 )
+from namel3ss.runtime.composition.retrieval_explain_logging import (
+    build_retrieval_explain_metadata,
+)
+from namel3ss.runtime.explainability.logger import append_explain_entry
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.runtime.values.coerce import require_type
@@ -154,6 +158,15 @@ def _run_retrieval(ctx: ExecutionContext, payload: dict, expr: ir.CallPipelineEx
             "reason": decision.reason,
         }
         output["report"] = report
+        results = report.get("results")
+        append_explain_entry(
+            ctx,
+            stage="retrieval",
+            event_type="selected_chunks",
+            inputs={"query": report.get("query")},
+            outputs={"result_count": len(results) if isinstance(results, list) else 0},
+            metadata=build_retrieval_explain_metadata(report),
+        )
     ctx.traces.extend(_retrieval_traces(report if isinstance(report, dict) else {}))
     return output, result.steps
 

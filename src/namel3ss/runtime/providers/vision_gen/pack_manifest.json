@@ -1,0 +1,9 @@
+{
+  "name": "vision_gen",
+  "capability_token": "vision_gen",
+  "supported_modes": ["image"],
+  "models": [
+    "vision_gen:stable-diffusion",
+    "vision_gen:sdxl-base"
+  ]
+}

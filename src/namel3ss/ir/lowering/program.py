@@ -32,6 +32,7 @@ from namel3ss.ir.lowering.records import _lower_record
 from namel3ss.ir.lowering.tools import _lower_tools
 from namel3ss.ir.lowering.ui_packs import build_pack_index
 from namel3ss.ir.lowering.ui_patterns import build_pattern_index
+from namel3ss.ir.lowering.program_capabilities import require_program_capabilities
 from namel3ss.ir.model.agents import RunAgentsParallelStmt
 from namel3ss.ir.model.flow_steps import FlowInput
 from namel3ss.ir.model.contracts import ContractDecl
@@ -130,7 +131,15 @@ def lower_program(program: ast.Program) -> Program:
     validate_flow_purity(flow_irs, flow_contracts)
     validate_declarative_flows(flow_irs, record_map, tool_map, mode=ValidationMode.RUNTIME, warnings=None)
     capabilities = _normalize_capabilities(getattr(program, "capabilities", []) or [])
-    _require_capabilities(capabilities, tool_map, job_irs)
+    require_program_capabilities(
+        capabilities,
+        tool_map,
+        job_irs,
+        flow_irs,
+        function_map,
+        ai_map,
+        agent_map,
+    )
     pack_allowlist = _normalize_pack_allowlist(getattr(program, "pack_allowlist", None))
     pack_index = build_pack_index(getattr(program, "ui_packs", []))
     pattern_index = build_pattern_index(getattr(program, "ui_patterns", []), pack_index)
@@ -458,29 +467,3 @@ def _normalize_pack_allowlist(items: list[str] | None) -> tuple[str, ...] | None
     if not normalized:
         return None
     return tuple(normalized)
-def _require_capabilities(
-    allowed: tuple[str, ...],
-    tools: Dict[str, object],
-    jobs: list,
-) -> None:
-    required: set[str] = set()
-    for tool in tools.values():
-        kind = getattr(tool, "kind", None)
-        if kind == "http":
-            required.add("http")
-        elif kind == "file":
-            required.add("files")
-    if jobs:
-        required.add("jobs")
-    missing = sorted(required - set(allowed))
-    if not missing:
-        return
-    missing_text = ", ".join(missing)
-    raise Namel3ssError(
-        build_guidance_message(
-            what=f"Missing capabilities: {missing_text}.",
-            why="Apps must explicitly enable built-in backend capabilities.",
-            fix="Add a capabilities block that lists the missing entries.",
-            example="capabilities:\n  http\n  jobs\n  files",
-        )
-    )

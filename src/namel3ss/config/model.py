@@ -96,6 +96,22 @@ class MemoryPacksConfig:
 
 
 @dataclass
+class PerformanceConfig:
+    async_runtime: bool = False
+    max_concurrency: int = 8
+    cache_size: int = 128
+    enable_batching: bool = False
+    metrics_endpoint: str = "/api/metrics"
+
+
+@dataclass
+class DeterminismConfig:
+    seed: int | str | None = None
+    explain: bool = True
+    redact_user_data: bool = False
+
+
+@dataclass
 class RegistrySourceConfig:
     id: str
     kind: str
@@ -125,6 +141,8 @@ class AppConfig:
     foreign: ForeignConfig = field(default_factory=ForeignConfig)
     tool_packs: ToolPacksConfig = field(default_factory=ToolPacksConfig)
     memory_packs: MemoryPacksConfig = field(default_factory=MemoryPacksConfig)
+    performance: PerformanceConfig = field(default_factory=PerformanceConfig)
+    determinism: DeterminismConfig = field(default_factory=DeterminismConfig)
     registries: RegistriesConfig = field(default_factory=RegistriesConfig)
     capability_overrides: dict[str, dict[str, object]] = field(default_factory=dict)
 
@@ -145,6 +163,8 @@ __all__ = [
     "ForeignConfig",
     "ToolPacksConfig",
     "MemoryPacksConfig",
+    "PerformanceConfig",
+    "DeterminismConfig",
     "RegistrySourceConfig",
     "RegistriesConfig",
 ]
