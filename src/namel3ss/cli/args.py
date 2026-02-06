@@ -20,7 +20,7 @@ def extract_app_override(remainder: list[str], app_override: str | None) -> tupl
     if not remainder:
         return app_override, remainder
     command = canonical_command(remainder[0])
-    if command not in {"check", "fmt", "lint", "studio"}:
+    if command not in {"check", "fmt", "lint", "studio", "console"}:
         return app_override, remainder
     tail = remainder[1:]
     for idx, item in enumerate(tail):

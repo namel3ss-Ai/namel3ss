@@ -11,6 +11,7 @@ This is the authoritative description of the UI DSL. It is semantic and explicit
 - Text-first: intent over pixels.
 - Studio panels (Setup, Graph, Traces, Memory, etc.) are tooling views; they are not part of the UI DSL contract.
 - Studio renders the same UI manifest intent as `n3 ui` and does not add DSL semantics.
+- Console editing is a file-backed workflow; it writes the same `.ai` constructs a text editor writes and does not add hidden grammar behavior.
 
 ## 2) Core blocks and naming rules
 - `ui:` (optional global settings; order inside the block is free)

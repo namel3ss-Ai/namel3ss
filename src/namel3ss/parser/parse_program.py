@@ -248,7 +248,7 @@ def parse_program(parser) -> ast.Program:
         if rule.name == "prompt":
             prompts.append(rule.parse(parser))
             continue
-        if rule.name in {"llm_call", "rag", "classification", "summarise"}:
+        if rule.name in {"llm_call", "rag", "classification", "classify", "summarise", "translate", "qa", "cot", "chain"}:
             ai_flows.append(rule.parse(parser))
             continue
         if rule.name == "flow":

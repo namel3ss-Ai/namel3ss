@@ -8,6 +8,7 @@ Run any `.ai` app with the file-first CLI.
 
 ## Create a project
 
+- Starter project: `n3 init <project_name>`
 - Scaffold: `n3 new <template> [project_name]` (templates: `operations_dashboard`, `onboarding`, `support_inbox`)
 - Example: `n3 new onboarding my_app` then `cd my_app`
 - Recommended first win: `n3 new operations_dashboard ops_app` then `cd ops_app`
@@ -67,6 +68,8 @@ route "upload_document":
 - SDKs: `n3 sdk generate --lang python|typescript|go|rust --out-dir sdk`
 - Postman: `n3 sdk postman --out postman.json`
 - AI metrics summary: `n3 metrics`
+- Console, feedback, canary, marketplace: `docs/console-feedback-marketplace.md`
+- Ecosystem, tutorials, tooling: `docs/ecosystem-developer-experience.md`
 - Prompt list: `n3 prompts list`
 - Prompt eval: `n3 eval prompt summary_prompt --input samples.txt`
 - Conventions check: `n3 conventions check`
@@ -78,6 +81,7 @@ route "upload_document":
 - UI manifest: `n3 app.ai ui`
 - Actions list: `n3 app.ai actions`
 - Studio (local viewer/interactor): `n3 app.ai studio`
+- Console alias (opens `/console`): `n3 app.ai console`
 - Run default flow (when only one flow): `n3 app.ai`
 - Run specific flow (template): `n3 app.ai flow "create_sample_incident"`
 - Run an action (template): `n3 app.ai page.dashboard.button.create_sample_incident '{}'`
@@ -105,6 +109,14 @@ route "upload_document":
 - Scaffold a package: `n3 new pkg my_capsule`
 - Scaffold a plugin: `n3 plugin new node demo_plugin`
 - Adoption kit: `n3 kit --format md`
+- Feedback list: `n3 feedback list --json`
+- Retrain scheduler: `n3 retrain schedule --json`
+- Canary config: `n3 model canary base candidate 0.1 --shadow --json`
+- Marketplace search/install: `n3 marketplace search demo --json` and `n3 marketplace install demo.flow --version 0.1.0 --json`
+- Tutorials: `n3 tutorial list --json` and `n3 tutorial run basics --auto --json`
+- Test scaffold: `n3 scaffold test hello --json`
+- Deterministic package archive: `n3 package build --out dist --json`
+- Language server: `n3 lsp stdio` (or `n3 lsp check app.ai --json`)
 
 Formatter and linter:
 

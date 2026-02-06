@@ -6,6 +6,10 @@ from pathlib import Path
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.governance.audit import record_audit_entry, resolve_actor
+from namel3ss.governance.secrets import load_decrypted_secrets_map
+from namel3ss.runtime.auth.enforcement import enforce_requirement
+from namel3ss.runtime.auth.route_permissions import load_route_permissions
 from namel3ss.runtime.persistence_paths import resolve_persistence_root
 
 
@@ -21,7 +25,14 @@ class SecretValue(str):
         return obj
 
 
-def resolve_secret_value(name: str, *, project_root: str | None, app_path: str | None) -> tuple[str, str]:
+def resolve_secret_value(
+    name: str,
+    *,
+    project_root: str | None,
+    app_path: str | None,
+    identity: dict | None = None,
+    auth_context: object | None = None,
+) -> tuple[str, str]:
     normalized = normalize_secret_name(name)
     if not normalized:
         raise Namel3ssError(
@@ -32,9 +43,24 @@ def resolve_secret_value(name: str, *, project_root: str | None, app_path: str |
                 example='secret("stripe_key")',
             )
         )
+    permissions = load_route_permissions(project_root, app_path)
+    enforce_requirement(
+        permissions.secret_requirement_for(normalized),
+        resource_name=f"secret:{normalized}",
+        identity=identity,
+        auth_context=auth_context,
+    )
     env_key = _env_key_for(normalized)
     env_value = _read_env_value(env_key)
     if env_value is not None:
+        _record_secret_access(
+            normalized,
+            project_root=project_root,
+            app_path=app_path,
+            identity=identity,
+            auth_context=auth_context,
+            source="env",
+        )
         return normalized, env_value
     secrets = _load_secret_file(project_root=project_root, app_path=app_path)
     value = secrets.get(normalized)
@@ -47,6 +73,14 @@ def resolve_secret_value(name: str, *, project_root: str | None, app_path: str |
                 example=f'{env_key}="..."',
             )
         )
+    _record_secret_access(
+        normalized,
+        project_root=project_root,
+        app_path=app_path,
+        identity=identity,
+        auth_context=auth_context,
+        source="vault",
+    )
     return normalized, value
 
 
@@ -84,6 +118,14 @@ def _read_env_value(primary_key: str) -> str | None:
 
 
 def _load_secret_file(*, project_root: str | None, app_path: str | None) -> dict[str, str]:
+    try:
+        encrypted = load_decrypted_secrets_map(project_root, app_path)
+    except Namel3ssError:
+        raise
+    except Exception:
+        encrypted = {}
+    if encrypted:
+        return encrypted
     root = resolve_persistence_root(project_root, app_path, allow_create=False)
     if root is None:
         return {}
@@ -119,6 +161,26 @@ def _load_secret_file(*, project_root: str | None, app_path: str | None) -> dict
 def list_secret_keys(*, project_root: str | None, app_path: str | None) -> list[str]:
     secrets = _load_secret_file(project_root=project_root, app_path=app_path)
     return sorted(secrets.keys())
+
+
+def _record_secret_access(
+    secret_name: str,
+    *,
+    project_root: str | None,
+    app_path: str | None,
+    identity: dict | None,
+    auth_context: object | None,
+    source: str,
+) -> None:
+    record_audit_entry(
+        project_root=project_root,
+        app_path=app_path,
+        user=resolve_actor(identity, auth_context),
+        action="secret_get",
+        resource=secret_name,
+        status="success",
+        details={"source": source},
+    )
 
 
 __all__ = [

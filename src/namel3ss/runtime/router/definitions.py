@@ -65,8 +65,13 @@ def _ai_models(program, sensitive_config, service) -> list[dict]:
             "prompt": flow.prompt,
             "dataset": flow.dataset,
             "output_type": flow.output_type,
+            "source_language": getattr(flow, "source_language", None),
+            "target_language": getattr(flow, "target_language", None),
+            "output_fields": _serialize_output_fields(getattr(flow, "output_fields", None)),
             "labels": list(flow.labels) if flow.labels else None,
             "sources": list(flow.sources) if flow.sources else None,
+            "chain_steps": _serialize_chain_steps(getattr(flow, "chain_steps", None)),
+            "tests": _serialize_tests(getattr(flow, "tests", None)),
         }
         if service and sensitive_config.is_sensitive(flow.name):
             payload = encrypt_prompt_entry(payload, service)
@@ -83,9 +88,43 @@ def _model_payload(name: str, metadata) -> dict:
         "prompt": metadata.prompt,
         "dataset": metadata.dataset,
         "output_type": getattr(metadata, "output_type", None),
+        "source_language": getattr(metadata, "source_language", None),
+        "target_language": getattr(metadata, "target_language", None),
+        "output_fields": _serialize_output_fields(getattr(metadata, "output_fields", None)),
         "labels": list(getattr(metadata, "labels", []) or []) or None,
         "sources": list(getattr(metadata, "sources", []) or []) or None,
+        "chain_steps": _serialize_chain_steps(getattr(metadata, "chain_steps", None)),
+        "tests": _serialize_tests(getattr(metadata, "tests", None)),
     }
+
+
+def _serialize_output_fields(fields) -> list[dict] | None:
+    if not fields:
+        return None
+    payload: list[dict] = []
+    for field in fields:
+        payload.append({"name": field.name, "type_name": field.type_name})
+    return payload
+
+
+def _serialize_chain_steps(steps) -> list[dict] | None:
+    if not steps:
+        return None
+    payload: list[dict] = []
+    for step in steps:
+        payload.append(
+            {
+                "flow_kind": getattr(step, "flow_kind", None),
+                "flow_name": getattr(step, "flow_name", None),
+            }
+        )
+    return payload
+
+
+def _serialize_tests(tests) -> dict | None:
+    if tests is None:
+        return None
+    return {"dataset": tests.dataset, "metrics": list(tests.metrics)}
 
 
 __all__ = ["build_definitions", "should_persist"]

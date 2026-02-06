@@ -163,6 +163,51 @@ route "get_user":
                     },
                     "required": ["model", "prompt", "labels"],
                 },
+                "Translate": {
+                    "type": "object",
+                    "description": "Translate metadata.",
+                    "properties": {
+                        "model": {"type": "string"},
+                        "prompt": {"type": "string"},
+                        "dataset": {"type": "string"},
+                        "output_type": {"type": "string"},
+                        "source_language": {"type": "string"},
+                        "target_language": {"type": "string"},
+                    },
+                    "required": ["model", "source_language", "target_language"],
+                },
+                "QA": {
+                    "type": "object",
+                    "description": "Question answering metadata.",
+                    "properties": {
+                        "model": {"type": "string"},
+                        "prompt": {"type": "string"},
+                        "dataset": {"type": "string"},
+                        "output_fields": {"type": "array", "items": {"type": "string"}},
+                    },
+                    "required": ["model", "output_fields"],
+                },
+                "COT": {
+                    "type": "object",
+                    "description": "Chain of thought metadata.",
+                    "properties": {
+                        "model": {"type": "string"},
+                        "prompt": {"type": "string"},
+                        "dataset": {"type": "string"},
+                        "output_fields": {"type": "array", "items": {"type": "string"}},
+                    },
+                    "required": ["model", "output_fields"],
+                },
+                "Chain": {
+                    "type": "object",
+                    "description": "Composable AI chain metadata.",
+                    "properties": {
+                        "steps": {"type": "array", "items": {"type": "object"}},
+                        "output_fields": {"type": "array", "items": {"type": "string"}},
+                        "tests": {"type": "object"},
+                    },
+                    "required": ["steps", "output_fields"],
+                },
             }
         },
         "x-ai-flows": [

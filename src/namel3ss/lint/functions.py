@@ -101,6 +101,8 @@ def _lint_function_body(stmts: list[ast.Statement]) -> list[Finding]:
                     )
                 )
         findings.extend(_lint_expression(getattr(stmt, "expression", None)))
+        if isinstance(stmt, ast.Yield):
+            findings.extend(_lint_expression(stmt.expression))
         findings.extend(_lint_expression(getattr(stmt, "condition", None)))
         findings.extend(_lint_expression(getattr(stmt, "iterable", None)))
         findings.extend(_lint_expression(getattr(stmt, "count", None)))
@@ -174,6 +176,8 @@ def _collect_calls(stmts: list[ast.Statement]) -> set[str]:
     calls: set[str] = set()
     for stmt in stmts:
         calls.update(_collect_calls_from_expr(getattr(stmt, "expression", None)))
+        if isinstance(stmt, ast.Yield):
+            calls.update(_collect_calls_from_expr(stmt.expression))
         calls.update(_collect_calls_from_expr(getattr(stmt, "condition", None)))
         calls.update(_collect_calls_from_expr(getattr(stmt, "iterable", None)))
         calls.update(_collect_calls_from_expr(getattr(stmt, "count", None)))
@@ -205,6 +209,9 @@ def _collect_calls(stmts: list[ast.Statement]) -> set[str]:
 def _collect_calls_from_expr(expr: ast.Expression | None) -> set[str]:
     calls: set[str] = set()
     if expr is None:
+        return calls
+    if isinstance(expr, ast.AsyncCallExpr):
+        calls.update(_collect_calls_from_expr(expr.expression))
         return calls
     if isinstance(expr, ast.CallFunctionExpr):
         calls.add(expr.function_name)
@@ -261,6 +268,9 @@ def _lint_expression(expr: ast.Expression | None) -> list[Finding]:
         return []
     findings: list[Finding] = []
     findings.extend(_lint_operator_expr(expr))
+    if isinstance(expr, ast.AsyncCallExpr):
+        findings.extend(_lint_expression(expr.expression))
+        return findings
     if isinstance(expr, ast.ToolCallExpr):
         findings.append(
             Finding(

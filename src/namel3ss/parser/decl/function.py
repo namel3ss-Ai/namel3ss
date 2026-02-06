@@ -4,11 +4,7 @@ from typing import List
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
-from namel3ss.lang.types import canonicalize_type_name
-from namel3ss.parser.decl.record import type_from_token
-
-
-_SUPPORTED_TYPES = {"text", "number", "boolean", "json", "list", "map"}
+from namel3ss.parser.decl.type_reference import parse_type_reference
 
 
 def parse_function_decl(parser) -> ast.FunctionDecl:
@@ -92,16 +88,7 @@ def _parse_function_fields(
         parser._expect("IS", f"Expected 'is' after {section_name} field name")
         required = True
         saw_optional = _match_word(parser, "optional")
-        type_tok = parser._current()
-        raw_type = None
-        if type_tok.type == "TEXT":
-            raw_type = "text"
-            parser._advance()
-        elif type_tok.type.startswith("TYPE_"):
-            parser._advance()
-            raw_type = type_from_token(type_tok)
-        else:
-            raise Namel3ssError(f"Expected {section_name} field type", line=type_tok.line, column=type_tok.column)
+        type_name, _alias, _raw, _type_line, _type_column = parse_type_reference(parser)
         if _match_word(parser, "optional"):
             saw_optional = True
         if saw_optional:
@@ -109,23 +96,13 @@ def _parse_function_fields(
                 tok = parser._current()
                 raise Namel3ssError("Input fields cannot be optional", line=tok.line, column=tok.column)
             required = False
-        canonical_type, type_was_alias = canonicalize_type_name(raw_type)
-        if type_was_alias and not getattr(parser, "allow_legacy_type_aliases", True):
-            raise Namel3ssError(
-                f"N3PARSER_TYPE_ALIAS_DISALLOWED: Type alias '{raw_type}' is not allowed. Use '{canonical_type}'. "
-                "Fix: run `n3 app.ai format` to rewrite aliases.",
-                line=type_tok.line,
-                column=type_tok.column,
-            )
-        if canonical_type not in _SUPPORTED_TYPES:
-            raise Namel3ssError(f"Unsupported {section_name} field type '{canonical_type}'", line=type_tok.line, column=type_tok.column)
         if name in seen:
             raise Namel3ssError(f"Duplicate {section_name} field '{name}'", line=line, column=column)
         seen.add(name)
         fields.append(
             ast.FunctionParam(
                 name=name,
-                type_name=canonical_type,
+                type_name=type_name,
                 required=required,
                 line=line,
                 column=column,

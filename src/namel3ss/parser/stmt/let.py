@@ -118,9 +118,32 @@ def _parse_let_entry(parser, seen: set[str], *, inline_mode: bool) -> ast.Let:
 
 
 def _parse_let_expression(parser) -> ast.Expression:
+    if parser._match("ASYNC"):
+        async_tok = parser.tokens[parser.position - 1]
+        launched = _parse_non_async_let_expression(parser)
+        if not _is_async_launchable(launched):
+            raise Namel3ssError(
+                build_guidance_message(
+                    what="async can only launch a call.",
+                    why="Only tool calls, function calls, flow calls, and pipeline calls can run async.",
+                    fix="Use async before a call expression.",
+                    example='let report_future is async call flow "build report":\n  input:\n    id is 1\n  output:\n    result',
+                ),
+                line=async_tok.line,
+                column=async_tok.column,
+            )
+        return ast.AsyncCallExpr(expression=launched, line=async_tok.line, column=async_tok.column)
+    return _parse_non_async_let_expression(parser)
+
+
+def _parse_non_async_let_expression(parser) -> ast.Expression:
     if looks_like_tool_call(parser):
         return parse_tool_call_expr(parser)
     return parser._parse_expression()
+
+
+def _is_async_launchable(expr: ast.Expression) -> bool:
+    return isinstance(expr, (ast.ToolCallExpr, ast.CallFunctionExpr, ast.CallFlowExpr, ast.CallPipelineExpr))
 
 
 def _line_has_inline_commas(parser) -> bool:

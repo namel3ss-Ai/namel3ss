@@ -40,6 +40,16 @@
           <button class="menu-item" data-action="reset" role="menuitem">Reset state</button>
           <button class="menu-item" data-action="replay" role="menuitem">Replay last run</button>
           <button class="menu-item" data-action="export" role="menuitem">Export trace</button>
+          <button class="menu-item" data-action="console" role="menuitem">Console</button>
+          <button class="menu-item" data-action="feedback" role="menuitem">Feedback</button>
+          <button class="menu-item" data-action="canary" role="menuitem">Canary</button>
+          <button class="menu-item" data-action="marketplace" role="menuitem">Marketplace</button>
+          <button class="menu-item" data-action="tutorials" role="menuitem">Tutorials</button>
+          <button class="menu-item" data-action="playground" role="menuitem">Playground</button>
+          <button class="menu-item" data-action="versioning" role="menuitem">Versioning</button>
+          <button class="menu-item" data-action="quality" role="menuitem">Quality</button>
+          <button class="menu-item" data-action="mlops" role="menuitem">MLOps</button>
+          <button class="menu-item" data-action="triggers" role="menuitem">Triggers</button>
           <button class="menu-item" data-action="catalog" role="menuitem">Pack catalog</button>
         </div>
         <div id="toast" class="toast run-status" aria-live="polite"></div>
@@ -65,6 +75,24 @@
             <div class="preview-answer-label">Answer</div>
             <div id="previewAnswer" class="preview-answer-text empty">Ask a question to see an answer.</div>
             <button class="btn ghost preview-why hidden" id="previewWhy">Why?</button>
+          </div>
+          <div class="preview-feedback hidden" id="previewFeedback">
+            <div class="preview-answer-label">Rate answer</div>
+            <div class="ui-buttons">
+              <button class="btn ghost preview-feedback-rating" data-rating="excellent">Excellent</button>
+              <button class="btn ghost preview-feedback-rating" data-rating="good">Good</button>
+              <button class="btn ghost preview-feedback-rating" data-rating="bad">Bad</button>
+            </div>
+            <div class="preview-input">
+              <input
+                id="previewFeedbackComment"
+                type="text"
+                placeholder="Optional comment"
+                aria-label="Feedback comment"
+              />
+              <button class="btn ghost" id="previewFeedbackSubmit">Send feedback</button>
+            </div>
+            <div class="preview-hint" id="previewFeedbackStatus" aria-live="polite"></div>
           </div>
         </div>
       </section>
@@ -126,6 +154,36 @@
       <section class="canvas-mode" data-mode="registry" aria-labelledby="dock-registry">
         <div id="registry" class="canvas-panel"></div>
       </section>
+      <section class="canvas-mode" data-mode="console" aria-labelledby="dock-console">
+        <div id="console" class="canvas-panel"></div>
+      </section>
+      <section class="canvas-mode" data-mode="feedback" aria-labelledby="dock-feedback">
+        <div id="feedback" class="canvas-panel"></div>
+      </section>
+      <section class="canvas-mode" data-mode="canary" aria-labelledby="dock-canary">
+        <div id="canary" class="canvas-panel"></div>
+      </section>
+      <section class="canvas-mode" data-mode="marketplace" aria-labelledby="dock-marketplace">
+        <div id="marketplace" class="canvas-panel"></div>
+      </section>
+      <section class="canvas-mode" data-mode="tutorials" aria-labelledby="dock-tutorials">
+        <div id="tutorials" class="canvas-panel"></div>
+      </section>
+      <section class="canvas-mode" data-mode="playground" aria-labelledby="dock-playground">
+        <div id="playground" class="canvas-panel"></div>
+      </section>
+      <section class="canvas-mode" data-mode="versioning" aria-labelledby="dock-versioning">
+        <div id="versioning" class="canvas-panel"></div>
+      </section>
+      <section class="canvas-mode" data-mode="quality" aria-labelledby="dock-quality">
+        <div id="quality" class="canvas-panel"></div>
+      </section>
+      <section class="canvas-mode" data-mode="mlops" aria-labelledby="dock-mlops">
+        <div id="mlops" class="canvas-panel"></div>
+      </section>
+      <section class="canvas-mode" data-mode="triggers" aria-label="Triggers">
+        <div id="triggers" class="canvas-panel"></div>
+      </section>
       <section class="canvas-mode" data-mode="deploy" aria-labelledby="dock-deploy">
         <div id="deploy" class="canvas-panel"></div>
       </section>
@@ -151,6 +209,8 @@
       <button class="tab" data-tab="memory" id="dock-memory" data-testid="studio-dock-item-memory">Memory</button>
       <button class="tab" data-tab="agents" id="dock-agents" data-testid="studio-dock-item-agents">Agents</button>
       <button class="tab" data-tab="setup" id="dock-setup" data-testid="studio-dock-item-setup">Setup</button>
+      <button class="tab" data-tab="tutorials" id="dock-tutorials" data-testid="studio-dock-item-tutorials">Tutorials</button>
+      <button class="tab" data-tab="playground" id="dock-playground" data-testid="studio-dock-item-playground">Playground</button>
       <button class="tab" data-tab="graph" id="dock-graph" data-testid="studio-dock-item-graph">Graph</button>
     </div>
   </footer>
@@ -200,6 +260,16 @@
   <script src="/studio/agents/index.js"></script>
   <script src="/studio/setup.js"></script>
   <script src="/studio/deploy.js"></script>
+  <script src="/studio/console.js"></script>
+  <script src="/studio/feedback.js"></script>
+  <script src="/studio/canary.js"></script>
+  <script src="/studio/marketplace.js"></script>
+  <script src="/studio/tutorials.js"></script>
+  <script src="/studio/playground.js"></script>
+  <script src="/studio/versioning.js"></script>
+  <script src="/studio/quality.js"></script>
+  <script src="/studio/mlops.js"></script>
+  <script src="/studio/triggers.js"></script>
   <script src="/studio/registry.js"></script>
   <script src="/studio/why.js"></script>
   <script src="/studio/preview.js"></script>

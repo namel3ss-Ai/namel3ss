@@ -82,9 +82,62 @@ def _lower_flow(flow: ast.Flow) -> ast.Flow:
         purity=getattr(flow, "purity", "effectful"),
         steps=_lower_flow_steps(getattr(flow, "steps", None)),
         declarative=bool(getattr(flow, "declarative", False)),
-        ai_metadata=getattr(flow, "ai_metadata", None),
+        ai_metadata=_lower_ai_metadata(getattr(flow, "ai_metadata", None)),
         line=flow.line,
         column=flow.column,
+    )
+
+
+def _lower_ai_metadata(metadata: ast.AIFlowMetadata | None) -> ast.AIFlowMetadata | None:
+    if metadata is None:
+        return None
+    output_fields = None
+    if metadata.output_fields:
+        output_fields = [
+            ast.AIOutputField(
+                name=field.name,
+                type_name=field.type_name,
+                line=field.line,
+                column=field.column,
+            )
+            for field in metadata.output_fields
+        ]
+    chain_steps = None
+    if metadata.chain_steps:
+        chain_steps = [
+            ast.ChainStep(
+                flow_kind=step.flow_kind,
+                flow_name=step.flow_name,
+                input_expr=_lower_expression(step.input_expr),
+                line=step.line,
+                column=step.column,
+            )
+            for step in metadata.chain_steps
+        ]
+    tests = None
+    if metadata.tests:
+        tests = ast.AIFlowTestConfig(
+            dataset=metadata.tests.dataset,
+            metrics=list(metadata.tests.metrics),
+            line=metadata.tests.line,
+            column=metadata.tests.column,
+        )
+    return ast.AIFlowMetadata(
+        model=metadata.model,
+        prompt=metadata.prompt,
+        prompt_expr=_lower_expression(metadata.prompt_expr) if metadata.prompt_expr else None,
+        dataset=metadata.dataset,
+        kind=getattr(metadata, "kind", None),
+        output_type=getattr(metadata, "output_type", None),
+        source_language=getattr(metadata, "source_language", None),
+        target_language=getattr(metadata, "target_language", None),
+        output_fields=output_fields,
+        labels=list(getattr(metadata, "labels", []) or []) or None,
+        sources=list(getattr(metadata, "sources", []) or []) or None,
+        chain_steps=chain_steps,
+        tests=tests,
+        line=metadata.line,
+        column=metadata.column,
     )
 
 
@@ -371,7 +424,7 @@ def _lower_card_actions(actions: list[ast.CardAction] | None) -> list[ast.CardAc
 
 
 def _lower_record(record: ast.RecordDecl) -> ast.RecordDecl:
-    return ast.RecordDecl(
+    lowered = ast.RecordDecl(
         name=record.name,
         fields=[_lower_field(field) for field in record.fields],
         tenant_key=_lower_expression(record.tenant_key) if record.tenant_key else None,
@@ -379,6 +432,8 @@ def _lower_record(record: ast.RecordDecl) -> ast.RecordDecl:
         line=record.line,
         column=record.column,
     )
+    setattr(lowered, "version", getattr(record, "version", None))
+    return lowered
 
 
 def _lower_identity(identity: ast.IdentityDecl) -> ast.IdentityDecl:

@@ -139,6 +139,8 @@ def _auth_context_or_error(handler: Any, *, kind: str) -> object | None:
             config=config,
             identity_schema=identity_schema,
             store=store,
+            project_root=str(getattr(program, "project_root", "") or "") or None,
+            app_path=str(getattr(program, "app_path", "") or "") or None,
         )
     except Namel3ssError as err:
         payload = error_from_exception(

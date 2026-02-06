@@ -137,11 +137,14 @@ def handle_logout_post(handler: Any) -> tuple[dict, int, dict[str, str]]:
         config, identity_schema, store = _auth_params(handler)
     except Namel3ssError as err:
         return build_error_from_exception(err, kind="authentication"), 400, {}
+    state = handler._state()
     return handle_logout(
         dict(handler.headers.items()),
         config=config,
         identity_schema=identity_schema,
         store=store,
+        project_root=str(getattr(state, "project_root", "") or "") or None,
+        app_path=str(getattr(state, "app_path", "") or "") or None,
     )
 
 
@@ -150,11 +153,14 @@ def _handle_session_get(handler: Any) -> tuple[dict, int, dict[str, str]]:
         config, identity_schema, store = _auth_params(handler)
     except Namel3ssError as err:
         return build_error_from_exception(err, kind="authentication"), 400, {}
+    state = handler._state()
     return handle_session(
         dict(handler.headers.items()),
         config=config,
         identity_schema=identity_schema,
         store=store,
+        project_root=str(getattr(state, "project_root", "") or "") or None,
+        app_path=str(getattr(state, "app_path", "") or "") or None,
     )
 
 
@@ -170,11 +176,14 @@ def _auth_params(handler: Any) -> tuple[object, object | None, object]:
 
 def _resolve_auth_context(handler: Any) -> object:
     config, identity_schema, store = _auth_params(handler)
+    state = handler._state()
     return resolve_auth_context(
         dict(handler.headers.items()),
         config=config,
         identity_schema=identity_schema,
         store=store,
+        project_root=str(getattr(state, "project_root", "") or "") or None,
+        app_path=str(getattr(state, "app_path", "") or "") or None,
     )
 
 

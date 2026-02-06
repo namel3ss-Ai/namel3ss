@@ -12,5 +12,6 @@ class ExecutionResult:
     last_value: Optional[object]
     traces: list[AITrace]
     execution_steps: list[dict] = field(default_factory=list)
+    yield_messages: list[dict] = field(default_factory=list)
     runtime_theme: Optional[str] = None
     theme_source: Optional[str] = None

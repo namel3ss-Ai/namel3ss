@@ -68,6 +68,11 @@ def _scan_statement(flow: ir.Flow, flow_map: dict[str, ir.Flow], stmt: ir.Statem
     if isinstance(stmt, ir.Return):
         _scan_expression(flow, flow_map, stmt.expression)
         return
+    if isinstance(stmt, ir.AwaitStmt):
+        return
+    if isinstance(stmt, ir.YieldStmt):
+        _scan_expression(flow, flow_map, stmt.expression)
+        return
     if isinstance(stmt, ir.Repeat):
         _scan_expression(flow, flow_map, stmt.count)
         _scan_statements(flow, flow_map, stmt.body)
@@ -137,6 +142,9 @@ def _scan_statement(flow: ir.Flow, flow_map: dict[str, ir.Flow], stmt: ir.Statem
 
 
 def _scan_expression(flow: ir.Flow, flow_map: dict[str, ir.Flow], expr: ir.Expression) -> None:
+    if isinstance(expr, ir.AsyncCallExpr):
+        _scan_expression(flow, flow_map, expr.expression)
+        return
     if isinstance(expr, ir.CallFlowExpr):
         callee = flow_map.get(expr.flow_name)
         if callee and not is_pure(getattr(callee, "purity", None)):

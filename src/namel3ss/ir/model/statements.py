@@ -45,6 +45,16 @@ class Return(Statement):
 
 
 @dataclass
+class AwaitStmt(Statement):
+    name: str
+
+
+@dataclass
+class YieldStmt(Statement):
+    expression: Expression
+
+
+@dataclass
 class ParallelTask(Node):
     name: str
     body: List[Statement]

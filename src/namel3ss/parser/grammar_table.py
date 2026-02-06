@@ -99,7 +99,12 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
         TopLevelRule("llm_call", "IDENT", parse_ai_flow_decl, token_value="llm_call"),
         TopLevelRule("rag", "IDENT", parse_ai_flow_decl, token_value="rag"),
         TopLevelRule("classification", "IDENT", parse_ai_flow_decl, token_value="classification"),
+        TopLevelRule("classify", "IDENT", parse_ai_flow_decl, token_value="classify"),
         TopLevelRule("summarise", "IDENT", parse_ai_flow_decl, token_value="summarise"),
+        TopLevelRule("translate", "IDENT", parse_ai_flow_decl, token_value="translate"),
+        TopLevelRule("qa", "IDENT", parse_ai_flow_decl, token_value="qa"),
+        TopLevelRule("cot", "IDENT", parse_ai_flow_decl, token_value="cot"),
+        TopLevelRule("chain", "IDENT", parse_ai_flow_decl, token_value="chain"),
         TopLevelRule("route", "IDENT", parse_route_decl, token_value="route"),
         TopLevelRule("flow", "FLOW", parse_flow),
         TopLevelRule("job", "JOB", parse_job),
@@ -112,6 +117,7 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
 
 def statement_rules() -> tuple[StatementRule, ...]:
     from namel3ss.parser.stmt.ask_ai import parse_ask_stmt
+    from namel3ss.parser.stmt.await_stmt import parse_await_stmt
     from namel3ss.parser.stmt.calc import parse_calc
     from namel3ss.parser.stmt.create import parse_create
     from namel3ss.parser.stmt.find import parse_find
@@ -126,6 +132,7 @@ def statement_rules() -> tuple[StatementRule, ...]:
     from namel3ss.parser.stmt.orchestration import parse_orchestration
     from namel3ss.parser.stmt.repeat import parse_repeat
     from namel3ss.parser.stmt.return_stmt import parse_return
+    from namel3ss.parser.stmt.yield_stmt import parse_yield_stmt
     from namel3ss.parser.stmt.run_agent import parse_run_agent_stmt, parse_run_agents_parallel
     from namel3ss.parser.stmt.enqueue_job import parse_enqueue_job
     from namel3ss.parser.stmt.tick import parse_tick
@@ -197,6 +204,8 @@ def statement_rules() -> tuple[StatementRule, ...]:
         StatementRule("set", "SET", parse_set),
         StatementRule("if", "IF", parse_if),
         StatementRule("return", "RETURN", parse_return),
+        StatementRule("await", "AWAIT", parse_await_stmt),
+        StatementRule("yield", "YIELD", parse_yield_stmt),
         StatementRule("ask", "ASK", parse_ask_stmt),
         StatementRule("parallel", "PARALLEL", parse_parallel),
         StatementRule("orchestration", "IDENT", parse_orchestration, token_value="orchestration"),

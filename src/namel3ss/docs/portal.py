@@ -10,6 +10,7 @@ from namel3ss.determinism import canonical_json_dumps
 from namel3ss.docs.spec import build_openapi_spec
 from namel3ss.docs.portal_assets import DOCS_HTML
 from namel3ss.docs.prompts import collect_prompts
+from namel3ss.evals.ai_flow_eval import load_ai_flow_evals
 from namel3ss.evals.prompt_eval import load_prompt_evals
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
@@ -141,8 +142,9 @@ class DocsRequestHandler(BaseHTTPRequestHandler):
         program = state.program
         if program is None:
             return build_error_payload("Program not loaded.", kind="engine"), 500
-        entries = load_prompt_evals(getattr(program, "project_root", None), getattr(program, "app_path", None))
-        return {"ok": True, "evals": entries}, 200
+        prompt_entries = load_prompt_evals(getattr(program, "project_root", None), getattr(program, "app_path", None))
+        ai_entries = load_ai_flow_evals(getattr(program, "project_root", None), getattr(program, "app_path", None))
+        return {"ok": True, "evals": prompt_entries, "ai_evals": ai_entries}, 200
 
     def _dispatch_dynamic_route(self) -> bool:
         state = self._ensure_state()

@@ -9,10 +9,8 @@ from typing import Any, Dict
 from urllib.parse import parse_qs, urlparse
 
 from namel3ss.config.loader import load_config
-from namel3ss.cli.demo_support import is_demo_project
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
-from namel3ss.runtime.executor import execute_program_flow
 from namel3ss.runtime.backend.upload_handler import handle_upload, handle_upload_list
 from namel3ss.runtime.backend.upload_recorder import UploadRecorder, apply_upload_error_payload
 from namel3ss.runtime.deploy_routes import get_build_payload, get_deploy_payload
@@ -31,6 +29,7 @@ from namel3ss.runtime.router.dispatch import dispatch_route
 from namel3ss.runtime.router.refresh import refresh_routes
 from namel3ss.runtime.router.registry import RouteRegistry
 from namel3ss.runtime.router.program_state import ProgramState
+from namel3ss.runtime.service_helpers import contract_kind_for_path, seed_flow, should_auto_seed, summarize_program
 from namel3ss.runtime.storage.factory import create_store
 
 
@@ -96,17 +95,37 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
             "build_id": getattr(self.server, "build_id", None),  # type: ignore[attr-defined]
         }
 
-    def _respond_json(self, payload: dict, status: int = 200, *, sort_keys: bool = False) -> None:
+    def _respond_json(self, payload: dict, status: int = 200, *, sort_keys: bool = False, headers: dict[str, str] | None = None) -> None:
         data = json_dumps(payload, sort_keys=sort_keys).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(data)))
+        if headers:
+            for key, value in headers.items():
+                self.send_header(key, value)
         self.end_headers()
         self.wfile.write(data)
 
+    def _respond_body(
+        self,
+        body: bytes,
+        *,
+        content_type: str,
+        status: int = 200,
+        headers: dict[str, str] | None = None,
+    ) -> None:
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(body)))
+        if headers:
+            for key, value in headers.items():
+                self.send_header(key, value)
+        self.end_headers()
+        self.wfile.write(body)
+
     def _handle_api_get(self, path: str) -> None:
         normalized = path.rstrip("/") or "/"
-        contract_kind = _contract_kind_for_path(normalized)
+        contract_kind = contract_kind_for_path(normalized)
         if contract_kind is not None:
             self._respond_contract(contract_kind)
             return
@@ -326,7 +345,15 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         )
         if result is None:
             return False
-        self._respond_json(result.payload, status=result.status, sort_keys=True)
+        if result.body is not None and result.content_type:
+            self._respond_body(
+                result.body,
+                content_type=result.content_type,
+                status=result.status,
+                headers=result.headers,
+            )
+            return True
+        self._respond_json(result.payload or {}, status=result.status, sort_keys=True, headers=result.headers)
         return True
 
     def _ensure_program(self):
@@ -337,7 +364,7 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
             program = state.program
             if program is not None:
                 self.server.program_ir = program  # type: ignore[attr-defined]
-                self.server.program_summary = _summarize_program(program)  # type: ignore[attr-defined]
+                self.server.program_summary = summarize_program(program)  # type: ignore[attr-defined]
         return state.program
 
     def _route_registry(self) -> RouteRegistry:
@@ -392,9 +419,9 @@ class ServiceRunner:
         program_ir = program_state.program
         if program_ir is None:
             raise Namel3ssError("Program failed to load.")
-        self.program_summary = _summarize_program(program_ir)
-        if _should_auto_seed(program_ir, self.auto_seed, self.seed_flow):
-            _seed_flow(program_ir, self.seed_flow)
+        self.program_summary = summarize_program(program_ir)
+        if should_auto_seed(program_ir, self.auto_seed, self.seed_flow):
+            seed_flow(program_ir, self.seed_flow)
         external_ui_root = resolve_external_ui_root(
             getattr(program_ir, "project_root", None),
             getattr(program_ir, "app_path", None),
@@ -434,59 +461,5 @@ class ServiceRunner:
         if self.server:
             return int(self.server.server_address[1])
         return self.port
-
-
-def _summarize_program(program_ir) -> Dict[str, object]:
-    return {
-        "flows": sorted(flow.name for flow in getattr(program_ir, "flows", [])),
-        "pages": sorted(getattr(page, "name", "") for page in getattr(program_ir, "pages", []) if getattr(page, "name", "")),
-        "records": sorted(getattr(rec, "name", "") for rec in getattr(program_ir, "records", []) if getattr(rec, "name", "")),
-    }
-
-
-def _contract_kind_for_path(path: str) -> str | None:
-    if path in {"/api/ui/contract", "/api/ui/contract.json"}:
-        return "all"
-    if path in {"/api/ui/contract/ui", "/api/ui/contract/ui.json"}:
-        return "ui"
-    if path in {"/api/ui/contract/actions", "/api/ui/contract/actions.json"}:
-        return "actions"
-    if path in {"/api/ui/contract/schema", "/api/ui/contract/schema.json"}:
-        return "schema"
-    return None
-
-
-def _should_auto_seed(program_ir, enabled: bool, flow_name: str) -> bool:
-    if not enabled or not flow_name:
-        return False
-    flows = [flow.name for flow in getattr(program_ir, "flows", []) if getattr(flow, "name", None)]
-    if flow_name not in flows:
-        return False
-    project_root = _resolve_project_root(program_ir)
-    if not project_root:
-        return False
-    return is_demo_project(project_root)
-
-
-def _resolve_project_root(program_ir) -> Path | None:
-    root = getattr(program_ir, "project_root", None)
-    if isinstance(root, Path):
-        return root
-    if isinstance(root, str) and root:
-        return Path(root)
-    app_path = getattr(program_ir, "app_path", None)
-    if isinstance(app_path, Path):
-        return app_path.parent
-    if isinstance(app_path, str) and app_path:
-        return Path(app_path).parent
-    return None
-
-
-def _seed_flow(program_ir, flow_name: str) -> None:
-    try:
-        execute_program_flow(program_ir, flow_name)
-    except Exception:
-        pass
-
 
 __all__ = ["DEFAULT_SERVICE_PORT", "ServiceRunner"]

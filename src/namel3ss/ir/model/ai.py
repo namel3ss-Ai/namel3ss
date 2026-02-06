@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Optional
 
+from namel3ss.ir.model.ai_flows import AIFlowTestConfig, AIOutputField, ChainStep
 from namel3ss.ir.model.base import Node, Statement
 from namel3ss.ir.model.expressions import Expression
 
@@ -16,13 +17,19 @@ class AIMemory(Node):
 
 @dataclass
 class AIFlowMetadata(Node):
-    model: str
-    prompt: str
+    model: str | None
+    prompt: str | None
+    prompt_expr: Expression | None = None
     dataset: Optional[str] = None
     kind: Optional[str] = None
     output_type: Optional[str] = None
+    source_language: Optional[str] = None
+    target_language: Optional[str] = None
+    output_fields: Optional[list[AIOutputField]] = None
     labels: Optional[List[str]] = None
     sources: Optional[List[str]] = None
+    chain_steps: Optional[list[ChainStep]] = None
+    tests: Optional[AIFlowTestConfig] = None
 
 
 @dataclass

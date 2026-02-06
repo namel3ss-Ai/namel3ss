@@ -98,6 +98,11 @@ def eval_binary_op(
     if expr.op in {"+", "-", "*", "/", "%", "**"}:
         left = eval_expr(ctx, expr.left, collector)
         right = eval_expr(ctx, expr.right, collector)
+        if expr.op == "+" and isinstance(left, str) and isinstance(right, str):
+            result = left + right
+            if collector:
+                collector.record_binary(expr.op, left, right, result)
+            return result
         if not is_number(left) or not is_number(right):
             raise Namel3ssError(
                 _arithmetic_type_message(expr.op, left, right),

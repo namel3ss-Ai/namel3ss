@@ -37,6 +37,8 @@ def run_flow(
         config=config,
         identity_schema=getattr(program_ir, "identity", None),
         store=None,
+        project_root=str(getattr(program_ir, "project_root", "") or "") or None,
+        app_path=str(app_path) if app_path else None,
     )
     identity = getattr(auth_context, "identity", None)
     secret_values = collect_secret_values(config)

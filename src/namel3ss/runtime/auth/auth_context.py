@@ -11,6 +11,7 @@ from namel3ss.runtime.auth.token_codec import TokenVerification, token_fingerpri
 from namel3ss.runtime.identity.context import resolve_identity, validate_identity
 from namel3ss.schema.identity import IdentitySchema
 from namel3ss.runtime.storage.factory import resolve_store
+from namel3ss.governance.rbac import resolve_identity_from_token
 from namel3ss.runtime.auth.trace_events import (
     authorization_identity_event,
     token_verification_event,
@@ -39,6 +40,8 @@ def resolve_auth_context(
     config: AppConfig | None,
     identity_schema: IdentitySchema | None,
     store=None,
+    project_root: str | None = None,
+    app_path: str | None = None,
 ) -> AuthContext:
     resolved_config = config
     resolved_store = resolve_store(store, config=resolved_config)
@@ -110,6 +113,25 @@ def resolve_auth_context(
         token_id = token_fingerprint(token)
         signing_key = getattr(getattr(resolved_config, "authentication", None), "signing_key", None)
         if not signing_key:
+            static_identity = resolve_identity_from_token(
+                token,
+                project_root=project_root,
+                app_path=app_path,
+            )
+            if isinstance(static_identity, dict):
+                traces.append(token_verification_event(status="static", token=token_id))
+                _validate_identity(identity_schema, static_identity)
+                return AuthContext(
+                    identity=normalize_identity(static_identity),
+                    source="token",
+                    authenticated=True,
+                    error=None,
+                    session=None,
+                    session_summary=None,
+                    token_status="static",
+                    token_fingerprint=token_id,
+                    traces=traces,
+                )
             token_status = "revoked"
             traces.append(token_verification_event(status=token_status, token=token_id))
             return AuthContext(
@@ -125,6 +147,25 @@ def resolve_auth_context(
             )
         verification = verify_token(token, signing_key=signing_key)
         if verification.status != "valid" or not verification.payload:
+            static_identity = resolve_identity_from_token(
+                token,
+                project_root=project_root,
+                app_path=app_path,
+            )
+            if isinstance(static_identity, dict):
+                traces.append(token_verification_event(status="static", token=token_id))
+                _validate_identity(identity_schema, static_identity)
+                return AuthContext(
+                    identity=normalize_identity(static_identity),
+                    source="token",
+                    authenticated=True,
+                    error=None,
+                    session=None,
+                    session_summary=None,
+                    token_status="static",
+                    token_fingerprint=token_id,
+                    traces=traces,
+                )
             token_status = "revoked"
             traces.append(token_verification_event(status=token_status, token=token_id))
             return AuthContext(

@@ -22,6 +22,7 @@ from namel3ss.ir.model.statements import (
     If,
     KeepFirst,
     Let,
+    AwaitStmt,
     Match,
     MatchCase,
     OrderList,
@@ -34,6 +35,7 @@ from namel3ss.ir.model.statements import (
     Repeat,
     RepeatWhile,
     Return,
+    YieldStmt,
     Save,
     Set,
     Update,
@@ -63,6 +65,7 @@ from namel3ss.ir.model.expressions import (
     MapExpr,
     ListOpExpr,
     MapOpExpr,
+    AsyncCallExpr,
     StatePath,
     ToolCallArg,
     ToolCallExpr,
@@ -77,7 +80,7 @@ from namel3ss.ir.functions.model import (
     FunctionSignature,
 )
 from namel3ss.ir.model.ai import AIDecl, AIMemory, AskAIStmt, AIFlowMetadata
-from namel3ss.ir.model.ai_flows import AIFlowDefinition
+from namel3ss.ir.model.ai_flows import AIFlowDefinition, AIFlowTestConfig, AIOutputField, ChainStep
 from namel3ss.ir.model.agents import (
     AgentDecl,
     AgentMergePolicy,
@@ -174,6 +177,8 @@ __all__ = [
     "Repeat",
     "RepeatWhile",
     "Return",
+    "AwaitStmt",
+    "YieldStmt",
     "Save",
     "Create",
     "Set",
@@ -199,6 +204,7 @@ __all__ = [
     "MapExpr",
     "ListOpExpr",
     "MapOpExpr",
+    "AsyncCallExpr",
     "StatePath",
     "ToolCallArg",
     "ToolCallExpr",
@@ -219,6 +225,9 @@ __all__ = [
     "AskAIStmt",
     "AIFlowMetadata",
     "AIFlowDefinition",
+    "AIFlowTestConfig",
+    "AIOutputField",
+    "ChainStep",
     "AgentDecl",
     "AgentTeam",
     "AgentTeamMember",

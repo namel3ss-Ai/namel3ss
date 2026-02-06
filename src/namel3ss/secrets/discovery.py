@@ -109,6 +109,10 @@ def _secret_names_from_statement(stmt: ir.Statement) -> set[str]:
         return names
     if isinstance(stmt, ir.Return):
         return _secret_names_from_expr(stmt.expression)
+    if isinstance(stmt, ir.AwaitStmt):
+        return set()
+    if isinstance(stmt, ir.YieldStmt):
+        return _secret_names_from_expr(stmt.expression)
     if isinstance(stmt, ir.Repeat):
         names = _secret_names_from_expr(stmt.count)
         names.update(_secret_names_from_statements(stmt.body))
@@ -183,6 +187,8 @@ def _secret_names_from_statement(stmt: ir.Statement) -> set[str]:
 
 
 def _secret_names_from_expr(expr: ir.Expression) -> set[str]:
+    if isinstance(expr, ir.AsyncCallExpr):
+        return _secret_names_from_expr(expr.expression)
     if isinstance(expr, ir.BuiltinCallExpr):
         names: set[str] = set()
         if expr.name == "secret" and len(expr.arguments) == 1:

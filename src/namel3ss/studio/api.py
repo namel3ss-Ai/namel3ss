@@ -278,6 +278,8 @@ def execute_action(
             config=config,
             identity_schema=getattr(program_ir, "identity", None),
             store=store,
+            project_root=str(getattr(program_ir, "project_root", "") or "") or None,
+            app_path=app_file.as_posix(),
         )
         identity = getattr(auth_context, "identity", None)
         before_rows = record_rows_snapshot(program_ir, store, config, identity=identity)

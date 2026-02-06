@@ -33,7 +33,7 @@ def _parse_yaml_block(lines: list[tuple[int, str]], index: int, indent: int) -> 
     if index >= len(lines):
         return {}, index
     current_indent, current_line = lines[index]
-    if current_line.startswith("- "):
+    if _is_list_item(current_line):
         return _parse_yaml_list(lines, index, indent)
     return _parse_yaml_map(lines, index, indent)
 
@@ -47,7 +47,7 @@ def _parse_yaml_map(lines: list[tuple[int, str]], index: int, indent: int) -> tu
             break
         if current_indent != indent:
             raise ValueError("YAML indentation is invalid.")
-        if current_line.startswith("- "):
+        if _is_list_item(current_line):
             raise ValueError("YAML list entry is not under a key.")
         if ":" not in current_line:
             raise ValueError("YAML mapping entry is invalid.")
@@ -64,7 +64,7 @@ def _parse_yaml_map(lines: list[tuple[int, str]], index: int, indent: int) -> tu
         if i >= len(lines) or lines[i][0] <= indent:
             data[key] = {}
             continue
-        if lines[i][1].startswith("- "):
+        if _is_list_item(lines[i][1]):
             list_value, i = _parse_yaml_list(lines, i, indent + 2)
             data[key] = list_value
         else:
@@ -82,15 +82,15 @@ def _parse_yaml_list(lines: list[tuple[int, str]], index: int, indent: int) -> t
             break
         if current_indent != indent:
             raise ValueError("YAML indentation is invalid.")
-        if not current_line.startswith("- "):
+        if not _is_list_item(current_line):
             raise ValueError("YAML list entry is invalid.")
-        value = current_line[2:].strip()
+        value = current_line[1:].strip()
         if not value:
             i += 1
             if i >= len(lines) or lines[i][0] <= indent:
                 items.append({})
                 continue
-            if lines[i][1].startswith("- "):
+            if _is_list_item(lines[i][1]):
                 nested, i = _parse_yaml_list(lines, i, indent + 2)
                 items.append(nested)
             else:
@@ -196,6 +196,10 @@ def _needs_quote(text: str) -> bool:
 def _quote(text: str) -> str:
     escaped = text.replace("\\", "\\\\").replace('"', '\\"')
     return f"\"{escaped}\""
+
+
+def _is_list_item(line: str) -> bool:
+    return line == "-" or line.startswith("- ")
 
 
 __all__ = ["parse_yaml", "render_yaml"]

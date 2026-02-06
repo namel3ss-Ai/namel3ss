@@ -22,9 +22,18 @@ def handle_session(
     config: AppConfig | None,
     identity_schema: IdentitySchema | None,
     store=None,
+    project_root: str | None = None,
+    app_path: str | None = None,
 ) -> tuple[dict, int, dict[str, str]]:
     try:
-        context = resolve_auth_context(headers, config=config, identity_schema=identity_schema, store=store)
+        context = resolve_auth_context(
+            headers,
+            config=config,
+            identity_schema=identity_schema,
+            store=store,
+            project_root=project_root,
+            app_path=app_path,
+        )
     except Namel3ssError as err:
         return build_error_from_exception(err, kind="authentication"), 400, {}
     payload = build_session_payload(context)
@@ -110,8 +119,17 @@ def handle_logout(
     config: AppConfig | None,
     identity_schema: IdentitySchema | None,
     store=None,
+    project_root: str | None = None,
+    app_path: str | None = None,
 ) -> tuple[dict, int, dict[str, str]]:
-    context = resolve_auth_context(headers, config=config, identity_schema=identity_schema, store=store)
+    context = resolve_auth_context(
+        headers,
+        config=config,
+        identity_schema=identity_schema,
+        store=store,
+        project_root=project_root,
+        app_path=app_path,
+    )
     if not context.session:
         if context.error:
             return build_error_payload(_auth_error_message(context.error), kind="authentication"), _status_for_auth_error(context.error), {}

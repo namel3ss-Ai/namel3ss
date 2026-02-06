@@ -8,18 +8,26 @@ from namel3ss.cli.app_handler import handle_app_commands
 from namel3ss.cli.auth_mode import run_auth_command
 from namel3ss.cli.artifacts_mode import run_artifacts_clean, run_artifacts_status
 from namel3ss.cli.audit_mode import run_audit_command
+from namel3ss.cli.ast_mode import run_ast_command
 from namel3ss.cli.browser_mode import run_dev_command, run_preview_command
 from namel3ss.cli.build_mode import run_build_command
+from namel3ss.cli.dataset_mode import run_dataset_command
 from namel3ss.cli.constants import ROOT_APP_COMMANDS
 from namel3ss.cli.deps_mode import run_deps
 from namel3ss.cli.discover_mode import run_discover
 from namel3ss.cli.doctor import run_doctor
 from namel3ss.cli.editor_mode import run_editor_command
 from namel3ss.cli.eval_mode import run_eval_command
+from namel3ss.cli.export_mode import run_export_command
 from namel3ss.cli.exists_mode import run_exists_command
 from namel3ss.cli.explain_mode import run_explain_command
 from namel3ss.cli.conventions_mode import run_conventions_command
+from namel3ss.cli.concurrency_mode import run_concurrency_command
+from namel3ss.cli.compile_mode import run_compile_command
+from namel3ss.cli.debug_mode import run_debug_command
+from namel3ss.cli.feedback_mode import run_feedback_command
 from namel3ss.cli.docs_mode import run_docs_command
+from namel3ss.cli.init_mode import run_init_command
 from namel3ss.cli.expr_check_mode import run_expr_check_command
 from namel3ss.cli.first_run import is_first_run
 from namel3ss.cli.fix_mode import run_fix_command
@@ -31,7 +39,10 @@ from namel3ss.cli.metrics_mode import run_metrics_command
 from namel3ss.cli.observe_mode import run_observe_command
 from namel3ss.cli.formats_mode import run_formats_command
 from namel3ss.cli.plugin_mode import run_plugin_command
+from namel3ss.cli.package_mode import run_package_command
 from namel3ss.cli.prompts_mode import run_prompts_command
+from namel3ss.cli.retrain_mode import run_retrain_command
+from namel3ss.cli.quality_mode import run_quality_command
 from namel3ss.cli.sandbox_mode import run_sandbox_command
 from namel3ss.cli.sensitive_mode import run_sensitive_command
 from namel3ss.cli.packs_mode import run_packs
@@ -44,13 +55,31 @@ from namel3ss.cli.proof_mode import run_proof_command
 from namel3ss.cli.readability_mode import run_readability_command
 from namel3ss.cli.registry_mode import run_registry
 from namel3ss.cli.reserved_mode import run_reserved_command
+from namel3ss.cli.secret_mode import run_secret_command
 from namel3ss.cli.icons_mode import run_icons_command
+from namel3ss.cli.policy_mode import run_policy_command
 from namel3ss.cli.release_check_mode import run_release_check_command
 from namel3ss.cli.run_mode import run_run_command
 from namel3ss.cli.scaffold_mode import run_new
 from namel3ss.cli.secrets_mode import run_secrets_command
 from namel3ss.cli.start_mode import run_start_command
+from namel3ss.cli.tutorial_mode import run_tutorial_command
+from namel3ss.cli.schema_mode import run_schema_command
+from namel3ss.cli.model_mode import run_model_command
+from namel3ss.cli.models_mode import run_models_command
+from namel3ss.cli.tenant_mode import run_tenant_command
+from namel3ss.cli.federation_mode import run_federation_command
+from namel3ss.cli.cluster_mode import run_cluster_command
+from namel3ss.cli.observability_mode import run_observability_command
+from namel3ss.cli.trace_mode import run_trace_command
+from namel3ss.cli.trigger_mode import run_trigger_command
+from namel3ss.cli.type_mode import run_type_command
+from namel3ss.cli.version_mode import run_version_command
+from namel3ss.cli.wasm_mode import run_wasm_command
+from namel3ss.cli.mlops_mode import run_mlops_command
+from namel3ss.cli.lsp_mode import run_lsp_command
 from namel3ss.cli.see_mode import run_see_command
+from namel3ss.cli.scaffold_tool_mode import run_scaffold_command
 from namel3ss.cli.status_mode import run_status_command
 from namel3ss.cli.test_mode import run_test_command
 from namel3ss.cli.text_output import prepare_cli_text, prepare_first_run_text
@@ -67,6 +96,7 @@ from namel3ss.cli.what_mode import run_what_command
 from namel3ss.cli.when_mode import run_when_command
 from namel3ss.cli.why_mode import run_why_command
 from namel3ss.cli.with_mode import run_with_command
+from namel3ss.cli.marketplace_mode import run_marketplace_command
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.contract import build_error_entry
 from namel3ss.errors.render import format_error, format_first_run_error
@@ -92,6 +122,9 @@ PACK_SUBCOMMANDS = {
 def main(argv: list[str] | None = None) -> int:
     args = sys.argv[1:] if argv is None else list(argv)
     first_run_args = list(args)
+    if "--old-parser" in args:
+        os.environ["N3_OLD_PARSER"] = "1"
+        args = [arg for arg in args if arg != "--old-parser"]
     if "--first-run" in args:
         os.environ["N3_FIRST_RUN"] = "1"
         args = [arg for arg in args if arg != "--first-run"]
@@ -140,7 +173,11 @@ def main(argv: list[str] | None = None) -> int:
             return run_doc_command(args[1:])
         if cmd == "docs":
             return run_docs_command(args[1:])
+        if cmd == "init":
+            return run_init_command(args[1:])
         if cmd == "version":
+            if len(args) > 1:
+                return run_version_command(args[1:])
             print_version()
             return 0
         if cmd == "help":
@@ -176,12 +213,32 @@ def main(argv: list[str] | None = None) -> int:
             return run_expr_check_command(args[1:])
         if cmd == "eval":
             return run_eval_command(args[1:])
+        if cmd == "export":
+            return run_export_command(args[1:])
         if cmd == "secrets":
             return run_secrets_command(args[1:])
         if cmd == "observe":
             return run_observe_command(args[1:])
+        if cmd == "trace":
+            return run_trace_command(args[1:])
+        if cmd == "debug":
+            return run_debug_command(args[1:])
+        if cmd == "observability":
+            return run_observability_command(args[1:])
         if cmd == "metrics":
             return run_metrics_command(args[1:])
+        if cmd == "ast":
+            return run_ast_command(args[1:])
+        if cmd == "type":
+            return run_type_command(args[1:])
+        if cmd == "schema":
+            return run_schema_command(args[1:])
+        if cmd == "concurrency":
+            return run_concurrency_command(args[1:])
+        if cmd == "compile":
+            return run_compile_command(args[1:])
+        if cmd == "trigger":
+            return run_trigger_command(args[1:])
         if cmd == "conventions":
             return run_conventions_command(args[1:])
         if cmd == "formats":
@@ -190,8 +247,44 @@ def main(argv: list[str] | None = None) -> int:
             return run_audit_command(args[1:])
         if cmd == "auth":
             return run_auth_command(args[1:])
+        if cmd == "secret":
+            return run_secret_command(args[1:])
+        if cmd == "policy":
+            return run_policy_command(args[1:])
         if cmd == "prompts":
             return run_prompts_command(args[1:])
+        if cmd == "feedback":
+            return run_feedback_command(args[1:])
+        if cmd == "dataset":
+            return run_dataset_command(args[1:])
+        if cmd == "retrain":
+            return run_retrain_command(args[1:])
+        if cmd == "model":
+            return run_model_command(args[1:])
+        if cmd == "models":
+            return run_models_command(args[1:])
+        if cmd == "tenant":
+            return run_tenant_command(args[1:])
+        if cmd == "federation":
+            return run_federation_command(args[1:])
+        if cmd == "cluster":
+            return run_cluster_command(args[1:])
+        if cmd == "marketplace":
+            return run_marketplace_command(args[1:])
+        if cmd == "wasm":
+            return run_wasm_command(args[1:])
+        if cmd == "quality":
+            return run_quality_command(args[1:])
+        if cmd == "mlops":
+            return run_mlops_command(args[1:])
+        if cmd == "tutorial":
+            return run_tutorial_command(args[1:])
+        if cmd == "scaffold":
+            return run_scaffold_command(args[1:])
+        if cmd == "package":
+            return run_package_command(args[1:])
+        if cmd == "lsp":
+            return run_lsp_command(args[1:])
         if cmd == "sensitive":
             return run_sensitive_command(args[1:])
         if cmd == "explain":

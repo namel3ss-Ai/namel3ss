@@ -82,6 +82,8 @@ def validate_prompt_references(
             column=metadata.column or flow.column,
         )
     for ai_flow in ai_flows:
+        if getattr(ai_flow, "prompt_expr", None) is not None:
+            continue
         _validate_prompt_reference(
             ai_flow.prompt,
             prompt_names=prompt_names,

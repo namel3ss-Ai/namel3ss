@@ -6,6 +6,8 @@ from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.governance.audit import record_audit_entry
+from namel3ss.governance.rbac import add_user, assign_role, list_users
 from namel3ss.runtime.auth.route_permissions import (
     RoutePermissions,
     RouteRequirement,
@@ -18,6 +20,12 @@ def run_auth_command(args: list[str]) -> int:
     app_arg, remaining = _split_app_arg(args)
     cmd = remaining[0] if remaining else "list"
     tail = remaining[1:] if remaining else []
+    if cmd == "list-users":
+        return _list_users(app_arg, tail)
+    if cmd == "add-user":
+        return _add_user(app_arg, tail)
+    if cmd == "assign-role":
+        return _assign_role(app_arg, tail)
     if cmd == "list":
         return _list_permissions(app_arg, tail)
     if cmd == "require":
@@ -26,7 +34,9 @@ def run_auth_command(args: list[str]) -> int:
         return _clear_permissions(app_arg, tail)
     if cmd == "config":
         return _config_path(app_arg)
-    raise Namel3ssError(f"Unknown auth subcommand '{cmd}'. Supported: list, require, clear, config")
+    raise Namel3ssError(
+        f"Unknown auth subcommand '{cmd}'. Supported: list, require, clear, config, list-users, add-user, assign-role"
+    )
 
 
 def _list_permissions(app_arg: str | None, args: list[str]) -> int:
@@ -66,7 +76,20 @@ def _require_permissions(app_arg: str | None, args: list[str]) -> int:
     current = load_route_permissions(app_path.parent, app_path)
     updated = dict(current.routes)
     updated[route_name] = RouteRequirement(roles=tuple(sorted(roles)), permissions=tuple(sorted(permissions)))
-    save_route_permissions(app_path.parent, app_path, RoutePermissions(routes=updated))
+    save_route_permissions(
+        app_path.parent,
+        app_path,
+        RoutePermissions(routes=updated, flows=dict(current.flows), secrets=dict(current.secrets)),
+    )
+    record_audit_entry(
+        project_root=app_path.parent,
+        app_path=app_path,
+        user="cli",
+        action="auth_require_route",
+        resource=route_name,
+        status="success",
+        details={"roles": sorted(roles), "permissions": sorted(permissions)},
+    )
     print(f'Updated permissions for "{route_name}".')
     return 0
 
@@ -80,7 +103,20 @@ def _clear_permissions(app_arg: str | None, args: list[str]) -> int:
         return 0
     updated = dict(current.routes)
     updated.pop(route_name, None)
-    save_route_permissions(app_path.parent, app_path, RoutePermissions(routes=updated))
+    save_route_permissions(
+        app_path.parent,
+        app_path,
+        RoutePermissions(routes=updated, flows=dict(current.flows), secrets=dict(current.secrets)),
+    )
+    record_audit_entry(
+        project_root=app_path.parent,
+        app_path=app_path,
+        user="cli",
+        action="auth_clear_route",
+        resource=route_name,
+        status="success",
+        details={},
+    )
     print(f'Cleared permissions for "{route_name}".')
     return 0
 
@@ -90,6 +126,200 @@ def _config_path(app_arg: str | None) -> int:
     path = Path(app_path).parent / ".namel3ss" / "permissions.yaml"
     print(path.as_posix())
     return 0
+
+
+def _list_users(app_arg: str | None, args: list[str]) -> int:
+    app_override = app_arg
+    json_mode = False
+    for arg in args:
+        if arg == "--json":
+            json_mode = True
+            continue
+        if arg.startswith("--"):
+            raise Namel3ssError(_unknown_user_flag_message(arg))
+        if app_override is None:
+            app_override = arg
+            continue
+        raise Namel3ssError(_too_many_user_args_message("list-users"))
+    app_path = resolve_app_path(app_override)
+    rows = list_users(app_path.parent, app_path)
+    payload = {"ok": True, "count": len(rows), "users": rows}
+    record_audit_entry(
+        project_root=app_path.parent,
+        app_path=app_path,
+        user="cli",
+        action="auth_list_users",
+        resource="users",
+        status="success",
+        details={"count": len(rows)},
+    )
+    if json_mode:
+        print(canonical_json_dumps(payload, pretty=True, drop_run_keys=False))
+        return 0
+    print("Users")
+    if not rows:
+        print("No users configured.")
+        return 0
+    for row in rows:
+        username = str(row.get("username") or "")
+        roles = ", ".join(row.get("roles") or []) or "none"
+        tenant = str(row.get("tenant") or "")
+        suffix = f" tenant={tenant}" if tenant else ""
+        print(f"- {username}: roles={roles}{suffix}")
+    return 0
+
+
+def _add_user(app_arg: str | None, args: list[str]) -> int:
+    parsed = _parse_user_args(args, command="add-user")
+    app_path = resolve_app_path(app_arg or parsed["app_arg"])
+    path, user = add_user(
+        project_root=app_path.parent,
+        app_path=app_path,
+        username=str(parsed["username"] or ""),
+        roles=list(parsed["roles"] or []) or None,
+        token=str(parsed["token"] or "") or None,
+        tenant=str(parsed["tenant"] or "") or None,
+    )
+    payload = {
+        "ok": True,
+        "users_path": path.as_posix(),
+        "user": user,
+    }
+    record_audit_entry(
+        project_root=app_path.parent,
+        app_path=app_path,
+        user="cli",
+        action="auth_add_user",
+        resource=str(user.get("username") or ""),
+        status="success",
+        details={"roles": list(user.get("roles") or [])},
+    )
+    if parsed["json_mode"]:
+        print(canonical_json_dumps(payload, pretty=True, drop_run_keys=False))
+        return 0
+    print(f'Added user "{user.get("username")}".')
+    return 0
+
+
+def _assign_role(app_arg: str | None, args: list[str]) -> int:
+    parsed = _parse_user_args(args, command="assign-role")
+    app_path = resolve_app_path(app_arg or parsed["app_arg"])
+    path, user = assign_role(
+        project_root=app_path.parent,
+        app_path=app_path,
+        username=str(parsed["username"] or ""),
+        role=str(parsed["role"] or ""),
+    )
+    payload = {
+        "ok": True,
+        "users_path": path.as_posix(),
+        "user": user,
+    }
+    record_audit_entry(
+        project_root=app_path.parent,
+        app_path=app_path,
+        user="cli",
+        action="auth_assign_role",
+        resource=str(user.get("username") or ""),
+        status="success",
+        details={"role": parsed["role"]},
+    )
+    if parsed["json_mode"]:
+        print(canonical_json_dumps(payload, pretty=True, drop_run_keys=False))
+        return 0
+    print(f'Updated roles for "{user.get("username")}".')
+    return 0
+
+
+def _parse_user_args(args: list[str], *, command: str) -> dict[str, object]:
+    json_mode = False
+    app_arg = None
+    token = None
+    tenant = None
+    roles: list[str] = []
+    positional: list[str] = []
+
+    idx = 0
+    while idx < len(args):
+        arg = args[idx]
+        if arg == "--json":
+            json_mode = True
+            idx += 1
+            continue
+        if arg == "--role":
+            if idx + 1 >= len(args):
+                raise Namel3ssError(_missing_flag_value("--role"))
+            roles.append(args[idx + 1])
+            idx += 2
+            continue
+        if arg == "--token":
+            if idx + 1 >= len(args):
+                raise Namel3ssError(_missing_flag_value("--token"))
+            token = args[idx + 1]
+            idx += 2
+            continue
+        if arg == "--tenant":
+            if idx + 1 >= len(args):
+                raise Namel3ssError(_missing_flag_value("--tenant"))
+            tenant = args[idx + 1]
+            idx += 2
+            continue
+        if arg.startswith("--"):
+            raise Namel3ssError(_unknown_user_flag_message(arg))
+        positional.append(arg)
+        idx += 1
+
+    if command == "add-user":
+        if not positional:
+            raise Namel3ssError(
+                build_guidance_message(
+                    what="auth add-user is missing a username.",
+                    why="A username is required.",
+                    fix="Provide the username after add-user.",
+                    example="n3 auth add-user alice --role developer",
+                )
+            )
+        username = positional[0]
+        if len(positional) >= 2:
+            app_arg = positional[1]
+        if len(positional) > 2:
+            raise Namel3ssError(_too_many_user_args_message(command))
+        return {
+            "json_mode": json_mode,
+            "app_arg": app_arg,
+            "username": username,
+            "roles": roles,
+            "token": token,
+            "tenant": tenant,
+        }
+
+    if command == "assign-role":
+        if len(positional) < 2:
+            raise Namel3ssError(
+                build_guidance_message(
+                    what="auth assign-role is missing arguments.",
+                    why="assign-role needs username and role.",
+                    fix="Provide both username and role.",
+                    example="n3 auth assign-role alice admin",
+                )
+            )
+        username = positional[0]
+        role = positional[1]
+        if len(positional) >= 3:
+            app_arg = positional[2]
+        if len(positional) > 3:
+            raise Namel3ssError(_too_many_user_args_message(command))
+        return {
+            "json_mode": json_mode,
+            "app_arg": app_arg,
+            "username": username,
+            "role": role,
+            "roles": roles,
+            "token": token,
+            "tenant": tenant,
+        }
+
+    raise Namel3ssError(f"Unsupported user auth command '{command}'")
 
 
 def _parse_require_args(args: list[str]) -> tuple[str, list[str], list[str]]:
@@ -173,12 +403,30 @@ def _unknown_flag_message(flag: str) -> str:
     )
 
 
+def _unknown_user_flag_message(flag: str) -> str:
+    return build_guidance_message(
+        what=f"Unknown flag '{flag}'.",
+        why="Supported auth user flags are --role, --token, --tenant, and --json.",
+        fix="Remove unsupported flags.",
+        example="n3 auth add-user alice --role developer --tenant acme --json",
+    )
+
+
 def _too_many_args_message(command: str) -> str:
     return build_guidance_message(
         what=f"Too many arguments for auth {command}.",
         why="Auth commands accept a single route name.",
         fix="Remove extra arguments.",
         example=f"n3 auth {command} get_user",
+    )
+
+
+def _too_many_user_args_message(command: str) -> str:
+    return build_guidance_message(
+        what=f"Too many arguments for auth {command}.",
+        why="Only one optional app path is supported.",
+        fix="Remove extra positional values.",
+        example=f"n3 auth {command} app.ai",
     )
 
 

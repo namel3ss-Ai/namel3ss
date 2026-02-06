@@ -85,6 +85,8 @@ def _lint_prompt_references(ast_program, prompt_names: set[str], *, severity: st
                 )
             )
     for ai_flow in getattr(ast_program, "ai_flows", []) or []:
+        if getattr(ai_flow, "prompt_expr", None) is not None:
+            continue
         prompt_value = getattr(ai_flow, "prompt", None)
         if _is_prompt_reference(prompt_value) and prompt_value not in prompt_names:
             findings.append(
@@ -105,6 +107,8 @@ def _has_prompt_references(ast_program) -> bool:
         if metadata is not None and _is_prompt_reference(getattr(metadata, "prompt", None)):
             return True
     for ai_flow in getattr(ast_program, "ai_flows", []) or []:
+        if getattr(ai_flow, "prompt_expr", None) is not None:
+            continue
         if _is_prompt_reference(getattr(ai_flow, "prompt", None)):
             return True
     return False

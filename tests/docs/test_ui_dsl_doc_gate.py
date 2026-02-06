@@ -27,15 +27,20 @@ def _git_cmd(args: list[str]) -> list[str]:
 
 def _changed_files() -> list[str]:
     try:
+        files: set[str] = set()
         base_ref = os.environ.get("GITHUB_BASE_REF")
         if base_ref:
             base = _git_cmd(["merge-base", "HEAD", f"origin/{base_ref}"])[0]
         else:
             base = _git_cmd(["merge-base", "HEAD", "origin/main"])[0]
-        return _git_cmd(["diff", "--name-only", f"{base}...HEAD"])
+        files.update(_git_cmd(["diff", "--name-only", f"{base}...HEAD"]))
+        files.update(_git_cmd(["diff", "--name-only"]))
+        return sorted(files)
     except Exception:
         try:
-            return _git_cmd(["diff", "--name-only", "HEAD~1...HEAD"])
+            files = set(_git_cmd(["diff", "--name-only", "HEAD~1...HEAD"]))
+            files.update(_git_cmd(["diff", "--name-only"]))
+            return sorted(files)
         except Exception:
             pytest.skip("git not available for doc gate")
 

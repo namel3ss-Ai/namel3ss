@@ -54,6 +54,46 @@
       root.registry.renderRegistry();
       return;
     }
+    if (tabName === "console" && root.console && typeof root.console.renderConsole === "function") {
+      root.console.renderConsole();
+      return;
+    }
+    if (tabName === "feedback" && root.feedback && typeof root.feedback.renderFeedback === "function") {
+      root.feedback.renderFeedback();
+      return;
+    }
+    if (tabName === "canary" && root.canary && typeof root.canary.renderCanary === "function") {
+      root.canary.renderCanary();
+      return;
+    }
+    if (tabName === "marketplace" && root.marketplace && typeof root.marketplace.renderMarketplace === "function") {
+      root.marketplace.renderMarketplace();
+      return;
+    }
+    if (tabName === "tutorials" && root.tutorials && typeof root.tutorials.renderTutorials === "function") {
+      root.tutorials.renderTutorials();
+      return;
+    }
+    if (tabName === "playground" && root.playground && typeof root.playground.renderPlayground === "function") {
+      root.playground.renderPlayground();
+      return;
+    }
+    if (tabName === "versioning" && root.versioning && typeof root.versioning.renderVersioning === "function") {
+      root.versioning.renderVersioning();
+      return;
+    }
+    if (tabName === "quality" && root.quality && typeof root.quality.renderQuality === "function") {
+      root.quality.renderQuality();
+      return;
+    }
+    if (tabName === "mlops" && root.mlops && typeof root.mlops.renderMLOps === "function") {
+      root.mlops.renderMLOps();
+      return;
+    }
+    if (tabName === "triggers" && root.triggers && typeof root.triggers.renderTriggers === "function") {
+      root.triggers.renderTriggers();
+      return;
+    }
     if (tabName === "deploy" && root.deploy && typeof root.deploy.renderDeploy === "function") {
       root.deploy.renderDeploy();
       return;

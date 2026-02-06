@@ -241,6 +241,10 @@ class Executor:
                     self.ctx.last_value = sandbox_result.get("result")
                 elif getattr(self.ctx.flow, "declarative", False):
                     run_declarative_flow(self.ctx)
+                elif getattr(self.ctx.flow, "ai_metadata", None) is not None and not getattr(self.ctx.flow, "body", None):
+                    from namel3ss.runtime.executor.ai_patterns import execute_ai_metadata_flow
+
+                    execute_ai_metadata_flow(self.ctx)
                 else:
                     for idx, stmt in enumerate(self.ctx.flow.body, start=1):
                         self.ctx.current_statement = stmt
@@ -356,6 +360,7 @@ class Executor:
             last_value=self.ctx.last_value,
             traces=self.ctx.traces,
             execution_steps=list(self.ctx.execution_steps or []),
+            yield_messages=list(self.ctx.yield_messages or []),
             runtime_theme=self.ctx.runtime_theme,
         )
 
@@ -409,6 +414,10 @@ def _statement_kind(stmt: object) -> str | None:
         return "let"
     if isinstance(stmt, ir.Return):
         return "return"
+    if isinstance(stmt, ir.AwaitStmt):
+        return "await"
+    if isinstance(stmt, ir.YieldStmt):
+        return "yield"
     if isinstance(stmt, ir.ThemeChange):
         return "theme"
     if isinstance(stmt, ir.LogStmt):

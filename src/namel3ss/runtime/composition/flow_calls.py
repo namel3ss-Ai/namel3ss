@@ -240,6 +240,10 @@ def _run_flow(ctx: ExecutionContext, flow: ir.Flow, input_payload: dict, flow_ca
             from namel3ss.runtime.flow.runner import run_declarative_flow
 
             run_declarative_flow(ctx)
+        elif getattr(flow, "ai_metadata", None) is not None and not getattr(flow, "body", None):
+            from namel3ss.runtime.executor.ai_patterns import execute_ai_metadata_flow
+
+            execute_ai_metadata_flow(ctx)
         else:
             for idx, stmt in enumerate(flow.body, start=1):
                 ctx.current_statement = stmt

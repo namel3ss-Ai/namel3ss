@@ -6,6 +6,7 @@ from namel3ss.ir.model.agents import AgentMergePolicy, ParallelAgentEntry, RunAg
 from namel3ss.ir.model.ai import AskAIStmt
 from namel3ss.ir.model.statements import (
     AdvanceTime,
+    AwaitStmt,
     Create,
     Delete,
     EnqueueJob,
@@ -28,6 +29,7 @@ from namel3ss.ir.model.statements import (
     Repeat,
     RepeatWhile,
     Return,
+    YieldStmt,
     Save,
     Set,
     ThemeChange,
@@ -78,6 +80,18 @@ def _lower_statement(stmt: ast.Statement, agents) -> IRStatement:
         )
     if isinstance(stmt, ast.Return):
         return Return(
+            expression=_lower_expression(stmt.expression),
+            line=stmt.line,
+            column=stmt.column,
+        )
+    if isinstance(stmt, ast.Await):
+        return AwaitStmt(
+            name=stmt.name,
+            line=stmt.line,
+            column=stmt.column,
+        )
+    if isinstance(stmt, ast.Yield):
+        return YieldStmt(
             expression=_lower_expression(stmt.expression),
             line=stmt.line,
             column=stmt.column,

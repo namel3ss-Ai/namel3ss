@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import json
 
+from namel3ss.evals.ai_flow_eval import run_ai_flow_eval
 from namel3ss.evals.loader import load_eval_suite
 from namel3ss.evals.runner import render_eval_text, run_eval_suite
 from namel3ss.evals.prompt_eval import run_prompt_eval
@@ -28,6 +29,8 @@ class _EvalParams:
 def run_eval_command(args: list[str]) -> int:
     if args and args[0] == "prompt":
         return _run_prompt_eval_command(args[1:])
+    if args and args[0] == "flow":
+        return _run_flow_eval_command(args[1:])
     params = _parse_args(args)
     suite = load_eval_suite(params.suite_path)
     report = run_eval_suite(suite, fast=params.fast)
@@ -102,6 +105,58 @@ def _run_prompt_eval_command(args: list[str]) -> int:
             print(f"  {key}: {summary[key]}")
     else:
         print(f'Prompt "{prompt_name}" evaluation complete.')
+    return 0
+
+
+def _run_flow_eval_command(args: list[str]) -> int:
+    flow_name = None
+    app_arg: str | None = None
+    out_dir: Path | None = None
+    json_mode = False
+    idx = 0
+    while idx < len(args):
+        arg = args[idx]
+        if arg == "--out-dir":
+            if idx + 1 >= len(args):
+                raise Namel3ssError(_missing_flow_flag("--out-dir"))
+            out_dir = Path(args[idx + 1])
+            idx += 2
+            continue
+        if arg == "--app":
+            if idx + 1 >= len(args):
+                raise Namel3ssError(_missing_flow_flag("--app"))
+            app_arg = args[idx + 1]
+            idx += 2
+            continue
+        if arg == "--json":
+            json_mode = True
+            idx += 1
+            continue
+        if arg.startswith("--"):
+            raise Namel3ssError(_unknown_flow_flag(arg))
+        if flow_name is None:
+            flow_name = arg
+            idx += 1
+            continue
+        raise Namel3ssError(_too_many_flow_args_message())
+    if not flow_name:
+        raise Namel3ssError(_missing_flow_name_message())
+    app_path = resolve_app_path(app_arg)
+    payload = run_ai_flow_eval(
+        flow_name=flow_name,
+        app_path=Path(app_path),
+        out_dir=out_dir,
+    )
+    if json_mode:
+        print(json.dumps(payload, indent=2, sort_keys=True))
+        return 0
+    print(f'Flow "{flow_name}" evaluation')
+    print(f'  model: {payload.get("model")}@{payload.get("model_version")}')
+    print(f'  dataset: {payload.get("dataset")}')
+    results = payload.get("results")
+    if isinstance(results, dict):
+        for key in sorted(results.keys()):
+            print(f"  {key}: {results[key]}")
     return 0
 
 
@@ -234,6 +289,45 @@ def _too_many_prompt_args_message() -> str:
         why="Provide a single prompt name.",
         fix="Remove the extra arguments.",
         example="n3 eval prompt summary_prompt --input samples.json",
+    )
+
+
+def _missing_flow_name_message() -> str:
+    return build_guidance_message(
+        what="Flow name is missing.",
+        why="Flow eval needs an AI flow name.",
+        fix="Provide the flow name after 'flow'.",
+        example='n3 eval flow "answer_question"',
+    )
+
+
+def _missing_flow_flag(flag: str) -> str:
+    example = 'n3 eval flow "answer_question" --app app.ai'
+    if flag == "--out-dir":
+        example = 'n3 eval flow "answer_question" --out-dir .namel3ss/observability/evals/ai'
+    return build_guidance_message(
+        what=f"{flag} flag is missing a value.",
+        why="Flow eval needs a value for this flag.",
+        fix=f"Provide a value after {flag}.",
+        example=example,
+    )
+
+
+def _unknown_flow_flag(flag: str) -> str:
+    return build_guidance_message(
+        what=f"Unknown flag '{flag}'.",
+        why="Flow eval supports --app, --out-dir, and --json.",
+        fix="Remove the unsupported flag.",
+        example='n3 eval flow "answer_question" --json',
+    )
+
+
+def _too_many_flow_args_message() -> str:
+    return build_guidance_message(
+        what="eval flow accepts at most one flow name.",
+        why="Provide a single AI flow name.",
+        fix="Remove extra arguments.",
+        example='n3 eval flow "answer_question"',
     )
 
 

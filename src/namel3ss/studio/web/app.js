@@ -30,6 +30,7 @@
     root.run.setupRunButton();
     if (root.traces && root.traces.setupFilter) root.traces.setupFilter();
     if (root.preview && root.preview.setupPreview) root.preview.setupPreview();
+    if (root.feedback && root.feedback.setupPreviewFeedback) root.feedback.setupPreviewFeedback();
     if (root.formulas && root.formulas.setupFormulas) root.formulas.setupFormulas();
     if (root.menu && root.menu.setupMenu) root.menu.setupMenu();
     if (root.agents && root.agents.setupAgents) root.agents.setupAgents();

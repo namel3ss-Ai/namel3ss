@@ -1,11 +1,9 @@
 from __future__ import annotations
-
 import json
 from http.server import BaseHTTPRequestHandler
 from types import SimpleNamespace
 from typing import Any
 from urllib.parse import parse_qs, urlparse
-
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
@@ -35,7 +33,6 @@ from namel3ss.version import get_version
 class ProductionRequestHandler(BaseHTTPRequestHandler):
     def log_message(self, format: str, *args: Any) -> None:  # pragma: no cover - silence logs
         pass
-
     def do_GET(self) -> None:  # noqa: N802
         raw_path = self.path
         path = urlparse(raw_path).path
@@ -333,7 +330,6 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             payload = build_error_payload(str(err), kind="internal")
             return payload, 500
 
-
     def _handle_observability(self, kind: str) -> tuple[dict, int]:
         program = getattr(self._state(), "program", None)
         if program is None:
@@ -420,6 +416,8 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             config=config,
             identity_schema=identity_schema,
             store=store,
+            project_root=str(getattr(self._state(), "project_root", "") or "") or None,
+            app_path=str(getattr(self._state(), "app_path", "") or "") or None,
         )
 
     def _handle_login_post(self, body: dict) -> tuple[dict, int, dict[str, str]]:
@@ -445,6 +443,8 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             config=config,
             identity_schema=identity_schema,
             store=store,
+            project_root=str(getattr(self._state(), "project_root", "") or "") or None,
+            app_path=str(getattr(self._state(), "app_path", "") or "") or None,
         )
 
     def _resolve_auth_context(self) -> object:
@@ -454,6 +454,8 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             config=config,
             identity_schema=identity_schema,
             store=store,
+            project_root=str(getattr(self._state(), "project_root", "") or "") or None,
+            app_path=str(getattr(self._state(), "app_path", "") or "") or None,
         )
 
     def _auth_context_or_error(self, *, kind: str) -> object | None:

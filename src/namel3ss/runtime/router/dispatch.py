@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from namel3ss.config.loader import load_config
+from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.executor import execute_program_flow
+from namel3ss.runtime.persistence_paths import resolve_persistence_root
 from namel3ss.runtime.router.registry import RouteEntry, RouteMatch, RouteRegistry
 from namel3ss.runtime.router.request import coerce_params, query_params, read_json_body
 from namel3ss.runtime.router.authorization import enforce_route_permissions
@@ -16,6 +19,8 @@ from namel3ss.runtime.conventions.filters import apply_filters, parse_filter_par
 from namel3ss.runtime.conventions.formats import load_formats_config
 from namel3ss.runtime.conventions.pagination import apply_pagination, parse_pagination
 from namel3ss.runtime.conventions.toon import encode_toon
+from namel3ss.governance.audit import record_audit_entry, resolve_actor
+from namel3ss.federation.tenants import resolve_request_tenant
 
 
 @dataclass(frozen=True)
@@ -25,6 +30,12 @@ class RouteDispatchResult:
     headers: dict[str, str] | None = None
     body: bytes | None = None
     content_type: str | None = None
+
+
+@dataclass(frozen=True)
+class RouteRunPayload:
+    response: dict
+    yield_messages: list[dict]
 
 
 def dispatch_route(
@@ -40,14 +51,44 @@ def dispatch_route(
     store,
 ) -> RouteDispatchResult | None:
     parsed = urlparse(raw_path)
-    match = registry.match(method, parsed.path)
-    if match is None:
-        return None
-    entry = match.entry
-    enforce_route_permissions(entry, identity=identity, auth_context=auth_context)
     query = parse_qs(parsed.query or "")
     query_values = query_params(query)
+    requested_version = _requested_version(query_values, headers)
+    match = registry.match(method, parsed.path, requested_version=requested_version)
+    if match is None:
+        if requested_version:
+            removed = registry.removed_version(method, parsed.path, requested_version)
+            if removed is not None:
+                warning = _deprecation_warning(removed)
+                err = Namel3ssError(
+                    _removed_version_message(removed, requested_version),
+                    details={"http_status": 404, "category": "version", "reason_code": "removed_version"},
+                )
+                return RouteDispatchResult(
+                    payload=build_error_envelope(error=err, project_root=getattr(program, "project_root", None)),
+                    status=404,
+                    headers={"X-N3-Deprecation-Warning": warning},
+                )
+        return None
+    entry = match.entry
+    warning_headers = _deprecated_headers(entry)
+    request_identity = identity
+    active_tenant = None
+    actor = resolve_actor(identity, auth_context)
     try:
+        active_tenant = resolve_request_tenant(
+            headers=headers,
+            query_values=query_values,
+            identity=identity,
+            project_root=getattr(program, "project_root", None),
+            app_path=getattr(program, "app_path", None),
+        )
+        if active_tenant:
+            request_identity = dict(identity or {})
+            request_identity.setdefault("tenant", active_tenant)
+            request_identity.setdefault("tenant_id", active_tenant)
+        actor = resolve_actor(request_identity, auth_context)
+        enforce_route_permissions(entry, identity=request_identity, auth_context=auth_context)
         formats_config = load_formats_config(
             getattr(program, "project_root", None),
             getattr(program, "app_path", None),
@@ -64,26 +105,81 @@ def dispatch_route(
             headers=headers,
             rfile=rfile,
             program=program,
-            identity=identity,
+            identity=request_identity,
             auth_context=auth_context,
             store=store,
             conventions=conventions,
         )
+        if _should_stream_response(query_values, headers, payload.yield_messages):
+            if warning_headers:
+                _log_deprecated_route_call(program, entry, requested_version=requested_version)
+            stream_headers = dict(warning_headers or {})
+            stream_headers["Cache-Control"] = "no-cache"
+            _record_route_audit(
+                program,
+                entry,
+                user=actor,
+                status="success",
+                details={"stream": True, "requested_version": requested_version or "", "tenant_id": active_tenant or ""},
+            )
+            return RouteDispatchResult(
+                payload=None,
+                body=_build_sse_body(payload.yield_messages, payload.response),
+                content_type="text/event-stream; charset=utf-8",
+                status=200,
+                headers=stream_headers,
+            )
         if format_name == "toon":
-            token = encode_toon(payload)
+            token = encode_toon(payload.response)
+            _record_route_audit(
+                program,
+                entry,
+                user=actor,
+                status="success",
+                details={"format": "toon", "requested_version": requested_version or "", "tenant_id": active_tenant or ""},
+            )
             return RouteDispatchResult(
                 payload=None,
                 body=token.encode("utf-8"),
                 content_type="text/plain; charset=utf-8",
                 status=200,
+                headers=warning_headers,
             )
-        return RouteDispatchResult(payload=payload, status=200)
+        if warning_headers:
+            _log_deprecated_route_call(program, entry, requested_version=requested_version)
+        _record_route_audit(
+            program,
+            entry,
+            user=actor,
+            status="success",
+            details={"requested_version": requested_version or "", "tenant_id": active_tenant or ""},
+        )
+        return RouteDispatchResult(payload=payload.response, status=200, headers=warning_headers)
     except Namel3ssError as err:
+        _record_route_audit(
+            program,
+            entry,
+            user=actor,
+            status="failure",
+            details={
+                "reason_code": _error_reason_code(err),
+                "http_status": _status_from_error(err),
+                "requested_version": requested_version or "",
+                "tenant_id": active_tenant or "",
+            },
+        )
         return RouteDispatchResult(
             payload=build_error_envelope(error=err, project_root=getattr(program, "project_root", None)),
             status=_status_from_error(err),
         )
     except Exception as err:  # pragma: no cover - defensive guard rail
+        _record_route_audit(
+            program,
+            entry,
+            user=actor,
+            status="failure",
+            details={"reason_code": "internal_error", "requested_version": requested_version or "", "tenant_id": active_tenant or ""},
+        )
         return RouteDispatchResult(
             payload=build_error_envelope(error=err, project_root=getattr(program, "project_root", None)),
             status=500,
@@ -102,7 +198,7 @@ def _run_route(
     auth_context: object | None,
     store,
     conventions,
-) -> dict:
+) -> RouteRunPayload:
     entry = match.entry
     list_fields = _list_response_fields(entry.response or {})
     route_conventions = conventions.for_route(entry.name)
@@ -111,7 +207,7 @@ def _run_route(
     filtered_query = {
         key: value
         for key, value in query_values.items()
-        if key not in {"page", "page_size", "filter", "format"}
+        if key not in {"page", "page_size", "filter", "format", "version"}
     }
     input_data.update(coerce_params(filtered_query, entry.parameters))
     filters: dict[str, str] = {}
@@ -176,7 +272,10 @@ def _run_route(
                 response["next_page"] = page + 1
     if upload_metadata and "upload_id" not in response:
         response["upload_id"] = upload_metadata.get("checksum")
-    return response
+    return RouteRunPayload(
+        response=response,
+        yield_messages=_sorted_yield_messages(getattr(result, "yield_messages", None)),
+    )
 
 
 def _format_response(entry: RouteEntry, value: object) -> dict:
@@ -239,6 +338,57 @@ def _filter_not_allowed_message(route_name: str) -> str:
     )
 
 
+def _requested_version(query: dict[str, str], headers: dict[str, str]) -> str | None:
+    query_value = str(query.get("version") or "").strip()
+    if query_value:
+        return query_value
+    header_value = str(headers.get("Accept-Version") or headers.get("accept-version") or "").strip()
+    return header_value or None
+
+
+def _deprecated_headers(entry: RouteEntry) -> dict[str, str] | None:
+    if entry.status != "deprecated":
+        return None
+    return {"X-N3-Deprecation-Warning": _deprecation_warning(entry)}
+
+
+def _deprecation_warning(entry: RouteEntry) -> str:
+    message = f'route "{entry.entity_name}" version "{entry.version or "default"}" is deprecated'
+    if entry.replacement:
+        message += f'; use "{entry.replacement}"'
+    if entry.deprecation_date:
+        message += f"; end_of_life={entry.deprecation_date}"
+    return message
+
+
+def _removed_version_message(entry: RouteEntry, requested_version: str) -> str:
+    if entry.replacement:
+        return (
+            f'Route "{entry.entity_name}" version "{requested_version}" was removed. '
+            f'Use version "{entry.replacement}" instead.'
+        )
+    return f'Route "{entry.entity_name}" version "{requested_version}" was removed.'
+
+
+def _log_deprecated_route_call(program, entry: RouteEntry, *, requested_version: str | None) -> None:
+    root = resolve_persistence_root(getattr(program, "project_root", None), getattr(program, "app_path", None))
+    if root is None:
+        return
+    log_path = Path(root) / ".namel3ss" / "deprecations.jsonl"
+    row = {
+        "route_name": entry.name,
+        "entity_name": entry.entity_name,
+        "version": entry.version or "default",
+        "status": entry.status,
+        "replacement": entry.replacement or "",
+        "deprecation_date": entry.deprecation_date or "",
+        "requested_version": requested_version or "",
+    }
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("a", encoding="utf-8") as handle:
+        handle.write(canonical_json_dumps(row, pretty=False, drop_run_keys=False) + "\n")
+
+
 def _status_from_error(err: Namel3ssError) -> int:
     details = err.details if isinstance(err.details, dict) else {}
     status = details.get("http_status")
@@ -252,3 +402,93 @@ def _status_from_error(err: Namel3ssError) -> int:
     if category == "permission":
         return 403
     return 400
+
+
+def _error_reason_code(err: Namel3ssError) -> str:
+    details = err.details if isinstance(err.details, dict) else {}
+    reason = details.get("reason_code")
+    if isinstance(reason, str) and reason.strip():
+        return reason.strip()
+    category = details.get("category")
+    if isinstance(category, str) and category.strip():
+        return category.strip()
+    return "request_error"
+
+
+def _record_route_audit(program, entry: RouteEntry, *, user: str, status: str, details: dict[str, object]) -> None:
+    record_audit_entry(
+        project_root=getattr(program, "project_root", None),
+        app_path=getattr(program, "app_path", None),
+        user=user,
+        action="invoke_route",
+        resource=entry.name,
+        status=status,
+        details={
+            "flow_name": entry.flow_name,
+            "method": entry.method,
+            "path": entry.path,
+            **details,
+        },
+    )
+
+
+def _should_stream_response(query: dict[str, str], headers: dict[str, str], yield_messages: list[dict]) -> bool:
+    if yield_messages:
+        return True
+    stream = str(query.get("stream") or "").strip().lower()
+    if stream in {"1", "true", "yes", "on"}:
+        return True
+    accept = str(headers.get("Accept") or headers.get("accept") or "").lower()
+    if "text/event-stream" in accept:
+        return True
+    header_stream = str(headers.get("X-N3-Stream") or headers.get("x-n3-stream") or "").strip().lower()
+    return header_stream in {"1", "true", "yes", "on"}
+
+
+def _build_sse_body(yield_messages: list[dict], response: dict) -> bytes:
+    lines: list[str] = []
+    for message in yield_messages:
+        lines.append("event: yield")
+        lines.append(f"data: {canonical_json_dumps(message, pretty=False, drop_run_keys=False)}")
+        lines.append("")
+    lines.append("event: return")
+    lines.append(f"data: {canonical_json_dumps(response, pretty=False, drop_run_keys=False)}")
+    lines.append("")
+    return "\n".join(lines).encode("utf-8")
+
+
+def _sorted_yield_messages(raw: object) -> list[dict]:
+    if not isinstance(raw, list):
+        return []
+    rows: list[dict] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        sequence = _safe_int(item.get("sequence"))
+        flow_name = str(item.get("flow_name") or "")
+        payload = {
+            "flow_name": flow_name,
+            "output": item.get("output"),
+            "sequence": sequence,
+        }
+        rows.append(payload)
+    rows.sort(
+        key=lambda entry: (
+            int(entry.get("sequence") or 0),
+            str(entry.get("flow_name") or ""),
+            canonical_json_dumps(entry.get("output"), pretty=False, drop_run_keys=False),
+        )
+    )
+    return rows
+
+
+def _safe_int(value: object) -> int:
+    if isinstance(value, bool):
+        return 0
+    try:
+        parsed = int(value)
+    except Exception:
+        return 0
+    if parsed < 0:
+        return 0
+    return parsed

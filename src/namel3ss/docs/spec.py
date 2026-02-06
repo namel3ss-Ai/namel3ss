@@ -319,6 +319,51 @@ def _add_error_schemas(target: dict[str, dict]) -> None:
 def _add_ai_flow_schemas(target: dict[str, dict]) -> None:
     target["LLMCall"] = _ai_schema_base("LLM call metadata.")
     target["Summarise"] = _ai_schema_base("Summarise metadata.")
+    target["Translate"] = {
+        "type": "object",
+        "description": "Translate metadata.",
+        "properties": {
+            "model": {"type": "string"},
+            "prompt": {"type": "string"},
+            "dataset": {"type": "string"},
+            "output_type": {"type": "string"},
+            "source_language": {"type": "string"},
+            "target_language": {"type": "string"},
+        },
+        "required": ["model", "source_language", "target_language"],
+    }
+    target["QA"] = {
+        "type": "object",
+        "description": "Question answering metadata.",
+        "properties": {
+            "model": {"type": "string"},
+            "prompt": {"type": "string"},
+            "dataset": {"type": "string"},
+            "output_fields": {"type": "array", "items": {"type": "string"}},
+        },
+        "required": ["model", "output_fields"],
+    }
+    target["COT"] = {
+        "type": "object",
+        "description": "Chain of thought metadata.",
+        "properties": {
+            "model": {"type": "string"},
+            "prompt": {"type": "string"},
+            "dataset": {"type": "string"},
+            "output_fields": {"type": "array", "items": {"type": "string"}},
+        },
+        "required": ["model", "output_fields"],
+    }
+    target["Chain"] = {
+        "type": "object",
+        "description": "Composable AI chain metadata.",
+        "properties": {
+            "steps": {"type": "array", "items": {"type": "object"}},
+            "output_fields": {"type": "array", "items": {"type": "string"}},
+            "tests": {"type": "object"},
+        },
+        "required": ["steps", "output_fields"],
+    }
     target["RAG"] = {
         "type": "object",
         "description": "RAG metadata.",
@@ -370,8 +415,8 @@ def _collect_ai_summaries(program) -> dict[str, _AIFlowSummary]:
         summaries[flow.name] = _AIFlowSummary(
             name=flow.name,
             kind=kind,
-            model=meta.model,
-            prompt=meta.prompt,
+            model=meta.model or "n/a",
+            prompt=meta.prompt or "[dynamic prompt]",
             output_type=output_type,
         )
     for flow in getattr(program, "ai_flows", []) or []:
@@ -379,8 +424,8 @@ def _collect_ai_summaries(program) -> dict[str, _AIFlowSummary]:
         summaries[flow.name] = _AIFlowSummary(
             name=flow.name,
             kind=flow.kind,
-            model=flow.model,
-            prompt=flow.prompt,
+            model=flow.model or "n/a",
+            prompt=flow.prompt or "[dynamic prompt]",
             output_type=output_type,
         )
     return summaries

@@ -88,6 +88,10 @@ def _scan_statement_expressions(ctx, stmt: ir.Statement) -> None:
         _scan_expression(ctx, stmt.expression)
     elif isinstance(stmt, ir.Return):
         _scan_expression(ctx, stmt.expression)
+    elif isinstance(stmt, ir.YieldStmt):
+        _scan_expression(ctx, stmt.expression)
+    elif isinstance(stmt, ir.AwaitStmt):
+        return
     elif isinstance(stmt, ir.Repeat):
         _scan_expression(ctx, stmt.count)
     elif isinstance(stmt, ir.RepeatWhile):
@@ -129,6 +133,9 @@ def _scan_statement_expressions(ctx, stmt: ir.Statement) -> None:
 
 
 def _scan_expression(ctx, expr: ir.Expression) -> None:
+    if isinstance(expr, ir.AsyncCallExpr):
+        _scan_expression(ctx, expr.expression)
+        return
     if isinstance(expr, ir.ToolCallExpr):
         _ensure_tool_pure(ctx, expr.tool_name, line=expr.line, column=expr.column)
         for arg in expr.arguments:

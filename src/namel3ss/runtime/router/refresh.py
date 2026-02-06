@@ -6,6 +6,7 @@ from namel3ss.persistence.local_store import LocalStore
 from namel3ss.runtime.auth.route_permissions import load_route_permissions
 from namel3ss.runtime.router.definitions import build_definitions, should_persist
 from namel3ss.runtime.router.registry import RouteRegistry
+from namel3ss.versioning import load_version_config, route_metadata_by_target
 
 
 def refresh_routes(
@@ -17,7 +18,14 @@ def refresh_routes(
 ) -> dict[str, list[str]]:
     routes = getattr(program, "routes", []) or []
     permissions = load_route_permissions(getattr(program, "project_root", None), getattr(program, "app_path", None))
-    diff = registry.update(routes, revision=revision, requirements=permissions.routes)
+    version_config = load_version_config(getattr(program, "project_root", None), getattr(program, "app_path", None))
+    route_version_meta = route_metadata_by_target(version_config)
+    diff = registry.update(
+        routes,
+        revision=revision,
+        requirements=permissions.routes,
+        route_version_meta=route_version_meta,
+    )
     definitions = build_definitions(program)
     if should_persist(definitions):
         store = LocalStore(getattr(program, "project_root", None), getattr(program, "app_path", None))

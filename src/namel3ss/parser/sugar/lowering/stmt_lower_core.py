@@ -103,6 +103,10 @@ def _lower_statement(stmt: ast.Statement) -> list[ast.Statement]:
         ]
     if isinstance(stmt, ast.Return):
         return [ast.Return(expression=_lower_expression(stmt.expression), line=stmt.line, column=stmt.column)]
+    if isinstance(stmt, ast.Await):
+        return [ast.Await(name=stmt.name, line=stmt.line, column=stmt.column)]
+    if isinstance(stmt, ast.Yield):
+        return [ast.Yield(expression=_lower_expression(stmt.expression), line=stmt.line, column=stmt.column)]
     if isinstance(stmt, ast.AskAIStmt):
         return [
             ast.AskAIStmt(

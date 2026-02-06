@@ -105,6 +105,10 @@ class ExecutionContext:
     scheduled_jobs: list[dict] = field(default_factory=list)
     job_enqueue_counter: int = 0
     logical_time: int = 0
+    async_tasks: dict[str, object] = field(default_factory=dict)
+    async_launch_counter: int = 0
+    yield_messages: list[dict] = field(default_factory=list)
+    yield_sequence: int = 0
 
     def __post_init__(self) -> None:
         if not isinstance(self.traces, TraceList):

@@ -12,6 +12,7 @@ def parse_flow_ai_block(parser) -> ast.AIFlowMetadata:
     parser._expect("INDENT", "Expected indented ai block")
     model = None
     prompt = None
+    prompt_expr = None
     dataset = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
@@ -33,10 +34,15 @@ def parse_flow_ai_block(parser) -> ast.AIFlowMetadata:
             parser._match("NEWLINE")
             continue
         if _match_ident(parser, "prompt"):
-            _ensure_unique("prompt", prompt, key_tok)
+            _ensure_unique("prompt", prompt if prompt_expr is None else object(), key_tok)
             parser._expect("IS", "Expected 'is' after prompt")
-            value_tok = parser._expect("STRING", "Expected prompt string")
-            prompt = value_tok.value
+            value_expr = parser._parse_expression()
+            if isinstance(value_expr, ast.Literal) and isinstance(value_expr.value, str):
+                prompt = value_expr.value
+                prompt_expr = None
+            else:
+                prompt = None
+                prompt_expr = value_expr
             parser._match("NEWLINE")
             continue
         if _match_ident(parser, "dataset"):
@@ -65,11 +71,12 @@ def parse_flow_ai_block(parser) -> ast.AIFlowMetadata:
         pass
     if model is None:
         raise Namel3ssError("AI block requires a model", line=ai_tok.line, column=ai_tok.column)
-    if prompt is None:
+    if prompt is None and prompt_expr is None:
         raise Namel3ssError("AI block requires a prompt", line=ai_tok.line, column=ai_tok.column)
     return ast.AIFlowMetadata(
         model=model,
         prompt=prompt,
+        prompt_expr=prompt_expr,
         dataset=dataset,
         line=ai_tok.line,
         column=ai_tok.column,

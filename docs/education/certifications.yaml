@@ -1,0 +1,26 @@
+version: "1.0.0"
+certifications:
+  - id: "certified_developer"
+    title: "Certified namel3ss Developer"
+    target_level: "beginner"
+    spec_version: "1.0.0"
+    exam:
+      passing_score: 80
+      duration_minutes: 60
+      question_pool: "foundation_pool_v1"
+  - id: "certified_flow_designer"
+    title: "Certified Flow Designer"
+    target_level: "intermediate"
+    spec_version: "1.0.0"
+    exam:
+      passing_score: 85
+      duration_minutes: 90
+      question_pool: "flow_design_pool_v1"
+  - id: "certified_platform_steward"
+    title: "Certified Platform Steward"
+    target_level: "advanced"
+    spec_version: "1.0.0"
+    exam:
+      passing_score: 90
+      duration_minutes: 120
+      question_pool: "platform_steward_pool_v1"

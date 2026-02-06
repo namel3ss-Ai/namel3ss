@@ -113,7 +113,16 @@ def lower_program(program: ast.Program) -> Program:
         getattr(program, "ai_flows", []) or [],
         prompt_names=prompt_names,
     )
-    validate_ai_flows(getattr(program, "ai_flows", []) or [], record_names=set(record_map.keys()))
+    ai_decls = list(getattr(program, "ai_flows", []) or [])
+    known_flow_names = {flow.name for flow in getattr(program, "flows", []) or []}
+    known_flow_names.update(flow.name for flow in ai_decls)
+    validate_ai_flows(
+        ai_decls,
+        record_names=set(record_map.keys()),
+        known_flow_names=known_flow_names,
+        project_root=getattr(program, "project_root", None),
+        app_path=getattr(program, "app_path", None),
+    )
     validate_crud(getattr(program, "crud", []) or [], record_names=set(record_map.keys()))
     validate_routes(getattr(program, "routes", []) or [], record_names=set(record_map.keys()), flow_names=set(flow_names))
     validate_flow_contracts(flow_irs, flow_contracts)
@@ -189,8 +198,6 @@ def _ensure_unique_pages(pages: list[Page]) -> None:
                 column=getattr(page, "column", None),
             )
         seen[page.name] = True
-
-
 def _lower_active_page_rules(
     rules: list[ast.ActivePageRule] | None,
     page_names: set[str],
@@ -244,14 +251,10 @@ def _lower_active_page_rules(
             )
         )
     return lowered
-
-
 def _active_page_rule_key(path: list[str], value: object) -> tuple[tuple[str, ...], object]:
     if is_number(value):
         return (tuple(path), to_decimal(value))
     return (tuple(path), value)
-
-
 def _validate_text_inputs(
     pages: list[Page],
     flows: list[Flow],
@@ -297,8 +300,6 @@ def _validate_text_inputs(
                     line=item.line,
                     column=item.column,
                 )
-
-
 def _validate_chat_composers(
     pages: list[Page],
     flows: list[Flow],
@@ -388,8 +389,6 @@ def _validate_chat_composers(
                         line=field.line if field else item.line,
                         column=field.column if field else item.column,
                     )
-
-
 def _flow_input_signature(flow: Flow, flow_contracts: dict[str, ContractDecl]) -> dict[str, str]:
     if flow.steps:
         for step in flow.steps:
@@ -399,8 +398,6 @@ def _flow_input_signature(flow: Flow, flow_contracts: dict[str, ContractDecl]) -
     if contract is None:
         return {}
     return {field.name: field.type_name for field in contract.signature.inputs}
-
-
 def _composer_expected_fields(extra_fields: list[object]) -> list[str]:
     names = ["message"]
     for field in extra_fields:
@@ -408,15 +405,11 @@ def _composer_expected_fields(extra_fields: list[object]) -> list[str]:
         if isinstance(name, str):
             names.append(name)
     return names
-
-
 def _composer_input_example(flow_name: str, field_names: list[str]) -> str:
     lines = [f'flow "{flow_name}"', "  input"]
     for name in field_names:
         lines.append(f"    {name} is text")
     return "\\n".join(lines)
-
-
 def _walk_page_items(items: list[object]) -> list[object]:
     collected: list[object] = []
     for item in items:
@@ -442,8 +435,6 @@ def _walk_page_items(items: list[object]) -> list[object]:
                 collected.extend(_walk_page_items(tab.children))
             continue
     return collected
-
-
 def _normalize_capabilities(items: list[str]) -> tuple[str, ...]:
     normalized: list[str] = []
     for item in items:
@@ -451,8 +442,6 @@ def _normalize_capabilities(items: list[str]) -> tuple[str, ...]:
         if value:
             normalized.append(value)
     return tuple(sorted(set(normalized)))
-
-
 def _normalize_pack_allowlist(items: list[str] | None) -> tuple[str, ...] | None:
     if items is None:
         return None
@@ -469,8 +458,6 @@ def _normalize_pack_allowlist(items: list[str] | None) -> tuple[str, ...] | None
     if not normalized:
         return None
     return tuple(normalized)
-
-
 def _require_capabilities(
     allowed: tuple[str, ...],
     tools: Dict[str, object],

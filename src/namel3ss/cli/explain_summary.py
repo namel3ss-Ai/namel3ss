@@ -50,11 +50,32 @@ def summarize_ai_metadata(program) -> list[dict]:
                 "flow": flow.name,
                 "model": metadata.model,
                 "prompt": metadata.prompt,
+                "prompt_dynamic": getattr(metadata, "prompt_expr", None) is not None,
                 "dataset": metadata.dataset,
                 "kind": getattr(metadata, "kind", None),
                 "output_type": getattr(metadata, "output_type", None),
+                "source_language": getattr(metadata, "source_language", None),
+                "target_language": getattr(metadata, "target_language", None),
+                "output_fields": [
+                    {"name": field.name, "type_name": field.type_name}
+                    for field in list(getattr(metadata, "output_fields", None) or [])
+                ]
+                or None,
                 "labels": list(getattr(metadata, "labels", []) or []) or None,
                 "sources": list(getattr(metadata, "sources", []) or []) or None,
+                "chain_steps": [
+                    {"flow_kind": step.flow_kind, "flow_name": step.flow_name}
+                    for step in list(getattr(metadata, "chain_steps", None) or [])
+                ]
+                or None,
+                "tests": (
+                    {
+                        "dataset": metadata.tests.dataset,
+                        "metrics": list(metadata.tests.metrics),
+                    }
+                    if getattr(metadata, "tests", None) is not None
+                    else None
+                ),
             }
         )
     return summary
@@ -90,10 +111,28 @@ def summarize_ai_flows(program) -> list[dict]:
                 "kind": flow.kind,
                 "model": flow.model,
                 "prompt": flow.prompt,
+                "prompt_dynamic": getattr(flow, "prompt_expr", None) is not None,
                 "dataset": flow.dataset,
                 "output_type": flow.output_type,
+                "source_language": getattr(flow, "source_language", None),
+                "target_language": getattr(flow, "target_language", None),
+                "output_fields": [
+                    {"name": field.name, "type_name": field.type_name}
+                    for field in list(getattr(flow, "output_fields", None) or [])
+                ]
+                or None,
                 "labels": list(flow.labels) if flow.labels else None,
                 "sources": list(flow.sources) if flow.sources else None,
+                "chain_steps": [
+                    {"flow_kind": step.flow_kind, "flow_name": step.flow_name}
+                    for step in list(getattr(flow, "chain_steps", None) or [])
+                ]
+                or None,
+                "tests": (
+                    {"dataset": flow.tests.dataset, "metrics": list(flow.tests.metrics)}
+                    if getattr(flow, "tests", None) is not None
+                    else None
+                ),
             }
         )
     return summary

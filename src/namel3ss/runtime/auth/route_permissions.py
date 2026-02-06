@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from namel3ss.errors.base import Namel3ssError
@@ -25,11 +25,23 @@ class RouteRequirement:
 @dataclass(frozen=True)
 class RoutePermissions:
     routes: dict[str, RouteRequirement]
+    flows: dict[str, RouteRequirement] = field(default_factory=dict)
+    secrets: dict[str, RouteRequirement] = field(default_factory=dict)
 
     def requirement_for(self, route_name: str | None) -> RouteRequirement | None:
         if not route_name:
             return None
         return self.routes.get(route_name)
+
+    def flow_requirement_for(self, flow_name: str | None) -> RouteRequirement | None:
+        if not flow_name:
+            return None
+        return self.flows.get(flow_name)
+
+    def secret_requirement_for(self, secret_name: str | None) -> RouteRequirement | None:
+        if not secret_name:
+            return None
+        return self.secrets.get(secret_name)
 
 
 def permissions_path(project_root: str | Path | None, app_path: str | Path | None) -> Path | None:
@@ -49,13 +61,28 @@ def load_route_permissions(project_root: str | Path | None, app_path: str | Path
         raise Namel3ssError(_invalid_permissions_message(path)) from err
     if not isinstance(payload, dict):
         raise Namel3ssError(_invalid_permissions_message(path))
-    values = payload.get("routes")
-    if values is None:
-        values = payload
-    if not isinstance(values, dict):
+    route_values: object = payload.get("routes", {})
+    flow_values: object = payload.get("flows", {})
+    secret_values: object = payload.get("secrets", {})
+    has_explicit_sections = any(key in payload for key in ("routes", "flows", "secrets"))
+    if not has_explicit_sections:
+        route_values = payload
+        flow_values = {}
+        secret_values = {}
+    if route_values is None:
+        route_values = {}
+    if flow_values is None:
+        flow_values = {}
+    if secret_values is None:
+        secret_values = {}
+    if not isinstance(route_values, dict):
+        raise Namel3ssError(_invalid_permissions_message(path))
+    if not isinstance(flow_values, dict):
+        raise Namel3ssError(_invalid_permissions_message(path))
+    if not isinstance(secret_values, dict):
         raise Namel3ssError(_invalid_permissions_message(path))
     routes: dict[str, RouteRequirement] = {}
-    for route_name, entry in values.items():
+    for route_name, entry in route_values.items():
         name = str(route_name).strip()
         if not name:
             raise Namel3ssError(_invalid_permissions_message(path))
@@ -63,7 +90,25 @@ def load_route_permissions(project_root: str | Path | None, app_path: str | Path
         if requirement is None:
             continue
         routes[name] = requirement
-    return RoutePermissions(routes=routes)
+    flows: dict[str, RouteRequirement] = {}
+    for flow_name, entry in flow_values.items():
+        name = str(flow_name).strip()
+        if not name:
+            raise Namel3ssError(_invalid_permissions_message(path))
+        requirement = _parse_requirement(entry, path, name)
+        if requirement is None:
+            continue
+        flows[name] = requirement
+    secrets: dict[str, RouteRequirement] = {}
+    for secret_name, entry in secret_values.items():
+        name = str(secret_name).strip()
+        if not name:
+            raise Namel3ssError(_invalid_permissions_message(path))
+        requirement = _parse_requirement(entry, path, name)
+        if requirement is None:
+            continue
+        secrets[name] = requirement
+    return RoutePermissions(routes=routes, flows=flows, secrets=secrets)
 
 
 def save_route_permissions(
@@ -74,15 +119,39 @@ def save_route_permissions(
     path = permissions_path(project_root, app_path)
     if path is None:
         raise Namel3ssError("Permissions path could not be resolved.")
-    payload: dict[str, dict] = {"routes": {}}
-    for name in sorted(permissions.routes.keys()):
-        req = permissions.routes[name]
-        route_payload: dict[str, object] = {}
-        if req.roles:
-            route_payload["roles"] = list(req.roles)
-        if req.permissions:
-            route_payload["permissions"] = list(req.permissions)
-        payload["routes"][name] = {"requires": route_payload} if route_payload else {}
+    payload: dict[str, dict] = {}
+    if permissions.routes:
+        payload["routes"] = {}
+        for name in sorted(permissions.routes.keys()):
+            req = permissions.routes[name]
+            route_payload: dict[str, object] = {}
+            if req.roles:
+                route_payload["roles"] = list(req.roles)
+            if req.permissions:
+                route_payload["permissions"] = list(req.permissions)
+            payload["routes"][name] = {"requires": route_payload} if route_payload else {}
+    if permissions.flows:
+        payload["flows"] = {}
+        for name in sorted(permissions.flows.keys()):
+            req = permissions.flows[name]
+            flow_payload: dict[str, object] = {}
+            if req.roles:
+                flow_payload["roles"] = list(req.roles)
+            if req.permissions:
+                flow_payload["permissions"] = list(req.permissions)
+            payload["flows"][name] = {"requires": flow_payload} if flow_payload else {}
+    if permissions.secrets:
+        payload["secrets"] = {}
+        for name in sorted(permissions.secrets.keys()):
+            req = permissions.secrets[name]
+            secret_payload: dict[str, object] = {}
+            if req.roles:
+                secret_payload["roles"] = list(req.roles)
+            if req.permissions:
+                secret_payload["permissions"] = list(req.permissions)
+            payload["secrets"][name] = {"requires": secret_payload} if secret_payload else {}
+    if not payload:
+        payload = {"routes": {}}
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(render_yaml(payload), encoding="utf-8")
     return path
