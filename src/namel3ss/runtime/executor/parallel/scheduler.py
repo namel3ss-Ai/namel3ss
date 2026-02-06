@@ -85,6 +85,8 @@ def _merge_results(
     ctx.locals = merge.locals
     ctx.constants = merge.constants
     ctx.last_value = list(merge.values)
+    if merge.yield_messages:
+        _append_parallel_yields(ctx, merge.yield_messages)
     return merge
 
 
@@ -104,6 +106,8 @@ def _run_task(
     parent_tool_source = ctx.tool_call_source
     parent_parallel = getattr(ctx, "parallel_mode", False)
     parent_task = getattr(ctx, "parallel_task", None)
+    parent_yields = getattr(ctx, "yield_messages", [])
+    parent_yield_sequence = int(getattr(ctx, "yield_sequence", 0))
 
     ctx.locals = dict(base_locals)
     ctx.constants = set(base_constants)
@@ -114,6 +118,8 @@ def _run_task(
     ctx.tool_call_source = None
     ctx.parallel_mode = True
     ctx.parallel_task = task.name
+    ctx.yield_messages = []
+    ctx.yield_sequence = 0
 
     error: Exception | None = None
     try:
@@ -132,6 +138,7 @@ def _run_task(
         locals_update=locals_update,
         constants_update=constants_update,
         traces=list(ctx.traces),
+        yield_messages=list(ctx.yield_messages),
         last_value=ctx.last_value,
         line=task.line,
         column=task.column,
@@ -149,6 +156,8 @@ def _run_task(
     ctx.tool_call_source = parent_tool_source
     ctx.parallel_mode = parent_parallel
     ctx.parallel_task = parent_task
+    ctx.yield_messages = parent_yields
+    ctx.yield_sequence = parent_yield_sequence
 
     return result, error
 
@@ -166,6 +175,17 @@ def _flush_pending_traces(ctx) -> None:
         return
     ctx.traces.extend(ctx.pending_tool_traces)
     ctx.pending_tool_traces = []
+
+
+def _append_parallel_yields(ctx, merged_yields: list[dict]) -> None:
+    sequence = int(getattr(ctx, "yield_sequence", 0))
+    for entry in merged_yields:
+        sequence += 1
+        message = dict(entry)
+        message["sequence"] = sequence
+        message.setdefault("flow_name", getattr(ctx.flow, "name", ""))
+        ctx.yield_messages.append(message)
+    ctx.yield_sequence = sequence
 
 
 __all__ = ["execute_parallel_block"]

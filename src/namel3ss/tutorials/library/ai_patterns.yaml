@@ -1,0 +1,15 @@
+slug: ai_patterns
+title: "AI patterns"
+requires: "0.1"
+tags:
+  - ai
+  - patterns
+steps:
+  -
+    instruction: "Define a qa flow with clear labels."
+    code: "spec is \"1.0\"\\n\\nqa \"faq\":\\n  model is \"mock-model\"\\n  prompt is \"Qn: \" + input.question + \"\\\\nCtx: \" + input.context + \"\\\\nAns: \"\\n  output:\\n    ans is text\\n"
+    expected_output: "qa_ready"
+  -
+    instruction: "Chain two steps in order."
+    code: "spec is \"1.0\"\\n\\nsummarise \"sum_doc\":\\n  model is \"mock-model\"\\n  prompt is \"Summarise: \" + input.text\\n  output is text\\n\\nclassification \"classify_sum\":\\n  model is \"mock-model\"\\n  prompt is \"Classify: \" + summary\\n  labels:\\n    positive\\n    negative\\n  output is text\\n\\nchain \"sum_then_classify\":\\n  steps:\\n    - call summarise \"sum_doc\" with input.document\\n    - call classification \"classify_sum\" with sum_doc.result\\n  output:\\n    sentiment is text\\n"
+    expected_output: "chain_ready"

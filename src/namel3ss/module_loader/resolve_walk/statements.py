@@ -40,6 +40,8 @@ def resolve_statements(
     for stmt in stmts:
         if isinstance(stmt, (ast.Let, ast.Set)):
             _resolve_expr(stmt.expression)
+        if isinstance(stmt, ast.Yield):
+            _resolve_expr(stmt.expression)
         if isinstance(stmt, ast.AskAIStmt):
             stmt.ai_name = resolve_name(
                 stmt.ai_name,
@@ -198,6 +200,8 @@ def resolve_statements(
             _resolve_stmts(stmt.catch_body)
         elif isinstance(stmt, ast.Return):
             _resolve_expr(stmt.expression)
+        elif isinstance(stmt, ast.Await):
+            continue
 
 
 __all__ = ["resolve_statements"]

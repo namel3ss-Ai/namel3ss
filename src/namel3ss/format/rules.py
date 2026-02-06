@@ -38,7 +38,10 @@ def normalize_spacing(line: str) -> str:
     m = re.match(r'^capabilities\s*:?\s*$', rest, re.IGNORECASE)
     if m:
         return f"{indent}capabilities:"
-    m = re.match(r'^(flow|page|record|job|ai|agent|tool)\s+"([^"]+)"\s*:?\s*$', rest)
+    m = re.match(r'^crud\s+"([^"]+)"\s*:?\s*$', rest)
+    if m:
+        return f'{indent}crud "{m.group(1)}"'
+    m = re.match(r'^(flow|page|record|job|ai|agent|tool|route|prompt|llm_call|rag|classification|summarise)\s+"([^"]+)"\s*:?\s*$', rest)
     if m:
         return f'{indent}{m.group(1)} "{m.group(2)}":'
 

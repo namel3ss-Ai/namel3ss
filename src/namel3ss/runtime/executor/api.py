@@ -8,8 +8,10 @@ from namel3ss.config.loader import load_config
 from namel3ss.config.model import AppConfig
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.runtime.auth.enforcement import enforce_requirement
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.ai.provider import AIProvider
+from namel3ss.runtime.auth.route_permissions import load_route_permissions
 from namel3ss.runtime.executor.executor import Executor
 from namel3ss.runtime.executor.native_exec import NativeExecConfig, try_native_execute
 from namel3ss.runtime.executor.result import ExecutionResult
@@ -22,6 +24,7 @@ from namel3ss.observe import actor_summary, record_event, summarize_value
 from namel3ss.secrets import collect_secret_values
 from namel3ss.compatibility import validate_spec_version
 import time
+from namel3ss.governance.policy import enforce_policies_for_app, enforce_runtime_request_policies
 from namel3ss.observability.context import ObservabilityContext
 from namel3ss.observability.enablement import resolve_observability_context
 from namel3ss.pipelines.registry import pipeline_contracts
@@ -74,12 +77,30 @@ def execute_program_flow(
     identity: dict | None = None,
     auth_context: object | None = None,
     action_id: str | None = None,
+    route_name: str | None = None,
     observability: ObservabilityContext | None = None,
 ) -> ExecutionResult:
     validate_spec_version(program)
+    project_root = getattr(program, "project_root", None)
+    app_path_value = getattr(program, "app_path", None)
+    enforce_policies_for_app(project_root=project_root, app_path=app_path_value)
     flow = next((f for f in program.flows if f.name == flow_name), None)
     if flow is None:
         raise Namel3ssError(_unknown_flow_message(flow_name, program.flows))
+    permissions = load_route_permissions(project_root, app_path_value)
+    enforce_requirement(
+        permissions.flow_requirement_for(flow_name),
+        resource_name=f"flow:{flow_name}",
+        identity=identity,
+        auth_context=auth_context,
+    )
+    enforce_runtime_request_policies(
+        project_root=project_root,
+        app_path=app_path_value,
+        route_name=route_name or "",
+        flow_name=flow_name,
+        payload=input or {},
+    )
     schemas = {schema.name: schema for schema in program.records}
     pref_policy = getattr(program, "theme_preference", {}) or {}
     allow_override = pref_policy.get("allow_override", False)
@@ -100,9 +121,8 @@ def execute_program_flow(
         app_path=getattr(program, "app_path", None),
         root=getattr(program, "project_root", None),
     )
-    project_root = getattr(program, "project_root", None)
     resolved_root = project_root if isinstance(project_root, (str, type(None))) else str(project_root)
-    app_path = getattr(program, "app_path", None)
+    app_path = app_path_value
     if resolved_root is None and app_path is None:
         native_config = NativeExecConfig(
             flow_name=flow_name,
@@ -186,7 +206,7 @@ def execute_program_flow(
     except Exception as err:
         status = "error"
         error = err
-        if resolved_root:
+        if resolved_root and not executor.ctx.sensitive:
             record_event(
                 Path(resolved_root),
                 {
@@ -204,7 +224,7 @@ def execute_program_flow(
             obs.end_span(executor.ctx, span_id, status=status)
         if obs and owns_observability:
             obs.flush()
-        if resolved_root:
+        if resolved_root and not executor.ctx.sensitive:
             record_event(
                 Path(resolved_root),
                 {
@@ -218,6 +238,19 @@ def execute_program_flow(
                     "output_summary": summarize_value(result.last_value if result else None, secret_values=secret_values),
                 },
                 secret_values=secret_values,
+            )
+        if resolved_root and executor.ctx.sensitive:
+            from namel3ss.runtime.security.sensitive_audit import record_sensitive_access, resolve_actor
+
+            action_label = "action" if action_id else ("route" if route_name else "flow")
+            record_sensitive_access(
+                project_root=resolved_root,
+                app_path=getattr(program, "app_path", None),
+                flow_name=flow_name,
+                user=resolve_actor(executor.ctx.identity),
+                action=action_label,
+                step_count=getattr(executor.ctx, "execution_step_counter", 0),
+                route_name=route_name,
             )
     if error:
         raise error

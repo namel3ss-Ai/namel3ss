@@ -22,6 +22,7 @@ from namel3ss.ir.model.statements import (
     If,
     KeepFirst,
     Let,
+    AwaitStmt,
     Match,
     MatchCase,
     OrderList,
@@ -34,6 +35,7 @@ from namel3ss.ir.model.statements import (
     Repeat,
     RepeatWhile,
     Return,
+    YieldStmt,
     Save,
     Set,
     Update,
@@ -63,6 +65,7 @@ from namel3ss.ir.model.expressions import (
     MapExpr,
     ListOpExpr,
     MapOpExpr,
+    AsyncCallExpr,
     StatePath,
     ToolCallArg,
     ToolCallExpr,
@@ -76,7 +79,8 @@ from namel3ss.ir.functions.model import (
     FunctionParam,
     FunctionSignature,
 )
-from namel3ss.ir.model.ai import AIDecl, AIMemory, AskAIStmt
+from namel3ss.ir.model.ai import AIDecl, AIMemory, AskAIStmt, AIFlowMetadata
+from namel3ss.ir.model.ai_flows import AIFlowDefinition, AIFlowTestConfig, AIOutputField, ChainStep
 from namel3ss.ir.model.agents import (
     AgentDecl,
     AgentMergePolicy,
@@ -142,6 +146,9 @@ from namel3ss.ir.model.pages import (
     TitleItem,
 )
 from namel3ss.ir.model.tools import ToolDecl, ToolField
+from namel3ss.ir.model.prompts import PromptDefinition
+from namel3ss.ir.model.crud import CrudDefinition
+from namel3ss.ir.model.routes import RouteDefinition, RouteField
 
 __all__ = [
     "Expression",
@@ -170,6 +177,8 @@ __all__ = [
     "Repeat",
     "RepeatWhile",
     "Return",
+    "AwaitStmt",
+    "YieldStmt",
     "Save",
     "Create",
     "Set",
@@ -195,6 +204,7 @@ __all__ = [
     "MapExpr",
     "ListOpExpr",
     "MapOpExpr",
+    "AsyncCallExpr",
     "StatePath",
     "ToolCallArg",
     "ToolCallExpr",
@@ -213,6 +223,11 @@ __all__ = [
     "AIDecl",
     "AIMemory",
     "AskAIStmt",
+    "AIFlowMetadata",
+    "AIFlowDefinition",
+    "AIFlowTestConfig",
+    "AIOutputField",
+    "ChainStep",
     "AgentDecl",
     "AgentTeam",
     "AgentTeamMember",
@@ -275,4 +290,8 @@ __all__ = [
     "TitleItem",
     "ToolDecl",
     "ToolField",
+    "PromptDefinition",
+    "CrudDefinition",
+    "RouteDefinition",
+    "RouteField",
 ]

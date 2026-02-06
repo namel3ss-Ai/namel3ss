@@ -9,6 +9,7 @@ from namel3ss.runtime.execution.explain import (
 )
 from namel3ss.runtime.execution.normalize import format_assignable
 from namel3ss.runtime.execution.recorder import record_step
+from namel3ss.runtime.executor.async_tasks import await_async_handle, is_async_handle, launch_async_call
 from namel3ss.runtime.executor.assign import assign
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
@@ -61,6 +62,12 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
         return
     if isinstance(stmt, ir.Return):
         _execute_return(ctx, stmt)
+        return
+    if isinstance(stmt, ir.AwaitStmt):
+        _execute_await(ctx, stmt)
+        return
+    if isinstance(stmt, ir.YieldStmt):
+        _execute_yield(ctx, stmt)
         return
     if isinstance(stmt, ir.Repeat):
         execute_repeat(ctx, stmt, execute_statement)
@@ -126,6 +133,26 @@ def execute_statement(ctx: ExecutionContext, stmt: ir.Statement) -> None:
 
 
 def _execute_let(ctx: ExecutionContext, stmt: ir.Let) -> None:
+    if isinstance(stmt.expression, ir.AsyncCallExpr):
+        handle = launch_async_call(
+            ctx,
+            name=stmt.name,
+            expression=stmt.expression.expression,
+            line=stmt.line,
+            column=stmt.column,
+        )
+        ctx.locals[stmt.name] = handle
+        if stmt.constant:
+            ctx.constants.add(stmt.name)
+        record_step(
+            ctx,
+            kind="statement_async_launch",
+            what=f"launched async call {stmt.name}",
+            line=stmt.line,
+            column=stmt.column,
+        )
+        ctx.last_value = {"task_id": handle.task_id, "status": "pending"}
+        return
     calc_info = _calc_assignment_info(ctx, stmt.line)
     collector = ExpressionExplainCollector() if calc_info else None
     value = evaluate_expression(ctx, stmt.expression, collector)
@@ -197,6 +224,45 @@ def _execute_return(ctx: ExecutionContext, stmt: ir.Return) -> None:
         column=stmt.column,
     )
     raise _ReturnSignal(value)
+
+
+def _execute_await(ctx: ExecutionContext, stmt: ir.AwaitStmt) -> None:
+    if stmt.name not in ctx.locals:
+        raise Namel3ssError(f"Unknown async variable '{stmt.name}'", line=stmt.line, column=stmt.column)
+    value = ctx.locals.get(stmt.name)
+    if is_async_handle(value):
+        value = await_async_handle(ctx, value, line=stmt.line, column=stmt.column)
+        ctx.locals[stmt.name] = value
+    record_step(
+        ctx,
+        kind="statement_await",
+        what=f"awaited {stmt.name}",
+        line=stmt.line,
+        column=stmt.column,
+    )
+    ctx.last_value = value
+
+
+def _execute_yield(ctx: ExecutionContext, stmt: ir.YieldStmt) -> None:
+    value = evaluate_expression(ctx, stmt.expression)
+    sequence = int(getattr(ctx, "yield_sequence", 0)) + 1
+    ctx.yield_sequence = sequence
+    ctx.yield_messages.append(
+        {
+            "flow_name": ctx.flow.name,
+            "output": value,
+            "sequence": sequence,
+        }
+    )
+    record_step(
+        ctx,
+        kind="statement_yield",
+        what=f"yielded message {sequence}",
+        data={"sequence": sequence},
+        line=stmt.line,
+        column=stmt.column,
+    )
+    ctx.last_value = value
 
 
 def _execute_try_catch(ctx: ExecutionContext, stmt: ir.TryCatch) -> None:

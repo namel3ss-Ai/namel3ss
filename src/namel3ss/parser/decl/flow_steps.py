@@ -8,6 +8,7 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.lang.types import CANONICAL_TYPES, canonicalize_type_name
 from namel3ss.parser.core.helpers import parse_reference_name
 from namel3ss.parser.decl.record import _FIELD_NAME_TOKENS, type_from_token
+from namel3ss.parser.decl.flow_ai import parse_flow_ai_block
 
 
 _DECLARATIVE_STEPS = ("input", "require", "create", "update", "delete", "call foreign")
@@ -29,13 +30,28 @@ _IMPERATIVE_HINTS = {
 }
 
 
-def parse_flow_steps(parser) -> list[ast.FlowStep]:
+def parse_flow_steps(parser) -> tuple[list[ast.FlowStep], ast.AIFlowMetadata | None]:
     steps: list[ast.FlowStep] = []
+    ai_metadata: ast.AIFlowMetadata | None = None
     saw_input = False
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
         tok = parser._current()
+        if tok.type == "AI":
+            if ai_metadata is not None:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Flow declares ai more than once.",
+                        why="Each flow may only declare a single ai block.",
+                        fix="Keep a single ai block in the flow.",
+                        example='flow \"summarise\"\\n  ai:\\n    model is \"gpt-4\"\\n    prompt is \"Summarise the input.\"',
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            ai_metadata = parse_flow_ai_block(parser)
+            continue
         if tok.type == "INPUT" or (tok.type == "IDENT" and tok.value == "input"):
             if saw_input:
                 raise Namel3ssError(
@@ -67,7 +83,7 @@ def parse_flow_steps(parser) -> list[ast.FlowStep]:
             steps.append(_parse_delete(parser))
             continue
         _raise_unknown_step(tok)
-    return steps
+    return steps, ai_metadata
 
 
 def _parse_input(parser) -> ast.FlowInput:

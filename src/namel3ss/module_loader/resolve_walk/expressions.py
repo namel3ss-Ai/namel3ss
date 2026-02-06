@@ -16,6 +16,16 @@ def resolve_expression(
     exports_map: Dict[str, ModuleExports],
     context_label: str,
 ) -> None:
+    if isinstance(expr, ast.AsyncCallExpr):
+        resolve_expression(
+            expr.expression,
+            module_name=module_name,
+            alias_map=alias_map,
+            local_defs=local_defs,
+            exports_map=exports_map,
+            context_label=context_label,
+        )
+        return
     if isinstance(expr, ast.CallFunctionExpr):
         expr.function_name = resolve_name(
             expr.function_name,

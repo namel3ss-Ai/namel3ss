@@ -24,6 +24,17 @@ record "CaseArchive":
 record "ExplainEntry":
   field "stage" is text must be present
   field "detail" is json must be present
+contract flow "receive_case":
+  input:
+    case_id is optional text
+    upload_id is optional text
+    `title` is optional text
+    summary is optional text
+    route is optional text
+    policy_code is optional text
+  output:
+    status is text
+    case_id is optional text
 flow "receive_case": requires true
   let case_key is ""
   let has_case is false
@@ -107,6 +118,10 @@ flow "receive_case": requires true
     "status" is "received"
     "case_id" is case_key
 flow "understand_case": requires true
+  ai:
+    model is "gpt-4"
+    prompt is "Summarise the case: {state.input.summary}"
+    dataset is "case_summaries"
   let case_key is ""
   let has_case is false
   try:
@@ -496,4 +511,18 @@ page "Support":
         include detail
       pagination:
         page_size is 10
+
+route "receive_case":
+  path is "/api/cases"
+  method is "POST"
+  request:
+    case_id is text
+    `title` is text
+    summary is text
+    route is text
+    policy_code is text
+  response:
+    status is text
+    case_id is text
+  flow is "receive_case"
 

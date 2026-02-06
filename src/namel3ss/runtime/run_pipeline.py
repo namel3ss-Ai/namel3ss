@@ -60,6 +60,8 @@ def build_flow_payload(
             config=resolved_config,
             identity_schema=getattr(program, "identity", None),
             store=store,
+            project_root=str(getattr(program, "project_root", "") or "") or None,
+            app_path=str(getattr(program, "app_path", "") or "") or None,
         )
     if resolved_identity is None and resolved_auth is not None:
         resolved_identity = getattr(resolved_auth, "identity", None)

@@ -8,6 +8,10 @@ from namel3ss.lint.semantic import lint_semantic
 from namel3ss.lint.text_scan import scan_text
 from namel3ss.lint.types import Finding
 from namel3ss.lint.functions import lint_functions
+from namel3ss.lint.routes import lint_routes
+from namel3ss.lint.prompts import lint_prompts
+from namel3ss.lint.ai_flows import lint_ai_flows
+from namel3ss.lint.crud import lint_crud
 from namel3ss.runtime.tools.bindings import bindings_path
 from namel3ss.tools.health.analyze import analyze_tool_health
 from namel3ss.types import normalize_type_name
@@ -43,6 +47,10 @@ def lint_source(source: str, strict: bool = True, allow_legacy_type_aliases: boo
     findings.extend(lint_functions(ast_program))
     flow_names = {flow.name for flow in ast_program.flows}
     record_names = {record.name for record in ast_program.records}
+    findings.extend(lint_routes(ast_program, strict=strict, flow_names=flow_names, record_names=record_names))
+    findings.extend(lint_crud(ast_program, strict=strict, record_names=record_names))
+    findings.extend(lint_prompts(ast_program, strict=strict))
+    findings.extend(lint_ai_flows(ast_program, strict=strict, record_names=record_names))
 
     try:
         program_ir = lower_program(ast_program)
@@ -80,6 +88,10 @@ def lint_project(project: ProjectLoadResult, strict: bool = True) -> list[Findin
     _tag(_lint_theme(project.app_ast), app_path)
     _tag(_lint_theme_preference(project.app_ast), app_path)
     _tag(_lint_record_types(project.app_ast, strict=strict), app_path)
+    _tag(lint_routes(project.app_ast, strict=strict), app_path)
+    _tag(lint_crud(project.app_ast, strict=strict), app_path)
+    _tag(lint_prompts(project.app_ast, strict=strict), app_path)
+    _tag(lint_ai_flows(project.app_ast, strict=strict), app_path)
     _tag(lint_functions(project.app_ast), app_path)
 
     for module in project.modules.values():
@@ -87,6 +99,10 @@ def lint_project(project: ProjectLoadResult, strict: bool = True) -> list[Findin
             file_path = path.as_posix()
             _tag(_lint_reserved_identifiers(program), file_path)
             _tag(_lint_record_types(program, strict=strict), file_path)
+            _tag(lint_routes(program, strict=strict), file_path)
+            _tag(lint_crud(program, strict=strict), file_path)
+            _tag(lint_prompts(program, strict=strict), file_path)
+            _tag(lint_ai_flows(program, strict=strict), file_path)
             _tag(lint_functions(program), file_path)
 
     findings.extend(lint_semantic(project.program))
@@ -302,6 +318,7 @@ def _flows_contain_theme_change(flows) -> bool:
         return False
 
     return any(visit(s) for flow in flows for s in flow.body)
+
 
 
 def _lint_refs_ast(ast_program, flow_names: set[str], record_names: set[str]) -> list[Finding]:

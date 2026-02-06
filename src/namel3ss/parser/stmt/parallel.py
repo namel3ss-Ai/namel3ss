@@ -22,20 +22,37 @@ def parse_parallel(parser) -> ast.ParallelBlock:
             merge = _parse_merge_block(parser, tok)
             saw_merge = True
             continue
-        run_tok = parser._expect("RUN", "Expected 'run' in parallel block")
-        if saw_merge:
-            raise Namel3ssError("Parallel tasks must come before merge block", line=run_tok.line, column=run_tok.column)
-        name_tok = parser._expect("STRING", "Expected task name string after run")
-        parser._expect("COLON", "Expected ':' after task name")
-        body = parser._parse_block()
-        tasks.append(
-            ast.ParallelTask(
-                name=name_tok.value,
-                body=body,
-                line=run_tok.line,
-                column=run_tok.column,
+        if tok.type == "RUN":
+            run_tok = parser._advance()
+            if saw_merge:
+                raise Namel3ssError("Parallel tasks must come before merge block", line=run_tok.line, column=run_tok.column)
+            name_tok = parser._expect("STRING", "Expected task name string after run")
+            parser._expect("COLON", "Expected ':' after task name")
+            body = parser._parse_block()
+            tasks.append(
+                ast.ParallelTask(
+                    name=name_tok.value,
+                    body=body,
+                    line=run_tok.line,
+                    column=run_tok.column,
+                )
             )
-        )
+            continue
+        if saw_merge:
+            raise Namel3ssError("Parallel tasks must come before merge block", line=tok.line, column=tok.column)
+        parsed = parser._parse_statement()
+        items = parsed if isinstance(parsed, list) else [parsed]
+        for item in items:
+            task_name = f"step_{len(tasks) + 1}"
+            tasks.append(
+                ast.ParallelTask(
+                    name=task_name,
+                    body=[item],
+                    line=item.line,
+                    column=item.column,
+                )
+            )
+        parser._match("NEWLINE")
     parser._expect("DEDENT", "Expected end of parallel block")
     if not tasks:
         raise Namel3ssError("Parallel block requires at least one task", line=parallel_tok.line, column=parallel_tok.column)

@@ -141,4 +141,9 @@ class MapOpExpr(Expression):
     value: Expression | None = None
 
 
+@dataclass
+class AsyncCallExpr(Expression):
+    expression: Expression
+
+
 Assignable = Union[VarReference, StatePath]

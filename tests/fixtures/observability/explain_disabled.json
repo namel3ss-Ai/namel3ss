@@ -7,6 +7,9 @@
   },
   "active_build_id": "build-test",
   "active_proof_id": "proof-test",
+  "ai_metadata": [],
+  "ai_flows": [],
+  "datasets": [],
   "capsules": [],
   "composition": {
     "api_version": "composition",
@@ -101,6 +104,9 @@
     ]
   },
   "records": 0,
+  "routes": [],
+  "crud": [],
+  "prompts": [],
   "schema_version": 1,
   "tenant_scoping": {
     "count": 0,

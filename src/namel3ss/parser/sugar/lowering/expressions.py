@@ -95,6 +95,12 @@ def _lower_expression(expr: ast.Expression | None):
             line=expr.line,
             column=expr.column,
         )
+    if isinstance(expr, ast.AsyncCallExpr):
+        return ast.AsyncCallExpr(
+            expression=_lower_expression(expr.expression),
+            line=expr.line,
+            column=expr.column,
+        )
     if isinstance(expr, ast.ListMapExpr):
         return ast.ListMapExpr(
             target=_lower_expression(expr.target),

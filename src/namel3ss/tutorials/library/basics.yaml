@@ -1,0 +1,15 @@
+slug: basics
+title: "Basics: first flow"
+requires: "0.1"
+tags:
+  - basics
+  - flow
+steps:
+  -
+    instruction: "Create a simple flow that returns ok."
+    code: "spec is \"1.0\"\\n\\nflow \"hello\":\\n  return \"ok\"\\n"
+    expected_output: "ok"
+  -
+    instruction: "Add a record with one text field."
+    code: "spec is \"1.0\"\\n\\nrecord \"Note\":\\n  title text\\n\\nflow \"hello\":\\n  return \"ok\"\\n"
+    expected_output: "record_added"

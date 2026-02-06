@@ -76,7 +76,7 @@
       "type": "upload_stored",
       "title": "Upload stored",
       "name": "report.txt",
-      "stored_path": "app/uploads/report-u_ok.txt"
+      "stored_path": "uploads/app/u_ok"
     },
     {
       "type": "upload_state",

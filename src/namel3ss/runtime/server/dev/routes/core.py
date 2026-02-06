@@ -69,6 +69,22 @@ def handle_static(handler: Any, path: str) -> bool:
 
 
 def handle_observability_get(handler: Any, path: str) -> bool:
+    if path == "/api/traces/runs":
+        payload = _trace_runs_payload(handler)
+        status = 200 if payload.get("ok", True) else 400
+        handler._respond_json(payload, status=status)
+        return True
+    if path == "/api/traces/latest":
+        payload = _trace_latest_payload(handler)
+        status = 200 if payload.get("ok", True) else 404
+        handler._respond_json(payload, status=status)
+        return True
+    if path.startswith("/api/traces/") and path not in {"/api/traces", "/api/trace"}:
+        run_id = path[len("/api/traces/") :]
+        payload = _trace_run_payload(handler, run_id)
+        status = 200 if payload.get("ok", True) else 404
+        handler._respond_json(payload, status=status)
+        return True
     if path == "/api/logs":
         kind = "logs"
     elif path == "/api/traces":
@@ -143,6 +159,39 @@ def _empty_observability_payload(kind: str) -> dict:
     if kind in {"trace", "traces"}:
         return {"ok": True, "count": 0, "spans": []}
     return {"ok": True, "count": 0, "logs": []}
+
+
+def _trace_runs_payload(handler: Any) -> dict:
+    from namel3ss.runtime.observability_api import get_trace_runs_payload
+
+    state = handler._state()
+    state._refresh_if_needed()
+    program = state.program
+    if program is None:
+        return build_error_payload("Program not loaded.", kind="engine")
+    return get_trace_runs_payload(getattr(program, "project_root", None), getattr(program, "app_path", None))
+
+
+def _trace_latest_payload(handler: Any) -> dict:
+    from namel3ss.runtime.observability_api import get_latest_trace_run_payload
+
+    state = handler._state()
+    state._refresh_if_needed()
+    program = state.program
+    if program is None:
+        return build_error_payload("Program not loaded.", kind="engine")
+    return get_latest_trace_run_payload(getattr(program, "project_root", None), getattr(program, "app_path", None))
+
+
+def _trace_run_payload(handler: Any, run_id: str) -> dict:
+    from namel3ss.runtime.observability_api import get_trace_run_payload
+
+    state = handler._state()
+    state._refresh_if_needed()
+    program = state.program
+    if program is None:
+        return build_error_payload("Program not loaded.", kind="engine")
+    return get_trace_run_payload(getattr(program, "project_root", None), getattr(program, "app_path", None), run_id)
 
 
 __all__ = [

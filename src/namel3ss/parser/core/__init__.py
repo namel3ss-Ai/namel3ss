@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import List, Set
 
 from namel3ss.ast import nodes as ast
@@ -51,11 +52,13 @@ class Parser(TokenStream):
         *,
         allow_capsule: bool = False,
         require_spec: bool = True,
+        source_lines: list[str] | None = None,
     ) -> None:
         super().__init__(tokens=tokens)
         self.allow_legacy_type_aliases = allow_legacy_type_aliases
         self.allow_capsule = allow_capsule
         self.require_spec = require_spec
+        self.source_lines = source_lines or []
 
     @classmethod
     def parse(
@@ -74,6 +77,7 @@ class Parser(TokenStream):
             allow_legacy_type_aliases=allow_legacy_type_aliases,
             allow_capsule=allow_capsule,
             require_spec=require_spec,
+            source_lines=source.splitlines(),
         )
         program = parser._parse_program()
         if lower_sugar:
@@ -205,9 +209,25 @@ def parse(
     allow_capsule: bool = False,
     require_spec: bool = True,
     lower_sugar: bool = True,
+    use_old_parser: bool | None = None,
 ) -> ast.Program:
-    return Parser.parse(
+    old_parser = use_old_parser
+    if old_parser is None:
+        env_value = str(os.getenv("N3_OLD_PARSER") or "").strip().lower()
+        old_parser = env_value in {"1", "true", "yes"}
+    if old_parser:
+        return Parser.parse(
+            source,
+            allow_legacy_type_aliases=allow_legacy_type_aliases,
+            allow_capsule=allow_capsule,
+            require_spec=require_spec,
+            lower_sugar=lower_sugar,
+        )
+    from namel3ss.parser.generated.runtime import parse_with_generated_parser
+
+    return parse_with_generated_parser(
         source,
+        legacy_parse=Parser.parse,
         allow_legacy_type_aliases=allow_legacy_type_aliases,
         allow_capsule=allow_capsule,
         require_spec=require_spec,

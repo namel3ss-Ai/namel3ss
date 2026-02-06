@@ -28,6 +28,36 @@
     if (action === "reset" && root.run.runResetAction) root.run.runResetAction();
     if (action === "replay" && root.run.replayLastAction) root.run.replayLastAction();
     if (action === "export" && root.run.exportTraces) root.run.exportTraces();
+    if (action === "console" && root.dock && typeof root.dock.setActiveTab === "function") {
+      root.dock.setActiveTab("console");
+    }
+    if (action === "feedback" && root.dock && typeof root.dock.setActiveTab === "function") {
+      root.dock.setActiveTab("feedback");
+    }
+    if (action === "canary" && root.dock && typeof root.dock.setActiveTab === "function") {
+      root.dock.setActiveTab("canary");
+    }
+    if (action === "marketplace" && root.dock && typeof root.dock.setActiveTab === "function") {
+      root.dock.setActiveTab("marketplace");
+    }
+    if (action === "tutorials" && root.dock && typeof root.dock.setActiveTab === "function") {
+      root.dock.setActiveTab("tutorials");
+    }
+    if (action === "playground" && root.dock && typeof root.dock.setActiveTab === "function") {
+      root.dock.setActiveTab("playground");
+    }
+    if (action === "versioning" && root.dock && typeof root.dock.setActiveTab === "function") {
+      root.dock.setActiveTab("versioning");
+    }
+    if (action === "quality" && root.dock && typeof root.dock.setActiveTab === "function") {
+      root.dock.setActiveTab("quality");
+    }
+    if (action === "mlops" && root.dock && typeof root.dock.setActiveTab === "function") {
+      root.dock.setActiveTab("mlops");
+    }
+    if (action === "triggers" && root.dock && typeof root.dock.setActiveTab === "function") {
+      root.dock.setActiveTab("triggers");
+    }
     if (action === "catalog" && root.dock && typeof root.dock.setActiveTab === "function") {
       root.dock.setActiveTab("registry");
     }

@@ -15,6 +15,7 @@
       answer: document.getElementById("previewAnswer"),
       whyButton: document.getElementById("previewWhy"),
       hint: document.getElementById("previewHint"),
+      feedback: document.getElementById("previewFeedback"),
     };
   }
 
@@ -31,6 +32,7 @@
     answer.textContent = text || "Ask a question to see an answer.";
     answer.classList.toggle("empty", !hasAnswer);
     setWhyVisible(hasAnswer);
+    setFeedbackVisible(hasAnswer);
   }
 
   function setWhyVisible(visible) {
@@ -38,6 +40,12 @@
     if (!whyButton) return;
     whyButton.classList.toggle("hidden", !visible);
     whyButton.disabled = !visible;
+  }
+
+  function setFeedbackVisible(visible) {
+    const { feedback } = getElements();
+    if (!feedback) return;
+    feedback.classList.toggle("hidden", !visible);
   }
 
   function setAskEnabled(enabled) {
@@ -132,8 +140,14 @@
       const result = await root.run.executeAction(askActionId, payload);
       const manifest = (result && result.ui) || state.getCachedManifest();
       if (manifest) applyManifest(manifest);
+      if (root.feedback && typeof root.feedback.setPreviewContext === "function") {
+        root.feedback.setPreviewContext({ flow_name: "ask_ai", input_text: question });
+      }
     } catch (err) {
       setAnswer("We could not answer that right now. Try again.", true);
+      if (root.feedback && typeof root.feedback.setPreviewContext === "function") {
+        root.feedback.setPreviewContext(null);
+      }
     } finally {
       setAskLoading(false);
     }

@@ -4,6 +4,7 @@ from namel3ss.cli.actions_mode import list_actions
 from namel3ss.cli.aliases import canonical_command
 from namel3ss.cli.app_loader import load_program
 from namel3ss.cli.app_path import default_missing_app_message, resolve_app_path
+from namel3ss.cli.ast_mode import run_ast_command
 from namel3ss.cli.check_mode import run_check
 from namel3ss.cli.constants import RESERVED
 from namel3ss.cli.devex import parse_project_overrides
@@ -18,11 +19,14 @@ from namel3ss.cli.observe_mode import run_observe_command
 from namel3ss.cli.persist_mode import run_data, run_persist
 from namel3ss.cli.proof_mode import run_proof_command
 from namel3ss.cli.runner import run_flow
+from namel3ss.cli.schema_mode import run_schema_command
 from namel3ss.cli.secrets_mode import run_secrets_command
+from namel3ss.cli.console_mode import run_console
 from namel3ss.cli.studio_mode import run_studio
 from namel3ss.cli.browser_mode import run_dev_command, run_preview_command
 from namel3ss.cli.ui_mode import export_ui_contract, render_manifest, run_action
 from namel3ss.cli.run_mode import run_run_command
+from namel3ss.cli.type_mode import run_type_command
 from namel3ss.cli.ui_output import print_payload, print_usage
 from namel3ss.cli.verify_mode import run_verify_command
 from namel3ss.cli.args import allow_aliases_from_flags, extract_app_override, resolve_explicit_path
@@ -131,6 +135,25 @@ def handle_app_commands(path: str | None, remainder: list[str], context: dict | 
                 continue
             i += 1
         return run_studio(resolved_path.as_posix(), port, dry)
+    if remainder and canonical_first == "console":
+        port = 7333
+        dry = False
+        tail = remainder[1:]
+        i = 0
+        while i < len(tail):
+            if tail[i] == "--port" and i + 1 < len(tail):
+                try:
+                    port = int(tail[i + 1])
+                except ValueError:
+                    raise Namel3ssError("Port must be an integer")
+                i += 2
+                continue
+            if tail[i] == "--dry":
+                dry = True
+                i += 1
+                continue
+            i += 1
+        return run_console(resolved_path.as_posix(), port, dry)
     if remainder and canonical_first == "dev":
         tail = remainder[1:]
         return run_dev_command([resolved_path.as_posix(), *tail])
@@ -179,6 +202,13 @@ def handle_app_commands(path: str | None, remainder: list[str], context: dict | 
         return run_proof_command([path_posix, *tail])
     if cmd == "verify":
         return run_verify_command([path_posix, *tail])
+    if cmd == "ast":
+        return run_ast_command(["dump", path_posix, *tail])
+    if cmd == "type":
+        return run_type_command(["check", path_posix, *tail])
+    if cmd == "schema":
+        schema_tail = [*tail] if tail else ["infer"]
+        return run_schema_command([schema_tail[0], path_posix, *schema_tail[1:]])
     if cmd == "secrets":
         return run_secrets_command([path_posix, *tail])
     if cmd == "observe":

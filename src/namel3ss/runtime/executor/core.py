@@ -9,6 +9,7 @@ from namel3ss.config.model import AppConfig
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.ai.mock_provider import MockProvider
 from namel3ss.runtime.ai.provider import AIProvider
+from namel3ss.runtime.ai.model_manager import load_model_manager
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.executor.records import _persist_execution_artifacts, _write_run_outcome, _write_tools_with_pack
 from namel3ss.runtime.executor.result import ExecutionResult
@@ -35,6 +36,10 @@ from namel3ss.errors.runtime.api import build_runtime_error
 from namel3ss.errors.runtime.model import RuntimeWhere
 from namel3ss.runtime.boundary import attach_project_root, attach_secret_values, boundary_from_error, mark_boundary
 from namel3ss.security import activate_security_wall, build_security_wall
+from namel3ss.runtime.security import load_sensitive_config
+from namel3ss.runtime.sandbox.config import load_sandbox_config
+from namel3ss.runtime.sandbox.runner import run_sandbox_flow
+from namel3ss.security_encryption import load_encryption_service
 from namel3ss.observability.context import ObservabilityContext
 from namel3ss.observability.enablement import resolve_observability_context
 from namel3ss.purity import is_pure
@@ -92,6 +97,11 @@ class Executor:
             app_path=app_path,
             config=resolved_config,
         )
+        sensitive_config = load_sensitive_config(project_root, app_path)
+        sensitive = sensitive_config.is_sensitive(flow.name)
+        encryption_service = load_encryption_service(project_root, app_path, required=sensitive)
+        model_manager = load_model_manager(project_root, app_path)
+        sandbox_config = load_sandbox_config(project_root, app_path)
         self.ctx = ExecutionContext(
             flow=flow,
             schemas=schemas or {},
@@ -128,6 +138,11 @@ class Executor:
             execution_steps=[],
             execution_step_counter=0,
             flow_action_id=flow_action_id,
+            sensitive=sensitive,
+            sensitive_config=sensitive_config,
+            encryption_service=encryption_service,
+            model_manager=model_manager,
+            sandbox_config=sandbox_config,
         )
         self.ctx.calc_assignment_index = _load_calc_assignment_index(app_path)
         self.flow = self.ctx.flow
@@ -199,8 +214,37 @@ class Executor:
                 raise
             store_started = True
             try:
-                if getattr(self.ctx.flow, "declarative", False):
+                sandbox_flow = None
+                if self.ctx.sandbox_config:
+                    sandbox_flow = self.ctx.sandbox_config.flow_for(self.ctx.flow.name)
+                if sandbox_flow is not None:
+                    inputs = dict(self.ctx.locals.get("input") or {})
+                    payload = {
+                        "inputs": inputs,
+                        "input": inputs,
+                        "state": dict(self.ctx.state or {}),
+                        "identity": dict(self.ctx.identity or {}),
+                    }
+                    sandbox_result = run_sandbox_flow(
+                        project_root=self.ctx.project_root,
+                        app_path=self.ctx.app_path,
+                        flow_name=self.ctx.flow.name,
+                        payload=payload,
+                    )
+                    if not sandbox_result.get("ok"):
+                        error = sandbox_result.get("error") or {}
+                        raise Namel3ssError(
+                            error.get("message") or "Sandbox execution failed.",
+                            line=self.ctx.flow.line,
+                            column=self.ctx.flow.column,
+                        )
+                    self.ctx.last_value = sandbox_result.get("result")
+                elif getattr(self.ctx.flow, "declarative", False):
                     run_declarative_flow(self.ctx)
+                elif getattr(self.ctx.flow, "ai_metadata", None) is not None and not getattr(self.ctx.flow, "body", None):
+                    from namel3ss.runtime.executor.ai_patterns import execute_ai_metadata_flow
+
+                    execute_ai_metadata_flow(self.ctx)
                 else:
                     for idx, stmt in enumerate(self.ctx.flow.body, start=1):
                         self.ctx.current_statement = stmt
@@ -316,6 +360,7 @@ class Executor:
             last_value=self.ctx.last_value,
             traces=self.ctx.traces,
             execution_steps=list(self.ctx.execution_steps or []),
+            yield_messages=list(self.ctx.yield_messages or []),
             runtime_theme=self.ctx.runtime_theme,
         )
 
@@ -369,6 +414,10 @@ def _statement_kind(stmt: object) -> str | None:
         return "let"
     if isinstance(stmt, ir.Return):
         return "return"
+    if isinstance(stmt, ir.AwaitStmt):
+        return "await"
+    if isinstance(stmt, ir.YieldStmt):
+        return "yield"
     if isinstance(stmt, ir.ThemeChange):
         return "theme"
     if isinstance(stmt, ir.LogStmt):

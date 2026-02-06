@@ -4,7 +4,8 @@ from dataclasses import dataclass
 from typing import List, Optional, Union
 
 from namel3ss.ast.agents import AgentDecl, AgentTeamDecl, AgentTeamMember
-from namel3ss.ast.ai import AIDecl, AIMemory
+from namel3ss.ast.ai import AIDecl, AIMemory, AIFlowMetadata
+from namel3ss.ast.ai_flows import AIFlowDefinition, AIFlowTestConfig, AIOutputField, ChainStep
 from namel3ss.ast.base import Node
 from namel3ss.ast.calls import CallArg, CallFlowExpr, CallPipelineExpr
 from namel3ss.ast.contracts import ContractDecl
@@ -24,6 +25,7 @@ from namel3ss.ast.expressions import (
     MapExpr,
     ListOpExpr,
     MapOpExpr,
+    AsyncCallExpr,
     StatePath,
     ToolCallArg,
     ToolCallExpr,
@@ -121,6 +123,7 @@ from namel3ss.ast.statements import (
     ForEach,
     If,
     Let,
+    Await,
     LogStmt,
     Match,
     MatchCase,
@@ -137,6 +140,7 @@ from namel3ss.ast.statements import (
     Repeat,
     RepeatWhile,
     Return,
+    Yield,
     RunAgentStmt,
     RunAgentsParallelStmt,
     Update,
@@ -151,6 +155,9 @@ from namel3ss.ast.statements import (
 )
 from namel3ss.ast.tool import ToolDecl, ToolField
 from namel3ss.ast.records import FieldConstraint, FieldDecl, RecordDecl
+from namel3ss.ast.routes import RouteDefinition, RouteField
+from namel3ss.ast.prompts import PromptDefinition
+from namel3ss.ast.crud import CrudDefinition
 
 __all__ = [
     "Node",
@@ -174,6 +181,8 @@ __all__ = [
     "KeepFirst",
     "If",
     "Return",
+    "Await",
+    "Yield",
     "AskAIStmt",
     "RunAgentStmt",
     "ParallelAgentEntry",
@@ -215,6 +224,7 @@ __all__ = [
     "MapExpr",
     "ListOpExpr",
     "MapOpExpr",
+    "AsyncCallExpr",
     "UnaryOp",
     "BinaryOp",
     "Comparison",
@@ -299,8 +309,17 @@ __all__ = [
     "IdentityDecl",
     "AIDecl",
     "AIMemory",
+    "AIFlowMetadata",
+    "AIFlowDefinition",
+    "AIFlowTestConfig",
+    "AIOutputField",
+    "ChainStep",
     "ToolDecl",
     "ToolField",
+    "RouteDefinition",
+    "RouteField",
+    "PromptDefinition",
+    "CrudDefinition",
     "AgentDecl",
     "UseDecl",
     "CapsuleExport",

@@ -6,6 +6,8 @@ from pathlib import Path
 
 from namel3ss.runtime.server.dev.routes import BrowserRequestHandler
 from namel3ss.runtime.server.dev.state import BrowserAppState
+from namel3ss.runtime.router.refresh import refresh_routes
+from namel3ss.runtime.router.registry import RouteRegistry
 
 
 DEFAULT_BROWSER_PORT = 7340
@@ -46,6 +48,11 @@ class BrowserRunner:
         self.port = int(server.server_address[1])
         server.browser_mode = self.mode  # type: ignore[attr-defined]
         server.app_state = self.app_state  # type: ignore[attr-defined]
+        self.app_state._refresh_if_needed()
+        registry = RouteRegistry()
+        if self.app_state.program is not None:
+            refresh_routes(program=self.app_state.program, registry=registry, revision=self.app_state.revision, logger=print)
+        server.route_registry = registry  # type: ignore[attr-defined]
         self.server = server
 
     def start(self, *, background: bool = False) -> None:

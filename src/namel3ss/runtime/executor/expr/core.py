@@ -210,7 +210,13 @@ def _evaluate_builtin_call(
                 line=expr.line,
                 column=expr.column,
             )
-        normalized, secret_value = resolve_secret_value(value, project_root=ctx.project_root, app_path=ctx.app_path)
+        normalized, secret_value = resolve_secret_value(
+            value,
+            project_root=ctx.project_root,
+            app_path=ctx.app_path,
+            identity=ctx.identity,
+            auth_context=ctx.auth_context,
+        )
         return SecretValue(
             f"[redacted: {normalized}]",
             secret_names=(normalized,),

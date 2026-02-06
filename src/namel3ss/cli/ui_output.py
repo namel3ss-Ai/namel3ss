@@ -12,6 +12,7 @@ def print_usage() -> None:
 namel3ss is an AI-native programming language. Every valid .ai file is an application. Studio is optional (inspector only; browser renders the app).
 
 Start
+  n3 init <project_name>          # create a deterministic starter project
   n3 new <template> <name>        # scaffold a project
   n3 kb                           # knowledge template
   n3 ops                          # operations template
@@ -20,6 +21,7 @@ Start
   n3 run [file.ai]                # run app in browser (default: ./app.ai)
   n3 dev [file.ai]                # dev loop, alias of run (browser)
   n3 studio [file.ai]             # inspect/debug in Studio
+  n3 console [file.ai]            # alias of Studio with console workflows
 
 Quality
   n3 check [file.ai]              # static validation
@@ -45,15 +47,57 @@ Advanced
   n3 graph | exports <file.ai>    # dependency graph or exports (use --json)
   n3 data | persist <file.ai> ... # data status, reset, export, import
   n3 secrets | observe | explain  # secrets, observability, engine explain
+  n3 trace list|show ...          # list run traces and inspect one run
+  n3 debug pause|step|back|replay # time-travel trace debugger controls
+  n3 export traces ...            # export run traces to OTLP endpoint
+  n3 observability init [file.ai] # create default observability.yaml
+  n3 docs [file.ai]               # API docs portal and spec (use --offline for local docs path)
+  n3 sdk generate --lang L ...     # client SDK generation (python, typescript, go, rust)
+  n3 sdk postman --out FILE        # Postman collection
+  n3 metrics [file.ai]             # AI metrics summary
+  n3 ast dump [file.ai]            # canonical AST/CIR dump
+  n3 type check [file.ai]          # static type check and inference diagnostics
+  n3 schema infer|migrate [file.ai] # schema inference and migration plan
+  n3 concurrency check [file.ai]   # static checks for async and parallel safety
+  n3 compile ...                   # compile pure flows to c, rust, or wasm projects
+  n3 wasm run <module.wasm> ...    # execute wasm module with local runtime
+  n3 trigger list|register ...     # manage webhook, upload, timer, and queue triggers
+  n3 feedback list [file.ai]       # list user feedback entries
+  n3 dataset list|history|add-version ... # manage dataset versions and lineage
+  n3 retrain schedule|list|run ... # schedule, inspect, and execute retrain jobs
+  n3 model canary ...              # configure canary/shadow model routing
+  n3 models list|add|deprecate ... # manage the local model registry
+  n3 tenant add|list|set-current ... # manage tenant isolation config
+  n3 federation add-contract|list|remove-contract ... # manage cross-tenant contracts
+  n3 cluster status|scale|deploy ... # inspect and control cluster scaling
+  n3 version list ...              # manage route, flow, and model versions
+  n3 quality check|fix ...         # run quality gates and suggestions
+  n3 mlops ...                     # register and fetch model registry metadata
+  n3 policy check|enforce ...      # enforce global governance policies
+  n3 marketplace ...               # publish, search, and install marketplace items
+  n3 tutorial list|run ...         # interactive lessons and progress tracking
+  n3 scaffold test <flow> ...      # generate a flow test skeleton
+  n3 package build ...             # deterministic project archive build
+  n3 lsp stdio|check ...           # language server and diagnostics
+  n3 prompts list [file.ai]        # list prompt templates
+  n3 conventions check [file.ai]   # conventions config summary
+  n3 formats list [file.ai]        # response formats summary
+  n3 audit [file.ai]               # sensitive audit log (or audit list/filter)
+  n3 auth [file.ai]                # route permissions + user role commands
+  n3 secret list|add|get ...       # encrypted vault commands
+  n3 sensitive [file.ai]           # manage sensitive flows and keys
+  n3 sandbox [file.ai]             # sandbox build/run helpers
+  n3 plugin new <lang> <name>      # scaffold a plugin project
   n3 memory | kit | exists        # memory recall, adoption kit, contract status
   n3 tools | packs | registry     # tool and pack management commands
   n3 pkg | pattern | test | eval  # packages, patterns, tests, evaluation
-  n3 version | reserved | icons   # metadata and discovery
+  n3 version | reserved | icons   # metadata, versioning, and discovery
   n3 help                         # this help
 
 Notes:
   file.ai is optional and defaults to ./app.ai when present
   if app.ai is missing: run `n3 <command> <file.ai>` or create app.ai
+  use --old-parser to force legacy parser backend during transition
   legacy forms like `n3 run app.ai --target T --json` and `n3 actions app.ai json` remain supported
   Studio inspects; the browser renders the app
 """

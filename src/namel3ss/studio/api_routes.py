@@ -24,6 +24,21 @@ from namel3ss.studio.api import (
 )
 from namel3ss.studio.graph_api import get_exports_payload, get_graph_payload
 from namel3ss.studio.formulas_api import get_formulas_payload
+from namel3ss.studio.console_api import get_console_payload, save_console_payload, validate_console_payload
+from namel3ss.studio.feedback_api import (
+    configure_canary_payload,
+    get_canary_payload,
+    get_feedback_payload,
+    get_retrain_payload,
+    schedule_retrain_payload,
+    submit_feedback_payload,
+)
+from namel3ss.studio.marketplace_api import get_marketplace_payload
+from namel3ss.studio.tutorial_api import get_playground_payload, get_tutorials_payload
+from namel3ss.studio.versioning_api import apply_versioning_payload, get_versioning_payload
+from namel3ss.studio.quality_api import apply_quality_payload, get_quality_payload
+from namel3ss.studio.mlops_api import apply_mlops_payload, get_mlops_payload
+from namel3ss.studio.trigger_api import apply_triggers_payload, get_triggers_payload
 from namel3ss.studio.state_api import get_state_payload
 from namel3ss.studio.routes.core import handle_action
 from namel3ss.studio.why_api import get_why_payload
@@ -70,6 +85,22 @@ def handle_api_get(handler: Any) -> None:
         payload = _observability_payload(handler, "logs")
         handler._respond_json(payload, status=200)
         return
+    if handler.path == "/api/traces/runs":
+        payload = _trace_runs_payload(handler)
+        status = 200 if payload.get("ok", True) else 400
+        handler._respond_json(payload, status=status)
+        return
+    if handler.path == "/api/traces/latest":
+        payload = _trace_latest_payload(handler)
+        status = 200 if payload.get("ok", True) else 404
+        handler._respond_json(payload, status=status)
+        return
+    if handler.path.startswith("/api/traces/") and handler.path not in {"/api/traces", "/api/trace"}:
+        run_id = handler.path[len("/api/traces/") :].strip()
+        payload = _trace_run_payload(handler, run_id)
+        status = 200 if payload.get("ok", True) else 404
+        handler._respond_json(payload, status=status)
+        return
     if handler.path == "/api/traces":
         payload = _observability_payload(handler, "traces")
         handler._respond_json(payload, status=200)
@@ -90,6 +121,9 @@ def handle_api_get(handler: Any) -> None:
         return
     if handler.path == "/api/actions":
         _respond_with_source(handler, source, get_actions_payload, kind="manifest", include_app_path=True)
+        return
+    if handler.path == "/api/console":
+        _respond_with_source(handler, source, get_console_payload, kind="console", include_app_path=True)
         return
     if handler.path == "/api/lint":
         payload = get_lint_payload(source)
@@ -123,6 +157,36 @@ def handle_api_get(handler: Any) -> None:
 
         payload = get_version_payload()
         handler._respond_json(payload, status=200)
+        return
+    if handler.path == "/api/feedback":
+        _respond_simple(handler, source, get_feedback_payload, kind="feedback")
+        return
+    if handler.path == "/api/retrain":
+        _respond_simple(handler, source, get_retrain_payload, kind="retrain")
+        return
+    if handler.path == "/api/canary":
+        _respond_simple(handler, source, get_canary_payload, kind="canary")
+        return
+    if handler.path == "/api/marketplace":
+        _respond_post(handler, source, {"action": "search", "query": ""}, get_marketplace_payload, kind="marketplace", include_app_path=True)
+        return
+    if handler.path == "/api/tutorials":
+        _respond_post(handler, source, {"action": "list"}, get_tutorials_payload, kind="tutorials", include_app_path=True)
+        return
+    if handler.path == "/api/playground":
+        _respond_post(handler, source, {"action": "check", "source": source}, get_playground_payload, kind="playground", include_app_path=True)
+        return
+    if handler.path == "/api/versioning":
+        _respond_simple(handler, source, get_versioning_payload, kind="versioning")
+        return
+    if handler.path == "/api/quality":
+        _respond_with_source(handler, source, get_quality_payload, kind="quality", include_app_path=True)
+        return
+    if handler.path == "/api/mlops":
+        _respond_simple(handler, source, get_mlops_payload, kind="mlops")
+        return
+    if handler.path == "/api/triggers":
+        _respond_simple(handler, source, get_triggers_payload, kind="triggers")
         return
     if handler.path == "/api/agents":
         _respond_with_source(
@@ -161,6 +225,42 @@ def handle_api_post(handler: Any) -> None:
         return
     if handler.path == "/api/action":
         handle_action(handler, source, body)
+        return
+    if handler.path == "/api/console/validate":
+        _respond_post(handler, source, body, validate_console_payload, kind="console", include_app_path=True)
+        return
+    if handler.path == "/api/console/save":
+        _respond_post(handler, source, body, save_console_payload, kind="console", include_app_path=True)
+        return
+    if handler.path == "/api/feedback":
+        _respond_post(handler, source, body, submit_feedback_payload, kind="feedback", include_app_path=True)
+        return
+    if handler.path == "/api/retrain/schedule":
+        _respond_post(handler, source, body, schedule_retrain_payload, kind="retrain", include_app_path=True)
+        return
+    if handler.path == "/api/canary/config":
+        _respond_post(handler, source, body, configure_canary_payload, kind="canary", include_app_path=True)
+        return
+    if handler.path == "/api/marketplace":
+        _respond_post(handler, source, body, get_marketplace_payload, kind="marketplace", include_app_path=True)
+        return
+    if handler.path == "/api/tutorials":
+        _respond_post(handler, source, body, get_tutorials_payload, kind="tutorials", include_app_path=True)
+        return
+    if handler.path == "/api/playground":
+        _respond_post(handler, source, body, get_playground_payload, kind="playground", include_app_path=True)
+        return
+    if handler.path == "/api/versioning":
+        _respond_post(handler, source, body, apply_versioning_payload, kind="versioning", include_app_path=True)
+        return
+    if handler.path == "/api/quality":
+        _respond_post(handler, source, body, apply_quality_payload, kind="quality", include_app_path=True)
+        return
+    if handler.path == "/api/mlops":
+        _respond_post(handler, source, body, apply_mlops_payload, kind="mlops", include_app_path=True)
+        return
+    if handler.path == "/api/triggers":
+        _respond_post(handler, source, body, apply_triggers_payload, kind="triggers", include_app_path=True)
         return
     if handler.path == "/api/agent/run":
         _respond_post(handler, source, body, run_agent_payload_wrapper, kind="agent", include_session=True, include_app_path=True)
@@ -335,6 +435,34 @@ def _empty_observability_payload(kind: str) -> dict:
     if kind in {"trace", "traces"}:
         return {"ok": True, "count": 0, "spans": []}
     return {"ok": True, "count": 0, "logs": []}
+
+
+def _trace_project_root(handler: Any) -> str | None:
+    project_root = getattr(handler.server, "project_root", None)
+    if isinstance(project_root, str) and project_root.strip():
+        return project_root
+    app_path = getattr(handler.server, "app_path", None)
+    if isinstance(app_path, str) and app_path:
+        return str(Path(app_path).parent)
+    return None
+
+
+def _trace_runs_payload(handler: Any) -> dict:
+    from namel3ss.runtime.observability_api import get_trace_runs_payload
+
+    return get_trace_runs_payload(_trace_project_root(handler), getattr(handler.server, "app_path", None))
+
+
+def _trace_latest_payload(handler: Any) -> dict:
+    from namel3ss.runtime.observability_api import get_latest_trace_run_payload
+
+    return get_latest_trace_run_payload(_trace_project_root(handler), getattr(handler.server, "app_path", None))
+
+
+def _trace_run_payload(handler: Any, run_id: str) -> dict:
+    from namel3ss.runtime.observability_api import get_trace_run_payload
+
+    return get_trace_run_payload(_trace_project_root(handler), getattr(handler.server, "app_path", None), run_id)
 
 
 __all__ = ["handle_api_get", "handle_api_post"]

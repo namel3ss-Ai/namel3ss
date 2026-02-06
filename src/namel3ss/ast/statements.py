@@ -51,6 +51,16 @@ class Return(Statement):
 
 
 @dataclass
+class Await(Statement):
+    name: str
+
+
+@dataclass
+class Yield(Statement):
+    expression: Expression
+
+
+@dataclass
 class AskAIStmt(Statement):
     ai_name: str
     input_expr: Expression

@@ -4,6 +4,11 @@ This document defines the frozen grammar and semantics of namel3ss.
 Changes require explicit compatibility review.
 This document is the authoritative contract for namel3ss grammar and behavior. It freezes the language surface and determinism guarantees. Any conflict between this document and other docs, tests, or code is a bug.
 
+## Docs and SDK tooling
+- This phase adds no new grammar.
+- API docs, SDKs, metrics, and prompt tooling are generated from existing route, prompt, and AI flow declarations.
+- Use `n3 docs`, `n3 sdk`, `n3 metrics`, and `n3 prompts list` to access these features.
+
 ## Authority and scope
 - This contract is normative for parsers, validators, the runtime, and the Studio renderer.
 - Only the forms shown here are allowed. Variants, aliases, and alternate spellings are forbidden.
@@ -37,6 +42,13 @@ The only allowed top-level declarations are:
 - `agent`
 - `ai`
 - `record`
+- `crud`
+- `prompt`
+- `llm_call`
+- `rag`
+- `classification`
+- `summarise`
+- `route`
 - `flow`
 - `job`
 - `page`
@@ -93,8 +105,29 @@ record "User":
   name text
   email text must be unique
 
+crud "User"
+
+prompt "summary_prompt":
+  version is "1.0.0"
+  text is "Summarise the input."
+
+llm_call "summarise":
+  model is "gpt-4"
+  prompt is "summary_prompt"
+  output is text
+
 flow "init":
   return "ok"
+
+route "list_users":
+  path is "/api/users"
+  method is "GET"
+  request:
+    page is number
+  response:
+    users is list<User>
+    next_page is number
+  flow is "get_users"
 
 job "nightly":
   return "ok"
@@ -177,6 +210,74 @@ flow "demo":
   update "User" where id is 1 set:
     status is "ready"
   delete "User" where id is 1
+
+flow "summarise":
+  ai:
+    model is "gpt-4"
+    prompt is "Summarise the input."
+  return "ok"
+```
+
+### Routes
+Routes require both request and response blocks.
+Canonical form:
+```
+route "get_user":
+  path is "/api/users/{id}"
+  method is "GET"
+  parameters:
+    id is number
+  request:
+    id is number
+  response:
+    result is User
+  flow is "get_user"
+```
+
+### CRUD generator
+Canonical form:
+```
+record "User":
+  id number
+  name text
+
+crud "User"
+```
+Crud is a single line and has no colon.
+
+### Prompt templates
+Canonical form:
+```
+prompt "summary_prompt":
+  version is "1.0.0"
+  text is "Summarise the input."
+  description is "Short summary."
+```
+
+### AI flow types
+Canonical forms:
+```
+llm_call "summarise":
+  model is "gpt-4"
+  prompt is "summary_prompt"
+  output is text
+
+classification "tag_message":
+  model is "gpt-4"
+  prompt is "Tag the message."
+  labels:
+    billing
+    technical
+    general
+  output is text
+
+rag "answer_question":
+  model is "gpt-4"
+  prompt is "Answer the question."
+  sources:
+    documents
+    memory
+  output is text
 ```
 
 ### Pages and UI

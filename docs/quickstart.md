@@ -8,6 +8,7 @@ Run any `.ai` app with the file-first CLI.
 
 ## Create a project
 
+- Starter project: `n3 init <project_name>`
 - Scaffold: `n3 new <template> [project_name]` (templates: `operations_dashboard`, `onboarding`, `support_inbox`)
 - Example: `n3 new onboarding my_app` then `cd my_app`
 - Recommended first win: `n3 new operations_dashboard ops_app` then `cd ops_app`
@@ -36,17 +37,57 @@ In the browser:
 - Select "Create sample incident" to seed the queue.
 - Review the incident list and escalation checklist.
 
+## Automatic routes and uploads
+
+When you declare routes in `app.ai`, they go live automatically when you run `n3 run` or `n3 start`.
+Routes are read in a stable order and saved on disk so they stay the same across restarts.
+
+If a route sets `upload is true`, the server accepts a file upload, stores it under `.namel3ss/uploads`,
+and records metadata in `.namel3ss/persist`. For CSV and JSON uploads, a simple dataset schema is saved too.
+
+Example:
+
+```
+flow "store":
+  return input.upload_id
+
+route "upload_document":
+  path is "/api/documents"
+  method is "POST"
+  request:
+    upload is json
+  response:
+    upload_id is text
+  upload is true
+  flow is "store"
+```
+
+## API docs, SDKs, and metrics
+
+- Docs portal: `n3 docs` (opens a local portal with endpoints and try it)
+- SDKs: `n3 sdk generate --lang python|typescript|go|rust --out-dir sdk`
+- Postman: `n3 sdk postman --out postman.json`
+- AI metrics summary: `n3 metrics`
+- Console, feedback, canary, marketplace: `docs/console-feedback-marketplace.md`
+- Ecosystem, tutorials, tooling: `docs/ecosystem-developer-experience.md`
+- Prompt list: `n3 prompts list`
+- Prompt eval: `n3 eval prompt summary_prompt --input samples.txt`
+- Conventions check: `n3 conventions check`
+- Response formats: `n3 formats list`
+
 ## Core commands
 
 - Validate: `n3 app.ai check`
 - UI manifest: `n3 app.ai ui`
 - Actions list: `n3 app.ai actions`
 - Studio (local viewer/interactor): `n3 app.ai studio`
+- Console alias (opens `/console`): `n3 app.ai console`
 - Run default flow (when only one flow): `n3 app.ai`
 - Run specific flow (template): `n3 app.ai flow "create_sample_incident"`
 - Run an action (template): `n3 app.ai page.dashboard.button.create_sample_incident '{}'`
 - Run with expression explain traces: `n3 run app.ai --explain`
 - Run tests: `n3 test`
+- Persist list: `n3 persist list`
 - Why mode: `n3 why` or `n3 explain --why`
 - How mode: `n3 how`
 - With mode: `n3 with`
@@ -66,7 +107,16 @@ In the browser:
 - Add a package: `n3 pkg add github:owner/repo@<tag>`
 - Install packages: `n3 pkg install`
 - Scaffold a package: `n3 new pkg my_capsule`
+- Scaffold a plugin: `n3 plugin new node demo_plugin`
 - Adoption kit: `n3 kit --format md`
+- Feedback list: `n3 feedback list --json`
+- Retrain scheduler: `n3 retrain schedule --json`
+- Canary config: `n3 model canary base candidate 0.1 --shadow --json`
+- Marketplace search/install: `n3 marketplace search demo --json` and `n3 marketplace install demo.flow --version 0.1.0 --json`
+- Tutorials: `n3 tutorial list --json` and `n3 tutorial run basics --auto --json`
+- Test scaffold: `n3 scaffold test hello --json`
+- Deterministic package archive: `n3 package build --out dist --json`
+- Language server: `n3 lsp stdio` (or `n3 lsp check app.ai --json`)
 
 Formatter and linter:
 
@@ -140,6 +190,45 @@ Bundled examples live inside the distribution and are not copied unless you ask.
 
 ## Grammar note
 - Record fields use `is` for types and `must` for constraints, and canonical types are `text`, `number`, `boolean`, for example: `field "email" is text must be present`, `field "age" is number must be greater than 17`, `field "active" is boolean must be present`.
+
+**Routes and AI metadata**
+Add route and AI metadata blocks to keep HTTP and model intent in one place:
+```text
+route "list_users":
+  path is "/api/users"
+  method is "GET"
+  request:
+    page is number
+  response:
+    users is list<User>
+    next_page is number
+  flow is "get_users"
+
+flow "summarise":
+  ai:
+    model is "gpt-4"
+    prompt is "Summarise the input text."
+  return "ok"
+```
+
+**CRUD, AI flows, and prompts**
+Use CRUD and AI flow types to avoid repetition:
+```text
+record "User":
+  id number
+  name text
+
+crud "User"
+
+prompt "summary_prompt":
+  version is "1.0.0"
+  text is "Summarise the input."
+
+llm_call "summarise":
+  model is "gpt-4"
+  prompt is "summary_prompt"
+  output is text
+```
 
 ## Next steps
 - Read [First 5 minutes](first-5-minutes.md) for a guided win.

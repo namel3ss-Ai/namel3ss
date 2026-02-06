@@ -7,17 +7,22 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.lexer.tokens import Token
 from namel3ss.lang.keywords import is_keyword
-from namel3ss.lang.types import canonicalize_type_name
 from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 from namel3ss.parser.decl.constraints import parse_field_constraint
+from namel3ss.parser.decl.type_reference import parse_type_reference
 
 
 def parse_record(parser) -> ast.RecordDecl:
     rec_tok = parser._advance()
     name_tok = parser._expect("STRING", "Expected record name string")
+    version = None
+    if parser._current().type == "IDENT" and parser._current().value == "version":
+        parser._advance()
+        version_tok = parser._expect("STRING", "Expected version string after version")
+        version = str(version_tok.value or "").strip() or None
     parser._expect("COLON", "Expected ':' after record name")
     fields, tenant_key, ttl_hours = parse_record_body(parser)
-    return ast.RecordDecl(
+    record = ast.RecordDecl(
         name=name_tok.value,
         fields=fields,
         tenant_key=tenant_key,
@@ -25,6 +30,8 @@ def parse_record(parser) -> ast.RecordDecl:
         line=rec_tok.line,
         column=rec_tok.column,
     )
+    setattr(record, "version", version)
+    return record
 
 
 def parse_record_fields(parser) -> List[ast.FieldDecl]:
@@ -239,25 +246,7 @@ def _parse_record_field(
         parser._expect("IS", "Expected 'is' after field name")
     else:
         parser._match("IS")
-    type_tok = parser._current()
-    raw_type = None
-    type_was_alias = False
-    if type_tok.type == "TEXT":
-        raw_type = "text"
-        parser._advance()
-    elif type_tok.type.startswith("TYPE_"):
-        parser._advance()
-        raw_type = type_from_token(type_tok)
-    else:
-        raise Namel3ssError("Expected field type", line=type_tok.line, column=type_tok.column)
-    canonical_type, type_was_alias = canonicalize_type_name(raw_type)
-    if type_was_alias and not getattr(parser, "allow_legacy_type_aliases", True):
-        raise Namel3ssError(
-            f"N3PARSER_TYPE_ALIAS_DISALLOWED: Type alias '{raw_type}' is not allowed. Use '{canonical_type}'. "
-            "Fix: run `n3 app.ai format` to rewrite aliases.",
-            line=type_tok.line,
-            column=type_tok.column,
-        )
+    canonical_type, type_was_alias, raw_type, type_line, type_column = parse_type_reference(parser)
     constraint = None
     if parser._match("MUST"):
         constraint = parse_field_constraint(parser)
@@ -267,8 +256,8 @@ def _parse_record_field(
         constraint=constraint,
         type_was_alias=type_was_alias,
         raw_type_name=raw_type if type_was_alias else None,
-        type_line=type_tok.line,
-        type_column=type_tok.column,
+        type_line=type_line,
+        type_column=type_column,
         line=field_name_tok.line,
         column=field_name_tok.column,
     )

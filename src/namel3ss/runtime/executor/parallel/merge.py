@@ -11,6 +11,7 @@ class ParallelTaskResult:
     locals_update: dict[str, object]
     constants_update: set[str]
     traces: list[dict]
+    yield_messages: list[dict]
     last_value: object
     line: int | None
     column: int | None
@@ -21,6 +22,7 @@ class ParallelMergeResult:
     locals: dict[str, object]
     constants: set[str]
     values: list[object]
+    yield_messages: list[dict]
     lines: list[str]
     policy: str
     conflicts: list[str]
@@ -39,6 +41,7 @@ def merge_task_results(
     merged_locals = dict(base_locals)
     merged_constants = set(base_constants)
     values: list[object] = []
+    merged_yields: list[dict] = []
     lines: list[str] = []
     conflict_lines: list[str] = []
     conflicts: list[str] = []
@@ -46,6 +49,8 @@ def merge_task_results(
 
     for result in results:
         values.append(result.last_value)
+        if result.yield_messages:
+            merged_yields.extend(result.yield_messages)
         if result.locals_update:
             names = sorted(result.locals_update.keys())
             for name in names:
@@ -79,6 +84,7 @@ def merge_task_results(
         locals=merged_locals,
         constants=merged_constants,
         values=values,
+        yield_messages=merged_yields,
         lines=lines,
         policy=resolved_policy,
         conflicts=sorted(set(conflicts)),

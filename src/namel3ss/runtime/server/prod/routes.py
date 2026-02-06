@@ -1,11 +1,9 @@
 from __future__ import annotations
-
 import json
 from http.server import BaseHTTPRequestHandler
 from types import SimpleNamespace
 from typing import Any
 from urllib.parse import parse_qs, urlparse
-
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
@@ -20,16 +18,21 @@ from namel3ss.runtime.data.data_routes import (
 )
 from namel3ss.runtime.deploy_routes import get_build_payload, get_deploy_payload
 from namel3ss.runtime.dev_server import BrowserAppState
+from namel3ss.runtime.router.dispatch import dispatch_route
+from namel3ss.runtime.router.refresh import refresh_routes
+from namel3ss.runtime.router.registry import RouteRegistry
 from namel3ss.runtime.server.prod import answer_explain, documents
+from namel3ss.runtime.server.observability_helpers import (
+    empty_observability_payload,
+    load_observability_builder,
+    observability_enabled,
+)
 from namel3ss.ui.external.serve import resolve_external_ui_file
 from namel3ss.utils.json_tools import dumps as json_dumps
 from namel3ss.version import get_version
-
-
 class ProductionRequestHandler(BaseHTTPRequestHandler):
     def log_message(self, format: str, *args: Any) -> None:  # pragma: no cover - silence logs
         pass
-
     def do_GET(self) -> None:  # noqa: N802
         raw_path = self.path
         path = urlparse(raw_path).path
@@ -99,7 +102,11 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             self._respond_json(payload, status=status, sort_keys=True)
             return
         if path.startswith("/api/"):
+            if self._dispatch_dynamic_route():
+                return
             self.send_error(404)
+            return
+        if self._dispatch_dynamic_route():
             return
         if self._handle_static(path):
             return
@@ -132,6 +139,8 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
         if path == "/api/upload":
             response, status = self._handle_upload_post(parsed.query)
             self._respond_json(response, status=status)
+            return
+        if self._dispatch_dynamic_route():
             return
         self.send_error(404)
 
@@ -185,6 +194,50 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
                 self.send_header(key, value)
         self.end_headers()
         self.wfile.write(payload)
+
+    def _dispatch_dynamic_route(self) -> bool:
+        state = self._state()
+        state._refresh_if_needed()
+        if state.error_payload:
+            self._respond_json(state.error_payload, status=400)
+            return True
+        program = state.program
+        if program is None:
+            self._respond_json(build_error_payload("Program not loaded.", kind="engine"), status=500)
+            return True
+        auth_context = self._auth_context_or_error(kind="engine")
+        if auth_context is None:
+            return True
+        registry = getattr(self.server, "route_registry", None)  # type: ignore[attr-defined]
+        if registry is None:
+            registry = RouteRegistry()
+            self.server.route_registry = registry  # type: ignore[attr-defined]
+        refresh_routes(program=program, registry=registry, revision=state.revision, logger=print)
+        config = load_config(app_path=state.app_path)
+        store = state.session.ensure_store(config)
+        result = dispatch_route(
+            registry=registry,
+            method=self.command,
+            raw_path=self.path,
+            headers=dict(self.headers.items()),
+            rfile=self.rfile,
+            program=program,
+            identity=getattr(auth_context, "identity", None),
+            auth_context=auth_context,
+            store=store,
+        )
+        if result is None:
+            return False
+        if result.body is not None:
+            self._respond_bytes(
+                result.body,
+                status=result.status,
+                content_type=result.content_type or "application/octet-stream",
+                headers=result.headers,
+            )
+            return True
+        self._respond_json(result.payload or {}, status=result.status, headers=result.headers)
+        return True
 
     def _handle_action_post(self, body: dict) -> None:
         if not isinstance(body, dict):
@@ -277,17 +330,16 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             payload = build_error_payload(str(err), kind="internal")
             return payload, 500
 
-
     def _handle_observability(self, kind: str) -> tuple[dict, int]:
         program = getattr(self._state(), "program", None)
         if program is None:
             return build_error_payload("Program not loaded.", kind="engine"), 500
-        if not _observability_enabled():
-            payload = _empty_observability_payload(kind)
+        if not observability_enabled():
+            payload = empty_observability_payload(kind)
             return payload, 200
-        builder = _load_observability_builder(kind)
+        builder = load_observability_builder(kind)
         if builder is None:
-            payload = _empty_observability_payload(kind)
+            payload = empty_observability_payload(kind)
             return payload, 200
         payload = builder(getattr(program, "project_root", None), getattr(program, "app_path", None))
         status = 200 if payload.get("ok", True) else 400
@@ -364,6 +416,8 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             config=config,
             identity_schema=identity_schema,
             store=store,
+            project_root=str(getattr(self._state(), "project_root", "") or "") or None,
+            app_path=str(getattr(self._state(), "app_path", "") or "") or None,
         )
 
     def _handle_login_post(self, body: dict) -> tuple[dict, int, dict[str, str]]:
@@ -389,6 +443,8 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             config=config,
             identity_schema=identity_schema,
             store=store,
+            project_root=str(getattr(self._state(), "project_root", "") or "") or None,
+            app_path=str(getattr(self._state(), "app_path", "") or "") or None,
         )
 
     def _resolve_auth_context(self) -> object:
@@ -398,6 +454,8 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             config=config,
             identity_schema=identity_schema,
             store=store,
+            project_root=str(getattr(self._state(), "project_root", "") or "") or None,
+            app_path=str(getattr(self._state(), "app_path", "") or "") or None,
         )
 
     def _auth_context_or_error(self, *, kind: str) -> object | None:
@@ -439,32 +497,4 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
 
     def _state(self) -> BrowserAppState:
         return self.server.app_state  # type: ignore[attr-defined]
-
-
-def _load_observability_builder(kind: str):
-    from namel3ss.runtime import observability_api
-
-    mapping = {
-        "logs": observability_api.get_logs_payload,
-        "trace": observability_api.get_trace_payload,
-        "traces": observability_api.get_traces_payload,
-        "metrics": observability_api.get_metrics_payload,
-    }
-    return mapping.get(kind)
-
-
-def _observability_enabled() -> bool:
-    from namel3ss.observability.enablement import observability_enabled
-
-    return observability_enabled()
-
-
-def _empty_observability_payload(kind: str) -> dict:
-    if kind == "metrics":
-        return {"ok": True, "counters": [], "timings": []}
-    if kind in {"trace", "traces"}:
-        return {"ok": True, "count": 0, "spans": []}
-    return {"ok": True, "count": 0, "logs": []}
-
-
 __all__ = ["ProductionRequestHandler"]

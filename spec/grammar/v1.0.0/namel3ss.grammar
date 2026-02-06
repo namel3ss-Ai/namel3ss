@@ -1,0 +1,106 @@
+# namel3ss grammar source of truth
+# This file is machine-readable EBNF-like syntax used for parser generation.
+
+program           = spacing spec_decl top_level_list eof ;
+top_level_list    = top_level_item top_level_list | empty ;
+top_level_item    = record_decl | flow_decl | route_decl | prompt_decl | function_decl | page_decl | other_decl ;
+
+spec_decl         = "spec" "is" string newline ;
+record_decl       = "record" string record_version_opt ":" newline indent record_field_list dedent ;
+record_version_opt = "version" string | empty ;
+record_field_list = record_field record_field_list | empty ;
+record_field      = identifier "is" type_ref constraint_opt newline ;
+constraint_opt    = "must" constraint_expr | empty ;
+
+flow_decl         = "flow" string flow_header_opt ":" newline indent statement_list dedent ;
+flow_header_opt   = flow_header_item flow_header_opt | empty ;
+flow_header_item  = "requires" expression | "audited" | "purity" "is" string ;
+statement_list    = statement statement_list | empty ;
+statement         = let_stmt | set_stmt | return_stmt | await_stmt | yield_stmt | parallel_stmt | if_stmt | call_stmt | other_stmt ;
+let_stmt          = "let" identifier "is" async_opt expression newline ;
+async_opt         = "async" | empty ;
+set_stmt          = "set" assignable "is" expression newline ;
+return_stmt       = "return" expression newline ;
+await_stmt        = "await" identifier newline ;
+yield_stmt        = "yield" expression newline ;
+parallel_stmt     = "parallel" ":" newline indent parallel_item_list dedent ;
+parallel_item_list = parallel_item parallel_item_list | empty ;
+parallel_item     = run_task | statement ;
+run_task          = "run" string ":" newline indent statement_list dedent ;
+if_stmt           = "if" expression ":" newline indent statement_list dedent else_opt ;
+else_opt          = "else" ":" newline indent statement_list dedent | empty ;
+call_stmt         = "call" reference call_body_opt newline ;
+call_body_opt     = "with" expression | empty ;
+
+route_decl        = "route" string ":" newline indent route_body dedent ;
+route_body        = route_line route_body | empty ;
+route_line        = path_line | method_line | parameters_block | request_block | response_block | flow_line | upload_line ;
+path_line         = "path" "is" string newline ;
+method_line       = "method" "is" string newline ;
+flow_line         = "flow" "is" string newline ;
+upload_line       = "upload" "is" boolean newline ;
+parameters_block  = "parameters" ":" newline indent route_field_list dedent ;
+request_block     = "request" ":" newline indent route_field_list dedent ;
+response_block    = "response" ":" newline indent route_field_list dedent ;
+route_field_list  = route_field route_field_list | empty ;
+route_field       = identifier "is" type_ref newline ;
+
+function_decl     = "define" "function" string ":" newline indent function_sections dedent ;
+function_sections = function_section function_sections | empty ;
+function_section  = function_input | function_output | statement ;
+function_input    = "input" ":" newline indent function_field_list dedent ;
+function_output   = "output" ":" newline indent function_field_list dedent ;
+function_field_list = function_field function_field_list | empty ;
+function_field    = phrase "is" optional_kw_opt type_ref optional_kw_opt newline ;
+optional_kw_opt   = "optional" | empty ;
+
+prompt_decl       = "prompt" string ":" newline indent prompt_body dedent ;
+prompt_body       = prompt_line prompt_body | empty ;
+prompt_line       = "version" "is" string newline
+                  | "text" "is" string newline
+                  | "description" "is" string newline ;
+
+page_decl         = "page" string ":" newline indent page_item_list dedent ;
+page_item_list    = page_item page_item_list | empty ;
+page_item         = phrase ":" newline indent page_item_list dedent | phrase newline ;
+
+type_ref          = type_union ;
+type_union        = type_generic type_union_tail ;
+type_union_tail   = "|" type_generic type_union_tail | empty ;
+type_generic      = type_name type_args_opt ;
+type_args_opt     = "<" type_ref type_args_tail ">" | empty ;
+type_args_tail    = "," type_ref type_args_tail | empty ;
+type_name         = identifier | primitive_type | "null" ;
+primitive_type    = "text" | "number" | "boolean" | "json" | "list" | "map" ;
+
+expression        = literal
+                  | reference
+                  | expression binary_op expression
+                  | "(" expression ")" ;
+binary_op         = "+" | "-" | "*" | "/" | "and" | "or" | "is" ;
+
+reference         = identifier reference_tail ;
+reference_tail    = "." identifier reference_tail | empty ;
+assignable        = reference ;
+phrase            = identifier phrase_tail ;
+phrase_tail       = identifier phrase_tail | empty ;
+
+identifier        = IDENT | IDENT_ESCAPED ;
+literal           = string | number | boolean | "null" | list_literal | map_literal ;
+list_literal      = "list" ":" newline indent expression_list dedent ;
+map_literal       = "map" ":" newline indent map_entry_list dedent ;
+expression_list   = expression expression_list_tail ;
+expression_list_tail = newline expression_list | empty ;
+map_entry_list    = expression ":" expression map_entry_tail ;
+map_entry_tail    = newline map_entry_list | empty ;
+
+string            = STRING ;
+number            = NUMBER ;
+boolean           = "true" | "false" ;
+
+newline           = NEWLINE ;
+indent            = INDENT ;
+dedent            = DEDENT ;
+spacing           = empty ;
+eof               = EOF ;
+empty             = ;

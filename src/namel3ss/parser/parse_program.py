@@ -25,6 +25,10 @@ def parse_program(parser) -> ast.Program:
     packs_declared = False
     records: List[ast.RecordDecl] = []
     flows: List[ast.Flow] = []
+    routes: List[ast.RouteDefinition] = []
+    crud: List[ast.CrudDefinition] = []
+    prompts: List[ast.PromptDefinition] = []
+    ai_flows: List[ast.AIFlowDefinition] = []
     jobs: List[ast.JobDecl] = []
     pages: List[ast.PageDecl] = []
     ui_packs: List[ast.UIPackDecl] = []
@@ -238,8 +242,20 @@ def parse_program(parser) -> ast.Program:
         if rule.name == "record":
             records.append(rule.parse(parser))
             continue
+        if rule.name == "crud":
+            crud.append(rule.parse(parser))
+            continue
+        if rule.name == "prompt":
+            prompts.append(rule.parse(parser))
+            continue
+        if rule.name in {"llm_call", "rag", "classification", "classify", "summarise", "translate", "qa", "cot", "chain"}:
+            ai_flows.append(rule.parse(parser))
+            continue
         if rule.name == "flow":
             flows.append(rule.parse(parser))
+            continue
+        if rule.name == "route":
+            routes.append(rule.parse(parser))
             continue
         if rule.name == "job":
             jobs.append(rule.parse(parser))
@@ -305,6 +321,10 @@ def parse_program(parser) -> ast.Program:
         functions=functions,
         contracts=contracts,
         flows=flows,
+        routes=routes,
+        crud=crud,
+        prompts=prompts,
+        ai_flows=ai_flows,
         jobs=jobs,
         pages=pages,
         ui_packs=ui_packs,

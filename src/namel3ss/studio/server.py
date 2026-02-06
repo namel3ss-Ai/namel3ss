@@ -54,7 +54,7 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
         web_root = studio_web_root()
         parsed = urlparse(self.path)
         path_only = parsed.path
-        if path_only in {"/", "/index.html"}:
+        if path_only in {"/", "/index.html", "/console", "/console/"}:
             file_path = web_root / "index.html"
         else:
             file_path = web_root / path_only.lstrip("/")

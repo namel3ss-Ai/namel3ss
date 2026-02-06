@@ -1,0 +1,26 @@
+version: "1.0.0"
+courses:
+  - id: "ai_workflows"
+    title: "AI Workflows and Evaluation"
+    level: "intermediate"
+    requires_spec: "1.0.0"
+    modules:
+      - "ai_patterns"
+      - "workflow_chaining"
+      - "evaluation_metrics"
+  - id: "foundations"
+    title: "namel3ss Foundations"
+    level: "beginner"
+    requires_spec: "1.0.0"
+    modules:
+      - "records_and_types"
+      - "flows_and_routes"
+      - "testing_and_determinism"
+  - id: "platform_operations"
+    title: "Platform Operations"
+    level: "advanced"
+    requires_spec: "1.0.0"
+    modules:
+      - "governance_and_rbac"
+      - "observability_and_debugging"
+      - "multi_tenant_operations"

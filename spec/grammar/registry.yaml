@@ -1,0 +1,5 @@
+versions:
+  - version: "1.0.0"
+    grammar_file: "spec/grammar/v1.0.0/namel3ss.grammar"
+    overview_file: "spec/grammar/v1.0.0/overview.md"
+    released_at: 1

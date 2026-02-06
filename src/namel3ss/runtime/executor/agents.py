@@ -5,7 +5,8 @@ from namel3ss.agents.orchestration import MergeCandidate, build_merge_trace_even
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.ai.trace import AITrace
-from namel3ss.runtime.executor.ai_runner import run_ai_with_tools, _flush_pending_tool_traces
+from namel3ss.runtime.executor.ai_runner import run_ai_with_tools
+from namel3ss.runtime.executor.ai_runner_support import flush_pending_tool_traces as _flush_pending_tool_traces
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.executor.parallel.isolation import ensure_agent_call_allowed
 from namel3ss.runtime.ai.input_format import prepare_ai_input
@@ -355,11 +356,21 @@ def run_agent_call(
     if governance_events:
         canonical_events.extend(governance_events)
     canonical_events = append_explanation_events(canonical_events)
+    trace_model = profile_override.model
+    for event in canonical_events:
+        if not isinstance(event, dict):
+            continue
+        if event.get("type") != "ai_call_started":
+            continue
+        candidate = event.get("model")
+        if isinstance(candidate, str) and candidate.strip():
+            trace_model = candidate
+            break
     trace = AITrace(
         ai_name=profile_override.name,
         ai_profile_name=profile_override.name,
         agent_name=agent.name,
-        model=profile_override.model,
+        model=trace_model,
         system_prompt=profile_override.system_prompt,
         input=input_text,
         input_structured=input_structured,

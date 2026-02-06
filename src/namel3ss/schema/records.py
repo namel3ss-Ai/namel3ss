@@ -6,6 +6,7 @@ from typing import Dict, List, Optional
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
+from namel3ss.lang.types import is_supported_type_name
 
 SUPPORTED_TYPES = {
     "text",
@@ -67,7 +68,7 @@ class RecordSchema:
             if f.name in SYSTEM_FIELDS:
                 raise Namel3ssError(f"Field '{f.name}' is reserved in record '{self.name}'")
             seen.add(f.name)
-            if f.type_name not in SUPPORTED_TYPES:
+            if f.type_name not in SUPPORTED_TYPES and not is_supported_type_name(f.type_name):
                 raise Namel3ssError(f"Unsupported field type '{f.type_name}' in record '{self.name}'")
             if (
                 f.constraint

@@ -47,6 +47,8 @@ def resolve_program(
 ) -> None:
     for record in program.records:
         record.name = qualify(module_name, record.name)
+    for crud in getattr(program, "crud", []) or []:
+        crud.record_name = qualify(module_name, crud.record_name)
     for func in getattr(program, "functions", []):
         func.name = qualify(module_name, func.name)
         resolve_statements(
@@ -129,6 +131,28 @@ def resolve_program(
                 exports_map=exports_map,
                 context_label=context_label,
             )
+    for ai_flow in getattr(program, "ai_flows", []) or []:
+        ai_flow.name = qualify(module_name, ai_flow.name)
+        if ai_flow.return_expr is not None:
+            resolve_expression(
+                ai_flow.return_expr,
+                module_name=module_name,
+                alias_map=alias_map,
+                local_defs=local_defs,
+                exports_map=exports_map,
+                context_label=context_label,
+            )
+        if ai_flow.output_type:
+            ai_flow.output_type = _resolve_route_type(
+                ai_flow.output_type,
+                module_name=module_name,
+                alias_map=alias_map,
+                local_defs=local_defs,
+                exports_map=exports_map,
+                context_label=context_label,
+                line=ai_flow.line,
+                column=ai_flow.column,
+            )
     for ai in program.ais:
         ai.name = qualify(module_name, ai.name)
         ai.exposed_tools = [
@@ -174,6 +198,116 @@ def resolve_program(
             )
     for tool in program.tools:
         tool.name = qualify(module_name, tool.name)
+
+    for route in getattr(program, "routes", []) or []:
+        route.name = qualify(module_name, route.name)
+        route.flow_name = resolve_name(
+            route.flow_name,
+            kind="flow",
+            module_name=module_name,
+            alias_map=alias_map,
+            local_defs=local_defs,
+            exports_map=exports_map,
+            context_label=context_label,
+            line=route.line,
+            column=route.column,
+        )
+        _resolve_route_fields(
+            route,
+            module_name=module_name,
+            alias_map=alias_map,
+            local_defs=local_defs,
+            exports_map=exports_map,
+            context_label=context_label,
+        )
+
+
+def _resolve_route_fields(
+    route: ast.RouteDefinition,
+    *,
+    module_name: str | None,
+    alias_map: Dict[str, str],
+    local_defs: Dict[str, set[str]],
+    exports_map: Dict[str, ModuleExports],
+    context_label: str,
+) -> None:
+    for field_map in (route.parameters or {}, route.request or {}, route.response or {}):
+        for field in field_map.values():
+            field.type_name = _resolve_route_type(
+                field.type_name,
+                module_name=module_name,
+                alias_map=alias_map,
+                local_defs=local_defs,
+                exports_map=exports_map,
+                context_label=context_label,
+                line=field.type_line or field.line,
+                column=field.type_column or field.column,
+            )
+
+
+def _resolve_route_type(
+    type_name: str,
+    *,
+    module_name: str | None,
+    alias_map: Dict[str, str],
+    local_defs: Dict[str, set[str]],
+    exports_map: Dict[str, ModuleExports],
+    context_label: str,
+    line: int | None = None,
+    column: int | None = None,
+) -> str:
+    if not isinstance(type_name, str) or not type_name:
+        return type_name
+    inner = _split_list_type(type_name)
+    if inner is not None:
+        resolved_inner = _resolve_route_type(
+            inner,
+            module_name=module_name,
+            alias_map=alias_map,
+            local_defs=local_defs,
+            exports_map=exports_map,
+            context_label=context_label,
+            line=line,
+            column=column,
+        )
+        return f"list<{resolved_inner}>"
+    if type_name in {"text", "number", "boolean", "json"}:
+        return type_name
+    return resolve_name(
+        type_name,
+        kind="record",
+        module_name=module_name,
+        alias_map=alias_map,
+        local_defs=local_defs,
+        exports_map=exports_map,
+        context_label=context_label,
+        line=line,
+        column=column,
+    )
+
+
+def _split_list_type(type_name: str) -> str | None:
+    if not type_name.startswith("list<"):
+        return None
+    depth = 0
+    start = None
+    end = None
+    for idx, ch in enumerate(type_name):
+        if ch == "<":
+            depth += 1
+            if depth == 1:
+                start = idx + 1
+        elif ch == ">":
+            depth -= 1
+            if depth == 0:
+                end = idx
+                break
+    if start is None or end is None or end != len(type_name) - 1:
+        return None
+    inner = type_name[start:end].strip()
+    if not inner:
+        return None
+    return inner
 
 
 __all__ = ["collect_definitions", "qualify", "resolve_program"]

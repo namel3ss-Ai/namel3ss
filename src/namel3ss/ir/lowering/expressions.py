@@ -19,6 +19,7 @@ from namel3ss.ir.model.expressions import (
     MapExpr,
     ListOpExpr,
     MapOpExpr,
+    AsyncCallExpr,
     StatePath,
     ToolCallArg,
     ToolCallExpr,
@@ -146,6 +147,12 @@ def _lower_expression(expr: ast.Expression | None):
             target=_lower_expression(expr.target),
             key=_lower_expression(expr.key) if expr.key is not None else None,
             value=_lower_expression(expr.value) if expr.value is not None else None,
+            line=expr.line,
+            column=expr.column,
+        )
+    if isinstance(expr, ast.AsyncCallExpr):
+        return AsyncCallExpr(
+            expression=_lower_expression(expr.expression),
             line=expr.line,
             column=expr.column,
         )

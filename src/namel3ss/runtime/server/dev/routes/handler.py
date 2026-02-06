@@ -4,8 +4,12 @@ from http.server import BaseHTTPRequestHandler
 from typing import Any
 from urllib.parse import urlparse
 
+from namel3ss.config.loader import load_config
 from namel3ss.errors.payload import build_error_payload
 from namel3ss.runtime.server.dev.state import BrowserAppState
+from namel3ss.runtime.router.dispatch import dispatch_route
+from namel3ss.runtime.router.refresh import refresh_routes
+from namel3ss.runtime.router.registry import RouteRegistry
 
 from . import answer_explain, core, documents, health, ingestion, packs, studio
 
@@ -19,6 +23,8 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
         path = urlparse(raw_path).path
         if path.startswith("/api/"):
             self._handle_api_get(path, raw_path)
+            return
+        if self._dispatch_dynamic_route():
             return
         if core.handle_static(self, path):
             return
@@ -51,6 +57,8 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
         if path == "/api/upload":
             response, status = ingestion.handle_upload_post(self, parsed.query)
             self._respond_json(response, status=status)
+            return
+        if self._dispatch_dynamic_route():
             return
         self.send_error(404)
 
@@ -85,6 +93,8 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
             return
         if packs.handle_get(self, path):
             return
+        if self._dispatch_dynamic_route():
+            return
         self.send_error(404)
 
     def _handle_action_post(self, body: dict) -> None:
@@ -95,6 +105,48 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
 
     def _respond_json(self, payload: dict, status: int = 200, headers: dict[str, str] | None = None) -> None:
         core.respond_json(self, payload, status=status, headers=headers)
+
+    def _dispatch_dynamic_route(self) -> bool:
+        state = self._state()
+        state._refresh_if_needed()
+        if state.error_payload:
+            self._respond_json(state.error_payload, status=400)
+            return True
+        program = state.program
+        if program is None:
+            self._respond_json(build_error_payload("Program not loaded.", kind="engine"), status=500)
+            return True
+        registry = getattr(self.server, "route_registry", None)  # type: ignore[attr-defined]
+        if registry is None:
+            registry = RouteRegistry()
+            self.server.route_registry = registry  # type: ignore[attr-defined]
+        refresh_routes(program=program, registry=registry, revision=state.revision, logger=print)
+        config = load_config(app_path=state.app_path)
+        store = state.session.ensure_store(config)
+        result = dispatch_route(
+            registry=registry,
+            method=self.command,
+            raw_path=self.path,
+            headers=dict(self.headers.items()),
+            rfile=self.rfile,
+            program=program,
+            identity=None,
+            auth_context=None,
+            store=store,
+        )
+        if result is None:
+            return False
+        if result.body is not None:
+            core.respond_bytes(
+                self,
+                result.body,
+                status=result.status,
+                content_type=result.content_type or "application/octet-stream",
+                headers=result.headers,
+            )
+            return True
+        self._respond_json(result.payload or {}, status=result.status, headers=result.headers)
+        return True
 
     def _state(self) -> BrowserAppState:
         return self.server.app_state  # type: ignore[attr-defined]

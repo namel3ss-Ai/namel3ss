@@ -38,9 +38,25 @@ def _to_data(value: Any, *, field_name: str | None = None) -> Any:
                 continue
             if field.name == "declarative" and not field_value:
                 continue
+            if field.name == "ai_metadata" and field_value is None:
+                continue
+            if field.name == "ai_flows" and not field_value:
+                continue
+            if field.name == "prompts" and not field_value:
+                continue
+            if field.name == "crud" and not field_value:
+                continue
+            if field.name == "routes" and not field_value:
+                continue
+            if field.name == "generated" and not field_value:
+                continue
             if field.name == "visibility_rule" and field_value is None:
                 continue
             if field.name == "availability_rule" and field_value is None:
+                continue
+            if field.name in {"prompt_expr", "source_language", "target_language", "tests"} and field_value is None:
+                continue
+            if field.name in {"output_fields", "chain_steps"} and not field_value:
                 continue
             data[field.name] = _to_data(field_value, field_name=field.name)
         return data
