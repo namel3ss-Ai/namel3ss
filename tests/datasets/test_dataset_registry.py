@@ -66,3 +66,30 @@ def test_dataset_registry_rejects_duplicate_version(tmp_path: Path) -> None:
             schema={"question": "text"},
             source="faq_upload_2",
         )
+
+
+def test_dataset_registry_normalizes_file_uri_source(tmp_path: Path) -> None:
+    app = _write_app(tmp_path)
+    path, entry = add_dataset_version(
+        project_root=tmp_path,
+        app_path=app,
+        dataset_name="faq-dataset",
+        version="1.0.0",
+        schema={"question": "text"},
+        source="file:///tmp/faq.csv",
+    )
+    assert path.exists()
+    assert entry.source == "/tmp/faq.csv"
+
+
+def test_dataset_registry_rejects_malformed_file_uri_source(tmp_path: Path) -> None:
+    app = _write_app(tmp_path)
+    with pytest.raises(Namel3ssError):
+        add_dataset_version(
+            project_root=tmp_path,
+            app_path=app,
+            dataset_name="faq-dataset",
+            version="1.0.0",
+            schema={"question": "text"},
+            source="file:///tmp/faq.csv?bad=1",
+        )

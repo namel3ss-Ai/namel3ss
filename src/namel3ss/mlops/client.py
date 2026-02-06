@@ -5,7 +5,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.error import URLError
-from urllib.parse import urlencode, urlparse
+from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 from namel3ss.determinism import canonical_json_dump, canonical_json_dumps
@@ -18,6 +18,7 @@ from namel3ss.mlops.config_helpers import (
     normalize_training_backends,
 )
 from namel3ss.runtime.persistence_paths import resolve_persistence_root, resolve_project_root
+from namel3ss.utils.fs import resolve_file_uri
 from namel3ss.utils.simple_yaml import parse_yaml
 
 
@@ -270,8 +271,11 @@ def _dispatch_operation(config: MLOpsConfig, operation: dict[str, object]) -> bo
     url = config.registry_url
     parsed = urlparse(url)
     if parsed.scheme in {"", "file"}:
-        target = Path(parsed.path if parsed.scheme == "file" else url).expanduser()
-        _write_file_registry(target, operation)
+        try:
+            target = resolve_file_uri(url).expanduser()
+        except ValueError as err:
+            raise Namel3ssError(_invalid_registry_url_message(url, str(err))) from err
+        _write_file_registry(target, operation, registry_url=url)
         return True
     if parsed.scheme in {"http", "https"}:
         return _dispatch_http(config, operation)
@@ -294,7 +298,7 @@ def _dispatch_http(config: MLOpsConfig, operation: dict[str, object]) -> bool:
         return False
 
 
-def _write_file_registry(path: Path, operation: dict[str, object]) -> None:
+def _write_file_registry(path: Path, operation: dict[str, object], *, registry_url: str) -> None:
     existing = []
     if path.exists():
         try:
@@ -305,8 +309,11 @@ def _write_file_registry(path: Path, operation: dict[str, object]) -> None:
             existing = []
     existing.append(operation)
     existing = sorted(existing, key=lambda item: _operation_id(item))
-    path.parent.mkdir(parents=True, exist_ok=True)
-    canonical_json_dump(path, existing, pretty=True, drop_run_keys=False)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        canonical_json_dump(path, existing, pretty=True, drop_run_keys=False)
+    except OSError as err:
+        raise Namel3ssError(_invalid_registry_url_message(registry_url, str(err))) from err
 
 
 def _queue_operation(project_root: str | Path | None, app_path: str | Path | None, operation: dict[str, object]) -> None:
@@ -479,16 +486,13 @@ def _invalid_config_message(path: Path, details: str) -> str:
     )
 
 
-__all__ = [
-    "MLOPS_CACHE_FILENAME",
-    "MLOPS_FILENAME",
-    "MLOPS_SNAPSHOT_FILENAME",
-    "MLOpsClient",
-    "MLOpsConfig",
-    "ModelRegistryEntry",
-    "get_mlops_client",
-    "load_mlops_config",
-    "mlops_cache_path",
-    "mlops_config_path",
-    "mlops_snapshot_path",
-]
+def _invalid_registry_url_message(registry_url: str, details: str) -> str:
+    return build_guidance_message(
+        what="registry_url is invalid for local registry writes.",
+        why=f'Could not use "{registry_url}": {details}.',
+        fix="Use a valid local path or file URI for this platform.",
+        example="registry_url: file:///C:/Users/name/registry.json",
+    )
+
+
+__all__ = ["MLOPS_CACHE_FILENAME", "MLOPS_FILENAME", "MLOPS_SNAPSHOT_FILENAME", "MLOpsClient", "MLOpsConfig", "ModelRegistryEntry", "get_mlops_client", "load_mlops_config", "mlops_cache_path", "mlops_config_path", "mlops_snapshot_path"]

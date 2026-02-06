@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 
 import namel3ss.mlops.client as mlops_client_module
+import pytest
+from namel3ss.errors.base import Namel3ssError
 from namel3ss.mlops import get_mlops_client, mlops_cache_path, mlops_snapshot_path
 
 
@@ -94,3 +96,43 @@ def test_offline_queue_dedupes_and_replays_deterministically(tmp_path: Path, mon
     assert queued_after == []
     snapshot = mlops_snapshot_path(tmp_path, app)
     assert snapshot is not None and snapshot.exists()
+
+
+def test_dispatch_operation_resolves_windows_drive_file_uri(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    def _capture_write(path: Path, operation: dict[str, object], *, registry_url: str) -> None:
+        captured["path"] = path
+        captured["operation"] = dict(operation)
+        captured["registry_url"] = registry_url
+
+    monkeypatch.setattr(mlops_client_module, "_write_file_registry", _capture_write)
+    config = mlops_client_module.MLOpsConfig(
+        tool="mlflow",
+        registry_url="file:///C:/Users/demo/registry_ops.json",
+        project_name="demo",
+        auth={},
+        auth_token=None,
+        training_backends=(),
+    )
+    operation = {"operation": "register_model", "payload": {"name": "demo"}}
+
+    ok = mlops_client_module._dispatch_operation(config, operation)
+
+    assert ok is True
+    assert captured["registry_url"] == "file:///C:/Users/demo/registry_ops.json"
+    assert isinstance(captured["path"], Path)
+    assert captured["path"].as_posix() == "C:/Users/demo/registry_ops.json"
+
+
+def test_dispatch_operation_rejects_malformed_file_uri() -> None:
+    config = mlops_client_module.MLOpsConfig(
+        tool="mlflow",
+        registry_url="file:///tmp/registry_ops.json?bad=1",
+        project_name="demo",
+        auth={},
+        auth_token=None,
+        training_backends=(),
+    )
+    with pytest.raises(Namel3ssError):
+        mlops_client_module._dispatch_operation(config, {"operation": "register_model"})

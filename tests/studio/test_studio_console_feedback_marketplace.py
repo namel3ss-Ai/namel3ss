@@ -114,3 +114,21 @@ def test_console_feedback_marketplace_post_endpoints(tmp_path: Path) -> None:
         assert handler.status == 200
         assert isinstance(handler.payload, dict)
         assert handler.error is None
+
+
+def test_mlops_post_returns_400_for_invalid_registry_uri(tmp_path: Path) -> None:
+    app_path = _write_app(tmp_path)
+    (tmp_path / "mlops.yaml").write_text(
+        "registry_url: file:///tmp/registry_ops.json?bad=1\nproject_name: demo\n",
+        encoding="utf-8",
+    )
+    handler = DummyHandler(
+        path="/api/mlops",
+        app_path=app_path,
+        body=b'{"action":"register_model","name":"base","version":"1.0","artifact_uri":"model://base/1.0","experiment_id":"manual"}',
+    )
+    handle_api_post(handler)
+    assert handler.status == 400
+    assert isinstance(handler.payload, dict)
+    assert handler.payload.get("ok") is False
+    assert handler.error is None

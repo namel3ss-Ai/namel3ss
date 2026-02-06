@@ -7,6 +7,7 @@ import re
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.persistence_paths import resolve_project_root
+from namel3ss.utils.fs import resolve_file_uri
 from namel3ss.utils.simple_yaml import parse_yaml, render_yaml
 
 
@@ -124,7 +125,7 @@ def add_dataset_version(
     normalized_name = _required_text(dataset_name, "dataset name")
     normalized_version = _required_version(version)
     normalized_schema = _normalize_schema(schema)
-    normalized_source = _required_text(source, "source")
+    normalized_source = _normalize_source(source)
     normalized_owner = _optional_text(owner)
     normalized_transformations = _normalize_transformations(transformations or [])
 
@@ -248,7 +249,7 @@ def _normalize_dataset_version(
 ) -> DatasetVersion:
     version = _required_version(raw.get("version"))
     schema = _normalize_schema(raw.get("schema"))
-    source = _required_text(raw.get("source"), "source")
+    source = _normalize_source(raw.get("source"))
     transformations = _normalize_transformations(raw.get("transformations"))
     owner = _optional_text(raw.get("owner")) or default_owner
     return DatasetVersion(
@@ -314,6 +315,17 @@ def _required_version(value: object) -> str:
     return text
 
 
+def _normalize_source(value: object) -> str:
+    text = _required_text(value, "source")
+    if text.lower().startswith("file://"):
+        try:
+            resolved = resolve_file_uri(text)
+        except ValueError as err:
+            raise Namel3ssError(_invalid_source_message(text, str(err))) from err
+        return resolved.as_posix()
+    return text
+
+
 def _version_sort_key(value: str) -> tuple[int, int, int]:
     if not _SEMVER_RE.match(value):
         return (0, 0, 0)
@@ -363,6 +375,15 @@ def _invalid_transformations_message(details: str) -> str:
         why=details,
         fix="Provide transformations as repeated --transform flags.",
         example="--transform \"removed empty answers\"",
+    )
+
+
+def _invalid_source_message(value: str, details: str) -> str:
+    return build_guidance_message(
+        what="Dataset source is invalid.",
+        why=f'Could not resolve "{value}": {details}.',
+        fix="Use a plain source label or a valid local file URI.",
+        example="--source file:///C:/datasets/faq.csv",
     )
 
 
