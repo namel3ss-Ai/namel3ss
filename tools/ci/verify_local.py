@@ -78,6 +78,16 @@ def main() -> int:
         env={"PYTHONDONTWRITEBYTECODE": "1"},
     )
     _run_command(
+        "CLI entrypoint help",
+        [sys.executable, "-m", "namel3ss", "--help"],
+        env={"PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    _run_command(
+        "CLI install gate tests",
+        [sys.executable, "-m", "pytest", "-q", "tests/test_cli_install.py"],
+        env={"PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    _run_command(
         "Pytest",
         [sys.executable, "-m", "pytest", "-q"],
         env={"PYTHONDONTWRITEBYTECODE": "1"},
