@@ -10,7 +10,12 @@ from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.errors.render import format_error
-from namel3ss.tutorials import check_snippet, run_snippet
+from namel3ss.tutorials import (
+    DEFAULT_PLAYGROUND_TIMEOUT_SECONDS,
+    MAX_PLAYGROUND_TIMEOUT_SECONDS,
+    check_snippet,
+    run_snippet,
+)
 
 
 def run_playground_command(args: list[str]) -> int:
@@ -56,7 +61,7 @@ def _parse_args(args: list[str]) -> dict[str, object]:
             "app_arg": None,
             "flow_name": None,
             "input_payload": None,
-            "timeout_seconds": 1.5,
+            "timeout_seconds": DEFAULT_PLAYGROUND_TIMEOUT_SECONDS,
         }
 
     subcommand = args[0].strip().lower()
@@ -68,7 +73,7 @@ def _parse_args(args: list[str]) -> dict[str, object]:
     app_arg: str | None = None
     flow_name: str | None = None
     input_payload: dict | None = None
-    timeout_seconds = 1.5
+    timeout_seconds = float(DEFAULT_PLAYGROUND_TIMEOUT_SECONDS)
 
     i = 1
     while i < len(args):
@@ -169,10 +174,10 @@ def _parse_timeout(raw: str) -> float:
                 what="Timeout must be a number.",
                 why=f"Could not parse '{raw}'.",
                 fix="Provide timeout seconds as a number.",
-                example="n3 playground run --timeout 1.5",
+                example="n3 playground run --timeout 5",
             )
         ) from err
-    return max(0.1, min(value, 10.0))
+    return max(0.1, min(value, float(MAX_PLAYGROUND_TIMEOUT_SECONDS)))
 
 
 def _emit(payload: dict[str, object], *, json_mode: bool) -> int:
@@ -205,7 +210,8 @@ def _print_usage() -> None:
     print(
         "Usage:\n"
         "  n3 playground check [app.ai] [--source TEXT] [--json]\n"
-        "  n3 playground run [app.ai] [--source TEXT] [--flow NAME] [--input JSON] [--timeout SECONDS] [--json]"
+        f"  n3 playground run [app.ai] [--source TEXT] [--flow NAME] [--input JSON] [--timeout SECONDS] [--json]\n"
+        f"  # default timeout: {DEFAULT_PLAYGROUND_TIMEOUT_SECONDS:.1f}s"
     )
 
 

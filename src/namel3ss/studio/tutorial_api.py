@@ -4,7 +4,15 @@ from pathlib import Path
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
-from namel3ss.tutorials import check_snippet, list_tutorials, load_tutorial_progress, run_snippet, run_tutorial
+from namel3ss.tutorials import (
+    DEFAULT_PLAYGROUND_TIMEOUT_SECONDS,
+    MAX_PLAYGROUND_TIMEOUT_SECONDS,
+    check_snippet,
+    list_tutorials,
+    load_tutorial_progress,
+    run_snippet,
+    run_tutorial,
+)
 
 
 def get_tutorials_payload(source: str, body: dict, app_path: str) -> dict[str, object]:
@@ -56,12 +64,16 @@ def get_playground_payload(source: str, body: dict, app_path: str) -> dict[str, 
         flow_name = _read_text(body.get("flow_name"))
         input_payload = body.get("input")
         timeout_value = body.get("timeout_seconds")
-        timeout_seconds = float(timeout_value) if isinstance(timeout_value, (int, float)) else 1.5
+        timeout_seconds = (
+            float(timeout_value)
+            if isinstance(timeout_value, (int, float))
+            else float(DEFAULT_PLAYGROUND_TIMEOUT_SECONDS)
+        )
         payload = run_snippet(
             snippet,
             flow_name=flow_name,
             input_payload=input_payload if isinstance(input_payload, dict) else None,
-            timeout_seconds=max(0.1, min(timeout_seconds, 10.0)),
+            timeout_seconds=max(0.1, min(timeout_seconds, float(MAX_PLAYGROUND_TIMEOUT_SECONDS))),
         )
         payload["action"] = "run"
         return payload

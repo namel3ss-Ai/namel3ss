@@ -48,7 +48,7 @@ def test_cli_ecosystem_commands(tmp_path: Path, capsys, monkeypatch) -> None:
     assert check_payload["ok"] is True
     assert check_payload["flow_count"] == 1
 
-    assert cli_main(["playground", "run", "--source", snippet, "--flow", "hello", "--json"]) == 0
+    assert cli_main(["playground", "run", "--source", snippet, "--flow", "hello", "--timeout", "5", "--json"]) == 0
     run_playground_payload = json.loads(capsys.readouterr().out)
     assert run_playground_payload["ok"] is True
     assert run_playground_payload["flow_name"] == "hello"
