@@ -244,7 +244,9 @@ def _collect_source_entries(repo_root: Path, src_root: Path) -> list[ModuleEntry
         path for path in src_root.iterdir() if path.is_dir() and path.name not in SKIP_DIRECTORIES
     )
     for module_dir in subdirs:
-        entries.append(_build_entry_from_directory(repo_root, module_dir, forced_layer=None))
+        entry = _build_entry_from_directory(repo_root, module_dir, forced_layer=None)
+        if entry is not None:
+            entries.append(entry)
 
     root_files = sorted(
         path
@@ -270,7 +272,9 @@ def _collect_test_entries(repo_root: Path, tests_root: Path) -> list[ModuleEntry
         path for path in tests_root.iterdir() if path.is_dir() and path.name not in SKIP_DIRECTORIES
     )
     for module_dir in subdirs:
-        entries.append(_build_entry_from_directory(repo_root, module_dir, forced_layer="test"))
+        entry = _build_entry_from_directory(repo_root, module_dir, forced_layer="test")
+        if entry is not None:
+            entries.append(entry)
 
     root_files = sorted(
         path
@@ -290,11 +294,19 @@ def _collect_test_entries(repo_root: Path, tests_root: Path) -> list[ModuleEntry
     return entries
 
 
-def _build_entry_from_directory(repo_root: Path, module_dir: Path, forced_layer: str | None) -> ModuleEntry:
+def _build_entry_from_directory(
+    repo_root: Path,
+    module_dir: Path,
+    forced_layer: str | None,
+) -> ModuleEntry | None:
     rel_path = module_dir.relative_to(repo_root).as_posix()
     name = module_dir.name
     layer = forced_layer or _classify_layer(module_dir.relative_to(repo_root))
     loc = _count_loc(module_dir)
+    if loc == 0:
+        # Empty/untracked directories are not part of the deterministic source
+        # surface in clean checkouts; skip them to avoid local drift.
+        return None
     deps = _collect_dependencies_from_paths(_iter_python_files(module_dir), own_name=name)
     description = _describe_module(name=name, layer=layer)
     return ModuleEntry(
