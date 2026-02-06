@@ -28,9 +28,11 @@ class DummyHandler:
     def __post_init__(self) -> None:
         self.headers = {"Content-Length": str(len(self.body or b""))}
         self.rfile = io.BytesIO(self.body or b"")
+        self.wfile = io.BytesIO()
         self.payload = None
         self.status = None
         self.error = None
+        self.response_headers = {}
         self.server = SimpleNamespace(app_path=str(self.app_path), session_state=SessionState())
 
     def _read_source(self) -> str:
@@ -39,9 +41,20 @@ class DummyHandler:
     def _get_session(self) -> SessionState:
         return self.server.session_state
 
-    def _respond_json(self, payload: dict, status: int = 200) -> None:
+    def _respond_json(self, payload: dict, status: int = 200, headers: dict[str, str] | None = None) -> None:
         self.payload = payload
         self.status = status
+        if headers:
+            self.response_headers.update(headers)
+
+    def send_response(self, code: int) -> None:
+        self.status = code
+
+    def send_header(self, key: str, value: str) -> None:
+        self.response_headers[key] = value
+
+    def end_headers(self) -> None:
+        return
 
     def send_error(self, code: int) -> None:
         self.error = code
@@ -65,6 +78,8 @@ def test_kept_get_endpoints_return_ok(tmp_path: Path) -> None:
         "/api/exports",
         "/api/tools",
         "/api/secrets",
+        "/api/providers",
+        "/api/dependencies",
         "/api/diagnostics",
         "/api/version",
         "/api/why",
@@ -87,10 +102,31 @@ def test_action_post_still_executes(tmp_path: Path) -> None:
     assert handler.payload["ok"] is True
 
 
+def test_action_stream_post_returns_sse(tmp_path: Path) -> None:
+    app_path = _write_app(tmp_path)
+    body = b'{"id":"page.home.button.run","payload":{}}'
+    handler = DummyHandler(path="/api/action/stream", app_path=app_path, body=body)
+    handle_api_post(handler)
+    assert handler.status == 200
+    assert handler.payload is None
+    assert handler.response_headers.get("Content-Type") == "text/event-stream; charset=utf-8"
+    data = handler.wfile.getvalue().decode("utf-8")
+    assert "event: return" in data
+
+
 def test_agent_memory_pack_post_returns_ok(tmp_path: Path) -> None:
     app_path = _write_app(tmp_path)
     body = b'{"default_pack":"auto","agent_overrides":{}}'
     handler = DummyHandler(path="/api/agent/memory_packs", app_path=app_path, body=body)
+    handle_api_post(handler)
+    assert handler.status == 200
+    assert handler.payload["ok"] is True
+
+
+def test_provider_settings_post_returns_ok(tmp_path: Path) -> None:
+    app_path = _write_app(tmp_path)
+    body = b'{"action":"save","settings":{"huggingface":{"default_model":"huggingface:bert-base-uncased"}}}'
+    handler = DummyHandler(path="/api/providers", app_path=app_path, body=body)
     handle_api_post(handler)
     assert handler.status == 200
     assert handler.payload["ok"] is True

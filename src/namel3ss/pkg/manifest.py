@@ -42,6 +42,7 @@ def load_manifest(root: Path) -> Manifest:
     parsed: Dict[str, DependencySpec] = {}
     for name, value in deps.items():
         parsed[name] = _parse_dependency(name, value)
+    runtime_python_dependencies, runtime_system_dependencies = _parse_runtime_dependencies(data)
     package_name, package_version, capabilities = _parse_package_block(data.get("package"))
     metadata_payload = _load_metadata_payload(root)
     if metadata_payload is not None:
@@ -67,6 +68,8 @@ def load_manifest(root: Path) -> Manifest:
                     )
     return Manifest(
         dependencies=parsed,
+        runtime_python_dependencies=runtime_python_dependencies,
+        runtime_system_dependencies=runtime_system_dependencies,
         package_name=package_name,
         package_version=package_version,
         capabilities=capabilities,
@@ -90,6 +93,8 @@ def load_manifest_optional(root: Path) -> Manifest:
                 dependencies[str(name)] = _parse_dependency(str(name), value)
         return Manifest(
             dependencies=dependencies,
+            runtime_python_dependencies=(),
+            runtime_system_dependencies=(),
             package_name=package_name,
             package_version=package_version,
             capabilities=capabilities,
@@ -124,6 +129,15 @@ def format_manifest(manifest: Manifest) -> str:
             lines.append(f'{name} = {{ source = "{source}", version = "{dep.constraint_raw}" }}')
         else:
             lines.append(f'{name} = "{source}"')
+    if manifest.runtime_python_dependencies or manifest.runtime_system_dependencies:
+        lines.append("")
+        lines.append("[runtime.dependencies]")
+        if manifest.runtime_python_dependencies:
+            python_values = ", ".join(f'"{value}"' for value in sorted(manifest.runtime_python_dependencies))
+            lines.append(f"python = [{python_values}]")
+        if manifest.runtime_system_dependencies:
+            system_values = ", ".join(f'"{value}"' for value in sorted(manifest.runtime_system_dependencies))
+            lines.append(f"system = [{system_values}]")
     lines.append("")
     return "\n".join(lines)
 
@@ -336,6 +350,29 @@ def _parse_package_block(value: object) -> tuple[str | None, str | None, tuple[s
     return name, version, capabilities
 
 
+def _parse_runtime_dependencies(data: Dict[str, Any]) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    runtime_value = data.get("runtime")
+    runtime_deps = None
+    if isinstance(runtime_value, dict):
+        runtime_deps = runtime_value.get("dependencies")
+    if runtime_deps is None:
+        runtime_deps = data.get("runtime.dependencies")
+    if runtime_deps is None:
+        return (), ()
+    if not isinstance(runtime_deps, dict):
+        raise Namel3ssError(
+            build_guidance_message(
+                what="runtime.dependencies section is not a table.",
+                why="Runtime dependencies must be declared under [runtime.dependencies].",
+                fix="Use [runtime.dependencies] with python/system arrays.",
+                example='[runtime.dependencies]\npython = ["requests==2.31.0"]',
+            )
+        )
+    python_items = _parse_string_list(runtime_deps.get("python"), label="runtime.dependencies.python")
+    system_items = _parse_string_list(runtime_deps.get("system"), label="runtime.dependencies.system")
+    return tuple(sorted(set(python_items))), tuple(sorted(set(system_items)))
+
+
 def _parse_capabilities(value: object) -> tuple[str, ...]:
     if value is None:
         return ()
@@ -356,6 +393,35 @@ def _parse_capabilities(value: object) -> tuple[str, ...]:
             )
         )
     return tuple(sorted(set(values)))
+
+
+def _parse_string_list(value: object, *, label: str) -> list[str]:
+    if value is None:
+        return []
+    if not isinstance(value, list):
+        raise Namel3ssError(
+            build_guidance_message(
+                what=f"{label} is invalid.",
+                why=f"{label} must be a list of strings.",
+                fix="Use a TOML string array.",
+                example='python = ["requests==2.31.0"]',
+            )
+        )
+    output: list[str] = []
+    for item in value:
+        if not isinstance(item, str):
+            raise Namel3ssError(
+                build_guidance_message(
+                    what=f"{label} contains a non-string value.",
+                    why=f"{label} only supports string entries.",
+                    fix="Replace non-string entries with dependency strings.",
+                    example='system = ["postgresql-client@13"]',
+                )
+            )
+        text = item.strip()
+        if text:
+            output.append(text)
+    return output
 
 
 def _optional_text(value: object) -> str | None:

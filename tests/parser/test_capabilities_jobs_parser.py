@@ -120,3 +120,70 @@ flow "demo":
 '''
     program = parse(source)
     assert "security_compliance" in program.capabilities
+
+
+def test_vision_and_speech_capabilities_parse() -> None:
+    source = '''spec is "1.0"
+
+capabilities:
+  vision
+  speech
+
+flow "demo":
+  return "ok"
+'''
+    program = parse(source)
+    assert "vision" in program.capabilities
+    assert "speech" in program.capabilities
+
+
+def test_training_capability_parses() -> None:
+    source = '''spec is "1.0"
+
+capabilities:
+  training
+
+flow "demo":
+  return "ok"
+'''
+    program = parse(source)
+    assert "training" in program.capabilities
+
+
+def test_streaming_capability_parses() -> None:
+    source = '''spec is "1.0"
+
+capabilities:
+  streaming
+
+flow "demo":
+  return "ok"
+'''
+    program = parse(source)
+    assert "streaming" in program.capabilities
+
+
+def test_performance_capability_parses() -> None:
+    source = '''spec is "1.0"
+
+capabilities:
+  performance
+
+flow "demo":
+  return "ok"
+'''
+    program = parse(source)
+    assert "performance" in program.capabilities
+
+
+def test_dependency_management_capability_parses() -> None:
+    source = '''spec is "1.0"
+
+capabilities:
+  dependency_management
+
+flow "demo":
+  return "ok"
+'''
+    program = parse(source)
+    assert "dependency_management" in program.capabilities

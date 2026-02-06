@@ -6,7 +6,13 @@ from typing import Dict, List, Optional
 
 @dataclass
 class AIResponse:
-    output: str
+    output: str | None = None
+    image_id: str | None = None
+    image_url: str | None = None
+    description: str | None = None
+    transcript: str | None = None
+    audio_id: str | None = None
+    audio_url: str | None = None
 
 
 class AIProvider:

@@ -110,6 +110,9 @@ class ExecutionContext:
     async_launch_counter: int = 0
     yield_messages: list[dict] = field(default_factory=list)
     yield_sequence: int = 0
+    performance_state: object | None = None
+    explain_log: list[dict] = field(default_factory=list)
+    explain_sequence: int = 0
 
     def __post_init__(self) -> None:
         if not isinstance(self.traces, TraceList):

@@ -106,6 +106,9 @@ def build_flow_payload(
         traces=traces,
         project_root=root,
     )
+    yields = list(getattr(result, "yield_messages", []) or [])
+    if yields:
+        payload["yield_messages"] = yields
     return FlowRunOutcome(payload=payload, error=None, runtime_theme=result.runtime_theme)
 
 

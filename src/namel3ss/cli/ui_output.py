@@ -48,6 +48,7 @@ Advanced
   n3 data | persist <file.ai> ... # data status, reset, export, import
   n3 secrets | observe | explain  # secrets, observability, engine explain
   n3 trace list|show ...          # list run traces and inspect one run
+  n3 replay [app.ai] [--log ...] # replay explain logs with seed + retrieval metadata checks
   n3 debug pause|step|back|replay # time-travel trace debugger controls
   n3 export traces ...            # export run traces to OTLP endpoint
   n3 observability init [file.ai] # create default observability.yaml
@@ -64,6 +65,7 @@ Advanced
   n3 trigger list|register ...     # manage webhook, upload, timer, and queue triggers
   n3 feedback list [file.ai]       # list user feedback entries
   n3 dataset list|history|add-version ... # manage dataset versions and lineage
+  n3 train ...                     # deterministic custom model training and registration
   n3 retrain schedule|list|run ... # schedule, inspect, and execute retrain jobs
   n3 model canary ...              # configure canary/shadow model routing
   n3 models list|add|deprecate ... # manage the local model registry

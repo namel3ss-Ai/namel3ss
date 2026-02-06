@@ -25,7 +25,7 @@ page "home":
 SCALABLE_APP_SOURCE = '''spec is "1.0"
 
 capabilities:
-  performance_scalability
+  performance
 
 flow "echo":
   return input.message
@@ -38,7 +38,7 @@ page "home":
 SCALABLE_ROUTE_APP_SOURCE = '''spec is "1.0"
 
 capabilities:
-  performance_scalability
+  performance
 
 flow "echo":
   return input.id

@@ -44,6 +44,7 @@ from namel3ss.security_encryption import load_encryption_service
 from namel3ss.observability.context import ObservabilityContext
 from namel3ss.observability.enablement import resolve_observability_context
 from namel3ss.purity import is_pure
+from namel3ss.runtime.performance.state import build_or_get_performance_state
 
 
 class Executor:
@@ -150,6 +151,12 @@ class Executor:
             model_manager=model_manager,
             sandbox_config=sandbox_config,
             resource_limits=resource_limits,
+        )
+        self.ctx.performance_state = build_or_get_performance_state(
+            config=resolved_config,
+            capabilities=tuple(capabilities or ()),
+            project_root=project_root,
+            app_path=app_path,
         )
         self.ctx.calc_assignment_index = _load_calc_assignment_index(app_path)
         self.flow = self.ctx.flow

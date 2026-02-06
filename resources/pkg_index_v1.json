@@ -31,6 +31,56 @@
       "checksums": "verified by lock",
       "tags": ["admin", "ui", "records"],
       "trust_tier": "official"
+    },
+    {
+      "name": "huggingface-pack",
+      "description": "Provider pack for HuggingFace text, image, and audio models.",
+      "source": "namel3ss-ai/huggingface-pack",
+      "recommended": "v0.1.0",
+      "license": "MIT",
+      "checksums": "verified by lock",
+      "tags": ["provider", "huggingface", "text", "image", "audio"],
+      "trust_tier": "official"
+    },
+    {
+      "name": "local-runner-pack",
+      "description": "Provider pack for deterministic local model runners.",
+      "source": "namel3ss-ai/local-runner-pack",
+      "recommended": "v0.1.0",
+      "license": "MIT",
+      "checksums": "verified by lock",
+      "tags": ["provider", "local", "llama.cpp", "ggml"],
+      "trust_tier": "official"
+    },
+    {
+      "name": "speech-pack",
+      "description": "Provider pack for speech transcription and synthesis.",
+      "source": "namel3ss-ai/speech-pack",
+      "recommended": "v0.1.0",
+      "license": "MIT",
+      "checksums": "verified by lock",
+      "tags": ["provider", "speech", "audio", "stt", "tts"],
+      "trust_tier": "official"
+    },
+    {
+      "name": "third-party-apis-pack",
+      "description": "Provider pack for deterministic third-party vision and speech APIs.",
+      "source": "namel3ss-ai/third-party-apis-pack",
+      "recommended": "v0.1.0",
+      "license": "MIT",
+      "checksums": "verified by lock",
+      "tags": ["provider", "connectors", "vision", "speech"],
+      "trust_tier": "official"
+    },
+    {
+      "name": "vision-gen-pack",
+      "description": "Provider pack for deterministic text-to-image generation.",
+      "source": "namel3ss-ai/vision-gen-pack",
+      "recommended": "v0.1.0",
+      "license": "MIT",
+      "checksums": "verified by lock",
+      "tags": ["provider", "image", "generation", "diffusion"],
+      "trust_tier": "official"
     }
   ]
 }

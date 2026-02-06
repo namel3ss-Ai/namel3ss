@@ -69,6 +69,22 @@ def normalize_spacing(line: str) -> str:
     )
     if m:
         rest = f'ask ai "{m.group(1)}" with input: {m.group(2)} as {m.group(3)}'
+    m = re.match(
+        r'^ask\s+ai\s+"([^"]+)"\s+with\s+stream\s*:?\s*(true|false)\s+and\s+structured\s+input\s+from\s+(.+?)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)$',
+        rest,
+        re.IGNORECASE,
+    )
+    if m:
+        stream_value = m.group(2).lower()
+        rest = f'ask ai "{m.group(1)}" with stream: {stream_value} and structured input from {m.group(3)} as {m.group(4)}'
+    m = re.match(
+        r'^ask\s+ai\s+"([^"]+)"\s+with\s+stream\s*:?\s*(true|false)\s+and\s+input\s*:?\s*(.+?)\s+as\s+([A-Za-z_][A-Za-z0-9_]*)$',
+        rest,
+        re.IGNORECASE,
+    )
+    if m:
+        stream_value = m.group(2).lower()
+        rest = f'ask ai "{m.group(1)}" with stream: {stream_value} and input: {m.group(3)} as {m.group(4)}'
 
     # calls flow line
     m = re.match(r'^calls\s+flow\s+"([^"]+)"\s*$', rest)

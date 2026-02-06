@@ -94,6 +94,7 @@ def test_studio_run_button_state_logic():
     assert "Running..." in js
     assert "Run complete." in js
     assert "applyActionResult" in js
+    assert "/api/action/stream" in js
 
 
 def test_studio_traces_timeline_rendering():
@@ -154,5 +155,7 @@ def test_studio_codeblock_renderer():
     js = Path("src/namel3ss/studio/web/ui_renderer.js").read_text(encoding="utf-8")
     assert "n3-codeblock" in js
     assert 'startsWith("$ ")' in js
+    assert 'el.type === "audio"' in js
+    assert "audio.controls = true" in js
     css = Path("src/namel3ss/studio/web/styles.css").read_text(encoding="utf-8")
     assert ".n3-codeblock" in css

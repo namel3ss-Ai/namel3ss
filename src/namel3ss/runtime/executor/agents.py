@@ -263,6 +263,7 @@ def run_agent_call(
         mode=input_mode,
         line=line,
         column=column,
+        project_root=ctx.project_root,
     )
     record_step(
         ctx,

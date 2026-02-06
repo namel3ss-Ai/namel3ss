@@ -35,6 +35,8 @@ from namel3ss.runtime.security.retention_loop import run_retention_loop
 from namel3ss.runtime.service_helpers import contract_kind_for_path, seed_flow, should_auto_seed, summarize_program
 from namel3ss.runtime.storage.factory import create_store
 from namel3ss.runtime.triggers import run_service_trigger_loop
+from namel3ss.runtime.performance.config import normalize_performance_runtime_config
+from namel3ss.runtime.performance.guard import require_performance_capability
 DEFAULT_SERVICE_PORT = 8787
 class ServiceRequestHandler(BaseHTTPRequestHandler):
     def log_message(self, format: str, *args) -> None:  # pragma: no cover - silence logs
@@ -418,6 +420,14 @@ class ServiceRunner:
         program_ir = program_state.program
         if program_ir is None:
             raise Namel3ssError("Program failed to load.")
+        runtime_config = normalize_performance_runtime_config(
+            load_config(app_path=self.app_path, root=self.app_path.parent)
+        )
+        require_performance_capability(
+            getattr(program_ir, "capabilities", ()),
+            runtime_config,
+            where="runtime configuration",
+        )
         self.program_summary = summarize_program(program_ir)
         if should_auto_seed(program_ir, self.auto_seed, self.seed_flow):
             seed_flow(program_ir, self.seed_flow)

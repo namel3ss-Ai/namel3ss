@@ -29,6 +29,8 @@ class DependencySpec:
 @dataclass
 class Manifest:
     dependencies: Dict[str, DependencySpec] = field(default_factory=dict)
+    runtime_python_dependencies: tuple[str, ...] = ()
+    runtime_system_dependencies: tuple[str, ...] = ()
     package_name: str | None = None
     package_version: str | None = None
     capabilities: tuple[str, ...] = ()
@@ -64,7 +66,20 @@ class LockedPackage:
 
 
 @dataclass
+class RuntimeLockEntry:
+    name: str
+    version: str
+    checksum: str
+    source: str
+    dependencies: Dict[str, str] = field(default_factory=dict)
+    license: Optional[str] = None
+    trust_tier: Optional[str] = None
+
+
+@dataclass
 class Lockfile:
     lockfile_version: int
     roots: List[DependencySpec] = field(default_factory=list)
     packages: List[LockedPackage] = field(default_factory=list)
+    python_packages: List[RuntimeLockEntry] = field(default_factory=list)
+    system_packages: List[RuntimeLockEntry] = field(default_factory=list)

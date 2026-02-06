@@ -5,9 +5,11 @@ from namel3ss.runtime.executor import execute_flow
 from tests.conftest import lower_ir_program
 
 
-SOURCE_TEMPLATE = '''ai "assistant":
+SOURCE_TEMPLATE = '''{capabilities_block}
+
+ai "assistant":
   provider is "{provider}"
-  model is "test-model"
+  model is "{model}"
 
 spec is "1.0"
 
@@ -15,6 +17,33 @@ flow "demo":
   ask ai "assistant" with input: "hi" as reply
   return reply
 '''
+
+MODEL_BY_PROVIDER = {
+    "huggingface": "huggingface:bert-base-uncased",
+    "local_runner": "local_runner:llama3-8b-q4",
+    "vision_gen": "vision_gen:stable-diffusion",
+    "speech": "speech:whisper-base",
+    "third_party_apis": "third_party_apis:aws-rekognition-labels",
+}
+
+
+def _program_source(provider: str) -> str:
+    capability_tokens = {
+        "huggingface",
+        "local_runner",
+        "vision_gen",
+        "speech",
+        "third_party_apis",
+    }
+    capability_block = ""
+    if provider in capability_tokens:
+        capability_block = f'capabilities:\n  {provider}\n'
+    model = MODEL_BY_PROVIDER.get(provider, "test-model")
+    return SOURCE_TEMPLATE.format(
+        capabilities_block=capability_block,
+        provider=provider,
+        model=model,
+    )
 
 
 class StubProvider:
@@ -25,7 +54,7 @@ class StubProvider:
 def test_text_only_traces_for_all_providers(monkeypatch):
     provider_ids = set(provider_registry._FACTORIES.keys())
     for name in provider_ids:
-        program = lower_ir_program(SOURCE_TEMPLATE.format(provider=name))
+        program = lower_ir_program(_program_source(name))
         monkeypatch.setattr("namel3ss.runtime.executor.ai_runner.get_provider", lambda _name, _cfg: StubProvider())
         result = execute_flow(
             program.flows[0],

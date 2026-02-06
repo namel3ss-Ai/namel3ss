@@ -7,6 +7,7 @@ from pathlib import Path
 from namel3ss.cli.app_loader import load_program
 from namel3ss.runtime.router.dispatch import dispatch_route
 from namel3ss.runtime.router.registry import RouteRegistry
+from namel3ss.runtime.router.streaming import should_stream_response
 from tests.conftest import run_flow
 
 
@@ -75,3 +76,17 @@ def test_route_dispatch_streams_yield_messages_as_sse(tmp_path: Path) -> None:
     assert "event: yield" in body
     assert "event: return" in body
     assert '"status":"done"' in body
+
+
+def test_ai_stream_events_require_explicit_stream_request() -> None:
+    events = [
+        {
+            "flow_name": "demo",
+            "output": "chunk",
+            "sequence": 1,
+            "event_type": "token",
+            "stream_channel": "ai",
+        }
+    ]
+    assert should_stream_response({}, {}, events) is False
+    assert should_stream_response({"stream": "true"}, {}, events) is True

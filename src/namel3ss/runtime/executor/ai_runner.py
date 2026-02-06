@@ -15,6 +15,7 @@ from namel3ss.runtime.executor.ai_runner_support import (
     flush_pending_tool_traces,
     run_shadow_compare,
 )
+from namel3ss.runtime.executor.ai_response_output import extract_response_text
 from namel3ss.runtime.executor.context import ExecutionContext
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
 from namel3ss.runtime.executor.parallel.isolation import ensure_ai_call_allowed
@@ -37,6 +38,9 @@ from namel3ss.traces.builders import (
 from namel3ss.traces.redact import redact_memory_context
 from namel3ss.secrets import collect_secret_values
 from namel3ss.runtime.executor.ai_observability import record_ai_event, record_ai_metrics
+from namel3ss.runtime.explainability.logger import append_explain_entry
+from namel3ss.runtime.explainability.seed_manager import resolve_ai_call_seed
+from namel3ss.runtime.performance.state import run_cached_ai_text_call
 
 
 _flush_pending_tool_traces = flush_pending_tool_traces
@@ -58,6 +62,7 @@ def execute_ask_ai(ctx: ExecutionContext, expr: ir.AskAIStmt) -> str:
             mode=getattr(expr, "input_mode", "text"),
             line=expr.line,
             column=expr.column,
+            project_root=ctx.project_root,
         )
         record_step(
             ctx,
@@ -224,6 +229,19 @@ def run_ai_with_tools(
     ai_start = time.monotonic()
     wall_start = time.time()
     ai_failed_emitted = False
+    global_seed = getattr(getattr(ctx.config, "determinism", None), "seed", None)
+    call_seed = resolve_ai_call_seed(
+        explicit_seed=_seed_from_structured_input(input_structured),
+        global_seed=global_seed,
+        model=model_name,
+        user_input=user_input,
+        context={
+            "ai_profile": profile.name,
+            "flow": getattr(getattr(ctx, "flow", None), "name", ""),
+            "input_format": input_format or "text",
+            "provider": provider_name,
+        },
+    )
     memory_enabled = bool(
         getattr(profile, "memory", None)
         and (profile.memory.short_term or profile.memory.semantic or profile.memory.profile)
@@ -238,6 +256,25 @@ def run_ai_with_tools(
             memory_enabled=memory_enabled,
         )
     )
+    append_explain_entry(
+        ctx,
+        stage="generation",
+        event_type="start",
+        inputs={
+            "input_format": input_format or "text",
+            "user_input": user_input,
+        },
+        seed=call_seed,
+        provider=provider_name,
+        model=model_name,
+        parameters={
+            "tools_declared_count": len(profile.exposed_tools),
+            "memory_enabled": memory_enabled,
+        },
+        metadata={
+            "agent_name": agent_name,
+        },
+    )
     provider = _resolve_provider(ctx, provider_name)
     capabilities = get_provider_capabilities(provider_name)
     def _text_only_call():
@@ -249,12 +286,21 @@ def run_ai_with_tools(
             memory=memory_context,
             tool_results=[],
         )
-        output = response.output if hasattr(response, "output") else response
+        output = extract_response_text(response)
         return normalize_ai_text(output, provider_name=provider_name, secret_values=secret_values)
 
     try:
         if not profile.exposed_tools or not capabilities.supports_tools:
-            output_text = _text_only_call()
+            output_text, _cache_hit = run_cached_ai_text_call(
+                ctx,
+                provider=provider_name,
+                model=model_name,
+                system_prompt=profile.system_prompt,
+                user_input=user_input,
+                tools=list(profile.exposed_tools),
+                memory=memory_context,
+                compute=_text_only_call,
+            )
             duration_ms = int((time.monotonic() - ai_start) * 1000)
             canonical_events.append(
                 build_ai_call_completed(
@@ -296,6 +342,19 @@ def run_ai_with_tools(
                 memory_context=memory_context,
                 output_text=output_text,
                 secret_values=secret_values,
+            )
+            append_explain_entry(
+                ctx,
+                stage="generation",
+                event_type="finish",
+                outputs={"output": output_text},
+                seed=call_seed,
+                provider=provider_name,
+                model=model_name,
+                metadata={
+                    "cache_hit": _cache_hit,
+                    "tools_used": 0,
+                },
             )
             ctx.last_ai_provider = provider_name
             return output_text, canonical_events
@@ -306,7 +365,16 @@ def run_ai_with_tools(
 
         adapter = get_provider_adapter(provider_name, provider, model=model_name, system_prompt=profile.system_prompt)
         if adapter is None:
-            output_text = _text_only_call()
+            output_text, _cache_hit = run_cached_ai_text_call(
+                ctx,
+                provider=provider_name,
+                model=model_name,
+                system_prompt=profile.system_prompt,
+                user_input=user_input,
+                tools=list(profile.exposed_tools),
+                memory=memory_context,
+                compute=_text_only_call,
+            )
             duration_ms = int((time.monotonic() - ai_start) * 1000)
             canonical_events.append(
                 build_ai_call_completed(
@@ -348,6 +416,19 @@ def run_ai_with_tools(
                 memory_context=memory_context,
                 output_text=output_text,
                 secret_values=secret_values,
+            )
+            append_explain_entry(
+                ctx,
+                stage="generation",
+                event_type="finish",
+                outputs={"output": output_text},
+                seed=call_seed,
+                provider=provider_name,
+                model=model_name,
+                metadata={
+                    "cache_hit": _cache_hit,
+                    "tools_used": 0,
+                },
             )
             ctx.last_ai_provider = provider_name
             return output_text, canonical_events
@@ -433,10 +514,33 @@ def run_ai_with_tools(
             output_text=output_text,
             secret_values=secret_values,
         )
+        append_explain_entry(
+            ctx,
+            stage="generation",
+            event_type="finish",
+            outputs={"output": output_text},
+            seed=call_seed,
+            provider=provider_name,
+            model=model_name,
+            metadata={
+                "cache_hit": None,
+                "tools_used": len([event for event in tool_events if event.get("type") == "call"]),
+            },
+        )
         ctx.last_ai_provider = provider_name
         return output_text, canonical_events
     except Exception as err:
         mark_boundary(err, "ai")
+        append_explain_entry(
+            ctx,
+            stage="generation",
+            event_type="error",
+            outputs={"error": str(err)},
+            seed=call_seed,
+            provider=provider_name,
+            model=model_name,
+            metadata=None,
+        )
         diagnostic = extract_provider_diagnostic(err)
         if diagnostic:
             canonical_events.append(
@@ -495,3 +599,12 @@ def _resolve_provider(ctx: ExecutionContext, provider_name: str):
     provider = get_provider(key, ctx.config)
     ctx.provider_cache[key] = provider
     return provider
+
+
+def _seed_from_structured_input(input_structured: object | None) -> int | None:
+    if not isinstance(input_structured, dict):
+        return None
+    value = input_structured.get("seed")
+    if isinstance(value, int) and value >= 0:
+        return value
+    return None

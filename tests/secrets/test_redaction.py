@@ -11,6 +11,10 @@ from namel3ss.secrets import collect_secret_values, redact_text
         "GEMINI_API_KEY",
         "GOOGLE_API_KEY",
         "MISTRAL_API_KEY",
+        "HUGGINGFACE_API_KEY",
+        "HUGGINGFACEHUB_API_TOKEN",
+        "SPEECH_API_KEY",
+        "THIRD_PARTY_APIS_KEY",
     ],
 )
 def test_alias_env_is_redacted(monkeypatch, env_var):

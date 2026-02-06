@@ -25,6 +25,10 @@ class ModelRegistryEntry:
     artifact_uri: str | None = None
     training_dataset_version: str | None = None
     metrics: dict[str, float] | None = None
+    base_model: str | None = None
+    dataset_snapshot: str | None = None
+    training_seed: int | None = None
+    created_at: str | None = None
 
     def ref(self) -> str:
         return f"{self.name}@{self.version}"
@@ -46,6 +50,14 @@ class ModelRegistryEntry:
             payload["training_dataset_version"] = self.training_dataset_version
         if self.metrics:
             payload["metrics"] = {key: float(self.metrics[key]) for key in sorted(self.metrics.keys())}
+        if self.base_model:
+            payload["base_model"] = self.base_model
+        if self.dataset_snapshot:
+            payload["dataset_snapshot"] = self.dataset_snapshot
+        if self.training_seed is not None:
+            payload["training_seed"] = int(self.training_seed)
+        if self.created_at:
+            payload["created_at"] = self.created_at
         return payload
 
 
@@ -132,6 +144,10 @@ def add_registry_entry(
     artifact_uri: str | None = None,
     training_dataset_version: str | None = None,
     metrics: dict[str, float] | None = None,
+    base_model: str | None = None,
+    dataset_snapshot: str | None = None,
+    training_seed: int | None = None,
+    created_at: str | None = None,
 ) -> tuple[Path, ModelRegistryEntry]:
     entry = _normalize_entry(
         {
@@ -146,6 +162,10 @@ def add_registry_entry(
             "artifact_uri": artifact_uri,
             "training_dataset_version": training_dataset_version,
             "metrics": metrics or {},
+            "base_model": base_model,
+            "dataset_snapshot": dataset_snapshot,
+            "training_seed": training_seed,
+            "created_at": created_at,
         },
         path=models_registry_path(project_root, app_path) or Path(MODELS_REGISTRY_FILENAME),
     )
@@ -182,6 +202,10 @@ def deprecate_registry_entry(
                 artifact_uri=entry.artifact_uri,
                 training_dataset_version=entry.training_dataset_version,
                 metrics=entry.metrics,
+                base_model=entry.base_model,
+                dataset_snapshot=entry.dataset_snapshot,
+                training_seed=entry.training_seed,
+                created_at=entry.created_at,
             )
             updated_entries.append(deprecated)
             continue
@@ -256,6 +280,10 @@ def _normalize_entry(raw: dict[str, object], *, path: Path) -> ModelRegistryEntr
         field="training_dataset_version",
     )
     metrics = _optional_metrics(raw.get("metrics"), path=path)
+    base_model = _optional_text(raw.get("base_model"), path=path, field="base_model")
+    dataset_snapshot = _optional_text(raw.get("dataset_snapshot"), path=path, field="dataset_snapshot")
+    training_seed = _optional_int(raw.get("training_seed"), path=path, field="training_seed")
+    created_at = _optional_text(raw.get("created_at"), path=path, field="created_at")
     if status not in {"active", "deprecated"}:
         raise Namel3ssError(_invalid_registry_message(path, "status must be active or deprecated"))
     return ModelRegistryEntry(
@@ -270,6 +298,10 @@ def _normalize_entry(raw: dict[str, object], *, path: Path) -> ModelRegistryEntr
         artifact_uri=artifact_uri,
         training_dataset_version=training_dataset_version,
         metrics=metrics,
+        base_model=base_model,
+        dataset_snapshot=dataset_snapshot,
+        training_seed=training_seed,
+        created_at=created_at,
     )
 
 
@@ -325,6 +357,18 @@ def _optional_metrics(value: object, *, path: Path) -> dict[str, float]:
         except Exception as err:
             raise Namel3ssError(_invalid_registry_message(path, f"metrics.{key} must be a number")) from err
     return metrics
+
+
+def _optional_int(value: object, *, path: Path, field: str) -> int | None:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        raise Namel3ssError(_invalid_registry_message(path, f"{field} must be an integer"))
+    try:
+        parsed = int(value)
+    except Exception as err:
+        raise Namel3ssError(_invalid_registry_message(path, f"{field} must be an integer")) from err
+    return parsed
 
 
 def _split_reference(reference: str) -> tuple[str, str | None]:

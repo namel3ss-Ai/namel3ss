@@ -14,6 +14,7 @@ from namel3ss.cli.build_mode import run_build_command
 from namel3ss.cli.dataset_mode import run_dataset_command
 from namel3ss.cli.constants import ROOT_APP_COMMANDS
 from namel3ss.cli.deps_mode import run_deps
+from namel3ss.cli.dependency_management_mode import run_dependency_root
 from namel3ss.cli.discover_mode import run_discover
 from namel3ss.cli.doctor import run_doctor
 from namel3ss.cli.editor_mode import run_editor_command
@@ -54,6 +55,7 @@ from namel3ss.cli.sdk_mode import run_sdk_command
 from namel3ss.cli.promote_mode import run_promote_command
 from namel3ss.cli.proof_mode import run_proof_command
 from namel3ss.cli.readability_mode import run_readability_command
+from namel3ss.cli.replay_mode import run_replay_command
 from namel3ss.cli.registry_mode import run_registry
 from namel3ss.cli.reserved_mode import run_reserved_command
 from namel3ss.cli.secret_mode import run_secret_command
@@ -84,6 +86,7 @@ from namel3ss.cli.see_mode import run_see_command
 from namel3ss.cli.scaffold_tool_mode import run_scaffold_command
 from namel3ss.cli.status_mode import run_status_command
 from namel3ss.cli.test_mode import run_test_command
+from namel3ss.cli.train_mode import run_train_command
 from namel3ss.cli.text_output import prepare_cli_text, prepare_first_run_text
 from namel3ss.cli.template_shortcuts import (
     TEMPLATE_LIST_COMMAND,
@@ -184,6 +187,8 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if cmd == "run":
             return run_run_command(args[1:])
+        if cmd in {"install", "update", "tree"}:
+            return run_dependency_root(cmd, args[1:])
         if cmd == "dev":
             return run_dev_command(args[1:])
         if cmd == "preview":
@@ -220,6 +225,8 @@ def main(argv: list[str] | None = None) -> int:
             return run_observe_command(args[1:])
         if cmd == "trace":
             return run_trace_command(args[1:])
+        if cmd == "replay":
+            return run_replay_command(args[1:])
         if cmd == "debug":
             return run_debug_command(args[1:])
         if cmd == "observability":
@@ -258,6 +265,8 @@ def main(argv: list[str] | None = None) -> int:
             return run_feedback_command(args[1:])
         if cmd == "dataset":
             return run_dataset_command(args[1:])
+        if cmd == "train":
+            return run_train_command(args[1:])
         if cmd == "retrain":
             return run_retrain_command(args[1:])
         if cmd == "model":

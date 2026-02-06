@@ -1,0 +1,11 @@
+{
+  "name": "huggingface",
+  "capability_token": "huggingface",
+  "supported_modes": ["text", "image", "audio"],
+  "models": [
+    "huggingface:bert-base-uncased",
+    "huggingface:facebook/bart-large-cnn",
+    "huggingface:openai/whisper-tiny",
+    "huggingface:google/vit-base-patch16-224"
+  ]
+}

@@ -36,13 +36,16 @@ Resolution order:
 
 ## Lockfile
 
-`n3 pkg install` writes `namel3ss.lock.json` with:
+`n3 pkg install` and `n3 install` write lockfiles with:
 - resolved versions
 - provenance (GitHub ref)
 - checksums
 - licenses
 
+Primary lockfile: `namel3ss.lock` (with `namel3ss.lock.json` compatibility mirror).
 The lockfile is deterministic and should be committed for reproducible installs.
+
+For runtime python/system dependencies, use `docs/dependency-management.md`.
 
 ## Debug and inspect
 

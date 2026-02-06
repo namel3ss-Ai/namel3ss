@@ -66,6 +66,7 @@ class AskAIStmt(Statement):
     input_expr: Expression
     target: str
     input_mode: str = "text"
+    stream: bool = False
 
 
 @dataclass

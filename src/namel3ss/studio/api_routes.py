@@ -39,10 +39,12 @@ from namel3ss.studio.tutorial_api import get_playground_payload, get_tutorials_p
 from namel3ss.studio.versioning_api import apply_versioning_payload, get_versioning_payload
 from namel3ss.studio.quality_api import apply_quality_payload, get_quality_payload
 from namel3ss.studio.mlops_api import apply_mlops_payload, get_mlops_payload
+from namel3ss.studio.providers_api import apply_providers_payload, get_providers_payload
+from namel3ss.studio.dependencies_api import apply_dependencies_payload, get_dependencies_payload
 from namel3ss.studio.security_api import get_audit_logs_payload, get_security_payload
 from namel3ss.studio.trigger_api import apply_triggers_payload, get_triggers_payload
 from namel3ss.studio.state_api import get_state_payload
-from namel3ss.studio.routes.core import handle_action
+from namel3ss.studio.routes.core import handle_action, handle_action_stream
 from namel3ss.studio.why_api import get_why_payload
 from namel3ss.studio.registry_api import get_registry_payload
 from namel3ss.studio.deploy_api import get_build_payload_from_source, get_deploy_payload_from_source
@@ -52,7 +54,6 @@ from namel3ss.runtime.data.studio_adapters import (
     get_migrations_plan_payload,
     get_migrations_status_payload,
 )
-
 
 def handle_api_get(handler: Any) -> None:
     parsed_path = urlparse(handler.path)
@@ -155,6 +156,12 @@ def handle_api_get(handler: Any) -> None:
     if handler.path == "/api/secrets":
         _respond_with_source(handler, source, get_secrets_payload, kind="secrets", include_app_path=True)
         return
+    if handler.path == "/api/providers":
+        _respond_with_source(handler, source, get_providers_payload, kind="providers", include_app_path=True)
+        return
+    if handler.path == "/api/dependencies":
+        _respond_with_source(handler, source, get_dependencies_payload, kind="dependencies", include_app_path=True)
+        return
     if handler.path == "/api/diagnostics":
         _respond_with_source(handler, source, get_diagnostics_payload, kind="diagnostics", include_app_path=True)
         return
@@ -220,7 +227,6 @@ def handle_api_get(handler: Any) -> None:
         return
     handler.send_error(404)
 
-
 def handle_api_post(handler: Any) -> None:
     path = urlparse(handler.path).path
     length = int(handler.headers.get("Content-Length", "0"))
@@ -246,6 +252,9 @@ def handle_api_post(handler: Any) -> None:
         return
     if handler.path == "/api/action":
         handle_action(handler, source, body)
+        return
+    if handler.path == "/api/action/stream":
+        handle_action_stream(handler, source, body)
         return
     if handler.path == "/api/console/validate":
         _respond_post(handler, source, body, validate_console_payload, kind="console", include_app_path=True)
@@ -283,6 +292,12 @@ def handle_api_post(handler: Any) -> None:
     if handler.path == "/api/triggers":
         _respond_post(handler, source, body, apply_triggers_payload, kind="triggers", include_app_path=True)
         return
+    if handler.path == "/api/providers":
+        _respond_post(handler, source, body, apply_providers_payload, kind="providers", include_app_path=True)
+        return
+    if handler.path == "/api/dependencies":
+        _respond_post(handler, source, body, apply_dependencies_payload, kind="dependencies", include_app_path=True)
+        return
     if handler.path == "/api/agent/run":
         _respond_post(handler, source, body, run_agent_payload_wrapper, kind="agent", include_session=True, include_app_path=True)
         return
@@ -300,7 +315,6 @@ def handle_api_post(handler: Any) -> None:
         return
     handler.send_error(404)
 
-
 def _auth_inputs(handler: Any, source: str) -> tuple[object, object | None, object]:
     app_path = Path(handler.server.app_path)  # type: ignore[attr-defined]
     project = load_project(app_path, source_overrides={app_path: source})
@@ -308,7 +322,6 @@ def _auth_inputs(handler: Any, source: str) -> tuple[object, object | None, obje
     store = handler._get_session().ensure_store(config)
     identity_schema = getattr(project.program, "identity", None)
     return config, identity_schema, store
-
 
 def _handle_session(handler: Any, source: str) -> tuple[dict, int, dict[str, str]]:
     try:
@@ -321,7 +334,6 @@ def _handle_session(handler: Any, source: str) -> tuple[dict, int, dict[str, str
         identity_schema=identity_schema,
         store=store,
     )
-
 
 def _handle_login(handler: Any, source: str, body: dict) -> tuple[dict, int, dict[str, str]]:
     try:
@@ -336,7 +348,6 @@ def _handle_login(handler: Any, source: str, body: dict) -> tuple[dict, int, dic
         store=store,
     )
 
-
 def _handle_logout(handler: Any, source: str) -> tuple[dict, int, dict[str, str]]:
     try:
         config, identity_schema, store = _auth_inputs(handler, source)
@@ -348,7 +359,6 @@ def _handle_logout(handler: Any, source: str) -> tuple[dict, int, dict[str, str]
         identity_schema=identity_schema,
         store=store,
     )
-
 
 def _respond_with_source(
     handler: Any,
@@ -378,7 +388,6 @@ def _respond_with_source(
         handler._respond_json(payload, status=500)
         return
 
-
 def _respond_simple(handler: Any, source: str, fn, *, kind: str, allow_error: bool = False) -> None:
     try:
         payload = fn(handler.server.app_path)  # type: ignore[attr-defined]
@@ -393,7 +402,6 @@ def _respond_simple(handler: Any, source: str, fn, *, kind: str, allow_error: bo
         payload = build_error_payload(str(err), kind="internal")
         handler._respond_json(payload, status=500)
         return
-
 
 def _respond_post(
     handler: Any,
@@ -426,7 +434,6 @@ def _respond_post(
         handler._respond_json(payload, status=500)
         return
 
-
 def _observability_payload(handler: Any, kind: str) -> dict:
     from namel3ss.observability.enablement import observability_enabled
 
@@ -436,7 +443,6 @@ def _observability_payload(handler: Any, kind: str) -> dict:
     if builder is None:
         return _empty_observability_payload(kind)
     return builder(handler.server.project_root, handler.server.app_path)  # type: ignore[attr-defined]
-
 
 def _load_observability_builder(kind: str):
     from namel3ss.runtime import observability_api
@@ -449,14 +455,12 @@ def _load_observability_builder(kind: str):
     }
     return mapping.get(kind)
 
-
 def _empty_observability_payload(kind: str) -> dict:
     if kind == "metrics":
         return {"ok": True, "counters": [], "timings": []}
     if kind in {"trace", "traces"}:
         return {"ok": True, "count": 0, "spans": []}
     return {"ok": True, "count": 0, "logs": []}
-
 
 def _trace_project_root(handler: Any) -> str | None:
     project_root = getattr(handler.server, "project_root", None)
@@ -467,24 +471,20 @@ def _trace_project_root(handler: Any) -> str | None:
         return str(Path(app_path).parent)
     return None
 
-
 def _trace_runs_payload(handler: Any) -> dict:
     from namel3ss.runtime.observability_api import get_trace_runs_payload
 
     return get_trace_runs_payload(_trace_project_root(handler), getattr(handler.server, "app_path", None))
-
 
 def _trace_latest_payload(handler: Any) -> dict:
     from namel3ss.runtime.observability_api import get_latest_trace_run_payload
 
     return get_latest_trace_run_payload(_trace_project_root(handler), getattr(handler.server, "app_path", None))
 
-
 def _trace_run_payload(handler: Any, run_id: str) -> dict:
     from namel3ss.runtime.observability_api import get_trace_run_payload
 
     return get_trace_run_payload(_trace_project_root(handler), getattr(handler.server, "app_path", None), run_id)
-
 
 def _query_int(value: object, *, default: int, minimum: int = 1) -> int:
     if value is None:

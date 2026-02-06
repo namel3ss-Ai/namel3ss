@@ -9,6 +9,7 @@
   const RUNNING_LABEL = "Running...";
   const SUCCESS_LABEL = "Run complete.";
   let runLabel = "Run";
+  let activeController = null;
 
   const PREFERRED_SEED_FLOWS = ["seed", "seed_data", "seed_demo", "demo_seed", "seed_customers"];
   const PREFERRED_RESET_FLOWS = ["reset", "reset_state", "reset_demo", "reset_dashboard", "clear_state"];
@@ -76,7 +77,7 @@
     state.setResetActionId(resetActionId);
   }
 
-  async function executeAction(actionId, payload) {
+  async function executeAction(actionId, payload, options) {
     if (!actionId) {
       setRunStatus("error", dom.buildErrorLines("No action selected."));
       return { ok: false, error: "No action selected." };
@@ -91,7 +92,27 @@
     setRunButtonBusy(true);
     setRunStatus("running", [RUNNING_LABEL]);
     try {
-      const data = await net.postJson("/api/action", { id: actionId, payload });
+      const opts = options || {};
+      const useStreaming = opts.stream !== false && net && typeof net.postSse === "function";
+      const onStreamEvent = typeof opts.onStreamEvent === "function" ? opts.onStreamEvent : null;
+      let data;
+      if (useStreaming) {
+        try {
+          activeController = new AbortController();
+          data = await net.postSse("/api/action/stream", { id: actionId, payload }, {
+            signal: activeController.signal,
+            onEvent: (event) => {
+              if (onStreamEvent) onStreamEvent(event);
+            },
+          });
+        } catch (streamErr) {
+          const cancelled = streamErr && (streamErr.name === "AbortError" || String(streamErr).toLowerCase().includes("abort"));
+          if (cancelled) throw streamErr;
+          data = await net.postJson("/api/action", { id: actionId, payload });
+        }
+      } else {
+        data = await net.postJson("/api/action", { id: actionId, payload });
+      }
       if (data && data.ui && root.refresh && root.refresh.applyManifest) {
         root.refresh.applyManifest(data.ui);
       }
@@ -111,16 +132,24 @@
       }
       return data;
     } catch (err) {
-      const detail = err && err.message ? err.message : String(err);
+      const cancelled = err && (err.name === "AbortError" || String(err).toLowerCase().includes("abort"));
+      const detail = cancelled ? "Streaming cancelled." : err && err.message ? err.message : String(err);
       if (actionResult && typeof actionResult.applyActionResult === "function") {
-        actionResult.applyActionResult({ ok: false, error: detail, kind: "engine" });
+        actionResult.applyActionResult({ ok: false, error: detail, kind: "engine", cancelled });
       }
       setRunStatus("error", dom.buildErrorLines(detail));
-      return { ok: false, error: detail };
+      return { ok: false, error: detail, cancelled };
     } finally {
+      activeController = null;
       setRunButtonBusy(false);
       if (root.menu && root.menu.updateMenuState) root.menu.updateMenuState();
     }
+  }
+
+  function cancelActiveAction() {
+    if (!activeController) return false;
+    activeController.abort();
+    return true;
   }
 
   async function runSeedAction() {
@@ -186,6 +215,7 @@
   run.runResetAction = runResetAction;
   run.replayLastAction = replayLastAction;
   run.exportTraces = exportTraces;
+  run.cancelActiveAction = cancelActiveAction;
 
   window.executeAction = executeAction;
 })();

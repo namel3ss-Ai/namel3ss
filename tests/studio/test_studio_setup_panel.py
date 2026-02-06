@@ -7,6 +7,7 @@ def test_studio_setup_panel_smoke():
     assert 'id="setup"' in html
     assert 'id="setupBanner"' in html
     assert 'id="secretsModal"' in html
+    assert "/studio/provider_setup.js" in html
 
     js = Path("src/namel3ss/studio/web/studio/setup.js").read_text(encoding="utf-8")
     assert "Missing secrets:" in js
@@ -19,3 +20,6 @@ def test_studio_setup_panel_smoke():
     keys_js = Path("src/namel3ss/studio/web/studio/secret_keys.js").read_text(encoding="utf-8")
     assert "OPENAI_API_KEY" in keys_js
     assert "GOOGLE_API_KEY" in keys_js
+    assert "NAMEL3SS_HUGGINGFACE_API_KEY" in keys_js
+    assert "NAMEL3SS_SPEECH_API_KEY" in keys_js
+    assert "NAMEL3SS_THIRD_PARTY_APIS_KEY" in keys_js

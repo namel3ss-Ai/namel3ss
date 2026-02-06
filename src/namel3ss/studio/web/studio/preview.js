@@ -58,8 +58,8 @@
     isAsking = loading;
     const { askButton } = getElements();
     if (!askButton) return;
-    askButton.textContent = loading ? "Asking..." : "Ask AI";
-    askButton.disabled = loading || !askActionId;
+    askButton.textContent = loading ? "Stop" : "Ask AI";
+    askButton.disabled = !askActionId;
   }
 
   function flattenElements(elements) {
@@ -135,9 +135,31 @@
     }
     setHint("", false);
     setAskLoading(true);
+    let streamAnswer = "";
+    setAnswer("Thinking...", false);
     try {
       const payload = { values: { question } };
-      const result = await root.run.executeAction(askActionId, payload);
+      const result = await root.run.executeAction(askActionId, payload, {
+        stream: true,
+        onStreamEvent: (event) => {
+          const eventType = event && event.event ? event.event : "";
+          const data = event && event.data && typeof event.data === "object" ? event.data : null;
+          if (!data) return;
+          if (eventType === "token" && typeof data.output === "string") {
+            streamAnswer += data.output;
+            setAnswer(streamAnswer, Boolean(streamAnswer));
+            return;
+          }
+          if (eventType === "finish" && typeof data.output === "string") {
+            streamAnswer = data.output;
+            setAnswer(streamAnswer, Boolean(streamAnswer));
+          }
+        },
+      });
+      if (result && result.cancelled) {
+        setHint("Streaming cancelled.", true);
+        return;
+      }
       const manifest = (result && result.ui) || state.getCachedManifest();
       if (manifest) applyManifest(manifest);
       if (root.feedback && typeof root.feedback.setPreviewContext === "function") {
@@ -169,12 +191,20 @@
 
   function setupPreview() {
     const { askButton, input, whyButton } = getElements();
-    if (askButton) askButton.addEventListener("click", () => askQuestion());
+    if (askButton) {
+      askButton.addEventListener("click", () => {
+        if (isAsking && root.run && typeof root.run.cancelActiveAction === "function") {
+          root.run.cancelActiveAction();
+          return;
+        }
+        askQuestion();
+      });
+    }
     if (input) {
       input.addEventListener("keydown", (event) => {
         if (event.key === "Enter") {
           event.preventDefault();
-          askQuestion();
+          if (!isAsking) askQuestion();
         }
       });
     }

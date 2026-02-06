@@ -68,6 +68,8 @@ def _apply_toml_config(config: AppConfig, data: Dict[str, Any]) -> None:
     _apply_foreign_toml(config, data.get("foreign"))
     _apply_tool_packs_toml(config, data.get("tool_packs") or data.get("packs"))
     _apply_memory_packs_toml(config, data.get("memory_packs"))
+    _apply_performance_toml(config, data.get("performance"))
+    _apply_determinism_toml(config, data.get("determinism"))
     _apply_registries_toml(config, data.get("registries"))
     _apply_capability_overrides_toml(config, data.get("capability_overrides"))
 
@@ -288,6 +290,72 @@ def _apply_memory_packs_toml(config: AppConfig, table: Any) -> None:
     overrides = table.get("agent_overrides") or table.get("agent_packs") or table.get("agents")
     if overrides is not None:
         config.memory_packs.agent_overrides = _ensure_str_map(overrides, "memory_packs.agent_overrides")
+
+
+def _apply_performance_toml(config: AppConfig, table: Any) -> None:
+    if not isinstance(table, dict):
+        return
+    async_runtime = table.get("async_runtime")
+    if async_runtime is not None:
+        if not isinstance(async_runtime, bool):
+            raise Namel3ssError("performance.async_runtime must be true or false")
+        config.performance.async_runtime = async_runtime
+    max_concurrency = table.get("max_concurrency")
+    if max_concurrency is not None:
+        try:
+            value = int(max_concurrency)
+        except (TypeError, ValueError) as err:
+            raise Namel3ssError("performance.max_concurrency must be an integer") from err
+        if value < 1:
+            raise Namel3ssError("performance.max_concurrency must be >= 1")
+        config.performance.max_concurrency = value
+    cache_size = table.get("cache_size")
+    if cache_size is not None:
+        try:
+            value = int(cache_size)
+        except (TypeError, ValueError) as err:
+            raise Namel3ssError("performance.cache_size must be an integer") from err
+        if value < 0:
+            raise Namel3ssError("performance.cache_size must be >= 0")
+        config.performance.cache_size = value
+    enable_batching = table.get("enable_batching")
+    if enable_batching is not None:
+        if not isinstance(enable_batching, bool):
+            raise Namel3ssError("performance.enable_batching must be true or false")
+        config.performance.enable_batching = enable_batching
+    metrics_endpoint = table.get("metrics_endpoint")
+    if metrics_endpoint is not None:
+        config.performance.metrics_endpoint = str(metrics_endpoint)
+
+
+def _apply_determinism_toml(config: AppConfig, table: Any) -> None:
+    if not isinstance(table, dict):
+        return
+    seed = table.get("seed")
+    if seed is None:
+        config.determinism.seed = None
+    elif isinstance(seed, bool):
+        raise Namel3ssError("determinism.seed must be an integer, string, or null")
+    elif isinstance(seed, int):
+        if seed < 0:
+            raise Namel3ssError("determinism.seed must be >= 0")
+        config.determinism.seed = seed
+    elif isinstance(seed, str):
+        text = seed.strip()
+        config.determinism.seed = text or None
+    else:
+        raise Namel3ssError("determinism.seed must be an integer, string, or null")
+    explain = table.get("explain")
+    if explain is not None:
+        if not isinstance(explain, bool):
+            raise Namel3ssError("determinism.explain must be true or false")
+        config.determinism.explain = explain
+    redact_user_data = table.get("redact_user_data")
+    if redact_user_data is not None:
+        if not isinstance(redact_user_data, bool):
+            raise Namel3ssError("determinism.redact_user_data must be true or false")
+        config.determinism.redact_user_data = redact_user_data
+
 
 def _apply_registries_toml(config: AppConfig, table: Any) -> None:
     from namel3ss.config.model import RegistrySourceConfig, RegistriesConfig

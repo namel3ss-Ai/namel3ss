@@ -30,6 +30,12 @@ jobs:
       - name: Compile check
         run: python -m compileall src -q -x '.*namel3ss/runtime/build.*'
 
+      - name: Code audit report check
+        run: python scripts/audit_codebase.py --check
+
+      - name: Baseline metrics check
+        run: python scripts/measure_baseline.py --check --timing deterministic
+
       - name: Security hardening scan
         run: python tools/security_hardening_scan.py --json .namel3ss/ci_artifacts/security_scan.json
 
@@ -53,6 +59,75 @@ jobs:
           cp "${tmp_log}" .namel3ss/ci_artifacts/pytest_release_gate.log
           echo "${status}" > .namel3ss/ci_artifacts/pytest_exit_code.txt
           exit ${status}
+
+      - name: Multimodal deterministic suite
+        run: |
+          python -m pytest -q \
+            tests/runtime/test_ai_multimodal_input.py \
+            tests/ir/test_lowering_capabilities.py \
+            tests/spec_check/test_multimodal_required_capabilities.py
+
+      - name: Training deterministic suite
+        run: |
+          python -m pytest -q \
+            tests/cli/test_cli_train_command.py \
+            tests/training/test_training_runner.py \
+            tests/training/test_dataset_utils.py \
+            tests/scripts/test_convert_state_to_training_dataset.py
+
+      - name: Provider ecosystem suite
+        run: |
+          python -m pytest -q \
+            tests/providers/test_capabilities.py \
+            tests/providers/test_pack_registry.py \
+            tests/runtime/test_provider_pack_runtime.py \
+            tests/studio/test_studio_providers_api.py \
+            tests/studio/test_studio_provider_setup_panel.py \
+            tests/docs/test_providers_supported_doc.py \
+            tests/docs/test_providers_doc_contract.py \
+            tests/pkg/test_pkg_index.py
+
+      - name: Streaming suite
+        run: |
+          python -m pytest -q \
+            tests/parser/test_ai_parse.py \
+            tests/ir/test_lowering_capabilities.py \
+            tests/runtime/test_ai_streaming.py \
+            tests/spec_check/test_streaming_required_capabilities.py \
+            tests/studio/test_studio_minimal_routes.py \
+            tests/docs/test_streaming_doc_contract.py
+
+      - name: Performance suite
+        run: |
+          python -m pytest -q \
+            tests/config/test_performance_config.py \
+            tests/cli/test_run_mode_performance_flags.py \
+            tests/runtime/test_performance_capability_guard.py \
+            tests/runtime/test_performance_runtime.py \
+            tests/spec_check/test_performance_required_capabilities.py \
+            tests/docs/test_performance_doc_contract.py
+
+      - name: Determinism and explainability suite
+        run: |
+          python -m pytest -q \
+            tests/config/test_determinism_config.py \
+            tests/runtime/test_explainability_seed_manager.py \
+            tests/runtime/test_explainability_runtime_log.py \
+            tests/runtime/test_retrieval_explain_logging.py \
+            tests/cli/test_cli_replay_command.py \
+            tests/docs/test_explainability_doc_contract.py
+
+      - name: Dependency management suite
+        run: |
+          python -m pytest -q \
+            tests/parser/test_capabilities_jobs_parser.py \
+            tests/pkg/test_manifest_parser.py \
+            tests/pkg/test_lockfile_io.py \
+            tests/pkg/test_runtime_dependencies.py \
+            tests/cli/test_cli_dependency_management.py \
+            tests/studio/test_studio_dependencies_api.py \
+            tests/studio/test_studio_dependency_setup_panel.py \
+            tests/docs/test_dependency_management_doc_contract.py
 
       - name: Release smoke (build + start)
         run: python -m pytest -q tests/runtime/test_production_server.py

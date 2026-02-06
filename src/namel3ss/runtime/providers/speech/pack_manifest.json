@@ -1,0 +1,10 @@
+{
+  "name": "speech",
+  "capability_token": "speech",
+  "supported_modes": ["audio"],
+  "models": [
+    "speech:whisper-base",
+    "speech:coqui-tts",
+    "speech:cloud-tts"
+  ]
+}

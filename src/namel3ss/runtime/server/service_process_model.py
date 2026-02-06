@@ -7,7 +7,10 @@ from namel3ss.runtime.server.worker_pool import ServiceActionWorkerPool, capabil
 
 def configure_server_process_model(*, server, program_ir, app_path: Path, concurrency) -> ServiceActionWorkerPool | None:
     worker_processes = int(getattr(concurrency, "worker_processes", 1))
-    if capability_enabled(program_ir, "performance_scalability") and worker_processes > 1:
+    performance_enabled = capability_enabled(program_ir, "performance") or capability_enabled(
+        program_ir, "performance_scalability"
+    )
+    if performance_enabled and worker_processes > 1:
         worker_pool = ServiceActionWorkerPool(app_path=app_path, workers=worker_processes)
         server.worker_pool = worker_pool  # type: ignore[attr-defined]
         server.process_model = f"worker_pool:{worker_processes}"  # type: ignore[attr-defined]

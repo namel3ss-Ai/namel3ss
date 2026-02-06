@@ -416,6 +416,43 @@ let renderUI = (manifest) => {
       wrapper.appendChild(placeholder);
       return wrapper;
     }
+    if (el.type === "audio") {
+      const wrapper = document.createElement("div");
+      wrapper.className = "ui-element ui-audio-wrapper";
+      const src = typeof el.src === "string" ? el.src : "";
+      const name = typeof el.media_name === "string" ? el.media_name : "";
+      const label = typeof el.label === "string" ? el.label : name || "audio";
+      if (label) {
+        const title = document.createElement("div");
+        title.className = "ui-audio-label";
+        title.textContent = label;
+        wrapper.appendChild(title);
+      }
+      if (src) {
+        const audio = document.createElement("audio");
+        audio.className = "ui-audio";
+        audio.controls = true;
+        audio.preload = "metadata";
+        audio.src = src;
+        audio.setAttribute("aria-label", label);
+        wrapper.appendChild(audio);
+        if (typeof el.transcript === "string" && el.transcript) {
+          const transcript = document.createElement("div");
+          transcript.className = "ui-audio-transcript";
+          transcript.textContent = el.transcript;
+          wrapper.appendChild(transcript);
+        }
+        return wrapper;
+      }
+      const placeholder = document.createElement("div");
+      placeholder.className = "ui-audio";
+      placeholder.textContent = el.missing ? `${label} (missing)` : label;
+      if (el.missing && el.fix_hint) {
+        placeholder.title = el.fix_hint;
+      }
+      wrapper.appendChild(placeholder);
+      return wrapper;
+    }
     const wrapper = document.createElement("div");
     wrapper.className = "ui-element";
     if (el.type === "title") {

@@ -101,3 +101,29 @@ def test_manifest_rejects_dependency_conflict_between_toml_and_metadata(tmp_path
     )
     with pytest.raises(Namel3ssError):
         load_manifest(tmp_path)
+
+
+def test_manifest_parses_runtime_dependencies(tmp_path: Path) -> None:
+    path = tmp_path / "namel3ss.toml"
+    path.write_text(
+        '[dependencies]\ninv = "github:owner/repo@v0.1.0"\n\n'
+        "[runtime.dependencies]\n"
+        'python = ["requests==2.31.0", "httpx@0.27.0"]\n'
+        'system = ["postgresql-client@13"]\n',
+        encoding="utf-8",
+    )
+    manifest = load_manifest(tmp_path)
+    assert manifest.runtime_python_dependencies == ("httpx@0.27.0", "requests==2.31.0")
+    assert manifest.runtime_system_dependencies == ("postgresql-client@13",)
+
+
+def test_manifest_runtime_dependencies_must_be_string_lists(tmp_path: Path) -> None:
+    path = tmp_path / "namel3ss.toml"
+    path.write_text(
+        '[dependencies]\ninv = "github:owner/repo@v0.1.0"\n\n'
+        "[runtime.dependencies]\n"
+        "python = 123\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(Namel3ssError):
+        load_manifest(tmp_path)

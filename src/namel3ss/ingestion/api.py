@@ -360,6 +360,8 @@ def _prepare_ingestion(
         "status": status,
         "method_used": method_used,
         "detected": detected,
+        "image_resolution": detected.get("image_resolution"),
+        "audio_duration_ms": detected.get("audio_duration_ms"),
         "signals": signals,
         "preview": preview_text(
             sanitized,
