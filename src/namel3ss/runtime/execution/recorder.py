@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from namel3ss.runtime.execution.step import ExecutionStep
+from namel3ss.runtime.security.resource_limits import enforce_resource_limits
 
 
 def record_step(
@@ -28,6 +29,12 @@ def record_step(
     steps = getattr(ctx, "execution_steps", None)
     if isinstance(steps, list):
         steps.append(step.as_dict())
+    enforce_resource_limits(
+        ctx,
+        stage=kind,
+        line=line,
+        column=column,
+    )
     return step
 
 

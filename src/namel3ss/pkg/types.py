@@ -29,6 +29,9 @@ class DependencySpec:
 @dataclass
 class Manifest:
     dependencies: Dict[str, DependencySpec] = field(default_factory=dict)
+    package_name: str | None = None
+    package_version: str | None = None
+    capabilities: tuple[str, ...] = ()
     path: Optional[Path] = None
 
 

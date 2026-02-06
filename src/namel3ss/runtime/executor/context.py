@@ -76,6 +76,7 @@ class ExecutionContext:
     encryption_service: object | None = None
     model_manager: object | None = None
     sandbox_config: object | None = None
+    resource_limits: object | None = None
     last_order_target: ir.Assignable | None = None
     flow_map: Dict[str, ir.Flow] = field(default_factory=dict)
     flow_contracts: Dict[str, ir.ContractDecl] = field(default_factory=dict)

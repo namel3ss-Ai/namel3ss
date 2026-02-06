@@ -25,6 +25,9 @@ from namel3ss.runtime.server.observability_helpers import (
     load_observability_builder,
     observability_enabled,
 )
+from namel3ss.runtime.server.concurrency import create_runtime_http_server, load_concurrency_config
+from namel3ss.runtime.server.service_process_model import configure_server_process_model
+from namel3ss.runtime.server.worker_pool import ServiceActionWorkerPool
 from namel3ss.runtime.router.dispatch import dispatch_route
 from namel3ss.runtime.router.refresh import refresh_routes
 from namel3ss.runtime.router.registry import RouteRegistry
@@ -32,9 +35,7 @@ from namel3ss.runtime.router.program_state import ProgramState
 from namel3ss.runtime.service_helpers import contract_kind_for_path, seed_flow, should_auto_seed, summarize_program
 from namel3ss.runtime.storage.factory import create_store
 
-
 DEFAULT_SERVICE_PORT = 8787
-
 
 class ServiceRequestHandler(BaseHTTPRequestHandler):
     def log_message(self, format: str, *args: Any) -> None:  # pragma: no cover - silence logs
@@ -60,6 +61,8 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
         path = parsed.path
+        if path == "/api/ui/action":
+            path = "/api/action"
         if path == "/api/action":
             body = self._read_json_body()
             if body is None:
@@ -80,8 +83,10 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         return {
             "ok": True,
             "status": "ready",
+            "headless": bool(getattr(self.server, "headless", False)),  # type: ignore[attr-defined]
             "target": getattr(self.server, "target", "service"),  # type: ignore[attr-defined]
             "process_model": getattr(self.server, "process_model", "service"),  # type: ignore[attr-defined]
+            "concurrency": getattr(self.server, "concurrency", None),  # type: ignore[attr-defined]
             "build_id": getattr(self.server, "build_id", None),  # type: ignore[attr-defined]
             "app_path": getattr(self.server, "app_path", None),  # type: ignore[attr-defined]
             "summary": getattr(self.server, "program_summary", {}),  # type: ignore[attr-defined]
@@ -125,6 +130,18 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
 
     def _handle_api_get(self, path: str) -> None:
         normalized = path.rstrip("/") or "/"
+        if normalized == "/api/ui/manifest":
+            self._respond_contract("ui")
+            return
+        if normalized == "/api/ui/actions":
+            self._respond_contract("actions")
+            return
+        if normalized == "/api/ui/state":
+            state = self._program_state()
+            revision = getattr(state, "revision", "") if state is not None else ""
+            payload = {"ok": True, "api_version": "1", "state": {"current_page": None, "values": {}, "errors": []}, "revision": revision}
+            self._respond_json(payload, status=200, sort_keys=True)
+            return
         contract_kind = contract_kind_for_path(normalized)
         if contract_kind is not None:
             self._respond_contract(contract_kind)
@@ -195,8 +212,14 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
             self._respond_json(build_error_payload("Program not loaded", kind="engine"), status=500)
             return
         try:
-            response = dispatch_ui_action(program_ir, action_id=action_id, payload=payload)
+            worker_pool = getattr(self.server, "worker_pool", None)  # type: ignore[attr-defined]
+            if worker_pool is not None:
+                response = worker_pool.run_action(action_id, payload)
+            else:
+                response = dispatch_ui_action(program_ir, action_id=action_id, payload=payload)
             if isinstance(response, dict):
+                if worker_pool is not None:
+                    response.setdefault("process_model", "worker_pool")
                 status = 200 if response.get("ok", True) else 400
                 self._respond_json(response, status=status)
             else:  # pragma: no cover - defensive
@@ -301,6 +324,8 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         return payload, status
 
     def _handle_static(self, path: str) -> bool:
+        if bool(getattr(self.server, "headless", False)):  # type: ignore[attr-defined]
+            return False
         ui_root = getattr(self.server, "external_ui_root", None)  # type: ignore[attr-defined]
         if ui_root is None:
             return False
@@ -392,7 +417,6 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
     def _program(self):
         return self._ensure_program()
 
-
 class ServiceRunner:
     def __init__(
         self,
@@ -403,6 +427,7 @@ class ServiceRunner:
         *,
         auto_seed: bool = False,
         seed_flow: str = "seed_demo",
+        headless: bool = False,
     ):
         self.app_path = Path(app_path).resolve()
         self.target = target
@@ -410,9 +435,12 @@ class ServiceRunner:
         self.port = port or DEFAULT_SERVICE_PORT
         self.auto_seed = auto_seed
         self.seed_flow = seed_flow
+        self.headless = headless
         self.server: HTTPServer | None = None
         self._thread: threading.Thread | None = None
+        self._worker_pool: ServiceActionWorkerPool | None = None
         self.program_summary: Dict[str, object] = {}
+        self.concurrency = load_concurrency_config(app_path=self.app_path)
 
     def start(self, *, background: bool = False) -> None:
         program_state = ProgramState(self.app_path)
@@ -426,19 +454,26 @@ class ServiceRunner:
             getattr(program_ir, "project_root", None),
             getattr(program_ir, "app_path", None),
         )
-        server = HTTPServer(("0.0.0.0", self.port), ServiceRequestHandler)
+        server = create_runtime_http_server("0.0.0.0", self.port, ServiceRequestHandler, config=self.concurrency)
         server.target = self.target  # type: ignore[attr-defined]
         server.build_id = self.build_id  # type: ignore[attr-defined]
         server.app_path = self.app_path.as_posix()  # type: ignore[attr-defined]
-        server.process_model = "service"  # type: ignore[attr-defined]
+        self._worker_pool = configure_server_process_model(
+            server=server,
+            program_ir=program_ir,
+            app_path=self.app_path,
+            concurrency=self.concurrency,
+        )
+        server.concurrency = self.concurrency.to_dict()  # type: ignore[attr-defined]
+        server.headless = self.headless  # type: ignore[attr-defined]
         server.program_summary = self.program_summary  # type: ignore[attr-defined]
         server.program_ir = program_ir  # type: ignore[attr-defined]
         server.program_state = program_state  # type: ignore[attr-defined]
         registry = RouteRegistry()
         refresh_routes(program=program_ir, registry=registry, revision=program_state.revision, logger=print)
         server.route_registry = registry  # type: ignore[attr-defined]
-        server.external_ui_root = external_ui_root  # type: ignore[attr-defined]
-        server.external_ui_enabled = external_ui_root is not None  # type: ignore[attr-defined]
+        server.external_ui_root = None if self.headless else external_ui_root  # type: ignore[attr-defined]
+        server.external_ui_enabled = bool(not self.headless and external_ui_root is not None)  # type: ignore[attr-defined]
         self.server = server
         if background:
             thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -455,11 +490,11 @@ class ServiceRunner:
                 pass
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=1)
+        if self._worker_pool is not None:
+            self._worker_pool.shutdown()
+            self._worker_pool = None
 
     @property
     def bound_port(self) -> int:
-        if self.server:
-            return int(self.server.server_address[1])
-        return self.port
-
+        return int(self.server.server_address[1]) if self.server else self.port
 __all__ = ["DEFAULT_SERVICE_PORT", "ServiceRunner"]
