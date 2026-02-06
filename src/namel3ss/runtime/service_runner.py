@@ -1,13 +1,10 @@
 from __future__ import annotations
-
 import json
 from types import SimpleNamespace
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
-from typing import Any, Dict
 from urllib.parse import parse_qs, urlparse
-
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
@@ -19,35 +16,36 @@ from namel3ss.ui.export.contract import build_ui_contract_payload
 from namel3ss.ui.external.detect import resolve_external_ui_root
 from namel3ss.ui.external.serve import resolve_external_ui_file
 from namel3ss.utils.json_tools import dumps as json_dumps
-from namel3ss.version import get_version
 from namel3ss.runtime.server.observability_helpers import (
     empty_observability_payload,
     load_observability_builder,
     observability_enabled,
 )
 from namel3ss.runtime.server.concurrency import create_runtime_http_server, load_concurrency_config
+from namel3ss.runtime.server.metadata_payloads import build_health_payload, build_version_payload
 from namel3ss.runtime.server.service_process_model import configure_server_process_model
+from namel3ss.runtime.server.cluster_control import ClusterControlPlane
 from namel3ss.runtime.server.worker_pool import ServiceActionWorkerPool
+from namel3ss.runtime.server.webhook_triggers import handle_webhook_trigger_post
 from namel3ss.runtime.router.dispatch import dispatch_route
 from namel3ss.runtime.router.refresh import refresh_routes
 from namel3ss.runtime.router.registry import RouteRegistry
 from namel3ss.runtime.router.program_state import ProgramState
+from namel3ss.runtime.security.retention_loop import run_retention_loop
 from namel3ss.runtime.service_helpers import contract_kind_for_path, seed_flow, should_auto_seed, summarize_program
 from namel3ss.runtime.storage.factory import create_store
-
+from namel3ss.runtime.triggers import run_service_trigger_loop
 DEFAULT_SERVICE_PORT = 8787
-
 class ServiceRequestHandler(BaseHTTPRequestHandler):
-    def log_message(self, format: str, *args: Any) -> None:  # pragma: no cover - silence logs
+    def log_message(self, format: str, *args) -> None:  # pragma: no cover - silence logs
         pass
-
     def do_GET(self) -> None:  # noqa: N802
         path = urlparse(self.path).path
         if path.startswith("/health"):
-            self._respond_json(self._health_payload())
+            self._respond_json(build_health_payload(self.server))
             return
         if path.startswith("/version"):
-            self._respond_json(self._version_payload())
+            self._respond_json(build_version_payload(self.server))
             return
         if path.startswith("/api/"):
             self._handle_api_get(path)
@@ -57,7 +55,6 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         if self._handle_static(path):
             return
         self.send_error(404)
-
     def do_POST(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
         path = parsed.path
@@ -75,31 +72,16 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
             response, status = self._handle_upload_post(parsed.query)
             self._respond_json(response, status=status)
             return
+        if handle_webhook_trigger_post(
+            path=path,
+            program=self._program(),
+            read_json_body=self._read_json_body,
+            respond_json=self._respond_json,
+        ):
+            return
         if self._dispatch_dynamic_route():
             return
         self.send_error(404)
-
-    def _health_payload(self) -> Dict[str, object]:
-        return {
-            "ok": True,
-            "status": "ready",
-            "headless": bool(getattr(self.server, "headless", False)),  # type: ignore[attr-defined]
-            "target": getattr(self.server, "target", "service"),  # type: ignore[attr-defined]
-            "process_model": getattr(self.server, "process_model", "service"),  # type: ignore[attr-defined]
-            "concurrency": getattr(self.server, "concurrency", None),  # type: ignore[attr-defined]
-            "build_id": getattr(self.server, "build_id", None),  # type: ignore[attr-defined]
-            "app_path": getattr(self.server, "app_path", None),  # type: ignore[attr-defined]
-            "summary": getattr(self.server, "program_summary", {}),  # type: ignore[attr-defined]
-        }
-
-    def _version_payload(self) -> Dict[str, object]:
-        return {
-            "ok": True,
-            "version": get_version(),
-            "target": getattr(self.server, "target", "service"),  # type: ignore[attr-defined]
-            "build_id": getattr(self.server, "build_id", None),  # type: ignore[attr-defined]
-        }
-
     def _respond_json(self, payload: dict, status: int = 200, *, sort_keys: bool = False, headers: dict[str, str] | None = None) -> None:
         data = json_dumps(payload, sort_keys=sort_keys).encode("utf-8")
         self.send_response(status)
@@ -110,7 +92,6 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
                 self.send_header(key, value)
         self.end_headers()
         self.wfile.write(data)
-
     def _respond_body(
         self,
         body: bytes,
@@ -127,7 +108,6 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
                 self.send_header(key, value)
         self.end_headers()
         self.wfile.write(body)
-
     def _handle_api_get(self, path: str) -> None:
         normalized = path.rstrip("/") or "/"
         if normalized == "/api/ui/manifest":
@@ -177,7 +157,6 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         if self._dispatch_dynamic_route():
             return
         self.send_error(404)
-
     def _respond_contract(self, kind: str) -> None:
         program_ir = self._program()
         if program_ir is None:
@@ -194,7 +173,6 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         except Exception as err:  # pragma: no cover - defensive guard rail
             payload = build_error_payload(str(err), kind="internal")
             self._respond_json(payload, status=500)
-
     def _handle_action_post(self, body: dict) -> None:
         if not isinstance(body, dict):
             self._respond_json(build_error_payload("Body must be a JSON object", kind="engine"), status=400)
@@ -231,7 +209,6 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         except Exception as err:  # pragma: no cover - defensive
             payload = build_error_payload(f"Action failed: {err}", kind="engine")
             self._respond_json(payload, status=500)
-
     def _handle_upload_post(self, query: str) -> tuple[dict, int]:
         program_ir = self._program()
         if program_ir is None:
@@ -272,7 +249,6 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
             payload = build_error_payload(str(err), kind="internal")
             payload = apply_upload_error_payload(payload, recorder)
             return payload, 500
-
     def _handle_upload_list(self) -> tuple[dict, int]:
         program_ir = self._program()
         if program_ir is None:
@@ -291,7 +267,6 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         except Exception as err:  # pragma: no cover - defensive
             payload = build_error_payload(str(err), kind="internal")
             return payload, 500
-
     def _handle_observability(self, kind: str) -> tuple[dict, int]:
         program_ir = self._program()
         if program_ir is None:
@@ -306,7 +281,6 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         payload = builder(getattr(program_ir, "project_root", None), getattr(program_ir, "app_path", None))
         status = 200 if payload.get("ok", True) else 400
         return payload, status
-
     def _handle_build(self) -> tuple[dict, int]:
         program_ir = self._program()
         root = getattr(program_ir, "project_root", None) if program_ir is not None else None
@@ -314,7 +288,6 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         payload = get_build_payload(root, app_path)
         status = 200 if payload.get("ok", True) else 400
         return payload, status
-
     def _handle_deploy(self) -> tuple[dict, int]:
         program_ir = self._program()
         root = getattr(program_ir, "project_root", None) if program_ir is not None else None
@@ -322,7 +295,6 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         payload = get_deploy_payload(root, app_path, program=program_ir, target=getattr(self.server, "target", None))
         status = 200 if payload.get("ok", True) else 400
         return payload, status
-
     def _handle_static(self, path: str) -> bool:
         if bool(getattr(self.server, "headless", False)):  # type: ignore[attr-defined]
             return False
@@ -339,7 +311,6 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(content)
         return True
-
     def _read_json_body(self) -> dict | None:
         length = int(self.headers.get("Content-Length", "0"))
         raw_body = self.rfile.read(length) if length else b""
@@ -348,11 +319,12 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
             return json.loads(decoded or "{}")
         except json.JSONDecodeError:
             return None
-
     def _dispatch_dynamic_route(self) -> bool:
         program = self._ensure_program()
         if program is None:
             return False
+        worker_pool = getattr(self.server, "worker_pool", None)  # type: ignore[attr-defined]
+        flow_executor = worker_pool.run_flow if worker_pool is not None else None
         registry = self._route_registry()
         state = self._program_state()
         revision = getattr(state, "revision", None) if state else None
@@ -367,6 +339,7 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
             identity=None,
             auth_context=None,
             store=self._ensure_store(program),
+            flow_executor=flow_executor,
         )
         if result is None:
             return False
@@ -380,7 +353,6 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
             return True
         self._respond_json(result.payload or {}, status=result.status, sort_keys=True, headers=result.headers)
         return True
-
     def _ensure_program(self):
         state = self._program_state()
         if state is None:
@@ -391,14 +363,12 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
                 self.server.program_ir = program  # type: ignore[attr-defined]
                 self.server.program_summary = summarize_program(program)  # type: ignore[attr-defined]
         return state.program
-
     def _route_registry(self) -> RouteRegistry:
         registry = getattr(self.server, "route_registry", None)  # type: ignore[attr-defined]
         if registry is None:
             registry = RouteRegistry()
             self.server.route_registry = registry  # type: ignore[attr-defined]
         return registry
-
     def _ensure_store(self, program):
         store = getattr(self.server, "flow_store", None)  # type: ignore[attr-defined]
         if store is not None:
@@ -410,13 +380,10 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         store = create_store(config=config)
         self.server.flow_store = store  # type: ignore[attr-defined]
         return store
-
     def _program_state(self):
         return getattr(self.server, "program_state", None)  # type: ignore[attr-defined]
-
     def _program(self):
         return self._ensure_program()
-
 class ServiceRunner:
     def __init__(
         self,
@@ -438,10 +405,14 @@ class ServiceRunner:
         self.headless = headless
         self.server: HTTPServer | None = None
         self._thread: threading.Thread | None = None
+        self._trigger_thread: threading.Thread | None = None
+        self._trigger_stop = threading.Event()
+        self._retention_thread: threading.Thread | None = None
+        self._retention_stop = threading.Event()
         self._worker_pool: ServiceActionWorkerPool | None = None
-        self.program_summary: Dict[str, object] = {}
+        self._cluster_control: ClusterControlPlane | None = None
+        self.program_summary: dict[str, object] = {}
         self.concurrency = load_concurrency_config(app_path=self.app_path)
-
     def start(self, *, background: bool = False) -> None:
         program_state = ProgramState(self.app_path)
         program_ir = program_state.program
@@ -475,14 +446,39 @@ class ServiceRunner:
         server.external_ui_root = None if self.headless else external_ui_root  # type: ignore[attr-defined]
         server.external_ui_enabled = bool(not self.headless and external_ui_root is not None)  # type: ignore[attr-defined]
         self.server = server
+        self._cluster_control = ClusterControlPlane(
+            project_root=self.app_path.parent,
+            app_path=self.app_path,
+            worker_pool=self._worker_pool,
+            server=server,
+        )
+        self._cluster_control.start()
+        self._trigger_stop.clear()
+        self._trigger_thread = threading.Thread(
+            target=run_service_trigger_loop,
+            kwargs={"stop_event": self._trigger_stop, "program_state": program_state, "flow_store": getattr(server, "flow_store", None)},
+            daemon=True,
+        )
+        self._trigger_thread.start()
+        self._retention_stop.clear()
+        self._retention_thread = threading.Thread(
+            target=run_retention_loop,
+            kwargs={"stop_event": self._retention_stop, "program_state": program_state},
+            daemon=True,
+        )
+        self._retention_thread.start()
         if background:
             thread = threading.Thread(target=server.serve_forever, daemon=True)
             thread.start()
             self._thread = thread
         else:
             server.serve_forever()
-
     def shutdown(self) -> None:
+        self._trigger_stop.set()
+        self._retention_stop.set()
+        if self._cluster_control is not None:
+            self._cluster_control.stop()
+            self._cluster_control = None
         if self.server:
             try:
                 self.server.shutdown()
@@ -490,10 +486,13 @@ class ServiceRunner:
                 pass
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=1)
+        if self._trigger_thread and self._trigger_thread.is_alive():
+            self._trigger_thread.join(timeout=1)
+        if self._retention_thread and self._retention_thread.is_alive():
+            self._retention_thread.join(timeout=1)
         if self._worker_pool is not None:
             self._worker_pool.shutdown()
             self._worker_pool = None
-
     @property
     def bound_port(self) -> int:
         return int(self.server.server_address[1]) if self.server else self.port

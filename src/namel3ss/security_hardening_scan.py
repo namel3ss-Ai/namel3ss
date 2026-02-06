@@ -166,7 +166,7 @@ def _scan_text_files_for_secrets(repo_root: Path) -> list[SecurityScanIssue]:
 
 
 def _iter_python_files(repo_root: Path) -> Iterable[Path]:
-    for base in (repo_root / "src", repo_root / "tools"):
+    for base in (repo_root / "src", repo_root / "tools", repo_root / "tests"):
         if not base.exists():
             continue
         yield from sorted(base.rglob("*.py"))

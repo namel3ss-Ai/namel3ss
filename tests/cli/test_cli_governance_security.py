@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 from namel3ss.cli.main import main as cli_main
@@ -183,3 +184,35 @@ def test_cli_policy_check_and_audit_filters(tmp_path: Path, capsys, monkeypatch)
     assert audit_filtered["ok"] is True
     assert audit_filtered["count"] >= 1
     assert all(item["action"] == "secret_add" for item in audit_filtered["entries"])
+
+
+def test_cli_security_purge_removes_expired_files(tmp_path: Path, capsys, monkeypatch) -> None:
+    _write_app(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "security.yaml").write_text(
+        (
+            'version: "1.0"\n'
+            "encryption:\n"
+            "  enabled: true\n"
+            '  algorithm: "aes-256-gcm"\n'
+            "  key: env:N3_ENCRYPTION_KEY\n"
+            "resource_limits:\n"
+            "  max_memory_mb: 64\n"
+            "  max_cpu_ms: 5000\n"
+            "retention:\n"
+            "  feedback: 1\n"
+        ),
+        encoding="utf-8",
+    )
+    feedback_file = tmp_path / ".namel3ss" / "feedback.jsonl"
+    feedback_file.parent.mkdir(parents=True, exist_ok=True)
+    feedback_file.write_text('{"flow_name":"demo","input_id":"1","rating":"good","step_count":1}\n', encoding="utf-8")
+    old_epoch = 1_800_000_000.0 - (3 * 86400)
+    os.utime(feedback_file, (old_epoch, old_epoch))
+    monkeypatch.setattr("time.time", lambda: 1_800_000_000.0)
+
+    assert cli_main(["security", "purge", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ok"] is True
+    assert payload["removed_count"] >= 1
+    assert not feedback_file.exists()

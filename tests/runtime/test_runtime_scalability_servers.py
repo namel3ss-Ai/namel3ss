@@ -9,6 +9,7 @@ from pathlib import Path
 
 from namel3ss.runtime.dev_server import BrowserRunner
 from namel3ss.runtime.service_runner import ServiceRunner
+from namel3ss.runtime.server.worker_pool import ServiceActionWorkerPool
 
 
 APP_SOURCE = '''spec is "1.0"
@@ -32,6 +33,26 @@ flow "echo":
 page "home":
   button "Send":
     calls flow "echo"
+'''
+
+SCALABLE_ROUTE_APP_SOURCE = '''spec is "1.0"
+
+capabilities:
+  performance_scalability
+
+flow "echo":
+  return input.id
+
+route "echo_route":
+  path is "/api/echo/{id}"
+  method is "GET"
+  parameters:
+    id is number
+  request:
+    id is number
+  response:
+    id is number
+  flow is "echo"
 '''
 
 
@@ -128,5 +149,32 @@ def test_service_runner_uses_worker_pool_when_scalability_capability_enabled(tmp
         result = _post_json(f"{base}/api/action", {"id": action_id, "payload": {"message": "hello"}})
         assert result["ok"] is True
         assert result["process_model"] == "worker_pool"
+    finally:
+        runner.shutdown()
+
+
+def test_service_runner_routes_run_through_worker_pool(tmp_path: Path, monkeypatch) -> None:
+    app_path = tmp_path / "app.ai"
+    app_path.write_text(SCALABLE_ROUTE_APP_SOURCE, encoding="utf-8")
+    (tmp_path / "concurrency.yaml").write_text(
+        "server_mode: threaded\nmax_threads: 2\nworker_processes: 2\n",
+        encoding="utf-8",
+    )
+    calls: list[str] = []
+    original = ServiceActionWorkerPool.run_flow
+
+    def _tracked_run_flow(self, **kwargs):
+        calls.append(str(kwargs.get("flow_name") or ""))
+        return original(self, **kwargs)
+
+    monkeypatch.setattr(ServiceActionWorkerPool, "run_flow", _tracked_run_flow)
+    runner = ServiceRunner(app_path, "service", build_id="scale-route-workers", port=_free_port())
+    try:
+        runner.start(background=True)
+        base = f"http://127.0.0.1:{runner.bound_port}"
+        _wait_for_health(f"{base}/health")
+        payload = _fetch_json(f"{base}/api/echo/42")
+        assert payload == {"id": 42}
+        assert calls == ["echo"]
     finally:
         runner.shutdown()

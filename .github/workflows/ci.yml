@@ -36,6 +36,9 @@ jobs:
       - name: Spec freeze guard
         run: python tools/spec_freeze_check.py
 
+      - name: RFC compliance check
+        run: python tools/rfc_compliance_check.py
+
       - name: Run tests
         shell: bash
         run: |

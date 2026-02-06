@@ -69,3 +69,38 @@ def test_cli_version_quality_and_mlops_commands(tmp_path: Path, capsys, monkeypa
     listed_models = json.loads(capsys.readouterr().out)
     assert listed_models["ok"] is True
     assert listed_models["count"] >= 1
+
+
+def test_cli_mlops_register_model_blocks_on_quality_failure(tmp_path: Path, capsys, monkeypatch) -> None:
+    app = tmp_path / "app.ai"
+    app.write_text(
+        (
+            'spec is "1.0"\n\n'
+            "capabilities:\n"
+            "  versioning_quality_mlops\n\n"
+            'flow "BadFlow":\n'
+            '  return "ok"\n'
+        ),
+        encoding="utf-8",
+    )
+    registry_file = tmp_path / "registry_ops.json"
+    (tmp_path / "mlops.yaml").write_text(
+        f"registry_url: {registry_file.as_uri()}\nproject_name: demo\n",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    exit_code = cli_main(
+        [
+            "mlops",
+            "register-model",
+            "base",
+            "1.0",
+            "--artifact-uri",
+            "model://base/1.0",
+            "--json",
+        ]
+    )
+    assert exit_code == 1
+    stderr = capsys.readouterr().err.lower()
+    assert "quality" in stderr

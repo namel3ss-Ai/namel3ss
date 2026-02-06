@@ -7,6 +7,7 @@ This is the authoritative description of the UI DSL. It is semantic and explicit
 - Deterministic structure; no per-component styling knobs.
 - Canonical serialization: UI manifests and their IR nodes use stable ordering and deterministic JSON.
 - Parser updates are deterministic; incremental parsing must match full-parse output for the UI DSL surface.
+- The generated parser is the single runtime parser path for UI DSL processing; legacy parser flags are not supported.
 - Frozen surface: additive changes only, no silent behavior changes.
 - Text-first: intent over pixels.
 - Studio panels (Setup, Graph, Traces, Memory, etc.) are tooling views; they are not part of the UI DSL contract.

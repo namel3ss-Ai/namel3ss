@@ -10,6 +10,7 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.errors.render import format_error
 from namel3ss.governance.audit import record_audit_entry
 from namel3ss.runtime.security.compliance_status import build_security_status
+from namel3ss.runtime.security.retention_enforcer import enforce_retention_policies
 
 
 def run_security_command(args: list[str]) -> int:
@@ -20,17 +21,32 @@ def run_security_command(args: list[str]) -> int:
             return 0
 
         app_path = resolve_app_path(params["app_arg"])
-        payload = build_security_status(app_path.parent, app_path)
-        payload["checked_app"] = app_path.as_posix()
-        record_audit_entry(
-            project_root=app_path.parent,
-            app_path=app_path,
-            user="cli",
-            action="security_check",
-            resource=app_path.name,
-            status="success" if bool(payload.get("ok")) else "failure",
-            details={"violation_count": int(payload.get("count") or 0)},
-        )
+        if params["subcommand"] == "check":
+            payload = build_security_status(app_path.parent, app_path)
+            payload["checked_app"] = app_path.as_posix()
+            record_audit_entry(
+                project_root=app_path.parent,
+                app_path=app_path,
+                user="cli",
+                action="security_check",
+                resource=app_path.name,
+                status="success" if bool(payload.get("ok")) else "failure",
+                details={"violation_count": int(payload.get("count") or 0)},
+            )
+        elif params["subcommand"] == "purge":
+            payload = enforce_retention_policies(app_path.parent, app_path)
+            payload["checked_app"] = app_path.as_posix()
+            record_audit_entry(
+                project_root=app_path.parent,
+                app_path=app_path,
+                user="cli",
+                action="security_purge",
+                resource=app_path.name,
+                status="success",
+                details={"removed_count": int(payload.get("removed_count") or 0)},
+            )
+        else:
+            raise Namel3ssError(_unknown_subcommand_message(str(params["subcommand"])))
         return _emit(payload, json_mode=params["json_mode"])
     except Namel3ssError as err:
         print(prepare_cli_text(format_error(err, None)), file=sys.stderr)
@@ -41,7 +57,7 @@ def _parse_args(args: list[str]) -> dict[str, object]:
     if not args or args[0] in {"help", "-h", "--help"}:
         return {"subcommand": "help", "app_arg": None, "json_mode": False}
     subcommand = str(args[0]).strip().lower()
-    if subcommand != "check":
+    if subcommand not in {"check", "purge"}:
         raise Namel3ssError(_unknown_subcommand_message(subcommand))
     app_arg = None
     json_mode = False
@@ -56,7 +72,7 @@ def _parse_args(args: list[str]) -> dict[str, object]:
             continue
         raise Namel3ssError(_too_many_args_message())
     return {
-        "subcommand": "check",
+        "subcommand": subcommand,
         "app_arg": app_arg,
         "json_mode": json_mode,
     }
@@ -69,6 +85,10 @@ def _emit(payload: dict[str, object], *, json_mode: bool) -> int:
     print("Security check")
     print(f"  ok: {payload.get('ok')}")
     print(f"  violations: {payload.get('count')}")
+    if payload.get("removed_count") is not None:
+        print(f"  removed_count: {payload.get('removed_count')}")
+    if payload.get("redacted_count") is not None:
+        print(f"  redacted_count: {payload.get('redacted_count')}")
     configs = payload.get("configs")
     if isinstance(configs, dict):
         for name in ("auth", "security", "retention"):
@@ -97,14 +117,14 @@ def _emit(payload: dict[str, object], *, json_mode: bool) -> int:
 
 
 def _print_usage() -> None:
-    print("Usage:\n  n3 security check [app.ai] [--json]")
+    print("Usage:\n  n3 security check [app.ai] [--json]\n  n3 security purge [app.ai] [--json]")
 
 
 def _unknown_subcommand_message(subcommand: str) -> str:
     return build_guidance_message(
         what=f"Unknown security command '{subcommand}'.",
-        why="Supported command is check.",
-        fix="Use security check.",
+        why="Supported commands are check and purge.",
+        fix="Use one of the supported security subcommands.",
         example="n3 security check --json",
     )
 

@@ -206,7 +206,13 @@ def validate_contract_call(
     flow_name: str,
     payload: dict[str, object],
 ) -> FederationContract:
-    config = load_federation_config(project_root, app_path, required=True)
+    try:
+        config = load_federation_config(project_root, app_path, required=True)
+    except Namel3ssError as err:
+        raise Namel3ssError(
+            err.message,
+            details={"http_status": 403, "category": "permission", "reason_code": "federation_contract_missing"},
+        ) from err
     contract = config.find(source_tenant, target_tenant, flow_name)
     if contract is None:
         raise Namel3ssError(

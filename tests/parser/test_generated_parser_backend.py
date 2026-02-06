@@ -4,12 +4,11 @@ from namel3ss.parser.core import parse
 from namel3ss.parser.generated import GRAMMAR_PATH, GRAMMAR_SHA256, RULE_NAMES
 
 
-def test_generated_parser_backend_matches_legacy_parser() -> None:
+def test_generated_parser_backend_parses_basic_program() -> None:
     source = 'spec is "1.0"\n\nflow "demo":\n  return "ok"\n'
     generated = parse(source)
-    legacy = parse(source, use_old_parser=True)
-    assert generated.spec_version == legacy.spec_version
-    assert [flow.name for flow in generated.flows] == [flow.name for flow in legacy.flows]
+    assert generated.spec_version == "1.0"
+    assert [flow.name for flow in generated.flows] == ["demo"]
 
 
 def test_grammar_snapshot_metadata_present() -> None:

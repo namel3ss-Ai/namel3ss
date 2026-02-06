@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from namel3ss.mlops import get_mlops_client, load_mlops_config, mlops_snapshot_path
+from namel3ss.mlops.quality_gate import validate_model_registration
 from namel3ss.retrain import build_retrain_payload
 from namel3ss.runtime.capabilities.feature_gate import require_app_capability
 
@@ -35,6 +36,11 @@ def apply_mlops_payload(source: str, body: dict, app_path: str) -> dict[str, obj
     assert client is not None
 
     if action == "register_model":
+        validate_model_registration(
+            source=source,
+            project_root=app_file.parent,
+            app_path=app_file,
+        )
         payload = client.register_model(
             name=_text(body.get("name")) or "",
             version=_text(body.get("version")) or "",

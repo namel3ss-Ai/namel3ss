@@ -124,9 +124,6 @@ PACK_SUBCOMMANDS = {
 def main(argv: list[str] | None = None) -> int:
     args = sys.argv[1:] if argv is None else list(argv)
     first_run_args = list(args)
-    if "--old-parser" in args:
-        os.environ["N3_OLD_PARSER"] = "1"
-        args = [arg for arg in args if arg != "--old-parser"]
     if "--first-run" in args:
         os.environ["N3_FIRST_RUN"] = "1"
         args = [arg for arg in args if arg != "--first-run"]

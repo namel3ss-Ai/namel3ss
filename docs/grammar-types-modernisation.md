@@ -18,18 +18,8 @@ to refresh parser metadata after grammar edits.
 
 ## Parser transition
 
-- Default parser path goes through the generated parser facade.
-- Legacy parser is still available with:
-
-```bash
-n3 --old-parser ...
-```
-
-or environment variable:
-
-```bash
-N3_OLD_PARSER=1
-```
+- Parser entry now goes through the generated parser facade only.
+- Legacy parser override flags are removed.
 
 ## Type expressions
 

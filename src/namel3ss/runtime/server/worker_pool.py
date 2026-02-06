@@ -3,11 +3,13 @@ from __future__ import annotations
 from concurrent.futures import ProcessPoolExecutor, TimeoutError
 import multiprocessing
 from pathlib import Path
+import threading
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.lang.capabilities import normalize_builtin_capability
 from namel3ss.module_loader import load_project
+from namel3ss.runtime.executor import execute_program_flow
 from namel3ss.ui.actions.dispatch import dispatch_ui_action
 
 
@@ -15,15 +17,42 @@ class ServiceActionWorkerPool:
     def __init__(self, *, app_path: Path, workers: int) -> None:
         self.app_path = Path(app_path).resolve()
         self.workers = max(1, int(workers))
-        context = multiprocessing.get_context("spawn")
-        self._executor = ProcessPoolExecutor(max_workers=self.workers, mp_context=context)
+        self._lock = threading.RLock()
+        self._pending = 0
+        self._executor = _create_executor(self.workers)
 
     def run_action(self, action_id: str, payload: dict, *, timeout_seconds: float = 30.0) -> dict:
-        future = self._executor.submit(
-            _run_action_worker,
+        future = self._submit(_run_action_worker, self.app_path.as_posix(), str(action_id), dict(payload or {}))
+        try:
+            result = future.result(timeout=timeout_seconds)
+        except TimeoutError as err:
+            raise Namel3ssError(_worker_timeout_message(timeout_seconds)) from err
+        except Exception as err:
+            raise Namel3ssError(_worker_failed_message(str(err))) from err
+        finally:
+            self._mark_complete()
+        if isinstance(result, dict):
+            return result
+        raise Namel3ssError(_worker_failed_message("Worker returned invalid payload."))
+
+    def run_flow(
+        self,
+        *,
+        program,
+        flow_name: str,
+        input: dict | None,
+        identity: dict | None,
+        route_name: str | None,
+        timeout_seconds: float = 30.0,
+        **_unused,
+    ):
+        future = self._submit(
+            _run_flow_worker,
             self.app_path.as_posix(),
-            str(action_id),
-            dict(payload or {}),
+            str(flow_name),
+            dict(input or {}),
+            dict(identity or {}),
+            str(route_name or ""),
         )
         try:
             result = future.result(timeout=timeout_seconds)
@@ -31,12 +60,40 @@ class ServiceActionWorkerPool:
             raise Namel3ssError(_worker_timeout_message(timeout_seconds)) from err
         except Exception as err:
             raise Namel3ssError(_worker_failed_message(str(err))) from err
-        if isinstance(result, dict):
-            return result
-        raise Namel3ssError(_worker_failed_message("Worker returned invalid payload."))
+        finally:
+            self._mark_complete()
+        if not isinstance(result, dict) or result.get("ok") is not True:
+            raise Namel3ssError(_worker_failed_message("Flow worker returned invalid payload."))
+        return _WorkerFlowResult(
+            last_value=result.get("last_value"),
+            yield_messages=result.get("yield_messages") if isinstance(result.get("yield_messages"), list) else [],
+        )
+
+    def queue_depth(self) -> int:
+        with self._lock:
+            return int(self._pending)
+
+    def resize(self, workers: int) -> None:
+        target = max(1, int(workers))
+        with self._lock:
+            if target == self.workers:
+                return
+            self._executor.shutdown(wait=True, cancel_futures=True)
+            self.workers = target
+            self._executor = _create_executor(self.workers)
 
     def shutdown(self) -> None:
-        self._executor.shutdown(wait=True, cancel_futures=True)
+        with self._lock:
+            self._executor.shutdown(wait=True, cancel_futures=True)
+
+    def _submit(self, fn, *args):
+        with self._lock:
+            self._pending += 1
+            return self._executor.submit(fn, *args)
+
+    def _mark_complete(self) -> None:
+        with self._lock:
+            self._pending = max(0, self._pending - 1)
 
 
 def capability_enabled(program: object, capability: str) -> bool:
@@ -49,6 +106,17 @@ def capability_enabled(program: object, capability: str) -> bool:
         if token == expected:
             return True
     return False
+
+
+class _WorkerFlowResult:
+    def __init__(self, *, last_value: object, yield_messages: list[dict]) -> None:
+        self.last_value = last_value
+        self.yield_messages = yield_messages
+
+
+def _create_executor(workers: int) -> ProcessPoolExecutor:
+    context = multiprocessing.get_context("spawn")
+    return ProcessPoolExecutor(max_workers=max(1, int(workers)), mp_context=context)
 
 
 def _run_action_worker(app_path: str, action_id: str, payload: dict) -> dict:
@@ -65,6 +133,26 @@ def _run_action_worker(app_path: str, action_id: str, payload: dict) -> dict:
             "message": "Action worker returned invalid response.",
             "kind": "engine",
         },
+    }
+
+
+def _run_flow_worker(app_path: str, flow_name: str, payload: dict, identity: dict, route_name: str) -> dict:
+    app_file = Path(app_path).resolve()
+    source = app_file.read_text(encoding="utf-8")
+    project = load_project(app_file, source_overrides={app_file: source})
+    result = execute_program_flow(
+        project.program,
+        flow_name,
+        input=dict(payload or {}),
+        identity=dict(identity or {}),
+        auth_context=None,
+        route_name=route_name or None,
+    )
+    return {
+        "ok": True,
+        "last_value": result.last_value,
+        "yield_messages": list(getattr(result, "yield_messages", []) or []),
+        "process_model": "worker_pool",
     }
 
 

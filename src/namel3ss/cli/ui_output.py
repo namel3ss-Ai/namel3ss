@@ -86,6 +86,7 @@ Advanced
   n3 audit [file.ai]               # sensitive audit log (or audit list/filter)
   n3 auth [file.ai]                # route permissions + user role commands
   n3 secret list|add|get ...       # encrypted vault commands
+  n3 security check|purge ...      # security posture and retention cleanup
   n3 sensitive [file.ai]           # manage sensitive flows and keys
   n3 sandbox [file.ai]             # sandbox build/run helpers
   n3 plugin new <lang> <name>      # scaffold a plugin project
@@ -98,7 +99,6 @@ Advanced
 Notes:
   file.ai is optional and defaults to ./app.ai when present
   if app.ai is missing: run `n3 <command> <file.ai>` or create app.ai
-  use --old-parser to force legacy parser backend during transition
   legacy forms like `n3 run app.ai --target T --json` and `n3 actions app.ai json` remain supported
   Studio inspects; the browser renders the app
 """

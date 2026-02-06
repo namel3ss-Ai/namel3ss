@@ -11,7 +11,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.errors.render import format_error
 from namel3ss.mlops import get_mlops_client
-from namel3ss.quality import run_quality_checks
+from namel3ss.mlops.quality_gate import validate_model_registration
 from namel3ss.runtime.capabilities.feature_gate import require_app_capability
 
 
@@ -41,9 +41,11 @@ def run_mlops_command(args: list[str]) -> int:
         source = app_path.read_text(encoding="utf-8")
 
         if params.subcommand == "register-model":
-            quality = run_quality_checks(source, project_root=app_path.parent, app_path=app_path)
-            if not bool(quality.get("ok")):
-                raise Namel3ssError(_quality_block_message())
+            validate_model_registration(
+                source=source,
+                project_root=app_path.parent,
+                app_path=app_path,
+            )
             client = get_mlops_client(app_path.parent, app_path, required=True)
             assert client is not None
             experiment_id = params.experiment_id or _default_experiment_id(params.name or "", params.version or "")
@@ -345,15 +347,6 @@ def _metric_value_invalid_message(raw: str) -> str:
         why=f"Could not parse metric '{raw}'.",
         fix="Use numeric values for metrics.",
         example="--metric latency=1.2",
-    )
-
-
-def _quality_block_message() -> str:
-    return build_guidance_message(
-        what="Model registration is blocked by quality gates.",
-        why="The current app failed n3 quality check.",
-        fix="Run n3 quality check, fix issues, then retry register-model.",
-        example="n3 quality check",
     )
 
 

@@ -71,3 +71,9 @@ def test_security_scan_report_is_path_and_line_sorted(tmp_path: Path) -> None:
         ("src/a.py", 2, "dynamic_exec"),
         ("src/z.py", 2, "dynamic_eval"),
     ]
+
+
+def test_security_scan_covers_tests_modules(tmp_path: Path) -> None:
+    _write(tmp_path / "tests" / "unsafe_eval.py", "def run(v):\n    eval(v)\n")
+    report = run_security_hardening_scan(tmp_path)
+    assert any(issue.path == "tests/unsafe_eval.py" and issue.issue_type == "dynamic_eval" for issue in report.issues)
