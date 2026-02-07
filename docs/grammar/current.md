@@ -5,7 +5,7 @@ Derived from source files under `src/namel3ss/lexer` and `src/namel3ss/parser`.
 
 ## Docs and SDKs
 
-This phase adds no new grammar. Use the CLI to generate docs and SDKs from existing routes:
+This phase adds optional grouping delimiters (`[]`, `{}`) for selected list and compact block contexts. Use the CLI to generate docs and SDKs from existing routes:
 - `n3 docs` for the local docs portal
 - `n3 sdk generate --lang python|typescript|go|rust --out-dir sdk`
 - `n3 sdk postman --out postman.json`
@@ -20,7 +20,7 @@ This phase adds no new grammar. Use the CLI to generate docs and SDKs from exist
 - Numbers: digits with optional fractional part; minus is its own token (unary minus is handled by the parser).
 - Comments: whole-line comments only; a line whose first non-space character is `#` is skipped.
 - Indentation: significant; indentation changes emit `INDENT`/`DEDENT`, inconsistent spacing raises a lexer error.
-- Punctuation tokens: `:` `.` `+` `-` `*` `**` `/` `%` `=` `(` `)` `[` `]` `,` `<` `>`.
+- Punctuation tokens: `:` `.` `+` `-` `*` `**` `/` `%` `=` `(` `)` `[` `]` `{` `}` `,` `<` `>`.
 
 ## Reserved Words (KEYWORDS)
 ```
@@ -140,6 +140,14 @@ Top-level declarations (`src/namel3ss/parser/grammar_table.py`):
 - `spec`, `define` (function), `use`, `capsule`, `identity`, `app`, `capabilities`, `policy`, `packs`, `foreign`, `tool`,
   `agent`, `team of agents`, `ai`, `record`, `crud`, `prompt`, `llm_call`, `rag`, `classification`, `summarise`,
   `route`, `flow`, `job`, `page`, `ui`, `ui_pack`.
+
+Optional grouping sugar:
+- Bracket lists: `labels: [billing, technical]`, `sources: [docs, kb]`, `capabilities: [http, jobs]`, `packs: ["builtin.text"]`, `only: [functions, tools]`.
+- Braced compact blocks: `record "User": { id number, name text }`, `fields: { id is text, status is text }`, `parameters: { heading is text }`.
+- Grouped forms normalize to the same AST as equivalent indented forms.
+- Commas are required between grouped entries.
+- Nested grouping is rejected.
+- Grouped forms are single-line only in parser input; multi-line grouping must use indentation form.
 
 Statements (`src/namel3ss/parser/grammar_table.py`):
 - `start`, `plan`, `review`, `timeline`, `compute`, `increment`, `attempt` (two forms), agent verb calls,

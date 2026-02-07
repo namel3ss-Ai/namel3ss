@@ -3,6 +3,7 @@ from __future__ import annotations
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.lang.keywords import is_keyword
+from namel3ss.parser.decl.grouping import parse_braced_items
 from namel3ss.parser.decl.page import parse_page_item
 from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
@@ -49,61 +50,68 @@ def parse_ui_pattern_decl(parser) -> ast.UIPatternDecl:
 def _parse_parameters_block(parser, seen_params: set[str]) -> list[ast.PatternParam]:
     params_tok = parser._advance()
     parser._expect("COLON", "Expected ':' after parameters")
-    parser._expect("NEWLINE", "Expected newline after parameters")
-    parser._expect("INDENT", "Expected indented parameters block")
     params: list[ast.PatternParam] = []
-    while parser._current().type != "DEDENT":
-        if parser._match("NEWLINE"):
-            continue
-        name_tok = parser._current()
-        if name_tok.type != "IDENT":
-            raise Namel3ssError("Expected parameter name", line=name_tok.line, column=name_tok.column)
-        if is_keyword(name_tok.value) and not getattr(name_tok, "escaped", False):
-            guidance, details = reserved_identifier_diagnostic(name_tok.value)
-            raise Namel3ssError(guidance, line=name_tok.line, column=name_tok.column, details=details)
-        param_name = name_tok.value
-        parser._advance()
-        if param_name in seen_params:
-            raise Namel3ssError(
-                f"Parameter '{param_name}' is duplicated",
-                line=name_tok.line,
-                column=name_tok.column,
-            )
-        parser._expect("IS", "Expected 'is' after parameter name")
-        kind = _parse_param_kind(parser)
-        optional = False
-        default = None
-        while True:
-            tok = parser._current()
-            if tok.type == "IDENT" and tok.value == "optional":
-                optional = True
-                parser._advance()
+    if parser._current().type == "LBRACE":
+        params.extend(parse_braced_items(parser, context="parameters", parse_item=lambda: _parse_param_entry(parser, seen_params), allow_empty=True))
+        parser._match("NEWLINE")
+    else:
+        parser._expect("NEWLINE", "Expected newline after parameters")
+        parser._expect("INDENT", "Expected indented parameters block")
+        while parser._current().type != "DEDENT":
+            if parser._match("NEWLINE"):
                 continue
-            if tok.type == "IDENT" and tok.value == "default":
-                parser._advance()
-                parser._expect("IS", "Expected 'is' after default")
-                default = _parse_param_value(parser)
-                _validate_param_value(kind, default, line=tok.line, column=tok.column)
-                optional = True
+            params.append(_parse_param_entry(parser, seen_params))
+            if parser._match("NEWLINE"):
                 continue
-            break
-        params.append(
-            ast.PatternParam(
-                name=param_name,
-                kind=kind,
-                optional=optional,
-                default=default,
-                line=name_tok.line,
-                column=name_tok.column,
-            )
-        )
-        seen_params.add(param_name)
-        if parser._match("NEWLINE"):
-            continue
-    parser._expect("DEDENT", "Expected end of parameters block")
+        parser._expect("DEDENT", "Expected end of parameters block")
     if not params:
         raise Namel3ssError("Parameters block has no entries", line=params_tok.line, column=params_tok.column)
     return params
+
+
+def _parse_param_entry(parser, seen_params: set[str]) -> ast.PatternParam:
+    name_tok = parser._current()
+    if name_tok.type != "IDENT":
+        raise Namel3ssError("Expected parameter name", line=name_tok.line, column=name_tok.column)
+    if is_keyword(name_tok.value) and not getattr(name_tok, "escaped", False):
+        guidance, details = reserved_identifier_diagnostic(name_tok.value)
+        raise Namel3ssError(guidance, line=name_tok.line, column=name_tok.column, details=details)
+    param_name = name_tok.value
+    parser._advance()
+    if param_name in seen_params:
+        raise Namel3ssError(
+            f"Parameter '{param_name}' is duplicated",
+            line=name_tok.line,
+            column=name_tok.column,
+        )
+    parser._expect("IS", "Expected 'is' after parameter name")
+    kind = _parse_param_kind(parser)
+    optional = False
+    default = None
+    while True:
+        tok = parser._current()
+        if tok.type == "IDENT" and tok.value == "optional":
+            optional = True
+            parser._advance()
+            continue
+        if tok.type == "IDENT" and tok.value == "default":
+            parser._advance()
+            parser._expect("IS", "Expected 'is' after default")
+            default = _parse_param_value(parser)
+            _validate_param_value(kind, default, line=tok.line, column=tok.column)
+            optional = True
+            continue
+        break
+    param = ast.PatternParam(
+        name=param_name,
+        kind=kind,
+        optional=optional,
+        default=default,
+        line=name_tok.line,
+        column=name_tok.column,
+    )
+    seen_params.add(param_name)
+    return param
 
 
 def _parse_param_kind(parser) -> str:

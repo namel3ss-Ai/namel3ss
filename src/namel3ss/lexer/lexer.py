@@ -20,6 +20,8 @@ _PUNCTUATION_TOKENS = {
     ")": "RPAREN",
     "[": "LBRACKET",
     "]": "RBRACKET",
+    "{": "LBRACE",
+    "}": "RBRACE",
     ",": "COMMA",
     "<": "LT",
     ">": "GT",
@@ -44,7 +46,7 @@ class Lexer:
     def tokenize(self) -> List[Token]:
         # Keep native scanner for plain inputs, but force python fallback when
         # new lexer features are present so behavior stays deterministic.
-        use_fallback = any(token in self.source for token in ('"""', "\\", "#", "|", "==", "!=", "<=", ">="))
+        use_fallback = any(token in self.source for token in ('"""', "\\", "#", "|", "==", "!=", "<=", ">=", "{", "}"))
         if not use_fallback:
             from namel3ss.lexer.native_scan import scan_tokens_native
 
@@ -156,8 +158,6 @@ class Lexer:
                 tokens.append(Token(token_type, token_value, line_idx + 1, column))
                 i += consumed
                 continue
-            if ch in {"{", "}"}:
-                raise Namel3ssError(_object_literal_message(), line=line_idx + 1, column=column)
             raise Namel3ssError(_unsupported_character_message(ch), line=line_idx + 1, column=column)
 
     def _read_string(self, lines: list[str], line_idx: int, start_col_idx: int) -> tuple[str, int, int]:
@@ -305,18 +305,3 @@ def _unsupported_escape_message(marker: str) -> str:
         example='text is "line one\\nline two"',
     )
 
-
-def _object_literal_message() -> str:
-    return build_guidance_message(
-        what="Found '{' or '}' (object literal syntax).",
-        why="Inline JSON/dictionary literals are not supported; tool schemas and calls now use English field blocks.",
-        fix="Rewrite tool declarations and tool calls using input/output blocks instead of JSON literals.",
-        example=(
-            "tool \"get data from a web address\":\n"
-            "  implemented using python\n\n"
-            "  input:\n"
-            "    web address is text\n\n"
-            "  output:\n"
-            "    data is json"
-        ),
-    )

@@ -5,7 +5,7 @@ Changes require explicit compatibility review.
 This document is the authoritative contract for namel3ss grammar and behavior. It freezes the language surface and determinism guarantees. Any conflict between this document and other docs, tests, or code is a bug.
 
 ## Docs and SDK tooling
-- This phase adds no new grammar.
+- This phase adds optional grouping delimiters for selected list and compact block contexts.
 - API docs, SDKs, metrics, and prompt tooling are generated from existing route, prompt, and AI flow declarations.
 - Use `n3 docs`, `n3 sdk`, `n3 metrics`, and `n3 prompts list` to access these features.
 
@@ -23,6 +23,16 @@ This document is the authoritative contract for namel3ss grammar and behavior. I
 - No timestamps, randomness, environment dependence, or hidden state are allowed in language semantics.
 
 ## Canonical grammar surface
+
+### Optional grouping delimiters
+- Bracketed list form is allowed where the grammar already expects flat lists: `labels`, `sources`, `capabilities`, `packs`, and `use ... only/allow override`.
+- Braced compact block form is allowed for record field groups and pattern `parameters`.
+- These forms are syntactic sugar only. They normalize to the same AST as the equivalent indented form.
+- Entries inside `[]` and `{}` are comma-separated and preserve source order.
+- Nested grouping (`[]` inside `{}` or `{}` inside `[]`) is rejected.
+- Missing commas inside grouped forms are parse-time errors.
+- Grouped forms are single-line only in parser input; multi-line grouped forms must be rewritten to indentation form.
+- Mixing indentation and grouping delimiters in the same block is rejected.
 
 ### Top-level declarations (allowed)
 The only allowed top-level declarations are:
@@ -178,6 +188,11 @@ Canonical form:
 record "User":
   name text
   email text must be unique
+```
+
+Equivalent compact form:
+```
+record "User": { name text, email text must be unique }
 ```
 
 ### Flows and statements

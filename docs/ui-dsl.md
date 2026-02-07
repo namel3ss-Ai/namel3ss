@@ -30,6 +30,15 @@ This is the authoritative description of the UI DSL. It is semantic and explicit
 Rule: use `keyword "name"`; never `keyword is "name"`.
 - Reserved words may only be used as identifiers when escaped with backticks (for example `title`).
 
+### Optional grouping syntax
+- Grouping delimiters are optional convenience wrappers for short declarations.
+- Supported list form: `labels: [bug, feature]` (also `sources`, `capabilities`, `packs`, `only`, `allow override`).
+- Supported compact block form: `record "User": { id number, name text }`, `fields: { id is text, total is number }`, `parameters: { heading is text }`.
+- Commas are required between grouped entries.
+- Nested grouping is not allowed (for example `[a, {b}]`).
+- Grouped forms are single-line only in parser input. Multi-line grouped forms must be written using indentation.
+- Route paths keep existing placeholder braces (`/api/users/{id}`); this is unrelated to grouping syntax.
+
 ## 2.1) Policy declarations
 Policy is a declarative, top-level block in `app.ai` that controls ingestion/review/retrieval actions. Order is irrelevant and no expressions are allowed.
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.parser.decl.grouping import parse_named_value_block
 from namel3ss.parser.decl.type_reference import parse_type_reference
 _AI_FLOW_KINDS = {
     "llm_call",
@@ -133,11 +134,11 @@ def parse_ai_flow_decl(parser) -> ast.AIFlowDefinition:
             raise Namel3ssError("Expected `is` or `:` after output", line=tok.line, column=tok.column)
         if kind == "rag" and _match_word(parser, "sources"):
             _ensure_unique("sources", sources, tok)
-            sources = _parse_value_block(parser, label="sources", allow_strings=False)
+            sources = parse_named_value_block(parser, label="sources", allow_strings=False)
             continue
         if kind == "classification" and _match_word(parser, "labels"):
             _ensure_unique("labels", labels, tok)
-            labels = _parse_value_block(parser, label="labels", allow_strings=True)
+            labels = parse_named_value_block(parser, label="labels", allow_strings=True)
             continue
         if kind == "chain" and _match_word(parser, "steps"):
             _ensure_unique("steps", chain_steps, tok)
@@ -364,73 +365,6 @@ def _parse_metric_list_block(parser, *, header_tok) -> list[str]:
     parser._expect("DEDENT", "Expected end of metrics block")
     while parser._match("NEWLINE"):
         pass
-    return values
-def _parse_value_block(parser, *, label: str, allow_strings: bool) -> list[str]:
-    header_tok = parser._current()
-    parser._expect("COLON", f"Expected ':' after {label}")
-    parser._expect("NEWLINE", f"Expected newline after {label}")
-    if not parser._match("INDENT"):
-        raise Namel3ssError(
-            build_guidance_message(
-                what=f"{label.title()} block has no entries.",
-                why=f"{label.title()} blocks require at least one entry.",
-                fix=f"Add one or more entries under {label}.",
-                example=f"{label}:\n  example",
-            ),
-            line=header_tok.line,
-            column=header_tok.column,
-        )
-    values: list[str] = []
-    seen: set[str] = set()
-    while parser._current().type != "DEDENT":
-        if parser._match("NEWLINE"):
-            continue
-        tok = parser._current()
-        if tok.type == "IDENT":
-            value = tok.value
-            parser._advance()
-        elif allow_strings and tok.type == "STRING":
-            value = tok.value
-            parser._advance()
-        else:
-            raise Namel3ssError(
-                build_guidance_message(
-                    what=f"{label.title()} entries must be simple names.",
-                    why=f"{label.title()} blocks list one entry per line.",
-                    fix="Use a single name per line or quote the value.",
-                    example=f"{label}:\n  example",
-                ),
-                line=tok.line,
-                column=tok.column,
-            )
-        if value in seen:
-            raise Namel3ssError(
-                build_guidance_message(
-                    what=f"Duplicate {label} entry '{value}'.",
-                    why="Each entry may only appear once.",
-                    fix="Remove the duplicate entry.",
-                    example=f"{label}:\n  {value}",
-                ),
-                line=tok.line,
-                column=tok.column,
-            )
-        seen.add(value)
-        values.append(value)
-        parser._match("NEWLINE")
-    parser._expect("DEDENT", f"Expected end of {label} block")
-    while parser._match("NEWLINE"):
-        pass
-    if not values:
-        raise Namel3ssError(
-            build_guidance_message(
-                what=f"{label.title()} block has no entries.",
-                why=f"{label.title()} blocks require at least one entry.",
-                fix=f"Add one or more entries under {label}.",
-                example=f"{label}:\n  example",
-            ),
-            line=header_tok.line,
-            column=header_tok.column,
-        )
     return values
 def _validate_required_fields(
     *,
