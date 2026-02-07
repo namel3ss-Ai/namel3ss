@@ -36,6 +36,7 @@ from namel3ss.runtime.ui.actions.validate import (
     text_input_type_message,
     unknown_action_message,
 )
+from namel3ss.ui.manifest.display_mode import DISPLAY_MODE_STUDIO
 
 _SIMPLE_ACTIONS = {
     "ingestion_run": handle_ingestion_run_action,
@@ -62,6 +63,7 @@ def handle_action(
     auth_context: object | None = None,
     source: str | None = None,
     raise_on_error: bool = True,
+    ui_mode: str = DISPLAY_MODE_STUDIO,
 ) -> tuple[dict, Exception | None]:
     """Execute a UI action against the program."""
     start_time = time.time()
@@ -87,6 +89,7 @@ def handle_action(
         runtime_theme=runtime_theme,
         identity=identity,
         auth_context=auth_context,
+        display_mode=ui_mode,
     )
     actions: Dict[str, dict] = manifest.get("actions", {})
     if action_id not in actions:
@@ -125,6 +128,7 @@ def handle_action(
                 secret_values=secret_values,
                 source=source,
                 raise_on_error=raise_on_error,
+                ui_mode=ui_mode,
             )
             if action_error and raise_on_error:
                 raise action_error
@@ -162,6 +166,7 @@ def handle_action(
                     identity=identity,
                     secret_values=secret_values,
                     source=source,
+                    ui_mode=ui_mode,
                 )
             except Exception:
                 span_status = "error"
@@ -306,6 +311,7 @@ def _handle_call_flow(
     secret_values: list[str] | None = None,
     source: str | None = None,
     raise_on_error: bool = True,
+    ui_mode: str = DISPLAY_MODE_STUDIO,
 ) -> dict:
     flow_name = action.get("flow")
     if not isinstance(flow_name, str):
@@ -352,6 +358,7 @@ def _handle_call_flow(
         persisted_theme=next_runtime_theme if allow_theme_override and preference_store else None,
         identity=identity,
         auth_context=auth_context,
+        display_mode=ui_mode,
     )
     ensure_json_serializable(response)
     response = finalize_run_payload(response, secret_values)
@@ -372,6 +379,7 @@ def _handle_submit_form(
     auth_context: object | None = None,
     secret_values: list[str] | None = None,
     source: str | None = None,
+    ui_mode: str = DISPLAY_MODE_STUDIO,
 ) -> dict:
     payload = normalize_submit_payload(payload)
     record = action.get("record")
@@ -420,6 +428,7 @@ def _handle_submit_form(
             runtime_theme=runtime_theme,
             identity=identity,
             auth_context=auth_context,
+            display_mode=ui_mode,
         )
         ensure_json_serializable(response)
         response = finalize_run_payload(response, secret_values)
@@ -449,6 +458,7 @@ def _handle_submit_form(
             runtime_theme=runtime_theme,
             identity=identity,
             auth_context=auth_context,
+            display_mode=ui_mode,
         )
         response.pop("error", None)
         response.pop("message", None)
@@ -474,6 +484,7 @@ def _handle_submit_form(
         runtime_theme=runtime_theme,
         identity=identity,
         auth_context=auth_context,
+        display_mode=ui_mode,
     )
     ensure_json_serializable(response)
     response = finalize_run_payload(response, secret_values)

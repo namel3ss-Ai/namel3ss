@@ -7,6 +7,7 @@ Story parsing is isolated here to keep the shared page_items module small and fo
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.parser.decl.page_common import (
+    _parse_debug_only_clause,
     _is_visibility_rule_start,
     _parse_string_value,
     _parse_visibility_clause,
@@ -23,6 +24,7 @@ def parse_story_block(parser, *, allow_pattern_params: bool = False) -> ast.Stor
     parser._advance()
     title = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="story title")
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    debug_only = _parse_debug_only_clause(parser)
     parser._expect("COLON", "Expected ':' after story title")
     parser._expect("NEWLINE", "Expected newline after story header")
     parser._expect("INDENT", "Expected indented story body")
@@ -63,6 +65,7 @@ def parse_story_block(parser, *, allow_pattern_params: bool = False) -> ast.Stor
         steps=steps,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        debug_only=debug_only,
         line=story_tok.line,
         column=story_tok.column,
     )

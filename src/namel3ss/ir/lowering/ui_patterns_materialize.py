@@ -232,6 +232,22 @@ def materialize_item(
             return None
         working.label = label
         return working
+    if isinstance(working, ast.CustomComponentItem):
+        resolved_props: list[ast.CustomComponentProp] = []
+        for prop in list(working.properties):
+            next_prop = copy.deepcopy(prop)
+            value = next_prop.value
+            if isinstance(value, ast.PatternParamRef):
+                resolved = resolve_param_ref(
+                    value,
+                    expected_kinds={"text", "number", "boolean", "state"},
+                    param_values=param_values,
+                    param_defs=param_defs,
+                )
+                next_prop.value = resolved
+            resolved_props.append(next_prop)
+        working.properties = resolved_props
+        return working
     return working
 
 

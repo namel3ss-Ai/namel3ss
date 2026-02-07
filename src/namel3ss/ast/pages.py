@@ -12,14 +12,20 @@ if TYPE_CHECKING:  # pragma: no cover - typing-only
 
 @dataclass
 class PageItem(Node):
-    visibility: StatePath | None = field(default=None, kw_only=True)
-    visibility_rule: "VisibilityRule" | None = field(default=None, kw_only=True)
+    visibility: Expression | "PatternParamRef" | None = field(default=None, kw_only=True)
+    visibility_rule: "VisibilityRule | VisibilityExpressionRule" | None = field(default=None, kw_only=True)
+    debug_only: bool | None = field(default=None, kw_only=True)
 
 
 @dataclass
 class VisibilityRule(Node):
     path: StatePath
     value: Literal
+
+
+@dataclass
+class VisibilityExpressionRule(Node):
+    expression: Expression
 
 
 @dataclass
@@ -277,11 +283,24 @@ class ChatItem(PageItem):
 
 
 @dataclass
+class CustomComponentProp(Node):
+    name: str
+    value: object
+
+
+@dataclass
+class CustomComponentItem(PageItem):
+    component_name: str
+    properties: list[CustomComponentProp]
+    plugin_name: str | None = None
+
+
+@dataclass
 class TabItem(Node):
     label: str
     children: List["PageItem"]
-    visibility: StatePath | None = field(default=None, kw_only=True)
-    visibility_rule: VisibilityRule | None = field(default=None, kw_only=True)
+    visibility: Expression | "PatternParamRef" | None = field(default=None, kw_only=True)
+    visibility_rule: VisibilityRule | VisibilityExpressionRule | None = field(default=None, kw_only=True)
 
 
 @dataclass
@@ -378,4 +397,5 @@ class PageDecl(Node):
     requires: Expression | None = None
     purpose: str | None = None
     state_defaults: dict | None = None
+    debug_only: bool | None = None
     status: StatusBlock | None = None

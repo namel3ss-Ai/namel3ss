@@ -7,6 +7,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.parser.decl.page_common import _is_visibility_rule_start, _parse_visibility_rule_line
 
 from . import actions as actions_mod
+from . import custom_component as custom_component_mod
 from . import media as media_mod
 from . import numbers as numbers_mod
 from . import story as story_mod
@@ -142,6 +143,8 @@ def parse_page_item(
         return media_mod.parse_image_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if getattr(tok, "value", None) == "story":
         return story_mod.parse_story_item(parser, allow_pattern_params=allow_pattern_params)
+    if tok.type == "IDENT":
+        return custom_component_mod.parse_custom_component_item(parser, tok, allow_pattern_params=allow_pattern_params)
     raise Namel3ssError(
         f"Pages are declarative; unexpected item '{tok.type.lower()}'",
         line=tok.line,

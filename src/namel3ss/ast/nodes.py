@@ -50,7 +50,7 @@ from namel3ss.ast.functions import (
     FunctionParam,
     FunctionSignature,
 )
-from namel3ss.ast.modules import CapsuleDecl, CapsuleExport, UseDecl
+from namel3ss.ast.modules import CapsuleDecl, CapsuleExport, PluginUseDecl, UseDecl
 from namel3ss.ast.jobs import JobDecl
 from namel3ss.ast.pages import (
     ActivePageRule,
@@ -61,6 +61,8 @@ from namel3ss.ast.pages import (
     CardItem,
     CardStat,
     ChartItem,
+    CustomComponentItem,
+    CustomComponentProp,
     ComposeItem,
     ChatCitationsItem,
     ChatComposerField,
@@ -87,6 +89,7 @@ from namel3ss.ast.pages import (
     StatusBlock,
     StatusCase,
     StatusCondition,
+    VisibilityExpressionRule,
     VisibilityRule,
     StoryItem,
     StoryStep,
@@ -269,6 +272,8 @@ __all__ = [
     "ListItem",
     "ListItemMapping",
     "ChartItem",
+    "CustomComponentItem",
+    "CustomComponentProp",
     "UsePatternItem",
     "UseUIPackItem",
     "ChatMessagesItem",
@@ -284,6 +289,7 @@ __all__ = [
     "ActionAvailabilityRule",
     "ActivePageRule",
     "VisibilityRule",
+    "VisibilityExpressionRule",
     "ModalItem",
     "DrawerItem",
     "TabItem",
@@ -322,6 +328,7 @@ __all__ = [
     "CrudDefinition",
     "AgentDecl",
     "UseDecl",
+    "PluginUseDecl",
     "CapsuleExport",
     "CapsuleDecl",
     "PolicyDecl",

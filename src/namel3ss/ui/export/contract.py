@@ -7,6 +7,7 @@ from namel3ss.ui.export.actions import build_actions_export
 from namel3ss.ui.export.schema import build_schema_export
 from namel3ss.ui.export.ui import build_ui_export
 from namel3ss.ui.manifest import build_manifest
+from namel3ss.ui.manifest.display_mode import DISPLAY_MODE_STUDIO
 from namel3ss.validation import ValidationMode
 
 
@@ -19,6 +20,7 @@ def build_contract_manifest(
     persisted_theme: str | None = None,
     identity: dict | None = None,
     config=None,
+    ui_mode: str = DISPLAY_MODE_STUDIO,
 ) -> dict:
     resolved_config = config or load_config(
         app_path=getattr(program_ir, "app_path", None),
@@ -39,6 +41,7 @@ def build_contract_manifest(
         persisted_theme=persisted_theme,
         identity=resolved_identity,
         mode=ValidationMode.STATIC,
+        display_mode=ui_mode,
     )
 
 
@@ -51,6 +54,7 @@ def build_ui_contract_payload(
     persisted_theme: str | None = None,
     identity: dict | None = None,
     config=None,
+    ui_mode: str = DISPLAY_MODE_STUDIO,
 ) -> dict:
     manifest = build_contract_manifest(
         program_ir,
@@ -60,6 +64,7 @@ def build_ui_contract_payload(
         persisted_theme=persisted_theme,
         identity=identity,
         config=config,
+        ui_mode=ui_mode,
     )
     return {
         "ui": build_ui_export(manifest),

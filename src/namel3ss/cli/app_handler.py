@@ -25,7 +25,7 @@ from namel3ss.cli.console_mode import run_console
 from namel3ss.cli.studio_mode import run_studio
 from namel3ss.cli.browser_mode import run_dev_command, run_preview_command
 from namel3ss.cli.ui_mode import bundle_ui_contract, export_ui_contract, render_manifest, run_action
-from namel3ss.cli.run_mode import run_run_command
+from namel3ss.cli.run_entry import dispatch_run_command
 from namel3ss.cli.type_mode import run_type_command
 from namel3ss.cli.ui_output import print_payload, print_usage
 from namel3ss.cli.verify_mode import run_verify_command
@@ -200,7 +200,7 @@ def handle_app_commands(path: str | None, remainder: list[str], context: dict | 
         print(dumps_pretty(manifest))
         return 0
     if cmd == "run":
-        return run_run_command([path_posix, *tail])
+        return dispatch_run_command([*tail, path_posix])
     if cmd == "flow":
         json_mode = "--json" in tail
         tail = [item for item in tail if item != "--json"]

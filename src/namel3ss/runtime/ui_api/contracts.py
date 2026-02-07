@@ -29,6 +29,9 @@ def build_ui_manifest_payload(manifest_payload: dict, *, revision: str | None = 
         },
         "theme": theme,
     }
+    mode = manifest_payload.get("mode")
+    if isinstance(mode, str) and mode:
+        payload["manifest"]["mode"] = mode
     if isinstance(revision, str) and revision:
         payload["revision"] = revision
     return payload

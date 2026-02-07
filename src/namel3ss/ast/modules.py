@@ -16,6 +16,11 @@ class UseDecl(Node):
 
 
 @dataclass
+class PluginUseDecl(Node):
+    name: str
+
+
+@dataclass
 class CapsuleExport(Node):
     kind: str
     name: str

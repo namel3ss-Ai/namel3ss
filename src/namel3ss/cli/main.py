@@ -62,7 +62,7 @@ from namel3ss.cli.secret_mode import run_secret_command
 from namel3ss.cli.icons_mode import run_icons_command
 from namel3ss.cli.policy_mode import run_policy_command
 from namel3ss.cli.release_check_mode import run_release_check_command
-from namel3ss.cli.run_mode import run_run_command
+from namel3ss.cli.run_entry import dispatch_run_command
 from namel3ss.cli.scaffold_mode import run_new
 from namel3ss.cli.secrets_mode import run_secrets_command
 from namel3ss.cli.start_mode import run_start_command
@@ -186,7 +186,7 @@ def main(argv: list[str] | None = None) -> int:
             print_usage()
             return 0
         if cmd == "run":
-            return run_run_command(args[1:])
+            return dispatch_run_command(args[1:])
         if cmd in {"install", "update", "tree"}:
             return run_dependency_root(cmd, args[1:])
         if cmd == "dev":

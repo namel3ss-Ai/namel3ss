@@ -25,6 +25,11 @@ from namel3ss.secrets import set_audit_root, set_engine_target
 from namel3ss.studio.session import SessionState
 from namel3ss.determinism import canonical_json_dumps
 from namel3ss.ui.manifest import build_manifest
+from namel3ss.ui.manifest.display_mode import (
+    DISPLAY_MODE_PRODUCTION,
+    DISPLAY_MODE_STUDIO,
+    normalize_display_mode,
+)
 from namel3ss.ui.settings import UI_ALLOWED_VALUES, UI_DEFAULTS
 from namel3ss.validation import ValidationMode, ValidationWarning
 
@@ -50,11 +55,14 @@ class BrowserAppState:
         source_overrides: dict[Path, str] | None = None,
         watch_sources: bool = True,
         engine_target: str = "local",
+        ui_mode: str | None = None,
     ) -> None:
         self.app_path = Path(app_path).resolve()
         self.project_root = self.app_path.parent
         self.mode = mode
         self.debug = debug
+        default_ui_mode = DISPLAY_MODE_PRODUCTION if mode in {"run", "preview"} else DISPLAY_MODE_STUDIO
+        self.ui_mode = normalize_display_mode(ui_mode, default=default_ui_mode)
         self.source_overrides = source_overrides or {}
         self.watch_sources = watch_sources
         self.parse_cache: ParseCache = {}
@@ -193,6 +201,7 @@ class BrowserAppState:
                 memory_manager=self.session.memory_manager,
                 source=self._main_source(),
                 raise_on_error=False,
+                ui_mode=self.ui_mode,
             )
             if before_rows is not None:
                 self.session.data_effects = record_data_effects(
@@ -313,6 +322,7 @@ class BrowserAppState:
             mode=ValidationMode.RUNTIME,
             warnings=warnings,
             media_mode=MediaValidationMode.CHECK,
+            display_mode=self.ui_mode,
         )
         return manifest
 

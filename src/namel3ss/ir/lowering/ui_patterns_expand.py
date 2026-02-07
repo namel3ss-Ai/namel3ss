@@ -474,11 +474,14 @@ def _ensure_no_top_level_visibility(items: list[ast.PageItem], source: ast.PageI
                 column=source.column,
             )
 
-def _apply_visibility(item: ast.PageItem, visibility: ast.StatePath) -> ast.PageItem:
+def _apply_visibility(item: ast.PageItem, visibility: ast.Expression) -> ast.PageItem:
     item.visibility = visibility
     return item
 
-def _apply_visibility_rule(item: ast.PageItem, visibility_rule: ast.VisibilityRule) -> ast.PageItem:
+def _apply_visibility_rule(
+    item: ast.PageItem,
+    visibility_rule: ast.VisibilityRule | ast.VisibilityExpressionRule,
+) -> ast.PageItem:
     item.visibility_rule = visibility_rule
     return item
 

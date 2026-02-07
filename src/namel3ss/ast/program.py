@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, TYPE_CHECKING
 
 from namel3ss.ast.base import Node
 from namel3ss.ast.jobs import JobDecl
-from namel3ss.ast.modules import CapsuleDecl, UseDecl
+from namel3ss.ast.modules import CapsuleDecl, PluginUseDecl, UseDecl
 from namel3ss.ast.expressions import Expression
 from namel3ss.ast.identity import IdentityDecl
 from namel3ss.ast.policy import PolicyDecl
@@ -67,3 +67,4 @@ class Program(Node):
     agent_team: "AgentTeamDecl | None" = None
     identity: Optional[IdentityDecl] = None
     state_defaults: dict | None = None
+    plugin_uses: List[PluginUseDecl] = field(default_factory=list)

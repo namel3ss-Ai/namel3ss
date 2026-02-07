@@ -50,11 +50,15 @@ def _to_data(value: Any, *, field_name: str | None = None) -> Any:
                 continue
             if field.name == "routes" and not field_value:
                 continue
+            if field.name == "ui_plugins" and not field_value:
+                continue
             if field.name == "generated" and not field_value:
                 continue
             if field.name == "visibility_rule" and field_value is None:
                 continue
             if field.name == "availability_rule" and field_value is None:
+                continue
+            if field.name == "debug_only" and field_value is None:
                 continue
             if field.name in {"prompt_expr", "source_language", "target_language", "tests"} and field_value is None:
                 continue

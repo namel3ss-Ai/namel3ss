@@ -10,7 +10,7 @@ from namel3ss.utils.numbers import is_number, to_decimal
 
 
 def _base_element(element_id: str, page_name: str, page_slug: str, index: int, item: ir.PageItem) -> dict:
-    return {
+    element = {
         "element_id": element_id,
         "page": page_name,
         "page_slug": page_slug,
@@ -18,6 +18,9 @@ def _base_element(element_id: str, page_name: str, page_slug: str, index: int, i
         "line": item.line,
         "column": item.column,
     }
+    if getattr(item, "debug_only", None):
+        element["debug_only"] = True
+    return element
 
 
 def _require_record(name: str, record_map: Dict[str, schema.RecordSchema], item: ir.PageItem) -> schema.RecordSchema:

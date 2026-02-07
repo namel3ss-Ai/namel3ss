@@ -163,7 +163,8 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
             self._respond_json(build_error_payload("Program not loaded", kind="engine"), status=500)
             return
         try:
-            payload = build_ui_contract_payload(program_ir)
+            ui_mode = getattr(self.server, "ui_mode", "production")  # type: ignore[attr-defined]
+            payload = build_ui_contract_payload(program_ir, ui_mode=ui_mode)
             if kind != "all":
                 payload = payload.get(kind, {})
             self._respond_json(payload, status=200, sort_keys=True)
@@ -195,7 +196,8 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
             if worker_pool is not None:
                 response = worker_pool.run_action(action_id, payload)
             else:
-                response = dispatch_ui_action(program_ir, action_id=action_id, payload=payload)
+                ui_mode = getattr(self.server, "ui_mode", "production")  # type: ignore[attr-defined]
+                response = dispatch_ui_action(program_ir, action_id=action_id, payload=payload, ui_mode=ui_mode)
             if isinstance(response, dict):
                 if worker_pool is not None:
                     response.setdefault("process_model", "worker_pool")

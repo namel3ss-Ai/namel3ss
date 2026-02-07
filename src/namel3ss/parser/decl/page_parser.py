@@ -4,7 +4,7 @@ from typing import List
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
-from namel3ss.parser.decl.page_common import _match_ident_value, _reject_list_transforms
+from namel3ss.parser.decl.page_common import _is_debug_only_start, _match_ident_value, _parse_debug_only_line, _reject_list_transforms
 from namel3ss.parser.decl.page_items import parse_page_item
 from namel3ss.parser.decl.page_status import parse_status_block
 
@@ -22,10 +22,17 @@ def parse_page(parser) -> ast.PageDecl:
     items: List[ast.PageItem] = []
     purpose: str | None = None
     status_block: ast.StatusBlock | None = None
+    debug_only: bool | None = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
         tok = parser._current()
+        if _is_debug_only_start(parser):
+            if debug_only is not None:
+                raise Namel3ssError("debug_only is already declared for this page", line=tok.line, column=tok.column)
+            debug_only = _parse_debug_only_line(parser)
+            parser._match("NEWLINE")
+            continue
         if tok.type == "IDENT" and tok.value == "purpose":
             if purpose is not None:
                 raise Namel3ssError("Purpose is already declared for this page", line=tok.line, column=tok.column)
@@ -52,6 +59,7 @@ def parse_page(parser) -> ast.PageDecl:
         requires=requires_expr,
         purpose=purpose,
         status=status_block,
+        debug_only=debug_only,
         line=page_tok.line,
         column=page_tok.column,
     )

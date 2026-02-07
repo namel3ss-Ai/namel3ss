@@ -32,6 +32,14 @@ Deterministic execution with explicit AI boundaries and governed runtime.
 
 Try it in 60 seconds: [docs/quickstart.md](docs/quickstart.md).
 
+## Run modes
+
+- `n3 run app.ai` runs in production mode and renders only user-facing UI.
+- `n3 run studio app.ai` (or `n3 run --studio app.ai`) runs the same app with Studio instrumentation in the manifest.
+- `n3 studio app.ai` remains available as the dedicated Studio inspector command.
+- UI blocks can be marked with `debug_only` metadata so they render only in Studio mode.
+- Custom UI components are opt-in via `use plugin "name"` and require `custom_ui` in `capabilities`.
+
 ## What you can run today
 
 - Templates: [docs/templates.md](docs/templates.md)

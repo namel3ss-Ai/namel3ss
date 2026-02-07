@@ -8,29 +8,37 @@ from namel3ss.ui.patterns.model import PatternDefinition
 
 
 def resolve_visibility(
-    value: ast.StatePath | ast.PatternParamRef | None,
+    value: ast.Expression | ast.PatternParamRef | None,
     *,
     param_values: dict[str, object] | None,
     param_defs: dict[str, ast.PatternParam] | None,
-) -> ast.StatePath | None:
+) -> ast.Expression | None:
     if value is None:
         return None
-    resolved = resolve_param_ref(value, expected_kinds={"state"}, param_values=param_values, param_defs=param_defs)
+    resolved = resolve_param_ref(value, expected_kinds={"state", "boolean"}, param_values=param_values, param_defs=param_defs)
     if resolved is None:
         return None
-    if not isinstance(resolved, ast.StatePath):
-        raise Namel3ssError("Visibility requires state.<path>.", line=getattr(value, "line", None), column=getattr(value, "column", None))
+    if isinstance(resolved, bool):
+        return ast.Literal(value=resolved, line=getattr(value, "line", None), column=getattr(value, "column", None))
+    if not isinstance(resolved, ast.Expression):
+        raise Namel3ssError(
+            "Visibility requires a deterministic expression.",
+            line=getattr(value, "line", None),
+            column=getattr(value, "column", None),
+        )
     return resolved
 
 
 def resolve_visibility_rule(
-    value: ast.VisibilityRule | None,
+    value: ast.VisibilityRule | ast.VisibilityExpressionRule | None,
     *,
     param_values: dict[str, object] | None,
     param_defs: dict[str, ast.PatternParam] | None,
-) -> ast.VisibilityRule | None:
+) -> ast.VisibilityRule | ast.VisibilityExpressionRule | None:
     if value is None:
         return None
+    if isinstance(value, ast.VisibilityExpressionRule):
+        return value
     if not isinstance(value, ast.VisibilityRule):
         raise Namel3ssError("Visibility rule requires state.<path> is <value>.", line=getattr(value, "line", None), column=getattr(value, "column", None))
     if isinstance(value.value, ast.PatternParamRef):

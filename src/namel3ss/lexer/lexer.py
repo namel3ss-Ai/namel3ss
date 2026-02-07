@@ -24,6 +24,7 @@ _PUNCTUATION_TOKENS = {
     "<": "LT",
     ">": "GT",
     "|": "PIPE",
+    "!": "BANG",
 }
 
 _ESCAPE_TABLE = {
@@ -43,7 +44,7 @@ class Lexer:
     def tokenize(self) -> List[Token]:
         # Keep native scanner for plain inputs, but force python fallback when
         # new lexer features are present so behavior stays deterministic.
-        use_fallback = any(token in self.source for token in ('"""', "\\", "#", "|"))
+        use_fallback = any(token in self.source for token in ('"""', "\\", "#", "|", "==", "!=", "<=", ">="))
         if not use_fallback:
             from namel3ss.lexer.native_scan import scan_tokens_native
 

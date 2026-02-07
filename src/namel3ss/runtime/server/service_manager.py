@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import threading
 from http.server import HTTPServer
 from pathlib import Path
@@ -20,6 +21,7 @@ from namel3ss.runtime.server.worker_pool import ServiceActionWorkerPool
 from namel3ss.runtime.service_helpers import seed_flow, should_auto_seed, summarize_program
 from namel3ss.runtime.triggers import run_service_trigger_loop
 from namel3ss.ui.external.detect import resolve_external_ui_root
+from namel3ss.ui.manifest.display_mode import DISPLAY_MODE_PRODUCTION, normalize_display_mode
 
 DEFAULT_SERVICE_PORT = 8787
 
@@ -35,6 +37,7 @@ class ServiceRunner:
         auto_seed: bool = False,
         seed_flow: str = "seed_demo",
         headless: bool = False,
+        ui_mode: str | None = None,
     ):
         self.app_path = Path(app_path).resolve()
         self.target = target
@@ -43,6 +46,9 @@ class ServiceRunner:
         self.auto_seed = auto_seed
         self.seed_flow = seed_flow
         self.headless = headless
+        env_mode = os.getenv("N3_UI_MODE")
+        chosen_ui_mode = ui_mode if ui_mode is not None else env_mode
+        self.ui_mode = normalize_display_mode(chosen_ui_mode, default=DISPLAY_MODE_PRODUCTION)
         self.server: HTTPServer | None = None
         self._thread: threading.Thread | None = None
         self._trigger_thread: threading.Thread | None = None
@@ -83,6 +89,7 @@ class ServiceRunner:
             program_ir=program_ir,
             app_path=self.app_path,
             concurrency=self.concurrency,
+            ui_mode=self.ui_mode,
         )
         server.concurrency = self.concurrency.to_dict()  # type: ignore[attr-defined]
         server.headless = self.headless  # type: ignore[attr-defined]
@@ -94,6 +101,7 @@ class ServiceRunner:
         server.route_registry = registry  # type: ignore[attr-defined]
         server.external_ui_root = None if self.headless else external_ui_root  # type: ignore[attr-defined]
         server.external_ui_enabled = bool(not self.headless and external_ui_root is not None)  # type: ignore[attr-defined]
+        server.ui_mode = self.ui_mode  # type: ignore[attr-defined]
         self.server = server
         self._cluster_control = ClusterControlPlane(
             project_root=self.app_path.parent,
