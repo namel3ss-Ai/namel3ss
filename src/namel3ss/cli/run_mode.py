@@ -1,15 +1,14 @@
 from __future__ import annotations
 import os
-import re
 import sys
 from pathlib import Path
 
 from namel3ss.cli.app_loader import load_program
 from namel3ss.cli.app_path import default_missing_app_message, resolve_app_path
 from namel3ss.cli.devex import parse_project_overrides
-from namel3ss.cli.builds import app_path_from_metadata, load_build_metadata, resolve_build_id
 from namel3ss.cli.demo_support import DEMO_NAME, is_demo_project
 from namel3ss.cli.first_run import is_first_run
+from namel3ss.cli.run_helpers import detect_demo_provider, resolve_run_path
 from namel3ss.cli.open_url import open_url, should_open_url
 from namel3ss.cli.promotion_state import load_state
 from namel3ss.cli.runner import run_flow
@@ -24,6 +23,7 @@ from namel3ss.cli.text_output import prepare_cli_text, prepare_first_run_text
 from namel3ss.config.loader import load_config
 from namel3ss.runtime.performance.config import PerformanceRuntimeConfig, normalize_performance_runtime_config
 from namel3ss.runtime.performance.guard import require_performance_capability
+from namel3ss.runtime.capabilities.feature_gate import require_app_capability
 from namel3ss.secrets import set_audit_root, set_engine_target
 from namel3ss.traces.plain import format_plain
 from namel3ss.traces.schema import TraceEventType
@@ -60,7 +60,7 @@ def run_run_command(args: list[str]) -> int:
             project_root=project_root,
             force_check=_has_performance_overrides(params),
         )
-        run_path, build_id = _resolve_run_path(target.name, project_root, app_path, params.build_id)
+        run_path, build_id = resolve_run_path(target.name, project_root, app_path, params.build_id)
         if target.name == "local":
             if params.json_mode or params.explain:
                 program_ir, sources = load_program(run_path.as_posix())
@@ -108,6 +108,7 @@ def run_run_command(args: list[str]) -> int:
                 print("App server stopped.")
             return 0
         if target.name == "service":
+            require_app_capability(run_path, "service")
             port = params.port or DEFAULT_SERVICE_PORT
             runner = ServiceRunner(
                 run_path,
@@ -116,6 +117,7 @@ def run_run_command(args: list[str]) -> int:
                 port=port,
                 auto_seed=bool(is_demo and first_run and not params.dry),
                 headless=params.headless,
+                require_service_capability=True,
             )
             if params.dry:
                 print(f"Service runner dry http://127.0.0.1:{port}/health")
@@ -123,7 +125,7 @@ def run_run_command(args: list[str]) -> int:
                 return 0
             if is_demo:
                 url = f"http://127.0.0.1:{port}/api/ui/manifest" if params.headless else f"http://127.0.0.1:{port}/"
-                demo_provider = _detect_demo_provider(run_path)
+                demo_provider = detect_demo_provider(run_path)
                 if first_run:
                     print(f"Running {DEMO_NAME}")
                     print(f"Open: {url}")
@@ -225,6 +227,10 @@ def _parse_args(args: list[str]) -> _RunParams:
                 )
             target = args[i + 1]
             i += 2
+            continue
+        if arg == "--service":
+            target = "service"
+            i += 1
             continue
         if arg == "--port":
             if i + 1 >= len(args):
@@ -365,7 +371,7 @@ def _parse_args(args: list[str]) -> _RunParams:
             raise Namel3ssError(
                 build_guidance_message(
                     what=f"Unknown flag '{arg}'.",
-                    why="Supported flags: --target, --port, --build, --dry, --json, --explain, --first-run, --no-open, --headless, --async-runtime, --max-concurrency, --cache-size, --enable-batching.",
+                    why="Supported flags: --target, --service, --port, --build, --dry, --json, --explain, --first-run, --no-open, --headless, --async-runtime, --max-concurrency, --cache-size, --enable-batching.",
                     fix="Remove the unsupported flag.",
                     example="n3 run --target local",
                 )
@@ -473,25 +479,6 @@ def _print_explain_traces(output: dict) -> None:
         return
     print("Explain traces:")
     print(dumps_pretty(explain))
-
-
-def _resolve_run_path(target: str, project_root: Path, app_path: Path, build_id: str | None) -> tuple[Path, str | None]:
-    chosen_build = resolve_build_id(project_root, target, build_id)
-    if chosen_build:
-        build_path, meta = load_build_metadata(project_root, target, chosen_build)
-        return app_path_from_metadata(build_path, meta), chosen_build
-    return app_path, None
-
-
-def _detect_demo_provider(app_path: Path) -> str | None:
-    try:
-        contents = app_path.read_text(encoding="utf-8")
-    except OSError:
-        return None
-    match = re.search(r'provider\\s+is\\s+"([^"]+)"', contents)
-    if not match:
-        return None
-    return match.group(1).strip().lower()
 
 
 __all__ = ["run_run_command"]

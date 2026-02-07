@@ -149,7 +149,13 @@ def lower_section_item(
         for child in item.children
     ]
     return attach_origin(
-        SectionItem(label=item.label, children=children, line=item.line, column=item.column),
+        SectionItem(
+            label=item.label,
+            children=children,
+            columns=list(getattr(item, "columns", []) or []) or None,
+            line=item.line,
+            column=item.column,
+        ),
         item,
     )
 

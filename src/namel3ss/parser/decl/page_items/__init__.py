@@ -10,6 +10,8 @@ from . import actions as actions_mod
 from . import custom_component as custom_component_mod
 from . import media as media_mod
 from . import numbers as numbers_mod
+from . import polish as polish_mod
+from . import responsive as responsive_mod
 from . import story as story_mod
 from . import views as views_mod
 
@@ -81,6 +83,14 @@ def parse_page_item(
         return views_mod.parse_text_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "IDENT" and tok.value == "upload":
         return views_mod.parse_upload_item(parser, tok, allow_pattern_params=allow_pattern_params)
+    if tok.type == "IDENT" and tok.value == "loading":
+        return polish_mod.parse_loading_item(parser, tok, allow_pattern_params=allow_pattern_params)
+    if tok.type == "IDENT" and tok.value == "snackbar":
+        return polish_mod.parse_snackbar_item(parser, tok, allow_pattern_params=allow_pattern_params)
+    if tok.type == "IDENT" and tok.value == "icon":
+        return polish_mod.parse_icon_item(parser, tok, allow_pattern_params=allow_pattern_params)
+    if tok.type == "IDENT" and tok.value == "lightbox":
+        return polish_mod.parse_lightbox_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "FORM":
         return views_mod.parse_form_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "TABLE":
@@ -137,6 +147,8 @@ def parse_page_item(
         return actions_mod.parse_row_item(parser, tok, _parse_block, allow_pattern_params=allow_pattern_params)
     if tok.type == "COLUMN":
         return actions_mod.parse_column_item(parser, tok, _parse_block, allow_pattern_params=allow_pattern_params)
+    if tok.type == "IDENT" and tok.value == "grid":
+        return responsive_mod.parse_grid_item(parser, tok, parse_page_item, allow_pattern_params=allow_pattern_params)
     if tok.type == "DIVIDER":
         return actions_mod.parse_divider_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "IMAGE":

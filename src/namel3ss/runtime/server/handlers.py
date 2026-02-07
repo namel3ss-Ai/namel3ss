@@ -16,6 +16,18 @@ from namel3ss.runtime.server.observability_helpers import (
     load_observability_builder,
     observability_enabled,
 )
+from namel3ss.runtime.server.service_sessions_api import (
+    cleanup_session_manager,
+    handle_remote_studio_get,
+    handle_session_action_post,
+    handle_session_create_post,
+    handle_session_kill_delete,
+    handle_session_list_get,
+    handle_session_manifest_get,
+    handle_session_state_get,
+    resolve_dynamic_route_context,
+    session_manager,
+)
 from namel3ss.runtime.server.utils import dispatch_dynamic_route, get_or_create_route_registry, read_json_body
 from namel3ss.runtime.server.webhook_triggers import handle_webhook_trigger_post
 from namel3ss.runtime.service_helpers import contract_kind_for_path, summarize_program
@@ -31,7 +43,9 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         pass
 
     def do_GET(self) -> None:  # noqa: N802
-        path = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        path = parsed.path
+        cleanup_session_manager(self)
         if path.startswith("/health"):
             from namel3ss.runtime.server.metadata_payloads import build_health_payload
 
@@ -43,7 +57,7 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
             self._respond_json(build_version_payload(self.server))
             return
         if path.startswith("/api/"):
-            self._handle_api_get(path)
+            self._handle_api_get(parsed)
             return
         if self._dispatch_dynamic_route():
             return
@@ -54,15 +68,22 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
         path = parsed.path
+        cleanup_session_manager(self)
         if path == "/api/ui/action":
             path = "/api/action"
         if path == "/api/action":
             body = self._read_json_body()
             if body is None:
-                payload = build_error_payload("Invalid JSON body", kind="engine")
-                self._respond_json(payload, status=400)
+                self._respond_json(build_error_payload("Invalid JSON body", kind="engine"), status=400)
                 return
             self._handle_action_post(body)
+            return
+        if path == "/api/service/sessions":
+            body = self._read_json_body()
+            if body is None:
+                self._respond_json(build_error_payload("Invalid JSON body", kind="engine"), status=400)
+                return
+            handle_session_create_post(self, body)
             return
         if path == "/api/upload":
             response, status = self._handle_upload_post(parsed.query)
@@ -79,7 +100,24 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
             return
         self.send_error(404)
 
-    def _respond_json(self, payload: dict, status: int = 200, *, sort_keys: bool = False, headers: dict[str, str] | None = None) -> None:
+    def do_DELETE(self) -> None:  # noqa: N802
+        parsed = urlparse(self.path)
+        path = parsed.path.rstrip("/") or "/"
+        cleanup_session_manager(self)
+        if path.startswith("/api/service/sessions/"):
+            session_id = path.rsplit("/", 1)[-1]
+            handle_session_kill_delete(self, session_id)
+            return
+        self.send_error(404)
+
+    def _respond_json(
+        self,
+        payload: dict,
+        status: int = 200,
+        *,
+        sort_keys: bool = False,
+        headers: dict[str, str] | None = None,
+    ) -> None:
         data = json_dumps(payload, sort_keys=sort_keys).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
@@ -107,18 +145,36 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def _handle_api_get(self, path: str) -> None:
-        normalized = path.rstrip("/") or "/"
+    def _handle_api_get(self, parsed) -> None:
+        normalized = parsed.path.rstrip("/") or "/"
+        query = parse_qs(parsed.query or "")
+        if normalized == "/api/service/sessions":
+            handle_session_list_get(self)
+            return
+        if normalized.startswith("/api/service/studio/"):
+            handle_remote_studio_get(self, normalized)
+            return
         if normalized == "/api/ui/manifest":
+            if session_manager(self) is not None:
+                handle_session_manifest_get(self, query)
+                return
             self._respond_contract("ui")
             return
         if normalized == "/api/ui/actions":
             self._respond_contract("actions")
             return
         if normalized == "/api/ui/state":
+            if session_manager(self) is not None:
+                handle_session_state_get(self, query)
+                return
             state = self._program_state()
             revision = getattr(state, "revision", "") if state is not None else ""
-            payload = {"ok": True, "api_version": "1", "state": {"current_page": None, "values": {}, "errors": []}, "revision": revision}
+            payload = {
+                "ok": True,
+                "api_version": "1",
+                "state": {"current_page": None, "values": {}, "errors": []},
+                "revision": revision,
+            }
             self._respond_json(payload, status=200, sort_keys=True)
             return
         contract_kind = contract_kind_for_path(normalized)
@@ -169,11 +225,9 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
                 payload = payload.get(kind, {})
             self._respond_json(payload, status=200, sort_keys=True)
         except Namel3ssError as err:
-            payload = build_error_from_exception(err, kind="engine")
-            self._respond_json(payload, status=400)
+            self._respond_json(build_error_from_exception(err, kind="engine"), status=400)
         except Exception as err:  # pragma: no cover - defensive guard rail
-            payload = build_error_payload(str(err), kind="internal")
-            self._respond_json(payload, status=500)
+            self._respond_json(build_error_payload(str(err), kind="internal"), status=500)
 
     def _handle_action_post(self, body: dict) -> None:
         if not isinstance(body, dict):
@@ -191,6 +245,9 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         if program_ir is None:
             self._respond_json(build_error_payload("Program not loaded", kind="engine"), status=500)
             return
+        if session_manager(self) is not None:
+            handle_session_action_post(self, body, action_id=action_id, payload=payload, program_ir=program_ir)
+            return
         try:
             worker_pool = getattr(self.server, "worker_pool", None)  # type: ignore[attr-defined]
             if worker_pool is not None:
@@ -203,15 +260,12 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
                     response.setdefault("process_model", "worker_pool")
                 status = 200 if response.get("ok", True) else 400
                 self._respond_json(response, status=status)
-            else:  # pragma: no cover - defensive
-                payload = build_error_payload("Action response invalid", kind="engine")
-                self._respond_json(payload, status=500)
+                return
+            self._respond_json(build_error_payload("Action response invalid", kind="engine"), status=500)
         except Namel3ssError as err:
-            payload = build_error_from_exception(err, kind="engine")
-            self._respond_json(payload, status=400)
+            self._respond_json(build_error_from_exception(err, kind="engine"), status=400)
         except Exception as err:  # pragma: no cover - defensive
-            payload = build_error_payload(f"Action failed: {err}", kind="engine")
-            self._respond_json(payload, status=500)
+            self._respond_json(build_error_payload(f"Action failed: {err}", kind="engine"), status=500)
 
     def _handle_upload_post(self, query: str) -> tuple[dict, int]:
         program_ir = self._program()
@@ -247,12 +301,10 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
             return response, 200
         except Namel3ssError as err:
             payload = build_error_from_exception(err, kind="engine")
-            payload = apply_upload_error_payload(payload, recorder)
-            return payload, 400
+            return apply_upload_error_payload(payload, recorder), 400
         except Exception as err:  # pragma: no cover - defensive
             payload = build_error_payload(str(err), kind="internal")
-            payload = apply_upload_error_payload(payload, recorder)
-            return payload, 500
+            return apply_upload_error_payload(payload, recorder), 500
 
     def _handle_upload_list(self) -> tuple[dict, int]:
         program_ir = self._program()
@@ -267,23 +319,19 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
             response = handle_upload_list(ctx)
             return response, 200
         except Namel3ssError as err:
-            payload = build_error_from_exception(err, kind="engine")
-            return payload, 400
+            return build_error_from_exception(err, kind="engine"), 400
         except Exception as err:  # pragma: no cover - defensive
-            payload = build_error_payload(str(err), kind="internal")
-            return payload, 500
+            return build_error_payload(str(err), kind="internal"), 500
 
     def _handle_observability(self, kind: str) -> tuple[dict, int]:
         program_ir = self._program()
         if program_ir is None:
             return build_error_payload("Program not loaded", kind="engine"), 500
         if not observability_enabled():
-            payload = empty_observability_payload(kind)
-            return payload, 200
+            return empty_observability_payload(kind), 200
         builder = load_observability_builder(kind)
         if builder is None:
-            payload = empty_observability_payload(kind)
-            return payload, 200
+            return empty_observability_payload(kind), 200
         payload = builder(getattr(program_ir, "project_root", None), getattr(program_ir, "app_path", None))
         status = 200 if payload.get("ok", True) else 400
         return payload, status
@@ -329,31 +377,37 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         if program is None:
             return False
         worker_pool = getattr(self.server, "worker_pool", None)  # type: ignore[attr-defined]
-        flow_executor = worker_pool.run_flow if worker_pool is not None else None
-        registry = self._route_registry()
-        state = self._program_state()
+        try:
+            flow_executor, store, identity, extra_headers = resolve_dynamic_route_context(self, program, worker_pool)
+        except Namel3ssError as err:
+            self._respond_json(build_error_from_exception(err, kind="engine"), status=400)
+            return True
         result = dispatch_dynamic_route(
-            registry=registry,
+            registry=self._route_registry(),
             method=self.command,
             raw_path=self.path,
             headers=dict(self.headers.items()),
             rfile=self.rfile,
             program=program,
-            state=state,
-            store=self._ensure_store(program),
+            state=self._program_state(),
+            store=store,
             flow_executor=flow_executor,
+            identity=identity,
+            auth_context=None,
         )
         if result is None:
             return False
+        headers = dict(result.headers or {})
+        headers.update(extra_headers)
         if result.body is not None and result.content_type:
             self._respond_body(
                 result.body,
                 content_type=result.content_type,
                 status=result.status,
-                headers=result.headers,
+                headers=headers,
             )
             return True
-        self._respond_json(result.payload or {}, status=result.status, sort_keys=True, headers=result.headers)
+        self._respond_json(result.payload or {}, status=result.status, sort_keys=True, headers=headers)
         return True
 
     def _ensure_program(self):

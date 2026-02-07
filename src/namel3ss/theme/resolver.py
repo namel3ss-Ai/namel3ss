@@ -68,7 +68,7 @@ def resolve_theme_definition(
     capabilities: tuple[str, ...],
 ) -> ResolvedTheme:
     if definition is None:
-        return ResolvedTheme(definition=ThemeDefinition(), tokens={}, ui_overrides={})
+        return ResolvedTheme(definition=ThemeDefinition(), tokens={}, ui_overrides={}, responsive_tokens={})
     normalized = definition
     _validate_capability_gate(normalized, capabilities)
     if normalized.harmonize and not normalized.preset:
@@ -77,7 +77,12 @@ def resolve_theme_definition(
     ui_overrides = _build_ui_overrides(normalized)
     has_token_system = bool(normalized.preset or normalized.brand_palette or normalized.tokens or normalized.harmonize)
     if not has_token_system:
-        return ResolvedTheme(definition=normalized, tokens={}, ui_overrides=ui_overrides)
+        return ResolvedTheme(
+            definition=normalized,
+            tokens={},
+            ui_overrides=ui_overrides,
+            responsive_tokens=_sorted_responsive_tokens(normalized.responsive_tokens),
+        )
     palette = _resolve_base_palette(normalized)
     tokens = _derive_tokens(palette)
     tokens = _apply_semantic_aliases(tokens, palette)
@@ -89,6 +94,7 @@ def resolve_theme_definition(
         definition=normalized,
         tokens=sorted_token_items(tokens),
         ui_overrides=ui_overrides,
+        responsive_tokens=_sorted_responsive_tokens(normalized.responsive_tokens),
     )
 
 
@@ -216,16 +222,27 @@ def _pick_palette_name(palette: dict[str, str], candidates: tuple[str, ...], *, 
 
 def _validate_capability_gate(definition: ThemeDefinition, capabilities: tuple[str, ...]) -> None:
     normalized_caps = {normalize_builtin_capability(item) for item in capabilities}
-    has_custom_theme = bool(definition.brand_palette) or bool(definition.tokens) or bool(definition.harmonize)
+    has_custom_theme = (
+        bool(definition.brand_palette)
+        or bool(definition.tokens)
+        or bool(definition.responsive_tokens)
+        or bool(definition.harmonize)
+    )
     if not has_custom_theme:
         return
     if "custom_theme" in normalized_caps:
         return
     raise Namel3ssError(
-        "Missing capabilities: custom_theme. Add custom_theme to use brand_palette, tokens, or harmonize.",
+        "Missing capabilities: custom_theme. Add custom_theme to use brand_palette, tokens, responsive token scales, or harmonize.",
         line=definition.line,
         column=definition.column,
     )
+
+
+def _sorted_responsive_tokens(tokens: dict[str, tuple[int, ...]]) -> dict[str, tuple[int, ...]]:
+    if not tokens:
+        return {}
+    return {key: tuple(tokens[key]) for key in sorted(tokens)}
 
 
 __all__ = [

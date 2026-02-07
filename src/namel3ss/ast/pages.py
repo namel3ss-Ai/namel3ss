@@ -338,6 +338,7 @@ class LinkItem(PageItem):
 class SectionItem(PageItem):
     label: str | None
     children: List["PageItem"]
+    columns: list[int] | None = None
 
 
 @dataclass
@@ -379,6 +380,12 @@ class ColumnItem(PageItem):
 
 
 @dataclass
+class GridItem(PageItem):
+    columns: list[int]
+    children: List["PageItem"]
+
+
+@dataclass
 class DividerItem(PageItem):
     pass
 
@@ -388,6 +395,31 @@ class ImageItem(PageItem):
     src: str
     alt: str | None = None
     role: str | None = None
+
+
+@dataclass
+class LoadingItem(PageItem):
+    variant: str = "spinner"
+
+
+@dataclass
+class SnackbarItem(PageItem):
+    message: str
+    duration: int = 3000
+
+
+@dataclass
+class IconItem(PageItem):
+    name: str
+    size: str = "medium"
+    role: str = "decorative"
+    label: str | None = None
+
+
+@dataclass
+class LightboxItem(PageItem):
+    images: list[str]
+    start_index: int = 0
 
 
 @dataclass

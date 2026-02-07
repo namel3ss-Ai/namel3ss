@@ -112,3 +112,22 @@ page "home":
     with pytest.raises(Namel3ssError) as exc:
         lower_ir_program(source)
     assert "unknown token" in str(exc.value).lower()
+
+
+def test_theme_supports_responsive_token_scales() -> None:
+    source = '''
+capabilities:
+  custom_theme
+
+theme:
+  tokens:
+    font_size.base: [14, 16, 18]
+    spacing.small: [4, 6, 8]
+
+page "home":
+  title is "Hello"
+'''
+    program = lower_ir_program(source)
+    scales = getattr(program, "responsive_theme_tokens", {})
+    assert scales["font_size.base"] == (14, 16, 18)
+    assert scales["spacing.small"] == (4, 6, 8)

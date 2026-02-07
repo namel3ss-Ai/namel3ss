@@ -95,6 +95,9 @@ def build_section_item(
     )
     base = _base_element(_element_id(page_slug, "section", path), page_name, page_slug, index, item)
     element = {"type": "section", "label": item.label or "", "children": children, **base}
+    columns = getattr(item, "columns", None)
+    if columns:
+        element["columns"] = list(columns)
     return _attach_origin(element, item), actions
 
 

@@ -16,6 +16,7 @@ def parse_program(parser) -> ast.Program:
     app_column = None
     theme_tokens = {}
     theme_definition = None
+    responsive_definition = None
     ui_settings = default_ui_settings_with_meta()
     ui_line = None
     ui_column = None
@@ -42,6 +43,7 @@ def parse_program(parser) -> ast.Program:
     agent_team: ast.AgentTeamDecl | None = None
     uses: List[ast.UseDecl] = []
     plugin_uses: List[ast.PluginUseDecl] = []
+    plugin_declarations_closed_at: int | None = None
     capsule: ast.CapsuleDecl | None = None
     identity: ast.IdentityDecl | None = None
     theme_preference = {"allow_override": (False, None, None), "persist": ("none", None, None)}
@@ -80,6 +82,17 @@ def parse_program(parser) -> ast.Program:
         if rule.name == "use":
             parsed_use = rule.parse(parser)
             if isinstance(parsed_use, ast.PluginUseDecl):
+                if plugin_declarations_closed_at is not None:
+                    raise Namel3ssError(
+                        build_guidance_message(
+                            what="Plugin declarations must appear before page, flow, and record definitions.",
+                            why=f"A page/flow/record declaration already started at line {plugin_declarations_closed_at}.",
+                            fix='Move all `use plugin "..."` declarations to the top of the file.',
+                            example='use plugin "charts"\nuse plugin "maps"',
+                        ),
+                        line=getattr(parsed_use, "line", tok.line),
+                        column=getattr(parsed_use, "column", tok.column),
+                    )
                 plugin_uses.append(parsed_use)
             else:
                 uses.append(parsed_use)
@@ -201,6 +214,31 @@ def parse_program(parser) -> ast.Program:
                 )
             theme_definition = rule.parse(parser)
             continue
+        if rule.name == "responsive":
+            if responsive_definition is not None:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Responsive layout is already declared.",
+                        why="Only one top-level responsive block is allowed.",
+                        fix="Remove the duplicate responsive block.",
+                        example='responsive:\n  breakpoints:\n    mobile: 0\n    desktop: 1024',
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            if pages:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Responsive layout must be declared before page definitions.",
+                        why="Global breakpoints must be resolved before page layout.",
+                        fix="Move the responsive block above all page blocks.",
+                        example='responsive:\n  breakpoints:\n    mobile: 0\n    desktop: 1024',
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            responsive_definition = rule.parse(parser)
+            continue
         if rule.name == "policy":
             if policy is not None:
                 raise Namel3ssError(
@@ -271,6 +309,8 @@ def parse_program(parser) -> ast.Program:
             ais.append(rule.parse(parser))
             continue
         if rule.name == "record":
+            if plugin_declarations_closed_at is None:
+                plugin_declarations_closed_at = tok.line
             records.append(rule.parse(parser))
             continue
         if rule.name == "crud":
@@ -283,6 +323,8 @@ def parse_program(parser) -> ast.Program:
             ai_flows.append(rule.parse(parser))
             continue
         if rule.name == "flow":
+            if plugin_declarations_closed_at is None:
+                plugin_declarations_closed_at = tok.line
             flows.append(rule.parse(parser))
             continue
         if rule.name == "route":
@@ -292,6 +334,8 @@ def parse_program(parser) -> ast.Program:
             jobs.append(rule.parse(parser))
             continue
         if rule.name == "page":
+            if plugin_declarations_closed_at is None:
+                plugin_declarations_closed_at = tok.line
             pages.append(rule.parse(parser))
             continue
         if rule.name == "ui_pack":
@@ -376,6 +420,9 @@ def parse_program(parser) -> ast.Program:
     setattr(program, "theme_definition", theme_definition)
     setattr(program, "theme_line", getattr(theme_definition, "line", None))
     setattr(program, "theme_column", getattr(theme_definition, "column", None))
+    setattr(program, "responsive_definition", responsive_definition)
+    setattr(program, "responsive_line", getattr(responsive_definition, "line", None))
+    setattr(program, "responsive_column", getattr(responsive_definition, "column", None))
     return program
 
 

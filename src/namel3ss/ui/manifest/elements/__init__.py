@@ -16,6 +16,7 @@ from namel3ss.validation import ValidationMode
 
 from . import actions as actions_mod
 from . import numbers as numbers_mod
+from . import polish as polish_mod
 from . import story as story_mod
 from . import views as views_mod
 
@@ -233,6 +234,38 @@ def _page_item_to_manifest(
             page_slug=page_slug,
             path=path,
             taken_actions=taken_actions,
+        )
+        return apply_visibility(element, effective_visible, visibility_info), actions, effective_visible
+    if isinstance(item, ir.LoadingItem):
+        element, actions = polish_mod.build_loading_item(
+            item,
+            page_name=page_name,
+            page_slug=page_slug,
+            path=path,
+        )
+        return apply_visibility(element, effective_visible, visibility_info), actions, effective_visible
+    if isinstance(item, ir.SnackbarItem):
+        element, actions = polish_mod.build_snackbar_item(
+            item,
+            page_name=page_name,
+            page_slug=page_slug,
+            path=path,
+        )
+        return apply_visibility(element, effective_visible, visibility_info), actions, effective_visible
+    if isinstance(item, ir.IconItem):
+        element, actions = polish_mod.build_icon_item(
+            item,
+            page_name=page_name,
+            page_slug=page_slug,
+            path=path,
+        )
+        return apply_visibility(element, effective_visible, visibility_info), actions, effective_visible
+    if isinstance(item, ir.LightboxItem):
+        element, actions = polish_mod.build_lightbox_item(
+            item,
+            page_name=page_name,
+            page_slug=page_slug,
+            path=path,
         )
         return apply_visibility(element, effective_visible, visibility_info), actions, effective_visible
     if isinstance(item, ir.FormItem):
@@ -483,6 +516,25 @@ def _page_item_to_manifest(
         return apply_visibility(element, effective_visible, visibility_info), actions, effective_visible
     if isinstance(item, ir.ColumnItem):
         element, actions = actions_mod.build_column_item(
+            item,
+            record_map,
+            page_name=page_name,
+            page_slug=page_slug,
+            path=path,
+            store=store,
+            identity=identity,
+            state_ctx=state_ctx,
+            mode=mode,
+            media_registry=media_registry,
+            media_mode=media_mode,
+            warnings=warnings,
+            taken_actions=taken_actions,
+            build_children=_build_children,
+            parent_visible=effective_visible,
+        )
+        return apply_visibility(element, effective_visible, visibility_info), actions, effective_visible
+    if isinstance(item, ir.GridItem):
+        element, actions = polish_mod.build_grid_item(
             item,
             record_map,
             page_name=page_name,

@@ -59,6 +59,9 @@ def lower_program(program: ast.Program) -> ast.Program:
     setattr(lowered, "theme_definition", getattr(program, "theme_definition", None))
     setattr(lowered, "theme_line", getattr(program, "theme_line", None))
     setattr(lowered, "theme_column", getattr(program, "theme_column", None))
+    setattr(lowered, "responsive_definition", getattr(program, "responsive_definition", None))
+    setattr(lowered, "responsive_line", getattr(program, "responsive_line", None))
+    setattr(lowered, "responsive_column", getattr(program, "responsive_column", None))
     return lowered
 
 
@@ -332,11 +335,23 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
             line=item.line,
             column=item.column,
         )
+    if isinstance(item, ast.GridItem):
+        children = [_lower_page_item(child) for child in item.children]
+        return ast.GridItem(
+            columns=list(getattr(item, "columns", []) or []),
+            children=children,
+            visibility=getattr(item, "visibility", None),
+            visibility_rule=getattr(item, "visibility_rule", None),
+            debug_only=getattr(item, "debug_only", None),
+            line=item.line,
+            column=item.column,
+        )
     if isinstance(item, ast.SectionItem):
         children = [_lower_page_item(child) for child in item.children]
         return ast.SectionItem(
             label=item.label,
             children=children,
+            columns=list(getattr(item, "columns", []) or []) or None,
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
             debug_only=getattr(item, "debug_only", None),
@@ -387,6 +402,47 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
         return ast.DrawerItem(
             label=item.label,
             children=[_lower_page_item(child) for child in item.children],
+            visibility=getattr(item, "visibility", None),
+            visibility_rule=getattr(item, "visibility_rule", None),
+            debug_only=getattr(item, "debug_only", None),
+            line=item.line,
+            column=item.column,
+        )
+    if isinstance(item, ast.LoadingItem):
+        return ast.LoadingItem(
+            variant=getattr(item, "variant", "spinner"),
+            visibility=getattr(item, "visibility", None),
+            visibility_rule=getattr(item, "visibility_rule", None),
+            debug_only=getattr(item, "debug_only", None),
+            line=item.line,
+            column=item.column,
+        )
+    if isinstance(item, ast.SnackbarItem):
+        return ast.SnackbarItem(
+            message=getattr(item, "message", ""),
+            duration=getattr(item, "duration", 3000),
+            visibility=getattr(item, "visibility", None),
+            visibility_rule=getattr(item, "visibility_rule", None),
+            debug_only=getattr(item, "debug_only", None),
+            line=item.line,
+            column=item.column,
+        )
+    if isinstance(item, ast.IconItem):
+        return ast.IconItem(
+            name=getattr(item, "name", ""),
+            size=getattr(item, "size", "medium"),
+            role=getattr(item, "role", "decorative"),
+            label=getattr(item, "label", None),
+            visibility=getattr(item, "visibility", None),
+            visibility_rule=getattr(item, "visibility_rule", None),
+            debug_only=getattr(item, "debug_only", None),
+            line=item.line,
+            column=item.column,
+        )
+    if isinstance(item, ast.LightboxItem):
+        return ast.LightboxItem(
+            images=list(getattr(item, "images", []) or []),
+            start_index=getattr(item, "start_index", 0),
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
             debug_only=getattr(item, "debug_only", None),

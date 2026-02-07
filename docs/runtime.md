@@ -61,6 +61,12 @@ Rules:
 - No dev overlay, watcher, or preview markers are included.
 - Run `n3 build --target service` before starting the production server.
 
+## Service mode
+- `n3 serve app.ai` and `n3 run --service app.ai` now share the same capability gate and behavior.
+- Service mode requires `service`; concurrent sessions require `multi_user`; remote Studio inspection requires `remote_studio`.
+- Session APIs are deterministic and role-scoped (`guest`, `user`, `admin`).
+- See `docs/runtime/service-mode.md` for deployment, security, and remote Studio guidance.
+
 ### Button syntax (block-only)
 - Buttons must use a block:
   ```

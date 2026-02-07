@@ -33,6 +33,7 @@ def _lower_record(record: ast.RecordDecl) -> schema.RecordSchema:
     return schema.RecordSchema(
         name=record.name,
         fields=fields,
+        shared=bool(getattr(record, "shared", False)),
         tenant_key=tenant_key,
         ttl_hours=ttl_hours,
     )

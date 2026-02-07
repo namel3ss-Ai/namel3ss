@@ -230,4 +230,6 @@ page "home":
 '''
     with pytest.raises(Namel3ssError) as exc:
         lower_ir_program(source)
-    assert "Missing capabilities: custom_ui." in exc.value.message
+    assert "Missing capabilities:" in exc.value.message
+    assert "custom_ui" in exc.value.message
+    assert "sandbox" in exc.value.message

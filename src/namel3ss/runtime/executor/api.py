@@ -43,6 +43,7 @@ def execute_flow(
     functions: Optional[Dict[str, ir.FunctionDecl]] = None,
     identity: Optional[Dict[str, object]] = None,
     auth_context: object | None = None,
+    session: dict | None = None,
     observability: ObservabilityContext | None = None,
 ) -> ExecutionResult:
     return Executor(
@@ -59,6 +60,7 @@ def execute_flow(
         project_root=None,
         identity=identity,
         auth_context=auth_context,
+        session=session,
         observability=observability,
     ).run()
 
@@ -78,6 +80,7 @@ def execute_program_flow(
     config: AppConfig | None = None,
     identity: dict | None = None,
     auth_context: object | None = None,
+    session: dict | None = None,
     action_id: str | None = None,
     route_name: str | None = None,
     observability: ObservabilityContext | None = None,
@@ -177,10 +180,12 @@ def execute_program_flow(
         identity_schema=getattr(program, "identity", None),
         identity=identity,
         auth_context=auth_context,
+        session=session,
         project_root=resolved_root,
         app_path=getattr(program, "app_path", None),
         flow_action_id=action_id,
         observability=obs,
+        extension_hook_manager=getattr(program, "extension_hook_manager", None),
     )
     module_traces = getattr(program, "module_traces", None)
     if module_traces:

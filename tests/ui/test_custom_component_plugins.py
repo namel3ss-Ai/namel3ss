@@ -52,11 +52,12 @@ def render(props, state):
 
 capabilities:
   custom_ui
+  sandbox
+
+use plugin "maps"
 
 flow "OpenLocationDetails":
   return "ok"
-
-use plugin "maps"
 
 page "Dashboard":
   MapViewer lat: state.user.location.lat lng: state.user.location.lng zoom: 12 onClick: OpenLocationDetails
@@ -130,6 +131,7 @@ def render(props, state):
 
 capabilities:
   custom_ui
+  sandbox
 
 use plugin "charts"
 
@@ -165,6 +167,7 @@ def render(props, state):
 
 capabilities:
   custom_ui
+  sandbox
 
 use plugin "unsafe"
 

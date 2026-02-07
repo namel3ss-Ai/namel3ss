@@ -21,8 +21,11 @@ Start
   n3 run [file.ai]                # run app in browser (production UI, default: ./app.ai)
   n3 run studio [file.ai]         # run app with Studio instrumentation enabled
   n3 run [file.ai] --studio       # Studio mode flag alias
+  n3 serve [file.ai]              # run app as long-running service mode
   n3 dev [file.ai]                # dev loop, alias of run (browser)
   n3 studio [file.ai]             # inspect/debug in Studio
+  n3 studio connect <session_id>  # inspect a remote service session snapshot
+  n3 session list|kill ...        # list or terminate service sessions
   n3 console [file.ai]            # alias of Studio with console workflows
 
 Quality
@@ -34,6 +37,8 @@ Quality
 Ship
   n3 build [file.ai]              # build deployable bundle (alias: pack <file.ai>)
   n3 pack add <name[@version]>    # capability packs (contract)
+  n3 manifest [file.ai]           # print compiled manifest payload (for diffing/inspection)
+  n3 validate theme [file.ai]     # validate theme tokens and contrast contracts
   n3 clean                        # remove runtime artifacts
 
 Advanced
@@ -93,7 +98,19 @@ Advanced
   n3 security check|purge ...      # security posture and retention cleanup
   n3 sensitive [file.ai]           # manage sensitive flows and keys
   n3 sandbox [file.ai]             # sandbox build/run helpers
+  n3 create plugin <name>          # scaffold a custom UI plugin package
+  n3 create ui_pack <name>         # scaffold a reusable UI pack folder
   n3 plugin new <lang> <name>      # scaffold a plugin project
+  n3 plugin search <keyword>       # discover community extensions
+  n3 plugin info <name@version>    # inspect metadata, permissions, and trust
+  n3 plugin install <name@version> # install extension package (use --yes for consent)
+  n3 plugin update <name>          # update installed extension
+  n3 plugin trust <name@version>   # trust an extension hash locally (requires --yes)
+  n3 plugin revoke <name@version>  # revoke local trust
+  n3 plugin list --installed       # list installed extensions with trust status
+  n3 publish plugin <path>         # publish plugin package to local registry
+  n3 install plugin <name@version> # install plugin package from local registry
+  n3 list plugins                  # list published plugin versions in registry
   n3 memory | kit | exists        # memory recall, adoption kit, contract status
   n3 tools | packs | registry     # tool and pack management commands
   n3 pkg | pattern | test | eval  # packages, patterns, tests, evaluation

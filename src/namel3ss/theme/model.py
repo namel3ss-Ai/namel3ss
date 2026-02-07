@@ -8,6 +8,7 @@ class ThemeDefinition:
     preset: str | None = None
     brand_palette: dict[str, str] = field(default_factory=dict)
     tokens: dict[str, str] = field(default_factory=dict)
+    responsive_tokens: dict[str, tuple[int, ...]] = field(default_factory=dict)
     harmonize: bool = False
     allow_low_contrast: bool = False
     density: str | None = None
@@ -23,4 +24,4 @@ class ResolvedTheme:
     definition: ThemeDefinition
     tokens: dict[str, str]
     ui_overrides: dict[str, str]
-
+    responsive_tokens: dict[str, tuple[int, ...]] = field(default_factory=dict)

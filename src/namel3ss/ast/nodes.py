@@ -77,13 +77,17 @@ from namel3ss.ast.pages import (
     FormFieldConfig,
     FormFieldRef,
     FormGroup,
+    GridItem,
+    IconItem,
     ImageItem,
+    LightboxItem,
     LinkItem,
     ListAction,
     ListItem,
     ListItemMapping,
     NumberEntry,
     NumberItem,
+    SnackbarItem,
     ModalItem,
     DrawerItem,
     StatusBlock,
@@ -102,6 +106,7 @@ from namel3ss.ast.pages import (
     PageItem,
     RowItem,
     SectionItem,
+    LoadingItem,
     TableColumnDirective,
     TableItem,
     TablePagination,
@@ -161,6 +166,7 @@ from namel3ss.ast.records import FieldConstraint, FieldDecl, RecordDecl
 from namel3ss.ast.routes import RouteDefinition, RouteField
 from namel3ss.ast.prompts import PromptDefinition
 from namel3ss.ast.crud import CrudDefinition
+from namel3ss.ast.responsive import ResponsiveBreakpoint, ResponsiveDecl
 
 __all__ = [
     "Node",
@@ -305,6 +311,11 @@ __all__ = [
     "ColumnItem",
     "DividerItem",
     "ImageItem",
+    "GridItem",
+    "LoadingItem",
+    "SnackbarItem",
+    "IconItem",
+    "LightboxItem",
     "PageDecl",
     "UIPackDecl",
     "UIPackFragment",
@@ -326,6 +337,8 @@ __all__ = [
     "RouteField",
     "PromptDefinition",
     "CrudDefinition",
+    "ResponsiveBreakpoint",
+    "ResponsiveDecl",
     "AgentDecl",
     "UseDecl",
     "PluginUseDecl",

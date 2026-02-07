@@ -80,7 +80,9 @@ class Parser(TokenStream):
         )
         program = parser._parse_program()
         if lower_sugar:
-            program = lower_sugar_program(program)
+            lowered = lower_sugar_program(program)
+            _preserve_record_shared_flags(program, lowered)
+            program = lowered
         parser._expect("EOF")
         return program
 
@@ -219,6 +221,24 @@ def parse(
         require_spec=require_spec,
         lower_sugar=lower_sugar,
     )
+
+
+def _preserve_record_shared_flags(source_program: ast.Program, lowered_program: ast.Program) -> None:
+    source_records = getattr(source_program, "records", None)
+    lowered_records = getattr(lowered_program, "records", None)
+    if not isinstance(source_records, list) or not isinstance(lowered_records, list):
+        return
+    shared_by_name: dict[str, bool] = {}
+    for record in source_records:
+        name = str(getattr(record, "name", "") or "")
+        if not name:
+            continue
+        shared_by_name[name] = bool(getattr(record, "shared", False))
+    for record in lowered_records:
+        name = str(getattr(record, "name", "") or "")
+        if not name or name not in shared_by_name:
+            continue
+        setattr(record, "shared", shared_by_name[name])
 
 
 __all__ = ["Parser", "parse"]

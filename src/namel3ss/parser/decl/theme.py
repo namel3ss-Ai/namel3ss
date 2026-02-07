@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from decimal import Decimal
+
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.theme.colors import validate_palette_name, validate_token_name
 from namel3ss.theme.model import ThemeDefinition
@@ -19,6 +21,7 @@ def parse_theme_decl(parser) -> ThemeDefinition:
     preset: str | None = None
     brand_palette: dict[str, str] = {}
     tokens: dict[str, str] = {}
+    responsive_tokens: dict[str, tuple[int, ...]] = {}
     harmonize = False
     allow_low_contrast = False
     axes: dict[str, str] = {}
@@ -42,8 +45,8 @@ def parse_theme_decl(parser) -> ThemeDefinition:
             continue
         if key == "tokens":
             _expect_colon_or_is(parser, context="tokens")
-            block = _parse_theme_mapping_block(parser, key_kind="token")
-            for item_key, item_value in block.items():
+            token_block, responsive_block = _parse_theme_tokens_block(parser)
+            for item_key, item_value in token_block.items():
                 if item_key in tokens:
                     raise Namel3ssError(
                         f'Duplicate token key "{item_key}".',
@@ -51,6 +54,14 @@ def parse_theme_decl(parser) -> ThemeDefinition:
                         column=key_tok.column,
                     )
                 tokens[item_key] = item_value
+            for item_key, item_value in responsive_block.items():
+                if item_key in responsive_tokens:
+                    raise Namel3ssError(
+                        f'Duplicate token key "{item_key}".',
+                        line=key_tok.line,
+                        column=key_tok.column,
+                    )
+                responsive_tokens[item_key] = item_value
             continue
         if key == "preset":
             _expect_colon_or_is(parser, context="preset")
@@ -89,6 +100,7 @@ def parse_theme_decl(parser) -> ThemeDefinition:
         preset=preset,
         brand_palette=brand_palette,
         tokens=tokens,
+        responsive_tokens=responsive_tokens,
         harmonize=harmonize,
         allow_low_contrast=allow_low_contrast,
         density=axes.get("density"),
@@ -117,6 +129,26 @@ def _parse_theme_mapping_block(parser, *, key_kind: str) -> dict[str, str]:
         parser._match("NEWLINE")
     parser._expect("DEDENT", "Expected end of mapping block")
     return mapping
+
+
+def _parse_theme_tokens_block(parser) -> tuple[dict[str, str], dict[str, tuple[int, ...]]]:
+    parser._expect("NEWLINE", "Expected newline before mapping block")
+    parser._expect("INDENT", "Expected indented mapping block")
+    tokens: dict[str, str] = {}
+    responsive_tokens: dict[str, tuple[int, ...]] = {}
+    while parser._current().type != "DEDENT":
+        if parser._match("NEWLINE"):
+            continue
+        key = _parse_dotted_name_until(parser, stop_tokens={"COLON", "IS"}, context="token name")
+        _expect_colon_or_is(parser, context="token entry")
+        if key.startswith("font_size.") or key.startswith("spacing."):
+            responsive_tokens[key] = _parse_number_array_scalar(parser, context=key)
+        else:
+            value, _, _ = _parse_text_scalar(parser, context="token value", allow_dotted_ident=True)
+            tokens[key] = value
+        parser._match("NEWLINE")
+    parser._expect("DEDENT", "Expected end of mapping block")
+    return tokens, responsive_tokens
 
 
 def _parse_palette_key(parser) -> str:
@@ -185,5 +217,29 @@ def _parse_boolean_scalar(parser, *, context: str) -> bool:
     return bool(tok.value)
 
 
-__all__ = ["parse_theme_decl"]
+def _parse_number_array_scalar(parser, *, context: str) -> tuple[int, ...]:
+    parser._expect("LBRACKET", f"Expected '[' to start {context} scale")
+    values: list[int] = []
+    while True:
+        tok = parser._expect("NUMBER", f"Expected number in {context} scale")
+        value = tok.value
+        if isinstance(value, Decimal):
+            if value != value.to_integral_value():
+                raise Namel3ssError(f"{context} values must be integers.", line=tok.line, column=tok.column)
+            numeric = int(value)
+        else:
+            numeric = int(value)
+        if numeric < 0:
+            raise Namel3ssError(f"{context} values must be non-negative.", line=tok.line, column=tok.column)
+        values.append(numeric)
+        if parser._match("COMMA"):
+            continue
+        break
+    parser._expect("RBRACKET", f"Expected ']' to close {context} scale")
+    if not values:
+        current = parser._current()
+        raise Namel3ssError(f"{context} scale cannot be empty.", line=current.line, column=current.column)
+    return tuple(values)
 
+
+__all__ = ["parse_theme_decl"]

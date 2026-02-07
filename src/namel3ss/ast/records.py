@@ -30,5 +30,6 @@ class FieldDecl(Node):
 class RecordDecl(Node):
     name: str
     fields: List[FieldDecl]
+    shared: bool = False
     tenant_key: Optional[Expression] = None
     ttl_hours: Optional[Expression] = None

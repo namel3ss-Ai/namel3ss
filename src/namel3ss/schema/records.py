@@ -46,6 +46,7 @@ class FieldSchema:
 class RecordSchema:
     name: str
     fields: List[FieldSchema] = field(default_factory=list)
+    shared: bool = False
     tenant_key: List[str] | None = None
     ttl_hours: Decimal | None = None
     system_fields: List[FieldSchema] = field(default_factory=list, init=False)

@@ -26,6 +26,17 @@ BUILTIN_CAPABILITIES = (
     "custom_ui",
     "custom_theme",
     "theme_editor",
+    "dev_tools",
+    "plugin_registry",
+    "responsive_design",
+    "sandbox",
+    "service",
+    "multi_user",
+    "remote_studio",
+    "extension_hooks",
+    "hook_execution",
+    "extension_trust",
+    "remote_registry",
 )
 
 

@@ -23,6 +23,7 @@ _CONTAINER_SPACING_RULES: dict[str, tuple[tuple[str, str], ...]] = {
     "card_group": (("gap", "loose"),),
     "row": (("gap", "base"),),
     "column": (("gap", "base"),),
+    "grid": (("gap", "base"),),
     "tabs": (("tab_gap", "tight"), ("header_gap", "base")),
     "tab": (("gap", "base"),),
     "modal": (("padding", "loose"), ("header_gap", "tight"), ("body_gap", "base")),
@@ -41,6 +42,10 @@ _COMPONENT_SPACING_RULES: dict[str, tuple[tuple[str, str], ...]] = {
     "thinking": (("status_gap", "tight"),),
     "citations": (("item_gap", "tight"),),
     "memory": (("item_gap", "tight"),),
+    "loading": (("status_gap", "tight"),),
+    "snackbar": (("status_gap", "tight"),),
+    "icon": (("icon_gap", "tight"),),
+    "lightbox": (("item_gap", "base"),),
 }
 
 _VIEW_SPACING_RULES: dict[str, tuple[tuple[str, str], ...]] = {

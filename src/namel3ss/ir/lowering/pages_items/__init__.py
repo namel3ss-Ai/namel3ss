@@ -18,6 +18,7 @@ from namel3ss.ui.theme import normalize_style_hooks, normalize_variant
 from . import actions as actions_mod
 from . import media as media_mod
 from . import numbers as numbers_mod
+from . import polish as polish_mod
 from . import story as story_mod
 from . import views as views_mod
 
@@ -222,6 +223,14 @@ def _lower_page_item(
         )
     if isinstance(item, ast.UploadItem):
         return views_mod.lower_upload_item(item, attach_origin=_attach_origin)
+    if isinstance(item, ast.LoadingItem):
+        return polish_mod.lower_loading_item(item, attach_origin=_attach_origin)
+    if isinstance(item, ast.SnackbarItem):
+        return polish_mod.lower_snackbar_item(item, attach_origin=_attach_origin)
+    if isinstance(item, ast.IconItem):
+        return polish_mod.lower_icon_item(item, attach_origin=_attach_origin)
+    if isinstance(item, ast.LightboxItem):
+        return polish_mod.lower_lightbox_item(item, attach_origin=_attach_origin)
     if isinstance(item, ast.FormItem):
         return views_mod.lower_form_item(
             item,
@@ -331,6 +340,18 @@ def _lower_page_item(
         )
     if isinstance(item, ast.ColumnItem):
         return actions_mod.lower_column_item(
+            item,
+            record_map,
+            flow_names,
+            page_name,
+            page_names,
+            overlays,
+            compose_names,
+            lower_page_item=_lower_page_item,
+            attach_origin=_attach_origin,
+        )
+    if isinstance(item, ast.GridItem):
+        return polish_mod.lower_grid_item(
             item,
             record_map,
             flow_names,

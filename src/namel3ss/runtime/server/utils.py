@@ -37,6 +37,8 @@ def dispatch_dynamic_route(
     state: Any,
     store: Any,
     flow_executor: Any,
+    identity: dict | None = None,
+    auth_context: object | None = None,
 ):
     revision = getattr(state, "revision", None) if state else None
     refresh_routes(program=program, registry=registry, revision=revision, logger=print)
@@ -47,8 +49,8 @@ def dispatch_dynamic_route(
         headers=headers,
         rfile=rfile,
         program=program,
-        identity=None,
-        auth_context=None,
+        identity=identity,
+        auth_context=auth_context,
         store=store,
         flow_executor=flow_executor,
     )

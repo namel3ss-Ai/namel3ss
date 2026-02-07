@@ -24,6 +24,7 @@ This is the authoritative description of the UI DSL. It is semantic and explicit
 - `tool "name":`
 - `ui_pack "name":`
 - `pattern "name":`
+- `responsive:` (optional global breakpoint layout metadata)
 - `use plugin "name"` (top-level plug-in declaration for custom UI components)
 - `policy`
 Rule: use `keyword "name"`; never `keyword is "name"`.
@@ -61,12 +62,17 @@ Structural:
 - `chat:` children: chat elements only (`messages`, `composer`, `thinking`, `citations`, `memory`).
 - `row:` children: only `column`.
 - `column:` children: any page items.
+- `grid:` responsive container with deterministic column spans.
 - `divider`
 
 Content:
 - `title is "Text"`
 - `text is "Text"`
 - `image is "<media_name>"`
+- `loading [variant: spinner|skeleton]`
+- `snackbar message: "..." duration: <ms>`
+- `icon name: "<icon>" size: small|medium|large role: decorative|semantic [label: "..."]`
+- `lightbox images: ["a.png", "b.png"] [startIndex: <n>]`
 
 Data/UI bindings:
 - `form is "RecordName"` auto-fields from record; optional `groups`/`help`/`readonly`; submits as `submit_form` action.
@@ -103,7 +109,8 @@ Rules:
 - Unknown component tags still fail unless a loaded plug-in provides that component.
 - Component property names and types are validated against the plug-in schema.
 - Event properties (for example `onClick`) must reference known flow names.
-- Plug-ins are capability-gated: add `custom_ui` in the app `capabilities` block.
+- Plug-ins are capability-gated: add `custom_ui` and `sandbox` in the app `capabilities` block.
+- Permissioned or hook-enabled community extensions additionally require `extension_trust` (and `extension_hooks` when `hooks` are declared in the manifest).
 - Plug-in discovery uses `N3_UI_PLUGIN_DIRS` (path-separated list), then project defaults:
   - `<project_root>/.namel3ss/ui_plugins`
   - `<project_root>/ui_plugins`
@@ -250,6 +257,27 @@ Rules:
 - Elements with `visibility` still appear in the manifest with `visible: true|false`; hidden elements do not emit actions.
 - Elements and pages with `debug_only: true` are omitted in production mode and rendered in Studio mode.
 - UI explain output includes the predicate, referenced state paths, evaluated result, and the visibility reason.
+
+## 3.5) Responsive layout
+- Declare top-level breakpoints with:
+```
+responsive:
+  breakpoints:
+    mobile: 0
+    tablet: 640
+    desktop: 1024
+```
+- Sections can declare responsive spans: `section "Overview" columns: [12, 6, 4]:`
+- `grid` requires `columns` in its block:
+```
+grid:
+  columns: [12, 6, 4]
+  card:
+    title is "Item"
+```
+- `columns` values are deterministic integer spans. Each value must be `1..12`.
+- If fewer spans are provided than breakpoints, the last span is repeated.
+- If `responsive_design` capability is absent, responsive spans fall back to the first value (legacy static layout).
 
 Example:
 ```

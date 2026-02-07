@@ -39,6 +39,7 @@ def build_flow_payload(
     config: AppConfig | None = None,
     identity: dict | None = None,
     auth_context: object | None = None,
+    session: dict | None = None,
     source: str | None = None,
     project_root: str | Path | None = None,
     action_id: str | None = None,
@@ -80,6 +81,7 @@ def build_flow_payload(
             identity=resolved_identity,
             auth_context=resolved_auth,
             action_id=action_id,
+            session=session,
         )
     except Exception as err:
         error_payload = _build_error_payload(err, source)

@@ -33,6 +33,7 @@ from namel3ss.ir.lowering.tools import _lower_tools
 from namel3ss.ir.lowering.ui_packs import build_pack_index
 from namel3ss.ir.lowering.ui_patterns import build_pattern_index
 from namel3ss.ir.lowering.program_capabilities import require_program_capabilities
+from namel3ss.ir.lowering.responsive import lower_responsive_definition
 from namel3ss.ir.model.agents import RunAgentsParallelStmt
 from namel3ss.ir.model.flow_steps import FlowInput
 from namel3ss.ir.model.contracts import ContractDecl
@@ -46,6 +47,7 @@ from namel3ss.ir.model.pages import (
     ColumnItem,
     ComposeItem,
     DrawerItem,
+    GridItem,
     ModalItem,
     Page,
     RowItem,
@@ -56,9 +58,11 @@ from namel3ss.ir.model.pages import (
 from namel3ss.ir.model.expressions import Literal as IRLiteral
 from namel3ss.ir.model.expressions import StatePath as IRStatePath
 from namel3ss.ir.model.statements import ThemeChange, If, Repeat, RepeatWhile, ForEach, Match, MatchCase, TryCatch, ParallelBlock
+from namel3ss.ir.model.responsive import ResponsiveLayout
 from namel3ss.schema import records as schema
 from namel3ss.theme import resolve_theme_definition, resolve_token_registry
 from namel3ss.ui.plugins import load_ui_plugin_registry
+from namel3ss.ui.plugins.hooks import build_extension_hook_manager
 from namel3ss.ui.settings import normalize_ui_settings
 from namel3ss.validation import ValidationMode
 from namel3ss.lang.capabilities import normalize_builtin_capability
@@ -142,27 +146,46 @@ def lower_program(program: ast.Program) -> Program:
         ai_map,
         agent_map,
     )
+    responsive_layout = lower_responsive_definition(
+        getattr(program, "responsive_definition", None),
+        capabilities=capabilities,
+    )
     theme_resolution = resolve_theme_definition(
         getattr(program, "theme_definition", None),
         capabilities=capabilities,
     )
+    _validate_responsive_theme_scales(
+        responsive_tokens=theme_resolution.responsive_tokens,
+        responsive_layout=responsive_layout,
+        line=getattr(getattr(theme_resolution, "definition", None), "line", None),
+        column=getattr(getattr(theme_resolution, "definition", None), "column", None),
+    )
     plugin_decls = tuple(getattr(program, "plugin_uses", []) or [])
     plugin_names = tuple(str(getattr(plugin, "name", "") or "") for plugin in plugin_decls)
-    if plugin_names and "custom_ui" not in capabilities:
-        raise Namel3ssError(
-            build_guidance_message(
-                what="Missing capabilities: custom_ui.",
-                why="Apps must explicitly enable custom UI plug-ins.",
-                fix="Add custom_ui to the capabilities block.",
-                example="capabilities:\n  custom_ui",
+    if plugin_names:
+        missing_plugin_caps = [name for name in ("custom_ui", "sandbox") if name not in capabilities]
+        if missing_plugin_caps:
+            missing_text = ", ".join(missing_plugin_caps)
+            example_caps = "\n  ".join(["custom_ui", "sandbox"])
+            raise Namel3ssError(
+                build_guidance_message(
+                    what=f"Missing capabilities: {missing_text}.",
+                    why="UI plug-ins require explicit capability opt-in for custom UI rendering and sandbox isolation.",
+                    fix="Add the missing capabilities to the capabilities block.",
+                    example=f"capabilities:\n  {example_caps}",
+                )
             )
-        )
     plugin_registry = load_ui_plugin_registry(
         plugin_names=plugin_names,
         project_root=getattr(program, "project_root", None),
         app_path=getattr(program, "app_path", None),
         allowed_capabilities=capabilities,
     )
+    hook_manager = build_extension_hook_manager(
+        plugin_registry=plugin_registry,
+        capabilities=capabilities,
+    )
+    compile_hook_warnings = hook_manager.run_compile_hooks(program=program)
     pack_allowlist = _normalize_pack_allowlist(getattr(program, "pack_allowlist", None))
     pack_index = build_pack_index(getattr(program, "ui_packs", []))
     pattern_index = build_pattern_index(getattr(program, "ui_patterns", []), pack_index)
@@ -221,8 +244,12 @@ def lower_program(program: ast.Program) -> Program:
     )
     setattr(lowered, "pack_allowlist", pack_allowlist)
     setattr(lowered, "ui_plugin_registry", plugin_registry)
+    setattr(lowered, "extension_hook_manager", hook_manager)
+    setattr(lowered, "extension_compile_warnings", compile_hook_warnings)
     setattr(lowered, "theme_definition", theme_resolution.definition)
     setattr(lowered, "resolved_theme", theme_resolution)
+    setattr(lowered, "responsive_theme_tokens", theme_resolution.responsive_tokens)
+    setattr(lowered, "responsive_layout", responsive_layout)
     return lowered
 def _ensure_unique_pages(pages: list[Page]) -> None:
     seen: dict[str, object] = {}
@@ -239,6 +266,34 @@ def _ensure_unique_pages(pages: list[Page]) -> None:
                 column=getattr(page, "column", None),
             )
         seen[page.name] = True
+
+
+def _validate_responsive_theme_scales(
+    *,
+    responsive_tokens: dict[str, tuple[int, ...]],
+    responsive_layout: ResponsiveLayout | None,
+    line: int | None,
+    column: int | None,
+) -> None:
+    if not responsive_tokens:
+        return
+    if responsive_layout is None:
+        return
+    breakpoint_count = 0
+    if responsive_layout is not None:
+        breakpoint_count = len(tuple(getattr(getattr(responsive_layout, "breakpoints", None), "names", ()) or ()))
+    expected_length = breakpoint_count + 1
+    for token_name in sorted(responsive_tokens.keys()):
+        values = tuple(responsive_tokens.get(token_name, ()))
+        if len(values) != expected_length:
+            raise Namel3ssError(
+                (
+                    f"Responsive token '{token_name}' defines {len(values)} values, "
+                    f"but expected {expected_length} (default + {breakpoint_count} breakpoints)."
+                ),
+                line=line,
+                column=column,
+            )
 def _lower_active_page_rules(
     rules: list[ast.ActivePageRule] | None,
     page_names: set[str],
@@ -483,6 +538,7 @@ def _walk_page_items(items: list[object]) -> list[object]:
                 DrawerItem,
                 ModalItem,
                 ChatItem,
+                GridItem,
             ),
         ):
             collected.extend(_walk_page_items(getattr(item, "children", [])))

@@ -142,6 +142,7 @@
             }
           ],
           "column": 3,
+          "columns": null,
           "label": "Layout",
           "line": 14,
           "type": "SectionItem",
@@ -202,6 +203,7 @@
         }
       ],
       "name": "Note",
+      "shared": false,
       "system_fields": [],
       "tenant_key": null,
       "ttl_hours": null,

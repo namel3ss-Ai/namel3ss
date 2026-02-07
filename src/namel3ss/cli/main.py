@@ -11,6 +11,7 @@ from namel3ss.cli.audit_mode import run_audit_command
 from namel3ss.cli.ast_mode import run_ast_command
 from namel3ss.cli.browser_mode import run_dev_command, run_preview_command
 from namel3ss.cli.build_mode import run_build_command
+from namel3ss.cli.create_mode import run_create_command
 from namel3ss.cli.dataset_mode import run_dataset_command
 from namel3ss.cli.constants import ROOT_APP_COMMANDS
 from namel3ss.cli.deps_mode import run_deps
@@ -65,7 +66,10 @@ from namel3ss.cli.release_check_mode import run_release_check_command
 from namel3ss.cli.run_entry import dispatch_run_command
 from namel3ss.cli.scaffold_mode import run_new
 from namel3ss.cli.secrets_mode import run_secrets_command
+from namel3ss.cli.serve_mode import run_serve_command
+from namel3ss.cli.session_mode import run_session_command
 from namel3ss.cli.start_mode import run_start_command
+from namel3ss.cli.studio_connect_mode import run_studio_connect_command
 from namel3ss.cli.tutorial_mode import run_tutorial_command
 from namel3ss.cli.schema_mode import run_schema_command
 from namel3ss.cli.model_mode import run_model_command
@@ -102,6 +106,9 @@ from namel3ss.cli.when_mode import run_when_command
 from namel3ss.cli.why_mode import run_why_command
 from namel3ss.cli.with_mode import run_with_command
 from namel3ss.cli.marketplace_mode import run_marketplace_command
+from namel3ss.cli.manifest_mode import run_manifest_command
+from namel3ss.cli.plugin_registry_mode import run_plugin_registry_command
+from namel3ss.cli.validate_mode import run_validate_command
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.contract import build_error_entry
 from namel3ss.errors.render import format_error, format_first_run_error
@@ -146,6 +153,8 @@ def main(argv: list[str] | None = None) -> int:
             print_usage()
             return 0
         if cmd == TEMPLATE_LIST_COMMAND:
+            if args[1:] and canonical_command(args[1]) == "plugins":
+                return run_plugin_registry_command(["list", "plugins", *args[2:]])
             if args[1:]:
                 raise Namel3ssError(f"Usage: n3 {TEMPLATE_LIST_COMMAND}")
             print(render_template_list())
@@ -187,6 +196,22 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if cmd == "run":
             return dispatch_run_command(args[1:])
+        if cmd == "serve":
+            return run_serve_command(args[1:])
+        if cmd == "session":
+            return run_session_command(args[1:])
+        if cmd == "studio" and args[1:] and canonical_command(args[1]) == "connect":
+            return run_studio_connect_command(args[2:])
+        if cmd == "manifest":
+            return run_manifest_command(args[1:])
+        if cmd == "validate":
+            return run_validate_command(args[1:])
+        if cmd == "create":
+            return run_create_command(args[1:])
+        if cmd == "publish" and args[1:] and canonical_command(args[1]) == "plugin":
+            return run_plugin_registry_command(["publish", "plugin", *args[2:]])
+        if cmd == "install" and args[1:] and canonical_command(args[1]) == "plugin":
+            return run_plugin_registry_command(["install", "plugin", *args[2:]])
         if cmd in {"install", "update", "tree"}:
             return run_dependency_root(cmd, args[1:])
         if cmd == "dev":

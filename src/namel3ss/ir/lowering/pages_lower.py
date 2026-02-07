@@ -197,6 +197,7 @@ def _walk_page_items(items: list[ast.PageItem]) -> list[ast.PageItem]:
                 ast.ColumnItem,
                 ast.ComposeItem,
                 ast.DrawerItem,
+                ast.GridItem,
                 ast.ModalItem,
                 ast.RowItem,
                 ast.SectionItem,

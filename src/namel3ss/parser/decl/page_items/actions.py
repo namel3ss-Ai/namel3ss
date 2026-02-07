@@ -20,6 +20,7 @@ from namel3ss.parser.decl.page_common import (
 from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
 from .cards import parse_card_group_item, parse_card_item
+from .responsive import parse_columns_clause
 
 def parse_compose_item(parser, tok, parse_block, *, allow_pattern_params: bool = False) -> ast.ComposeItem:
     parser._advance()
@@ -309,6 +310,7 @@ def parse_link_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.L
 def parse_section_item(parser, tok, parse_block, *, allow_pattern_params: bool = False) -> ast.SectionItem:
     parser._advance()
     label = _parse_optional_string_value(parser, allow_pattern_params=allow_pattern_params)
+    columns = parse_columns_clause(parser)
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     parser._expect("COLON", "Expected ':' after section")
@@ -320,7 +322,7 @@ def parse_section_item(parser, tok, parse_block, *, allow_pattern_params: bool =
         allow_pattern_params=allow_pattern_params,
     )
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
-    return ast.SectionItem(
+    item = ast.SectionItem(
         label=label,
         children=children,
         visibility=visibility,
@@ -329,6 +331,9 @@ def parse_section_item(parser, tok, parse_block, *, allow_pattern_params: bool =
         line=tok.line,
         column=tok.column,
     )
+    if columns is not None:
+        item.columns = columns
+    return item
 
 
 def parse_row_item(parser, tok, parse_block, *, allow_pattern_params: bool = False) -> ast.RowItem:

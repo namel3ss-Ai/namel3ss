@@ -171,6 +171,7 @@
             }
           ],
           "column": 3,
+          "columns": null,
           "label": "notes",
           "line": 25,
           "type": "SectionItem",
@@ -289,6 +290,7 @@
       ],
       "line": 9,
       "name": "Note",
+      "shared": false,
       "tenant_key": null,
       "ttl_hours": null,
       "type": "RecordDecl"

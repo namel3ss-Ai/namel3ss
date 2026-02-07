@@ -78,7 +78,7 @@ def _parse_visibility_clause(parser, *, allow_pattern_params: bool = False) -> a
     if clause == "visibility":
         parser._expect("IS", "Expected 'is' after visibility")
     elif clause == "when":
-        parser._expect("IS", "Expected 'is' after when")
+        parser._match("IS")
     else:
         if parser._match("COLON"):
             pass

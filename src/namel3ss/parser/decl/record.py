@@ -16,15 +16,28 @@ def parse_record(parser) -> ast.RecordDecl:
     rec_tok = parser._advance()
     name_tok = parser._expect("STRING", "Expected record name string")
     version = None
-    if parser._current().type == "IDENT" and parser._current().value == "version":
-        parser._advance()
-        version_tok = parser._expect("STRING", "Expected version string after version")
-        version = str(version_tok.value or "").strip() or None
+    shared = False
+    while parser._current().type == "IDENT" and parser._current().value in {"version", "shared"}:
+        token = parser._current().value
+        if token == "version":
+            if version is not None:
+                raise Namel3ssError("Record version is declared more than once.", line=parser._current().line, column=parser._current().column)
+            parser._advance()
+            version_tok = parser._expect("STRING", "Expected version string after version")
+            version = str(version_tok.value or "").strip() or None
+            continue
+        if token == "shared":
+            if shared:
+                raise Namel3ssError("Record shared flag is declared more than once.", line=parser._current().line, column=parser._current().column)
+            parser._advance()
+            shared = True
+            continue
     parser._expect("COLON", "Expected ':' after record name")
     fields, tenant_key, ttl_hours = parse_record_body(parser)
     record = ast.RecordDecl(
         name=name_tok.value,
         fields=fields,
+        shared=shared,
         tenant_key=tenant_key,
         ttl_hours=ttl_hours,
         line=rec_tok.line,

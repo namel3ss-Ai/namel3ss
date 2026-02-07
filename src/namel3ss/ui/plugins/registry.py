@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import os
+from dataclasses import replace
 from dataclasses import dataclass
 from pathlib import Path
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
+from namel3ss.plugin.trust import compute_tree_hash, is_extension_trusted
 from namel3ss.utils.numbers import is_number
 
 from .loader import load_plugin_schema, resolve_plugin_directories
@@ -34,6 +36,10 @@ class UIPluginRegistry:
     @property
     def plugin_names(self) -> tuple[str, ...]:
         return tuple(self._plugins.keys())
+
+    @property
+    def plugin_schemas(self) -> tuple[UIPluginSchema, ...]:
+        return tuple(self._plugins[name] for name in sorted(self._plugins.keys()))
 
     def has_component(self, name: str) -> bool:
         return name in self._components
@@ -155,11 +161,18 @@ def load_ui_plugin_registry(
     plugins: dict[str, UIPluginSchema] = {}
     components: dict[str, UIPluginComponentBinding] = {}
     allowed = {str(entry).strip().lower() for entry in allowed_capabilities}
+    if "sandbox" not in allowed:
+        raise Namel3ssError(
+            "UI plug-ins require sandbox capability. Add sandbox to the capabilities block."
+        )
 
     for plugin_name in plugin_names:
         schema = load_plugin_schema(plugin_name, directories=directories)
         _ensure_plugin_capabilities(schema, allowed_capabilities=allowed)
-        renderer = load_sandboxed_renderer(schema.module_path)
+        if schema.hooks and not _hook_execution_enabled(allowed):
+            schema = replace(schema, hooks=tuple())
+        _ensure_extension_trust(schema, allowed_capabilities=allowed, project_root=project_root)
+        renderer = load_sandboxed_renderer(schema.module_path) if schema.components else _noop_renderer
         plugins[schema.name] = schema
         for component in schema.components:
             existing = components.get(component.name)
@@ -196,6 +209,48 @@ def _ensure_plugin_capabilities(schema: UIPluginSchema, *, allowed_capabilities:
     raise Namel3ssError(
         f"UI plug-in '{schema.name}' requires missing capabilities: {missing_text}."
     )
+
+
+def _ensure_extension_hook_capability(schema: UIPluginSchema, *, allowed_capabilities: set[str]) -> None:
+    if not schema.hooks:
+        return
+    if _hook_execution_enabled(allowed_capabilities):
+        return
+    raise Namel3ssError(
+        f"UI plug-in '{schema.name}' declares extension hooks and requires capability hook_execution."
+    )
+
+
+def _hook_execution_enabled(allowed_capabilities: set[str]) -> bool:
+    return "hook_execution" in allowed_capabilities or "extension_hooks" in allowed_capabilities
+
+
+def _ensure_extension_trust(
+    schema: UIPluginSchema,
+    *,
+    allowed_capabilities: set[str],
+    project_root: str | Path | None,
+) -> None:
+    needs_trust = bool(schema.hooks) or schema.permissions != ("legacy_full_access",)
+    if not needs_trust:
+        return
+    if "extension_trust" not in allowed_capabilities:
+        raise Namel3ssError(
+            f"UI plug-in '{schema.name}' requires capability extension_trust."
+        )
+    if project_root is None:
+        return
+    version = str(schema.version or "0.1.0")
+    digest = compute_tree_hash(schema.plugin_root)
+    if is_extension_trusted(project_root, name=schema.name, version=version, digest=digest):
+        return
+    raise Namel3ssError(
+        f"UI plug-in '{schema.name}@{version}' is not trusted. Run n3 plugin trust {schema.name}@{version}."
+    )
+
+
+def _noop_renderer(_props: dict, _state: dict) -> list[dict]:
+    return []
 
 
 def _value_matches_type(value: object, type_name: str) -> bool:

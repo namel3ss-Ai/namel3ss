@@ -107,7 +107,17 @@ route "upload_document":
 - Add a package: `n3 pkg add github:owner/repo@<tag>`
 - Install packages: `n3 pkg install`
 - Scaffold a package: `n3 new pkg my_capsule`
+- Scaffold a custom UI plugin: `n3 create plugin charts`
+- Scaffold a reusable UI pack: `n3 create ui_pack ops_pack`
 - Scaffold a plugin: `n3 plugin new node demo_plugin`
+- Search community extensions: `n3 plugin search charts --json`
+- Inspect extension metadata: `n3 plugin info charts@0.1.0 --json`
+- Install extension with explicit consent: `n3 plugin install charts@0.1.0 --yes --json`
+- Trust/revoke extensions: `n3 plugin trust charts@0.1.0 --yes --json`, `n3 plugin revoke charts@0.1.0 --json`
+- List installed extensions: `n3 plugin list --installed --json`
+- Manifest dump for diffs: `n3 manifest app.ai --json`
+- Theme contract validation: `n3 validate theme app.ai --json`
+- Plugin registry flow: `n3 publish plugin ./charts --json`, `n3 list plugins --json`, `n3 install plugin charts@0.1.0 --json`
 - Adoption kit: `n3 kit --format md`
 - Feedback list: `n3 feedback list --json`
 - Retrain scheduler: `n3 retrain schedule --json`

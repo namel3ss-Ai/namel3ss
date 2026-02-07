@@ -324,6 +324,7 @@
             }
           ],
           "column": 3,
+          "columns": null,
           "label": "records",
           "line": 46,
           "type": "SectionItem",
@@ -389,6 +390,7 @@
         }
       ],
       "name": "Prompt",
+      "shared": false,
       "system_fields": [],
       "tenant_key": null,
       "ttl_hours": null,
@@ -434,6 +436,7 @@
         }
       ],
       "name": "Answer",
+      "shared": false,
       "system_fields": [],
       "tenant_key": null,
       "ttl_hours": null,
