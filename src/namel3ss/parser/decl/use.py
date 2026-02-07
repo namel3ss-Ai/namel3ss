@@ -3,6 +3,7 @@ from __future__ import annotations
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.parser.decl.grouping import parse_bracketed_items
 
 
 _MODULE_CATEGORIES = ("functions", "records", "tools", "pages", "jobs")
@@ -163,30 +164,54 @@ def _parse_allow_override_block(parser) -> list[str]:
 def _parse_use_block(parser, *, label: str, header_tok=None) -> list[str]:
     header_tok = header_tok or parser._advance()
     parser._expect("COLON", f"Expected ':' after {label}")
-    parser._expect("NEWLINE", f"Expected newline after {label}")
-    parser._expect("INDENT", f"Expected indented {label} block")
     categories: list[str] = []
     seen = set()
-    while parser._current().type != "DEDENT":
-        if parser._match("NEWLINE"):
-            continue
-        cat_tok = parser._current()
-        cat = _parse_use_category(parser)
-        if cat in seen:
-            raise Namel3ssError(
-                build_guidance_message(
-                    what=f"Duplicate category in {label}.",
-                    why="Each category can appear once.",
-                    fix="Keep each category on a single line.",
-                    example=f"{label}:\n  {cat}",
-                ),
-                line=cat_tok.line,
-                column=cat_tok.column,
-            )
-        seen.add(cat)
-        categories.append(cat)
+    if parser._current().type == "LBRACKET":
+        bracket_items = parse_bracketed_items(
+            parser,
+            context=label,
+            parse_item=lambda: _parse_use_category(parser),
+            allow_empty=True,
+        )
+        for cat in bracket_items:
+            if cat in seen:
+                tok = parser._current()
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what=f"Duplicate category in {label}.",
+                        why="Each category can appear once.",
+                        fix="Keep each category once in the list.",
+                        example=f"{label}: [functions, records]",
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            seen.add(cat)
+            categories.append(cat)
         parser._match("NEWLINE")
-    parser._expect("DEDENT", f"Expected end of {label} block")
+    else:
+        parser._expect("NEWLINE", f"Expected newline after {label}")
+        parser._expect("INDENT", f"Expected indented {label} block")
+        while parser._current().type != "DEDENT":
+            if parser._match("NEWLINE"):
+                continue
+            cat_tok = parser._current()
+            cat = _parse_use_category(parser)
+            if cat in seen:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what=f"Duplicate category in {label}.",
+                        why="Each category can appear once.",
+                        fix="Keep each category on a single line.",
+                        example=f"{label}:\n  {cat}",
+                    ),
+                    line=cat_tok.line,
+                    column=cat_tok.column,
+                )
+            seen.add(cat)
+            categories.append(cat)
+            parser._match("NEWLINE")
+        parser._expect("DEDENT", f"Expected end of {label} block")
     while parser._match("NEWLINE"):
         pass
     if not categories:

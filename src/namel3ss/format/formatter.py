@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from namel3ss.format.grouping_rules import normalize_grouping_delimiters
 from namel3ss.format.list_rules import normalize_list_literals, normalize_one_of_lists
 from namel3ss.format.rules import (
     collapse_blank_lines,
@@ -18,6 +19,7 @@ def format_source(source: str) -> str:
     lines = [line.rstrip() for line in lines]
     lines = migrate_buttons(lines)
     lines = [normalize_spacing(line) for line in lines]
+    lines = normalize_grouping_delimiters(lines)
     lines = normalize_indentation(lines)
     lines = normalize_record_fields(lines)
     lines = normalize_function_fields(lines)

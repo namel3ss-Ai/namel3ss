@@ -9,6 +9,7 @@ from namel3ss.lexer.tokens import Token
 from namel3ss.lang.keywords import is_keyword
 from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 from namel3ss.parser.decl.constraints import parse_field_constraint
+from namel3ss.parser.decl.grouping import parse_braced_items
 from namel3ss.parser.decl.type_reference import parse_type_reference
 
 
@@ -55,6 +56,20 @@ def parse_record_fields(parser) -> List[ast.FieldDecl]:
 def parse_record_body(
     parser,
 ) -> Tuple[List[ast.FieldDecl], ast.Expression | None, ast.Expression | None]:
+    if parser._current().type == "LBRACE":
+        fields = _parse_braced_field_entries(
+            parser,
+            seen_fields=set(),
+            context="record fields",
+            allow_field_keyword=True,
+            require_is=False,
+            use_guidance=False,
+        )
+        parser._match("NEWLINE")
+        while parser._match("NEWLINE"):
+            pass
+        return fields, None, None
+
     parser._expect("NEWLINE", "Expected newline after record header")
     parser._expect("INDENT", "Expected indented record body")
     fields: List[ast.FieldDecl] = []
@@ -172,30 +187,45 @@ _FIELD_NAME_TOKENS = {"IDENT", "TITLE", "TEXT", "FORM", "TABLE", "BUTTON", "PAGE
 def _parse_fields_block(parser, seen_fields: set[str]) -> list[ast.FieldDecl]:
     fields_tok = parser._advance()
     parser._expect("COLON", "Expected ':' after fields")
-    parser._expect("NEWLINE", "Expected newline after fields")
-    if not parser._match("INDENT"):
-        tok = parser._current()
-        raise Namel3ssError(
-            build_guidance_message(
-                what="Fields block has no fields.",
-                why="Fields blocks require at least one field declaration.",
-                fix="Add one or more fields under fields:.",
-                example='record "Order":\n  fields:\n    order_id is text',
-            ),
-            line=tok.line,
-            column=tok.column,
-        )
     fields: list[ast.FieldDecl] = []
-    while parser._current().type != "DEDENT":
-        if parser._match("NEWLINE"):
-            continue
-        field = _parse_record_field(parser, allow_field_keyword=False, require_is=True, use_guidance=True)
-        _register_field(field, seen_fields)
-        fields.append(field)
+    if parser._current().type == "LBRACE":
+        fields.extend(
+            _parse_braced_field_entries(
+                parser,
+                seen_fields=seen_fields,
+                context="fields block",
+                allow_field_keyword=False,
+                require_is=True,
+                use_guidance=True,
+            )
+        )
         parser._match("NEWLINE")
-    parser._expect("DEDENT", "Expected end of fields block")
-    while parser._match("NEWLINE"):
-        pass
+        while parser._match("NEWLINE"):
+            pass
+    else:
+        parser._expect("NEWLINE", "Expected newline after fields")
+        if not parser._match("INDENT"):
+            tok = parser._current()
+            raise Namel3ssError(
+                build_guidance_message(
+                    what="Fields block has no fields.",
+                    why="Fields blocks require at least one field declaration.",
+                    fix="Add one or more fields under fields:.",
+                    example='record "Order":\n  fields:\n    order_id is text',
+                ),
+                line=tok.line,
+                column=tok.column,
+            )
+        while parser._current().type != "DEDENT":
+            if parser._match("NEWLINE"):
+                continue
+            field = _parse_record_field(parser, allow_field_keyword=False, require_is=True, use_guidance=True)
+            _register_field(field, seen_fields)
+            fields.append(field)
+            parser._match("NEWLINE")
+        parser._expect("DEDENT", "Expected end of fields block")
+        while parser._match("NEWLINE"):
+            pass
     if not fields:
         raise Namel3ssError(
             build_guidance_message(
@@ -207,6 +237,31 @@ def _parse_fields_block(parser, seen_fields: set[str]) -> list[ast.FieldDecl]:
             line=fields_tok.line,
             column=fields_tok.column,
         )
+    return fields
+
+
+def _parse_braced_field_entries(
+    parser,
+    *,
+    seen_fields: set[str],
+    context: str,
+    allow_field_keyword: bool,
+    require_is: bool,
+    use_guidance: bool,
+) -> list[ast.FieldDecl]:
+    fields = parse_braced_items(
+        parser,
+        context=context,
+        parse_item=lambda: _parse_record_field(
+            parser,
+            allow_field_keyword=allow_field_keyword,
+            require_is=require_is,
+            use_guidance=use_guidance,
+        ),
+        allow_empty=True,
+    )
+    for field in fields:
+        _register_field(field, seen_fields)
     return fields
 
 

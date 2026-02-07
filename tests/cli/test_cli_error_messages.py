@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
 from namel3ss.cli.main import main as cli_main
 from namel3ss.errors.render import format_error
 from namel3ss.errors.base import Namel3ssError
@@ -21,13 +18,17 @@ def test_curly_brace_parse_error_message(capsys):
     from tempfile import NamedTemporaryFile
 
     with NamedTemporaryFile("w", suffix=".ai", delete=False) as tmp:
-        tmp.write("spec is \"1.0\"\n\nflow \"bad\":\n  {")
+        tmp.write(
+            "spec is \"1.0\"\n\nclassification \"bad\":\n"
+            "  model is \"gpt-4\"\n"
+            "  prompt is \"Tag\"\n"
+            "  labels: [billing, {technical}]\n"
+        )
         path = tmp.name
     rc = cli_main([path, "check"])
     assert rc == 1
     out = capsys.readouterr().out
-    assert "object literal syntax" in out
-    assert "English field blocks" in out
+    assert "nested grouping" in out.lower()
 
 
 def test_strict_alias_rejection_message():
