@@ -76,6 +76,17 @@ def _load_module(
                 line=program.app_theme_line,
                 column=program.app_theme_column,
             )
+        if getattr(program, "theme_line", None) is not None:
+            raise Namel3ssError(
+                build_guidance_message(
+                    what="Theme declarations are not allowed inside modules.",
+                    why="Only the root app.ai file defines global theming.",
+                    fix="Move the theme block to app.ai.",
+                    example='theme:\n  preset: "clarity"',
+                ),
+                line=getattr(program, "theme_line", None),
+                column=getattr(program, "theme_column", None),
+            )
         if getattr(program, "ui_line", None) is not None:
             raise Namel3ssError(
                 build_guidance_message(

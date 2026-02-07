@@ -73,11 +73,13 @@ class Executor:
         identity_schema: IdentitySchema | None = None,
         identity: dict | None = None,
         auth_context: object | None = None,
+        session: dict | None = None,
         project_root: str | None = None,
         app_path: str | None = None,
         flow_action_id: str | None = None,
         policy: ir.PolicyDecl | None = None,
         observability: ObservabilityContext | None = None,
+        extension_hook_manager: object | None = None,
     ) -> None:
         resolved_config = config or load_config()
         default_ai_provider = ai_provider or MockProvider()
@@ -109,11 +111,14 @@ class Executor:
             app_path=app_path,
             capabilities=tuple(capabilities or ()),
         )
+        locals_payload = {"input": input_data or {}, "secrets": secrets_map}
+        if isinstance(session, dict):
+            locals_payload["session"] = dict(session)
         self.ctx = ExecutionContext(
             flow=flow,
             schemas=schemas or {},
             state=starting_state or {},
-            locals={"input": input_data or {}, "secrets": secrets_map},
+            locals=locals_payload,
             identity=resolved_identity,
             auth_context=auth_context,
             constants=set(),
@@ -145,6 +150,7 @@ class Executor:
             execution_steps=[],
             execution_step_counter=0,
             flow_action_id=flow_action_id,
+            extension_hook_manager=extension_hook_manager,
             sensitive=sensitive,
             sensitive_config=sensitive_config,
             encryption_service=encryption_service,
@@ -175,6 +181,7 @@ class Executor:
         self.agent_calls = self.ctx.agent_calls
         self.config = self.ctx.config
         self.provider_cache = self.ctx.provider_cache
+        self.extension_hook_manager = self.ctx.extension_hook_manager
 
     def run(self) -> ExecutionResult:
         wall = build_security_wall(self.ctx.config, self.ctx.traces)

@@ -63,3 +63,4 @@ class Program(Node):
     identity: "IdentitySchema | None" = None
     state_defaults: dict | None = None
     ui_active_page_rules: list["ActivePageRule"] | None = None
+    ui_plugins: tuple[str, ...] = tuple()

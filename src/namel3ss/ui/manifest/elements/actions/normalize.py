@@ -10,6 +10,7 @@ from namel3ss.schema import records as schema
 from namel3ss.ui.manifest.origin import _attach_origin
 from namel3ss.ui.manifest_card import _build_card_actions, _build_card_stat
 from namel3ss.ui.manifest.state_defaults import StateContext
+from namel3ss.ui.theme import resolve_component_style
 from namel3ss.validation import ValidationMode
 
 from ..base import _base_element
@@ -94,6 +95,9 @@ def build_section_item(
     )
     base = _base_element(_element_id(page_slug, "section", path), page_name, page_slug, index, item)
     element = {"type": "section", "label": item.label or "", "children": children, **base}
+    columns = getattr(item, "columns", None)
+    if columns:
+        element["columns"] = list(columns)
     return _attach_origin(element, item), actions
 
 
@@ -174,7 +178,23 @@ def build_card_item(
         parent_visible=parent_visible,
     )
     base = _base_element(element_id, page_name, page_slug, index, item)
+    variant = getattr(item, "variant", None)
+    style_hooks = getattr(item, "style_hooks", None)
+    style = None
+    if variant is not None or style_hooks:
+        style = resolve_component_style(
+            "card",
+            variant=variant,
+            style_hooks=style_hooks,
+            token_registry=getattr(state_ctx, "theme_tokens", {}) or {},
+        )
     element = {"type": "card", "label": item.label or "", "children": children, **base}
+    if variant is not None:
+        element["variant"] = variant
+    if style_hooks:
+        element["style_hooks"] = dict(style_hooks)
+    if style:
+        element["style"] = style
     if item.stat is not None:
         element["stat"] = _build_card_stat(item.stat, identity, state_ctx, mode, warnings)
     if item.actions:

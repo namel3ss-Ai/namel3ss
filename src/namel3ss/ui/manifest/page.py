@@ -33,7 +33,9 @@ from namel3ss.ui.manifest.actions import (
 )
 from namel3ss.ui.manifest.canonical import _slugify
 from namel3ss.ui.manifest.accessibility import apply_accessibility_contract
+from namel3ss.ui.manifest.display_mode import DISPLAY_MODE_STUDIO
 from namel3ss.ui.manifest.elements import _build_children
+from namel3ss.ui.manifest.filter_mode import apply_display_mode_filter
 from namel3ss.ui.manifest.navigation import select_active_page
 from namel3ss.ui.manifest.state_defaults import StateContext, StateDefaults
 from namel3ss.ui.manifest.status import select_status_items
@@ -43,6 +45,7 @@ from namel3ss.ui.manifest.validation import (
     append_layout_warnings,
     append_story_icon_warnings,
 )
+from namel3ss.ui.responsive import apply_responsive_layout_to_pages
 from namel3ss.ui.spacing import apply_spacing_to_pages
 from namel3ss.ui.settings import UI_ALLOWED_VALUES, UI_DEFAULTS, normalize_ui_settings, validate_ui_contrast
 from namel3ss.validation import ValidationMode
@@ -62,6 +65,7 @@ def build_manifest(
     warnings: list | None = None,
     state_defaults: dict | None = None,
     media_mode: MediaValidationMode | str | None = None,
+    display_mode: str = DISPLAY_MODE_STUDIO,
 ) -> dict:
     mode = ValidationMode.from_value(mode)
     media_mode = MediaValidationMode.from_value(media_mode)
@@ -104,11 +108,17 @@ def build_manifest(
     identity = identity or {}
     app_defaults = state_defaults or getattr(program, "state_defaults", None) or {}
     manifest_state_defaults_pages: dict[str, dict] = {}
+    ui_plugin_registry = getattr(program, "ui_plugin_registry", None)
+    responsive_layout = getattr(program, "responsive_layout", None)
+    breakpoint_names = tuple(getattr(getattr(responsive_layout, "breakpoints", None), "names", ()) or ())
+    breakpoint_values = tuple(getattr(getattr(responsive_layout, "breakpoints", None), "values", ()) or ())
     store_for_build = store if (mode == ValidationMode.RUNTIME or store is not None) else None
     for page in program.pages:
         page_defaults_raw = getattr(page, "state_defaults", None)
         defaults = StateDefaults(app_defaults, page_defaults_raw)
         state_ctx = StateContext(deepcopy(state_base), defaults)
+        setattr(state_ctx, "ui_plugin_registry", ui_plugin_registry)
+        setattr(state_ctx, "theme_tokens", getattr(program, "theme_tokens", {}) or {})
         enforce_requires(
             build_guard_context(identity=identity, state=state_ctx.state, auth_context=auth_context),
             getattr(page, "requires", None),
@@ -159,6 +169,8 @@ def build_manifest(
                 "elements": elements,
             }
         )
+        if getattr(page, "debug_only", None):
+            pages[-1]["debug_only"] = True
         if getattr(page, "purpose", None):
             pages[-1]["purpose"] = page.purpose
         defaults_snapshot = state_ctx.defaults_snapshot()
@@ -170,6 +182,7 @@ def build_manifest(
         pages=pages,
         state_ctx=navigation_state,
     )
+    apply_responsive_layout_to_pages(pages, breakpoint_names=breakpoint_names)
     apply_spacing_to_pages(pages, ui_settings.get("density", UI_DEFAULTS["density"]))
     validate_ui_contrast(theme_setting, ui_settings.get("accent_color", ""), raw_ui_settings)
     if theme_current != theme_setting:
@@ -187,6 +200,26 @@ def build_manifest(
     persistence = _resolve_persistence(store)
     if actions:
         actions = {action_id: actions[action_id] for action_id in sorted(actions)}
+    resolved_theme = getattr(program, "resolved_theme", None)
+    theme_definition = getattr(resolved_theme, "definition", None)
+    has_theme_definition = bool(
+        theme_definition is not None
+        and (
+            theme_definition.preset
+            or theme_definition.brand_palette
+            or theme_definition.tokens
+            or getattr(theme_definition, "responsive_tokens", None)
+            or theme_definition.harmonize
+            or theme_definition.allow_low_contrast
+            or theme_definition.density
+            or theme_definition.motion
+            or theme_definition.shape
+            or theme_definition.surface
+        )
+    )
+    theme_preference = dict(getattr(program, "theme_preference", {"allow_override": False, "persist": "none"}) or {})
+    if has_theme_definition:
+        theme_preference.setdefault("storage_key", "namel3ss_theme")
     manifest = {
         "pages": pages,
         "actions": actions,
@@ -199,13 +232,59 @@ def build_manifest(
             "source": source,
             "runtime_supported": getattr(program, "theme_runtime_supported", False),
             "tokens": getattr(program, "theme_tokens", {}),
-            "preference": getattr(program, "theme_preference", {"allow_override": False, "persist": "none"}),
+            "preference": theme_preference,
         },
         "ui": {
             "persistence": persistence,
             "settings": ui_settings,
         },
     }
+    hook_manager = getattr(program, "extension_hook_manager", None)
+    if display_mode == DISPLAY_MODE_STUDIO and hook_manager is not None:
+        session_id = None
+        if isinstance(identity, dict):
+            candidate = identity.get("session_id")
+            if isinstance(candidate, str) and candidate:
+                session_id = candidate
+        studio_panels = tuple(hook_manager.run_studio_hooks(session_id=session_id))
+        if studio_panels:
+            manifest.setdefault("studio", {})
+            manifest["studio"]["extension_panels"] = list(studio_panels)
+    responsive_theme_tokens = dict(getattr(program, "responsive_theme_tokens", {}) or {})
+    if responsive_theme_tokens:
+        manifest["theme"]["responsive_tokens"] = {
+            key: list(value)
+            for key, value in responsive_theme_tokens.items()
+        }
+    responsive_token_scales = dict(getattr(program, "responsive_theme_tokens", {}) or {})
+    if responsive_layout is not None or responsive_token_scales:
+        manifest["ui"]["responsive"] = {
+            "enabled": bool(responsive_layout is not None),
+            "breakpoints": [
+                {"name": name, "width": int(width)}
+                for name, width in zip(breakpoint_names, breakpoint_values)
+            ],
+            "columns": int(getattr(responsive_layout, "total_columns", 12) if responsive_layout is not None else 12),
+            "token_scales": {key: list(value) for key, value in responsive_token_scales.items()},
+        }
+    if has_theme_definition:
+        manifest["theme"]["definition"] = {
+            "preset": theme_definition.preset,
+            "brand_palette": dict(theme_definition.brand_palette),
+            "tokens": dict(theme_definition.tokens),
+            "responsive_tokens": {
+                key: list(value)
+                for key, value in dict(getattr(theme_definition, "responsive_tokens", {}) or {}).items()
+            },
+            "harmonize": bool(theme_definition.harmonize),
+            "allow_low_contrast": bool(theme_definition.allow_low_contrast),
+            "axes": {
+                "density": theme_definition.density,
+                "motion": theme_definition.motion,
+                "shape": theme_definition.shape,
+                "surface": theme_definition.surface,
+            },
+        }
     if navigation:
         manifest["navigation"] = navigation
     agent_team = build_agent_team_intent(program)
@@ -216,7 +295,7 @@ def build_manifest(
         manifest["foreign_functions"] = foreign_intent
     if app_defaults or manifest_state_defaults_pages:
         manifest["state_defaults"] = {"app": deepcopy(app_defaults) if app_defaults else {}, "pages": manifest_state_defaults_pages}
-    return manifest
+    return apply_display_mode_filter(manifest, display_mode=display_mode)
 
 
 def _resolve_persistence(store: Storage | None) -> dict:
@@ -243,7 +322,7 @@ def _add_system_action(actions: Dict[str, dict], taken_actions: set[str], base_i
     action_id = _allocate_action_id(base_id, f"system.{action_type}", taken_actions)
     if action_id in actions:
         return
-    actions[action_id] = {"id": action_id, "type": action_type}
+    actions[action_id] = {"id": action_id, "type": action_type, "debug_only": True}
     taken_actions.add(action_id)
 
 

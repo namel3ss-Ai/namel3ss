@@ -12,6 +12,7 @@ from namel3ss.runtime.server.prod.security_requirements import build_tls_context
 from namel3ss.runtime.server.prod.routes import ProductionRequestHandler
 from namel3ss.runtime.router.refresh import refresh_routes
 from namel3ss.runtime.router.registry import RouteRegistry
+from namel3ss.ui.manifest.display_mode import DISPLAY_MODE_PRODUCTION
 
 
 DEFAULT_START_PORT = 8787
@@ -47,6 +48,7 @@ class ProductionRunner:
             source_overrides=_build_source_overrides(self.build_path, self.app_path.parent, self.artifacts),
             watch_sources=False,
             engine_target=self.target,
+            ui_mode=DISPLAY_MODE_PRODUCTION,
         )
 
     def start(self, *, background: bool = False) -> None:

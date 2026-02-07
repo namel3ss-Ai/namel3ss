@@ -104,5 +104,6 @@
       "surface": "flat",
       "theme": "light"
     }
-  }
+  },
+  "mode": "studio"
 }

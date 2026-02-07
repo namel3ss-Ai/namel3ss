@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.parser.decl.visibility_expr import parse_visibility_expression
+from namel3ss.parser.decl.page_style import _parse_style_hooks_block, _parse_variant_line
 from namel3ss.parser.expr.common import read_attr_name
 
 
@@ -62,7 +64,7 @@ def _reject_list_transforms(expr: ast.Expression | None) -> None:
         return
 
 
-def _parse_visibility_clause(parser, *, allow_pattern_params: bool = False) -> ast.StatePath | ast.PatternParamRef | None:
+def _parse_visibility_clause(parser, *, allow_pattern_params: bool = False) -> ast.Expression | ast.PatternParamRef | None:
     tok = parser._current()
     clause = None
     if tok.type == "IDENT" and tok.value == "visibility":
@@ -77,28 +79,55 @@ def _parse_visibility_clause(parser, *, allow_pattern_params: bool = False) -> a
     if clause == "visibility":
         parser._expect("IS", "Expected 'is' after visibility")
     elif clause == "when":
-        parser._expect("IS", "Expected 'is' after when")
+        parser._match("IS")
     else:
-        parser._expect("IS", "Expected 'is' after visible_when")
-    if allow_pattern_params and _is_param_ref(parser):
+        if parser._match("COLON"):
+            pass
+        else:
+            parser._expect("IS", "Expected ':' or 'is' after visible_when")
+    next_tok = parser.tokens[parser.position + 1] if parser.position + 1 < len(parser.tokens) else parser._current()
+    if allow_pattern_params and _is_param_ref(parser) and next_tok.type in {"NEWLINE", "COLON", "DEDENT"}:
         path = _parse_param_ref(parser)
-    else:
-        try:
-            path = parser._parse_state_path()
-        except Namel3ssError as err:
-            raise Namel3ssError(
-                "Visibility requires state.<path>.",
-                line=err.line,
-                column=err.column,
-            )
+        return path
+    expr = parse_visibility_expression(parser, allow_pattern_params=allow_pattern_params)
     if parser._current().type not in {"NEWLINE", "COLON", "DEDENT"}:
         extra = parser._current()
         raise Namel3ssError(
-            "Visibility only supports a state path.",
+            "Visibility expressions must end at the line boundary.",
             line=extra.line,
             column=extra.column,
         )
-    return path
+    return expr
+
+
+def _is_debug_only_start(parser) -> bool:
+    tok = parser._current()
+    return tok.type == "IDENT" and tok.value == "debug_only"
+
+
+def _parse_debug_only_clause(parser) -> bool | None:
+    if not _is_debug_only_start(parser):
+        return None
+    return _parse_debug_only_line(parser)
+
+
+def _parse_debug_only_line(parser) -> bool:
+    tok = parser._current()
+    if tok.type != "IDENT" or tok.value != "debug_only":
+        raise Namel3ssError("Expected debug_only metadata", line=tok.line, column=tok.column)
+    parser._advance()
+    if parser._match("COLON"):
+        pass
+    else:
+        parser._expect("IS", "Expected ':' or 'is' after debug_only")
+    value_tok = parser._current()
+    if value_tok.type != "BOOLEAN":
+        raise Namel3ssError("debug_only must be a boolean literal", line=value_tok.line, column=value_tok.column)
+    parser._advance()
+    if parser._current().type not in {"NEWLINE", "DEDENT", "COLON"}:
+        extra = parser._current()
+        raise Namel3ssError("debug_only only supports true or false", line=extra.line, column=extra.column)
+    return bool(value_tok.value)
 
 
 def _is_visibility_rule_start(parser) -> bool:
@@ -106,30 +135,39 @@ def _is_visibility_rule_start(parser) -> bool:
     return tok.type == "IDENT" and tok.value == "only"
 
 
-def _parse_visibility_rule_line(parser, *, allow_pattern_params: bool = False) -> ast.VisibilityRule:
+def _parse_visibility_rule_line(
+    parser,
+    *,
+    allow_pattern_params: bool = False,
+) -> ast.VisibilityRule | ast.VisibilityExpressionRule:
     only_tok = parser._current()
     if only_tok.type != "IDENT" or only_tok.value != "only":
         raise Namel3ssError("Expected 'only when' visibility rule", line=only_tok.line, column=only_tok.column)
     parser._advance()
     parser._expect("WHEN", "Expected 'when' after only")
+    legacy_pos = parser.position
     try:
         path = _parse_state_path_relaxed(parser)
-    except Namel3ssError as err:
-        raise Namel3ssError(
-            "Visibility rule requires state.<path> is <value>.",
-            line=err.line,
-            column=err.column,
-        ) from err
-    parser._expect("IS", "Expected 'is' after state path")
-    value = _parse_visibility_rule_value(parser, allow_pattern_params=allow_pattern_params)
+        parser._expect("IS", "Expected 'is' after state path")
+        value = _parse_visibility_rule_value(parser, allow_pattern_params=allow_pattern_params)
+        if parser._current().type not in {"NEWLINE", "DEDENT"}:
+            raise Namel3ssError(
+                "Visibility rule only supports a literal value.",
+                line=parser._current().line,
+                column=parser._current().column,
+            )
+        return ast.VisibilityRule(path=path, value=value, line=only_tok.line, column=only_tok.column)
+    except Namel3ssError:
+        parser.position = legacy_pos
+    expression = parse_visibility_expression(parser, allow_pattern_params=allow_pattern_params)
     if parser._current().type not in {"NEWLINE", "DEDENT"}:
         extra = parser._current()
         raise Namel3ssError(
-            "Visibility rule only supports a literal value.",
+            "Visibility expressions must end at the line boundary.",
             line=extra.line,
             column=extra.column,
         )
-    return ast.VisibilityRule(path=path, value=value, line=only_tok.line, column=only_tok.column)
+    return ast.VisibilityExpressionRule(expression=expression, line=only_tok.line, column=only_tok.column)
 
 
 def _parse_action_availability_rule_line(parser, *, allow_pattern_params: bool = False) -> ast.ActionAvailabilityRule:
@@ -242,7 +280,11 @@ def _parse_action_availability_value(parser) -> ast.Literal:
     )
 
 
-def _parse_visibility_rule_block(parser, *, allow_pattern_params: bool = False) -> ast.VisibilityRule | None:
+def _parse_visibility_rule_block(
+    parser,
+    *,
+    allow_pattern_params: bool = False,
+) -> ast.VisibilityRule | ast.VisibilityExpressionRule | None:
     if parser._current().type != "NEWLINE":
         return None
     next_pos = parser.position + 1
@@ -260,7 +302,7 @@ def _parse_visibility_rule_block(parser, *, allow_pattern_params: bool = False) 
         return None
     parser._advance()  # consume NEWLINE
     parser._advance()  # consume INDENT
-    rule: ast.VisibilityRule | None = None
+    rule: ast.VisibilityRule | ast.VisibilityExpressionRule | None = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
@@ -288,8 +330,8 @@ def _parse_visibility_rule_block(parser, *, allow_pattern_params: bool = False) 
 
 
 def _validate_visibility_combo(
-    visibility: ast.StatePath | ast.PatternParamRef | None,
-    visibility_rule: ast.VisibilityRule | None,
+    visibility: ast.Expression | ast.PatternParamRef | None,
+    visibility_rule: ast.VisibilityRule | ast.VisibilityExpressionRule | None,
     *,
     line: int | None,
     column: int | None,
@@ -384,6 +426,9 @@ __all__ = [
     "_match_ident_value",
     "_reject_list_transforms",
     "_parse_visibility_clause",
+    "_parse_debug_only_clause",
+    "_parse_debug_only_line",
+    "_is_debug_only_start",
     "_parse_string_value",
     "_parse_optional_string_value",
     "_parse_reference_name_value",
@@ -399,4 +444,6 @@ __all__ = [
     "_validate_visibility_combo",
     "_is_param_ref",
     "_parse_param_ref",
+    "_parse_style_hooks_block",
+    "_parse_variant_line",
 ]

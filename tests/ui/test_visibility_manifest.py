@@ -108,15 +108,28 @@ def test_visibility_explain_reasons_include_predicate_and_result():
 @pytest.mark.parametrize(
     "source, message",
     [
-        ('page "home":\n  title is "Hi" visibility is input.ready\n', "Visibility requires state.<path>."),
-        ('page "home":\n  title is "Hi" visibility is state\n', "Visibility requires state.<path>."),
-        ('page "home":\n  title is "Hi" visibility is state.ready and state.other\n', "Visibility only supports a state path."),
+        (
+            'page "home":\n  title is "Hi" visibility is input.ready\n',
+            "Visibility expressions only support literals, state paths, lists, and boolean operators.",
+        ),
+        ('page "home":\n  title is "Hi" visibility is state\n', "Expected state path"),
     ],
 )
 def test_visibility_rejects_invalid_forms(source, message):
     with pytest.raises(Namel3ssError) as exc:
         lower_ir_program(source)
     assert message in str(exc.value)
+
+
+def test_visibility_supports_boolean_expressions():
+    source = 'page "home":\n  title is "Hi" visibility is state.ready and state.other\n'
+    program = lower_ir_program(source)
+    hidden = build_manifest(program, state={"ready": True, "other": False}, store=None)
+    shown = build_manifest(program, state={"ready": True, "other": True}, store=None)
+    hidden_title = next(el for el in hidden["pages"][0]["elements"] if el.get("type") == "title")
+    shown_title = next(el for el in shown["pages"][0]["elements"] if el.get("type") == "title")
+    assert hidden_title["visible"] is False
+    assert shown_title["visible"] is True
 
 
 def test_visibility_build_does_not_create_runtime_artifacts(tmp_path: Path):
@@ -149,3 +162,17 @@ def test_only_when_type_mismatch_errors():
     with pytest.raises(Namel3ssError) as exc:
         build_manifest(program, state={}, store=None)
     assert "expects text but state value is boolean" in str(exc.value)
+
+
+def test_only_when_supports_expression_operators():
+    source = '''page "home":
+  title is "Admin"
+    only when state.user.role == "admin" and state.task.status in ["ready", "queued"]
+'''
+    program = lower_ir_program(source)
+    hidden = build_manifest(program, state={"user": {"role": "staff"}, "task": {"status": "ready"}}, store=None)
+    shown = build_manifest(program, state={"user": {"role": "admin"}, "task": {"status": "queued"}}, store=None)
+    hidden_title = next(el for el in hidden["pages"][0]["elements"] if el.get("type") == "title")
+    shown_title = next(el for el in shown["pages"][0]["elements"] if el.get("type") == "title")
+    assert hidden_title["visible"] is False
+    assert shown_title["visible"] is True

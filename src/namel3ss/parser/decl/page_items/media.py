@@ -3,6 +3,7 @@ from __future__ import annotations
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.parser.decl.page_common import (
+    _parse_debug_only_clause,
     _is_visibility_rule_start,
     _parse_string_value,
     _parse_visibility_clause,
@@ -17,6 +18,7 @@ def parse_image_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.
     parser._expect("IS", "Expected 'is' after 'image'")
     src = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="image source")
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    debug_only = _parse_debug_only_clause(parser)
     role = None
     visibility_rule = None
     if parser._match("COLON"):
@@ -53,6 +55,7 @@ def parse_image_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.
         role=role,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        debug_only=debug_only,
         line=tok.line,
         column=tok.column,
     )

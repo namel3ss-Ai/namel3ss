@@ -15,18 +15,25 @@ class Page(Node):
     purpose: str | None = None
     state_defaults: dict | None = None
     status: "StatusBlock" | None = None
+    debug_only: bool | None = None
 
 
 @dataclass
 class PageItem(Node):
-    visibility: StatePath | None = field(default=None, kw_only=True)
-    visibility_rule: "VisibilityRule" | None = field(default=None, kw_only=True)
+    visibility: Expression | None = field(default=None, kw_only=True)
+    visibility_rule: "VisibilityRule | VisibilityExpressionRule" | None = field(default=None, kw_only=True)
+    debug_only: bool | None = field(default=None, kw_only=True)
 
 
 @dataclass
 class VisibilityRule(Node):
     path: StatePath
     value: Literal
+
+
+@dataclass
+class VisibilityExpressionRule(Node):
+    expression: Expression
 
 
 @dataclass
@@ -272,11 +279,24 @@ class ChatItem(PageItem):
 
 
 @dataclass
+class CustomComponentProp(Node):
+    name: str
+    value: object
+
+
+@dataclass
+class CustomComponentItem(PageItem):
+    component_name: str
+    properties: list[CustomComponentProp]
+    plugin_name: str | None = None
+
+
+@dataclass
 class TabItem(Node):
     label: str
     children: List["PageItem"]
-    visibility: StatePath | None = field(default=None, kw_only=True)
-    visibility_rule: VisibilityRule | None = field(default=None, kw_only=True)
+    visibility: Expression | None = field(default=None, kw_only=True)
+    visibility_rule: VisibilityRule | VisibilityExpressionRule | None = field(default=None, kw_only=True)
 
 
 @dataclass
@@ -314,6 +334,7 @@ class LinkItem(PageItem):
 class SectionItem(PageItem):
     label: str | None
     children: List["PageItem"]
+    columns: list[int] | None = None
 
 
 @dataclass
@@ -355,6 +376,12 @@ class ColumnItem(PageItem):
 
 
 @dataclass
+class GridItem(PageItem):
+    columns: list[int]
+    children: List["PageItem"]
+
+
+@dataclass
 class DividerItem(PageItem):
     pass
 
@@ -364,3 +391,28 @@ class ImageItem(PageItem):
     src: str
     alt: str
     role: str | None = None
+
+
+@dataclass
+class LoadingItem(PageItem):
+    variant: str = "spinner"
+
+
+@dataclass
+class SnackbarItem(PageItem):
+    message: str
+    duration: int = 3000
+
+
+@dataclass
+class IconItem(PageItem):
+    name: str
+    size: str = "medium"
+    role: str = "decorative"
+    label: str | None = None
+
+
+@dataclass
+class LightboxItem(PageItem):
+    images: list[str] | None = None
+    start_index: int = 0

@@ -84,6 +84,7 @@ def _build_chat_thinking(
         raise Namel3ssError("Thinking expects a boolean state value", line=item.line, column=item.column)
     return {
         "type": "thinking",
+        "debug_only": True,
         "when": when,
         "active": value,
         "element_id": element_id,
@@ -110,6 +111,7 @@ def _build_chat_citations(
     _validate_citations(citations, item.line, item.column)
     return {
         "type": "citations",
+        "debug_only": True,
         "source": source,
         "citations": citations,
         "element_id": element_id,
@@ -136,6 +138,7 @@ def _build_chat_memory(
     _validate_memory(items, item.line, item.column)
     element = {
         "type": "memory",
+        "debug_only": True,
         "source": source,
         "items": items,
         "element_id": element_id,

@@ -6,6 +6,7 @@ from namel3ss.parser.sugar.lowering.flow_steps import _lower_flow_steps
 from namel3ss.parser.sugar.lowering.statements import _lower_statements
 from namel3ss.parser.sugar.lowering.ai_flows import ai_flow_to_flow, lower_ai_flow
 from namel3ss.parser.sugar.lowering.crud import expand_crud_routes
+from namel3ss.parser.sugar.lowering.program_page_items import _lower_page_item
 
 
 def lower_program(program: ast.Program) -> ast.Program:
@@ -47,6 +48,7 @@ def lower_program(program: ast.Program) -> ast.Program:
         agents=list(program.agents),
         agent_team=getattr(program, "agent_team", None),
         uses=list(program.uses),
+        plugin_uses=list(getattr(program, "plugin_uses", []) or []),
         capsule=program.capsule,
         identity=_lower_identity(program.identity) if program.identity else None,
         policy=_lower_policy(program.policy) if program.policy else None,
@@ -55,6 +57,12 @@ def lower_program(program: ast.Program) -> ast.Program:
     )
     raw_allowlist = getattr(program, "pack_allowlist", None)
     setattr(lowered, "pack_allowlist", list(raw_allowlist) if raw_allowlist is not None else None)
+    setattr(lowered, "theme_definition", getattr(program, "theme_definition", None))
+    setattr(lowered, "theme_line", getattr(program, "theme_line", None))
+    setattr(lowered, "theme_column", getattr(program, "theme_column", None))
+    setattr(lowered, "responsive_definition", getattr(program, "responsive_definition", None))
+    setattr(lowered, "responsive_line", getattr(program, "responsive_line", None))
+    setattr(lowered, "responsive_column", getattr(program, "responsive_column", None))
     return lowered
 
 
@@ -198,6 +206,7 @@ def _lower_page(page: ast.PageDecl) -> ast.PageDecl:
         purpose=getattr(page, "purpose", None),
         state_defaults=getattr(page, "state_defaults", None),
         status=_lower_status_block(getattr(page, "status", None)),
+        debug_only=getattr(page, "debug_only", None),
         line=page.line,
         column=page.column,
     )
@@ -268,161 +277,6 @@ def _lower_ui_pattern(pattern: ast.UIPatternDecl) -> ast.UIPatternDecl:
     )
 
 
-def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
-    if isinstance(item, ast.CardItem):
-        children = [_lower_page_item(child) for child in item.children]
-        stat = _lower_card_stat(item.stat)
-        actions = _lower_card_actions(item.actions)
-        return ast.CardItem(
-            label=item.label,
-            children=children,
-            stat=stat,
-            actions=actions,
-            visibility=getattr(item, "visibility", None),
-            visibility_rule=getattr(item, "visibility_rule", None),
-            line=item.line,
-            column=item.column,
-        )
-    if isinstance(item, ast.CardGroupItem):
-        children = [_lower_page_item(child) for child in item.children]
-        return ast.CardGroupItem(
-            children=children,
-            visibility=getattr(item, "visibility", None),
-            visibility_rule=getattr(item, "visibility_rule", None),
-            line=item.line,
-            column=item.column,
-        )
-    if isinstance(item, ast.ComposeItem):
-        children = [_lower_page_item(child) for child in item.children]
-        return ast.ComposeItem(
-            name=item.name,
-            children=children,
-            visibility=getattr(item, "visibility", None),
-            visibility_rule=getattr(item, "visibility_rule", None),
-            line=item.line,
-            column=item.column,
-        )
-    if isinstance(item, ast.RowItem):
-        children = [_lower_page_item(child) for child in item.children]
-        return ast.RowItem(
-            children=children,
-            visibility=getattr(item, "visibility", None),
-            visibility_rule=getattr(item, "visibility_rule", None),
-            line=item.line,
-            column=item.column,
-        )
-    if isinstance(item, ast.ColumnItem):
-        children = [_lower_page_item(child) for child in item.children]
-        return ast.ColumnItem(
-            children=children,
-            visibility=getattr(item, "visibility", None),
-            visibility_rule=getattr(item, "visibility_rule", None),
-            line=item.line,
-            column=item.column,
-        )
-    if isinstance(item, ast.SectionItem):
-        children = [_lower_page_item(child) for child in item.children]
-        return ast.SectionItem(
-            label=item.label,
-            children=children,
-            visibility=getattr(item, "visibility", None),
-            visibility_rule=getattr(item, "visibility_rule", None),
-            line=item.line,
-            column=item.column,
-        )
-    if isinstance(item, ast.TabsItem):
-        tabs = [
-            ast.TabItem(
-                label=tab.label,
-                children=[_lower_page_item(child) for child in tab.children],
-                visibility=getattr(tab, "visibility", None),
-                visibility_rule=getattr(tab, "visibility_rule", None),
-                line=tab.line,
-                column=tab.column,
-            )
-            for tab in item.tabs
-        ]
-        return ast.TabsItem(
-            tabs=tabs,
-            default=item.default,
-            visibility=getattr(item, "visibility", None),
-            visibility_rule=getattr(item, "visibility_rule", None),
-            line=item.line,
-            column=item.column,
-        )
-    if isinstance(item, ast.ChatItem):
-        return ast.ChatItem(
-            children=[_lower_page_item(child) for child in item.children],
-            visibility=getattr(item, "visibility", None),
-            visibility_rule=getattr(item, "visibility_rule", None),
-            line=item.line,
-            column=item.column,
-        )
-    if isinstance(item, ast.ModalItem):
-        return ast.ModalItem(
-            label=item.label,
-            children=[_lower_page_item(child) for child in item.children],
-            visibility=getattr(item, "visibility", None),
-            visibility_rule=getattr(item, "visibility_rule", None),
-            line=item.line,
-            column=item.column,
-        )
-    if isinstance(item, ast.DrawerItem):
-        return ast.DrawerItem(
-            label=item.label,
-            children=[_lower_page_item(child) for child in item.children],
-            visibility=getattr(item, "visibility", None),
-            visibility_rule=getattr(item, "visibility_rule", None),
-            line=item.line,
-            column=item.column,
-        )
-    if isinstance(item, ast.NumberItem):
-        entries = [ast.NumberEntry(kind=e.kind, value=e.value, record_name=e.record_name, label=e.label, line=e.line, column=e.column) for e in item.entries]
-        return ast.NumberItem(
-            entries=entries,
-            visibility=getattr(item, "visibility", None),
-            visibility_rule=getattr(item, "visibility_rule", None),
-            line=item.line,
-            column=item.column,
-        )
-    if isinstance(item, ast.ViewItem):
-        return ast.ViewItem(
-            record_name=item.record_name,
-            visibility=getattr(item, "visibility", None),
-            visibility_rule=getattr(item, "visibility_rule", None),
-            line=item.line,
-            column=item.column,
-        )
-    return item
-
-
-def _lower_card_stat(stat: ast.CardStat | None) -> ast.CardStat | None:
-    if stat is None:
-        return None
-    return ast.CardStat(
-        value=_lower_expression(stat.value),
-        label=stat.label,
-        line=stat.line,
-        column=stat.column,
-    )
-
-
-def _lower_card_actions(actions: list[ast.CardAction] | None) -> list[ast.CardAction] | None:
-    if actions is None:
-        return None
-    return [
-        ast.CardAction(
-            label=action.label,
-            flow_name=action.flow_name,
-            kind=action.kind,
-            target=action.target,
-            line=action.line,
-            column=action.column,
-        )
-        for action in actions
-    ]
-
-
 def _lower_record(record: ast.RecordDecl) -> ast.RecordDecl:
     lowered = ast.RecordDecl(
         name=record.name,
@@ -455,13 +309,7 @@ def _lower_policy(policy: ast.PolicyDecl) -> ast.PolicyDecl:
 
 
 def _lower_policy_rule(rule: ast.PolicyRuleDecl) -> ast.PolicyRuleDecl:
-    return ast.PolicyRuleDecl(
-        action=rule.action,
-        mode=rule.mode,
-        permissions=list(rule.permissions),
-        line=rule.line,
-        column=rule.column,
-    )
+    return ast.PolicyRuleDecl(action=rule.action, mode=rule.mode, permissions=list(rule.permissions), line=rule.line, column=rule.column)
 
 
 def _lower_field(field: ast.FieldDecl) -> ast.FieldDecl:

@@ -34,3 +34,13 @@ def test_parse_record_tenant_key_and_ttl():
     assert record.tenant_key.attrs == ["org_id"]
     assert isinstance(record.ttl_hours, ast.Literal)
     assert str(record.ttl_hours.value) == "24"
+
+
+def test_parse_shared_record_flag():
+    source = '''record "SharedCounter" shared:
+  field "value" is number
+'''
+    program = parse_program(source)
+    record = program.records[0]
+    assert record.name == "SharedCounter"
+    assert record.shared is True

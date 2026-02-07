@@ -2,19 +2,23 @@
   "actions": {
     "app.ingestion.review": {
       "id": "app.ingestion.review",
-      "type": "ingestion_review"
+      "type": "ingestion_review",
+      "debug_only": true
     },
     "app.ingestion.skip": {
       "id": "app.ingestion.skip",
-      "type": "ingestion_skip"
+      "type": "ingestion_skip",
+      "debug_only": true
     },
     "app.retrieval": {
       "id": "app.retrieval",
-      "type": "retrieval_run"
+      "type": "retrieval_run",
+      "debug_only": true
     },
     "app.upload.replace": {
       "id": "app.upload.replace",
-      "type": "upload_replace"
+      "type": "upload_replace",
+      "debug_only": true
     },
     "page.composition.button.run_ingestion": {
       "flow": "run_ingestion",
@@ -360,5 +364,6 @@
       "surface": "flat",
       "theme": "light"
     }
-  }
+  },
+  "mode": "studio"
 }

@@ -123,6 +123,7 @@
         }
       ],
       "name": "Note",
+      "shared": false,
       "system_fields": [],
       "tenant_key": null,
       "ttl_hours": null,

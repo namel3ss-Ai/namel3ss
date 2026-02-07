@@ -33,35 +33,27 @@ from namel3ss.ir.lowering.tools import _lower_tools
 from namel3ss.ir.lowering.ui_packs import build_pack_index
 from namel3ss.ir.lowering.ui_patterns import build_pattern_index
 from namel3ss.ir.lowering.program_capabilities import require_program_capabilities
-from namel3ss.ir.model.agents import RunAgentsParallelStmt
-from namel3ss.ir.model.flow_steps import FlowInput
-from namel3ss.ir.model.contracts import ContractDecl
-from namel3ss.ir.model.program import Flow, Program
-from namel3ss.ir.model.pages import (
-    ActivePageRule,
-    CardGroupItem,
-    CardItem,
-    ChatItem,
-    ChatComposerItem,
-    ColumnItem,
-    ComposeItem,
-    DrawerItem,
-    ModalItem,
-    Page,
-    RowItem,
-    SectionItem,
-    TabsItem,
-    TextInputItem,
+from namel3ss.ir.lowering.responsive import lower_responsive_definition
+from namel3ss.ir.lowering.program_validation import (
+    _ensure_unique_pages,
+    _lower_active_page_rules,
+    _normalize_capabilities,
+    _normalize_pack_allowlist,
+    _validate_chat_composers,
+    _validate_page_style_hook_tokens,
+    _validate_responsive_theme_scales,
+    _validate_text_inputs,
 )
-from namel3ss.ir.model.expressions import Literal as IRLiteral
-from namel3ss.ir.model.expressions import StatePath as IRStatePath
+from namel3ss.ir.model.agents import RunAgentsParallelStmt
+from namel3ss.ir.model.program import Flow, Program
 from namel3ss.ir.model.statements import ThemeChange, If, Repeat, RepeatWhile, ForEach, Match, MatchCase, TryCatch, ParallelBlock
 from namel3ss.schema import records as schema
+from namel3ss.theme import resolve_theme_definition, resolve_token_registry
+from namel3ss.ui.plugins import load_ui_plugin_registry
+from namel3ss.ui.plugins.hooks import build_extension_hook_manager
 from namel3ss.ui.settings import normalize_ui_settings
 from namel3ss.validation import ValidationMode
-from namel3ss.lang.capabilities import normalize_builtin_capability
 from namel3ss.pipelines.registry import pipeline_contracts
-from namel3ss.utils.numbers import is_number, to_decimal
 def _statement_has_theme_change(stmt) -> bool:
     if isinstance(stmt, ThemeChange):
         return True
@@ -140,12 +132,52 @@ def lower_program(program: ast.Program) -> Program:
         ai_map,
         agent_map,
     )
+    responsive_layout = lower_responsive_definition(
+        getattr(program, "responsive_definition", None),
+        capabilities=capabilities,
+    )
+    theme_resolution = resolve_theme_definition(
+        getattr(program, "theme_definition", None),
+        capabilities=capabilities,
+    )
+    _validate_responsive_theme_scales(
+        responsive_tokens=theme_resolution.responsive_tokens,
+        responsive_layout=responsive_layout,
+        line=getattr(getattr(theme_resolution, "definition", None), "line", None),
+        column=getattr(getattr(theme_resolution, "definition", None), "column", None),
+    )
+    plugin_decls = tuple(getattr(program, "plugin_uses", []) or [])
+    plugin_names = tuple(str(getattr(plugin, "name", "") or "") for plugin in plugin_decls)
+    if plugin_names:
+        missing_plugin_caps = [name for name in ("custom_ui", "sandbox") if name not in capabilities]
+        if missing_plugin_caps:
+            missing_text = ", ".join(missing_plugin_caps)
+            example_caps = "\n  ".join(["custom_ui", "sandbox"])
+            raise Namel3ssError(
+                build_guidance_message(
+                    what=f"Missing capabilities: {missing_text}.",
+                    why="UI plug-ins require explicit capability opt-in for custom UI rendering and sandbox isolation.",
+                    fix="Add the missing capabilities to the capabilities block.",
+                    example=f"capabilities:\n  {example_caps}",
+                )
+            )
+    plugin_registry = load_ui_plugin_registry(
+        plugin_names=plugin_names,
+        project_root=getattr(program, "project_root", None),
+        app_path=getattr(program, "app_path", None),
+        allowed_capabilities=capabilities,
+    )
+    hook_manager = build_extension_hook_manager(
+        plugin_registry=plugin_registry,
+        capabilities=capabilities,
+    )
+    compile_hook_warnings = hook_manager.run_compile_hooks(program=program)
     pack_allowlist = _normalize_pack_allowlist(getattr(program, "pack_allowlist", None))
     pack_index = build_pack_index(getattr(program, "ui_packs", []))
     pattern_index = build_pattern_index(getattr(program, "ui_patterns", []), pack_index)
     page_names = {page.name for page in program.pages}
     pages = [
-        _lower_page(page, record_map, flow_names, page_names, pack_index, pattern_index)
+        _lower_page(page, record_map, flow_names, page_names, pack_index, pattern_index, plugin_registry)
         for page in program.pages
     ]
     ui_active_page_rules = _lower_active_page_rules(
@@ -157,11 +189,16 @@ def lower_program(program: ast.Program) -> Program:
     _validate_chat_composers(pages, flow_irs, flow_contracts)
     theme_runtime_supported = any(_flow_has_theme_change(flow) for flow in flow_irs)
     ui_settings = normalize_ui_settings(getattr(program, "ui_settings", None))
+    if theme_resolution.ui_overrides:
+        ui_settings = normalize_ui_settings({**ui_settings, **theme_resolution.ui_overrides})
     theme_setting = ui_settings.get("theme", program.app_theme)
+    legacy_theme_tokens = {name: val for name, (val, _, _) in program.theme_tokens.items()}
+    merged_theme_tokens = resolve_token_registry(theme_resolution, legacy_tokens=legacy_theme_tokens)
+    _validate_page_style_hook_tokens(pages, merged_theme_tokens)
     lowered = Program(
         spec_version=str(program.spec_version),
         theme=theme_setting,
-        theme_tokens={name: val for name, (val, _, _) in program.theme_tokens.items()},
+        theme_tokens=merged_theme_tokens,
         theme_runtime_supported=theme_runtime_supported,
         theme_preference={
             "allow_override": program.theme_preference.get("allow_override", (False, None, None))[0],
@@ -187,283 +224,16 @@ def lower_program(program: ast.Program) -> Program:
         identity=identity_schema,
         state_defaults=getattr(program, "state_defaults", None),
         ui_active_page_rules=ui_active_page_rules,
+        ui_plugins=plugin_registry.plugin_names,
         line=program.line,
         column=program.column,
     )
     setattr(lowered, "pack_allowlist", pack_allowlist)
+    setattr(lowered, "ui_plugin_registry", plugin_registry)
+    setattr(lowered, "extension_hook_manager", hook_manager)
+    setattr(lowered, "extension_compile_warnings", compile_hook_warnings)
+    setattr(lowered, "theme_definition", theme_resolution.definition)
+    setattr(lowered, "resolved_theme", theme_resolution)
+    setattr(lowered, "responsive_theme_tokens", theme_resolution.responsive_tokens)
+    setattr(lowered, "responsive_layout", responsive_layout)
     return lowered
-def _ensure_unique_pages(pages: list[Page]) -> None:
-    seen: dict[str, object] = {}
-    for page in pages:
-        if page.name in seen:
-            raise Namel3ssError(
-                build_guidance_message(
-                    what=f"Page '{page.name}' is declared more than once.",
-                    why="Pages must have unique names.",
-                    fix="Rename the duplicate page or merge its contents.",
-                    example='page "home":',
-                ),
-                line=getattr(page, "line", None),
-                column=getattr(page, "column", None),
-            )
-        seen[page.name] = True
-def _lower_active_page_rules(
-    rules: list[ast.ActivePageRule] | None,
-    page_names: set[str],
-) -> list[ActivePageRule] | None:
-    if not rules:
-        return None
-    lowered: list[ActivePageRule] = []
-    seen: dict[tuple[tuple[str, ...], object], str] = {}
-    for rule in rules:
-        if not isinstance(rule, ast.ActivePageRule):
-            raise Namel3ssError(
-                "Active page rules require: is \"<page>\" only when state.<path> is <value>.",
-                line=getattr(rule, "line", None),
-                column=getattr(rule, "column", None),
-            )
-        if rule.page_name not in page_names:
-            raise Namel3ssError(
-                f"Active page rule references unknown page '{rule.page_name}'.",
-                line=getattr(rule, "line", None),
-                column=getattr(rule, "column", None),
-            )
-        lowered_path = _lower_expression(rule.path)
-        if not isinstance(lowered_path, IRStatePath):
-            raise Namel3ssError(
-                "Active page rules require state.<path>.",
-                line=getattr(rule, "line", None),
-                column=getattr(rule, "column", None),
-            )
-        lowered_value = _lower_expression(rule.value)
-        if not isinstance(lowered_value, IRLiteral):
-            raise Namel3ssError(
-                "Active page rules require a text, number, or boolean literal.",
-                line=getattr(rule, "line", None),
-                column=getattr(rule, "column", None),
-            )
-        key = _active_page_rule_key(lowered_path.path, lowered_value.value)
-        if key in seen:
-            raise Namel3ssError(
-                "Active page rules must be unique for each state value.",
-                line=getattr(rule, "line", None),
-                column=getattr(rule, "column", None),
-            )
-        seen[key] = rule.page_name
-        lowered.append(
-            ActivePageRule(
-                page_name=rule.page_name,
-                path=lowered_path,
-                value=lowered_value,
-                line=rule.line,
-                column=rule.column,
-            )
-        )
-    return lowered
-def _active_page_rule_key(path: list[str], value: object) -> tuple[tuple[str, ...], object]:
-    if is_number(value):
-        return (tuple(path), to_decimal(value))
-    return (tuple(path), value)
-def _validate_text_inputs(
-    pages: list[Page],
-    flows: list[Flow],
-    flow_contracts: dict[str, ContractDecl],
-) -> None:
-    flow_inputs: dict[str, dict[str, str]] = {flow.name: _flow_input_signature(flow, flow_contracts) for flow in flows}
-    for page in pages:
-        for item in _walk_page_items(page.items):
-            if not isinstance(item, TextInputItem):
-                continue
-            inputs = flow_inputs.get(item.flow_name) or {}
-            if not inputs:
-                raise Namel3ssError(
-                    build_guidance_message(
-                        what=f'Text input "{item.name}" targets flow "{item.flow_name}" without input fields.',
-                        why="Text inputs require a flow input field with a text type.",
-                        fix=f'Add an input block with `{item.name} is text` to the flow.',
-                        example=f'flow "{item.flow_name}"\\n  input\\n    {item.name} is text',
-                    ),
-                    line=item.line,
-                    column=item.column,
-                )
-            field_type = inputs.get(item.name)
-            if field_type is None:
-                raise Namel3ssError(
-                    build_guidance_message(
-                        what=f'Text input "{item.name}" is not declared on flow "{item.flow_name}".',
-                        why="The input name must match a flow input field.",
-                        fix=f'Add `{item.name} is text` to the flow input block.',
-                        example=f'flow "{item.flow_name}"\\n  input\\n    {item.name} is text',
-                    ),
-                    line=item.line,
-                    column=item.column,
-                )
-            if field_type != "text":
-                raise Namel3ssError(
-                    build_guidance_message(
-                        what=f'Text input "{item.name}" must bind to a text field.',
-                        why=f'Flow "{item.flow_name}" declares "{item.name}" as {field_type}.',
-                        fix=f'Change the flow input type to text for "{item.name}".',
-                        example=f'flow "{item.flow_name}"\\n  input\\n    {item.name} is text',
-                    ),
-                    line=item.line,
-                    column=item.column,
-                )
-def _validate_chat_composers(
-    pages: list[Page],
-    flows: list[Flow],
-    flow_contracts: dict[str, ContractDecl],
-) -> None:
-    flow_inputs: dict[str, dict[str, str]] = {flow.name: _flow_input_signature(flow, flow_contracts) for flow in flows}
-    for page in pages:
-        for item in _walk_page_items(page.items):
-            if not isinstance(item, ChatComposerItem):
-                continue
-            inputs = flow_inputs.get(item.flow_name) or {}
-            extra_fields = list(getattr(item, "fields", []) or [])
-            if not extra_fields:
-                if not inputs:
-                    continue
-                message_type = inputs.get("message")
-                if message_type is None:
-                    raise Namel3ssError(
-                        build_guidance_message(
-                            what=f'Chat composer for flow "{item.flow_name}" is missing "message" in inputs.',
-                            why="Composer submissions always include message.",
-                            fix='Add `message is text` to the flow input block.',
-                            example=_composer_input_example(item.flow_name, ["message"]),
-                        ),
-                        line=item.line,
-                        column=item.column,
-                    )
-                if message_type != "text":
-                    raise Namel3ssError(
-                        build_guidance_message(
-                            what='Chat composer field "message" must be text.',
-                            why=f'Flow "{item.flow_name}" declares "message" as {message_type}.',
-                            fix='Change the flow input type to text for "message".',
-                            example=f'flow "{item.flow_name}"\\n  input\\n    message is text',
-                        ),
-                        line=item.line,
-                        column=item.column,
-                    )
-                continue
-            expected_fields = _composer_expected_fields(extra_fields)
-            if not inputs:
-                example = _composer_input_example(item.flow_name, expected_fields)
-                raise Namel3ssError(
-                    build_guidance_message(
-                        what=f'Chat composer for flow "{item.flow_name}" declares extra fields without flow inputs.',
-                        why="Structured composers require explicit input fields for validation.",
-                        fix="Add an input block that lists message and the extra fields.",
-                        example=example,
-                    ),
-                    line=item.line,
-                    column=item.column,
-                )
-            missing = [name for name in expected_fields if name not in inputs]
-            extra = [name for name in inputs.keys() if name not in expected_fields]
-            if missing or extra:
-                why_parts: list[str] = []
-                if missing:
-                    why_parts.append(f"Missing: {', '.join(missing)}.")
-                if extra:
-                    why_parts.append(f"Extra: {', '.join(extra)}.")
-                example = _composer_input_example(item.flow_name, expected_fields)
-                raise Namel3ssError(
-                    build_guidance_message(
-                        what=f'Chat composer fields do not match flow "{item.flow_name}" inputs.',
-                        why=" ".join(why_parts) if why_parts else "Flow inputs must match composer fields.",
-                        fix="Update the flow input block to match the composer payload.",
-                        example=example,
-                    ),
-                    line=item.line,
-                    column=item.column,
-                )
-            type_map = {"message": "text"}
-            for field in extra_fields:
-                type_map[field.name] = field.type_name
-            for name in expected_fields:
-                expected_type = type_map.get(name)
-                actual_type = inputs.get(name)
-                if expected_type and actual_type and actual_type != expected_type:
-                    field = next((entry for entry in extra_fields if entry.name == name), None)
-                    raise Namel3ssError(
-                        build_guidance_message(
-                            what=f'Chat composer field "{name}" must be {expected_type}.',
-                            why=f'Flow "{item.flow_name}" declares "{name}" as {actual_type}.',
-                            fix=f'Change the flow input type to {expected_type} for "{name}".',
-                            example=f'flow "{item.flow_name}"\\n  input\\n    {name} is {expected_type}',
-                        ),
-                        line=field.line if field else item.line,
-                        column=field.column if field else item.column,
-                    )
-def _flow_input_signature(flow: Flow, flow_contracts: dict[str, ContractDecl]) -> dict[str, str]:
-    if flow.steps:
-        for step in flow.steps:
-            if isinstance(step, FlowInput):
-                return {field.name: field.type_name for field in step.fields}
-    contract = flow_contracts.get(flow.name)
-    if contract is None:
-        return {}
-    return {field.name: field.type_name for field in contract.signature.inputs}
-def _composer_expected_fields(extra_fields: list[object]) -> list[str]:
-    names = ["message"]
-    for field in extra_fields:
-        name = getattr(field, "name", None)
-        if isinstance(name, str):
-            names.append(name)
-    return names
-def _composer_input_example(flow_name: str, field_names: list[str]) -> str:
-    lines = [f'flow "{flow_name}"', "  input"]
-    for name in field_names:
-        lines.append(f"    {name} is text")
-    return "\\n".join(lines)
-def _walk_page_items(items: list[object]) -> list[object]:
-    collected: list[object] = []
-    for item in items:
-        collected.append(item)
-        if isinstance(
-            item,
-            (
-                SectionItem,
-                CardGroupItem,
-                CardItem,
-                RowItem,
-                ColumnItem,
-                ComposeItem,
-                DrawerItem,
-                ModalItem,
-                ChatItem,
-            ),
-        ):
-            collected.extend(_walk_page_items(getattr(item, "children", [])))
-            continue
-        if isinstance(item, TabsItem):
-            for tab in item.tabs:
-                collected.extend(_walk_page_items(tab.children))
-            continue
-    return collected
-def _normalize_capabilities(items: list[str]) -> tuple[str, ...]:
-    normalized: list[str] = []
-    for item in items:
-        value = normalize_builtin_capability(item)
-        if value:
-            normalized.append(value)
-    return tuple(sorted(set(normalized)))
-def _normalize_pack_allowlist(items: list[str] | None) -> tuple[str, ...] | None:
-    if items is None:
-        return None
-    normalized: list[str] = []
-    seen: set[str] = set()
-    for item in items:
-        if not isinstance(item, str):
-            continue
-        value = item.strip()
-        if not value or value in seen:
-            continue
-        seen.add(value)
-        normalized.append(value)
-    if not normalized:
-        return None
-    return tuple(normalized)

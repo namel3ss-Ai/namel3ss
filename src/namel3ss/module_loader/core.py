@@ -109,6 +109,8 @@ def load_project(
         module_order,
         extra_defs=module_file_defs,
     )
+    setattr(combined, "project_root", root)
+    setattr(combined, "app_path", app_file)
     program_ir = lower_program(combined)
     setattr(program_ir, "project_root", root)
     setattr(program_ir, "app_path", app_file)

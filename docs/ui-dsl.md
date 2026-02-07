@@ -13,6 +13,7 @@ This is the authoritative description of the UI DSL. It is semantic and explicit
 - Studio panels (Setup, Graph, Traces, Memory, etc.) are tooling views; they are not part of the UI DSL contract.
 - Studio renders the same UI manifest intent as `n3 ui` and does not add DSL semantics.
 - Console editing is a file-backed workflow; it writes the same `.ai` constructs a text editor writes and does not add hidden grammar behavior.
+- Run modes are explicit and deterministic: `n3 run` renders production UI, `n3 run studio` renders Studio-instrumented UI.
 
 ## 2) Core blocks and naming rules
 - `ui:` (optional global settings; order inside the block is free)
@@ -23,6 +24,8 @@ This is the authoritative description of the UI DSL. It is semantic and explicit
 - `tool "name":`
 - `ui_pack "name":`
 - `pattern "name":`
+- `responsive:` (optional global breakpoint layout metadata)
+- `use plugin "name"` (top-level plug-in declaration for custom UI components)
 - `policy`
 Rule: use `keyword "name"`; never `keyword is "name"`.
 - Reserved words may only be used as identifiers when escaped with backticks (for example `title`).
@@ -59,12 +62,17 @@ Structural:
 - `chat:` children: chat elements only (`messages`, `composer`, `thinking`, `citations`, `memory`).
 - `row:` children: only `column`.
 - `column:` children: any page items.
+- `grid:` responsive container with deterministic column spans.
 - `divider`
 
 Content:
 - `title is "Text"`
 - `text is "Text"`
 - `image is "<media_name>"`
+- `loading [variant: spinner|skeleton]`
+- `snackbar message: "..." duration: <ms>`
+- `icon name: "<icon>" size: small|medium|large role: decorative|semantic [label: "..."]`
+- `lightbox images: ["a.png", "b.png"] [startIndex: <n>]`
 
 Data/UI bindings:
 - `form is "RecordName"` auto-fields from record; optional `groups`/`help`/`readonly`; submits as `submit_form` action.
@@ -85,7 +93,28 @@ Data/UI bindings:
 - `link "Label" to page "PageName"` navigates to a named page; emits an `open_page` action.
 - `use ui_pack "pack_name" fragment "fragment_name"` static expansion of a pack fragment.
 - `use pattern "pattern_name"` static expansion of a UI pattern.
+- Custom component tags are allowed only when declared by a loaded plug-in (`use plugin "name"`).
+- Optional metadata: `debug_only` can be set on pages and UI items (`debug_only is true|false`).
 - Record/flow names may be module-qualified (for example `inv.Product`, `inv.seed_item`) when using Capsules.
+
+Custom component example:
+```
+use plugin "maps"
+
+page "dashboard":
+  MapViewer lat: state.user.location.lat lng: state.user.location.lng zoom: 12 onClick: OpenLocationDetails
+```
+
+Rules:
+- Unknown component tags still fail unless a loaded plug-in provides that component.
+- Component property names and types are validated against the plug-in schema.
+- Event properties (for example `onClick`) must reference known flow names.
+- Plug-ins are capability-gated: add `custom_ui` and `sandbox` in the app `capabilities` block.
+- Permissioned or hook-enabled community extensions additionally require `extension_trust` (and `extension_hooks` when `hooks` are declared in the manifest).
+- Plug-in discovery uses `N3_UI_PLUGIN_DIRS` (path-separated list), then project defaults:
+  - `<project_root>/.namel3ss/ui_plugins`
+  - `<project_root>/ui_plugins`
+  - `<project_root>/plugins`
 
 Structured composer:
 ```
@@ -211,16 +240,44 @@ Rules:
   - runtime -> placeholder intent with `fix_hint`
 
 ## 3.2) Visibility
-- Optional `visibility is state.<path>`, `when is state.<path>`, or `visible_when is state.<path>` may be appended to any page item or `tab` header.
-- Optional `only when state.<path> is <literal>` may be declared as a single indented line inside a page item block (or directly under a single-line item).
+- Optional `visibility is <expr>`, `when is <expr>`, or `visible_when: <expr>` may be appended to any page item or `tab` header.
+- Optional `only when <expr>` may be declared as a single indented line inside a page item block (or directly under a single-line item).
+- Optional `debug_only is true|false` may be appended to page items, and `debug_only: true|false` may be declared at page scope.
 - Text literals use quotes; numbers and booleans are unquoted.
 - `only when` cannot be combined with `visibility`, `when`, or `visible_when` on the same item.
-- Visibility predicates are read-only state paths only (no expressions, operators, or function calls).
-- Paths must include at least one segment after `state.`.
-- For `visibility`/`when`/`visible_when`, a path is visible only when the state value exists and is truthy.
+- Visibility expressions support:
+  - state paths (`state.user.role`)
+  - literals (`"admin"`, `true`, `3`)
+  - comparisons (`==`, `!=`, `>`, `<`, `>=`, `<=`)
+  - boolean logic (`and`, `or`, `not`)
+  - membership (`in`, `not in`) with list literals (`["ready", "queued"]`)
+- Function calls and side effects are not allowed in visibility expressions.
+- For plain `state.<path>` visibility clauses, a path is visible only when the state value exists and is truthy.
 - For `only when`, missing state paths or type mismatches fail at build time.
 - Elements with `visibility` still appear in the manifest with `visible: true|false`; hidden elements do not emit actions.
+- Elements and pages with `debug_only: true` are omitted in production mode and rendered in Studio mode.
 - UI explain output includes the predicate, referenced state paths, evaluated result, and the visibility reason.
+
+## 3.5) Responsive layout
+- Declare top-level breakpoints with:
+```
+responsive:
+  breakpoints:
+    mobile: 0
+    tablet: 640
+    desktop: 1024
+```
+- Sections can declare responsive spans: `section "Overview" columns: [12, 6, 4]:`
+- `grid` requires `columns` in its block:
+```
+grid:
+  columns: [12, 6, 4]
+  card:
+    title is "Item"
+```
+- `columns` values are deterministic integer spans. Each value must be `1..12`.
+- If fewer spans are provided than breakpoints, the last span is repeated.
+- If `responsive_design` capability is absent, responsive spans fall back to the first value (legacy static layout).
 
 Example:
 ```
@@ -230,6 +287,9 @@ page "home":
     table is "Result"
   text is "Loading"
     only when state.status is "loading"
+  button "Delete":
+    calls flow "DeleteRecord"
+    only when state.user.role == "admin" and state.task.status in ["ready", "queued"]
 ```
 
 ## 3.3) Status patterns
@@ -378,6 +438,15 @@ page "home":
     - `motion is "<motion>"`
     - `shape is "<shape>"`
     - `surface is "<surface>"`
+  - `theme` (top-level, optional, before pages):
+    - `preset: "<preset>"`
+    - `brand_palette:`
+      - `<name>: "<hex-or-css-color>"`
+    - `tokens:`
+      - `<token.name>: <token.ref-or-color>`
+    - `harmonize: true|false`
+    - `allow_low_contrast: true|false`
+    - design axes: `density`, `motion`, `shape`, `surface`
 - Defaults (applied when the ui block is missing):
   - theme: `light`
   - accent color: `blue`
@@ -393,13 +462,24 @@ page "home":
   - Shape: `rounded`, `soft`, `sharp`, `square`
   - Surface: `flat`, `outlined`, `raised`
 - Rules:
-  - No hex or numeric colors; accent colors are hue names only.
+  - `ui` remains curated and enum-based. Custom colors live in the top-level `theme` block.
   - No pixel sizes, margins, padding, or per-component styling knobs.
   - Unknown keys/values are rejected with plain-English guidance.
   - Settings are global and appear in CLI and Studio manifests in normalized order.
+  - `theme` is deterministic: token derivation order is fixed and contrast checks run at compile time.
+  - `brand_palette`, `tokens`, and `harmonize` require capability `custom_theme`.
 - Runtime:
   - Theme changes (`set theme to "<theme>"`) use the same allowed themes.
   - `theme_preference` persists overrides when enabled: `allow_override` (true|false), `persist` (`none`|`local`|`file`). Defaults keep runtime overrides disabled and unpersisted.
+  - Manifest preference metadata includes a reserved storage key: `namel3ss_theme`.
+
+### 8.1 Component variants and style hooks
+- `button` supports `variant` values: `primary`, `secondary`, `success`, `danger`.
+- `card` supports `variant` values: `default`, `elevated`, `outlined`.
+- `style_hooks` allow token overrides with a constrained hook set:
+  - `button`: `background`, `border`, `text`
+  - `card`: `background`, `border`, `text`, `shadow`, `radius`
+- Hook values must reference existing theme tokens. Unknown hooks/tokens fail deterministically at compile time.
 
 ### Type canon
 - Canonical field types: `text`, `number`, `boolean` (and `json` if already supported).
@@ -419,13 +499,13 @@ record "User":
 ## 9) Intentionally missing
 - CSS or styling DSL
 - Advanced routing (guards, parameters, auth)
-- Per-component styles or custom colors
+- Arbitrary per-component styles or raw CSS values
 - Pixel-perfect layout controls
 - Implicit AI calls or memory access from UI elements
 
 ## 10) Anti-examples
 - `flow is "demo"` (invalid; must be `flow "demo"`)
-- `theme is "#121212"` (themes are curated names only)
+- `ui: theme is "#121212"` (ui themes are curated names only)
 - `theme is "system"` (not a supported theme value)
 - `theme_tokens: foo is "bar"` (unknown token)
 - `set theme to "dark"` when `allow_override` is false (lint/engine error)

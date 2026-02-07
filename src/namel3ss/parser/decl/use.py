@@ -8,8 +8,26 @@ from namel3ss.errors.guidance import build_guidance_message
 _MODULE_CATEGORIES = ("functions", "records", "tools", "pages", "jobs")
 
 
-def parse_use_decl(parser) -> ast.UseDecl:
+def parse_use_decl(parser) -> ast.UseDecl | ast.PluginUseDecl:
     use_tok = parser._advance()
+    plugin_tok = parser._current()
+    if plugin_tok.type == "IDENT" and plugin_tok.value == "plugin":
+        parser._advance()
+        name_tok = parser._current()
+        if name_tok.type != "STRING":
+            raise Namel3ssError(
+                build_guidance_message(
+                    what="Use plugin is missing a plugin name.",
+                    why="Plug-ins are referenced by name strings.",
+                    fix='Use `use plugin "<name>"`.',
+                    example='use plugin "charts"',
+                ),
+                line=name_tok.line,
+                column=name_tok.column,
+            )
+        parser._advance()
+        return ast.PluginUseDecl(name=str(name_tok.value), line=use_tok.line, column=use_tok.column)
+
     module_keyword = False
     module_tok = parser._current()
     if module_tok.type == "IDENT" and module_tok.value == "module":

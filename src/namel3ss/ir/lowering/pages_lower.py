@@ -4,7 +4,7 @@ from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir.lowering.expressions import _lower_expression
 from namel3ss.ir.lowering.page_chart import _validate_chart_pairing
-from namel3ss.ir.lowering.pages_items import _lower_page_item
+from namel3ss.ir.lowering.pages_items import _lower_page_item, set_plugin_registry
 from namel3ss.ir.lowering.ui_packs import expand_page_items
 from namel3ss.ir.lowering.ui_patterns import expand_pattern_items
 from namel3ss.ir.model.pages import Page, StatusBlock, StatusCase, StatusCondition
@@ -18,7 +18,9 @@ def _lower_page(
     page_names: set[str],
     pack_index: dict[str, ast.UIPackDecl],
     pattern_index: dict[str, object],
+    plugin_registry,
 ) -> Page:
+    set_plugin_registry(plugin_registry)
     expanded_items = expand_page_items(
         page.items,
         pack_index,
@@ -48,6 +50,7 @@ def _lower_page(
         pack_index,
         pattern_index,
         context_module,
+        plugin_registry,
     )
     overlays = _collect_overlays(expanded_items)
     _validate_upload_names(expanded_items, expanded_status_items)
@@ -63,6 +66,7 @@ def _lower_page(
         items=items,
         requires=_lower_expression(page.requires) if page.requires else None,
         purpose=getattr(page, "purpose", None),
+        debug_only=getattr(page, "debug_only", None),
         line=page.line,
         column=page.column,
         state_defaults=getattr(page, "state_defaults", None),
@@ -78,6 +82,7 @@ def _lower_status_block(
     pack_index: dict[str, ast.UIPackDecl],
     pattern_index: dict[str, object],
     context_module: str | None,
+    plugin_registry,
 ) -> tuple[StatusBlock | None, list[ast.PageItem]]:
     status = getattr(page, "status", None)
     if status is None:
@@ -192,6 +197,7 @@ def _walk_page_items(items: list[ast.PageItem]) -> list[ast.PageItem]:
                 ast.ColumnItem,
                 ast.ComposeItem,
                 ast.DrawerItem,
+                ast.GridItem,
                 ast.ModalItem,
                 ast.RowItem,
                 ast.SectionItem,

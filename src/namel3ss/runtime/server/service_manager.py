@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import os
 import threading
 from http.server import HTTPServer
 from pathlib import Path
 
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.lang.capabilities import normalize_builtin_capability
 from namel3ss.runtime.performance.config import normalize_performance_runtime_config
 from namel3ss.runtime.performance.guard import require_performance_capability
 from namel3ss.runtime.router.program_state import ProgramState
@@ -15,11 +18,14 @@ from namel3ss.runtime.security.retention_loop import run_retention_loop
 from namel3ss.runtime.server.cluster_control import ClusterControlPlane
 from namel3ss.runtime.server.concurrency import create_runtime_http_server, load_concurrency_config
 from namel3ss.runtime.server.handlers import ServiceRequestHandler
+from namel3ss.runtime.server.session_manager import DEFAULT_IDLE_TIMEOUT_SECONDS, ServiceSessionManager
 from namel3ss.runtime.server.service_process_model import configure_server_process_model
 from namel3ss.runtime.server.worker_pool import ServiceActionWorkerPool
 from namel3ss.runtime.service_helpers import seed_flow, should_auto_seed, summarize_program
 from namel3ss.runtime.triggers import run_service_trigger_loop
+from namel3ss.runtime.storage.factory import create_store
 from namel3ss.ui.external.detect import resolve_external_ui_root
+from namel3ss.ui.manifest.display_mode import DISPLAY_MODE_PRODUCTION, normalize_display_mode
 
 DEFAULT_SERVICE_PORT = 8787
 
@@ -35,6 +41,8 @@ class ServiceRunner:
         auto_seed: bool = False,
         seed_flow: str = "seed_demo",
         headless: bool = False,
+        ui_mode: str | None = None,
+        require_service_capability: bool = False,
     ):
         self.app_path = Path(app_path).resolve()
         self.target = target
@@ -43,6 +51,10 @@ class ServiceRunner:
         self.auto_seed = auto_seed
         self.seed_flow = seed_flow
         self.headless = headless
+        self.require_service_capability = bool(require_service_capability)
+        env_mode = os.getenv("N3_UI_MODE")
+        chosen_ui_mode = ui_mode if ui_mode is not None else env_mode
+        self.ui_mode = normalize_display_mode(chosen_ui_mode, default=DISPLAY_MODE_PRODUCTION)
         self.server: HTTPServer | None = None
         self._thread: threading.Thread | None = None
         self._trigger_thread: threading.Thread | None = None
@@ -59,9 +71,14 @@ class ServiceRunner:
         program_ir = program_state.program
         if program_ir is None:
             raise Namel3ssError("Program failed to load.")
-        runtime_config = normalize_performance_runtime_config(
-            load_config(app_path=self.app_path, root=self.app_path.parent)
-        )
+        capabilities = _normalized_capabilities(getattr(program_ir, "capabilities", ()))
+        has_service_capability = "service" in capabilities
+        if self.require_service_capability and not has_service_capability:
+            raise Namel3ssError(_missing_service_capability_message())
+        allow_multi_user = "multi_user" in capabilities
+        remote_studio_enabled = "remote_studio" in capabilities
+        resolved_config = load_config(app_path=self.app_path, root=self.app_path.parent)
+        runtime_config = normalize_performance_runtime_config(resolved_config)
         require_performance_capability(
             getattr(program_ir, "capabilities", ()),
             runtime_config,
@@ -83,6 +100,7 @@ class ServiceRunner:
             program_ir=program_ir,
             app_path=self.app_path,
             concurrency=self.concurrency,
+            ui_mode=self.ui_mode,
         )
         server.concurrency = self.concurrency.to_dict()  # type: ignore[attr-defined]
         server.headless = self.headless  # type: ignore[attr-defined]
@@ -94,6 +112,20 @@ class ServiceRunner:
         server.route_registry = registry  # type: ignore[attr-defined]
         server.external_ui_root = None if self.headless else external_ui_root  # type: ignore[attr-defined]
         server.external_ui_enabled = bool(not self.headless and external_ui_root is not None)  # type: ignore[attr-defined]
+        server.ui_mode = self.ui_mode  # type: ignore[attr-defined]
+        if has_service_capability:
+            idle_timeout = _service_idle_timeout()
+            base_store = create_store(config=resolved_config)
+            server.session_manager = ServiceSessionManager(  # type: ignore[attr-defined]
+                base_store=base_store,
+                project_root=getattr(program_ir, "project_root", None),
+                app_path=getattr(program_ir, "app_path", None),
+                allow_multi_user=allow_multi_user,
+                remote_studio_enabled=remote_studio_enabled,
+                idle_timeout_seconds=idle_timeout,
+            )
+        else:
+            server.session_manager = None  # type: ignore[attr-defined]
         self.server = server
         self._cluster_control = ClusterControlPlane(
             project_root=self.app_path.parent,
@@ -150,3 +182,34 @@ class ServiceRunner:
 
 
 __all__ = ["DEFAULT_SERVICE_PORT", "ServiceRunner"]
+
+
+def _normalized_capabilities(values: object) -> tuple[str, ...]:
+    if not isinstance(values, (list, tuple)):
+        return ()
+    normalized: list[str] = []
+    for value in values:
+        token = normalize_builtin_capability(value if isinstance(value, str) else None)
+        if token and token not in normalized:
+            normalized.append(token)
+    return tuple(normalized)
+
+
+def _service_idle_timeout() -> int:
+    raw = os.getenv("N3_SERVICE_IDLE_TIMEOUT_SECONDS")
+    if raw is None:
+        return DEFAULT_IDLE_TIMEOUT_SECONDS
+    try:
+        value = int(raw)
+    except ValueError:
+        return DEFAULT_IDLE_TIMEOUT_SECONDS
+    return max(0, value)
+
+
+def _missing_service_capability_message() -> str:
+    return build_guidance_message(
+        what='Capability "service" is required.',
+        why="Service mode is opt-in and disabled by default.",
+        fix="Add service to the app capabilities block and retry.",
+        example='capabilities:\n  service',
+    )

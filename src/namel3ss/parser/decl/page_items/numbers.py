@@ -3,6 +3,7 @@ from __future__ import annotations
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.parser.decl.page_common import (
+    _parse_debug_only_clause,
     _is_visibility_rule_start,
     _parse_reference_name_value,
     _parse_string_value,
@@ -15,6 +16,7 @@ from namel3ss.parser.decl.page_common import (
 def parse_number_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.NumberItem:
     parser._advance()
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    debug_only = _parse_debug_only_clause(parser)
     parser._expect("COLON", "Expected ':' after number")
     entries: list[ast.NumberEntry] = []
     visibility_rule: ast.VisibilityRule | None = None
@@ -76,6 +78,7 @@ def parse_number_item(parser, tok, *, allow_pattern_params: bool = False) -> ast
         entries=entries,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        debug_only=debug_only,
         line=tok.line,
         column=tok.column,
     )

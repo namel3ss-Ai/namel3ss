@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import threading
 from http.server import HTTPServer
 from pathlib import Path
@@ -7,6 +8,11 @@ from pathlib import Path
 from namel3ss.runtime.server.concurrency import create_runtime_http_server, load_concurrency_config
 from namel3ss.runtime.server.dev.routes import BrowserRequestHandler
 from namel3ss.runtime.server.dev.state import BrowserAppState
+from namel3ss.ui.manifest.display_mode import (
+    DISPLAY_MODE_PRODUCTION,
+    DISPLAY_MODE_STUDIO,
+    normalize_display_mode,
+)
 from namel3ss.runtime.router.refresh import refresh_routes
 from namel3ss.runtime.router.registry import RouteRegistry
 
@@ -25,6 +31,7 @@ class BrowserRunner:
         watch_sources: bool = True,
         engine_target: str = "local",
         headless: bool = False,
+        ui_mode: str | None = None,
     ) -> None:
         if mode not in {"dev", "preview", "run"}:
             raise ValueError(f"Unknown browser mode: {mode}")
@@ -36,6 +43,10 @@ class BrowserRunner:
         self.server: HTTPServer | None = None
         self.watch_sources = watch_sources
         self.headless = headless
+        default_ui_mode = DISPLAY_MODE_PRODUCTION if mode in {"run", "preview"} else DISPLAY_MODE_STUDIO
+        env_mode = os.getenv("N3_UI_MODE")
+        chosen_ui_mode = ui_mode if ui_mode is not None else env_mode
+        self.ui_mode = normalize_display_mode(chosen_ui_mode, default=default_ui_mode)
         self.concurrency = load_concurrency_config(app_path=self.app_path)
         self.app_state = BrowserAppState(
             self.app_path,
@@ -43,6 +54,7 @@ class BrowserRunner:
             debug=debug,
             watch_sources=watch_sources,
             engine_target=engine_target,
+            ui_mode=self.ui_mode,
         )
 
     def bind(self) -> None:

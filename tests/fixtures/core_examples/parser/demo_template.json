@@ -328,6 +328,7 @@
             }
           ],
           "column": 3,
+          "columns": null,
           "label": "records",
           "line": 46,
           "type": "SectionItem",
@@ -403,6 +404,7 @@
       ],
       "line": 14,
       "name": "Prompt",
+      "shared": false,
       "tenant_key": null,
       "ttl_hours": null,
       "type": "RecordDecl"
@@ -473,6 +475,7 @@
       ],
       "line": 17,
       "name": "Answer",
+      "shared": false,
       "tenant_key": null,
       "ttl_hours": null,
       "type": "RecordDecl"

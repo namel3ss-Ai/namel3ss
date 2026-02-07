@@ -48,4 +48,4 @@ def test_visibility_when_invalid_state_path():
     source = INVALID_FIXTURE.read_text(encoding="utf-8")
     with pytest.raises(Namel3ssError) as exc:
         lower_ir_program(source)
-    assert "Visibility requires state.<path>." in str(exc.value)
+    assert "Visibility expressions only support literals, state paths, lists, and boolean operators." in str(exc.value)

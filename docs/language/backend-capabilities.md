@@ -18,7 +18,20 @@ capabilities:
   training
   streaming
   performance
+  custom_ui
+  sandbox
+  extension_hooks
+  extension_trust
+  custom_theme
+  theme_editor
 ```
+
+`custom_ui` gates UI plug-in declarations (`use plugin "name"`). When omitted, programs using UI plug-ins fail deterministically at compile time.
+`sandbox` gates sandboxed plug-in rendering.
+`extension_hooks` gates manifest-declared extension hooks (`compiler`, `runtime`, `studio`).
+`extension_trust` gates install/trust/revoke/update workflows and loading of permissioned/hook-enabled community extensions.
+`custom_theme` gates top-level `theme` features (`brand_palette`, custom `tokens`, `harmonize`).  
+`theme_editor` gates use of runtime ThemeEditor controls in UI manifests.
 
 ## HTTP calls (read-only)
 Declare an HTTP tool using the normal tool syntax and set its implementation to `http`.

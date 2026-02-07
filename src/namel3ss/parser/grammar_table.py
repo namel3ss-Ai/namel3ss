@@ -67,8 +67,10 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
     from namel3ss.parser.decl.page import parse_page
     from namel3ss.parser.decl.prompt import parse_prompt_decl
     from namel3ss.parser.decl.record import parse_record
+    from namel3ss.parser.decl.responsive import parse_responsive_decl
     from namel3ss.parser.decl.route import parse_route_decl
     from namel3ss.parser.decl.spec import parse_spec_decl
+    from namel3ss.parser.decl.theme import parse_theme_decl
     from namel3ss.parser.decl.tool import parse_tool
     from namel3ss.parser.decl.ui import parse_ui_decl
     from namel3ss.parser.decl.ui_pack import parse_ui_pack_decl
@@ -85,6 +87,8 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
         TopLevelRule("capsule", "IDENT", parse_capsule_decl, token_value="capsule"),
         TopLevelRule("identity", "IDENT", parse_identity, token_value="identity"),
         TopLevelRule("app", "APP", parse_app),
+        TopLevelRule("theme", "THEME", parse_theme_decl),
+        TopLevelRule("responsive", "IDENT", parse_responsive_decl, token_value="responsive"),
         TopLevelRule("capabilities", "CAPABILITIES", parse_capabilities),
         TopLevelRule("policy", "IDENT", parse_policy_decl, token_value="policy"),
         TopLevelRule("packs", "IDENT", parse_packs, token_value="packs"),

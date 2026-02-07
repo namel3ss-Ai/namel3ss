@@ -26,6 +26,8 @@ def _assert_no_forbidden_terms(text: str) -> None:
 def _write_basic_app(root: Path) -> None:
     (root / "app.ai").write_text(
         'spec is "1.0"\n\n'
+        "capabilities:\n"
+        "  service\n\n"
         'record "Order":\n'
         '  field "id" is number must be present\n\n'
         'record "Answer":\n'

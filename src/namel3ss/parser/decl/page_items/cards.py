@@ -6,8 +6,11 @@ from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.parser.decl.page_actions import parse_ui_action_body
 from namel3ss.parser.decl.page_common import (
+    _parse_debug_only_clause,
     _is_visibility_rule_start,
     _parse_optional_string_value,
+    _parse_style_hooks_block,
+    _parse_variant_line,
     _parse_visibility_clause,
     _parse_visibility_rule_line,
     _validate_visibility_combo,
@@ -17,6 +20,7 @@ from namel3ss.parser.decl.page_common import (
 def parse_card_group_item(parser, tok, parse_page_item, *, allow_pattern_params: bool = False) -> ast.CardGroupItem:
     parser._advance()
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    debug_only = _parse_debug_only_clause(parser)
     parser._expect("COLON", "Expected ':' after card_group")
     children, visibility_rule = _parse_card_group_block(parser, parse_page_item, allow_pattern_params=allow_pattern_params)
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
@@ -24,6 +28,7 @@ def parse_card_group_item(parser, tok, parse_page_item, *, allow_pattern_params:
         children=children,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        debug_only=debug_only,
         line=tok.line,
         column=tok.column,
     )
@@ -33,19 +38,30 @@ def parse_card_item(parser, tok, parse_page_item, *, allow_pattern_params: bool 
     parser._advance()
     label = _parse_optional_string_value(parser, allow_pattern_params=allow_pattern_params)
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    debug_only = _parse_debug_only_clause(parser)
     parser._expect("COLON", "Expected ':' after card")
-    children, stat, actions, visibility_rule = _parse_card_block(parser, parse_page_item, allow_pattern_params=allow_pattern_params)
+    children, stat, actions, visibility_rule, variant, style_hooks = _parse_card_block(
+        parser,
+        parse_page_item,
+        allow_pattern_params=allow_pattern_params,
+    )
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
-    return ast.CardItem(
+    item = ast.CardItem(
         label=label,
         children=children,
         stat=stat,
         actions=actions,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        debug_only=debug_only,
         line=tok.line,
         column=tok.column,
     )
+    if variant is not None:
+        setattr(item, "variant", variant)
+    if style_hooks is not None:
+        setattr(item, "style_hooks", style_hooks)
+    return item
 
 
 def _parse_card_group_block(
@@ -89,13 +105,15 @@ def _parse_card_block(
     parse_page_item,
     *,
     allow_pattern_params: bool,
-) -> tuple[List[ast.PageItem], ast.CardStat | None, List[ast.CardAction] | None, ast.VisibilityRule | None]:
+) -> tuple[List[ast.PageItem], ast.CardStat | None, List[ast.CardAction] | None, ast.VisibilityRule | None, str | None, dict[str, str] | None]:
     parser._expect("NEWLINE", "Expected newline after card header")
     parser._expect("INDENT", "Expected indented card body")
     children: List[ast.PageItem] = []
     stat: ast.CardStat | None = None
     actions: List[ast.CardAction] | None = None
     visibility_rule: ast.VisibilityRule | None = None
+    variant: str | None = None
+    style_hooks: dict[str, str] | None = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
@@ -123,13 +141,25 @@ def _parse_card_block(
             parser._advance()
             actions = _parse_card_actions_block(parser, allow_pattern_params=allow_pattern_params)
             continue
+        if tok.type == "IDENT" and tok.value == "variant":
+            if variant is not None:
+                raise Namel3ssError("Variant is declared more than once", line=tok.line, column=tok.column)
+            variant = _parse_variant_line(parser)
+            parser._match("NEWLINE")
+            continue
+        if tok.type == "IDENT" and tok.value == "style_hooks":
+            if style_hooks is not None:
+                raise Namel3ssError("style_hooks is declared more than once", line=tok.line, column=tok.column)
+            style_hooks = _parse_style_hooks_block(parser)
+            parser._match("NEWLINE")
+            continue
         parsed = parse_page_item(parser, allow_tabs=False, allow_pattern_params=allow_pattern_params)
         if isinstance(parsed, list):
             children.extend(parsed)
         else:
             children.append(parsed)
     parser._expect("DEDENT", "Expected end of card body")
-    return children, stat, actions, visibility_rule
+    return children, stat, actions, visibility_rule, variant, style_hooks
 
 
 def _parse_card_stat_block(parser, line: int, column: int) -> ast.CardStat:

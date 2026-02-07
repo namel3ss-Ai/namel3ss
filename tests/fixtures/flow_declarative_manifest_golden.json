@@ -6,6 +6,7 @@
       "type": "call_flow"
     }
   },
+  "mode": "studio",
   "pages": [
     {
       "elements": [

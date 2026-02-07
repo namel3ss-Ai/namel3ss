@@ -46,6 +46,7 @@ def _merge_programs(
     combined_ais = list(app_ast.ais)
     combined_tools = list(app_ast.tools)
     combined_agents = list(app_ast.agents)
+    combined_plugin_uses = list(getattr(app_ast, "plugin_uses", []) or [])
     agent_team = getattr(app_ast, "agent_team", None)
     identity_decl = app_ast.identity
 
@@ -91,6 +92,7 @@ def _merge_programs(
             combined_ais.extend(program.ais)
             combined_tools.extend(program.tools)
             combined_agents.extend(program.agents)
+            combined_plugin_uses.extend(list(getattr(program, "plugin_uses", []) or []))
             combined_pages.extend(_exported_pages(program.pages, name, exports_map))
             combined_ui_packs.extend(_exported_ui_packs(getattr(program, "ui_packs", []), name, exports_map))
             combined_ui_patterns.extend(_exported_ui_patterns(getattr(program, "ui_patterns", []), name, exports_map))
@@ -124,6 +126,7 @@ def _merge_programs(
         agents=combined_agents,
         agent_team=agent_team,
         uses=[],
+        plugin_uses=_dedupe_plugin_uses(combined_plugin_uses),
         capsule=None,
         identity=identity_decl,
         line=app_ast.line,
@@ -131,7 +134,22 @@ def _merge_programs(
     )
     raw_allowlist = getattr(app_ast, "pack_allowlist", None)
     setattr(combined, "pack_allowlist", list(raw_allowlist) if raw_allowlist is not None else None)
+    setattr(combined, "theme_definition", getattr(app_ast, "theme_definition", None))
+    setattr(combined, "theme_line", getattr(app_ast, "theme_line", None))
+    setattr(combined, "theme_column", getattr(app_ast, "theme_column", None))
     return combined
+
+
+def _dedupe_plugin_uses(entries: list[ast.PluginUseDecl]) -> list[ast.PluginUseDecl]:
+    seen: set[str] = set()
+    ordered: list[ast.PluginUseDecl] = []
+    for entry in entries:
+        name = str(getattr(entry, "name", "") or "").strip()
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        ordered.append(entry)
+    return ordered
 
 
 def _exported_pages(

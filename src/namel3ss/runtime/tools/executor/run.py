@@ -28,6 +28,7 @@ from namel3ss.runtime.tools.registry import execute_tool as _registry_execute_bu
 from namel3ss.runtime.values.normalize import ensure_object
 from namel3ss.runtime.backend.file_store import execute_file_tool
 from namel3ss.runtime.backend.http_capability import execute_http_tool
+from namel3ss.ui.plugins.hooks import RuntimeHookOutcome
 
 
 def execute_tool_call(
@@ -76,6 +77,31 @@ def _execute_tool_call_internal(
     column: int | None,
 ) -> tuple[ToolCallOutcome, Exception | None]:
     ensure_tool_call_allowed(ctx, tool_name, line=line, column=column)
+    before_hooks = _run_runtime_hooks(
+        ctx,
+        stage="before",
+        tool_name=tool_name,
+        args=args,
+        result=None,
+        error=None,
+    )
+    if before_hooks.blocked_message:
+        decision = ToolDecision(
+            status="blocked",
+            capability=None,
+            reason="runtime_hook",
+            message=before_hooks.blocked_message,
+        )
+        outcome = ToolCallOutcome(
+            tool_name=tool_name,
+            decision=decision,
+            result_kind="blocked",
+            result_summary=before_hooks.blocked_message,
+        )
+        _record_tool_trace(ctx, tool_name, None, decision, result="blocked")
+        err = Namel3ssError(before_hooks.blocked_message, line=line, column=column)
+        mark_boundary(err, "tools")
+        return outcome, err
     tool_decl = ctx.tools.get(tool_name)
     is_foreign = _is_foreign_tool(tool_decl)
     policy_mode = foreign_policy_mode(getattr(ctx, "config", None))
@@ -272,6 +298,14 @@ def _execute_tool_call_internal(
             _record_foreign_boundary_end(ctx, tool_decl, status="error", error=err, policy_mode=policy_mode)
             return outcome, err
     except Exception as err:
+        _run_runtime_hooks(
+            ctx,
+            stage="after",
+            tool_name=tool_name,
+            args=args,
+            result=None,
+            error=str(err),
+        )
         _record_tool_trace(ctx, tool_name, tool_kind, decision, result="error")
         _ensure_tool_trace(
             ctx,
@@ -291,6 +325,14 @@ def _execute_tool_call_internal(
         return outcome, err
 
     result_object = result if is_foreign else ensure_object(result)
+    _run_runtime_hooks(
+        ctx,
+        stage="after",
+        tool_name=tool_name,
+        args=args,
+        result=result_object,
+        error=None,
+    )
     _record_tool_trace(ctx, tool_name, tool_kind, decision, result="ok")
     outcome = ToolCallOutcome(
         tool_name=tool_name,
@@ -375,6 +417,41 @@ def _execute_python_tool_call(
     if override is not None:
         return override(ctx, tool_name=tool_name, payload=payload, line=line, column=column)
     return _runtime_execute_python_tool_call(ctx, tool_name=tool_name, payload=payload, line=line, column=column)
+
+
+def _run_runtime_hooks(
+    ctx: ExecutionContext,
+    *,
+    stage: str,
+    tool_name: str,
+    args: dict,
+    result: object,
+    error: str | None,
+) -> RuntimeHookOutcome:
+    hook_manager = getattr(ctx, "extension_hook_manager", None)
+    if hook_manager is None:
+        return RuntimeHookOutcome(blocked_message=None, annotations=tuple())
+    try:
+        outcome = hook_manager.run_runtime_tool_hooks(
+            stage=stage,
+            tool_name=tool_name,
+            args=dict(args or {}),
+            result=result,
+            error=error,
+        )
+    except Exception as err:
+        raise Namel3ssError(f"Runtime hook execution failed: {err}") from err
+    for annotation in outcome.annotations:
+        ctx.traces.append(
+            {
+                "type": "extension_runtime_hook",
+                "stage": stage,
+                "tool_name": tool_name,
+                "plugin": annotation.get("plugin"),
+                "payload": annotation.get("payload"),
+            }
+        )
+    return outcome
 
 
 def _resolve_override(name: str, current: object):

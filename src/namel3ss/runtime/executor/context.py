@@ -101,6 +101,7 @@ class ExecutionContext:
     flow_call_id: str | None = None
     flow_call_counter: int = 0
     orchestration_counter: int = 0
+    extension_hook_manager: object | None = None
     job_queue: list[dict] = field(default_factory=list)
     job_trigger_state: dict[str, bool] = field(default_factory=dict)
     scheduled_jobs: list[dict] = field(default_factory=list)

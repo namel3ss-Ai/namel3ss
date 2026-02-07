@@ -14,15 +14,22 @@ from namel3ss.ui.actions.dispatch import dispatch_ui_action
 
 
 class ServiceActionWorkerPool:
-    def __init__(self, *, app_path: Path, workers: int) -> None:
+    def __init__(self, *, app_path: Path, workers: int, ui_mode: str) -> None:
         self.app_path = Path(app_path).resolve()
         self.workers = max(1, int(workers))
+        self.ui_mode = str(ui_mode)
         self._lock = threading.RLock()
         self._pending = 0
         self._executor = _create_executor(self.workers)
 
     def run_action(self, action_id: str, payload: dict, *, timeout_seconds: float = 30.0) -> dict:
-        future = self._submit(_run_action_worker, self.app_path.as_posix(), str(action_id), dict(payload or {}))
+        future = self._submit(
+            _run_action_worker,
+            self.app_path.as_posix(),
+            str(action_id),
+            dict(payload or {}),
+            self.ui_mode,
+        )
         try:
             result = future.result(timeout=timeout_seconds)
         except TimeoutError as err:
@@ -119,11 +126,11 @@ def _create_executor(workers: int) -> ProcessPoolExecutor:
     return ProcessPoolExecutor(max_workers=max(1, int(workers)), mp_context=context)
 
 
-def _run_action_worker(app_path: str, action_id: str, payload: dict) -> dict:
+def _run_action_worker(app_path: str, action_id: str, payload: dict, ui_mode: str) -> dict:
     app_file = Path(app_path).resolve()
     source = app_file.read_text(encoding="utf-8")
     project = load_project(app_file, source_overrides={app_file: source})
-    response = dispatch_ui_action(project.program, action_id=action_id, payload=payload)
+    response = dispatch_ui_action(project.program, action_id=action_id, payload=payload, ui_mode=ui_mode)
     if isinstance(response, dict):
         response.setdefault("process_model", "worker_pool")
         return response
