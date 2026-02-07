@@ -47,6 +47,7 @@ def lower_program(program: ast.Program) -> ast.Program:
         agents=list(program.agents),
         agent_team=getattr(program, "agent_team", None),
         uses=list(program.uses),
+        plugin_uses=list(getattr(program, "plugin_uses", []) or []),
         capsule=program.capsule,
         identity=_lower_identity(program.identity) if program.identity else None,
         policy=_lower_policy(program.policy) if program.policy else None,
@@ -55,6 +56,9 @@ def lower_program(program: ast.Program) -> ast.Program:
     )
     raw_allowlist = getattr(program, "pack_allowlist", None)
     setattr(lowered, "pack_allowlist", list(raw_allowlist) if raw_allowlist is not None else None)
+    setattr(lowered, "theme_definition", getattr(program, "theme_definition", None))
+    setattr(lowered, "theme_line", getattr(program, "theme_line", None))
+    setattr(lowered, "theme_column", getattr(program, "theme_column", None))
     return lowered
 
 
@@ -198,6 +202,7 @@ def _lower_page(page: ast.PageDecl) -> ast.PageDecl:
         purpose=getattr(page, "purpose", None),
         state_defaults=getattr(page, "state_defaults", None),
         status=_lower_status_block(getattr(page, "status", None)),
+        debug_only=getattr(page, "debug_only", None),
         line=page.line,
         column=page.column,
     )
@@ -273,22 +278,26 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
         children = [_lower_page_item(child) for child in item.children]
         stat = _lower_card_stat(item.stat)
         actions = _lower_card_actions(item.actions)
-        return ast.CardItem(
+        lowered = ast.CardItem(
             label=item.label,
             children=children,
             stat=stat,
             actions=actions,
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
+        _copy_style_metadata(lowered, item)
+        return lowered
     if isinstance(item, ast.CardGroupItem):
         children = [_lower_page_item(child) for child in item.children]
         return ast.CardGroupItem(
             children=children,
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
@@ -299,6 +308,7 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
             children=children,
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
@@ -308,6 +318,7 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
             children=children,
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
@@ -317,6 +328,7 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
             children=children,
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
@@ -327,6 +339,7 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
             children=children,
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
@@ -347,6 +360,7 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
             default=item.default,
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
@@ -355,6 +369,7 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
             children=[_lower_page_item(child) for child in item.children],
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
@@ -364,6 +379,7 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
             children=[_lower_page_item(child) for child in item.children],
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
@@ -373,6 +389,7 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
             children=[_lower_page_item(child) for child in item.children],
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
@@ -382,6 +399,7 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
             entries=entries,
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
@@ -390,6 +408,7 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
             record_name=item.record_name,
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
@@ -399,12 +418,7 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
 def _lower_card_stat(stat: ast.CardStat | None) -> ast.CardStat | None:
     if stat is None:
         return None
-    return ast.CardStat(
-        value=_lower_expression(stat.value),
-        label=stat.label,
-        line=stat.line,
-        column=stat.column,
-    )
+    return ast.CardStat(value=_lower_expression(stat.value), label=stat.label, line=stat.line, column=stat.column)
 
 
 def _lower_card_actions(actions: list[ast.CardAction] | None) -> list[ast.CardAction] | None:
@@ -455,13 +469,7 @@ def _lower_policy(policy: ast.PolicyDecl) -> ast.PolicyDecl:
 
 
 def _lower_policy_rule(rule: ast.PolicyRuleDecl) -> ast.PolicyRuleDecl:
-    return ast.PolicyRuleDecl(
-        action=rule.action,
-        mode=rule.mode,
-        permissions=list(rule.permissions),
-        line=rule.line,
-        column=rule.column,
-    )
+    return ast.PolicyRuleDecl(action=rule.action, mode=rule.mode, permissions=list(rule.permissions), line=rule.line, column=rule.column)
 
 
 def _lower_field(field: ast.FieldDecl) -> ast.FieldDecl:
@@ -489,3 +497,12 @@ def _lower_constraint(constraint: ast.FieldConstraint | None) -> ast.FieldConstr
         line=constraint.line,
         column=constraint.column,
     )
+
+
+def _copy_style_metadata(target, source) -> None:
+    variant = getattr(source, "variant", None)
+    if variant is not None:
+        setattr(target, "variant", variant)
+    style_hooks = getattr(source, "style_hooks", None)
+    if style_hooks is not None:
+        setattr(target, "style_hooks", dict(style_hooks))

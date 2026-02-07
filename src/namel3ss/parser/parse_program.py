@@ -15,6 +15,7 @@ def parse_program(parser) -> ast.Program:
     app_line = None
     app_column = None
     theme_tokens = {}
+    theme_definition = None
     ui_settings = default_ui_settings_with_meta()
     ui_line = None
     ui_column = None
@@ -40,6 +41,7 @@ def parse_program(parser) -> ast.Program:
     agents: List[ast.AgentDecl] = []
     agent_team: ast.AgentTeamDecl | None = None
     uses: List[ast.UseDecl] = []
+    plugin_uses: List[ast.PluginUseDecl] = []
     capsule: ast.CapsuleDecl | None = None
     identity: ast.IdentityDecl | None = None
     theme_preference = {"allow_override": (False, None, None), "persist": ("none", None, None)}
@@ -76,7 +78,11 @@ def parse_program(parser) -> ast.Program:
             spec_version = rule.parse(parser)
             continue
         if rule.name == "use":
-            uses.append(rule.parse(parser))
+            parsed_use = rule.parse(parser)
+            if isinstance(parsed_use, ast.PluginUseDecl):
+                plugin_uses.append(parsed_use)
+            else:
+                uses.append(parsed_use)
             continue
         if rule.name == "function":
             if parser.allow_capsule:
@@ -169,6 +175,31 @@ def parse_program(parser) -> ast.Program:
             )
         if rule.name == "app":
             app_theme, app_line, app_column, theme_tokens, theme_preference = rule.parse(parser)
+            continue
+        if rule.name == "theme":
+            if theme_definition is not None:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Theme is already declared.",
+                        why="Only one top-level theme block is allowed.",
+                        fix="Remove the duplicate theme block.",
+                        example='theme:\n  preset: "clarity"',
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            if pages:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Theme must be declared before page definitions.",
+                        why="Theme setup is global and must be resolved before page rendering.",
+                        fix="Move the theme block above all page blocks.",
+                        example='theme:\n  preset: "clarity"',
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            theme_definition = rule.parse(parser)
             continue
         if rule.name == "policy":
             if policy is not None:
@@ -334,6 +365,7 @@ def parse_program(parser) -> ast.Program:
         agents=agents,
         agent_team=agent_team,
         uses=uses,
+        plugin_uses=plugin_uses,
         capsule=capsule,
         identity=identity,
         policy=policy,
@@ -341,6 +373,9 @@ def parse_program(parser) -> ast.Program:
         column=None,
     )
     setattr(program, "pack_allowlist", list(packs) if packs_declared else None)
+    setattr(program, "theme_definition", theme_definition)
+    setattr(program, "theme_line", getattr(theme_definition, "line", None))
+    setattr(program, "theme_column", getattr(theme_definition, "column", None))
     return program
 
 

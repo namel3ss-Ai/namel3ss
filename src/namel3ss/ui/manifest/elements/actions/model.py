@@ -9,6 +9,7 @@ from namel3ss.media import MediaValidationMode
 from namel3ss.ui.manifest.origin import _attach_origin
 from namel3ss.ui.manifest.action_availability import evaluate_action_availability
 from namel3ss.ui.manifest.state_defaults import StateContext
+from namel3ss.ui.theme import resolve_component_style
 from namel3ss.validation import ValidationMode
 
 from ..base import _base_element
@@ -131,6 +132,16 @@ def build_button_item(
         action_entry["enabled"] = enabled
         action_entry["availability"] = availability
     base = _base_element(element_id, page_name, page_slug, index, item)
+    variant = getattr(item, "variant", None)
+    style_hooks = getattr(item, "style_hooks", None)
+    style = None
+    if variant is not None or style_hooks:
+        style = resolve_component_style(
+            "button",
+            variant=variant,
+            style_hooks=style_hooks,
+            token_registry=getattr(state_ctx, "theme_tokens", {}) or {},
+        )
     element = {
         "type": "button",
         "label": item.label,
@@ -139,6 +150,12 @@ def build_button_item(
         "action": {"type": "call_flow", "flow": item.flow_name},
         **base,
     }
+    if variant is not None:
+        element["variant"] = variant
+    if style_hooks:
+        element["style_hooks"] = dict(style_hooks)
+    if style:
+        element["style"] = style
     if availability is not None:
         element["enabled"] = enabled
         element["action"]["enabled"] = enabled

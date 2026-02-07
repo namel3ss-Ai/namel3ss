@@ -5,10 +5,13 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.lang.keywords import is_keyword
 from namel3ss.parser.decl.page_common import (
     _parse_action_availability_rule_block,
+    _parse_debug_only_clause,
     _is_visibility_rule_start,
     _parse_optional_string_value,
     _parse_reference_name_value,
+    _parse_style_hooks_block,
     _parse_string_value,
+    _parse_variant_line,
     _parse_visibility_clause,
     _parse_visibility_rule_block,
     _parse_visibility_rule_line,
@@ -25,6 +28,7 @@ def parse_compose_item(parser, tok, parse_block, *, allow_pattern_params: bool =
         guidance, details = reserved_identifier_diagnostic(name_tok.value)
         raise Namel3ssError(guidance, line=name_tok.line, column=name_tok.column, details=details)
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    debug_only = _parse_debug_only_clause(parser)
     parser._expect("COLON", "Expected ':' after compose name")
     children, visibility_rule = parse_block(
         parser,
@@ -39,6 +43,7 @@ def parse_compose_item(parser, tok, parse_block, *, allow_pattern_params: bool =
         children=children,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        debug_only=debug_only,
         line=tok.line,
         column=tok.column,
     )
@@ -57,6 +62,7 @@ def parse_modal_item(
     parser._advance()
     label = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="modal label")
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    debug_only = _parse_debug_only_clause(parser)
     parser._expect("COLON", "Expected ':' after modal label")
     children, visibility_rule = parse_block(
         parser,
@@ -71,6 +77,7 @@ def parse_modal_item(
         children=children,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        debug_only=debug_only,
         line=tok.line,
         column=tok.column,
     )
@@ -89,6 +96,7 @@ def parse_drawer_item(
     parser._advance()
     label = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="drawer label")
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    debug_only = _parse_debug_only_clause(parser)
     parser._expect("COLON", "Expected ':' after drawer label")
     children, visibility_rule = parse_block(
         parser,
@@ -103,6 +111,7 @@ def parse_drawer_item(
         children=children,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        debug_only=debug_only,
         line=tok.line,
         column=tok.column,
     )
@@ -118,12 +127,15 @@ def parse_button_item(parser, tok, *, allow_pattern_params: bool = False) -> ast
             column=tok.column,
         )
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    debug_only = _parse_debug_only_clause(parser)
     parser._expect("COLON", "Expected ':' after button label")
     parser._expect("NEWLINE", "Expected newline after button header")
     parser._expect("INDENT", "Expected indented button body")
     flow_name = None
     visibility_rule = None
     availability_rule = None
+    variant = None
+    style_hooks = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
@@ -139,6 +151,18 @@ def parse_button_item(parser, tok, *, allow_pattern_params: bool = False) -> ast
             parser._match("NEWLINE")
             continue
         tok_action = parser._current()
+        if tok_action.type == "IDENT" and tok_action.value == "variant":
+            if variant is not None:
+                raise Namel3ssError("Variant is declared more than once", line=tok_action.line, column=tok_action.column)
+            variant = _parse_variant_line(parser)
+            parser._match("NEWLINE")
+            continue
+        if tok_action.type == "IDENT" and tok_action.value == "style_hooks":
+            if style_hooks is not None:
+                raise Namel3ssError("style_hooks is declared more than once", line=tok_action.line, column=tok_action.column)
+            style_hooks = _parse_style_hooks_block(parser)
+            parser._match("NEWLINE")
+            continue
         if tok_action.type == "CALLS":
             parser._advance()
             parser._expect("FLOW", "Expected 'flow' keyword in button action")
@@ -167,15 +191,21 @@ def parse_button_item(parser, tok, *, allow_pattern_params: bool = False) -> ast
             column=tok.column,
         )
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
-    return ast.ButtonItem(
+    item = ast.ButtonItem(
         label=label,
         flow_name=flow_name,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        debug_only=debug_only,
         availability_rule=availability_rule,
         line=tok.line,
         column=tok.column,
     )
+    if variant is not None:
+        setattr(item, "variant", variant)
+    if style_hooks is not None:
+        setattr(item, "style_hooks", style_hooks)
+    return item
 
 
 def parse_text_input_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.TextInputItem:
@@ -188,6 +218,7 @@ def parse_text_input_item(parser, tok, *, allow_pattern_params: bool = False) ->
     parser._expect("AS", "Expected 'as' after input text")
     name_tok = parser._expect("IDENT", "Expected input name")
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    debug_only = _parse_debug_only_clause(parser)
     parser._expect("NEWLINE", "Expected newline after input header")
     parser._expect("INDENT", "Expected indented input body")
     flow_name = None
@@ -244,6 +275,7 @@ def parse_text_input_item(parser, tok, *, allow_pattern_params: bool = False) ->
         flow_name=flow_name,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        debug_only=debug_only,
         availability_rule=availability_rule,
         line=tok.line,
         column=tok.column,
@@ -260,6 +292,7 @@ def parse_link_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.L
     parser._advance()
     name = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="page name")
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    debug_only = _parse_debug_only_clause(parser)
     visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
     return ast.LinkItem(
@@ -267,6 +300,7 @@ def parse_link_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.L
         page_name=name,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        debug_only=debug_only,
         line=tok.line,
         column=tok.column,
     )
@@ -276,6 +310,7 @@ def parse_section_item(parser, tok, parse_block, *, allow_pattern_params: bool =
     parser._advance()
     label = _parse_optional_string_value(parser, allow_pattern_params=allow_pattern_params)
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    debug_only = _parse_debug_only_clause(parser)
     parser._expect("COLON", "Expected ':' after section")
     children, visibility_rule = parse_block(
         parser,
@@ -290,6 +325,7 @@ def parse_section_item(parser, tok, parse_block, *, allow_pattern_params: bool =
         children=children,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        debug_only=debug_only,
         line=tok.line,
         column=tok.column,
     )
@@ -298,6 +334,7 @@ def parse_section_item(parser, tok, parse_block, *, allow_pattern_params: bool =
 def parse_row_item(parser, tok, parse_block, *, allow_pattern_params: bool = False) -> ast.RowItem:
     parser._advance()
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    debug_only = _parse_debug_only_clause(parser)
     parser._expect("COLON", "Expected ':' after row")
     children, visibility_rule = parse_block(
         parser,
@@ -311,6 +348,7 @@ def parse_row_item(parser, tok, parse_block, *, allow_pattern_params: bool = Fal
         children=children,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        debug_only=debug_only,
         line=tok.line,
         column=tok.column,
     )
@@ -319,6 +357,7 @@ def parse_row_item(parser, tok, parse_block, *, allow_pattern_params: bool = Fal
 def parse_column_item(parser, tok, parse_block, *, allow_pattern_params: bool = False) -> ast.ColumnItem:
     parser._advance()
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    debug_only = _parse_debug_only_clause(parser)
     parser._expect("COLON", "Expected ':' after column")
     children, visibility_rule = parse_block(
         parser,
@@ -332,6 +371,7 @@ def parse_column_item(parser, tok, parse_block, *, allow_pattern_params: bool = 
         children=children,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        debug_only=debug_only,
         line=tok.line,
         column=tok.column,
     )
@@ -340,11 +380,13 @@ def parse_column_item(parser, tok, parse_block, *, allow_pattern_params: bool = 
 def parse_divider_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.DividerItem:
     parser._advance()
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    debug_only = _parse_debug_only_clause(parser)
     visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
     return ast.DividerItem(
         visibility=visibility,
         visibility_rule=visibility_rule,
+        debug_only=debug_only,
         line=tok.line,
         column=tok.column,
     )

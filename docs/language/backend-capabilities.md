@@ -18,7 +18,14 @@ capabilities:
   training
   streaming
   performance
+  custom_ui
+  custom_theme
+  theme_editor
 ```
+
+`custom_ui` gates UI plug-in declarations (`use plugin "name"`). When omitted, programs using UI plug-ins fail deterministically at compile time.
+`custom_theme` gates top-level `theme` features (`brand_palette`, custom `tokens`, `harmonize`).  
+`theme_editor` gates use of runtime ThemeEditor controls in UI manifests.
 
 ## HTTP calls (read-only)
 Declare an HTTP tool using the normal tool syntax and set its implementation to `http`.

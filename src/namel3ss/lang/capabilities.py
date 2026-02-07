@@ -23,6 +23,9 @@ BUILTIN_CAPABILITIES = (
     "decoupled_ui_api",
     "ecosystem_developer_experience",
     "security_compliance",
+    "custom_ui",
+    "custom_theme",
+    "theme_editor",
 )
 
 

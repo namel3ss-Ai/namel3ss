@@ -146,7 +146,9 @@ def _expand_children(
             stack=stack,
             origin=origin,
         )
+        previous = working
         working = replace(working, children=children)
+        _copy_dynamic_style_metadata(previous, working)
     elif isinstance(working, ast.RowItem):
         children = expand_page_items(
             working.children,
@@ -217,6 +219,15 @@ def _expand_children(
     if origin is not None:
         setattr(working, "origin", origin)
     return working
+
+
+def _copy_dynamic_style_metadata(source: ast.PageItem, target: ast.PageItem) -> None:
+    variant = getattr(source, "variant", None)
+    if variant is not None:
+        setattr(target, "variant", variant)
+    style_hooks = getattr(source, "style_hooks", None)
+    if style_hooks is not None:
+        setattr(target, "style_hooks", copy.deepcopy(style_hooks))
 
 
 __all__ = ["build_pack_index", "expand_page_items"]

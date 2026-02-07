@@ -5,16 +5,28 @@ import difflib
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir.lowering.expressions import _lower_expression
+from namel3ss.ir.model.base import Expression as IRExpression
 from namel3ss.ir.model.expressions import Literal as IRLiteral
 from namel3ss.ir.model.expressions import StatePath as IRStatePath
+from namel3ss.ir.model.pages import CustomComponentItem as IRCustomComponentItem
+from namel3ss.ir.model.pages import CustomComponentProp as IRCustomComponentProp
+from namel3ss.ir.model.pages import VisibilityExpressionRule as IRVisibilityExpressionRule
 from namel3ss.ir.model.pages import VisibilityRule as IRVisibilityRule
 from namel3ss.schema import records as schema
+from namel3ss.ui.theme import normalize_style_hooks, normalize_variant
 
 from . import actions as actions_mod
 from . import media as media_mod
 from . import numbers as numbers_mod
 from . import story as story_mod
 from . import views as views_mod
+
+_PLUGIN_REGISTRY = None
+
+
+def set_plugin_registry(registry) -> None:
+    global _PLUGIN_REGISTRY
+    _PLUGIN_REGISTRY = registry
 
 
 def _attach_origin(target, source):
@@ -27,54 +39,93 @@ def _attach_origin(target, source):
     visibility_rule = _lower_visibility_rule(source)
     if visibility_rule is not None:
         setattr(target, "visibility_rule", visibility_rule)
+    debug_only = getattr(source, "debug_only", None)
+    if debug_only is not None:
+        setattr(target, "debug_only", bool(debug_only))
+    component = _style_component_name(source)
+    if component:
+        variant = normalize_variant(
+            component,
+            getattr(source, "variant", None),
+            line=getattr(source, "line", None),
+            column=getattr(source, "column", None),
+        )
+        if variant is not None:
+            setattr(target, "variant", variant)
+        style_hooks = normalize_style_hooks(
+            component,
+            getattr(source, "style_hooks", None),
+            line=getattr(source, "line", None),
+            column=getattr(source, "column", None),
+        )
+        if style_hooks is not None:
+            setattr(target, "style_hooks", style_hooks)
     return target
 
 
-def _lower_visibility(source) -> IRStatePath | None:
+def _style_component_name(source) -> str | None:
+    name = type(source).__name__.lower()
+    if "button" in name:
+        return "button"
+    if "carditem" in name or name == "card":
+        return "card"
+    return None
+
+
+def _lower_visibility(source) -> IRExpression | None:
     visibility = getattr(source, "visibility", None)
     if visibility is None:
         return None
-    if not isinstance(visibility, ast.StatePath):
+    if isinstance(visibility, ast.PatternParamRef):
         raise Namel3ssError(
-            "Visibility requires state.<path>.",
+            "Visibility expressions cannot use unresolved pattern parameters.",
             line=getattr(source, "line", None),
             column=getattr(source, "column", None),
         )
     lowered = _lower_expression(visibility)
-    if not isinstance(lowered, IRStatePath):
+    if not isinstance(lowered, IRExpression):
         raise Namel3ssError(
-            "Visibility requires state.<path>.",
+            "Visibility requires a deterministic expression.",
             line=getattr(source, "line", None),
             column=getattr(source, "column", None),
         )
     return lowered
 
 
-def _lower_visibility_rule(source) -> IRVisibilityRule | None:
+def _lower_visibility_rule(source) -> IRVisibilityRule | IRVisibilityExpressionRule | None:
     rule = getattr(source, "visibility_rule", None)
     if rule is None:
         return None
-    if not isinstance(rule, ast.VisibilityRule):
-        raise Namel3ssError(
-            "Visibility rule requires state.<path> is <value>.",
-            line=getattr(source, "line", None),
-            column=getattr(source, "column", None),
-        )
-    lowered_path = _lower_expression(rule.path)
-    if not isinstance(lowered_path, IRStatePath):
-        raise Namel3ssError(
-            "Visibility rule requires state.<path> is <value>.",
-            line=getattr(rule, "line", None),
-            column=getattr(rule, "column", None),
-        )
-    lowered_value = _lower_expression(rule.value)
-    if not isinstance(lowered_value, IRLiteral):
-        raise Namel3ssError(
-            "Visibility rule requires a text, number, or boolean literal.",
-            line=getattr(rule.value, "line", None),
-            column=getattr(rule.value, "column", None),
-        )
-    return IRVisibilityRule(path=lowered_path, value=lowered_value, line=rule.line, column=rule.column)
+    if isinstance(rule, ast.VisibilityExpressionRule):
+        lowered_expr = _lower_expression(rule.expression)
+        if not isinstance(lowered_expr, IRExpression):
+            raise Namel3ssError(
+                "Visibility expressions require deterministic operands.",
+                line=getattr(rule, "line", None),
+                column=getattr(rule, "column", None),
+            )
+        return IRVisibilityExpressionRule(expression=lowered_expr, line=rule.line, column=rule.column)
+    if isinstance(rule, ast.VisibilityRule):
+        lowered_path = _lower_expression(rule.path)
+        if not isinstance(lowered_path, IRStatePath):
+            raise Namel3ssError(
+                "Visibility rule requires state.<path> is <value>.",
+                line=getattr(rule, "line", None),
+                column=getattr(rule, "column", None),
+            )
+        lowered_value = _lower_expression(rule.value)
+        if not isinstance(lowered_value, IRLiteral):
+            raise Namel3ssError(
+                "Visibility rule requires a text, number, or boolean literal.",
+                line=getattr(rule.value, "line", None),
+                column=getattr(rule.value, "column", None),
+            )
+        return IRVisibilityRule(path=lowered_path, value=lowered_value, line=rule.line, column=rule.column)
+    raise Namel3ssError(
+        "Visibility rule requires either an expression or state.<path> is <value>.",
+        line=getattr(source, "line", None),
+        column=getattr(source, "column", None),
+    )
 
 
 def _unknown_record_message(name: str, record_map: dict[str, schema.RecordSchema]) -> str:
@@ -87,6 +138,37 @@ def _unknown_page_message(name: str, page_names: set[str]) -> str:
     suggestion = difflib.get_close_matches(name, page_names, n=1, cutoff=0.6)
     hint = f' Did you mean "{suggestion[0]}"?' if suggestion else ""
     return f"Page references unknown page '{name}'.{hint}"
+
+
+def _lower_custom_component_item(
+    item: ast.CustomComponentItem,
+    flow_names: set[str],
+) -> IRCustomComponentItem:
+    if _PLUGIN_REGISTRY is None:
+        raise Namel3ssError(
+            "Custom UI component registry is not initialized.",
+            line=item.line,
+            column=item.column,
+        )
+    plugin_name, normalized = _PLUGIN_REGISTRY.validate_component_usage(
+        item.component_name,
+        list(item.properties),
+        flow_names,
+        line=item.line,
+        column=item.column,
+    )
+    properties: list[IRCustomComponentProp] = []
+    for name, value in normalized:
+        lowered_value = _lower_expression(value) if isinstance(value, ast.Expression) else value
+        properties.append(IRCustomComponentProp(name=name, value=lowered_value, line=item.line, column=item.column))
+    lowered = IRCustomComponentItem(
+        component_name=item.component_name,
+        plugin_name=plugin_name,
+        properties=properties,
+        line=item.line,
+        column=item.column,
+    )
+    return _attach_origin(lowered, item)
 
 
 def _lower_page_item(
@@ -171,6 +253,8 @@ def _lower_page_item(
         return views_mod.lower_chart_item(item, record_map, page_name, attach_origin=_attach_origin)
     if isinstance(item, ast.ChatItem):
         return views_mod.lower_chat_item(item, flow_names, page_name, attach_origin=_attach_origin)
+    if isinstance(item, ast.CustomComponentItem):
+        return _lower_custom_component_item(item, flow_names)
     if isinstance(item, ast.TabsItem):
         return views_mod.lower_tabs_item(
             item,
@@ -288,4 +372,4 @@ def _lower_page_item(
     raise TypeError(f"Unhandled page item type: {type(item)}")
 
 
-__all__ = ["_lower_page_item"]
+__all__ = ["_lower_page_item", "set_plugin_registry"]

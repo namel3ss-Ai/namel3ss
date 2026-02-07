@@ -57,6 +57,8 @@ from namel3ss.ir.model.expressions import Literal as IRLiteral
 from namel3ss.ir.model.expressions import StatePath as IRStatePath
 from namel3ss.ir.model.statements import ThemeChange, If, Repeat, RepeatWhile, ForEach, Match, MatchCase, TryCatch, ParallelBlock
 from namel3ss.schema import records as schema
+from namel3ss.theme import resolve_theme_definition, resolve_token_registry
+from namel3ss.ui.plugins import load_ui_plugin_registry
 from namel3ss.ui.settings import normalize_ui_settings
 from namel3ss.validation import ValidationMode
 from namel3ss.lang.capabilities import normalize_builtin_capability
@@ -140,12 +142,33 @@ def lower_program(program: ast.Program) -> Program:
         ai_map,
         agent_map,
     )
+    theme_resolution = resolve_theme_definition(
+        getattr(program, "theme_definition", None),
+        capabilities=capabilities,
+    )
+    plugin_decls = tuple(getattr(program, "plugin_uses", []) or [])
+    plugin_names = tuple(str(getattr(plugin, "name", "") or "") for plugin in plugin_decls)
+    if plugin_names and "custom_ui" not in capabilities:
+        raise Namel3ssError(
+            build_guidance_message(
+                what="Missing capabilities: custom_ui.",
+                why="Apps must explicitly enable custom UI plug-ins.",
+                fix="Add custom_ui to the capabilities block.",
+                example="capabilities:\n  custom_ui",
+            )
+        )
+    plugin_registry = load_ui_plugin_registry(
+        plugin_names=plugin_names,
+        project_root=getattr(program, "project_root", None),
+        app_path=getattr(program, "app_path", None),
+        allowed_capabilities=capabilities,
+    )
     pack_allowlist = _normalize_pack_allowlist(getattr(program, "pack_allowlist", None))
     pack_index = build_pack_index(getattr(program, "ui_packs", []))
     pattern_index = build_pattern_index(getattr(program, "ui_patterns", []), pack_index)
     page_names = {page.name for page in program.pages}
     pages = [
-        _lower_page(page, record_map, flow_names, page_names, pack_index, pattern_index)
+        _lower_page(page, record_map, flow_names, page_names, pack_index, pattern_index, plugin_registry)
         for page in program.pages
     ]
     ui_active_page_rules = _lower_active_page_rules(
@@ -157,11 +180,16 @@ def lower_program(program: ast.Program) -> Program:
     _validate_chat_composers(pages, flow_irs, flow_contracts)
     theme_runtime_supported = any(_flow_has_theme_change(flow) for flow in flow_irs)
     ui_settings = normalize_ui_settings(getattr(program, "ui_settings", None))
+    if theme_resolution.ui_overrides:
+        ui_settings = normalize_ui_settings({**ui_settings, **theme_resolution.ui_overrides})
     theme_setting = ui_settings.get("theme", program.app_theme)
+    legacy_theme_tokens = {name: val for name, (val, _, _) in program.theme_tokens.items()}
+    merged_theme_tokens = resolve_token_registry(theme_resolution, legacy_tokens=legacy_theme_tokens)
+    _validate_page_style_hook_tokens(pages, merged_theme_tokens)
     lowered = Program(
         spec_version=str(program.spec_version),
         theme=theme_setting,
-        theme_tokens={name: val for name, (val, _, _) in program.theme_tokens.items()},
+        theme_tokens=merged_theme_tokens,
         theme_runtime_supported=theme_runtime_supported,
         theme_preference={
             "allow_override": program.theme_preference.get("allow_override", (False, None, None))[0],
@@ -187,10 +215,14 @@ def lower_program(program: ast.Program) -> Program:
         identity=identity_schema,
         state_defaults=getattr(program, "state_defaults", None),
         ui_active_page_rules=ui_active_page_rules,
+        ui_plugins=plugin_registry.plugin_names,
         line=program.line,
         column=program.column,
     )
     setattr(lowered, "pack_allowlist", pack_allowlist)
+    setattr(lowered, "ui_plugin_registry", plugin_registry)
+    setattr(lowered, "theme_definition", theme_resolution.definition)
+    setattr(lowered, "resolved_theme", theme_resolution)
     return lowered
 def _ensure_unique_pages(pages: list[Page]) -> None:
     seen: dict[str, object] = {}
@@ -398,6 +430,22 @@ def _validate_chat_composers(
                         line=field.line if field else item.line,
                         column=field.column if field else item.column,
                     )
+
+
+def _validate_page_style_hook_tokens(pages: list[Page], token_registry: dict[str, str]) -> None:
+    for page in pages:
+        for item in _walk_page_items(page.items):
+            style_hooks = getattr(item, "style_hooks", None) or {}
+            for hook_name, token_name in style_hooks.items():
+                if token_name in token_registry:
+                    continue
+                raise Namel3ssError(
+                    f'Style hook "{hook_name}" references unknown token "{token_name}".',
+                    line=getattr(item, "line", None),
+                    column=getattr(item, "column", None),
+                )
+
+
 def _flow_input_signature(flow: Flow, flow_contracts: dict[str, ContractDecl]) -> dict[str, str]:
     if flow.steps:
         for step in flow.steps:
