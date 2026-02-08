@@ -78,8 +78,23 @@ def main() -> int:
         env={"PYTHONDONTWRITEBYTECODE": "1"},
     )
     _run_command(
+        "CLI module version",
+        [sys.executable, "-m", "namel3ss", "--version"],
+        env={"PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    _run_command(
         "CLI entrypoint help",
         [sys.executable, "-m", "namel3ss", "--help"],
+        env={"PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    _run_command(
+        "CLI script version",
+        ["n3", "--version"],
+        env={"PYTHONDONTWRITEBYTECODE": "1"},
+    )
+    _run_command(
+        "CLI script help",
+        ["n3", "--help"],
         env={"PYTHONDONTWRITEBYTECODE": "1"},
     )
     _run_command(

@@ -53,6 +53,19 @@ To refresh committed UI baseline snapshots intentionally:
 
 CI runs these tests and fails on snapshot diffs or warning-order regressions.
 
+## CLI Install Gate
+The CLI install gate validates packaging and entry points on Linux and Windows.
+It checks both invocation paths:
+- `python -m namel3ss --help`
+- `n3 --help`
+
+It also prints:
+- `python -m namel3ss --version`
+- `n3 --version`
+
+Run locally with:
+- `python -m pytest -q tests/test_cli_install.py`
+
 ## Diagnostics vs Product UI
 - Keep end-user UI in regular page elements/layout slots.
 - Put traces/explain content in `layout.diagnostics` or pages marked `diagnostics is true`.
