@@ -64,4 +64,5 @@ def test_chat_defaults_are_injected() -> None:
     assert defaults.get("chat", {}).get("citations") == []
     assert defaults.get("chat", {}).get("memory") == []
     assert defaults.get("chat", {}).get("thinking") is False
-    assert not warnings
+    assert warnings
+    assert set(w.code for w in warnings) == {"diagnostics.misplaced_debug_content"}

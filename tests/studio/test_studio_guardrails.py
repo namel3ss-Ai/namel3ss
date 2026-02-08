@@ -21,7 +21,7 @@ def test_studio_guardrail_layout_invariants():
         assert forbidden not in html_lower
 
     dock_items = re.findall(r'data-testid="studio-dock-item-[^"]+"', html)
-    assert len(dock_items) == 13
+    assert len(dock_items) == 14
     for label in [
         "Preview",
         "Why",
@@ -36,6 +36,7 @@ def test_studio_guardrail_layout_invariants():
         "Tutorials",
         "Playground",
         "Graph",
+        "Diagnostics",
     ]:
         assert label in html
 

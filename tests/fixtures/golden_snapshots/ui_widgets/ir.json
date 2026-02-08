@@ -54,6 +54,7 @@
   "pages": [
     {
       "column": 1,
+      "diagnostics": null,
       "items": [
         {
           "column": 3,

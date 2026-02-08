@@ -36,7 +36,7 @@ from namel3ss.parser.core import parse
 from namel3ss.runtime.audit import audit_report_json, build_audit_report, build_decision_model
 from namel3ss.runtime.executor.api import execute_program_flow
 from namel3ss.runtime.native.exec_adapter import _reset_exec_state, native_exec_available
-from namel3ss.spec_freeze.v1.rules import NONDETERMINISTIC_KEYS, NORMALIZED_VALUE, PATH_KEYS
+from namel3ss.spec_freeze.contracts.rules import NONDETERMINISTIC_KEYS, NORMALIZED_VALUE, PATH_KEYS
 
 FORBIDDEN_SUBSTRINGS = ("/Users/", "/home/", "C:\\")
 
