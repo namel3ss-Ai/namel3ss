@@ -325,7 +325,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          $logDir = ".namel3ss\\ci"
+          $logDir = ".namel3ss/ci"
           $logPath = Join-Path -Path $logDir -ChildPath "pytest_cli_install_gate.log"
           $moduleHelpPath = Join-Path -Path $logDir -ChildPath "namel3ss_help.txt"
           $scriptHelpPath = Join-Path -Path $logDir -ChildPath "n3_help.txt"
