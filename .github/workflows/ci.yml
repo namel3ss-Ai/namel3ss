@@ -315,24 +315,7 @@ jobs:
           python -m compileall src -q
           python tools/line_limit_check.py
           python -m pip install -e .
-          n3_script="$(python - <<'PY'
-import shutil
-import sys
-from pathlib import Path
-
-scripts_dir = Path(sys.executable).resolve().parent
-candidates = [scripts_dir / "n3", scripts_dir / "n3.exe", scripts_dir / "n3-script.py"]
-for candidate in candidates:
-    if candidate.exists():
-        print(candidate)
-        raise SystemExit(0)
-on_path = shutil.which("n3")
-if on_path:
-    print(on_path)
-    raise SystemExit(0)
-raise SystemExit("n3 console script was not found in interpreter scripts directory or PATH.")
-PY
-)"
+          n3_script="$(python -c "import shutil, sys; from pathlib import Path; scripts = Path(sys.executable).resolve().parent; candidates = [scripts / 'n3', scripts / 'n3.exe', scripts / 'n3-script.py']; found = next((str(candidate) for candidate in candidates if candidate.exists()), shutil.which('n3')); sys.exit('n3 console script was not found in interpreter scripts directory or PATH.') if not found else print(found)")"
           printf 'n3 script path: %s\n' "$n3_script" | tee -a .namel3ss/ci/cli_install_gate_step.log
           python -m namel3ss --version | tee .namel3ss/ci/namel3ss_version.txt
           "$n3_script" --version | tee .namel3ss/ci/n3_version.txt
