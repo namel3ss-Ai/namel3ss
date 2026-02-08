@@ -81,6 +81,7 @@ def test_cli_install_gate_workflow_contract() -> None:
     assert '$logDir = ".namel3ss/ci"' in ci_workflow
     assert "path: .namel3ss/ci/" in ci_workflow
     assert ".namel3ss\\\\ci" not in ci_workflow
+    assert ci_workflow.count('New-Item -ItemType Directory -Force -Path $logDir | Out-Null') >= 2
     assert "n3_script=" in ci_workflow
     assert "$n3ScriptPath =" in ci_workflow
 

@@ -353,6 +353,7 @@ jobs:
           & $n3ScriptPath --help | Out-File -FilePath $scriptHelpPath -Encoding utf8
           $pytestOutput = & python -m pytest -q tests/test_cli_install.py 2>&1
           $exitCode = $LASTEXITCODE
+          New-Item -ItemType Directory -Force -Path $logDir | Out-Null
           $pytestOutput | Out-File -FilePath $logPath -Encoding utf8
           if ($exitCode -ne 0) {
             if (Test-Path -Path $logPath) {
