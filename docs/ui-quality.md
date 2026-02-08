@@ -80,6 +80,8 @@ page "archive":
 - `layout.mixed_record_representation` - use one representation for a record.
 - `layout.inconsistent_columns` - align table columns for the same record.
 - `layout.unlabeled_container` - add labels to sections, cards, tabs, drawers, or modals.
+- `visibility.missing_empty_state_guard` - add `visible when` or `empty_state: hidden` for list/table empty states.
+- `diagnostics.misplaced_debug_content` - move debug content into `layout.diagnostics` or mark it `debug_only`.
 - `copy.missing_page_title` - add a page title.
 - `copy.missing_intro_text` - add a short intro text before data-heavy elements.
 - `copy.unlabeled_container` - label sections, cards, tabs, drawers, or modals.
@@ -99,3 +101,10 @@ page "archive":
 ## Where warnings appear
 - `/api/ui` and `n3 app.ai ui --json` under `manifest.warnings`
 - `/api/actions` and `n3 app.ai actions --json` under `warnings`
+
+## Baseline checks
+Run deterministic guardrails locally before opening a PR:
+- `n3 app.ai check`
+- `python -m pytest -q tests/ui/test_ui_manifest_baseline.py tests/ui/test_warning_pipeline.py`
+
+The baseline suite snapshots manifest JSON and CSS selector contracts for representative UI layouts.

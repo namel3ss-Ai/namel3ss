@@ -113,7 +113,7 @@ def validate_memory_kind(kind: MemoryKind | str) -> MemoryKind:
 def validate_scope(scope: str) -> str:
     if scope not in MEMORY_SCOPES:
         raise Namel3ssError(
-            "Invalid memory scope. Phase 0 supports only 'session'.",
+            "Invalid memory scope. Only 'session' is supported.",
             details={"scope": scope},
         )
     return scope

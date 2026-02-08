@@ -3,9 +3,11 @@ from __future__ import annotations
 from functools import wraps
 import hashlib
 import json
+import os
 from pathlib import Path
 import threading
 
+from namel3ss.diagnostics_mode import parse_diagnostics_flag
 from namel3ss.config.dotenv import apply_dotenv, load_dotenv_for_path
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
@@ -56,6 +58,7 @@ class BrowserAppState:
         watch_sources: bool = True,
         engine_target: str = "local",
         ui_mode: str | None = None,
+        diagnostics_enabled: bool | None = None,
     ) -> None:
         self.app_path = Path(app_path).resolve()
         self.project_root = self.app_path.parent
@@ -63,6 +66,8 @@ class BrowserAppState:
         self.debug = debug
         default_ui_mode = DISPLAY_MODE_PRODUCTION if mode in {"run", "preview"} else DISPLAY_MODE_STUDIO
         self.ui_mode = normalize_display_mode(ui_mode, default=default_ui_mode)
+        env_diagnostics = parse_diagnostics_flag(os.getenv("N3_UI_DIAGNOSTICS"))
+        self.diagnostics_enabled = env_diagnostics if diagnostics_enabled is None else bool(diagnostics_enabled)
         self.source_overrides = source_overrides or {}
         self.watch_sources = watch_sources
         self.parse_cache: ParseCache = {}
@@ -202,6 +207,7 @@ class BrowserAppState:
                 source=self._main_source(),
                 raise_on_error=False,
                 ui_mode=self.ui_mode,
+                diagnostics_enabled=self.diagnostics_enabled,
             )
             if before_rows is not None:
                 self.session.data_effects = record_data_effects(
@@ -323,6 +329,7 @@ class BrowserAppState:
             warnings=warnings,
             media_mode=MediaValidationMode.CHECK,
             display_mode=self.ui_mode,
+            diagnostics_enabled=self.diagnostics_enabled,
         )
         return manifest
 

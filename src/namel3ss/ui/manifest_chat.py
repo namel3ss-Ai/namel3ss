@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
 from namel3ss.ui.manifest.state_defaults import StateContext
@@ -21,11 +23,11 @@ def _build_chat_messages(
     source = _state_path_label(item.source)
     value = _resolve_state_path(item.source, state_ctx, default=[], register_default=True)
     messages = _require_list(value, "messages", item.line, item.column)
-    _validate_messages(messages, item.line, item.column)
+    normalized_messages = _normalize_messages(messages, item.line, item.column)
     return {
         "type": "messages",
         "source": source,
-        "messages": messages,
+        "messages": normalized_messages,
         "element_id": element_id,
         "page": page_name,
         "page_slug": page_slug,
@@ -263,7 +265,8 @@ def _require_list(value: object, label: str, line: int | None, column: int | Non
     return value
 
 
-def _validate_messages(messages: list, line: int | None, column: int | None) -> None:
+def _normalize_messages(messages: list, line: int | None, column: int | None) -> list[dict]:
+    normalized: list[dict] = []
     for idx, entry in enumerate(messages):
         if not isinstance(entry, dict):
             raise Namel3ssError(f"Message {idx} must be an object", line=line, column=column)
@@ -281,6 +284,61 @@ def _validate_messages(messages: list, line: int | None, column: int | None) -> 
         meta = entry.get("meta")
         if meta is not None and not isinstance(meta, dict):
             raise Namel3ssError(f"Message {idx} meta must be an object", line=line, column=column)
+        message_payload = {"role": role, "content": content}
+        if created is not None:
+            message_payload["created"] = created
+        if meta is not None:
+            message_payload["meta"] = meta
+        citations = entry.get("citations")
+        if citations is not None:
+            if not isinstance(citations, list):
+                raise Namel3ssError(f"Message {idx} citations must be a list", line=line, column=column)
+            _validate_citations(citations, line, column)
+            message_payload["citations"] = _index_citations(citations)
+        trust = entry.get("trust")
+        if trust is not None:
+            message_payload["trust"] = _normalize_trust_value(trust, idx=idx, line=line, column=column)
+        attachments = entry.get("attachments")
+        if attachments is not None:
+            if not isinstance(attachments, list):
+                raise Namel3ssError(f"Message {idx} attachments must be a list", line=line, column=column)
+            message_payload["attachments"] = [dict(item) for item in attachments if isinstance(item, dict)]
+        actions = entry.get("actions")
+        if actions is not None:
+            if isinstance(actions, str):
+                message_payload["actions"] = [actions]
+            elif isinstance(actions, list):
+                values: list[str] = []
+                for action in actions:
+                    if not isinstance(action, str):
+                        raise Namel3ssError(f"Message {idx} actions must be text", line=line, column=column)
+                    values.append(action)
+                message_payload["actions"] = values
+            else:
+                raise Namel3ssError(f"Message {idx} actions must be text or list", line=line, column=column)
+        streaming = entry.get("streaming")
+        if streaming is not None:
+            if not isinstance(streaming, bool):
+                raise Namel3ssError(f"Message {idx} streaming must be true or false", line=line, column=column)
+            message_payload["streaming"] = streaming
+        tokens = entry.get("tokens")
+        if tokens is not None:
+            if not isinstance(tokens, list) or any(not isinstance(token, str) for token in tokens):
+                raise Namel3ssError(f"Message {idx} tokens must be a list of text", line=line, column=column)
+            message_payload["tokens"] = list(tokens)
+        normalized.append(message_payload)
+    return normalized
+
+
+def _normalize_trust_value(value: object, *, idx: int, line: int | None, column: int | None) -> bool | float:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        number = float(value)
+        if not math.isfinite(number) or number < 0 or number > 1:
+            raise Namel3ssError(f"Message {idx} trust must be between 0 and 1", line=line, column=column)
+        return round(number, 4)
+    raise Namel3ssError(f"Message {idx} trust must be boolean or number", line=line, column=column)
 
 
 def _validate_citations(citations: list, line: int | None, column: int | None) -> None:
@@ -301,6 +359,15 @@ def _validate_citations(citations: list, line: int | None, column: int | None) -
         snippet = entry.get("snippet")
         if snippet is not None and not isinstance(snippet, str):
             raise Namel3ssError(f"Citation {idx} snippet must be text", line=line, column=column)
+
+
+def _index_citations(citations: list[dict]) -> list[dict]:
+    indexed: list[dict] = []
+    for idx, entry in enumerate(citations):
+        payload = dict(entry)
+        payload["index"] = idx + 1
+        indexed.append(payload)
+    return indexed
 
 
 def _validate_memory(items: list, line: int | None, column: int | None) -> None:

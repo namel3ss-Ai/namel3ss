@@ -5,7 +5,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
-from namel3ss.spec_freeze.v1.rules import NONDETERMINISTIC_KEYS, NORMALIZED_VALUE, PATH_KEYS
+from namel3ss.spec_freeze.contracts.rules import NONDETERMINISTIC_KEYS, NORMALIZED_VALUE, PATH_KEYS
 
 
 def dump_runtime(result: Any) -> dict:

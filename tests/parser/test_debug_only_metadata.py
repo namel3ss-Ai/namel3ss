@@ -28,6 +28,22 @@ page "home":
     assert live_button.debug_only is None
 
 
+def test_parse_debug_only_category_on_page_and_button():
+    source = '''flow "run":
+  return "ok"
+
+page "home":
+  debug_only: "trace"
+  button "Debug" debug_only is "metrics":
+    calls flow "run"
+'''
+    page = parse_program(source).pages[0]
+    button = page.items[0]
+    assert page.debug_only == "trace"
+    assert isinstance(button, ast.ButtonItem)
+    assert button.debug_only == "metrics"
+
+
 def test_debug_only_requires_boolean_literal_in_page_metadata():
     source = '''page "home":
   debug_only: "true"
@@ -35,7 +51,7 @@ def test_debug_only_requires_boolean_literal_in_page_metadata():
 '''
     with pytest.raises(Namel3ssError) as exc:
         parse_program(source)
-    assert "debug_only must be a boolean literal" in str(exc.value)
+    assert "debug_only category must be one of" in str(exc.value)
 
 
 def test_debug_only_requires_boolean_literal_in_item_metadata():
@@ -48,4 +64,4 @@ page "home":
 '''
     with pytest.raises(Namel3ssError) as exc:
         parse_program(source)
-    assert "debug_only must be a boolean literal" in str(exc.value)
+    assert "debug_only must be a boolean literal or diagnostics category string" in str(exc.value)

@@ -1,0 +1,12 @@
+{
+  "primary_color": "#2563EB",
+  "secondary_color": "#5856D6",
+  "background_color": "#FFFFFF",
+  "foreground_color": "#111827",
+  "font_family": "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+  "font_size_base": 14,
+  "font_weight": 500,
+  "spacing_scale": 1.0,
+  "border_radius": 10,
+  "shadow_level": 1
+}

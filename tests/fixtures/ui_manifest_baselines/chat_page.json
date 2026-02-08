@@ -1,0 +1,331 @@
+{
+  "css_contract": {
+    "selectors": {
+      ".btn": [
+        "border: 1px solid var(--border-soft); background: #fff; color: var(--text-main); padding: 10px 16px; border-radius: var(--radius-m); font-size: 13px; cursor: pointer; transition: background var(--transition-fast) var(--ease-soft), border-color var(--transition-fast) var(--ease-soft)",
+        "transition: none"
+      ],
+      ".btn.small": [
+        "padding: 6px 10px; font-size: 12px"
+      ],
+      ".topbar": [
+        "position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 12px 0; background: #f8f8f8; border-bottom: 1px solid var(--border-subtle)"
+      ],
+      ".ui-chat": [
+        "display: flex; flex-direction: column; gap: 14px"
+      ],
+      ".ui-chat-citation": [
+        "display: flex; flex-direction: column; gap: 4px"
+      ],
+      ".ui-chat-citation-actions": [
+        "display: flex; gap: 6px"
+      ],
+      ".ui-chat-citations": [
+        "border: 1px solid #eaeaea; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px"
+      ],
+      ".ui-chat-composer": [
+        "display: flex; flex-wrap: wrap; gap: 8px"
+      ],
+      ".ui-chat-memory": [
+        "border: 1px solid #eaeaea; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px"
+      ],
+      ".ui-chat-memory-item": [
+        "display: flex; gap: 10px; align-items: baseline"
+      ],
+      ".ui-chat-message": [
+        "display: flex; gap: 8px; align-items: flex-end"
+      ],
+      ".ui-chat-messages": [
+        "display: flex; flex-direction: column; gap: 6px"
+      ],
+      ".ui-chat-thinking": [
+        "font-size: 12px; color: #555; font-style: italic"
+      ],
+      ".ui-section": [
+        "background: #fff; display: flex; flex-direction: column; gap: 10px"
+      ],
+      ".ui-section-title": [
+        "font-size: 14px; font-weight: 600; letter-spacing: 0.2px"
+      ]
+    },
+    "sticky_topbar": true
+  },
+  "manifest": {
+    "actions": {
+      "page.chat.composer.2.0.1.composer": {
+        "flow": "send_message",
+        "id": "page.chat.composer.2.0.1.composer",
+        "type": "call_flow"
+      }
+    },
+    "diagnostics_enabled": true,
+    "mode": "studio",
+    "pages": [
+      {
+        "elements": [
+          {
+            "column": 3,
+            "element_id": "page.chat.title.0",
+            "index": 0,
+            "line": 7,
+            "page": "chat",
+            "page_slug": "chat",
+            "type": "title",
+            "value": "Support chat"
+          },
+          {
+            "column": 3,
+            "element_id": "page.chat.text.1",
+            "index": 1,
+            "line": 8,
+            "page": "chat",
+            "page_slug": "chat",
+            "type": "text",
+            "value": "Talk to the assistant."
+          },
+          {
+            "children": [
+              {
+                "actions": [],
+                "attachments": false,
+                "children": [
+                  {
+                    "column": 7,
+                    "element_id": "page.chat.messages.2.0.0",
+                    "index": 0,
+                    "line": 11,
+                    "messages": [
+                      {
+                        "content": "Hi",
+                        "group_start": true,
+                        "role": "user"
+                      }
+                    ],
+                    "page": "chat",
+                    "page_slug": "chat",
+                    "source": "state.chat.messages",
+                    "spacing": {
+                      "item_gap": "m",
+                      "meta_gap": "s"
+                    },
+                    "type": "messages"
+                  },
+                  {
+                    "accessibility": {
+                      "label": "send_message",
+                      "role": "textbox",
+                      "tab_order": 1
+                    },
+                    "action": {
+                      "flow": "send_message",
+                      "type": "call_flow"
+                    },
+                    "action_id": "page.chat.composer.2.0.1.composer",
+                    "column": 7,
+                    "element_id": "page.chat.composer.2.0.1",
+                    "flow": "send_message",
+                    "id": "page.chat.composer.2.0.1.composer",
+                    "index": 1,
+                    "line": 12,
+                    "page": "chat",
+                    "page_slug": "chat",
+                    "spacing": {
+                      "action_gap": "s",
+                      "input_gap": "s"
+                    },
+                    "type": "composer"
+                  },
+                  {
+                    "active": false,
+                    "column": 7,
+                    "debug_only": true,
+                    "element_id": "page.chat.thinking.2.0.2",
+                    "index": 2,
+                    "line": 13,
+                    "page": "chat",
+                    "page_slug": "chat",
+                    "spacing": {
+                      "status_gap": "s"
+                    },
+                    "type": "thinking",
+                    "when": "state.chat.thinking"
+                  },
+                  {
+                    "citations": [
+                      {
+                        "title": "Spec",
+                        "url": "https://example.com/spec"
+                      }
+                    ],
+                    "column": 7,
+                    "debug_only": true,
+                    "element_id": "page.chat.citations.2.0.3",
+                    "index": 3,
+                    "line": 14,
+                    "page": "chat",
+                    "page_slug": "chat",
+                    "source": "state.chat.citations",
+                    "spacing": {
+                      "item_gap": "s"
+                    },
+                    "type": "citations"
+                  },
+                  {
+                    "column": 7,
+                    "debug_only": true,
+                    "element_id": "page.chat.memory.2.0.4",
+                    "index": 4,
+                    "items": [
+                      {
+                        "kind": "fact",
+                        "text": "Account active"
+                      }
+                    ],
+                    "line": 15,
+                    "page": "chat",
+                    "page_slug": "chat",
+                    "source": "state.chat.memory",
+                    "spacing": {
+                      "item_gap": "s"
+                    },
+                    "type": "memory"
+                  }
+                ],
+                "column": 5,
+                "element_id": "page.chat.chat.2.0",
+                "group_messages": true,
+                "index": 0,
+                "line": 10,
+                "page": "chat",
+                "page_slug": "chat",
+                "show_avatars": false,
+                "spacing": {
+                  "composer_gap": "m",
+                  "message_gap": "m",
+                  "section_gap": "m"
+                },
+                "streaming": false,
+                "style": "bubbles",
+                "type": "chat"
+              }
+            ],
+            "column": 3,
+            "element_id": "page.chat.section.2",
+            "index": 2,
+            "label": "Conversation",
+            "line": 9,
+            "page": "chat",
+            "page_slug": "chat",
+            "spacing": {
+              "gap": "l",
+              "padding": "m",
+              "title_gap": "s"
+            },
+            "type": "section"
+          }
+        ],
+        "name": "chat",
+        "slug": "chat"
+      }
+    ],
+    "theme": {
+      "css": ":root {\n  --n3-primary-color: #2563EB;\n  --n3-secondary-color: #5856D6;\n  --n3-background-color: #FFFFFF;\n  --n3-foreground-color: #111827;\n  --n3-font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;\n  --n3-font-size-base: 14px;\n  --n3-font-weight: 500;\n  --n3-spacing-scale: 1.0;\n  --n3-border-radius: 10px;\n  --n3-shadow-elevation: 0 2px 6px rgba(15, 23, 42, 0.08);\n}\n\nbody.n3-runtime,\nbody {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  font-family: var(--n3-font-family);\n  font-size: var(--n3-font-size-base);\n  font-weight: var(--n3-font-weight);\n}\n\n.ui-body,\n.panel,\n.ui-element,\n.list-item,\n.trace-row,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  border-radius: var(--n3-border-radius);\n  box-shadow: var(--n3-shadow-elevation);\n}\n\n.btn.primary,\n.ui-chat-action,\n.ui-upload-label {\n  background: var(--n3-primary-color);\n  border-color: var(--n3-primary-color);\n  color: #FFFFFF;\n}\n\n.ui-link,\n.n3-chat-attachment-link,\n.n3-citation-chip {\n  color: var(--n3-primary-color);\n}\n\n.ui-card-title,\n.ui-section-title,\n.n3-chat-group-label {\n  color: var(--n3-secondary-color);\n}\n\n.ui-element,\n.panel,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  padding: calc(10px * var(--n3-spacing-scale));\n}\n\n.ui-row,\n.ui-column,\n.ui-card-group,\n.n3-layout-root,\n.n3-layout-body {\n  gap: calc(10px * var(--n3-spacing-scale));\n}\n",
+      "css_hash": "af84b4058b81de1bba97dd498d5b53bb92defe1f5de89914b9ee0633692c1446",
+      "current": "light",
+      "effective": "light",
+      "font_url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+      "persisted_current": null,
+      "preference": {
+        "allow_override": false,
+        "persist": "none"
+      },
+      "runtime_supported": false,
+      "runtime_tokens": {},
+      "schema_version": "1",
+      "setting": "light",
+      "source": "app",
+      "theme_name": "default",
+      "tokens": {
+        "background_color": "#FFFFFF",
+        "border_radius": 10,
+        "font_family": "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+        "font_size_base": 14,
+        "font_weight": 500,
+        "foreground_color": "#111827",
+        "primary_color": "#2563EB",
+        "secondary_color": "#5856D6",
+        "shadow_level": 1,
+        "spacing_scale": 1.0
+      }
+    },
+    "ui": {
+      "persistence": {
+        "enabled": false,
+        "kind": "memory",
+        "path": null,
+        "schema_version": null
+      },
+      "settings": {
+        "accent_color": "blue",
+        "density": "comfortable",
+        "motion": "subtle",
+        "shape": "rounded",
+        "surface": "flat",
+        "theme": "light"
+      }
+    },
+    "warnings": [
+      {
+        "category": "diagnostics",
+        "code": "diagnostics.misplaced_debug_content",
+        "column": 7,
+        "enforced_at": null,
+        "fix": "Add a `layout: diagnostics:` block for diagnostics content.",
+        "line": 14,
+        "message": "Diagnostics-oriented UI content is mixed into the product layout.",
+        "path": "page.chat.citations.2.0.3"
+      },
+      {
+        "category": "diagnostics",
+        "code": "diagnostics.misplaced_debug_content",
+        "column": 7,
+        "enforced_at": null,
+        "fix": "Add a `layout: diagnostics:` block for diagnostics content.",
+        "line": 15,
+        "message": "Diagnostics-oriented UI content is mixed into the product layout.",
+        "path": "page.chat.memory.2.0.4"
+      },
+      {
+        "category": "diagnostics",
+        "code": "diagnostics.misplaced_debug_content",
+        "column": 7,
+        "enforced_at": null,
+        "fix": "Add a `layout: diagnostics:` block for diagnostics content.",
+        "line": 13,
+        "message": "Diagnostics-oriented UI content is mixed into the product layout.",
+        "path": "page.chat.thinking.2.0.2"
+      }
+    ]
+  },
+  "summary": {
+    "action_types": [
+      "call_flow"
+    ],
+    "element_types": [
+      "chat",
+      "citations",
+      "composer",
+      "memory",
+      "messages",
+      "section",
+      "text",
+      "thinking",
+      "title"
+    ],
+    "warning_codes": [
+      "diagnostics.misplaced_debug_content",
+      "diagnostics.misplaced_debug_content",
+      "diagnostics.misplaced_debug_content"
+    ]
+  }
+}

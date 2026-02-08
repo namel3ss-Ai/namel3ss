@@ -34,6 +34,10 @@
       window.renderExplain();
       return;
     }
+    if (tabName === "diagnostics" && typeof window.renderDiagnostics === "function") {
+      window.renderDiagnostics();
+      return;
+    }
     if (tabName === "errors" && typeof window.renderErrors === "function") {
       window.renderErrors();
       return;

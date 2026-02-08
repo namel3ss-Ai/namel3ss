@@ -3,7 +3,7 @@ from pathlib import Path
 from namel3ss.graduation.matrix import build_capability_matrix
 from namel3ss.graduation.render import render_graduation_lines, render_matrix_lines, render_summary_lines
 from namel3ss.graduation.rules import STABILITY_CHECKS, STABILITY_PROMISES, evaluate_graduation
-from namel3ss.spec_freeze.v1.rules import has_bracket_chars
+from namel3ss.spec_freeze.contracts.rules import has_bracket_chars
 
 
 def test_graduation_rules() -> None:

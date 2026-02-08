@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 
 from namel3ss.runtime.store.memory_store import MemoryStore
-from namel3ss.spec_freeze.v1.rules import RUNTIME_GOLDEN_DIR
+from namel3ss.spec_freeze.contracts.rules import RUNTIME_GOLDEN_DIR
 from tests.conftest import run_flow
 from tests.spec_freeze.helpers.runtime_dump import dump_runtime
 from tests.spec_freeze.helpers.runtime_samples import runtime_sources

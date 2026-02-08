@@ -14,17 +14,22 @@ flow "demo":
 '''
 
 
-def _fetch_json(url: str) -> dict:
-    with urllib.request.urlopen(url) as resp:
+def _fetch_json(url: str, headers: dict[str, str] | None = None) -> dict:
+    req = urllib.request.Request(url, method="GET")
+    for key, value in (headers or {}).items():
+        req.add_header(key, value)
+    with urllib.request.urlopen(req) as resp:
         body = resp.read().decode("utf-8")
     return json.loads(body)
 
 
-def _post_json(url: str, payload: dict) -> dict:
+def _post_json(url: str, payload: dict, headers: dict[str, str] | None = None) -> dict:
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(url, data=data, method="POST")
     req.add_header("Content-Type", "application/json")
     req.add_header("Content-Length", str(len(data)))
+    for key, value in (headers or {}).items():
+        req.add_header(key, value)
     with urllib.request.urlopen(req) as resp:
         body = resp.read().decode("utf-8")
     return json.loads(body)
@@ -164,6 +169,132 @@ def test_service_runner_api_first_aliases(tmp_path):
         raise AssertionError("headless service mode should not serve static root")
     except urllib.error.HTTPError as err:
         assert err.code == 404
+    finally:
+        runner.shutdown()
+
+
+def test_service_runner_headless_api_requires_token_and_respects_cors(tmp_path):
+    app = tmp_path / "app.ai"
+    app.write_text(
+        'spec is "1.0"\n\n'
+        'flow "demo":\n'
+        "  return \"ok\"\n\n"
+        'page "home":\n'
+        '  button "Run":\n'
+        '    calls flow "demo"\n',
+        encoding="utf-8",
+    )
+    runner = ServiceRunner(
+        app,
+        "service",
+        build_id=None,
+        port=_free_port(),
+        headless=True,
+        headless_api_token="test-token",
+        headless_cors_origins=("https://frontend.example.com",),
+    )
+    try:
+        runner.start(background=True)
+        port = runner.bound_port
+        _wait_for_health(port)
+        try:
+            _fetch_json(f"http://127.0.0.1:{port}/api/v1/ui")
+            raise AssertionError("versioned endpoint should require token")
+        except urllib.error.HTTPError as err:
+            assert err.code == 401
+            payload = json.loads(err.read().decode("utf-8"))
+            assert payload.get("ok") is False
+        headers = {"X-API-Token": "test-token", "Origin": "https://frontend.example.com"}
+        payload = _fetch_json(
+            f"http://127.0.0.1:{port}/api/v1/ui?include_state=1&include_actions=1",
+            headers=headers,
+        )
+        assert payload.get("ok") is True
+        assert payload.get("api_version") == "v1"
+        assert isinstance(payload.get("hash"), str) and len(payload["hash"]) == 64
+        assert isinstance(payload.get("manifest"), dict)
+        assert isinstance(payload.get("actions"), dict)
+        action_items = payload["actions"].get("actions")
+        assert isinstance(action_items, list) and action_items
+        action_id = action_items[0]["id"]
+        result = _post_json(
+            f"http://127.0.0.1:{port}/api/v1/actions/{action_id}",
+            {"args": {}},
+            headers=headers,
+        )
+        assert result.get("ok") is True
+        assert result.get("action_id") == action_id
+        try:
+            _fetch_json(
+                f"http://127.0.0.1:{port}/api/v1/ui",
+                headers={"X-API-Token": "test-token", "Origin": "https://blocked.example.com"},
+            )
+            raise AssertionError("versioned endpoint should reject blocked origin")
+        except urllib.error.HTTPError as err:
+            assert err.code == 403
+    finally:
+        runner.shutdown()
+
+
+def test_service_runner_headless_api_upload_selection_updates_state(tmp_path):
+    app = tmp_path / "app.ai"
+    app.write_text(
+        'spec is "1.0"\n\n'
+        "capabilities:\n"
+        "  uploads\n\n"
+        'page "home":\n'
+        "  upload receipt\n",
+        encoding="utf-8",
+    )
+    runner = ServiceRunner(
+        app,
+        "service",
+        build_id=None,
+        port=_free_port(),
+        headless=True,
+        headless_api_token="upload-token",
+        headless_cors_origins=("https://frontend.example.com",),
+    )
+    try:
+        runner.start(background=True)
+        port = runner.bound_port
+        _wait_for_health(port)
+        headers = {"X-API-Token": "upload-token", "Origin": "https://frontend.example.com"}
+        payload = _fetch_json(f"http://127.0.0.1:{port}/api/v1/ui?include_actions=1", headers=headers)
+        assert payload.get("ok") is True
+        upload_action_id = ""
+        for entry in payload.get("actions", {}).get("actions", []):
+            if isinstance(entry, dict) and entry.get("type") == "upload_select":
+                candidate = entry.get("id")
+                if isinstance(candidate, str) and candidate:
+                    upload_action_id = candidate
+                    break
+        if not upload_action_id:
+            manifest_actions = payload.get("manifest", {}).get("actions", {})
+            for action_id, entry in manifest_actions.items():
+                if isinstance(entry, dict) and entry.get("type") == "upload_select":
+                    upload_action_id = action_id
+                    break
+        assert upload_action_id
+        response = _post_json(
+            f"http://127.0.0.1:{port}/api/v1/actions/{upload_action_id}",
+            {
+                "args": {
+                    "upload": {
+                        "name": "receipt.pdf",
+                        "content_type": "application/pdf",
+                        "bytes": 128,
+                        "checksum": "abc123",
+                    }
+                }
+            },
+            headers=headers,
+        )
+        assert response.get("ok") is True
+        uploads = response.get("state", {}).get("uploads", {}).get("receipt", {})
+        assert "abc123" in uploads
+        assert uploads["abc123"]["name"] == "receipt.pdf"
+        assert uploads["abc123"]["type"] == "application/pdf"
     finally:
         runner.shutdown()
 

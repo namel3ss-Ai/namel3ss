@@ -6,6 +6,7 @@
       "type": "call_flow"
     }
   },
+  "mode": "studio",
   "pages": [
     {
       "elements": [
@@ -433,5 +434,16 @@
       "theme": "light"
     }
   },
-  "mode": "studio"
+  "warnings": [
+    {
+      "category": "visibility",
+      "code": "visibility.missing_empty_state_guard",
+      "column": 11,
+      "enforced_at": null,
+      "fix": "Add `visible when state.<path> > 0` or set `empty_state: hidden`.",
+      "line": 50,
+      "message": "Table on page \"dashboard\" may render empty-state copy without a visible guard.",
+      "path": "page.dashboard.table.3.1.0.0.0"
+    }
+  ]
 }

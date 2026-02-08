@@ -6,34 +6,24 @@ from namel3ss.ir.lowering.page_list import _default_list_primary, _list_id_field
 from namel3ss.runtime.records.service import build_record_scope
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.schema import records as schema
-from namel3ss.ui.manifest.actions import _allocate_action_id, _form_action_id, _ingestion_action_id, _upload_action_id
+from namel3ss.ui.manifest.actions import (
+    _allocate_action_id,
+    _form_action_id,
+)
 from namel3ss.ui.manifest.canonical import _element_id
 from namel3ss.ui.manifest.empty_state import _empty_state_for_list, _empty_state_for_table
 from namel3ss.ui.manifest.origin import _attach_origin
 from namel3ss.ui.manifest_chart import _build_chart_element, _resolve_state_list, _state_path_label
 from namel3ss.ui.manifest_chat import _chat_item_kind, _chat_item_to_manifest
+from namel3ss.ui.manifest_chat_enhanced import apply_chat_configuration
 from namel3ss.ui.manifest_form import _build_form_element
-from namel3ss.ui.manifest_list import (
-    _build_list_actions,
-    _list_id,
-    _list_id_field,
-    _list_item_mapping,
-    _list_state_id,
-)
+from namel3ss.ui.manifest_list import _build_list_actions, _list_id, _list_id_field, _list_item_mapping, _list_state_id
 from namel3ss.ui.manifest.state_defaults import StateContext
 from namel3ss.ui.manifest.visibility import apply_visibility, evaluate_visibility
-from namel3ss.ui.manifest_table import (
-    _apply_table_pagination,
-    _apply_table_sort,
-    _build_row_actions,
-    _resolve_state_table_columns,
-    _resolve_table_columns,
-    _table_id,
-    _table_id_field,
-    _table_state_id,
-)
+from namel3ss.ui.manifest_table import _apply_table_pagination, _apply_table_sort, _build_row_actions, _resolve_state_table_columns, _resolve_table_columns, _table_id, _table_id_field, _table_state_id
 from namel3ss.validation import ValidationMode
 from .base import _base_element, _require_record, _stable_rows_by_id, _view_representation
+from .uploads import build_upload_item
 
 def build_view_item(
     item: ir.ViewItem,
@@ -90,44 +80,6 @@ def build_view_item(
     return _attach_origin(element, item), {}
 
 
-def build_upload_item(
-    item: ir.UploadItem,
-    *,
-    page_name: str,
-    page_slug: str,
-    path: List[int],
-    taken_actions: set[str],
-) -> tuple[dict, Dict[str, dict]]:
-    index = path[-1] if path else 0
-    element_id = _element_id(page_slug, "upload", path)
-    base_action_id = _upload_action_id(page_slug, item.name)
-    action_id = _allocate_action_id(base_action_id, element_id, taken_actions)
-    ingestion_base = _ingestion_action_id(page_slug, item.name)
-    ingestion_action_id = _allocate_action_id(ingestion_base, element_id, taken_actions)
-    base = _base_element(element_id, page_name, page_slug, index, item)
-    multiple = bool(item.multiple)
-    element = {
-        "type": "upload",
-        "name": item.name,
-        "accept": list(item.accept or []),
-        "multiple": multiple,
-        "id": action_id,
-        "action_id": action_id,
-        **base,
-    }
-    action_entry = {
-        "id": action_id,
-        "type": "upload_select",
-        "name": item.name,
-        "multiple": multiple,
-    }
-    ingestion_entry = {
-        "id": ingestion_action_id,
-        "type": "ingestion_run",
-    }
-    return _attach_origin(element, item), {action_id: action_entry, ingestion_action_id: ingestion_entry}
-
-
 def build_form_item(
     item: ir.FormItem,
     record_map: Dict[str, schema.RecordSchema],
@@ -170,6 +122,7 @@ def build_table_item(
     index = path[-1] if path else 0
     element_id = _element_id(page_slug, "table", path)
     base = _base_element(element_id, page_name, page_slug, index, item)
+    empty_state_hidden = bool(getattr(item, "empty_state_hidden", False))
     if item.record_name:
         record = _require_record(item.record_name, record_map, item)
         table_id = _table_id(page_slug, item.record_name)
@@ -198,6 +151,8 @@ def build_table_item(
             "rows": rows,
             **base,
         }
+        if empty_state_hidden:
+            element["empty_state"] = _empty_state_for_table(item.empty_text, hidden=True)
         if item.empty_text:
             element["empty_text"] = item.empty_text
         if item.columns:
@@ -212,6 +167,8 @@ def build_table_item(
             element["row_actions"] = row_actions
         if row_actions or (item.selection in {"single", "multi"}):
             element["id_field"] = _table_id_field(record)
+        if empty_state_hidden and not rows:
+            element["visible"] = False
         return _attach_origin(element, item), action_entries
     source_label = _state_path_label(item.source)
     rows = _resolve_state_list(
@@ -230,12 +187,14 @@ def build_table_item(
         "source": source_label,
         "columns": columns,
         "rows": rows,
-        "empty_state": _empty_state_for_table(item.empty_text),
+        "empty_state": _empty_state_for_table(item.empty_text, hidden=empty_state_hidden),
         **base,
     }
     if item.empty_text:
         element["empty_text"] = item.empty_text
     element["columns_configured"] = True
+    if empty_state_hidden and not rows:
+        element["visible"] = False
     return _attach_origin(element, item), {}
 
 
@@ -255,6 +214,7 @@ def build_list_item(
     index = path[-1] if path else 0
     element_id = _element_id(page_slug, "list", path)
     base = _base_element(element_id, page_name, page_slug, index, item)
+    empty_state_hidden = bool(getattr(item, "empty_state_hidden", False))
     if item.record_name:
         record = _require_record(item.record_name, record_map, item)
         list_id = _list_id(page_slug, item.record_name)
@@ -270,7 +230,7 @@ def build_list_item(
             "variant": item.variant,
             "item": _list_item_mapping(item.item),
             "rows": rows,
-            "empty_state": _empty_state_for_list(item.empty_text),
+            "empty_state": _empty_state_for_list(item.empty_text, hidden=empty_state_hidden),
             **base,
         }
         if item.empty_text:
@@ -281,6 +241,8 @@ def build_list_item(
             element["actions"] = action_entries
         if action_entries or (item.selection in {"single", "multi"}):
             element["id_field"] = _list_id_field(record)
+        if empty_state_hidden and not rows:
+            element["visible"] = False
         return _attach_origin(element, item), action_map
     source_label = _state_path_label(item.source)
     rows = _resolve_state_list(
@@ -299,11 +261,13 @@ def build_list_item(
         "variant": item.variant,
         "item": _list_item_mapping(item.item),
         "rows": rows,
-        "empty_state": _empty_state_for_list(item.empty_text),
+        "empty_state": _empty_state_for_list(item.empty_text, hidden=empty_state_hidden),
         **base,
     }
     if item.empty_text:
         element["empty_text"] = item.empty_text
+    if empty_state_hidden and not rows:
+        element["visible"] = False
     return _attach_origin(element, item), {}
 
 
@@ -377,6 +341,7 @@ def build_chat_item(
     element_id = _element_id(page_slug, "chat", path)
     base = _base_element(element_id, page_name, page_slug, index, item)
     element = {"type": "chat", "children": children, **base}
+    element = apply_chat_configuration(element, item)
     return _attach_origin(element, item), actions
 
 

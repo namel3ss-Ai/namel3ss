@@ -325,6 +325,56 @@ page "home":
     assert "text" in message
 
 
+def test_chat_streaming_requires_composer():
+    source = '''page "home":
+  chat:
+    messages from is state.chat.messages
+    streaming is true
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "streaming is enabled without a composer" in str(exc.value).lower()
+
+
+def test_chat_streaming_requires_stream_enabled_flow():
+    source = '''flow "ask_flow":
+  return "ok"
+
+page "home":
+  chat:
+    messages from is state.chat.messages
+    composer calls flow "ask_flow"
+    streaming is true
+'''
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "does not stream output" in str(exc.value).lower()
+
+
+def test_chat_streaming_accepts_stream_enabled_flow():
+    source = '''spec is "1.0"
+
+capabilities:
+  streaming
+
+ai "assistant":
+  provider is "mock"
+  model is "mock-model"
+
+flow "ask_flow":
+  ask ai "assistant" with stream: true and input: "hello" as reply
+  return reply
+
+page "home":
+  chat:
+    messages from is state.chat.messages
+    composer calls flow "ask_flow"
+    streaming is true
+'''
+    program = lower_ir_program(source)
+    assert program is not None
+
+
 def test_form_group_unknown_field_errors():
     source = '''record "User":
   name text

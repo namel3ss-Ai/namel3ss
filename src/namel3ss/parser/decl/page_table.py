@@ -16,6 +16,7 @@ def parse_table_block(parser, *, allow_pattern_params: bool = False):
     parser._expect("INDENT", "Expected indented table block")
     columns = None
     empty_text = None
+    empty_state_hidden = False
     sort = None
     pagination = None
     selection = None
@@ -38,13 +39,13 @@ def parse_table_block(parser, *, allow_pattern_params: bool = False):
             columns = _parse_table_columns(parser)
             continue
         if tok.type == "IDENT" and tok.value == "empty_state":
-            if empty_text is not None:
+            if empty_text is not None or empty_state_hidden:
                 raise Namel3ssError("Empty state is declared more than once", line=tok.line, column=tok.column)
             parser._advance()
-            empty_text = _parse_empty_state_block(parser, allow_pattern_params=allow_pattern_params)
+            empty_text, empty_state_hidden = _parse_empty_state_block(parser, allow_pattern_params=allow_pattern_params)
             continue
         if tok.type == "IDENT" and tok.value == "empty_text":
-            if empty_text is not None:
+            if empty_text is not None or empty_state_hidden:
                 raise Namel3ssError("Empty state is declared more than once", line=tok.line, column=tok.column)
             parser._advance()
             parser._expect("IS", "Expected 'is' after empty_text")
@@ -100,7 +101,7 @@ def parse_table_block(parser, *, allow_pattern_params: bool = False):
             column=tok.column,
         )
     parser._expect("DEDENT", "Expected end of table block")
-    return columns, empty_text, sort, pagination, selection, row_actions, visibility_rule
+    return columns, empty_text, empty_state_hidden, sort, pagination, selection, row_actions, visibility_rule
 
 
 def _parse_table_columns(parser):
@@ -160,8 +161,39 @@ def _parse_table_columns(parser):
     return directives
 
 
-def _parse_empty_state_block(parser, *, allow_pattern_params: bool = False) -> str:
+def _parse_empty_state_block(parser, *, allow_pattern_params: bool = False) -> tuple[str | None, bool]:
     parser._expect("COLON", "Expected ':' after empty_state")
+    tok = parser._current()
+    if tok.type != "NEWLINE":
+        if tok.type == "BOOLEAN":
+            parser._advance()
+            if bool(tok.value):
+                raise Namel3ssError(
+                    "empty_state inline value only supports hidden or false.",
+                    line=tok.line,
+                    column=tok.column,
+                )
+            if parser._current().type not in {"NEWLINE", "DEDENT", "COLON"}:
+                extra = parser._current()
+                raise Namel3ssError("empty_state inline value must end at the line boundary.", line=extra.line, column=extra.column)
+            return None, True
+        if tok.type in {"IDENT", "STRING"}:
+            parser._advance()
+            if str(tok.value).strip().lower() != "hidden":
+                raise Namel3ssError(
+                    "empty_state inline value only supports hidden or false.",
+                    line=tok.line,
+                    column=tok.column,
+                )
+            if parser._current().type not in {"NEWLINE", "DEDENT", "COLON"}:
+                extra = parser._current()
+                raise Namel3ssError("empty_state inline value must end at the line boundary.", line=extra.line, column=extra.column)
+            return None, True
+        raise Namel3ssError(
+            "empty_state must be a text block or set to hidden/false.",
+            line=tok.line,
+            column=tok.column,
+        )
     parser._expect("NEWLINE", "Expected newline after empty_state")
     if not parser._match("INDENT"):
         tok = parser._current()
@@ -185,7 +217,7 @@ def _parse_empty_state_block(parser, *, allow_pattern_params: bool = False) -> s
     if text_value is None:
         tok = parser._current()
         raise Namel3ssError("Empty state block has no entries", line=tok.line, column=tok.column)
-    return text_value
+    return text_value, False
 
 
 def _parse_table_sort(parser, line: int, column: int) -> ast.TableSort:

@@ -47,15 +47,90 @@ def apply_upload_selection(state: dict, *, upload_name: str, entry: dict, multip
     if not isinstance(uploads, dict):
         raise Namel3ssError(_uploads_shape_message())
     state["uploads"] = uploads
-    existing = uploads.get(upload_name)
-    if existing is None:
-        existing = []
-    if not isinstance(existing, list):
-        raise Namel3ssError(_upload_list_message(upload_name))
+    existing = _normalize_upload_bucket(uploads.get(upload_name), upload_name)
+    entry_id = _entry_id(entry)
     if multiple:
-        uploads[upload_name] = list(existing) + [entry]
+        next_bucket = dict(existing)
+        next_bucket[entry_id] = entry
+        uploads[upload_name] = next_bucket
     else:
-        uploads[upload_name] = [entry]
+        uploads[upload_name] = {entry_id: entry}
+
+
+def clear_upload_selection(state: dict, *, upload_name: str, upload_id: str | None = None) -> None:
+    if not isinstance(state, dict):
+        raise Namel3ssError(_state_type_message())
+    if not isinstance(upload_name, str) or not upload_name.strip():
+        raise Namel3ssError(_upload_name_message())
+    uploads = state.get("uploads")
+    if uploads is None:
+        uploads = {}
+    if not isinstance(uploads, dict):
+        raise Namel3ssError(_uploads_shape_message())
+    state["uploads"] = uploads
+    current = _normalize_upload_bucket(uploads.get(upload_name), upload_name)
+    if upload_id is None:
+        uploads[upload_name] = {}
+        return
+    if not isinstance(upload_id, str) or not upload_id.strip():
+        raise Namel3ssError(_upload_id_message())
+    next_bucket = dict(current)
+    next_bucket.pop(upload_id, None)
+    uploads[upload_name] = next_bucket
+
+
+def normalized_upload_entries(state: dict, *, upload_name: str) -> dict[str, dict]:
+    if not isinstance(state, dict):
+        raise Namel3ssError(_state_type_message())
+    uploads = state.get("uploads")
+    if uploads is None:
+        return {}
+    if not isinstance(uploads, dict):
+        raise Namel3ssError(_uploads_shape_message())
+    return _normalize_upload_bucket(uploads.get(upload_name), upload_name)
+
+
+def _normalize_upload_bucket(value: object, upload_name: str) -> dict[str, dict]:
+    if value is None:
+        return {}
+    if isinstance(value, dict):
+        if _looks_like_upload_entry(value):
+            entry_id = _entry_id(value)
+            return {entry_id: value}
+        bucket: dict[str, dict] = {}
+        for key, entry in value.items():
+            if not isinstance(entry, dict):
+                raise Namel3ssError(_upload_bucket_message(upload_name))
+            entry_id = _entry_id(entry, fallback_key=key)
+            bucket[entry_id] = entry
+        return bucket
+    if isinstance(value, list):
+        bucket: dict[str, dict] = {}
+        for entry in value:
+            if not isinstance(entry, dict):
+                raise Namel3ssError(_upload_bucket_message(upload_name))
+            entry_id = _entry_id(entry)
+            bucket[entry_id] = entry
+        return bucket
+    raise Namel3ssError(_upload_bucket_message(upload_name))
+
+
+def _entry_id(entry: dict, *, fallback_key: object | None = None) -> str:
+    value = entry.get("id")
+    if not isinstance(value, str) or not value.strip():
+        value = entry.get("checksum")
+    if not isinstance(value, str) or not value.strip():
+        if isinstance(fallback_key, str) and fallback_key.strip():
+            value = fallback_key.strip()
+        else:
+            raise Namel3ssError(_entry_id_message())
+    return value.strip()
+
+
+def _looks_like_upload_entry(value: dict) -> bool:
+    identifier = value.get("id") if isinstance(value.get("id"), str) and value.get("id") else value.get("checksum")
+    name = value.get("name")
+    return isinstance(name, str) and bool(name.strip()) and isinstance(identifier, str) and bool(identifier.strip())
 
 
 def _require_text(metadata: dict, key: str, message: str) -> str:
@@ -202,18 +277,36 @@ def _uploads_shape_message() -> str:
     return build_guidance_message(
         what="state.uploads must be an object.",
         why="Uploads are stored by name under state.uploads.",
-        fix="Ensure state.uploads is a map of upload names to lists.",
-        example='{"uploads":{"receipt":[]}}',
+        fix="Ensure state.uploads is a map of upload names to upload metadata maps.",
+        example='{"uploads":{"receipt":{}}}',
     )
 
 
-def _upload_list_message(upload_name: str) -> str:
+def _upload_bucket_message(upload_name: str) -> str:
     return build_guidance_message(
-        what=f"state.uploads.{upload_name} must be a list.",
-        why="Each upload name stores a list of metadata entries.",
-        fix="Replace the value with a list of upload entries.",
-        example=f'{{"uploads":{{"{upload_name}":[]}}}}',
+        what=f"state.uploads.{upload_name} must be an object, list, or upload metadata entry.",
+        why="Upload state is normalized to a deterministic map keyed by file id.",
+        fix="Use an object keyed by upload id or provide a list of upload metadata entries.",
+        example=f'{{"uploads":{{"{upload_name}":{{}}}}}}',
     )
 
 
-__all__ = ["apply_upload_selection", "upload_state_entry"]
+def _upload_id_message() -> str:
+    return build_guidance_message(
+        what="Upload removal requires a valid upload id.",
+        why="Remove operations target a specific selected upload by id.",
+        fix="Pass the upload id returned in state.uploads.<name>.",
+        example='{"upload_id":"<checksum>"}',
+    )
+
+
+def _entry_id_message() -> str:
+    return build_guidance_message(
+        what="Upload entry is missing id/checksum.",
+        why="Upload state maps entries by deterministic file ids.",
+        fix="Include id or checksum in upload metadata entries.",
+        example='{"id":"<checksum>","name":"file.txt","size":12,"type":"text/plain","checksum":"<checksum>"}',
+    )
+
+
+__all__ = ["apply_upload_selection", "clear_upload_selection", "normalized_upload_entries", "upload_state_entry"]

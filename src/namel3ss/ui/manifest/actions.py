@@ -25,6 +25,10 @@ def _upload_action_id(page_slug: str, name: str) -> str:
     return f"page.{page_slug}.upload.{_slugify(name)}"
 
 
+def _upload_clear_action_id(page_slug: str, name: str) -> str:
+    return f"page.{page_slug}.upload.{_slugify(name)}.clear"
+
+
 def _ingestion_action_id(page_slug: str, name: str) -> str:
     return f"page.{page_slug}.upload.{_slugify(name)}.ingestion"
 
@@ -103,6 +107,7 @@ __all__ = [
     "_input_action_id",
     "_link_action_id",
     "_upload_action_id",
+    "_upload_clear_action_id",
     "_ingestion_action_id",
     "_retrieval_action_id",
     "_ingestion_review_action_id",

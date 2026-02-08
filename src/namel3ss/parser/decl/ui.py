@@ -4,7 +4,12 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ui.presets import validate_ui_preset
 from namel3ss.ast import nodes as ast
-from namel3ss.ui.settings import default_ui_settings_with_meta, validate_ui_field, validate_ui_value
+from namel3ss.ui.settings import (
+    UI_THEME_TOKEN_FIELDS,
+    default_ui_settings_with_meta,
+    validate_ui_field,
+    validate_ui_value,
+)
 
 
 _PAGES_GRAMMAR = "Pages must declare: active page: with one or more rules."
@@ -53,18 +58,31 @@ def parse_ui_decl(parser):
                 column=name_tok.column,
             )
         parser._expect("IS", "Expected 'is' after ui field name")
-        value_tok = parser._expect("STRING", "Expected ui field value")
+        value, value_tok = _parse_ui_field_value(parser, key)
         if key == "preset":
-            validate_ui_preset(value_tok.value, line=value_tok.line, column=value_tok.column)
+            if not isinstance(value, str):
+                raise Namel3ssError("preset value must be a string", line=value_tok.line, column=value_tok.column)
+            validate_ui_preset(value, line=value_tok.line, column=value_tok.column)
         else:
-            validate_ui_value(key, value_tok.value, line=value_tok.line, column=value_tok.column)
-        settings[key] = (value_tok.value, value_tok.line, value_tok.column)
+            validate_ui_value(key, value, line=value_tok.line, column=value_tok.column)
+        settings[key] = (value, value_tok.line, value_tok.column)
         seen.add(key)
         parser._match("NEWLINE")
     parser._expect("DEDENT", "Expected end of ui block")
     while parser._match("NEWLINE"):
         continue
     return settings, active_page_rules, tok.line, tok.column
+
+
+def _parse_ui_field_value(parser, key: str) -> tuple[object, object]:
+    if key in UI_THEME_TOKEN_FIELDS:
+        tok = parser._current()
+        if tok.type in {"STRING", "NUMBER", "BOOLEAN"}:
+            parser._advance()
+            return tok.value, tok
+        raise Namel3ssError("Expected ui token value", line=tok.line, column=tok.column)
+    value_tok = parser._expect("STRING", "Expected ui field value")
+    return value_tok.value, value_tok
 
 
 def _parse_pages_block(parser) -> list[ast.ActivePageRule]:

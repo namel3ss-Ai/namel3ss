@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Callable
 
 from namel3ss.ast import nodes as ast
-from namel3ss.parser.sugar import phase4 as sugar
+from namel3ss.parser.sugar import error_handling_statements as sugar
 
 
 def _lower_attempt_otherwise(

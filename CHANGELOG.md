@@ -2,6 +2,29 @@
 
 No breaking changes without an explicit changelog entry.
 
+## v0.1.0a15
+### Added
+- Integration tests for combined UI features (layout, conditional rendering, RAG, diagnostics, uploads, plugins, theming).
+- Headless upload action coverage through `/api/v1/actions/<id>` end-to-end tests.
+- Deterministic HTTP caching coverage for versioned headless API and plugin assets.
+
+### Changed
+- Internal headless server modules and handler names use descriptive, professional naming (public `/api/v1/*` paths unchanged).
+- Diagnostics panel styling now follows theme tokens (`--n3-secondary-color`, `--n3-background-color`, border-radius token).
+- Studio/runtime UI renderer now loads plugin JS/CSS assets declared in `manifest.ui.plugins` deterministically and exposes custom-component mount metadata.
+- Baseline manifest guardrails updated for diagnostics warnings emitted by legacy debug-oriented chat subcomponents.
+
+### Fixed
+- Versioned headless UI endpoint now emits stable `ETag` and cache headers and correctly returns `304 Not Modified` on matching `If-None-Match`.
+- Plugin asset endpoints now emit immutable cache headers and `ETag`, with `304 Not Modified` behavior for conditional requests.
+- Custom UI integration gap where plugin assets were declared but not loaded by renderer.
+
+### Deprecated
+- Legacy debug-oriented chat subcomponents (`thinking`, legacy `citations`, `memory`) continue to work but now trigger diagnostics placement warnings in product layouts.
+
+### Removed
+- None.
+
 ## v0.1.0a14
 ### Added
 

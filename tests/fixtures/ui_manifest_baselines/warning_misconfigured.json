@@ -1,0 +1,249 @@
+{
+  "css_contract": {
+    "selectors": {
+      ".btn": [
+        "border: 1px solid var(--border-soft); background: #fff; color: var(--text-main); padding: 10px 16px; border-radius: var(--radius-m); font-size: 13px; cursor: pointer; transition: background var(--transition-fast) var(--ease-soft), border-color var(--transition-fast) var(--ease-soft)",
+        "transition: none"
+      ],
+      ".btn.small": [
+        "padding: 6px 10px; font-size: 12px"
+      ],
+      ".topbar": [
+        "position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 12px 0; background: #f8f8f8; border-bottom: 1px solid var(--border-subtle)"
+      ],
+      ".ui-section": [
+        "background: #fff; display: flex; flex-direction: column; gap: 10px"
+      ],
+      ".ui-section-title": [
+        "font-size: 14px; font-weight: 600; letter-spacing: 0.2px"
+      ],
+      ".ui-table": [
+        "width: 100%; border-collapse: collapse; font-size: 13px"
+      ]
+    },
+    "sticky_topbar": true
+  },
+  "manifest": {
+    "actions": {
+      "page.home.button.more_details_about_the_report_status_and_metrics": {
+        "flow": "execute",
+        "id": "page.home.button.more_details_about_the_report_status_and_metrics",
+        "type": "call_flow"
+      }
+    },
+    "diagnostics_enabled": true,
+    "mode": "studio",
+    "pages": [
+      {
+        "elements": [
+          {
+            "accessibility": {
+              "label": "Order",
+              "role": "table"
+            },
+            "column": 3,
+            "columns": [
+              {
+                "label": "Name",
+                "name": "name",
+                "type": "text"
+              }
+            ],
+            "element_id": "page.home.table.0",
+            "id": "page.home.table.order",
+            "index": 0,
+            "line": 10,
+            "page": "home",
+            "page_slug": "home",
+            "record": "Order",
+            "rows": [],
+            "spacing": {
+              "cell_gap": "s",
+              "header_gap": "m",
+              "row_actions_gap": "s",
+              "row_gap": "s"
+            },
+            "type": "table"
+          },
+          {
+            "children": [
+              {
+                "column": 5,
+                "element_id": "page.home.text.1.0",
+                "index": 0,
+                "line": 12,
+                "page": "home",
+                "page_slug": "home",
+                "type": "text",
+                "value": "Missing label"
+              }
+            ],
+            "column": 3,
+            "element_id": "page.home.section.1",
+            "index": 1,
+            "label": "",
+            "line": 11,
+            "page": "home",
+            "page_slug": "home",
+            "spacing": {
+              "gap": "l",
+              "padding": "m",
+              "title_gap": "s"
+            },
+            "type": "section"
+          },
+          {
+            "accessibility": {
+              "label": "More details about the report status and metrics",
+              "role": "button",
+              "tab_order": 1
+            },
+            "action": {
+              "flow": "execute",
+              "type": "call_flow"
+            },
+            "action_id": "page.home.button.more_details_about_the_report_status_and_metrics",
+            "column": 3,
+            "element_id": "page.home.button_item.2",
+            "id": "page.home.button.more_details_about_the_report_status_and_metrics",
+            "index": 2,
+            "label": "More details about the report status and metrics",
+            "line": 13,
+            "page": "home",
+            "page_slug": "home",
+            "type": "button"
+          }
+        ],
+        "name": "home",
+        "slug": "home"
+      }
+    ],
+    "theme": {
+      "css": ":root {\n  --n3-primary-color: #2563EB;\n  --n3-secondary-color: #5856D6;\n  --n3-background-color: #FFFFFF;\n  --n3-foreground-color: #111827;\n  --n3-font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;\n  --n3-font-size-base: 14px;\n  --n3-font-weight: 500;\n  --n3-spacing-scale: 1.0;\n  --n3-border-radius: 10px;\n  --n3-shadow-elevation: 0 2px 6px rgba(15, 23, 42, 0.08);\n}\n\nbody.n3-runtime,\nbody {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  font-family: var(--n3-font-family);\n  font-size: var(--n3-font-size-base);\n  font-weight: var(--n3-font-weight);\n}\n\n.ui-body,\n.panel,\n.ui-element,\n.list-item,\n.trace-row,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  border-radius: var(--n3-border-radius);\n  box-shadow: var(--n3-shadow-elevation);\n}\n\n.btn.primary,\n.ui-chat-action,\n.ui-upload-label {\n  background: var(--n3-primary-color);\n  border-color: var(--n3-primary-color);\n  color: #FFFFFF;\n}\n\n.ui-link,\n.n3-chat-attachment-link,\n.n3-citation-chip {\n  color: var(--n3-primary-color);\n}\n\n.ui-card-title,\n.ui-section-title,\n.n3-chat-group-label {\n  color: var(--n3-secondary-color);\n}\n\n.ui-element,\n.panel,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  padding: calc(10px * var(--n3-spacing-scale));\n}\n\n.ui-row,\n.ui-column,\n.ui-card-group,\n.n3-layout-root,\n.n3-layout-body {\n  gap: calc(10px * var(--n3-spacing-scale));\n}\n",
+      "css_hash": "af84b4058b81de1bba97dd498d5b53bb92defe1f5de89914b9ee0633692c1446",
+      "current": "light",
+      "effective": "light",
+      "font_url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+      "persisted_current": null,
+      "preference": {
+        "allow_override": false,
+        "persist": "none"
+      },
+      "runtime_supported": false,
+      "runtime_tokens": {},
+      "schema_version": "1",
+      "setting": "light",
+      "source": "app",
+      "theme_name": "default",
+      "tokens": {
+        "background_color": "#FFFFFF",
+        "border_radius": 10,
+        "font_family": "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+        "font_size_base": 14,
+        "font_weight": 500,
+        "foreground_color": "#111827",
+        "primary_color": "#2563EB",
+        "secondary_color": "#5856D6",
+        "shadow_level": 1,
+        "spacing_scale": 1.0
+      }
+    },
+    "ui": {
+      "persistence": {
+        "enabled": false,
+        "kind": "memory",
+        "path": null,
+        "schema_version": null
+      },
+      "settings": {
+        "accent_color": "blue",
+        "density": "comfortable",
+        "motion": "subtle",
+        "shape": "rounded",
+        "surface": "flat",
+        "theme": "light"
+      }
+    },
+    "warnings": [
+      {
+        "category": "layout",
+        "code": "layout.unlabeled_container",
+        "column": 3,
+        "enforced_at": null,
+        "fix": "Provide a label to clarify the purpose of this container.",
+        "line": 11,
+        "message": "Container section on page \"home\" has no label.",
+        "path": "page.home.section.1"
+      },
+      {
+        "category": "visibility",
+        "code": "visibility.missing_empty_state_guard",
+        "column": 3,
+        "enforced_at": null,
+        "fix": "Add `visible when state.<path> > 0` or set `empty_state: hidden`.",
+        "line": 10,
+        "message": "Table on page \"home\" may render empty-state copy without a visible guard.",
+        "path": "page.home.table.0"
+      },
+      {
+        "category": "copy",
+        "code": "copy.action_label",
+        "column": 3,
+        "enforced_at": null,
+        "fix": "Use a short verb-first label: 'Create ...', 'View ...', 'Reset ...'.",
+        "line": 13,
+        "message": "Action label \"More details about the report status and metrics\" on page \"home\" exceeds 40 characters.",
+        "path": "page.home.button_item.2"
+      },
+      {
+        "category": "copy",
+        "code": "copy.missing_intro_text",
+        "column": 3,
+        "enforced_at": null,
+        "fix": "Add a short text block before the first data-heavy element.",
+        "line": 10,
+        "message": "Page \"home\" has data-heavy content without intro text.",
+        "path": "page.home.table.0"
+      },
+      {
+        "category": "copy",
+        "code": "copy.missing_page_title",
+        "column": null,
+        "enforced_at": null,
+        "fix": "Add a title item near the top of the page.",
+        "line": null,
+        "message": "Page \"home\" has no title.",
+        "path": "page.home"
+      },
+      {
+        "category": "copy",
+        "code": "copy.unlabeled_container",
+        "column": 3,
+        "enforced_at": null,
+        "fix": "Provide a label for this container.",
+        "line": 11,
+        "message": "Container section on page \"home\" has no label.",
+        "path": "page.home.section.1"
+      }
+    ]
+  },
+  "summary": {
+    "action_types": [
+      "call_flow"
+    ],
+    "element_types": [
+      "button",
+      "section",
+      "table",
+      "text"
+    ],
+    "warning_codes": [
+      "copy.action_label",
+      "copy.missing_intro_text",
+      "copy.missing_page_title",
+      "copy.unlabeled_container",
+      "layout.unlabeled_container",
+      "visibility.missing_empty_state_guard"
+    ]
+  }
+}

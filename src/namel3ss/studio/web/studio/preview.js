@@ -2,6 +2,7 @@
   const root = window.N3Studio || (window.N3Studio = {});
   const state = root.state;
   const preview = root.preview || (root.preview = {});
+  const LAYOUT_SLOTS = ["header", "sidebar_left", "main", "drawer_right", "footer"];
 
   let askActionId = null;
   let whyActionId = null;
@@ -73,10 +74,25 @@
     return list;
   }
 
+  function pageRootElements(page) {
+    if (!page || typeof page !== "object") return [];
+    if (page.layout && typeof page.layout === "object") {
+      const elements = [];
+      LAYOUT_SLOTS.forEach((slot) => {
+        const slotElements = page.layout[slot];
+        if (Array.isArray(slotElements)) {
+          elements.push(...slotElements);
+        }
+      });
+      return elements;
+    }
+    return Array.isArray(page.elements) ? page.elements : [];
+  }
+
   function findTable(manifest, recordName) {
     if (!manifest || !manifest.pages) return null;
     for (const page of manifest.pages) {
-      const elements = flattenElements(page.elements || []);
+      const elements = flattenElements(pageRootElements(page));
       for (const element of elements) {
         if (element.type === "table" && element.record === recordName) {
           return element;

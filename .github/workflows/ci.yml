@@ -60,6 +60,18 @@ jobs:
           echo "${status}" > .namel3ss/ci_artifacts/pytest_exit_code.txt
           exit ${status}
 
+      - name: UI baseline guardrails suite
+        run: |
+          python -m pytest -q \
+            tests/ui/test_ui_manifest_baseline.py \
+            tests/ui/test_warning_pipeline.py \
+            tests/ui/test_layout_primitives.py \
+            tests/ui/test_layout_responsive.py \
+            tests/parser/test_page_layout_slots.py \
+            tests/ir/test_ir_layout_primitives.py \
+            tests/studio/test_studio_errors_panel.py \
+            tests/runtime/test_ui_api_contracts.py
+
       - name: Multimodal deterministic suite
         run: |
           python -m pytest -q \

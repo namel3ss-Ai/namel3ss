@@ -34,6 +34,8 @@ def _to_data(value: Any, *, field_name: str | None = None) -> Any:
                 continue
             if field.name == "status" and field_value is None:
                 continue
+            if field.name == "layout" and field_value is None:
+                continue
             if field.name == "ui_active_page_rules" and field_value is None:
                 continue
             if field.name == "policy" and field_value is None:
@@ -58,7 +60,11 @@ def _to_data(value: Any, *, field_name: str | None = None) -> Any:
                 continue
             if field.name == "visibility_rule" and field_value is None:
                 continue
+            if field.name == "visibility" and field_value is None and value.__class__.__name__ == "PageDecl":
+                continue
             if field.name == "availability_rule" and field_value is None:
+                continue
+            if field.name == "empty_state_hidden" and field_value is False:
                 continue
             if field.name == "debug_only" and field_value is None:
                 continue

@@ -59,6 +59,8 @@ def _render_files(*, plugin_name: str, component_name: str) -> dict[str, str]:
         f'  "name": "{plugin_name}",\n'
         f'  "version": "0.1.0",\n'
         '  "module": "renderer.py",\n'
+        '  "asset_js": "assets/runtime.js",\n'
+        '  "asset_css": "assets/style.css",\n'
         "  \"components\": [\n"
         "    {\n"
         f'      "name": "{component_name}",\n'
@@ -82,12 +84,27 @@ def _render_files(*, plugin_name: str, component_name: str) -> dict[str, str]:
         "        }\n"
         "    ]\n"
     )
+    runtime_js = (
+        "(() => {\n"
+        "  if (typeof window === \"undefined\") {\n"
+        "    return;\n"
+        "  }\n"
+        "  window.__n3PluginRuntimeLoaded = true;\n"
+        "})();\n"
+    )
+    style_css = (
+        ".n3-plugin-sample {\n"
+        "  font-weight: 600;\n"
+        "}\n"
+    )
     readme = (
         f"# {plugin_name}\n\n"
         "UI plugin scaffold for Namel3ss custom components.\n\n"
         "## Files\n"
         "- `plugin.json`: plug-in manifest schema and component contracts.\n"
         "- `renderer.py`: sandboxed deterministic renderer (`render(props, state)`).\n"
+        "- `assets/runtime.js`: optional browser script loaded by runtime clients.\n"
+        "- `assets/style.css`: optional component styles loaded by runtime clients.\n"
         "- `tests/test_plugin_manifest.py`: schema parse smoke test.\n\n"
         "## Use in app\n"
         "```ai\n"
@@ -111,6 +128,8 @@ def _render_files(*, plugin_name: str, component_name: str) -> dict[str, str]:
     )
     return {
         "README.md": readme,
+        "assets/runtime.js": runtime_js,
+        "assets/style.css": style_css,
         "plugin.json": plugin_manifest,
         "renderer.py": renderer,
         "tests/test_plugin_manifest.py": test_file,

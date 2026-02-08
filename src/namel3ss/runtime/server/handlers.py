@@ -16,6 +16,16 @@ from namel3ss.runtime.server.observability_helpers import (
     load_observability_builder,
     observability_enabled,
 )
+from namel3ss.runtime.server.headless_service_api import (
+    handle_service_headless_get,
+    handle_service_headless_options,
+    handle_service_headless_post,
+)
+from namel3ss.runtime.server.plugin_assets import (
+    plugin_asset_headers,
+    request_etag_matches as plugin_request_etag_matches,
+    resolve_plugin_asset,
+)
 from namel3ss.runtime.server.service_sessions_api import (
     cleanup_session_manager,
     handle_remote_studio_get,
@@ -69,6 +79,10 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
         cleanup_session_manager(self)
+        if path.startswith("/api/v"):
+            body = self._read_json_body()
+            if handle_service_headless_post(self, path=path, body=body):
+                return
         if path == "/api/ui/action":
             path = "/api/action"
         if path == "/api/action":
@@ -97,6 +111,12 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         ):
             return
         if self._dispatch_dynamic_route():
+            return
+        self.send_error(404)
+
+    def do_OPTIONS(self) -> None:  # noqa: N802
+        parsed = urlparse(self.path)
+        if handle_service_headless_options(self, path=parsed.path):
             return
         self.send_error(404)
 
@@ -148,6 +168,23 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
     def _handle_api_get(self, parsed) -> None:
         normalized = parsed.path.rstrip("/") or "/"
         query = parse_qs(parsed.query or "")
+        if handle_service_headless_get(self, path=normalized, query=query):
+            return
+        if normalized.startswith("/api/plugins/"):
+            asset = resolve_plugin_asset(self._program(), normalized)
+            if asset is not None:
+                body, content_type = asset
+                headers = plugin_asset_headers(body)
+                if plugin_request_etag_matches(dict(self.headers.items()), headers["ETag"]):
+                    self.send_response(304)
+                    for key, value in headers.items():
+                        self.send_header(key, value)
+                    self.end_headers()
+                    return
+                self._respond_body(body, content_type=content_type, status=200, headers=headers)
+                return
+            self.send_error(404)
+            return
         if normalized == "/api/service/sessions":
             handle_session_list_get(self)
             return
@@ -220,7 +257,8 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
             return
         try:
             ui_mode = getattr(self.server, "ui_mode", "production")  # type: ignore[attr-defined]
-            payload = build_ui_contract_payload(program_ir, ui_mode=ui_mode)
+            diagnostics_enabled = bool(getattr(self.server, "ui_diagnostics_enabled", False))  # type: ignore[attr-defined]
+            payload = build_ui_contract_payload(program_ir, ui_mode=ui_mode, diagnostics_enabled=diagnostics_enabled)
             if kind != "all":
                 payload = payload.get(kind, {})
             self._respond_json(payload, status=200, sort_keys=True)
@@ -254,7 +292,14 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
                 response = worker_pool.run_action(action_id, payload)
             else:
                 ui_mode = getattr(self.server, "ui_mode", "production")  # type: ignore[attr-defined]
-                response = dispatch_ui_action(program_ir, action_id=action_id, payload=payload, ui_mode=ui_mode)
+                diagnostics_enabled = bool(getattr(self.server, "ui_diagnostics_enabled", False))  # type: ignore[attr-defined]
+                response = dispatch_ui_action(
+                    program_ir,
+                    action_id=action_id,
+                    payload=payload,
+                    ui_mode=ui_mode,
+                    diagnostics_enabled=diagnostics_enabled,
+                )
             if isinstance(response, dict):
                 if worker_pool is not None:
                     response.setdefault("process_model", "worker_pool")

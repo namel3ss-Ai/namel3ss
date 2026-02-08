@@ -25,6 +25,9 @@ from namel3ss.runtime.ui.actions.ingestion_review import handle_ingestion_review
 from namel3ss.runtime.ui.actions.ingestion_run import handle_ingestion_run_action
 from namel3ss.runtime.ui.actions.ingestion_skip import handle_ingestion_skip_action
 from namel3ss.runtime.ui.actions.retrieval_run import handle_retrieval_run_action
+from namel3ss.runtime.ui.actions.scope_select import handle_scope_select_action
+from namel3ss.runtime.ui.actions.upload_clear import handle_upload_clear_action
+from namel3ss.runtime.ui.actions.upload_requirements import validate_required_uploads_for_flow
 from namel3ss.runtime.ui.actions.upload_select import handle_upload_select_action
 from namel3ss.runtime.ui.actions.upload_replace import handle_upload_replace_action
 from namel3ss.runtime.ui.actions.validate import (
@@ -45,7 +48,6 @@ _SIMPLE_ACTIONS = {
     "retrieval_run": handle_retrieval_run_action,
     "upload_replace": handle_upload_replace_action,
 }
-
 def handle_action(
     program_ir: ir.Program,
     *,
@@ -65,8 +67,8 @@ def handle_action(
     source: str | None = None,
     raise_on_error: bool = True,
     ui_mode: str = DISPLAY_MODE_STUDIO,
+    diagnostics_enabled: bool = False,
 ) -> tuple[dict, Exception | None]:
-    """Execute a UI action against the program."""
     start_time = time.time()
     if payload is not None and not isinstance(payload, dict):
         raise Namel3ssError(action_payload_message())
@@ -91,6 +93,7 @@ def handle_action(
         identity=identity,
         auth_context=auth_context,
         display_mode=ui_mode,
+        diagnostics_enabled=diagnostics_enabled,
     )
     actions: Dict[str, dict] = manifest.get("actions", {})
     if action_id not in actions:
@@ -131,6 +134,7 @@ def handle_action(
                 source=source,
                 raise_on_error=raise_on_error,
                 ui_mode=ui_mode,
+                diagnostics_enabled=diagnostics_enabled,
             )
             if action_error and raise_on_error:
                 raise action_error
@@ -169,6 +173,7 @@ def handle_action(
                     secret_values=secret_values,
                     source=source,
                     ui_mode=ui_mode,
+                    diagnostics_enabled=diagnostics_enabled,
                 )
             except Exception:
                 span_status = "error"
@@ -192,9 +197,36 @@ def handle_action(
                 auth_context=auth_context,
                 secret_values=secret_values,
             )
+        elif action_type == "upload_clear":
+            response = handle_upload_clear_action(
+                program_ir,
+                action=action,
+                action_id=action_id,
+                payload=payload or {},
+                state=working_state,
+                store=store,
+                runtime_theme=runtime_theme,
+                config=resolved_config,
+                identity=identity,
+                auth_context=auth_context,
+                secret_values=secret_values,
+            )
+        elif action_type == "scope_select":
+            response = handle_scope_select_action(
+                program_ir,
+                action=action,
+                action_id=action_id,
+                payload=payload or {},
+                state=working_state,
+                store=store,
+                runtime_theme=runtime_theme,
+                config=resolved_config,
+                identity=identity,
+                auth_context=auth_context,
+                secret_values=secret_values,
+            )
         elif action_type in _SIMPLE_ACTIONS:
-            response = _handle_simple_action(
-                _SIMPLE_ACTIONS[action_type],
+            response = _SIMPLE_ACTIONS[action_type](
                 program_ir,
                 action_id=action_id,
                 payload=payload or {},
@@ -238,34 +270,6 @@ def handle_action(
                 secret_values=secret_values,
             )
     return response
-
-def _handle_simple_action(
-    handler,
-    program_ir: ir.Program,
-    *,
-    action_id: str,
-    payload: dict,
-    state: dict,
-    store: Storage,
-    runtime_theme: Optional[str],
-    config: AppConfig | None,
-    identity: dict | None,
-    auth_context: object | None,
-    secret_values: list[str] | None,
-) -> dict:
-    return handler(
-        program_ir,
-        action_id=action_id,
-        payload=payload,
-        state=state,
-        store=store,
-        runtime_theme=runtime_theme,
-        config=config,
-        identity=identity,
-        auth_context=auth_context,
-        secret_values=secret_values,
-    )
-
 def _record_engine_error(
     project_root: str | Path | None,
     action_id: str,
@@ -287,13 +291,9 @@ def _record_engine_error(
         },
         secret_values=secret_values,
     )
-
-
 def _form_error_payload(errors: list[dict]) -> dict:
     details = {"error_id": "form_validation", "form_errors": errors}
     return build_error_payload("Form validation failed.", kind="runtime", details=details)
-
-
 def _handle_call_flow(
     program_ir: ir.Program,
     action: dict,
@@ -315,6 +315,7 @@ def _handle_call_flow(
     source: str | None = None,
     raise_on_error: bool = True,
     ui_mode: str = DISPLAY_MODE_STUDIO,
+    diagnostics_enabled: bool = False,
 ) -> dict:
     flow_name = action.get("flow")
     if not isinstance(flow_name, str):
@@ -326,6 +327,7 @@ def _handle_call_flow(
         value = payload.get(input_field)
         if not isinstance(value, str):
             raise Namel3ssError(text_input_type_message(input_field))
+    validate_required_uploads_for_flow(program_ir, flow_name, state)
     outcome = build_flow_payload(
         program_ir,
         flow_name,
@@ -363,12 +365,11 @@ def _handle_call_flow(
         identity=identity,
         auth_context=auth_context,
         display_mode=ui_mode,
+        diagnostics_enabled=diagnostics_enabled,
     )
     ensure_json_serializable(response)
     response = finalize_run_payload(response, secret_values)
     return response, None
-
-
 def _handle_submit_form(
     program_ir: ir.Program,
     action: dict,
@@ -384,6 +385,7 @@ def _handle_submit_form(
     secret_values: list[str] | None = None,
     source: str | None = None,
     ui_mode: str = DISPLAY_MODE_STUDIO,
+    diagnostics_enabled: bool = False,
 ) -> dict:
     payload = normalize_submit_payload(payload)
     record = action.get("record")
@@ -433,6 +435,7 @@ def _handle_submit_form(
             identity=identity,
             auth_context=auth_context,
             display_mode=ui_mode,
+            diagnostics_enabled=diagnostics_enabled,
         )
         ensure_json_serializable(response)
         response = finalize_run_payload(response, secret_values)
@@ -463,13 +466,13 @@ def _handle_submit_form(
             identity=identity,
             auth_context=auth_context,
             display_mode=ui_mode,
+            diagnostics_enabled=diagnostics_enabled,
         )
         response.pop("error", None)
         response.pop("message", None)
         ensure_json_serializable(response)
         response = finalize_run_payload(response, secret_values)
         return response
-
     record_id = saved.get("id") if isinstance(saved, dict) else None
     record_id = record_id or (saved.get("_id") if isinstance(saved, dict) else None)
     response = build_run_payload(
@@ -489,6 +492,7 @@ def _handle_submit_form(
         identity=identity,
         auth_context=auth_context,
         display_mode=ui_mode,
+        diagnostics_enabled=diagnostics_enabled,
     )
     ensure_json_serializable(response)
     response = finalize_run_payload(response, secret_values)

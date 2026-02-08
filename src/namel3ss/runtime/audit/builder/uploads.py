@@ -20,6 +20,11 @@ def upload_decisions(state: dict, upload_id: str | None) -> list[DecisionStep]:
     steps: list[DecisionStep] = []
     for upload_name in sorted(uploads.keys(), key=lambda item: str(item)):
         entries = uploads.get(upload_name)
+        if isinstance(entries, dict):
+            if _looks_like_upload_entry(entries):
+                entries = [entries]
+            else:
+                entries = [value for value in entries.values() if isinstance(value, dict)]
         if not isinstance(entries, list):
             continue
         for entry in sorted(entries, key=_upload_sort_key):
@@ -158,6 +163,12 @@ def _upload_checksum(entry: dict) -> str | None:
     if isinstance(value, str) and value:
         return value
     return None
+
+
+def _looks_like_upload_entry(entry: dict) -> bool:
+    identifier = entry.get("id") if isinstance(entry.get("id"), str) and entry.get("id") else entry.get("checksum")
+    name = entry.get("name")
+    return isinstance(identifier, str) and bool(identifier) and isinstance(name, str) and bool(name)
 
 
 __all__ = ["upload_decisions", "upload_trace_decisions"]

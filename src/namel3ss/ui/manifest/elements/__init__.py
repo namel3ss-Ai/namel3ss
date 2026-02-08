@@ -52,13 +52,14 @@ def _build_children(
         )
         elements.append(element)
         source_element_id = element.get("element_id") if isinstance(element, dict) else None
-        is_debug_only = bool(element.get("debug_only")) if isinstance(element, dict) else False
+        debug_only_value = element.get("debug_only") if isinstance(element, dict) else None
+        is_debug_only = bool(debug_only_value) and debug_only_value is not False
         if isinstance(source_element_id, str):
             for action_entry in child_actions.values():
                 if isinstance(action_entry, dict):
                     action_entry.setdefault("_source_element_id", source_element_id)
                     if is_debug_only:
-                        action_entry.setdefault("debug_only", True)
+                        action_entry.setdefault("debug_only", debug_only_value if isinstance(debug_only_value, str) else True)
         for action_id, action_entry in child_actions.items():
             if action_id in seen_before:
                 raise Namel3ssError(

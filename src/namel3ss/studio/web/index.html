@@ -6,6 +6,7 @@
   <title>Namel3ss Studio</title>
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/studio_ui.css">
+  <link rel="stylesheet" href="/studio_ui_integration.css">
   <link rel="stylesheet" href="/studio_panels.css">
   <link rel="stylesheet" href="/studio_deploy.css">
   <link rel="stylesheet" href="/theme_tokens.css">
@@ -119,6 +120,9 @@
       <section class="canvas-mode" data-mode="explain" aria-labelledby="dock-explain">
         <div id="explain" class="canvas-panel"></div>
       </section>
+      <section class="canvas-mode" data-mode="diagnostics" aria-labelledby="dock-diagnostics">
+        <div id="diagnostics" class="canvas-panel"></div>
+      </section>
       <section class="canvas-mode" data-mode="traces" aria-labelledby="dock-traces">
         <div class="canvas-panel">
           <div class="control-row">
@@ -205,6 +209,7 @@
       <button class="tab" data-tab="errors" id="dock-errors" data-testid="studio-dock-item-errors">Errors</button>
       <button class="tab" data-tab="formulas" id="dock-formulas" data-testid="studio-dock-item-formulas">Formulas</button>
       <button class="tab" data-tab="explain" id="dock-explain" data-testid="studio-dock-item-explain">Explain</button>
+      <button class="tab" data-tab="diagnostics" id="dock-diagnostics" data-testid="studio-dock-item-diagnostics">Diagnostics</button>
       <button class="tab" data-tab="traces" id="dock-traces" data-testid="studio-dock-item-traces">Traces</button>
       <button class="tab" data-tab="memory" id="dock-memory" data-testid="studio-dock-item-memory">Memory</button>
       <button class="tab" data-tab="agents" id="dock-agents" data-testid="studio-dock-item-agents">Agents</button>
@@ -232,6 +237,8 @@
   <script src="/ui_renderer_collections.js"></script>
   <script src="/ui_renderer_form.js"></script>
   <script src="/ui_renderer_chat.js"></script>
+  <script src="/ui_renderer_rag.js"></script>
+  <script src="/ui_renderer_upload.js"></script>
   <script src="/ui_renderer_chart.js"></script>
   <script src="/ui_renderer.js"></script>
   <script src="/theme_tokens.js"></script>
@@ -251,9 +258,11 @@
   <script src="/studio/tracing.js"></script>
   <script src="/studio/logs.js"></script>
   <script src="/studio/metrics.js"></script>
+  <script src="/studio/ui_warnings.js"></script>
   <script src="/studio/errors.js"></script>
   <script src="/studio/formulas.js"></script>
   <script src="/studio/explain.js"></script>
+  <script src="/studio/diagnostics.js"></script>
   <script src="/studio/memory.js"></script>
   <script src="/studio/agents/wizard.js"></script>
   <script src="/studio/agents/run.js"></script>

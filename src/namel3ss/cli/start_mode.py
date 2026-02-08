@@ -2,11 +2,15 @@ from __future__ import annotations
 
 import sys
 from dataclasses import dataclass
-from pathlib import Path
 
 from namel3ss.cli.app_path import resolve_app_path
 from namel3ss.cli.builds import load_build_metadata, resolve_build_id
 from namel3ss.cli.devex import parse_project_overrides
+from namel3ss.cli.headless_api_flags import (
+    extract_headless_api_flags,
+    resolve_headless_api_token,
+    resolve_headless_cors_origins,
+)
 from namel3ss.cli.targets import parse_target
 from namel3ss.cli.text_output import prepare_cli_text
 from namel3ss.errors.base import Namel3ssError
@@ -28,6 +32,9 @@ class _StartParams:
 def run_start_command(args: list[str]) -> int:
     try:
         overrides, remaining = parse_project_overrides(args)
+        remaining, headless_api = extract_headless_api_flags(remaining)
+        resolved_api_token = resolve_headless_api_token(headless_api.api_token)
+        resolved_cors_origins = resolve_headless_cors_origins(headless_api.cors_origins)
         params = _parse_args(remaining)
         if params.app_arg and overrides.app_path:
             raise Namel3ssError("App path was provided twice. Use either an explicit app path or --app.")
@@ -77,6 +84,8 @@ def run_start_command(args: list[str]) -> int:
             port=port,
             artifacts=artifacts if isinstance(artifacts, dict) else None,
             headless=params.headless,
+            headless_api_token=resolved_api_token,
+            headless_cors_origins=resolved_cors_origins,
         )
         print(f"Start: http://127.0.0.1:{port}/")
         print(f"Build: {build_id}")

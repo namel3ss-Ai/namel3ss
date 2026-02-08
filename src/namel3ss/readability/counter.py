@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from namel3ss.ast import nodes as ast
-from namel3ss.parser.sugar.phase2 import ClearStmt, NoticeStmt, SaveRecordStmt
-from namel3ss.parser.sugar.phase3 import ParallelVerbAgentsStmt, VerbAgentCallStmt
-from namel3ss.parser.sugar.phase4 import AttemptOtherwiseStmt
+from namel3ss.parser.sugar.agent_collaboration_statements import ParallelVerbAgentsStmt, VerbAgentCallStmt
+from namel3ss.parser.sugar.error_handling_statements import AttemptOtherwiseStmt
+from namel3ss.parser.sugar.state_record_statements import ClearStmt, NoticeStmt, SaveRecordStmt
 
 
 class FlowCounter:

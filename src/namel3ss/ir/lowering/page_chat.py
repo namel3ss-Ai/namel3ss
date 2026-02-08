@@ -5,6 +5,12 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
 from namel3ss.ir.lowering.expressions import _lower_expression
 from namel3ss.ir.lowering.flow_refs import unknown_flow_message
+from namel3ss.ir.lowering.page_rag import (
+    _lower_citation_chips_item,
+    _lower_scope_selector_item,
+    _lower_source_preview_item,
+    _lower_trust_indicator_item,
+)
 
 _ALLOWED_MEMORY_LANES = {"my", "team", "system"}
 
@@ -13,7 +19,17 @@ def _lower_chat_item(item: ast.ChatItem, flow_names: set[str], page_name: str, *
     children = [_lower_chat_child(child, flow_names, page_name, attach_origin=attach_origin) for child in item.children]
     if not children:
         raise Namel3ssError("Chat block has no entries", line=item.line, column=item.column)
-    return ir.ChatItem(children=children, line=item.line, column=item.column)
+    return ir.ChatItem(
+        children=children,
+        style=getattr(item, "style", "bubbles"),
+        show_avatars=bool(getattr(item, "show_avatars", False)),
+        group_messages=bool(getattr(item, "group_messages", True)),
+        actions=list(getattr(item, "actions", []) or []),
+        streaming=bool(getattr(item, "streaming", False)),
+        attachments=bool(getattr(item, "attachments", False)),
+        line=item.line,
+        column=item.column,
+    )
 
 
 def _lower_chat_child(child: ast.PageItem, flow_names: set[str], page_name: str, *, attach_origin) -> ir.PageItem:
@@ -64,7 +80,19 @@ def _lower_chat_child(child: ast.PageItem, flow_names: set[str], page_name: str,
         if lane is not None and lane not in _ALLOWED_MEMORY_LANES:
             raise Namel3ssError("Memory lane must be 'my', 'team', or 'system'", line=child.line, column=child.column)
         return attach_origin(ir.ChatMemoryItem(source=source, lane=lane, line=child.line, column=child.column), child)
-    raise Namel3ssError("Chat blocks may only contain messages, composer, thinking, citations, or memory", line=child.line, column=child.column)
+    if isinstance(child, ast.CitationChipsItem):
+        return _lower_citation_chips_item(child, attach_origin=attach_origin)
+    if isinstance(child, ast.SourcePreviewItem):
+        return _lower_source_preview_item(child, attach_origin=attach_origin)
+    if isinstance(child, ast.TrustIndicatorItem):
+        return _lower_trust_indicator_item(child, attach_origin=attach_origin)
+    if isinstance(child, ast.ScopeSelectorItem):
+        return _lower_scope_selector_item(child, attach_origin=attach_origin)
+    raise Namel3ssError(
+        "Chat blocks may only contain messages, composer, thinking, citations, trust_indicator, source_preview, scope_selector, or memory",
+        line=child.line,
+        column=child.column,
+    )
 
 
 __all__ = ["_lower_chat_item"]

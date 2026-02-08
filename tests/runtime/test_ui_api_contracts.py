@@ -26,6 +26,7 @@ def test_manifest_contract_collects_components_and_flows() -> None:
             "page.home.form.submit": {"type": "submit_form", "record": "User"},
         },
         "theme": {"current": "light"},
+        "diagnostics_enabled": True,
     }
 
     payload = build_ui_manifest_payload(manifest, revision="abc123")
@@ -34,7 +35,77 @@ def test_manifest_contract_collects_components_and_flows() -> None:
     assert payload["api_version"] == UI_API_VERSION
     assert payload["manifest"]["flows"] == ["echo"]
     assert payload["manifest"]["components"] == ["button", "form", "input"]
+    assert payload["manifest"]["diagnostics_enabled"] is True
     assert payload["revision"] == "abc123"
+
+
+def test_manifest_contract_collects_components_from_layout_pages() -> None:
+    manifest = {
+        "ok": True,
+        "pages": [
+            {
+                "name": "chat",
+                "layout": {
+                    "header": [{"type": "title"}],
+                    "sidebar_left": [{"type": "list"}],
+                    "main": [{"type": "chat", "children": [{"type": "messages"}, {"type": "composer"}]}],
+                    "drawer_right": [],
+                    "footer": [{"type": "text"}],
+                },
+            }
+        ],
+        "actions": {
+            "page.chat.composer.send": {"type": "call_flow", "flow": "send"},
+        },
+    }
+
+    payload = build_ui_manifest_payload(manifest)
+    assert payload["manifest"]["components"] == ["chat", "composer", "list", "messages", "text", "title"]
+
+
+def test_manifest_and_actions_contract_include_warnings() -> None:
+    warning = {
+        "code": "copy.missing_page_title",
+        "message": "Add a page title.",
+        "fix": "Declare a title at the top of the page.",
+        "path": "page.home",
+        "line": 10,
+        "column": 3,
+        "category": "copy",
+        "enforced_at": None,
+    }
+    manifest = {
+        "ok": True,
+        "pages": [{"name": "home", "elements": []}],
+        "actions": {"page.home.button.run": {"type": "call_flow", "flow": "run"}},
+        "warnings": [warning],
+    }
+
+    manifest_payload = build_ui_manifest_payload(manifest)
+    assert manifest_payload["manifest"]["warnings"] == [warning]
+
+    actions_payload = build_ui_actions_payload(manifest)
+    assert actions_payload["warnings"] == [warning]
+
+
+def test_manifest_contract_includes_upload_requests_when_available() -> None:
+    manifest = {
+        "ok": True,
+        "pages": [{"name": "home", "elements": [{"type": "upload", "name": "receipt"}]}],
+        "actions": {"page.home.upload.receipt": {"type": "upload_select", "name": "receipt"}},
+        "upload_requests": [
+            {
+                "name": "receipt",
+                "accept": ["application/pdf"],
+                "multiple": False,
+                "required": True,
+                "label": "Upload receipt",
+                "preview": True,
+            }
+        ],
+    }
+    payload = build_ui_manifest_payload(manifest)
+    assert payload["manifest"]["upload_requests"] == manifest["upload_requests"]
 
 
 def test_actions_contract_is_stable_list() -> None:

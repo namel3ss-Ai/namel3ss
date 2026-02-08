@@ -5,6 +5,7 @@ from typing import Iterable
 from namel3ss.ui.consistency_rules import collect_consistency_findings
 from namel3ss.ui.copy_rules import collect_copy_findings
 from namel3ss.ui.icon_rules import collect_icon_findings
+from namel3ss.ui.manifest.page_structure import page_root_elements
 from namel3ss.ui.layout_rules import (
     LayoutFinding,
     LayoutLocation,
@@ -28,7 +29,8 @@ from namel3ss.ui.story_tone_rules import collect_story_tone_findings
 from namel3ss.validation import add_warning
 
 
-def append_layout_warnings(pages: list[dict], warnings: list | None) -> None:
+def append_layout_warnings(pages: list[dict], warnings: list | None, context: dict | None = None) -> None:
+    del context
     if warnings is None:
         return
     findings = collect_layout_findings(pages)
@@ -47,7 +49,8 @@ def append_layout_warnings(pages: list[dict], warnings: list | None) -> None:
         )
 
 
-def append_copy_warnings(pages: list[dict], warnings: list | None) -> None:
+def append_copy_warnings(pages: list[dict], warnings: list | None, context: dict | None = None) -> None:
+    del context
     if warnings is None:
         return
     findings = collect_copy_findings(pages)
@@ -66,7 +69,28 @@ def append_copy_warnings(pages: list[dict], warnings: list | None) -> None:
         )
 
 
-def append_story_icon_warnings(pages: list[dict], warnings: list | None) -> None:
+def append_visibility_warnings(pages: list[dict], warnings: list | None, context: dict | None = None) -> None:
+    del context
+    if warnings is None:
+        return
+    findings = collect_visibility_findings(pages)
+    for finding in sorted(findings, key=lambda entry: entry.sort_key()):
+        location = finding.location
+        path = location.path or _page_path(location.page_slug)
+        add_warning(
+            warnings,
+            code=finding.code,
+            message=finding.message,
+            fix=finding.fix,
+            path=path,
+            line=location.line,
+            column=location.column,
+            category="visibility",
+        )
+
+
+def append_story_icon_warnings(pages: list[dict], warnings: list | None, context: dict | None = None) -> None:
+    del context
     if warnings is None:
         return
     findings = list(collect_story_tone_findings(pages))
@@ -87,7 +111,8 @@ def append_story_icon_warnings(pages: list[dict], warnings: list | None) -> None
         )
 
 
-def append_story_tone_warnings(pages: list[dict], warnings: list | None) -> None:
+def append_story_tone_warnings(pages: list[dict], warnings: list | None, context: dict | None = None) -> None:
+    del context
     if warnings is None:
         return
     findings = collect_story_tone_findings(pages)
@@ -106,7 +131,8 @@ def append_story_tone_warnings(pages: list[dict], warnings: list | None) -> None
         )
 
 
-def append_icon_warnings(pages: list[dict], warnings: list | None) -> None:
+def append_icon_warnings(pages: list[dict], warnings: list | None, context: dict | None = None) -> None:
+    del context
     if warnings is None:
         return
     findings = collect_icon_findings(pages)
@@ -125,7 +151,8 @@ def append_icon_warnings(pages: list[dict], warnings: list | None) -> None:
         )
 
 
-def append_consistency_warnings(pages: list[dict], warnings: list | None) -> None:
+def append_consistency_warnings(pages: list[dict], warnings: list | None, context: dict | None = None) -> None:
+    del context
     if warnings is None:
         return
     findings = collect_consistency_findings(pages)
@@ -152,7 +179,7 @@ def collect_layout_findings(pages: list[dict]) -> list[LayoutFinding]:
     for page in pages:
         page_name = str(page.get("name") or page.get("slug") or "page")
         page_slug = str(page.get("slug") or page_name)
-        elements = page.get("elements") or []
+        elements = page_root_elements(page)
         element_count, leaf_count = _page_counts(elements)
         page_location = LayoutLocation(page=page_name, page_slug=page_slug, path=_page_path(page_slug), line=None, column=None)
         flat = rule_flat_page_sprawl(
@@ -236,6 +263,42 @@ def collect_layout_findings(pages: list[dict]) -> list[LayoutFinding]:
 
     findings.extend(_record_representation_findings(record_representations))
     findings.extend(_record_column_findings(record_columns))
+    return findings
+
+
+def collect_visibility_findings(pages: list[dict]) -> list[LayoutFinding]:
+    findings: list[LayoutFinding] = []
+    for page in pages:
+        if not isinstance(page, dict):
+            continue
+        page_name = str(page.get("name") or page.get("slug") or "page")
+        page_slug = str(page.get("slug") or page_name)
+        root_elements = page_root_elements(page)
+
+        def walk(elements: list[dict], *, guarded: bool) -> None:
+            for element in elements:
+                if not isinstance(element, dict):
+                    continue
+                has_guard = isinstance(element.get("visibility"), dict)
+                if _warns_for_missing_guard(element, guarded=guarded, has_guard=has_guard):
+                    location = _element_location(page_name, page_slug, element)
+                    component = str(element.get("type") or "component")
+                    findings.append(
+                        LayoutFinding(
+                            code="visibility.missing_empty_state_guard",
+                            message=(
+                                f'{component.capitalize()} on page "{page_name}" may render empty-state copy '
+                                "without a visible guard."
+                            ),
+                            fix="Add `visible when state.<path> > 0` or set `empty_state: hidden`.",
+                            location=location,
+                        )
+                    )
+                children = element.get("children")
+                if isinstance(children, list):
+                    walk(children, guarded=guarded or has_guard)
+
+        walk(root_elements, guarded=False)
     return findings
 
 
@@ -355,12 +418,28 @@ def _pick_location(locations: list[LayoutLocation]) -> LayoutLocation:
     return sorted(locations, key=lambda entry: entry.sort_key())[0]
 
 
+def _warns_for_missing_guard(element: dict, *, guarded: bool, has_guard: bool) -> bool:
+    if guarded or has_guard:
+        return False
+    element_type = element.get("type")
+    if element_type not in {"list", "table"}:
+        return False
+    empty_state = element.get("empty_state")
+    if isinstance(empty_state, dict):
+        state_value = empty_state.get("state")
+        if isinstance(state_value, str) and state_value.strip().lower() == "hidden":
+            return False
+    return True
+
+
 __all__ = [
     "append_consistency_warnings",
     "append_copy_warnings",
     "append_icon_warnings",
     "append_layout_warnings",
+    "append_visibility_warnings",
     "append_story_icon_warnings",
     "append_story_tone_warnings",
     "collect_layout_findings",
+    "collect_visibility_findings",
 ]

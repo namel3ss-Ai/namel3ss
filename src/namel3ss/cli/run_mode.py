@@ -4,13 +4,17 @@ import sys
 from pathlib import Path
 
 from namel3ss.cli.app_loader import load_program
+from namel3ss.cli.headless_api_flags import (
+    extract_headless_api_flags,
+    resolve_headless_api_token,
+    resolve_headless_cors_origins,
+)
 from namel3ss.cli.app_path import default_missing_app_message, resolve_app_path
 from namel3ss.cli.devex import parse_project_overrides
 from namel3ss.cli.demo_support import DEMO_NAME, is_demo_project
 from namel3ss.cli.first_run import is_first_run
 from namel3ss.cli.run_helpers import detect_demo_provider, resolve_run_path
 from namel3ss.cli.open_url import open_url, should_open_url
-from namel3ss.cli.promotion_state import load_state
 from namel3ss.cli.runner import run_flow
 from namel3ss.cli.targets import parse_target
 from namel3ss.errors.base import Namel3ssError
@@ -36,6 +40,9 @@ def run_run_command(args: list[str]) -> int:
     first_run = is_first_run(None, args)
     try:
         overrides, remaining = parse_project_overrides(args)
+        remaining, headless_api = extract_headless_api_flags(remaining)
+        resolved_api_token = resolve_headless_api_token(headless_api.api_token)
+        resolved_cors_origins = resolve_headless_cors_origins(headless_api.cors_origins)
         params = _parse_args(remaining)
         if params.app_arg and overrides.app_path:
             raise Namel3ssError("App path was provided twice. Use either an explicit app path or --app.")
@@ -81,6 +88,8 @@ def run_run_command(args: list[str]) -> int:
                 watch_sources=False,
                 engine_target=target.name,
                 headless=params.headless,
+                headless_api_token=resolved_api_token,
+                headless_cors_origins=resolved_cors_origins,
             )
             try:
                 runner.bind()
@@ -117,6 +126,8 @@ def run_run_command(args: list[str]) -> int:
                 port=port,
                 auto_seed=bool(is_demo and first_run and not params.dry),
                 headless=params.headless,
+                headless_api_token=resolved_api_token,
+                headless_cors_origins=resolved_cors_origins,
                 require_service_capability=True,
             )
             if params.dry:

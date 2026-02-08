@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from namel3ss.ui.manifest.page_structure import page_root_elements
+
 
 TEXT_LENGTH_THRESHOLD = 200
 ACTION_LABEL_LENGTH_THRESHOLD = 40
@@ -89,7 +91,7 @@ def collect_copy_findings(pages: list[dict]) -> list[CopyFinding]:
     for page in pages:
         page_name = str(page.get("name") or page.get("slug") or "page")
         page_slug = str(page.get("slug") or page_name)
-        elements = page.get("elements") or []
+        elements = page_root_elements(page)
         if not _has_page_title(elements):
             findings.append(
                 rule_missing_page_title(

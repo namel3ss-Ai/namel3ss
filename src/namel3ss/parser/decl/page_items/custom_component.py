@@ -15,7 +15,7 @@ from namel3ss.parser.decl.page_common import (
     _validate_visibility_combo,
 )
 
-_COMPONENT_METADATA_KEYS = {"visibility", "visible_when", "when", "debug_only", "only"}
+_COMPONENT_METADATA_KEYS = {"visibility", "visible", "visible_when", "when", "debug_only", "only"}
 
 
 def parse_custom_component_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.CustomComponentItem:

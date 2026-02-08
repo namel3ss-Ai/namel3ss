@@ -304,7 +304,7 @@ def _is_attempt_otherwise(parser) -> bool:
 
 
 def _is_verb_agent_call(parser) -> bool:
-    from namel3ss.parser.sugar.phase3 import is_allowed_verb
+    from namel3ss.parser.sugar.agent_collaboration_statements import is_allowed_verb
 
     pos = parser.position
     tokens = parser.tokens

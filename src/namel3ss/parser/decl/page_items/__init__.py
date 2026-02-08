@@ -11,6 +11,7 @@ from . import custom_component as custom_component_mod
 from . import media as media_mod
 from . import numbers as numbers_mod
 from . import polish as polish_mod
+from . import rag as rag_mod
 from . import responsive as responsive_mod
 from . import story as story_mod
 from . import views as views_mod
@@ -105,7 +106,15 @@ def parse_page_item(
         return views_mod.parse_use_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "IDENT" and tok.value == "chat":
         return views_mod.parse_chat_item(parser, tok, allow_pattern_params=allow_pattern_params)
-    if tok.type == "IDENT" and tok.value in {"messages", "composer", "thinking", "citations"}:
+    if tok.type == "IDENT" and tok.value == "citations":
+        return rag_mod.parse_citation_chips_item(parser, tok, allow_pattern_params=allow_pattern_params)
+    if tok.type == "IDENT" and tok.value == "source_preview":
+        return rag_mod.parse_source_preview_item(parser, tok, allow_pattern_params=allow_pattern_params)
+    if tok.type == "IDENT" and tok.value == "trust_indicator":
+        return rag_mod.parse_trust_indicator_item(parser, tok, allow_pattern_params=allow_pattern_params)
+    if tok.type == "IDENT" and tok.value == "scope_selector":
+        return rag_mod.parse_scope_selector_item(parser, tok, allow_pattern_params=allow_pattern_params)
+    if tok.type == "IDENT" and tok.value in {"messages", "composer", "thinking"}:
         raise Namel3ssError("Chat elements must be inside a chat block", line=tok.line, column=tok.column)
     if tok.type == "MEMORY":
         raise Namel3ssError("Chat elements must be inside a chat block", line=tok.line, column=tok.column)

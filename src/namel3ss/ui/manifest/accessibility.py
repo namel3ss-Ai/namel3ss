@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Iterable
 
 from namel3ss.ui.fields import label_from_identifier
+from namel3ss.ui.manifest.page_structure import iter_page_element_lists
 
 
 _FIELD_ROLE_MAP: dict[str, str] = {
@@ -24,8 +25,9 @@ _FOCUSABLE_ROLES: set[str] = {"button", "link", "textbox", "checkbox", "spinbutt
 
 def apply_accessibility_contract(pages: list[dict]) -> None:
     for page in pages:
-        elements = page.get("elements") or []
-        _apply_elements(elements, tab_counter=0)
+        tab_counter = 0
+        for elements in iter_page_element_lists(page):
+            tab_counter = _apply_elements(elements, tab_counter=tab_counter)
 
 
 def _apply_elements(elements: list[dict], tab_counter: int) -> int:
@@ -134,7 +136,7 @@ def _accessibility_for_element(element: dict, kind: str) -> dict | None:
     if kind == "link":
         return _accessibility_with_label("link", element.get("label"))
     if kind == "upload":
-        return _accessibility_with_label("button", element.get("name"))
+        return _accessibility_with_label("button", element.get("label") or element.get("name"))
     if kind == "input":
         name = element.get("name")
         label = label_from_identifier(str(name)) if isinstance(name, str) else name

@@ -1,24 +1,24 @@
 {
   "actions": {
     "app.ingestion.review": {
+      "debug_only": true,
       "id": "app.ingestion.review",
-      "type": "ingestion_review",
-      "debug_only": true
+      "type": "ingestion_review"
     },
     "app.ingestion.skip": {
+      "debug_only": true,
       "id": "app.ingestion.skip",
-      "type": "ingestion_skip",
-      "debug_only": true
+      "type": "ingestion_skip"
     },
     "app.retrieval": {
+      "debug_only": true,
       "id": "app.retrieval",
-      "type": "retrieval_run",
-      "debug_only": true
+      "type": "retrieval_run"
     },
     "app.upload.replace": {
+      "debug_only": true,
       "id": "app.upload.replace",
-      "type": "upload_replace",
-      "debug_only": true
+      "type": "upload_replace"
     },
     "page.composition.button.run_ingestion": {
       "flow": "run_ingestion",
@@ -34,13 +34,20 @@
       "id": "page.composition.upload.intake",
       "multiple": false,
       "name": "intake",
+      "required": false,
       "type": "upload_select"
+    },
+    "page.composition.upload.intake.clear": {
+      "id": "page.composition.upload.intake.clear",
+      "name": "intake",
+      "type": "upload_clear"
     },
     "page.composition.upload.intake.ingestion": {
       "id": "page.composition.upload.intake.ingestion",
       "type": "ingestion_run"
     }
   },
+  "mode": "studio",
   "pages": [
     {
       "elements": [
@@ -143,20 +150,25 @@
             {
               "accept": [],
               "accessibility": {
-                "label": "intake",
+                "label": "Upload",
                 "role": "button",
                 "tab_order": 1
               },
               "action_id": "page.composition.upload.intake",
+              "clear_action_id": "page.composition.upload.intake.clear",
               "column": 5,
               "element_id": "page.composition.upload.3.1",
+              "files": [],
               "id": "page.composition.upload.intake",
               "index": 1,
+              "label": "Upload",
               "line": 158,
               "multiple": false,
               "name": "intake",
               "page": "composition",
               "page_slug": "composition",
+              "preview": false,
+              "required": false,
               "type": "upload"
             },
             {
@@ -241,6 +253,8 @@
               "value": "Submit a query, then run retrieval."
             },
             {
+              "actions": [],
+              "attachments": false,
               "children": [
                 {
                   "accessibility": {
@@ -270,15 +284,19 @@
               ],
               "column": 5,
               "element_id": "page.composition.chat.4.1",
+              "group_messages": true,
               "index": 1,
               "line": 169,
               "page": "composition",
               "page_slug": "composition",
+              "show_avatars": false,
               "spacing": {
                 "composer_gap": "m",
                 "message_gap": "m",
                 "section_gap": "m"
               },
+              "streaming": false,
+              "style": "bubbles",
               "type": "chat"
             },
             {
@@ -365,5 +383,36 @@
       "theme": "light"
     }
   },
-  "mode": "studio"
+  "upload_requests": [
+    {
+      "accept": [],
+      "label": "Upload",
+      "multiple": false,
+      "name": "intake",
+      "preview": false,
+      "required": false
+    }
+  ],
+  "warnings": [
+    {
+      "category": "visibility",
+      "code": "visibility.missing_empty_state_guard",
+      "column": 5,
+      "enforced_at": null,
+      "fix": "Add `visible when state.<path> > 0` or set `empty_state: hidden`.",
+      "line": 161,
+      "message": "Table on page \"composition\" may render empty-state copy without a visible guard.",
+      "path": "page.composition.table.3.3"
+    },
+    {
+      "category": "visibility",
+      "code": "visibility.missing_empty_state_guard",
+      "column": 5,
+      "enforced_at": null,
+      "fix": "Add `visible when state.<path> > 0` or set `empty_state: hidden`.",
+      "line": 171,
+      "message": "Table on page \"composition\" may render empty-state copy without a visible guard.",
+      "path": "page.composition.table.4.2"
+    }
+  ]
 }

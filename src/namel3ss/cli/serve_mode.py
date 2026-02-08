@@ -4,6 +4,11 @@ import sys
 
 from namel3ss.cli.app_path import default_missing_app_message, resolve_app_path
 from namel3ss.cli.devex import parse_project_overrides
+from namel3ss.cli.headless_api_flags import (
+    extract_headless_api_flags,
+    resolve_headless_api_token,
+    resolve_headless_cors_origins,
+)
 from namel3ss.cli.text_output import prepare_cli_text
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
@@ -32,6 +37,9 @@ class _ServeParams:
 def run_serve_command(args: list[str]) -> int:
     try:
         overrides, remaining = parse_project_overrides(args)
+        remaining, headless_api = extract_headless_api_flags(remaining)
+        resolved_api_token = resolve_headless_api_token(headless_api.api_token)
+        resolved_cors_origins = resolve_headless_cors_origins(headless_api.cors_origins)
         params = _parse_args(remaining)
         if params.app_arg and overrides.app_path:
             raise Namel3ssError("App path was provided twice. Use either an explicit app path or --app.")
@@ -52,6 +60,8 @@ def run_serve_command(args: list[str]) -> int:
             build_id=None,
             port=port,
             headless=params.headless,
+            headless_api_token=resolved_api_token,
+            headless_cors_origins=resolved_cors_origins,
             require_service_capability=True,
         )
         if params.dry:

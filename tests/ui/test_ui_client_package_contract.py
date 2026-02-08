@@ -16,5 +16,15 @@ def test_ui_client_package_contract_files_exist() -> None:
     assert payload["main"] == "src/index.js"
 
     source = entry.read_text(encoding="utf-8")
-    for token in ["getManifest", "getState", "getActions", "runAction", "/api/ui/manifest", "/api/ui/action"]:
+    for token in [
+        "getManifest",
+        "getState",
+        "getActions",
+        "runAction",
+        "/api/v1/ui",
+        "/api/v1/actions/",
+        "/api/ui/manifest",
+        "/api/ui/action",
+        "X-API-Token",
+    ]:
         assert token in source

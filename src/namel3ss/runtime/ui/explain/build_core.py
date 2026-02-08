@@ -5,6 +5,7 @@ from pathlib import Path
 from namel3ss.cli.app_loader import load_program
 from namel3ss.cli.ui_mode import render_manifest
 from namel3ss.config.loader import load_config
+from namel3ss.ui.manifest.page_structure import page_root_elements
 from namel3ss.runtime.identity.context import resolve_identity
 
 from .build_redaction import _bound_to, _element_fix_hint, _element_label
@@ -108,6 +109,10 @@ def _build_actions(manifest: dict, flow_requires: dict[str, object], identity: d
             reasons.append("retrieval run (quality-aware ordering)")
         if action_type == "upload_replace":
             reasons.append("upload replace (placeholder)")
+        if action_type == "upload_clear":
+            reasons.append("upload clear (remove selected files)")
+        if action_type == "scope_select":
+            reasons.append("scope selector updates active retrieval sources")
         items.append(
             UIActionState(
                 id=action_id,
@@ -132,7 +137,7 @@ def _build_pages(manifest: dict, actions: list[UIActionState]) -> tuple[list[UIE
         page_name = page.get("name") or ""
         counter = 0
         elements: list[dict] = []
-        for element in _walk_elements(page.get("elements") or []):
+        for element in _walk_elements(_page_elements(page)):
             counter += 1
             state = _element_state(page_name, counter, element, action_map)
             element_states.append(state)
@@ -222,6 +227,10 @@ def _walk_elements(elements: list[dict]) -> list[dict]:
         if isinstance(children, list) and children:
             items.extend(_walk_elements(children))
     return items
+
+
+def _page_elements(page: dict) -> list[dict]:
+    return [entry for entry in page_root_elements(page) if isinstance(entry, dict)]
 
 
 def _enabled_from_status(status: str) -> bool | None:

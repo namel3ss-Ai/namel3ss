@@ -29,6 +29,7 @@ STUDIO_WEB_ASSETS = (
     "ui_renderer.js",
     "ui_renderer_chart.js",
     "ui_renderer_chat.js",
+    "ui_renderer_upload.js",
     "ui_renderer_collections.js",
     "ui_renderer_form.js",
 )

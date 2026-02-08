@@ -8,12 +8,14 @@ def test_studio_html_structure():
     assert "/studio/explain.js" in html
     assert "/studio/agents/index.js" in html
     assert "/studio/agents/wizard.js" in html
+    assert "/studio_ui_integration.css" in html
     guidance_idx = html.index("/studio/guidance.js")
     dom_idx = html.index("/studio/dom.js")
     action_result_idx = html.index("/studio/action_result.js")
+    warnings_idx = html.index("/studio/ui_warnings.js")
     errors_idx = html.index("/studio/errors.js")
     run_idx = html.index("/studio/run.js")
-    assert guidance_idx < dom_idx < errors_idx
+    assert guidance_idx < dom_idx < warnings_idx < errors_idx
     assert action_result_idx < run_idx
     for label in [
         "Preview",
@@ -22,6 +24,7 @@ def test_studio_html_structure():
         "Errors",
         "Formulas",
         "Explain",
+        "Diagnostics",
         "Traces",
         "Memory",
         "Agents",
@@ -60,6 +63,7 @@ def test_studio_html_structure():
         "errors",
         "formulas",
         "explain",
+        "diagnostics",
         "errorBanner",
         "traces",
         "tracesFilter",
@@ -73,6 +77,7 @@ def test_studio_html_structure():
         "dock-errors",
         "dock-formulas",
         "dock-explain",
+        "dock-diagnostics",
         "dock-agents",
         "studioMenu",
         "toast",
@@ -159,3 +164,12 @@ def test_studio_codeblock_renderer():
     assert "audio.controls = true" in js
     css = Path("src/namel3ss/studio/web/styles.css").read_text(encoding="utf-8")
     assert ".n3-codeblock" in css
+
+
+def test_studio_plugin_assets_and_custom_component_hooks():
+    js = Path("src/namel3ss/studio/web/ui_renderer.js").read_text(encoding="utf-8")
+    assert "ensurePluginAssets" in js
+    assert "loadPluginScript" in js
+    assert "loadPluginStyle" in js
+    assert "n3:plugin-component" in js
+    assert 'el.type === "custom_component"' in js

@@ -16,6 +16,7 @@ def parse_list_block(parser, *, allow_pattern_params: bool = False):
     variant = None
     item = None
     empty_text = None
+    empty_state_hidden = False
     selection = None
     actions = None
     visibility_rule = None
@@ -60,13 +61,13 @@ def parse_list_block(parser, *, allow_pattern_params: bool = False):
             item = _parse_list_item_block(parser, tok.line, tok.column)
             continue
         if tok.type == "IDENT" and tok.value == "empty_state":
-            if empty_text is not None:
+            if empty_text is not None or empty_state_hidden:
                 raise Namel3ssError("Empty state is declared more than once", line=tok.line, column=tok.column)
             parser._advance()
-            empty_text = _parse_empty_state_block(parser, allow_pattern_params=allow_pattern_params)
+            empty_text, empty_state_hidden = _parse_empty_state_block(parser, allow_pattern_params=allow_pattern_params)
             continue
         if tok.type == "IDENT" and tok.value == "empty_text":
-            if empty_text is not None:
+            if empty_text is not None or empty_state_hidden:
                 raise Namel3ssError("Empty state is declared more than once", line=tok.line, column=tok.column)
             parser._advance()
             parser._expect("IS", "Expected 'is' after empty_text")
@@ -110,7 +111,7 @@ def parse_list_block(parser, *, allow_pattern_params: bool = False):
             column=tok.column,
         )
     parser._expect("DEDENT", "Expected end of list block")
-    return variant, item, empty_text, selection, actions, visibility_rule
+    return variant, item, empty_text, empty_state_hidden, selection, actions, visibility_rule
 
 
 def _parse_list_item_block(parser, line: int, column: int) -> ast.ListItemMapping:
@@ -181,8 +182,39 @@ def _parse_list_item_block(parser, line: int, column: int) -> ast.ListItemMappin
     )
 
 
-def _parse_empty_state_block(parser, *, allow_pattern_params: bool = False) -> str:
+def _parse_empty_state_block(parser, *, allow_pattern_params: bool = False) -> tuple[str | None, bool]:
     parser._expect("COLON", "Expected ':' after empty_state")
+    tok = parser._current()
+    if tok.type != "NEWLINE":
+        if tok.type == "BOOLEAN":
+            parser._advance()
+            if bool(tok.value):
+                raise Namel3ssError(
+                    "empty_state inline value only supports hidden or false.",
+                    line=tok.line,
+                    column=tok.column,
+                )
+            if parser._current().type not in {"NEWLINE", "DEDENT", "COLON"}:
+                extra = parser._current()
+                raise Namel3ssError("empty_state inline value must end at the line boundary.", line=extra.line, column=extra.column)
+            return None, True
+        if tok.type in {"IDENT", "STRING"}:
+            parser._advance()
+            if str(tok.value).strip().lower() != "hidden":
+                raise Namel3ssError(
+                    "empty_state inline value only supports hidden or false.",
+                    line=tok.line,
+                    column=tok.column,
+                )
+            if parser._current().type not in {"NEWLINE", "DEDENT", "COLON"}:
+                extra = parser._current()
+                raise Namel3ssError("empty_state inline value must end at the line boundary.", line=extra.line, column=extra.column)
+            return None, True
+        raise Namel3ssError(
+            "empty_state must be a text block or set to hidden/false.",
+            line=tok.line,
+            column=tok.column,
+        )
     parser._expect("NEWLINE", "Expected newline after empty_state")
     if not parser._match("INDENT"):
         tok = parser._current()
@@ -206,7 +238,7 @@ def _parse_empty_state_block(parser, *, allow_pattern_params: bool = False) -> s
     if text_value is None:
         tok = parser._current()
         raise Namel3ssError("Empty state block has no entries", line=tok.line, column=tok.column)
-    return text_value
+    return text_value, False
 
 
 def _parse_list_actions_block(parser, *, allow_pattern_params: bool) -> List[ast.ListAction]:

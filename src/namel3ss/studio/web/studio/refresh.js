@@ -4,9 +4,17 @@
   const dom = root.dom;
   const net = root.net;
   const refresh = root.refresh || (root.refresh = {});
+  const LAYOUT_SLOTS = ["header", "sidebar_left", "main", "drawer_right", "footer"];
 
   function applyThemeFromManifest(manifest) {
     const theme = (manifest && manifest.theme) || {};
+    if (typeof applyThemeBundle === "function") {
+      applyThemeBundle(theme);
+      const setting = theme.current || theme.setting || "system";
+      state.setThemeSetting(theme.setting || setting);
+      state.setRuntimeTheme(setting);
+      return;
+    }
     const setting = theme.current || theme.setting || "system";
     state.setThemeSetting(theme.setting || setting);
     state.setRuntimeTheme(setting);
@@ -38,13 +46,19 @@
     if (root.menu && root.menu.updateMenuState) {
       root.menu.updateMenuState();
     }
+    if (root.errors && typeof root.errors.renderErrors === "function") {
+      root.errors.renderErrors();
+    }
+    if (root.diagnostics && typeof root.diagnostics.renderDiagnostics === "function") {
+      root.diagnostics.renderDiagnostics();
+    }
   }
 
   function updateAppNameFromManifest(manifest) {
     const label = document.getElementById("appName");
     if (!label || !manifest || !manifest.pages) return;
     for (const page of manifest.pages) {
-      const queue = Array.isArray(page.elements) ? [...page.elements] : [];
+      const queue = pageRootElements(page);
       while (queue.length) {
         const element = queue.shift();
         if (!element) continue;
@@ -57,6 +71,21 @@
         }
       }
     }
+  }
+
+  function pageRootElements(page) {
+    if (!page || typeof page !== "object") return [];
+    if (page.layout && typeof page.layout === "object") {
+      const elements = [];
+      LAYOUT_SLOTS.forEach((slot) => {
+        const slotElements = page.layout[slot];
+        if (Array.isArray(slotElements)) {
+          elements.push(...slotElements);
+        }
+      });
+      return elements;
+    }
+    return Array.isArray(page.elements) ? [...page.elements] : [];
   }
 
   function setManifestError(detail) {

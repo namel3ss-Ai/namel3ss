@@ -78,7 +78,7 @@ flow "demo":
     assert sugar_dump == core_dump
 
 
-def test_phase3_ir_is_deterministic() -> None:
+def test_agent_collaboration_ir_is_deterministic() -> None:
     source = '''
 ai "mock":
   model is "mock"

@@ -33,6 +33,8 @@ hooks:
 min_api_version: 1
 signature: "optional-signature"
 module: renderer.py
+asset_js: assets/runtime.js
+asset_css: assets/style.css
 components:
   - name: TimelinePanel
     props:
@@ -57,6 +59,16 @@ Supported hook types:
 - `compiler`
 - `runtime`
 - `studio`
+
+Optional asset keys:
+
+- `asset_js`: string or list of JS asset paths bundled with the extension.
+- `asset_css`: string or list of CSS asset paths bundled with the extension.
+
+Assets must resolve to files under the extension root and are exposed through deterministic runtime URLs:
+
+- `/api/plugins/<plugin>/assets/js/<path>`
+- `/api/plugins/<plugin>/assets/css/<path>`
 
 ## Trust model
 

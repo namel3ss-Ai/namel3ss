@@ -50,7 +50,19 @@ def _count_upload_entries(uploads: object) -> int:
     for entry in uploads.values():
         if isinstance(entry, list):
             total += len(entry)
+            continue
+        if isinstance(entry, dict):
+            if _looks_like_upload_entry(entry):
+                total += 1
+            else:
+                total += sum(1 for value in entry.values() if isinstance(value, dict))
     return total
+
+
+def _looks_like_upload_entry(entry: dict) -> bool:
+    identifier = entry.get("id") if isinstance(entry.get("id"), str) and entry.get("id") else entry.get("checksum")
+    name = entry.get("name")
+    return isinstance(identifier, str) and bool(identifier) and isinstance(name, str) and bool(name)
 
 
 __all__ = ["build_inputs"]

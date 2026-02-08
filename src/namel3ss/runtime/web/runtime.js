@@ -13,6 +13,7 @@
   const overlayCard = overlay ? overlay.querySelector(".overlay-card") : null;
   const statusLabel = document.getElementById("runtimeStatus");
   const appLabel = document.getElementById("appLabel");
+  const LAYOUT_SLOTS = ["header", "sidebar_left", "main", "drawer_right", "footer"];
 
   const state = {
     manifest: null,
@@ -51,7 +52,7 @@
   function updateAppLabel(manifest) {
     if (!appLabel || !manifest || !manifest.pages) return;
     for (const page of manifest.pages) {
-      const queue = Array.isArray(page.elements) ? [...page.elements] : [];
+      const queue = pageRootElements(page);
       while (queue.length) {
         const element = queue.shift();
         if (!element) continue;
@@ -66,8 +67,27 @@
     }
   }
 
+  function pageRootElements(page) {
+    if (!page || typeof page !== "object") return [];
+    if (page.layout && typeof page.layout === "object") {
+      const elements = [];
+      LAYOUT_SLOTS.forEach((slot) => {
+        const slotElements = page.layout[slot];
+        if (Array.isArray(slotElements)) {
+          elements.push(...slotElements);
+        }
+      });
+      return elements;
+    }
+    return Array.isArray(page.elements) ? [...page.elements] : [];
+  }
+
   function applyThemeFromManifest(manifest) {
     const theme = (manifest && manifest.theme) || {};
+    if (typeof applyThemeBundle === "function") {
+      applyThemeBundle(theme);
+      return;
+    }
     const setting = theme.current || theme.setting || "light";
     if (typeof applyTheme === "function") applyTheme(setting);
     if (typeof applyThemeTokens === "function") applyThemeTokens(theme.tokens || {}, setting);

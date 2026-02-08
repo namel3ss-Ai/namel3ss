@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.ui.manifest.page_structure import iter_page_element_lists
 
 
 def normalize_columns(
@@ -37,8 +38,7 @@ def apply_responsive_layout_to_pages(pages: list[dict], *, breakpoint_names: tup
     for page in pages:
         if not isinstance(page, dict):
             continue
-        elements = page.get("elements")
-        if isinstance(elements, list):
+        for elements in iter_page_element_lists(page):
             _apply_to_elements(elements, breakpoint_count=count)
 
 

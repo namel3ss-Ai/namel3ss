@@ -21,11 +21,11 @@ from namel3ss.parser.sugar.lowering.sugar_statements import (
     _lower_start_run,
     _lower_timeline,
 )
-from namel3ss.parser.sugar.lowering.phase3 import (
+from namel3ss.parser.sugar.lowering.agent_collaboration_lowering import (
     _lower_parallel_verb_agents,
     _lower_verb_agent_call,
 )
-from namel3ss.parser.sugar.lowering.phase4 import _lower_attempt_otherwise
+from namel3ss.parser.sugar.lowering.error_handling_lowering import _lower_attempt_otherwise
 
 
 def _lower_statements(statements: list[ast.Statement]) -> list[ast.Statement]:

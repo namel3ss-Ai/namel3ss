@@ -7,6 +7,16 @@ from urllib.parse import urlparse
 from namel3ss.config.loader import load_config
 from namel3ss.errors.payload import build_error_payload
 from namel3ss.runtime.server.dev.state import BrowserAppState
+from namel3ss.runtime.server.headless_state_api import (
+    handle_stateful_headless_get,
+    handle_stateful_headless_options,
+    handle_stateful_headless_post,
+)
+from namel3ss.runtime.server.plugin_assets import (
+    plugin_asset_headers,
+    request_etag_matches as plugin_request_etag_matches,
+    resolve_plugin_asset,
+)
 from namel3ss.runtime.router.dispatch import dispatch_route
 from namel3ss.runtime.router.refresh import refresh_routes
 from namel3ss.runtime.router.registry import RouteRegistry
@@ -33,6 +43,10 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
         path = parsed.path
+        if path.startswith("/api/v"):
+            body = self._read_json_body()
+            if handle_stateful_headless_post(self, path=path, body=body):
+                return
         if path == "/api/ui/action":
             body = self._read_json_body()
             if body is None:
@@ -70,7 +84,32 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
             return
         self.send_error(404)
 
+    def do_OPTIONS(self) -> None:  # noqa: N802
+        path = urlparse(self.path).path
+        if handle_stateful_headless_options(self, path=path):
+            return
+        self.send_error(404)
+
     def _handle_api_get(self, path: str, raw_path: str) -> None:
+        if handle_stateful_headless_get(self, path=path, body_path=raw_path):
+            return
+        if path.startswith("/api/plugins/"):
+            state = self._state()
+            state._refresh_if_needed()
+            asset = resolve_plugin_asset(state.program, path)
+            if asset is None:
+                self.send_error(404)
+                return
+            payload, content_type = asset
+            headers = plugin_asset_headers(payload)
+            if plugin_request_etag_matches(dict(self.headers.items()), headers["ETag"]):
+                self.send_response(304)
+                for key, value in headers.items():
+                    self.send_header(key, value)
+                self.end_headers()
+                return
+            core.respond_bytes(self, payload, status=200, content_type=content_type, headers=headers)
+            return
         if answer_explain.handle_answer_explain_get(self, path):
             return
         if studio.handle_session_get(self, path):
@@ -170,6 +209,9 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
 
     def _source_payload(self) -> dict:
         return self._state()._source_payload()
+
+    def _auth_context_or_error(self, *, kind: str):
+        return studio._auth_context_or_error(self, kind=kind)
 
 
 __all__ = ["BrowserRequestHandler"]

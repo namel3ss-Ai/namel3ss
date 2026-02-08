@@ -255,6 +255,12 @@ def _upload_reasons(element: dict) -> list[str]:
     multiple = element.get("multiple")
     if isinstance(multiple, bool):
         reasons.append(f"multiple: {str(multiple).lower()}")
+    required = element.get("required")
+    if isinstance(required, bool):
+        reasons.append(f"required: {str(required).lower()}")
+    preview = element.get("preview")
+    if isinstance(preview, bool):
+        reasons.append(f"preview: {str(preview).lower()}")
     return reasons
 
 

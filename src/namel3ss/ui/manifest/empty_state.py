@@ -4,17 +4,22 @@ from __future__ import annotations
 # Keeps manifest deterministic and ensures empty collections render an empty state.
 _DEFAULT_EMPTY_STATE_LIST = {"title": "No items", "text": "There are no items to display."}
 _DEFAULT_EMPTY_STATE_TABLE = {"title": "No rows", "text": "There are no rows to display."}
+_HIDDEN_EMPTY_STATE = {"state": "hidden"}
 
 
-def _empty_state_for_list(empty_text: str | None) -> dict:
+def _empty_state_for_list(empty_text: str | None, *, hidden: bool = False) -> dict:
     """Return deterministic empty_state dict for a list element."""
+    if hidden:
+        return dict(_HIDDEN_EMPTY_STATE)
     if empty_text:
         return {"title": "No items", "text": empty_text}
     return dict(_DEFAULT_EMPTY_STATE_LIST)
 
 
-def _empty_state_for_table(empty_text: str | None) -> dict:
+def _empty_state_for_table(empty_text: str | None, *, hidden: bool = False) -> dict:
     """Return deterministic empty_state dict for a table element."""
+    if hidden:
+        return dict(_HIDDEN_EMPTY_STATE)
     if empty_text:
         return {"title": "No rows", "text": empty_text}
     return dict(_DEFAULT_EMPTY_STATE_TABLE)

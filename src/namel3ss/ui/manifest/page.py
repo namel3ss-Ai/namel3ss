@@ -11,6 +11,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.foreign.intent import build_foreign_functions_intent
 from namel3ss.foreign.policy import foreign_policy_mode
 from namel3ss.ir import nodes as ir
+from namel3ss.page_layout import PAGE_LAYOUT_SLOT_ORDER
 from namel3ss.flow_contract import validate_declarative_flows
 from namel3ss.media import MediaValidationMode, media_registry, media_root_for_program
 from namel3ss.runtime.identity.guards import build_guard_context, enforce_requires
@@ -37,17 +38,19 @@ from namel3ss.ui.manifest.display_mode import DISPLAY_MODE_STUDIO
 from namel3ss.ui.manifest.elements import _build_children
 from namel3ss.ui.manifest.filter_mode import apply_display_mode_filter
 from namel3ss.ui.manifest.navigation import select_active_page
+from namel3ss.ui.manifest.plugin_assets import build_plugin_assets_manifest
+from namel3ss.ui.manifest.upload_analysis import (
+    collect_upload_reference_names,
+    collect_upload_requests,
+)
+from namel3ss.ui.manifest.upload_manifest import inject_default_upload_control, public_upload_request
 from namel3ss.ui.manifest.state_defaults import StateContext, StateDefaults
 from namel3ss.ui.manifest.status import select_status_items
-from namel3ss.ui.manifest.validation import (
-    append_copy_warnings,
-    append_consistency_warnings,
-    append_layout_warnings,
-    append_story_icon_warnings,
-)
+from namel3ss.ui.manifest.visibility import evaluate_visibility
+from namel3ss.ui.manifest.warning_pipeline import append_manifest_warnings
 from namel3ss.ui.responsive import apply_responsive_layout_to_pages
 from namel3ss.ui.spacing import apply_spacing_to_pages
-from namel3ss.ui.settings import UI_ALLOWED_VALUES, UI_DEFAULTS, normalize_ui_settings, validate_ui_contrast
+from namel3ss.ui.settings import UI_DEFAULTS, UI_RUNTIME_THEME_VALUES, normalize_ui_settings, validate_ui_contrast
 from namel3ss.validation import ValidationMode
 
 
@@ -66,6 +69,7 @@ def build_manifest(
     state_defaults: dict | None = None,
     media_mode: MediaValidationMode | str | None = None,
     display_mode: str = DISPLAY_MODE_STUDIO,
+    diagnostics_enabled: bool = False,
 ) -> dict:
     mode = ValidationMode.from_value(mode)
     media_mode = MediaValidationMode.from_value(media_mode)
@@ -95,8 +99,8 @@ def build_manifest(
     state_base = deepcopy(state or {})
     raw_ui_settings = getattr(program, "ui_settings", None)
     ui_settings = normalize_ui_settings(raw_ui_settings)
-    theme_setting = ui_settings.get("theme", getattr(program, "theme", UI_DEFAULTS["theme"]))
-    allowed_themes = set(UI_ALLOWED_VALUES.get("theme", ()))
+    theme_setting = getattr(program, "theme", UI_DEFAULTS["theme"])
+    allowed_themes = set(UI_RUNTIME_THEME_VALUES)
     theme_current = runtime_theme if runtime_theme in allowed_themes else theme_setting
     persisted_theme_normalized = persisted_theme if persisted_theme in allowed_themes else None
     effective = resolve_effective_theme(theme_current, False, None)
@@ -112,6 +116,11 @@ def build_manifest(
     responsive_layout = getattr(program, "responsive_layout", None)
     breakpoint_names = tuple(getattr(getattr(responsive_layout, "breakpoints", None), "names", ()) or ())
     breakpoint_values = tuple(getattr(getattr(responsive_layout, "breakpoints", None), "values", ()) or ())
+    capabilities = tuple(getattr(program, "capabilities", ()) or ())
+    diagnostics_enabled = bool(diagnostics_enabled or display_mode == DISPLAY_MODE_STUDIO)
+    upload_requests_with_location = collect_upload_requests(program)
+    upload_requests = [public_upload_request(entry) for entry in upload_requests_with_location]
+    upload_reference_names = tuple(sorted(collect_upload_reference_names(program)))
     store_for_build = store if (mode == ValidationMode.RUNTIME or store is not None) else None
     for page in program.pages:
         page_defaults_raw = getattr(page, "state_defaults", None)
@@ -119,6 +128,17 @@ def build_manifest(
         state_ctx = StateContext(deepcopy(state_base), defaults)
         setattr(state_ctx, "ui_plugin_registry", ui_plugin_registry)
         setattr(state_ctx, "theme_tokens", getattr(program, "theme_tokens", {}) or {})
+        page_visible, _ = evaluate_visibility(
+            getattr(page, "visibility", None),
+            getattr(page, "visibility_rule", None),
+            state_ctx,
+            mode,
+            warnings,
+            line=getattr(page, "line", None),
+            column=getattr(page, "column", None),
+        )
+        if not page_visible:
+            continue
         enforce_requires(
             build_guard_context(identity=identity, state=state_ctx.state, auth_context=auth_context),
             getattr(page, "requires", None),
@@ -129,6 +149,8 @@ def build_manifest(
             warnings=warnings,
         )
         page_slug = _slugify(page.name)
+        page_layout = getattr(page, "layout", None)
+        page_is_diagnostics = bool(getattr(page, "diagnostics", False))
         status_items = select_status_items(
             getattr(page, "status", None),
             state_ctx,
@@ -137,23 +159,82 @@ def build_manifest(
             line=page.line,
             column=page.column,
         )
-        items = status_items if status_items is not None else page.items
-        elements, action_entries = _build_children(
-            items,
-            record_map,
-            page.name,
-            page_slug,
-            [],
-            store_for_build,
-            identity,
-            state_ctx,
-            mode,
-            media_index,
-            media_mode,
-            warnings,
-            taken_actions,
-        )
-        _wire_overlay_actions(elements, action_entries)
+        action_entries: Dict[str, dict] = {}
+        page_payload: dict
+        if status_items is not None or page_layout is None:
+            items = status_items if status_items is not None else page.items
+            elements, action_entries = _build_children(
+                items,
+                record_map,
+                page.name,
+                page_slug,
+                [],
+                store_for_build,
+                identity,
+                state_ctx,
+                mode,
+                media_index,
+                media_mode,
+                warnings,
+                taken_actions,
+            )
+            _wire_overlay_actions(elements, action_entries)
+            page_payload = {
+                "name": page.name,
+                "slug": page_slug,
+                "elements": elements,
+            }
+        else:
+            layout_payload: dict[str, list[dict]] = {}
+            top_level_layout_elements: list[dict] = []
+            diagnostics_elements: list[dict] = []
+            for slot_index, slot_name in enumerate(PAGE_LAYOUT_SLOT_ORDER):
+                slot_items = getattr(page_layout, slot_name, None) or []
+                slot_elements, slot_actions = _build_children(
+                    slot_items,
+                    record_map,
+                    page.name,
+                    page_slug,
+                    [slot_index],
+                    store_for_build,
+                    identity,
+                    state_ctx,
+                    mode,
+                    media_index,
+                    media_mode,
+                    warnings,
+                    taken_actions,
+                )
+                layout_payload[slot_name] = slot_elements
+                top_level_layout_elements.extend(slot_elements)
+                action_entries.update(slot_actions)
+            diagnostics_items = getattr(page_layout, "diagnostics", None) or []
+            if diagnostics_items:
+                diagnostics_elements, diagnostics_actions = _build_children(
+                    diagnostics_items,
+                    record_map,
+                    page.name,
+                    page_slug,
+                    [len(PAGE_LAYOUT_SLOT_ORDER)],
+                    store_for_build,
+                    identity,
+                    state_ctx,
+                    mode,
+                    media_index,
+                    media_mode,
+                    warnings,
+                    taken_actions,
+                )
+                action_entries.update(diagnostics_actions)
+                _wire_overlay_actions(diagnostics_elements, action_entries)
+            _wire_overlay_actions(top_level_layout_elements, action_entries)
+            page_payload = {
+                "name": page.name,
+                "slug": page_slug,
+                "layout": layout_payload,
+            }
+            if diagnostics_elements:
+                page_payload["diagnostics_blocks"] = diagnostics_elements
         for action_id, action_entry in action_entries.items():
             if action_id in actions:
                 raise Namel3ssError(
@@ -162,20 +243,36 @@ def build_manifest(
                     column=page.column,
                 )
             actions[action_id] = action_entry
-        pages.append(
-            {
-                "name": page.name,
-                "slug": page_slug,
-                "elements": elements,
-            }
-        )
-        if getattr(page, "debug_only", None):
+        pages.append(page_payload)
+        if page_is_diagnostics:
+            pages[-1]["diagnostics"] = True
+        page_debug_only = getattr(page, "debug_only", None)
+        if page_debug_only is False:
+            pages[-1]["debug_only"] = False
+        elif isinstance(page_debug_only, str):
+            pages[-1]["debug_only"] = page_debug_only
+        elif page_debug_only:
             pages[-1]["debug_only"] = True
         if getattr(page, "purpose", None):
             pages[-1]["purpose"] = page.purpose
         defaults_snapshot = state_ctx.defaults_snapshot()
         if defaults_snapshot:
             manifest_state_defaults_pages[page_slug] = defaults_snapshot
+    warning_context = {
+        "capabilities": capabilities,
+        "upload_requests": upload_requests_with_location,
+        "upload_reference_names": upload_reference_names,
+    }
+    injected_upload = inject_default_upload_control(
+        pages=pages,
+        actions=actions,
+        taken_actions=taken_actions,
+        state=state_base,
+        capabilities=capabilities,
+        display_mode=display_mode,
+    )
+    if injected_upload:
+        warning_context["studio_injected_upload"] = True
     navigation_state = StateContext(deepcopy(state_base), StateDefaults(app_defaults))
     navigation = select_active_page(
         getattr(program, "ui_active_page_rules", None),
@@ -188,11 +285,8 @@ def build_manifest(
     if theme_current != theme_setting:
         validate_ui_contrast(theme_current, ui_settings.get("accent_color", ""), None)
     apply_accessibility_contract(pages)
-    append_layout_warnings(pages, warnings)
-    append_copy_warnings(pages, warnings)
-    append_story_icon_warnings(pages, warnings)
-    append_consistency_warnings(pages, warnings)
-    if "uploads" in (getattr(program, "capabilities", ()) or ()):
+    append_manifest_warnings(pages, warnings, context=warning_context)
+    if "uploads" in capabilities:
         _add_system_action(actions, taken_actions, _retrieval_action_id(), "retrieval_run")
         _add_system_action(actions, taken_actions, _ingestion_review_action_id(), "ingestion_review")
         _add_system_action(actions, taken_actions, _ingestion_skip_action_id(), "ingestion_skip")
@@ -220,9 +314,18 @@ def build_manifest(
     theme_preference = dict(getattr(program, "theme_preference", {"allow_override": False, "persist": "none"}) or {})
     if has_theme_definition:
         theme_preference.setdefault("storage_key", "namel3ss_theme")
+    legacy_theme_tokens = dict(getattr(program, "theme_tokens", {}) or {})
+    visual_theme_tokens = dict(getattr(program, "ui_visual_theme_tokens", {}) or {})
+    merged_theme_tokens = dict(legacy_theme_tokens)
+    merged_theme_tokens.update(visual_theme_tokens)
+    visual_theme_name = str(getattr(program, "ui_visual_theme_name", "default") or "default")
+    visual_theme_css = str(getattr(program, "ui_visual_theme_css", "") or "")
+    visual_theme_css_hash = str(getattr(program, "ui_visual_theme_css_hash", "") or "")
+    visual_theme_font_url = getattr(program, "ui_visual_theme_font_url", None)
     manifest = {
         "pages": pages,
         "actions": actions,
+        "diagnostics_enabled": diagnostics_enabled,
         "theme": {
             "schema_version": ui_schema_version,
             "setting": theme_setting,
@@ -231,7 +334,11 @@ def build_manifest(
             "effective": effective.value,
             "source": source,
             "runtime_supported": getattr(program, "theme_runtime_supported", False),
-            "tokens": getattr(program, "theme_tokens", {}),
+            "theme_name": visual_theme_name,
+            "tokens": merged_theme_tokens,
+            "runtime_tokens": legacy_theme_tokens,
+            "css": visual_theme_css,
+            "css_hash": visual_theme_css_hash,
             "preference": theme_preference,
         },
         "ui": {
@@ -239,6 +346,13 @@ def build_manifest(
             "settings": ui_settings,
         },
     }
+    plugin_assets = build_plugin_assets_manifest(ui_plugin_registry)
+    if plugin_assets:
+        manifest["ui"]["plugins"] = plugin_assets
+    if isinstance(visual_theme_font_url, str) and visual_theme_font_url:
+        manifest["theme"]["font_url"] = visual_theme_font_url
+    if upload_requests:
+        manifest["upload_requests"] = upload_requests
     hook_manager = getattr(program, "extension_hook_manager", None)
     if display_mode == DISPLAY_MODE_STUDIO and hook_manager is not None:
         session_id = None
@@ -295,7 +409,11 @@ def build_manifest(
         manifest["foreign_functions"] = foreign_intent
     if app_defaults or manifest_state_defaults_pages:
         manifest["state_defaults"] = {"app": deepcopy(app_defaults) if app_defaults else {}, "pages": manifest_state_defaults_pages}
-    return apply_display_mode_filter(manifest, display_mode=display_mode)
+    return apply_display_mode_filter(
+        manifest,
+        display_mode=display_mode,
+        diagnostics_enabled=diagnostics_enabled,
+    )
 
 
 def _resolve_persistence(store: Storage | None) -> dict:

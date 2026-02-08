@@ -1,0 +1,12 @@
+{
+  "primary_color": "#004E89",
+  "secondary_color": "#7A869A",
+  "background_color": "#F7F9FC",
+  "foreground_color": "#172B4D",
+  "font_family": "Source Sans 3, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+  "font_size_base": 14,
+  "font_weight": 500,
+  "spacing_scale": 1.15,
+  "border_radius": 8,
+  "shadow_level": 1
+}

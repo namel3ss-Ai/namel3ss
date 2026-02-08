@@ -17,19 +17,39 @@ from namel3ss.parser.decl.page_common import (
     _validate_visibility_combo,
 )
 from namel3ss.parser.decl.record import _FIELD_NAME_TOKENS, type_from_token
+from namel3ss.parser.decl.page_items.rag import (
+    parse_citation_chips_item,
+    parse_scope_selector_item,
+    parse_source_preview_item,
+    parse_trust_indicator_item,
+)
+from namel3ss.parser.decl.page_chat_options import ChatOptions, parse_chat_option_line
 
 _ALLOWED_MEMORY_LANES = {"my", "team", "system"}
 
 
-def parse_chat_block(parser, *, allow_pattern_params: bool = False) -> tuple[List[ast.PageItem], ast.VisibilityRule | None]:
+def parse_chat_block(
+    parser,
+    *,
+    allow_pattern_params: bool = False,
+) -> tuple[List[ast.PageItem], ast.VisibilityRule | None, ChatOptions]:
     parser._expect("NEWLINE", "Expected newline after chat")
     parser._expect("INDENT", "Expected indented chat block")
     items: List[ast.PageItem] = []
     visibility_rule: ast.VisibilityRule | None = None
+    options = ChatOptions()
+    seen_options: set[str] = set()
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
         tok = parser._current()
+        if parse_chat_option_line(
+            parser,
+            options,
+            seen_options,
+            allow_pattern_params=allow_pattern_params,
+        ):
+            continue
         if _is_visibility_rule_start(parser):
             if visibility_rule is not None:
                 raise Namel3ssError("Visibility blocks may only declare one only-when rule.", line=tok.line, column=tok.column)
@@ -46,17 +66,30 @@ def parse_chat_block(parser, *, allow_pattern_params: bool = False) -> tuple[Lis
             items.append(_parse_thinking(parser, allow_pattern_params=allow_pattern_params))
             continue
         if tok.type == "IDENT" and tok.value == "citations":
-            items.append(_parse_citations(parser, allow_pattern_params=allow_pattern_params))
+            items.append(_parse_citations_or_chips(parser, allow_pattern_params=allow_pattern_params))
+            continue
+        if tok.type == "IDENT" and tok.value == "trust_indicator":
+            items.append(parse_trust_indicator_item(parser, tok, allow_pattern_params=allow_pattern_params))
+            continue
+        if tok.type == "IDENT" and tok.value == "scope_selector":
+            items.append(parse_scope_selector_item(parser, tok, allow_pattern_params=allow_pattern_params))
+            continue
+        if tok.type == "IDENT" and tok.value == "source_preview":
+            items.append(parse_source_preview_item(parser, tok, allow_pattern_params=allow_pattern_params))
             continue
         if tok.type == "MEMORY" or (tok.type == "IDENT" and tok.value == "memory"):
             items.append(_parse_memory(parser, allow_pattern_params=allow_pattern_params))
             continue
-        raise Namel3ssError("Chat blocks may only contain messages, composer, thinking, citations, or memory", line=tok.line, column=tok.column)
+        raise Namel3ssError(
+            "Chat blocks may only contain messages, composer, thinking, citations, trust_indicator, source_preview, scope_selector, or memory",
+            line=tok.line,
+            column=tok.column,
+        )
     parser._expect("DEDENT", "Expected end of chat block")
     if not items:
         tok = parser._current()
         raise Namel3ssError("Chat block has no entries", line=tok.line, column=tok.column)
-    return items, visibility_rule
+    return items, visibility_rule, options
 
 
 def _parse_messages(parser, *, allow_pattern_params: bool) -> ast.ChatMessagesItem:
@@ -264,7 +297,7 @@ def _register_composer_field(field: ast.ChatComposerField, seen: set[str]) -> No
 def _parse_thinking(parser, *, allow_pattern_params: bool) -> ast.ChatThinkingItem:
     tok = parser._advance()
     parser._expect("WHEN", "Expected 'when' after thinking")
-    parser._expect("IS", "Expected 'is' after thinking when")
+    parser._match("IS")
     when = _parse_state_path_value(parser, allow_pattern_params=allow_pattern_params)
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
@@ -302,6 +335,18 @@ def _parse_citations(parser, *, allow_pattern_params: bool) -> ast.ChatCitations
         line=tok.line,
         column=tok.column,
     )
+
+
+def _parse_citations_or_chips(parser, *, allow_pattern_params: bool) -> ast.PageItem:
+    token_index = parser.position
+    next_index = token_index + 1
+    from_tok = parser.tokens[next_index] if next_index < len(parser.tokens) else parser._current()
+    if from_tok.type == "IDENT" and from_tok.value == "from":
+        value_index = next_index + 1
+        value_tok = parser.tokens[value_index] if value_index < len(parser.tokens) else from_tok
+        if value_tok.type == "IS":
+            return _parse_citations(parser, allow_pattern_params=allow_pattern_params)
+    return parse_citation_chips_item(parser, parser._current(), allow_pattern_params=allow_pattern_params)
 
 
 def _parse_memory(parser, *, allow_pattern_params: bool) -> ast.ChatMemoryItem:

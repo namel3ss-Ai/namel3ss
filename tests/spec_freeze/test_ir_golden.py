@@ -4,7 +4,7 @@ import json
 
 from namel3ss.ir.nodes import lower_program
 from namel3ss.parser.core import parse
-from namel3ss.spec_freeze.v1.rules import IR_GOLDEN_DIR
+from namel3ss.spec_freeze.contracts.rules import IR_GOLDEN_DIR
 from tests.spec_freeze.helpers.ir_dump import dump_ir
 from tests.spec_freeze.helpers.samples import sample_sources
 

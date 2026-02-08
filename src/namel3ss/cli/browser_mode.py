@@ -5,6 +5,11 @@ from dataclasses import dataclass
 
 from namel3ss.cli.app_path import default_missing_app_message, resolve_app_path
 from namel3ss.cli.devex import parse_project_overrides
+from namel3ss.cli.headless_api_flags import (
+    extract_headless_api_flags,
+    resolve_headless_api_token,
+    resolve_headless_cors_origins,
+)
 from namel3ss.cli.open_url import open_url, should_open_url
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
@@ -34,6 +39,9 @@ def run_preview_command(args: list[str]) -> int:
 def _run_browser_command(mode: str, args: list[str]) -> int:
     try:
         overrides, remaining = parse_project_overrides(args)
+        remaining, headless_api = extract_headless_api_flags(remaining)
+        resolved_api_token = resolve_headless_api_token(headless_api.api_token)
+        resolved_cors_origins = resolve_headless_cors_origins(headless_api.cors_origins)
         params = _parse_args(remaining, allow_debug=mode == "dev")
         app_path = resolve_app_path(
             params.app_arg or overrides.app_path,
@@ -42,7 +50,15 @@ def _run_browser_command(mode: str, args: list[str]) -> int:
             missing_message=default_missing_app_message(mode),
         )
         port = params.port or DEFAULT_BROWSER_PORT
-        runner = BrowserRunner(app_path, mode=mode, port=port, debug=params.debug, headless=params.headless)
+        runner = BrowserRunner(
+            app_path,
+            mode=mode,
+            port=port,
+            debug=params.debug,
+            headless=params.headless,
+            headless_api_token=resolved_api_token,
+            headless_cors_origins=resolved_cors_origins,
+        )
         if params.headless:
             url = f"http://127.0.0.1:{runner.bound_port}/api/ui/manifest"
         else:

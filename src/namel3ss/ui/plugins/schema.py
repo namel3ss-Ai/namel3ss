@@ -31,6 +31,8 @@ class UIPluginSchema:
     plugin_root: Path
     module_path: Path
     components: tuple[UIPluginComponentSchema, ...]
+    asset_js: tuple[str, ...] = tuple()
+    asset_css: tuple[str, ...] = tuple()
     capabilities: tuple[str, ...] = tuple()
     permissions: tuple[str, ...] = ("legacy_full_access",)
     hooks: tuple[tuple[str, str], ...] = tuple()
@@ -80,6 +82,8 @@ def parse_plugin_manifest(payload: object, *, source_path: Path, plugin_root: Pa
         raise Namel3ssError(_manifest_error(source_path, "module must be a non-empty string when components are present"))
 
     capabilities = _parse_capabilities(payload.get("capabilities"), source_path=source_path)
+    asset_js = _parse_asset_paths(payload.get("asset_js"), source_path=source_path, plugin_root=plugin_root, field="asset_js")
+    asset_css = _parse_asset_paths(payload.get("asset_css"), source_path=source_path, plugin_root=plugin_root, field="asset_css")
     permissions = parse_extension_permissions(
         payload.get("permissions"),
         source_label=source_path.as_posix(),
@@ -100,6 +104,8 @@ def parse_plugin_manifest(payload: object, *, source_path: Path, plugin_root: Pa
         plugin_root=plugin_root.resolve(),
         module_path=module_path,
         components=tuple(components),
+        asset_js=asset_js,
+        asset_css=asset_css,
         capabilities=capabilities,
         permissions=permissions,
         hooks=hooks,
@@ -293,6 +299,34 @@ def _resolve_module_path(raw_value: object, *, source_path: Path, plugin_root: P
     if not isinstance(raw_value, str) or not raw_value.strip():
         raise Namel3ssError(_manifest_error(source_path, "module must be a non-empty string"))
     return (plugin_root / raw_value).resolve()
+
+
+def _parse_asset_paths(raw_value: object, *, source_path: Path, plugin_root: Path, field: str) -> tuple[str, ...]:
+    if raw_value is None:
+        return tuple()
+    raw_items: list[object]
+    if isinstance(raw_value, str):
+        raw_items = [raw_value]
+    elif isinstance(raw_value, list):
+        raw_items = list(raw_value)
+    else:
+        raise Namel3ssError(_manifest_error(source_path, f"{field} must be a string or list of strings"))
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for index, item in enumerate(raw_items):
+        if not isinstance(item, str) or not item.strip():
+            raise Namel3ssError(_manifest_error(source_path, f"{field}[{index}] must be a non-empty string"))
+        rel_path = item.strip().replace("\\", "/").lstrip("/")
+        if ".." in Path(rel_path).parts:
+            raise Namel3ssError(_manifest_error(source_path, f"{field}[{index}] cannot contain '..' segments"))
+        if rel_path in seen:
+            continue
+        resolved = (plugin_root / rel_path).resolve()
+        if not resolved.exists() or not resolved.is_file():
+            raise Namel3ssError(_manifest_error(source_path, f"{field}[{index}] file '{rel_path}' was not found"))
+        seen.add(rel_path)
+        normalized.append(rel_path)
+    return tuple(normalized)
 
 
 def _manifest_error(source_path: Path, detail: str) -> str:

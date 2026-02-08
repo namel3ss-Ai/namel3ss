@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-# Phase 0 freeze rules for tests.
+# Spec freeze rules for tests.
 # These constants define what counts as a breaking change in frozen outputs.
 
-PHASE0_ROOT = Path("tests/fixtures/core_examples")
-PARSER_GOLDEN_DIR = PHASE0_ROOT / "parser"
-IR_GOLDEN_DIR = PHASE0_ROOT / "ir"
-RUNTIME_GOLDEN_DIR = PHASE0_ROOT / "runtime"
+CORE_EXAMPLES_ROOT = Path("tests/fixtures/core_examples")
+PARSER_GOLDEN_DIR = CORE_EXAMPLES_ROOT / "parser"
+IR_GOLDEN_DIR = CORE_EXAMPLES_ROOT / "ir"
+RUNTIME_GOLDEN_DIR = CORE_EXAMPLES_ROOT / "runtime"
 
 BRACKET_CHARS = ("(", ")", "[", "]", "{", "}")
 HUMAN_TEXT_KEYS = ("what", "because")
@@ -40,7 +40,7 @@ __all__ = [
     "NORMALIZED_VALUE",
     "PARSER_GOLDEN_DIR",
     "PATH_KEYS",
-    "PHASE0_ROOT",
+    "CORE_EXAMPLES_ROOT",
     "RUNTIME_GOLDEN_DIR",
     "has_bracket_chars",
 ]

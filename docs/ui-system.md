@@ -5,9 +5,11 @@ There is no CSS or per-component styling. The runtime owns layout, typography, a
 
 ## Mental model
 - Pages are structured documents: title, intro text, sections, cards, and rows.
+- Pages may also use deterministic layout slots (`header`, `sidebar_left`, `main`, `drawer_right`, `footer`).
 - Records power forms, tables, lists, charts, and views.
 - Flows power actions; the UI never runs logic on its own.
 - UI settings are presets: theme, density, motion, shape, and surface.
+- UI also supports deterministic visual themes (`default`, `modern`, `minimal`, `corporate`) and token overrides (colors, font, spacing, radius, shadow).
 
 ## Beautiful by default
 - Structure is grouped and readable.
@@ -29,6 +31,39 @@ Warnings are guidance, not errors. They surface in:
 - `/api/actions` and `n3 app.ai actions --json` under `warnings`
 
 Each warning includes `code`, `message`, `fix`, `path`, `line`, `column`, and `category`.
+
+## Deterministic Warning Pipeline
+UI warnings are evaluated in a fixed order during manifest build:
+1. `layout`
+2. `upload`
+3. `visibility`
+4. `diagnostics`
+5. `copy`
+6. `story_icon`
+7. `consistency`
+
+Each stage uses stable sorting by code and location, so the same `.ai` input produces the same warning list across runs.
+
+## Golden Baselines
+Use the baseline suite to lock UI manifest and CSS contracts for representative apps (chat, drawer layouts, conditional sections, uploads):
+- `python -m pytest -q tests/ui/test_ui_manifest_baseline.py tests/ui/test_warning_pipeline.py tests/ui/test_layout_primitives.py tests/ui/test_layout_responsive.py`
+
+To refresh committed UI baseline snapshots intentionally:
+- `UPDATE_UI_MANIFEST_BASELINES=1 python -m pytest -q tests/ui/test_ui_manifest_baseline.py`
+
+CI runs these tests and fails on snapshot diffs or warning-order regressions.
+
+## Diagnostics vs Product UI
+- Keep end-user UI in regular page elements/layout slots.
+- Put traces/explain content in `layout.diagnostics` or pages marked `diagnostics is true`.
+- Production hides diagnostics by default.
+- Studio exposes diagnostics with a `Show Explain` toggle.
+- `n3 run --diagnostics <app.ai>` enables diagnostics rendering outside Studio.
+
+## Theming
+- Visual theme selection is declarative under `ui:`.
+- Theme token overrides are validated and compiled into deterministic CSS with a stable hash.
+- Runtime applies compiled CSS and tokens without reload; font loading uses a deterministic URL with fallback to system fonts.
 
 ## Templates
 Templates live in `src/namel3ss/templates/` and show the full UI system:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import threading
 from http.server import HTTPServer
 from pathlib import Path
@@ -8,6 +9,8 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.dev_server import BrowserAppState
 from namel3ss.runtime.server.concurrency import create_runtime_http_server, load_concurrency_config
+from namel3ss.runtime.server.headless_api import normalize_api_token, normalize_cors_origins
+from namel3ss.runtime.server.prod.headless_routes import HeadlessProductionRequestHandler
 from namel3ss.runtime.server.prod.security_requirements import build_tls_context_if_required
 from namel3ss.runtime.server.prod.routes import ProductionRequestHandler
 from namel3ss.runtime.router.refresh import refresh_routes
@@ -29,6 +32,8 @@ class ProductionRunner:
         port: int = DEFAULT_START_PORT,
         artifacts: dict | None = None,
         headless: bool = False,
+        headless_api_token: str | None = None,
+        headless_cors_origins: tuple[str, ...] | None = None,
     ) -> None:
         self.build_path = Path(build_path).resolve()
         self.app_path = Path(app_path).resolve()
@@ -36,6 +41,11 @@ class ProductionRunner:
         self.target = target
         self.port = port or DEFAULT_START_PORT
         self.headless = headless
+        self.headless_api_token = normalize_api_token(headless_api_token or os.getenv("N3_HEADLESS_API_TOKEN"))
+        if headless_cors_origins:
+            self.headless_cors_origins = normalize_cors_origins(headless_cors_origins)
+        else:
+            self.headless_cors_origins = normalize_cors_origins(os.getenv("N3_HEADLESS_CORS_ORIGINS"))
         self.server: HTTPServer | None = None
         self._thread: threading.Thread | None = None
         self.artifacts = artifacts or {}
@@ -52,7 +62,8 @@ class ProductionRunner:
         )
 
     def start(self, *, background: bool = False) -> None:
-        server = create_runtime_http_server("0.0.0.0", self.port, ProductionRequestHandler, config=self.concurrency)
+        handler = HeadlessProductionRequestHandler if self.headless else ProductionRequestHandler
+        server = create_runtime_http_server("0.0.0.0", self.port, handler, config=self.concurrency)
         tls_context = build_tls_context_if_required(project_root=self.app_path.parent, app_path=self.app_path)
         if tls_context is not None:
             server.socket = tls_context.wrap_socket(server.socket, server_side=True)
@@ -63,6 +74,8 @@ class ProductionRunner:
         server.build_id = self.build_id  # type: ignore[attr-defined]
         server.web_root = self.web_root  # type: ignore[attr-defined]
         server.headless = self.headless  # type: ignore[attr-defined]
+        server.headless_api_token = self.headless_api_token  # type: ignore[attr-defined]
+        server.headless_cors_origins = self.headless_cors_origins  # type: ignore[attr-defined]
         server.app_state = self.app_state  # type: ignore[attr-defined]
         server.concurrency = self.concurrency.to_dict()  # type: ignore[attr-defined]
         self.app_state._refresh_if_needed()

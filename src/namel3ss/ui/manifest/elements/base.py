@@ -18,7 +18,12 @@ def _base_element(element_id: str, page_name: str, page_slug: str, index: int, i
         "line": item.line,
         "column": item.column,
     }
-    if getattr(item, "debug_only", None):
+    debug_only = getattr(item, "debug_only", None)
+    if debug_only is False:
+        element["debug_only"] = False
+    elif isinstance(debug_only, str):
+        element["debug_only"] = debug_only
+    elif debug_only:
         element["debug_only"] = True
     return element
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from namel3ss.ast import nodes as ast
-from namel3ss.parser.sugar import phase3 as sugar
+from namel3ss.parser.sugar import agent_collaboration_statements as sugar
 from namel3ss.parser.sugar.lowering.expressions import _lower_expression
 
 

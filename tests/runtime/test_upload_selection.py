@@ -65,7 +65,8 @@ page "home":
     )
 
     uploads = response["state"]["uploads"]["receipt"]
-    entry = uploads[0]
+    assert isinstance(uploads, dict)
+    entry = uploads[metadata["checksum"]]
     assert entry["id"] == metadata["checksum"]
     assert entry["name"] == metadata["name"]
     assert entry["size"] == metadata["bytes"]
@@ -105,7 +106,8 @@ page "home":
     )
 
     uploads = response["state"]["uploads"]["receipt"]
-    assert [entry["checksum"] for entry in uploads] == [first["checksum"], second["checksum"]]
+    assert isinstance(uploads, dict)
+    assert list(uploads.keys()) == [first["checksum"], second["checksum"]]
 
 
 def test_upload_selection_single_replaces(tmp_path: Path) -> None:
@@ -137,7 +139,9 @@ page "home":
     )
 
     uploads = response["state"]["uploads"]["receipt"]
-    entry = uploads[0]
+    assert isinstance(uploads, dict)
+    assert list(uploads.keys()) == [second["checksum"]]
+    entry = uploads[second["checksum"]]
     assert entry["id"] == second["checksum"]
     assert entry["name"] == second["name"]
     assert entry["size"] == second["bytes"]
@@ -165,3 +169,94 @@ page "home":
             store=MemoryStore(),
         )
     assert "upload selection" in str(exc.value).lower()
+
+
+def test_upload_clear_action_removes_entry(tmp_path: Path) -> None:
+    source = '''
+spec is "1.0"
+
+page "home":
+  upload receipt:
+    multiple is true
+'''.lstrip()
+    program = lower_ir_program(source)
+    manifest = build_manifest(program, state={}, store=MemoryStore())
+    action_id = next(
+        action_id
+        for action_id, entry in manifest.get("actions", {}).items()
+        if entry.get("type") == "upload_select"
+    )
+    clear_id = next(
+        action_id
+        for action_id, entry in manifest.get("actions", {}).items()
+        if entry.get("type") == "upload_clear"
+    )
+    first = _upload_metadata(tmp_path, b"first", filename="first.txt")
+    second = _upload_metadata(tmp_path, b"second", filename="second.txt")
+    state: dict = {}
+    handle_action(
+        program,
+        action_id=action_id,
+        payload={"upload": first},
+        state=state,
+        store=MemoryStore(),
+    )
+    handle_action(
+        program,
+        action_id=action_id,
+        payload={"upload": second},
+        state=state,
+        store=MemoryStore(),
+    )
+    response = handle_action(
+        program,
+        action_id=clear_id,
+        payload={"upload_id": first["checksum"]},
+        state=state,
+        store=MemoryStore(),
+    )
+    uploads = response["state"]["uploads"]["receipt"]
+    assert list(uploads.keys()) == [second["checksum"]]
+
+
+def test_required_uploads_gate_flow_execution(tmp_path: Path) -> None:
+    source = '''
+spec is "1.0"
+
+flow "submit":
+  let files is state.uploads.receipt
+  return "ok"
+
+page "home":
+  upload receipt:
+    required is true
+  button "Submit":
+    calls flow "submit"
+'''.lstrip()
+    program = lower_ir_program(source)
+    manifest = build_manifest(program, state={}, store=MemoryStore())
+    action_id = next(
+        action_id
+        for action_id, entry in manifest.get("actions", {}).items()
+        if entry.get("type") == "call_flow"
+    )
+    with pytest.raises(Namel3ssError) as exc:
+        handle_action(
+            program,
+            action_id=action_id,
+            payload={},
+            state={},
+            store=MemoryStore(),
+        )
+    assert "required upload selection is missing" in str(exc.value).lower()
+
+    metadata = _upload_metadata(tmp_path, b"ok", filename="receipt.txt")
+    state = {"uploads": {"receipt": [metadata]}}
+    response = handle_action(
+        program,
+        action_id=action_id,
+        payload={},
+        state=state,
+        store=MemoryStore(),
+    )
+    assert response.get("ok") is True

@@ -5,6 +5,7 @@ import threading
 from http.server import HTTPServer
 from pathlib import Path
 
+from namel3ss.diagnostics_mode import parse_diagnostics_flag
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
@@ -17,6 +18,7 @@ from namel3ss.runtime.router.registry import RouteRegistry
 from namel3ss.runtime.security.retention_loop import run_retention_loop
 from namel3ss.runtime.server.cluster_control import ClusterControlPlane
 from namel3ss.runtime.server.concurrency import create_runtime_http_server, load_concurrency_config
+from namel3ss.runtime.server.headless_api import normalize_api_token, normalize_cors_origins
 from namel3ss.runtime.server.handlers import ServiceRequestHandler
 from namel3ss.runtime.server.session_manager import DEFAULT_IDLE_TIMEOUT_SECONDS, ServiceSessionManager
 from namel3ss.runtime.server.service_process_model import configure_server_process_model
@@ -41,6 +43,8 @@ class ServiceRunner:
         auto_seed: bool = False,
         seed_flow: str = "seed_demo",
         headless: bool = False,
+        headless_api_token: str | None = None,
+        headless_cors_origins: tuple[str, ...] | None = None,
         ui_mode: str | None = None,
         require_service_capability: bool = False,
     ):
@@ -51,10 +55,16 @@ class ServiceRunner:
         self.auto_seed = auto_seed
         self.seed_flow = seed_flow
         self.headless = headless
+        self.headless_api_token = normalize_api_token(headless_api_token or os.getenv("N3_HEADLESS_API_TOKEN"))
+        if headless_cors_origins:
+            self.headless_cors_origins = normalize_cors_origins(headless_cors_origins)
+        else:
+            self.headless_cors_origins = normalize_cors_origins(os.getenv("N3_HEADLESS_CORS_ORIGINS"))
         self.require_service_capability = bool(require_service_capability)
         env_mode = os.getenv("N3_UI_MODE")
         chosen_ui_mode = ui_mode if ui_mode is not None else env_mode
         self.ui_mode = normalize_display_mode(chosen_ui_mode, default=DISPLAY_MODE_PRODUCTION)
+        self.diagnostics_enabled = parse_diagnostics_flag(os.getenv("N3_UI_DIAGNOSTICS"))
         self.server: HTTPServer | None = None
         self._thread: threading.Thread | None = None
         self._trigger_thread: threading.Thread | None = None
@@ -101,9 +111,12 @@ class ServiceRunner:
             app_path=self.app_path,
             concurrency=self.concurrency,
             ui_mode=self.ui_mode,
+            diagnostics_enabled=self.diagnostics_enabled,
         )
         server.concurrency = self.concurrency.to_dict()  # type: ignore[attr-defined]
         server.headless = self.headless  # type: ignore[attr-defined]
+        server.headless_api_token = self.headless_api_token  # type: ignore[attr-defined]
+        server.headless_cors_origins = self.headless_cors_origins  # type: ignore[attr-defined]
         server.program_summary = self.program_summary  # type: ignore[attr-defined]
         server.program_ir = program_ir  # type: ignore[attr-defined]
         server.program_state = program_state  # type: ignore[attr-defined]
@@ -113,6 +126,7 @@ class ServiceRunner:
         server.external_ui_root = None if self.headless else external_ui_root  # type: ignore[attr-defined]
         server.external_ui_enabled = bool(not self.headless and external_ui_root is not None)  # type: ignore[attr-defined]
         server.ui_mode = self.ui_mode  # type: ignore[attr-defined]
+        server.ui_diagnostics_enabled = self.diagnostics_enabled  # type: ignore[attr-defined]
         if has_service_capability:
             idle_timeout = _service_idle_timeout()
             base_store = create_store(config=resolved_config)

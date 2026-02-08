@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from namel3ss.ui.settings import UI_DEFAULTS
+from namel3ss.ui.manifest.page_structure import iter_page_element_lists
 
 SPACING_TOKENS: tuple[str, ...] = ("xs", "s", "m", "l", "xl", "xxl")
 
@@ -95,8 +96,7 @@ def apply_spacing_to_pages(pages: list[dict], density: str | None) -> None:
     for page in pages or []:
         if not isinstance(page, dict):
             continue
-        elements = page.get("elements")
-        if isinstance(elements, list):
+        for elements in iter_page_element_lists(page):
             apply_spacing_to_elements(elements, density)
 
 

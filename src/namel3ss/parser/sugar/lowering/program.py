@@ -202,13 +202,32 @@ def _lower_page(page: ast.PageDecl) -> ast.PageDecl:
     return ast.PageDecl(
         name=page.name,
         items=[_lower_page_item(item) for item in page.items],
+        layout=_lower_page_layout(getattr(page, "layout", None)),
         requires=_lower_expression(page.requires) if page.requires else None,
+        visibility=_lower_expression(page.visibility) if getattr(page, "visibility", None) else None,
+        visibility_rule=getattr(page, "visibility_rule", None),
         purpose=getattr(page, "purpose", None),
         state_defaults=getattr(page, "state_defaults", None),
         status=_lower_status_block(getattr(page, "status", None)),
         debug_only=getattr(page, "debug_only", None),
+        diagnostics=getattr(page, "diagnostics", None),
         line=page.line,
         column=page.column,
+    )
+
+
+def _lower_page_layout(layout: ast.PageLayout | None) -> ast.PageLayout | None:
+    if layout is None:
+        return None
+    return ast.PageLayout(
+        header=[_lower_page_item(item) for item in layout.header],
+        sidebar_left=[_lower_page_item(item) for item in layout.sidebar_left],
+        main=[_lower_page_item(item) for item in layout.main],
+        drawer_right=[_lower_page_item(item) for item in layout.drawer_right],
+        footer=[_lower_page_item(item) for item in layout.footer],
+        diagnostics=[_lower_page_item(item) for item in layout.diagnostics],
+        line=layout.line,
+        column=layout.column,
     )
 
 

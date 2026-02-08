@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from namel3ss.ui.manifest.page_structure import page_root_elements
+
 NEUTRAL_TONE = "neutral"
 
 
@@ -45,7 +47,7 @@ def collect_icon_findings(pages: list[dict]) -> list[IconFinding]:
     for page in pages:
         page_name = str(page.get("name") or page.get("slug") or "page")
         page_slug = str(page.get("slug") or page_name)
-        elements = page.get("elements") or []
+        elements = page_root_elements(page)
         _walk_story_elements(page_name, page_slug, elements, findings, tone_icons)
     findings.extend(_icon_inconsistency_findings(tone_icons))
     return findings

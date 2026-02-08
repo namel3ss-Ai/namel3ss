@@ -8,12 +8,12 @@
     },
     {
       "title": "why",
-      "body": "Allowed values: light, dark, white, black, midnight, paper, terminal, enterprise."
+      "body": "Allowed values: light, dark, white, black, midnight, paper, terminal, enterprise, default, modern, minimal, corporate."
     },
     {
       "title": "how to fix",
       "items": [
-        "Use one of: light, dark, white, black, midnight, paper, terminal, enterprise."
+        "Use one of: light, dark, white, black, midnight, paper, terminal, enterprise, default, modern, minimal, corporate."
       ]
     }
   ]

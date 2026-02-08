@@ -110,6 +110,12 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
     if isinstance(item, ast.ChatItem):
         return ast.ChatItem(
             children=[_lower_page_item(child) for child in item.children],
+            style=getattr(item, "style", "bubbles"),
+            show_avatars=bool(getattr(item, "show_avatars", False)),
+            group_messages=bool(getattr(item, "group_messages", True)),
+            actions=list(getattr(item, "actions", []) or []),
+            streaming=bool(getattr(item, "streaming", False)),
+            attachments=bool(getattr(item, "attachments", False)),
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
             debug_only=getattr(item, "debug_only", None),

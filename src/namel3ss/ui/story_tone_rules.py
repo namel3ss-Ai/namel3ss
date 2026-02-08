@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from namel3ss.ui.manifest.page_structure import page_root_elements
+
 CANONICAL_TONE_ICONS: dict[str, tuple[str, ...]] = {
     "informative": ("info",),
     "success": ("check",),
@@ -53,7 +55,7 @@ def collect_story_tone_findings(pages: list[dict]) -> list[StoryToneFinding]:
     for page in pages:
         page_name = str(page.get("name") or page.get("slug") or "page")
         page_slug = str(page.get("slug") or page_name)
-        elements = page.get("elements") or []
+        elements = page_root_elements(page)
         _walk_story_elements(page_name, page_slug, elements, findings)
     return findings
 

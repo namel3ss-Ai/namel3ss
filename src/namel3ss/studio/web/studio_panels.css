@@ -643,6 +643,14 @@
   background: #ffe1e1;
   color: #7a1f1f;
 }
+.warning-card {
+  border: 1px solid #f2d79f;
+  background: #fffaf0;
+}
+.warning-badge {
+  background: #fff1cc;
+  color: #7a5b1b;
+}
 .error-hint {
   font-size: 13px;
   color: #333;

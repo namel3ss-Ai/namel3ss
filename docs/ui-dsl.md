@@ -60,6 +60,50 @@ Rules:
 - Allowed actions: `ingestion.run`, `ingestion.review`, `ingestion.override`, `ingestion.skip`, `retrieval.include_warn`, `upload.replace`.
 
 ## 3) Allowed UI elements
+### Page layout slots
+Pages may declare an optional `layout:` block to place items into fixed slots.
+
+Allowed slots:
+- `header`
+- `sidebar_left`
+- `main`
+- `drawer_right`
+- `footer`
+- `diagnostics` (special diagnostics-only block inside `layout:`)
+
+Rules:
+- Slot evaluation order is fixed: `header` -> `sidebar_left` -> `main` -> `drawer_right` -> `footer`.
+- Only the slot names above are valid.
+- A slot may be omitted or left empty.
+- `diagnostics:` content is diagnostics-only and not part of product layout rendering.
+- If `layout:` is present, page items must be declared inside slots (no mixed top-level page items).
+- Duplicate slot declarations are compile-time errors.
+- Without `layout:`, pages use the legacy vertical `elements` stack.
+
+Example:
+```ai
+page "Support Inbox":
+  layout:
+    header:
+      title is "Support Inbox"
+    sidebar_left:
+      section "Folders":
+        text is "Open"
+    main:
+      section "Messages":
+        chat:
+          messages from is state.messages
+          composer calls flow "reply"
+    drawer_right:
+      section "Details":
+        text is state.selected.details
+    footer:
+      text is "Powered by Namel3ss"
+    diagnostics:
+      section "Trace":
+        text is state.debug.trace
+```
+
 Structural:
 - `section "Label":` children: any page items.
 - `card_group:` children: `card` only.
@@ -68,7 +112,14 @@ Structural:
 - `tab "Label":` children: any page items.
 - `modal "Label":` page-level overlay container.
 - `drawer "Label":` page-level overlay container.
-- `chat:` children: chat elements only (`messages`, `composer`, `thinking`, `citations`, `memory`).
+- `chat:` children: chat elements only (`messages`, `composer`, `thinking`, `citations`, `trust_indicator`, `source_preview`, `scope_selector`, `memory`).
+  - Optional chat settings inside `chat:`:
+    - `style is "bubbles"|"plain"` (default `bubbles`)
+    - `show_avatars is true|false` (default `false`)
+    - `group_messages is true|false` (default `true`)
+    - `actions are [copy, expand, view_sources]` (default `[]`)
+    - `streaming is true|false` (default `false`)
+    - `attachments are true|false` (default `false`)
 - `row:` children: only `column`.
 - `column:` children: any page items.
 - `grid:` responsive container with deterministic column spans.
@@ -95,7 +146,12 @@ Data/UI bindings:
 - `composer sends to flow "flow_name"` may declare extra fields with a `send` block; indented lines inherit `send` to avoid repetition.
 - `input text as <name>` with body `send to flow "<flow>"` renders a single-line input and emits a `call_flow` action with payload named `<name>`; the flow must declare a matching text input field (flow input block or contract).
 - `thinking when is state.<path>` UI-only indicator bound to state.
-- `citations from is state.<path>` display-only citations list from state.
+- `thinking when state.<path>` is also accepted (equivalent to `thinking when is ...`).
+- `citations from state.<path>` renders citation chips with deterministic numbering; each citation requires `title` and `url` or `source_id`.
+- Legacy `citations from is state.<path>` remains available inside `chat` as the debug-only citations panel.
+- `source_preview from <source_id|state.<path>>` renders a source preview card/drawer payload.
+- `trust_indicator from state.<path>` renders a trust badge from a boolean or score in `[0, 1]`.
+- `scope_selector from state.<options_path> active in state.<active_path>` renders selectable retrieval scopes and emits `scope_select`.
 - `memory from is state.<path> [lane is "my"|"team"|"system"]` display-only memory list from state.
 - `upload <name>` declares an upload request (intent-only). Optional `accept` list and `multiple` flag.
 - `button "Label":` `calls flow "flow_name"` creates `call_flow` action.
@@ -103,7 +159,8 @@ Data/UI bindings:
 - `use ui_pack "pack_name" fragment "fragment_name"` static expansion of a pack fragment.
 - `use pattern "pattern_name"` static expansion of a UI pattern.
 - Custom component tags are allowed only when declared by a loaded plug-in (`use plugin "name"`).
-- Optional metadata: `debug_only` can be set on pages and UI items (`debug_only is true|false`).
+- Optional metadata: `debug_only` can be set on pages and UI items (`debug_only is true|false|"trace"|"retrieval"|"metrics"`).
+- Optional page metadata: `diagnostics is true|false` marks a diagnostics-only page.
 - Record/flow names may be module-qualified (for example `inv.Product`, `inv.seed_item`) when using Capsules.
 
 Custom component example:
@@ -139,9 +196,24 @@ Rules:
 - Flow inputs must match `message` plus the declared extra fields.
 - Payload field order follows the declaration order.
 
+Enhanced chat example:
+```ai
+page "assistant":
+  chat:
+    style is "bubbles"
+    show_avatars is true
+    group_messages is true
+    actions are [copy, expand, view_sources]
+    streaming is true
+    attachments are true
+    messages from is state.chat.messages
+    composer calls flow "answer_question"
+    thinking when state.chat.thinking
+```
+
 Nesting rules:
 - `row` -> `column` only.
-- `chat` -> `messages`, `composer`, `thinking`, `citations`, `memory` only.
+- `chat` -> `messages`, `composer`, `thinking`, `citations`, `trust_indicator`, `source_preview`, `scope_selector`, `memory` only.
 - `tabs` -> `tab` only; `tab` is only valid inside `tabs`.
 - `modal`/`drawer` are page-level only; they are opened/closed via actions.
 - `card_group` -> `card` only.
@@ -249,11 +321,15 @@ Rules:
   - runtime -> placeholder intent with `fix_hint`
 
 ## 3.2) Visibility
-- Optional `visibility is <expr>`, `when is <expr>`, or `visible_when: <expr>` may be appended to any page item or `tab` header.
+- Optional `visible when <expr>` may be appended to any page item, `tab` header, or page header.
+- Backward-compatible aliases remain supported: `visibility is <expr>`, `when is <expr>`, and `visible_when: <expr>`.
 - Optional `only when <expr>` may be declared as a single indented line inside a page item block (or directly under a single-line item).
-- Optional `debug_only is true|false` may be appended to page items, and `debug_only: true|false` may be declared at page scope.
+- Optional `debug_only is true|false|"trace"|"retrieval"|"metrics"` may be appended to page items, and `debug_only: true|false|"trace"|"retrieval"|"metrics"` may be declared at page scope.
+- Optional page metadata `diagnostics is true|false` marks a diagnostics-only page.
+- In pages with `layout:`, `diagnostics:` is a diagnostics-only content block.
 - Text literals use quotes; numbers and booleans are unquoted.
-- `only when` cannot be combined with `visibility`, `when`, or `visible_when` on the same item.
+- A declaration may use only one visibility clause (`visible when` or an alias). Duplicate clauses are a parse error.
+- `only when` cannot be combined with inline visibility clauses on the same item.
 - Visibility expressions support:
   - state paths (`state.user.role`)
   - literals (`"admin"`, `true`, `3`)
@@ -263,9 +339,32 @@ Rules:
 - Function calls and side effects are not allowed in visibility expressions.
 - For plain `state.<path>` visibility clauses, a path is visible only when the state value exists and is truthy.
 - For `only when`, missing state paths or type mismatches fail at build time.
-- Elements with `visibility` still appear in the manifest with `visible: true|false`; hidden elements do not emit actions.
+- Page-level visibility is evaluated before page layout. If false, the page is omitted from the manifest and navigation.
+- In Studio mode, hidden elements remain in the manifest with `visible: false` for diagnostics; hidden elements do not emit actions.
+- In production mode, hidden elements are omitted from the emitted manifest.
 - Elements and pages with `debug_only: true` are omitted in production mode and rendered in Studio mode.
+- Pages with `diagnostics is true` and `layout.diagnostics` blocks are omitted in production unless diagnostics mode is enabled.
+- `n3 run --diagnostics <app.ai>` enables diagnostics rendering outside Studio for local debugging.
 - UI explain output includes the predicate, referenced state paths, evaluated result, and the visibility reason.
+
+## Warning pipeline and guardrails
+- UI warnings are produced during manifest construction in this fixed order:
+  - `layout`
+  - `upload`
+  - `visibility`
+  - `diagnostics`
+  - `copy`
+  - `story_icon`
+  - `consistency`
+- Each stage uses stable sorting by code and location so warning order is deterministic for the same `.ai` source.
+- Warnings surface in:
+  - `n3 app.ai ui --json` -> `manifest.warnings`
+  - `/api/ui` -> `manifest.warnings`
+  - `/api/ui/manifest` -> `manifest.warnings`
+  - `/api/ui/actions` and `n3 app.ai actions --json` -> `warnings`
+  - Studio Errors panel -> `UI warnings` card
+- Guardrail baselines are snapshot-tested with:
+  - `python -m pytest -q tests/ui/test_ui_manifest_baseline.py tests/ui/test_warning_pipeline.py`
 
 ## 3.5) Responsive layout
 - Declare top-level breakpoints with:
@@ -360,12 +459,22 @@ page "home":
 - `upload <name>` declares intent to request a file from the user.
 - Uploads are request-only; no upload occurs until runtime bindings are provided.
 - When a file is selected, the client posts bytes to `/api/upload` and uses the returned metadata to update state.
-- Runtime records selections under `state.uploads.<name>` as a list of `{id, name, size, type, checksum}` (id is checksum).
+- Runtime records selections under `state.uploads.<name>` as a map of `{upload_id: {id, name, size, type, checksum}}`.
 - Upload selection is metadata-only; ingestion runs only when explicitly triggered.
 - Optional block fields:
-  - `accept is "pdf", "png", "jpg"` (list of non-empty strings)
+  - `accept is "application/pdf,image/png"` or `accept is "pdf", "png"` (MIME list / shorthand extensions)
   - `multiple is true|false` (defaults to false)
-- Manifests include the request with deterministic fields: `type`, `name`, `accept`, `multiple`.
+  - `required is true|false` (defaults to false; gates flow execution when `state.uploads.<name>` is read)
+  - `label is "<button text>"` (defaults to `"Upload"`)
+  - `preview is true|false` (defaults to false; shows built-in preview summary for image/text/pdf metadata)
+- When `multiple` is false, a new file replaces the existing selection.
+- Upload widgets include built-in remove/clear actions and deterministic file ordering.
+- Manifests include:
+  - upload element fields: `type`, `name`, `accept`, `multiple`, `required`, `label`, `preview`, `files`
+  - top-level `upload_requests` entries with the same deterministic request contract
+- Warnings are deterministic:
+  - `upload.missing_control` when uploads capability is enabled but no upload control is declared
+  - `upload.unused_declaration` when an upload declaration is never referenced from `state.uploads.<name>`
 
 ## 5) Core UI primitives
 - `page "<title>":` container with optional `purpose is "<string>"` metadata (page-only; deterministic id generation). Duplicate page titles are rejected.
@@ -447,6 +556,17 @@ page "home":
     - `motion is "<motion>"`
     - `shape is "<shape>"`
     - `surface is "<surface>"`
+    - visual theme token overrides:
+      - `primary_color is "#RRGGBB"`
+      - `secondary_color is "#RRGGBB"`
+      - `background_color is "#RRGGBB"`
+      - `foreground_color is "#RRGGBB"`
+      - `font_family is "<font stack>"`
+      - `font_size_base is <number>`
+      - `font_weight is <number>`
+      - `spacing_scale is <number>`
+      - `border_radius is <number>`
+      - `shadow_level is <integer>`
   - `theme` (top-level, optional, before pages):
     - `preset: "<preset>"`
     - `brand_palette:`
@@ -465,6 +585,7 @@ page "home":
   - surface: `flat`
 - Allowed values (closed enums with "did you mean ..." guidance):
   - Themes: `light`, `dark`, `white`, `black`, `midnight`, `paper`, `terminal`, `enterprise`
+  - Built-in visual themes for `ui.theme`: `default`, `modern`, `minimal`, `corporate`
   - Accent colors: `blue`, `indigo`, `purple`, `pink`, `red`, `orange`, `yellow`, `green`, `teal`, `cyan`, `neutral`
   - Density: `compact`, `comfortable`, `spacious`
   - Motion: `none`, `subtle` (no layout changes; respects OS reduce-motion)
@@ -472,6 +593,9 @@ page "home":
   - Surface: `flat`, `outlined`, `raised`
 - Rules:
   - `ui` remains curated and enum-based. Custom colors live in the top-level `theme` block.
+  - Visual token overrides are deterministic and validated by type/range.
+  - If `ui.theme` is a visual theme (`default|modern|minimal|corporate`), runtime light/dark setting still comes from app theme/runtime theme state.
+  - Theme token merge order is fixed: built-in visual theme first, then explicit `ui` token overrides.
   - No pixel sizes, margins, padding, or per-component styling knobs.
   - Unknown keys/values are rejected with plain-English guidance.
   - Settings are global and appear in CLI and Studio manifests in normalized order.
@@ -481,6 +605,8 @@ page "home":
   - Theme changes (`set theme to "<theme>"`) use the same allowed themes.
   - `theme_preference` persists overrides when enabled: `allow_override` (true|false), `persist` (`none`|`local`|`file`). Defaults keep runtime overrides disabled and unpersisted.
   - Manifest preference metadata includes a reserved storage key: `namel3ss_theme`.
+  - Manifest includes deterministic visual theme metadata: `theme_name`, merged `tokens`, compiled `css`, `css_hash`, and optional `font_url`.
+  - Runtime applies theme CSS/tokens without page reload.
 
 ### 8.1 Component variants and style hooks
 - `button` supports `variant` values: `primary`, `secondary`, `success`, `danger`.
@@ -522,3 +648,6 @@ record "User":
 ## 11) Compatibility promise
 - Spec is frozen; changes must be additive and documented.
 - Any change to UI DSL code must update this spec, examples, and tests together.
+- `empty_state` may be:
+  - indented text block (existing behavior), or
+  - inline `hidden`/`false` to suppress rendering when rows are empty.

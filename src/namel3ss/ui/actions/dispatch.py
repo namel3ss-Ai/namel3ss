@@ -6,7 +6,14 @@ from namel3ss.runtime.ui.actions import handle_action
 from namel3ss.ui.manifest.display_mode import DISPLAY_MODE_STUDIO
 
 
-def dispatch_ui_action(program_ir, *, action_id: str, payload: dict, ui_mode: str = DISPLAY_MODE_STUDIO) -> dict:
+def dispatch_ui_action(
+    program_ir,
+    *,
+    action_id: str,
+    payload: dict,
+    ui_mode: str = DISPLAY_MODE_STUDIO,
+    diagnostics_enabled: bool = False,
+) -> dict:
     config = load_config(
         app_path=getattr(program_ir, "app_path", None),
         root=getattr(program_ir, "project_root", None),
@@ -25,6 +32,7 @@ def dispatch_ui_action(program_ir, *, action_id: str, payload: dict, ui_mode: st
         allow_theme_override=allow_theme_override,
         config=config,
         ui_mode=ui_mode,
+        diagnostics_enabled=diagnostics_enabled,
     )
 
 

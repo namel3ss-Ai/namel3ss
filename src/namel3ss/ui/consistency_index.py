@@ -10,6 +10,7 @@ from namel3ss.ui.consistency_extract import (
     _view_config,
 )
 from namel3ss.ui.consistency_models import ConsistencyLocation, RecordAppearance
+from namel3ss.ui.manifest.page_structure import page_root_elements, walk_elements as walk_manifest_elements
 
 
 _COMPONENT_TYPES = {"table", "list", "form", "chart", "view", "chat"}
@@ -20,7 +21,7 @@ def _collect_record_appearances(pages: list[dict]) -> dict[str, list[RecordAppea
     for page in pages:
         page_name = str(page.get("name") or page.get("slug") or "page")
         page_slug = str(page.get("slug") or page_name)
-        elements = page.get("elements") or []
+        elements = page_root_elements(page)
         record_sources = _collect_page_sources(elements)
 
         for element in _walk_elements(elements):
@@ -70,13 +71,7 @@ def _collect_page_sources(elements: list[dict]) -> dict[str, set[str]]:
 
 
 def _walk_elements(elements: list[dict]) -> Iterable[dict]:
-    for element in elements:
-        if not isinstance(element, dict):
-            continue
-        yield element
-        children = element.get("children")
-        if isinstance(children, list):
-            yield from _walk_elements(children)
+    yield from walk_manifest_elements(elements)
 
 
 def _component_type(element: dict) -> str | None:

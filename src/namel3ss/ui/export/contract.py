@@ -21,6 +21,7 @@ def build_contract_manifest(
     identity: dict | None = None,
     config=None,
     ui_mode: str = DISPLAY_MODE_STUDIO,
+    diagnostics_enabled: bool = False,
 ) -> dict:
     resolved_config = config or load_config(
         app_path=getattr(program_ir, "app_path", None),
@@ -42,6 +43,7 @@ def build_contract_manifest(
         identity=resolved_identity,
         mode=ValidationMode.STATIC,
         display_mode=ui_mode,
+        diagnostics_enabled=diagnostics_enabled,
     )
 
 
@@ -55,6 +57,7 @@ def build_ui_contract_payload(
     identity: dict | None = None,
     config=None,
     ui_mode: str = DISPLAY_MODE_STUDIO,
+    diagnostics_enabled: bool = False,
 ) -> dict:
     manifest = build_contract_manifest(
         program_ir,
@@ -65,6 +68,7 @@ def build_ui_contract_payload(
         identity=identity,
         config=config,
         ui_mode=ui_mode,
+        diagnostics_enabled=diagnostics_enabled,
     )
     return {
         "ui": build_ui_export(manifest),

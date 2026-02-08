@@ -11,6 +11,7 @@ def test_studio_errors_panel_structure():
 
 def test_studio_errors_panel_behavior():
     js = Path("src/namel3ss/studio/web/studio/errors.js").read_text(encoding="utf-8")
+    warnings_js = Path("src/namel3ss/studio/web/studio/ui_warnings.js").read_text(encoding="utf-8")
     assert "ai_provider_error" in js
     assert "Last run error" in js
     assert "Copy error JSON" in js
@@ -31,3 +32,7 @@ def test_studio_errors_panel_behavior():
     assert "normalizeLineBreaks(buildFixSteps" in js
     assert "parse.reserved_identifier" in js
     assert "n3 reserved" in js
+    assert "UI warnings" in warnings_js
+    assert "Copy warning JSON" in warnings_js
+    assert "normalizeManifestWarnings" in warnings_js
+    assert "warning-badge" in warnings_js

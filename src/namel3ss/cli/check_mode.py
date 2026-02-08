@@ -65,10 +65,30 @@ def run_check(path: str, allow_legacy_type_aliases: bool = True) -> int:
         sections.append(f"Actions: {len(manifest.get('actions', {}))} discovered")
     if warnings:
         sections.append(f"Warnings: {len(warnings)}")
-        for warn in warnings:
+        ordered_warnings = sorted(
+            warnings,
+            key=lambda warning: (
+                warning.code or "",
+                warning.path or "",
+                warning.line or 0,
+                warning.column or 0,
+                warning.message or "",
+            ),
+        )
+        for warn in ordered_warnings:
             runtime_note = " (enforced at runtime)" if getattr(warn, "enforced_at", None) else ""
             category = f"[{warn.category}]" if getattr(warn, "category", None) else ""
-            sections.append(f"- WARN {category} {warn.message}{runtime_note}".rstrip())
+            code = warn.code or "warning"
+            path = f" path={warn.path}" if warn.path else ""
+            location = ""
+            if warn.line:
+                location = f" line={warn.line}"
+                if warn.column:
+                    location += f":{warn.column}"
+            fix = f" fix={warn.fix}" if warn.fix else ""
+            sections.append(
+                f"- WARN {category} {code}: {warn.message}{runtime_note}{path}{location}{fix}".rstrip()
+            )
 
     print("\n".join(sections))
     success = all("FAIL" not in line for line in sections)

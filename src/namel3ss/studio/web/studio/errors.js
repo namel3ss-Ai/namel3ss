@@ -5,6 +5,7 @@
   const errors = root.errors || (root.errors = {});
   const secrets = root.secrets || {};
   const guidance = root.guidance || {};
+  const uiWarnings = root.uiWarnings || {};
 
   const PROVIDER_LABELS = {
     openai: "OpenAI",
@@ -220,27 +221,32 @@
     }
   }
 
-  function updateErrorBanner(diagnostic) {
+  function updateErrorBanner(diagnostic, runError, warnings) {
     const banner = document.getElementById("errorBanner");
     if (!banner) return;
-    const runError = getLastRunError();
     if (runError) {
       banner.textContent = "Run failed. Click for details.";
       banner.classList.remove("hidden");
       banner.onclick = () => openTab("errors");
       return;
     }
-    if (!diagnostic) {
-      banner.classList.add("hidden");
-      banner.textContent = "";
-      banner.onclick = null;
+    if (diagnostic) {
+      const provider = formatProvider(diagnostic.provider);
+      const category = normalizeCategory(diagnostic.category);
+      banner.textContent = `${provider} failed (${category}). Click for details.`;
+      banner.classList.remove("hidden");
+      banner.onclick = () => openTab("errors");
       return;
     }
-    const provider = formatProvider(diagnostic.provider);
-    const category = normalizeCategory(diagnostic.category);
-    banner.textContent = `${provider} failed (${category}). Click for details.`;
-    banner.classList.remove("hidden");
-    banner.onclick = () => openTab("errors");
+    if (Array.isArray(warnings) && warnings.length) {
+      banner.textContent = `UI warnings: ${warnings.length}. Click for details.`;
+      banner.classList.remove("hidden");
+      banner.onclick = () => openTab("errors");
+      return;
+    }
+    banner.classList.add("hidden");
+    banner.textContent = "";
+    banner.onclick = null;
   }
 
   function buildFieldRow(label, value) {
@@ -456,14 +462,15 @@
     const event = getLatestProviderError(traces);
     const providerDiagnostic = event && event.diagnostic ? sanitizeDiagnostic(event.diagnostic || {}) : null;
     const safeRunError = runError ? sanitizeDiagnostic(runError) : null;
+    const warningRows = uiWarnings.normalizeManifestWarnings ? uiWarnings.normalizeManifestWarnings() : [];
 
-    if (!providerDiagnostic && !safeRunError) {
-      updateErrorBanner(null);
-      dom.showEmpty(panel, "No provider errors yet.");
+    if (!providerDiagnostic && !safeRunError && !warningRows.length) {
+      updateErrorBanner(null, null, []);
+      dom.showEmpty(panel, "No errors or warnings yet.");
       return;
     }
 
-    updateErrorBanner(providerDiagnostic);
+    updateErrorBanner(providerDiagnostic, safeRunError, warningRows);
     panel.innerHTML = "";
     const stack = document.createElement("div");
     stack.className = "panel-stack";
@@ -472,6 +479,11 @@
     }
     if (providerDiagnostic) {
       stack.appendChild(buildProviderErrorCard(providerDiagnostic));
+    }
+    if (warningRows.length) {
+      if (uiWarnings.buildWarningsCard) {
+        stack.appendChild(uiWarnings.buildWarningsCard(warningRows, { buildDetailRow, copyText }));
+      }
     }
     panel.appendChild(stack);
   }

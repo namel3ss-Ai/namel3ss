@@ -43,15 +43,22 @@ from namel3ss.ir.lowering.program_validation import (
     _validate_page_style_hook_tokens,
     _validate_responsive_theme_scales,
     _validate_text_inputs,
+    _validate_unique_upload_requests,
 )
 from namel3ss.ir.model.agents import RunAgentsParallelStmt
 from namel3ss.ir.model.program import Flow, Program
 from namel3ss.ir.model.statements import ThemeChange, If, Repeat, RepeatWhile, ForEach, Match, MatchCase, TryCatch, ParallelBlock
 from namel3ss.schema import records as schema
 from namel3ss.theme import resolve_theme_definition, resolve_token_registry
+from namel3ss.theme.ui_theme_tokens import UI_STYLE_THEME_DEFAULT, UI_STYLE_THEME_NAMES, compile_ui_theme
 from namel3ss.ui.plugins import load_ui_plugin_registry
 from namel3ss.ui.plugins.hooks import build_extension_hook_manager
-from namel3ss.ui.settings import normalize_ui_settings
+from namel3ss.ui.settings import (
+    UI_RUNTIME_THEME_VALUES,
+    explicit_ui_theme_tokens,
+    normalize_ui_settings,
+    runtime_theme_setting_from_ui,
+)
 from namel3ss.validation import ValidationMode
 from namel3ss.pipelines.registry import pipeline_contracts
 def _statement_has_theme_change(stmt) -> bool:
@@ -185,13 +192,20 @@ def lower_program(program: ast.Program) -> Program:
         page_names,
     )
     _ensure_unique_pages(pages)
+    _validate_unique_upload_requests(pages)
     _validate_text_inputs(pages, flow_irs, flow_contracts)
     _validate_chat_composers(pages, flow_irs, flow_contracts)
     theme_runtime_supported = any(_flow_has_theme_change(flow) for flow in flow_irs)
-    ui_settings = normalize_ui_settings(getattr(program, "ui_settings", None))
+    raw_ui_settings = getattr(program, "ui_settings", None)
+    ui_settings = normalize_ui_settings(raw_ui_settings)
     if theme_resolution.ui_overrides:
         ui_settings = normalize_ui_settings({**ui_settings, **theme_resolution.ui_overrides})
-    theme_setting = ui_settings.get("theme", program.app_theme)
+    candidate_ui_theme = str(ui_settings.get("theme", program.app_theme))
+    theme_setting = runtime_theme_setting_from_ui(raw_ui_settings, program.app_theme, normalized_theme=candidate_ui_theme)
+    if theme_setting not in UI_RUNTIME_THEME_VALUES:
+        theme_setting = program.app_theme
+    visual_theme_name = candidate_ui_theme if candidate_ui_theme in UI_STYLE_THEME_NAMES else UI_STYLE_THEME_DEFAULT
+    visual_theme = compile_ui_theme(visual_theme_name, explicit_ui_theme_tokens(raw_ui_settings))
     legacy_theme_tokens = {name: val for name, (val, _, _) in program.theme_tokens.items()}
     merged_theme_tokens = resolve_token_registry(theme_resolution, legacy_tokens=legacy_theme_tokens)
     _validate_page_style_hook_tokens(pages, merged_theme_tokens)
@@ -236,4 +250,9 @@ def lower_program(program: ast.Program) -> Program:
     setattr(lowered, "resolved_theme", theme_resolution)
     setattr(lowered, "responsive_theme_tokens", theme_resolution.responsive_tokens)
     setattr(lowered, "responsive_layout", responsive_layout)
+    setattr(lowered, "ui_visual_theme_name", visual_theme.theme_name)
+    setattr(lowered, "ui_visual_theme_tokens", dict(visual_theme.tokens))
+    setattr(lowered, "ui_visual_theme_css", visual_theme.css)
+    setattr(lowered, "ui_visual_theme_css_hash", visual_theme.css_hash)
+    setattr(lowered, "ui_visual_theme_font_url", visual_theme.font_url)
     return lowered

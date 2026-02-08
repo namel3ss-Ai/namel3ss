@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from namel3ss.runtime.store.memory_store import MemoryStore
-from namel3ss.spec_freeze.v1.rules import HUMAN_TEXT_KEYS, has_bracket_chars
+from namel3ss.spec_freeze.contracts.rules import HUMAN_TEXT_KEYS, has_bracket_chars
 from tests.compute_core.helpers.samples import sample_sources
 from tests.conftest import run_flow
 from tests.spec_freeze.helpers.runtime_dump import dump_runtime

@@ -1,0 +1,12 @@
+{
+  "primary_color": "#111827",
+  "secondary_color": "#4B5563",
+  "background_color": "#FFFFFF",
+  "foreground_color": "#111827",
+  "font_family": "IBM Plex Sans, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+  "font_size_base": 14,
+  "font_weight": 400,
+  "spacing_scale": 1.0,
+  "border_radius": 6,
+  "shadow_level": 0
+}

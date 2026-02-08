@@ -4,6 +4,9 @@ This phase adds a headless runtime mode and stable UI API contracts so front-end
 
 ## What is new
 
+- Versioned headless endpoints:
+  - `GET /api/v1/ui`
+  - `POST /api/v1/actions/<action_id>`
 - API-first endpoints for runtime UI contracts:
   - `GET /api/ui/manifest`
   - `GET /api/ui/state`
@@ -18,6 +21,13 @@ This phase adds a headless runtime mode and stable UI API contracts so front-end
 ## Runtime contracts
 
 All API-first responses include `api_version` and deterministic field ordering.
+
+Headless `v1` responses include:
+
+- `manifest` (existing UI manifest payload)
+- `hash` (`sha256` of canonical manifest JSON)
+- optional `state` and `actions` when `include_state=1` / `include_actions=1` are set
+- OpenAPI reference: `docs/headless-api-openapi.json`
 
 - `UIManifest`
   - `manifest.pages`
@@ -39,12 +49,13 @@ Use `--headless` to disable static UI hosting while keeping API endpoints availa
 
 Examples:
 
-- `n3 run --headless`
+- `n3 run --headless --api-token dev-secret --cors-origin https://frontend.example.com`
 - `n3 dev --headless`
 - `n3 preview --headless`
 - `n3 start --headless`
 
 When headless mode is enabled, `/` returns `404` and UI clients should call API endpoints directly.
+`/api/v1/*` requires the configured token (`X-API-Token` header or `Authorization: Bearer ...`).
 
 ## Static UI bundle
 

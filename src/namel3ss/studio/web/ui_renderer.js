@@ -11,8 +11,18 @@ let renderUI = (manifest) => {
   const renderFormElement = collectionRender.renderFormElement;
   const renderChatElement = collectionRender.renderChatElement;
   const renderChartElement = collectionRender.renderChartElement;
+  const renderCitationChipsElement = collectionRender.renderCitationChipsElement;
+  const renderSourcePreviewElement = collectionRender.renderSourcePreviewElement;
+  const renderTrustIndicatorElement = collectionRender.renderTrustIndicatorElement;
+  const renderScopeSelectorElement = collectionRender.renderScopeSelectorElement;
+  const renderUploadElement = collectionRender.renderUploadElement;
   const overlayRegistry = new Map();
+  const LAYOUT_SLOTS = ["header", "sidebar_left", "main", "drawer_right", "footer"];
+  const diagnosticsEnabled = Boolean(manifest && manifest.diagnostics_enabled) || manifest.mode === "studio";
+  const diagnosticsVisibilityByPage = new Map();
+  const loadedPluginAssets = window.N3LoadedPluginAssets || (window.N3LoadedPluginAssets = { js: {}, css: {} });
   if (!uiContainer) return;
+  ensurePluginAssets(manifest);
   const pageEntries = (pages || [])
     .filter((p) => p && p.name)
     .map((p, idx) => ({
@@ -29,9 +39,65 @@ let renderUI = (manifest) => {
     return pageBySlug.get(value) || pageByName.get(value) || null;
   }
 
+  function ensurePluginAssets(nextManifest) {
+    const plugins = nextManifest && nextManifest.ui && Array.isArray(nextManifest.ui.plugins) ? nextManifest.ui.plugins : [];
+    plugins.forEach((plugin) => {
+      if (!plugin || typeof plugin !== "object") return;
+      const assets = plugin.assets || {};
+      const jsAssets = Array.isArray(assets.js) ? assets.js : [];
+      const cssAssets = Array.isArray(assets.css) ? assets.css : [];
+      cssAssets.forEach((url) => loadPluginStyle(url));
+      jsAssets.forEach((url) => loadPluginScript(url));
+    });
+  }
+
+  function loadPluginStyle(url) {
+    if (typeof url !== "string" || !url) return;
+    if (loadedPluginAssets.css[url]) return;
+    loadedPluginAssets.css[url] = true;
+    const existing = document.querySelector(`link[data-n3-plugin-asset="${url}"]`);
+    if (existing) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = url;
+    link.dataset.n3PluginAsset = url;
+    document.head.appendChild(link);
+  }
+
+  function loadPluginScript(url) {
+    if (typeof url !== "string" || !url) return;
+    if (loadedPluginAssets.js[url]) return;
+    loadedPluginAssets.js[url] = true;
+    const existing = document.querySelector(`script[data-n3-plugin-asset="${url}"]`);
+    if (existing) return;
+    const script = document.createElement("script");
+    script.src = url;
+    script.async = false;
+    script.defer = true;
+    script.dataset.n3PluginAsset = url;
+    document.head.appendChild(script);
+  }
+
   function resolvePageSlug(value) {
     const entry = resolvePageEntry(value);
     return entry ? entry.slug : "";
+  }
+
+  function diagnosticsElements(page) {
+    if (!page || typeof page !== "object") return [];
+    const blocks = page.diagnostics_blocks;
+    return Array.isArray(blocks) ? blocks : [];
+  }
+
+  function diagnosticsVisibleForPage(page) {
+    const slug = resolvePageSlug(page && (page.slug || page.name));
+    return diagnosticsVisibilityByPage.get(slug) === true;
+  }
+
+  function setDiagnosticsVisibleForPage(page, visible) {
+    const slug = resolvePageSlug(page && (page.slug || page.name));
+    if (!slug) return;
+    diagnosticsVisibilityByPage.set(slug, Boolean(visible));
   }
 
   const activeSlug = activePage ? resolvePageSlug(activePage.slug || activePage.name) : "";
@@ -78,7 +144,7 @@ let renderUI = (manifest) => {
     pageEntries.forEach((entry, idx) => {
       const opt = document.createElement("option");
       opt.value = entry.slug;
-      opt.textContent = entry.name;
+      opt.textContent = entry.page && entry.page.diagnostics ? `${entry.name} (Diagnostics)` : entry.name;
       if (entry.slug === initialSelection || (!initialSelection && idx === 0)) {
         opt.selected = true;
       }
@@ -455,6 +521,9 @@ let renderUI = (manifest) => {
     }
     const wrapper = document.createElement("div");
     wrapper.className = "ui-element";
+    if (typeof el.type === "string" && el.type) wrapper.dataset.elementType = el.type;
+    if (typeof el.id === "string" && el.id) wrapper.dataset.elementId = el.id;
+    if (typeof el.element_id === "string" && el.element_id) wrapper.dataset.elementId = el.element_id;
     if (el.type === "title") {
       const h = document.createElement("h3");
       h.textContent = el.value;
@@ -579,6 +648,79 @@ let renderUI = (manifest) => {
       const empty = document.createElement("div");
       empty.textContent = "Chat renderer unavailable.";
       wrapper.appendChild(empty);
+    } else if (el.type === "citation_chips") {
+      if (typeof renderCitationChipsElement === "function") {
+        return renderCitationChipsElement(el);
+      }
+      const empty = document.createElement("div");
+      empty.textContent = "Citations renderer unavailable.";
+      wrapper.appendChild(empty);
+    } else if (el.type === "source_preview") {
+      if (typeof renderSourcePreviewElement === "function") {
+        return renderSourcePreviewElement(el);
+      }
+      const empty = document.createElement("div");
+      empty.textContent = "Source preview renderer unavailable.";
+      wrapper.appendChild(empty);
+    } else if (el.type === "trust_indicator") {
+      if (typeof renderTrustIndicatorElement === "function") {
+        return renderTrustIndicatorElement(el);
+      }
+      const empty = document.createElement("div");
+      empty.textContent = "Trust indicator renderer unavailable.";
+      wrapper.appendChild(empty);
+    } else if (el.type === "scope_selector") {
+      if (typeof renderScopeSelectorElement === "function") {
+        return renderScopeSelectorElement(el, handleAction);
+      }
+      const empty = document.createElement("div");
+      empty.textContent = "Scope selector renderer unavailable.";
+      wrapper.appendChild(empty);
+    } else if (el.type === "upload") {
+      if (typeof renderUploadElement === "function") {
+        return renderUploadElement(el, handleAction);
+      }
+      const empty = document.createElement("div");
+      empty.textContent = "Upload renderer unavailable.";
+      wrapper.appendChild(empty);
+    } else if (el.type === "custom_component") {
+      wrapper.classList.add("ui-custom-component");
+      if (typeof el.plugin === "string" && el.plugin) wrapper.dataset.plugin = el.plugin;
+      if (typeof el.component === "string" && el.component) wrapper.dataset.component = el.component;
+      const nodes = Array.isArray(el.nodes) ? el.nodes : [];
+      if (!nodes.length) {
+        const empty = document.createElement("div");
+        empty.className = "ui-custom-component-empty";
+        empty.textContent = "Custom component has no rendered nodes.";
+        wrapper.appendChild(empty);
+      } else {
+        nodes.forEach((node, idx) => {
+          const item = document.createElement("div");
+          item.className = "ui-custom-component-node";
+          const nodeType = node && typeof node === "object" && typeof node.type === "string" ? node.type : "node";
+          item.dataset.nodeType = nodeType;
+          item.dataset.nodeIndex = String(idx);
+          const preview = node && typeof node === "object" && typeof node.text === "string" ? node.text : nodeType;
+          item.textContent = String(preview);
+          wrapper.appendChild(item);
+        });
+      }
+      const detail = {
+        element: wrapper,
+        page: pageName,
+        plugin: el.plugin || "",
+        component: el.component || "",
+        props: el.props || {},
+        nodes: nodes,
+      };
+      wrapper.dispatchEvent(new CustomEvent("n3:plugin-component", { bubbles: true, detail: detail }));
+      if (window.N3PluginRuntime && typeof window.N3PluginRuntime.renderComponent === "function") {
+        try {
+          window.N3PluginRuntime.renderComponent(detail);
+        } catch (_err) {
+          wrapper.dataset.pluginRenderError = "true";
+        }
+      }
     } else if (el.type === "list") {
       if (typeof renderListElement === "function") {
         return renderListElement(el, handleAction);
@@ -603,6 +745,193 @@ let renderUI = (manifest) => {
     }
     return wrapper;
   }
+
+  function normalizeLayout(page) {
+    if (!page || typeof page !== "object" || typeof page.layout !== "object" || page.layout === null) {
+      return null;
+    }
+    const normalized = {};
+    LAYOUT_SLOTS.forEach((slot) => {
+      normalized[slot] = Array.isArray(page.layout[slot]) ? page.layout[slot] : [];
+    });
+    return normalized;
+  }
+
+  function splitOverlayItems(elements) {
+    const result = { items: [], overlays: [] };
+    (elements || []).forEach((el) => {
+      if (!el || el.visible === false) return;
+      if (el.type === "modal" || el.type === "drawer") {
+        result.overlays.push(el);
+      } else {
+        result.items.push(el);
+      }
+    });
+    return result;
+  }
+
+  function appendRenderedItems(container, elements, pageName) {
+    (elements || []).forEach((el) => {
+      if (!el || el.visible === false) return;
+      container.appendChild(renderElement(el, pageName));
+    });
+  }
+
+  function buildDiagnosticsSection(page) {
+    if (!diagnosticsEnabled) return null;
+    const blocks = diagnosticsElements(page).filter((entry) => entry && entry.visible !== false);
+    if (!blocks.length) return null;
+    const section = document.createElement("section");
+    section.className = "n3-diagnostics";
+    const header = document.createElement("div");
+    header.className = "n3-diagnostics-header";
+    const title = document.createElement("div");
+    title.className = "n3-diagnostics-title";
+    title.textContent = "Diagnostics";
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "btn small ghost n3-diagnostics-toggle";
+    const body = document.createElement("div");
+    body.className = "n3-diagnostics-body";
+    appendRenderedItems(body, blocks, page.name);
+
+    function applyVisible(visible) {
+      toggle.textContent = visible ? "Hide Explain" : "Show Explain";
+      toggle.setAttribute("aria-expanded", visible ? "true" : "false");
+      body.classList.toggle("hidden", !visible);
+    }
+
+    const initialVisible = diagnosticsVisibleForPage(page);
+    applyVisible(initialVisible);
+    toggle.onclick = () => {
+      const nextVisible = !diagnosticsVisibleForPage(page);
+      setDiagnosticsVisibleForPage(page, nextVisible);
+      applyVisible(nextVisible);
+    };
+    header.appendChild(title);
+    header.appendChild(toggle);
+    section.appendChild(header);
+    section.appendChild(body);
+    return section;
+  }
+
+  function renderLayoutPage(page) {
+    const layout = normalizeLayout(page);
+    if (!layout) return false;
+    const root = document.createElement("div");
+    root.className = "n3-layout-root";
+    const overlayItems = [];
+    const slots = {};
+    LAYOUT_SLOTS.forEach((slot) => {
+      const split = splitOverlayItems(layout[slot]);
+      slots[slot] = split.items;
+      overlayItems.push(...split.overlays);
+    });
+
+    let sidebarDrawer = null;
+    let sidebarToggle = null;
+    const hasSidebar = slots.sidebar_left.length > 0;
+
+    function setSidebarDrawerOpen(open) {
+      if (!sidebarDrawer) return;
+      sidebarDrawer.classList.toggle("open", open);
+      if (sidebarToggle) {
+        sidebarToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      }
+    }
+
+    const header = document.createElement("div");
+    header.className = "n3-layout-header";
+    if (hasSidebar) {
+      sidebarToggle = document.createElement("button");
+      sidebarToggle.type = "button";
+      sidebarToggle.className = "btn small ghost n3-layout-sidebar-toggle";
+      sidebarToggle.textContent = "Sections";
+      sidebarToggle.setAttribute("aria-expanded", "false");
+      sidebarToggle.onclick = () => {
+        const nextOpen = !sidebarDrawer || !sidebarDrawer.classList.contains("open");
+        setSidebarDrawerOpen(nextOpen);
+      };
+      header.appendChild(sidebarToggle);
+    }
+    appendRenderedItems(header, slots.header, page.name);
+    if (header.children.length) {
+      root.appendChild(header);
+    }
+
+    const body = document.createElement("div");
+    body.className = "n3-layout-body";
+    body.dataset.hasDrawer = slots.drawer_right.length > 0 ? "true" : "false";
+
+    if (hasSidebar) {
+      const sidebar = document.createElement("aside");
+      sidebar.className = "n3-layout-sidebar";
+      appendRenderedItems(sidebar, slots.sidebar_left, page.name);
+      body.appendChild(sidebar);
+
+      sidebarDrawer = document.createElement("div");
+      sidebarDrawer.className = "n3-layout-sidebar-drawer";
+      const drawerBackdrop = document.createElement("button");
+      drawerBackdrop.type = "button";
+      drawerBackdrop.className = "n3-layout-sidebar-backdrop";
+      drawerBackdrop.setAttribute("aria-label", "Close sidebar");
+      drawerBackdrop.onclick = () => setSidebarDrawerOpen(false);
+      const drawerPanel = document.createElement("div");
+      drawerPanel.className = "n3-layout-sidebar-panel";
+      const closeButton = document.createElement("button");
+      closeButton.type = "button";
+      closeButton.className = "btn small ghost n3-layout-sidebar-close";
+      closeButton.textContent = "Close";
+      closeButton.onclick = () => setSidebarDrawerOpen(false);
+      drawerPanel.appendChild(closeButton);
+      appendRenderedItems(drawerPanel, slots.sidebar_left, page.name);
+      sidebarDrawer.appendChild(drawerBackdrop);
+      sidebarDrawer.appendChild(drawerPanel);
+      root.appendChild(sidebarDrawer);
+    }
+
+    if (slots.main.length) {
+      const main = document.createElement("section");
+      main.className = "n3-layout-main";
+      appendRenderedItems(main, slots.main, page.name);
+      body.appendChild(main);
+    }
+
+    if (slots.drawer_right.length) {
+      const drawer = document.createElement("aside");
+      drawer.className = "n3-layout-drawer";
+      appendRenderedItems(drawer, slots.drawer_right, page.name);
+      body.appendChild(drawer);
+    }
+
+    if (body.children.length) {
+      root.appendChild(body);
+    }
+
+    if (slots.footer.length) {
+      const footer = document.createElement("div");
+      footer.className = "n3-layout-footer";
+      appendRenderedItems(footer, slots.footer, page.name);
+      root.appendChild(footer);
+    }
+
+    const diagnosticsSection = buildDiagnosticsSection(page);
+    if (diagnosticsSection) {
+      root.appendChild(diagnosticsSection);
+    }
+
+    if (overlayItems.length) {
+      const overlayLayer = document.createElement("div");
+      overlayLayer.className = "ui-overlay-layer";
+      overlayItems.forEach((el) => {
+        overlayLayer.appendChild(renderOverlay(el, page.name));
+      });
+      root.appendChild(overlayLayer);
+    }
+    uiContainer.appendChild(root);
+    return true;
+  }
+
   function renderPage(pageKey) {
     uiContainer.innerHTML = "";
     overlayRegistry.clear();
@@ -612,26 +941,24 @@ let renderUI = (manifest) => {
       showEmpty(uiContainer, emptyMessage);
       return;
     }
-    const overlayItems = [];
-    const mainItems = [];
-    (page.elements || []).forEach((el) => {
-      if (el && el.visible === false) return;
-      if (el.type === "modal" || el.type === "drawer") {
-        overlayItems.push(el);
-      } else {
-        mainItems.push(el);
-      }
-    });
-    mainItems.forEach((el) => {
+    if (renderLayoutPage(page)) {
+      return;
+    }
+    const split = splitOverlayItems(page.elements || []);
+    split.items.forEach((el) => {
       uiContainer.appendChild(renderElement(el, page.name));
     });
-    if (overlayItems.length) {
+    if (split.overlays.length) {
       const overlayLayer = document.createElement("div");
       overlayLayer.className = "ui-overlay-layer";
-      overlayItems.forEach((el) => {
+      split.overlays.forEach((el) => {
         overlayLayer.appendChild(renderOverlay(el, page.name));
       });
       uiContainer.appendChild(overlayLayer);
+    }
+    const diagnosticsSection = buildDiagnosticsSection(page);
+    if (diagnosticsSection) {
+      uiContainer.appendChild(diagnosticsSection);
     }
   }
   if (select) {

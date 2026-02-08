@@ -259,6 +259,7 @@ def build_session_manifest(handler, program_ir, session: ServiceSession) -> dict
         identity=identity_for_session(session),
         auth_context=None,
         display_mode=getattr(handler.server, "ui_mode", "production"),  # type: ignore[attr-defined]
+        diagnostics_enabled=bool(getattr(handler.server, "ui_diagnostics_enabled", False)),  # type: ignore[attr-defined]
     )
     current = (manifest.get("theme") or {}).get("current")
     if isinstance(current, str) and current:

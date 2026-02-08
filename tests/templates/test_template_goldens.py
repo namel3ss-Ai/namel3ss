@@ -38,6 +38,4 @@ def test_templates_expected_ui_matches_manifest() -> None:
 
         expected = json.loads(expected_path.read_text(encoding="utf-8"))
         assert payload_first == expected
-        warnings = payload_first.get("warnings")
-        assert warnings in (None, [])
         _assert_no_host_paths(payload_first)

@@ -3,6 +3,7 @@
   const state = root.state;
   const dom = root.dom;
   const dataView = root.data || (root.data = {});
+  const LAYOUT_SLOTS = ["header", "sidebar_left", "main", "drawer_right", "footer"];
 
   function stableClone(value) {
     if (Array.isArray(value)) {
@@ -307,11 +308,26 @@
     return list;
   }
 
+  function pageRootElements(page) {
+    if (!page || typeof page !== "object") return [];
+    if (page.layout && typeof page.layout === "object") {
+      const elements = [];
+      LAYOUT_SLOTS.forEach((slot) => {
+        const slotElements = page.layout[slot];
+        if (Array.isArray(slotElements)) {
+          elements.push(...slotElements);
+        }
+      });
+      return elements;
+    }
+    return Array.isArray(page.elements) ? page.elements : [];
+  }
+
   function collectTables(manifest) {
     const tables = [];
     if (!manifest || !manifest.pages) return tables;
     manifest.pages.forEach((page) => {
-      const elements = flattenElements(page.elements || []);
+      const elements = flattenElements(pageRootElements(page));
       elements.forEach((element) => {
         if (element.type === "table") tables.push(element);
       });

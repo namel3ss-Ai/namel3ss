@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -15,13 +16,19 @@ from namel3ss.ui.manifest.display_mode import (
 )
 
 _ENV_UI_MODE = "N3_UI_MODE"
+_ENV_UI_DIAGNOSTICS = "N3_UI_DIAGNOSTICS"
 
 
 def dispatch_run_command(args: list[str]) -> int:
     mode = _resolve_requested_mode(args)
+    diagnostics_flag_in_args = "--diagnostics" in args
+    diagnostics_enabled = _resolve_requested_diagnostics(args)
+    if mode == DISPLAY_MODE_STUDIO and diagnostics_flag_in_args:
+        print("Warning: --diagnostics is ignored in Studio mode (Studio already includes diagnostics).", file=sys.stderr)
     normalized_args = _strip_mode_tokens(args)
     with _temporary_ui_mode(mode):
-        return run_run_command(normalized_args)
+        with _temporary_diagnostics_flag(diagnostics_enabled):
+            return run_run_command(normalized_args)
 
 
 def _resolve_requested_mode(args: list[str]) -> str:
@@ -46,10 +53,15 @@ def _resolve_requested_mode(args: list[str]) -> str:
 
 
 def _strip_mode_tokens(args: list[str]) -> list[str]:
-    cleaned = [arg for arg in args if arg not in {"--studio", "--production"}]
+    cleaned = [arg for arg in args if arg not in {"--studio", "--production", "--diagnostics"}]
     if cleaned and cleaned[0] in {DISPLAY_MODE_STUDIO, DISPLAY_MODE_PRODUCTION}:
         return cleaned[1:]
     return cleaned
+
+
+def _resolve_requested_diagnostics(args: list[str]) -> bool:
+    env_enabled = _env_diagnostics_enabled()
+    return "--diagnostics" in args or env_enabled
 
 
 def _env_mode_or_error() -> str | None:
@@ -60,6 +72,10 @@ def _env_mode_or_error() -> str | None:
         return normalize_display_mode(raw, default=DISPLAY_MODE_PRODUCTION)
     except ValueError as err:
         raise Namel3ssError(str(err)) from err
+
+
+def _env_diagnostics_enabled() -> bool:
+    return os.getenv(_ENV_UI_DIAGNOSTICS, "").strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _looks_like_unknown_mode(token: str | None) -> bool:
@@ -104,6 +120,19 @@ def _temporary_ui_mode(mode: str):
             os.environ.pop(_ENV_UI_MODE, None)
         else:
             os.environ[_ENV_UI_MODE] = previous
+
+
+@contextmanager
+def _temporary_diagnostics_flag(enabled: bool):
+    previous = os.environ.get(_ENV_UI_DIAGNOSTICS)
+    os.environ[_ENV_UI_DIAGNOSTICS] = "true" if enabled else "false"
+    try:
+        yield
+    finally:
+        if previous is None:
+            os.environ.pop(_ENV_UI_DIAGNOSTICS, None)
+        else:
+            os.environ[_ENV_UI_DIAGNOSTICS] = previous
 
 
 __all__ = ["dispatch_run_command"]

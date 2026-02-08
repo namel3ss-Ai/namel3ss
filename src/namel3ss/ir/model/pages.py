@@ -11,18 +11,32 @@ from namel3ss.ir.model.expressions import Expression, Literal, StatePath
 class Page(Node):
     name: str
     items: List["PageItem"]
+    layout: "PageLayout | None" = None
     requires: Expression | None = None
+    visibility: Expression | None = field(default=None, kw_only=True)
+    visibility_rule: "VisibilityRule | VisibilityExpressionRule" | None = field(default=None, kw_only=True)
     purpose: str | None = None
     state_defaults: dict | None = None
     status: "StatusBlock" | None = None
-    debug_only: bool | None = None
+    debug_only: bool | str | None = None
+    diagnostics: bool | None = None
+
+
+@dataclass
+class PageLayout(Node):
+    header: list["PageItem"]
+    sidebar_left: list["PageItem"]
+    main: list["PageItem"]
+    drawer_right: list["PageItem"]
+    footer: list["PageItem"]
+    diagnostics: list["PageItem"] = field(default_factory=list)
 
 
 @dataclass
 class PageItem(Node):
     visibility: Expression | None = field(default=None, kw_only=True)
     visibility_rule: "VisibilityRule | VisibilityExpressionRule" | None = field(default=None, kw_only=True)
-    debug_only: bool | None = field(default=None, kw_only=True)
+    debug_only: bool | str | None = field(default=None, kw_only=True)
 
 
 @dataclass
@@ -132,6 +146,9 @@ class UploadItem(PageItem):
     name: str
     accept: list[str]
     multiple: bool
+    required: bool = False
+    label: str = "Upload"
+    preview: bool = False
 
 
 @dataclass
@@ -192,6 +209,7 @@ class TableItem(PageItem):
     source: StatePath | None = None
     columns: List[TableColumnDirective] | None = None
     empty_text: str | None = None
+    empty_state_hidden: bool = False
     sort: TableSort | None = None
     pagination: TablePagination | None = None
     selection: str | None = None
@@ -222,6 +240,7 @@ class ListItem(PageItem):
     record_name: str | None = None
     source: StatePath | None = None
     empty_text: str | None = None
+    empty_state_hidden: bool = False
     selection: str | None = None
     actions: List[ListAction] | None = None
 
@@ -274,8 +293,35 @@ class ChatMemoryItem(PageItem):
 
 
 @dataclass
+class CitationChipsItem(PageItem):
+    source: StatePath
+
+
+@dataclass
+class SourcePreviewItem(PageItem):
+    source: StatePath | Literal
+
+
+@dataclass
+class TrustIndicatorItem(PageItem):
+    source: StatePath
+
+
+@dataclass
+class ScopeSelectorItem(PageItem):
+    options_source: StatePath
+    active: StatePath
+
+
+@dataclass
 class ChatItem(PageItem):
     children: List["PageItem"]
+    style: str = "bubbles"
+    show_avatars: bool = False
+    group_messages: bool = True
+    actions: list[str] = field(default_factory=list)
+    streaming: bool = False
+    attachments: bool = False
 
 
 @dataclass

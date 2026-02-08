@@ -80,11 +80,17 @@ def lower_upload_item(
 ) -> UploadItem:
     accept = [entry.strip() for entry in (item.accept or []) if entry.strip()]
     multiple = bool(item.multiple) if item.multiple is not None else False
+    required = bool(item.required) if item.required is not None else False
+    label = str(item.label).strip() if isinstance(item.label, str) and item.label.strip() else "Upload"
+    preview = bool(item.preview) if item.preview is not None else False
     return attach_origin(
         UploadItem(
             name=item.name,
             accept=accept,
             multiple=multiple,
+            required=required,
+            label=label,
+            preview=preview,
             line=item.line,
             column=item.column,
         ),
@@ -127,6 +133,7 @@ def lower_table_item(
                 source=None,
                 columns=columns,
                 empty_text=item.empty_text,
+                empty_state_hidden=bool(getattr(item, "empty_state_hidden", False)),
                 sort=sort,
                 pagination=pagination,
                 selection=item.selection,
@@ -149,6 +156,7 @@ def lower_table_item(
             source=source,
             columns=columns,
             empty_text=item.empty_text,
+            empty_state_hidden=bool(getattr(item, "empty_state_hidden", False)),
             sort=None,
             pagination=None,
             selection=None,
@@ -195,6 +203,7 @@ def lower_list_item(
                 variant=variant,
                 item=mapping,
                 empty_text=item.empty_text,
+                empty_state_hidden=bool(getattr(item, "empty_state_hidden", False)),
                 selection=item.selection,
                 actions=actions,
                 line=item.line,
@@ -214,6 +223,7 @@ def lower_list_item(
             variant=variant,
             item=mapping,
             empty_text=item.empty_text,
+            empty_state_hidden=bool(getattr(item, "empty_state_hidden", False)),
             selection=None,
             actions=None,
             line=item.line,

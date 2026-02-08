@@ -5,9 +5,11 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir.lowering.expressions import _lower_expression
 from namel3ss.ir.model.contracts import ContractDecl
+from namel3ss.ir.model.ai import AskAIStmt
 from namel3ss.ir.model.expressions import Literal as IRLiteral
 from namel3ss.ir.model.expressions import StatePath as IRStatePath
 from namel3ss.ir.model.flow_steps import FlowInput
+from namel3ss.ir.model.statements import ForEach, If, Match, ParallelBlock, Repeat, RepeatWhile, TryCatch
 from namel3ss.ir.model.pages import (
     ActivePageRule,
     CardGroupItem,
@@ -24,6 +26,7 @@ from namel3ss.ir.model.pages import (
     SectionItem,
     TabsItem,
     TextInputItem,
+    UploadItem,
 )
 from namel3ss.ir.model.program import Flow
 from namel3ss.ir.model.responsive import ResponsiveLayout
@@ -190,8 +193,35 @@ def _validate_chat_composers(
     flow_contracts: dict[str, ContractDecl],
 ) -> None:
     flow_inputs: dict[str, dict[str, str]] = {flow.name: _flow_input_signature(flow, flow_contracts) for flow in flows}
+    flow_streaming_support: dict[str, bool] = {flow.name: _flow_supports_streaming(flow.body) for flow in flows}
     for page in pages:
         for item in _walk_page_items(page.items):
+            if isinstance(item, ChatItem) and bool(getattr(item, "streaming", False)):
+                composer_children = [child for child in getattr(item, "children", []) if isinstance(child, ChatComposerItem)]
+                if not composer_children:
+                    raise Namel3ssError(
+                        build_guidance_message(
+                            what="Chat streaming is enabled without a composer.",
+                            why="Streaming chat requires a composer flow to produce incremental assistant replies.",
+                            fix="Add a composer or disable streaming.",
+                            example='chat:\\n  composer calls flow "ask"\\n  streaming is true',
+                        ),
+                        line=item.line,
+                        column=item.column,
+                    )
+                for composer in composer_children:
+                    if flow_streaming_support.get(composer.flow_name, False):
+                        continue
+                    raise Namel3ssError(
+                        build_guidance_message(
+                            what=f'Chat streaming is enabled but flow "{composer.flow_name}" does not stream output.',
+                            why="At least one ask-ai statement in the flow must set stream to true.",
+                            fix="Enable stream on an ask-ai step or disable chat streaming.",
+                            example='ask ai "assistant" with stream: true and input: message as reply',
+                        ),
+                        line=composer.line,
+                        column=composer.column,
+                    )
             if not isinstance(item, ChatComposerItem):
                 continue
             inputs = flow_inputs.get(item.flow_name) or {}
@@ -316,6 +346,45 @@ def _composer_input_example(flow_name: str, field_names: list[str]) -> str:
     return "\n".join(lines)
 
 
+def _flow_supports_streaming(statements: list[object]) -> bool:
+    for stmt in statements:
+        if isinstance(stmt, AskAIStmt) and bool(getattr(stmt, "stream", False)):
+            return True
+        if isinstance(stmt, If):
+            if _flow_supports_streaming(getattr(stmt, "then_body", [])) or _flow_supports_streaming(getattr(stmt, "else_body", [])):
+                return True
+            continue
+        if isinstance(stmt, Repeat):
+            if _flow_supports_streaming(getattr(stmt, "body", [])):
+                return True
+            continue
+        if isinstance(stmt, RepeatWhile):
+            if _flow_supports_streaming(getattr(stmt, "body", [])):
+                return True
+            continue
+        if isinstance(stmt, ForEach):
+            if _flow_supports_streaming(getattr(stmt, "body", [])):
+                return True
+            continue
+        if isinstance(stmt, Match):
+            for case in getattr(stmt, "cases", []):
+                if _flow_supports_streaming(getattr(case, "body", [])):
+                    return True
+            if _flow_supports_streaming(getattr(stmt, "otherwise", [])):
+                return True
+            continue
+        if isinstance(stmt, TryCatch):
+            if _flow_supports_streaming(getattr(stmt, "try_body", [])) or _flow_supports_streaming(getattr(stmt, "catch_body", [])):
+                return True
+            continue
+        if isinstance(stmt, ParallelBlock):
+            for task in getattr(stmt, "tasks", []):
+                if _flow_supports_streaming(getattr(task, "body", [])):
+                    return True
+            continue
+    return False
+
+
 def _walk_page_items(items: list[object]) -> list[object]:
     collected: list[object] = []
     for item in items:
@@ -371,11 +440,29 @@ def _normalize_pack_allowlist(items: list[str] | None) -> tuple[str, ...] | None
     return tuple(normalized)
 
 
+def _validate_unique_upload_requests(pages: list[Page]) -> None:
+    seen: dict[str, UploadItem] = {}
+    for page in pages:
+        for item in _walk_page_items(page.items):
+            if not isinstance(item, UploadItem):
+                continue
+            existing = seen.get(item.name)
+            if existing is None:
+                seen[item.name] = item
+                continue
+            raise Namel3ssError(
+                f"Upload name '{item.name}' is duplicated",
+                line=item.line,
+                column=item.column,
+            )
+
+
 __all__ = [
     "_ensure_unique_pages",
     "_lower_active_page_rules",
     "_normalize_capabilities",
     "_normalize_pack_allowlist",
+    "_validate_unique_upload_requests",
     "_validate_chat_composers",
     "_validate_page_style_hook_tokens",
     "_validate_responsive_theme_scales",

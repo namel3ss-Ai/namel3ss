@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "namel3ss"
-version = "0.1.0a14"
+version = "0.1.0a15"
 description = "AI-native programming language for deterministic, inspectable applications."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -104,6 +104,7 @@ where = ["src"]
 ]
 "namel3ss.runtime.native" = ["lib/*"]
 "namel3ss.studio.web" = ["**/*"]
+"namel3ss.themes" = ["*.json"]
 
 [tool.setuptools.data-files]
 "resources/icons/actions" = ["resources/icons/actions/*"]

@@ -8,6 +8,7 @@ from namel3ss.ir import nodes as ir
 from namel3ss.media import MediaValidationMode
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.schema import records as schema
+from namel3ss.ui import manifest_rag as rag_mod
 from namel3ss.ui.manifest.state_defaults import StateContext
 from namel3ss.ui.manifest.visibility import apply_visibility, evaluate_visibility
 from namel3ss.validation import ValidationMode
@@ -117,6 +118,7 @@ def page_item_to_manifest(
             page_slug=page_slug,
             path=path,
             taken_actions=taken_actions,
+            state_ctx=state_ctx,
         )
         return apply_visibility(element, effective_visible, visibility_info), actions, effective_visible
     if isinstance(item, ir.LoadingItem):
@@ -229,6 +231,44 @@ def page_item_to_manifest(
             taken_actions=taken_actions,
             build_children=build_children,
             parent_visible=effective_visible,
+        )
+        return apply_visibility(element, effective_visible, visibility_info), actions, effective_visible
+    if isinstance(item, ir.CitationChipsItem):
+        element, actions = rag_mod.build_citation_chips_item(
+            item,
+            page_name=page_name,
+            page_slug=page_slug,
+            path=path,
+            state_ctx=state_ctx,
+            mode=mode,
+            warnings=warnings,
+        )
+        return apply_visibility(element, effective_visible, visibility_info), actions, effective_visible
+    if isinstance(item, ir.SourcePreviewItem):
+        element, actions = rag_mod.build_source_preview_item(
+            item,
+            page_name=page_name,
+            page_slug=page_slug,
+            path=path,
+            state_ctx=state_ctx,
+        )
+        return apply_visibility(element, effective_visible, visibility_info), actions, effective_visible
+    if isinstance(item, ir.TrustIndicatorItem):
+        element, actions = rag_mod.build_trust_indicator_item(
+            item,
+            page_name=page_name,
+            page_slug=page_slug,
+            path=path,
+            state_ctx=state_ctx,
+        )
+        return apply_visibility(element, effective_visible, visibility_info), actions, effective_visible
+    if isinstance(item, ir.ScopeSelectorItem):
+        element, actions = rag_mod.build_scope_selector_item(
+            item,
+            page_name=page_name,
+            page_slug=page_slug,
+            path=path,
+            state_ctx=state_ctx,
         )
         return apply_visibility(element, effective_visible, visibility_info), actions, effective_visible
     chat_result = views_mod.build_chat_child_item(

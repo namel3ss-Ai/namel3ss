@@ -1,0 +1,29 @@
+.ui-custom-component {
+  border-style: dashed;
+  border-color: var(--n3-secondary-color);
+  background: var(--n3-background-color);
+}
+
+.ui-custom-component-node {
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 6px 8px;
+  border: 1px solid #e7e7e7;
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+
+.ui-custom-component-empty {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.n3-diagnostics {
+  border-color: var(--n3-secondary-color);
+  border-radius: calc(var(--n3-border-radius) + 2px);
+  background: var(--n3-background-color);
+}
+
+.n3-diagnostics-title {
+  color: var(--n3-secondary-color);
+}

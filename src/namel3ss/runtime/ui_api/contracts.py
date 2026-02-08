@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from namel3ss.ui.export.actions import build_actions_list
+from namel3ss.ui.manifest.page_structure import page_diagnostics_elements, walk_elements, walk_page_elements
 
 UI_API_VERSION = "1"
 
@@ -29,9 +30,18 @@ def build_ui_manifest_payload(manifest_payload: dict, *, revision: str | None = 
         },
         "theme": theme,
     }
+    upload_requests = manifest_payload.get("upload_requests")
+    if isinstance(upload_requests, list):
+        payload["manifest"]["upload_requests"] = [entry for entry in upload_requests if isinstance(entry, dict)]
+    warnings = _normalize_warnings(manifest_payload.get("warnings"))
+    if warnings:
+        payload["manifest"]["warnings"] = warnings
     mode = manifest_payload.get("mode")
     if isinstance(mode, str) and mode:
         payload["manifest"]["mode"] = mode
+    diagnostics_enabled = manifest_payload.get("diagnostics_enabled")
+    if isinstance(diagnostics_enabled, bool):
+        payload["manifest"]["diagnostics_enabled"] = diagnostics_enabled
     if isinstance(revision, str) and revision:
         payload["revision"] = revision
     return payload
@@ -49,6 +59,9 @@ def build_ui_actions_payload(manifest_payload: dict, *, revision: str | None = N
         "api_version": UI_API_VERSION,
         "actions": build_actions_list(action_map),
     }
+    warnings = _normalize_warnings(manifest_payload.get("warnings"))
+    if warnings:
+        payload["warnings"] = warnings
     if isinstance(revision, str) and revision:
         payload["revision"] = revision
     return payload
@@ -125,24 +138,16 @@ def _collect_component_types(pages: list[dict]) -> list[str]:
     for page in pages:
         if not isinstance(page, dict):
             continue
-        for element in _walk_elements(page.get("elements")):
+        for element in walk_page_elements(page):
+            element_type = element.get("type") if isinstance(element, dict) else None
+            if isinstance(element_type, str) and element_type:
+                types.append(element_type)
+        diagnostics_blocks = page_diagnostics_elements(page)
+        for element in walk_elements(diagnostics_blocks):
             element_type = element.get("type") if isinstance(element, dict) else None
             if isinstance(element_type, str) and element_type:
                 types.append(element_type)
     return types
-
-
-def _walk_elements(elements: Any) -> list[dict]:
-    if not isinstance(elements, list):
-        return []
-    rows: list[dict] = []
-    for element in elements:
-        if not isinstance(element, dict):
-            continue
-        rows.append(element)
-        rows.extend(_walk_elements(element.get("children")))
-    return rows
-
 
 def _sorted_unique(values: list[str]) -> list[str]:
     return sorted({value for value in values if isinstance(value, str) and value})
@@ -153,6 +158,12 @@ def _normalize_errors(error_payload: Any) -> list[dict]:
         return [item for item in error_payload if isinstance(item, dict)]
     if isinstance(error_payload, dict):
         return [error_payload]
+    return []
+
+
+def _normalize_warnings(warnings_payload: Any) -> list[dict]:
+    if isinstance(warnings_payload, list):
+        return [item for item in warnings_payload if isinstance(item, dict)]
     return []
 
 

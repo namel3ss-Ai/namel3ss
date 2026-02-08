@@ -12,6 +12,12 @@ from namel3ss.ir.model.pages import CustomComponentItem as IRCustomComponentItem
 from namel3ss.ir.model.pages import CustomComponentProp as IRCustomComponentProp
 from namel3ss.ir.model.pages import VisibilityExpressionRule as IRVisibilityExpressionRule
 from namel3ss.ir.model.pages import VisibilityRule as IRVisibilityRule
+from namel3ss.ir.lowering.page_rag import (
+    _lower_citation_chips_item,
+    _lower_scope_selector_item,
+    _lower_source_preview_item,
+    _lower_trust_indicator_item,
+)
 from namel3ss.schema import records as schema
 from namel3ss.ui.theme import normalize_style_hooks, normalize_variant
 
@@ -42,7 +48,7 @@ def _attach_origin(target, source):
         setattr(target, "visibility_rule", visibility_rule)
     debug_only = getattr(source, "debug_only", None)
     if debug_only is not None:
-        setattr(target, "debug_only", bool(debug_only))
+        setattr(target, "debug_only", debug_only)
     component = _style_component_name(source)
     if component:
         variant = normalize_variant(
@@ -262,6 +268,14 @@ def _lower_page_item(
         return views_mod.lower_chart_item(item, record_map, page_name, attach_origin=_attach_origin)
     if isinstance(item, ast.ChatItem):
         return views_mod.lower_chat_item(item, flow_names, page_name, attach_origin=_attach_origin)
+    if isinstance(item, ast.CitationChipsItem):
+        return _lower_citation_chips_item(item, attach_origin=_attach_origin)
+    if isinstance(item, ast.SourcePreviewItem):
+        return _lower_source_preview_item(item, attach_origin=_attach_origin)
+    if isinstance(item, ast.TrustIndicatorItem):
+        return _lower_trust_indicator_item(item, attach_origin=_attach_origin)
+    if isinstance(item, ast.ScopeSelectorItem):
+        return _lower_scope_selector_item(item, attach_origin=_attach_origin)
     if isinstance(item, ast.CustomComponentItem):
         return _lower_custom_component_item(item, flow_names)
     if isinstance(item, ast.TabsItem):

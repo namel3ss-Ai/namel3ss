@@ -15,6 +15,7 @@
     if (typeof window.renderLogs !== "function") missing.push("logs");
     if (typeof window.renderMetrics !== "function") missing.push("metrics");
     if (typeof window.renderExplain !== "function") missing.push("explain");
+    if (typeof window.renderDiagnostics !== "function") missing.push("diagnostics");
     if (typeof window.renderErrors !== "function") missing.push("errors");
     if (!root.formulas || typeof root.formulas.setupFormulas !== "function") missing.push("formulas");
     if (typeof window.renderFormulas !== "function") missing.push("formulas_render");

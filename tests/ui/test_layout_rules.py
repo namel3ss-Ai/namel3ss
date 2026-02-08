@@ -123,4 +123,5 @@ def test_layout_rules_skip_good_layouts() -> None:
     program = lower_ir_program(GOOD_LAYOUT_SOURCE)
     warnings: list = []
     build_manifest(program, state={}, mode=ValidationMode.STATIC, warnings=warnings)
-    assert not warnings
+    layout_warnings = [warning for warning in warnings if str(getattr(warning, "code", "")).startswith("layout.")]
+    assert not layout_warnings

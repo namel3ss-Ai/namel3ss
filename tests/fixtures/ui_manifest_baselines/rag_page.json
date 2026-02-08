@@ -1,0 +1,352 @@
+{
+  "css_contract": {
+    "selectors": {
+      ".btn": [
+        "border: 1px solid var(--border-soft); background: #fff; color: var(--text-main); padding: 10px 16px; border-radius: var(--radius-m); font-size: 13px; cursor: pointer; transition: background var(--transition-fast) var(--ease-soft), border-color var(--transition-fast) var(--ease-soft)",
+        "transition: none"
+      ],
+      ".btn.small": [
+        "padding: 6px 10px; font-size: 12px"
+      ],
+      ".n3-layout-body": [
+        "display: grid; grid-template-columns: minmax(200px, 260px) minmax(0, 1fr); gap: 12px; align-items: start",
+        "grid-template-columns: minmax(0, 1fr)"
+      ],
+      ".n3-layout-drawer": [
+        "border: 1px solid #eaeaea; border-radius: 10px; background: #fff; padding: 10px; display: flex; flex-direction: column; gap: 10px; max-height: calc(100vh - 280px); overflow: auto",
+        "display: none"
+      ],
+      ".n3-layout-footer": [
+        "position: sticky; bottom: 0; z-index: 4; border: 1px solid #eaeaea; border-radius: 10px; background: #fff; padding: 10px; display: flex; flex-direction: column; gap: 10px"
+      ],
+      ".n3-layout-header": [
+        "display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 5; background: #fff; border: 1px solid #eaeaea; border-radius: 10px; padding: 10px",
+        "position: static"
+      ],
+      ".n3-layout-main": [
+        "border: 1px solid #eaeaea; border-radius: 10px; background: #fff; padding: 10px; display: flex; flex-direction: column; gap: 10px; max-height: calc(100vh - 280px); overflow: auto"
+      ],
+      ".n3-layout-root": [
+        "display: flex; flex-direction: column; gap: 12px; min-height: 100%"
+      ],
+      ".n3-layout-sidebar": [
+        "border: 1px solid #eaeaea; border-radius: 10px; background: #fff; padding: 10px; display: flex; flex-direction: column; gap: 10px; max-height: calc(100vh - 280px); overflow: auto",
+        "display: none"
+      ],
+      ".topbar": [
+        "position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 12px 0; background: #f8f8f8; border-bottom: 1px solid var(--border-subtle)"
+      ],
+      ".ui-chat": [
+        "display: flex; flex-direction: column; gap: 14px"
+      ],
+      ".ui-chat-composer": [
+        "display: flex; flex-wrap: wrap; gap: 8px"
+      ],
+      ".ui-chat-message": [
+        "display: flex; gap: 8px; align-items: flex-end"
+      ],
+      ".ui-chat-messages": [
+        "display: flex; flex-direction: column; gap: 6px"
+      ],
+      ".ui-citation-chip": [
+        "border: 1px solid #d6def5; background: #f5f8ff; color: #274078; font-size: 11px; border-radius: 999px; padding: 2px 8px; cursor: pointer"
+      ],
+      ".ui-citation-chips": [
+        "display: flex; flex-wrap: wrap; gap: 6px; align-items: center"
+      ],
+      ".ui-scope-option": [
+        "border: 1px solid #ccd2dc; border-radius: 999px; background: #fff; color: #223; padding: 4px 10px; font-size: 12px; cursor: pointer"
+      ],
+      ".ui-scope-selector": [
+        "border: 1px solid #eaeaea; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px"
+      ],
+      ".ui-section": [
+        "background: #fff; display: flex; flex-direction: column; gap: 10px"
+      ],
+      ".ui-section-title": [
+        "font-size: 14px; font-weight: 600; letter-spacing: 0.2px"
+      ],
+      ".ui-source-preview": [
+        "border: 1px solid #eaeaea; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px"
+      ],
+      ".ui-source-preview-title": [
+        "font-size: 13px; font-weight: 600"
+      ],
+      ".ui-trust-indicator": [
+        "display: inline-flex; align-items: center; border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 600"
+      ]
+    },
+    "sticky_topbar": true
+  },
+  "manifest": {
+    "actions": {
+      "page.rag.composer.2.1.1.composer": {
+        "flow": "send",
+        "id": "page.rag.composer.2.1.1.composer",
+        "type": "call_flow"
+      },
+      "page.rag.scope_selector.1.0.select": {
+        "id": "page.rag.scope_selector.1.0.select",
+        "target_state": "state.active_docs",
+        "type": "scope_select"
+      }
+    },
+    "diagnostics_enabled": true,
+    "mode": "studio",
+    "pages": [
+      {
+        "layout": {
+          "drawer_right": [
+            {
+              "column": 7,
+              "element_id": "page.rag.source_preview.3.0",
+              "index": 0,
+              "line": 21,
+              "page": "rag",
+              "page_slug": "rag",
+              "snippet": "Policy source",
+              "source": "state.preview",
+              "source_id": "doc-policy",
+              "title": "Policy",
+              "type": "source_preview"
+            }
+          ],
+          "footer": [],
+          "header": [
+            {
+              "column": 7,
+              "element_id": "page.rag.title.0.0",
+              "index": 0,
+              "line": 9,
+              "page": "rag",
+              "page_slug": "rag",
+              "type": "title",
+              "value": "Ask the Docs"
+            }
+          ],
+          "main": [
+            {
+              "children": [
+                {
+                  "column": 9,
+                  "element_id": "page.rag.text.2.0.0",
+                  "index": 0,
+                  "line": 14,
+                  "page": "rag",
+                  "page_slug": "rag",
+                  "type": "text",
+                  "value": "Grounded answer"
+                },
+                {
+                  "citations": [
+                    {
+                      "index": 1,
+                      "source_id": "doc-policy",
+                      "title": "Policy"
+                    }
+                  ],
+                  "column": 9,
+                  "element_id": "page.rag.citation_chips.2.0.1",
+                  "index": 1,
+                  "line": 15,
+                  "page": "rag",
+                  "page_slug": "rag",
+                  "source": "state.answer.citations",
+                  "type": "citation_chips"
+                },
+                {
+                  "column": 9,
+                  "element_id": "page.rag.trust_indicator.2.0.2",
+                  "index": 2,
+                  "line": 16,
+                  "page": "rag",
+                  "page_slug": "rag",
+                  "source": "state.answer.trusted",
+                  "type": "trust_indicator",
+                  "value": true
+                }
+              ],
+              "column": 7,
+              "element_id": "page.rag.section.2.0",
+              "index": 0,
+              "label": "Answer",
+              "line": 13,
+              "page": "rag",
+              "page_slug": "rag",
+              "spacing": {
+                "gap": "l",
+                "padding": "m",
+                "title_gap": "s"
+              },
+              "type": "section"
+            },
+            {
+              "actions": [],
+              "attachments": false,
+              "children": [
+                {
+                  "column": 9,
+                  "element_id": "page.rag.messages.2.1.0",
+                  "index": 0,
+                  "line": 18,
+                  "messages": [
+                    {
+                      "content": "Grounded answer",
+                      "group_start": true,
+                      "role": "assistant"
+                    }
+                  ],
+                  "page": "rag",
+                  "page_slug": "rag",
+                  "source": "state.chat.messages",
+                  "spacing": {
+                    "item_gap": "m",
+                    "meta_gap": "s"
+                  },
+                  "type": "messages"
+                },
+                {
+                  "accessibility": {
+                    "label": "send",
+                    "role": "textbox",
+                    "tab_order": 1
+                  },
+                  "action": {
+                    "flow": "send",
+                    "type": "call_flow"
+                  },
+                  "action_id": "page.rag.composer.2.1.1.composer",
+                  "column": 9,
+                  "element_id": "page.rag.composer.2.1.1",
+                  "flow": "send",
+                  "id": "page.rag.composer.2.1.1.composer",
+                  "index": 1,
+                  "line": 19,
+                  "page": "rag",
+                  "page_slug": "rag",
+                  "spacing": {
+                    "action_gap": "s",
+                    "input_gap": "s"
+                  },
+                  "type": "composer"
+                }
+              ],
+              "column": 7,
+              "element_id": "page.rag.chat.2.1",
+              "group_messages": true,
+              "index": 1,
+              "line": 17,
+              "page": "rag",
+              "page_slug": "rag",
+              "show_avatars": false,
+              "spacing": {
+                "composer_gap": "m",
+                "message_gap": "m",
+                "section_gap": "m"
+              },
+              "streaming": false,
+              "style": "bubbles",
+              "type": "chat"
+            }
+          ],
+          "sidebar_left": [
+            {
+              "action_id": "page.rag.scope_selector.1.0.select",
+              "active": [
+                "policy"
+              ],
+              "active_source": "state.active_docs",
+              "column": 7,
+              "element_id": "page.rag.scope_selector.1.0",
+              "id": "page.rag.scope_selector.1.0.select",
+              "index": 0,
+              "line": 11,
+              "options": [
+                {
+                  "id": "policy",
+                  "name": "Policy docs"
+                },
+                {
+                  "id": "handbook",
+                  "name": "Handbook"
+                }
+              ],
+              "options_source": "state.documents",
+              "page": "rag",
+              "page_slug": "rag",
+              "type": "scope_selector"
+            }
+          ]
+        },
+        "name": "rag",
+        "slug": "rag"
+      }
+    ],
+    "theme": {
+      "css": ":root {\n  --n3-primary-color: #2563EB;\n  --n3-secondary-color: #5856D6;\n  --n3-background-color: #FFFFFF;\n  --n3-foreground-color: #111827;\n  --n3-font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;\n  --n3-font-size-base: 14px;\n  --n3-font-weight: 500;\n  --n3-spacing-scale: 1.0;\n  --n3-border-radius: 10px;\n  --n3-shadow-elevation: 0 2px 6px rgba(15, 23, 42, 0.08);\n}\n\nbody.n3-runtime,\nbody {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  font-family: var(--n3-font-family);\n  font-size: var(--n3-font-size-base);\n  font-weight: var(--n3-font-weight);\n}\n\n.ui-body,\n.panel,\n.ui-element,\n.list-item,\n.trace-row,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  border-radius: var(--n3-border-radius);\n  box-shadow: var(--n3-shadow-elevation);\n}\n\n.btn.primary,\n.ui-chat-action,\n.ui-upload-label {\n  background: var(--n3-primary-color);\n  border-color: var(--n3-primary-color);\n  color: #FFFFFF;\n}\n\n.ui-link,\n.n3-chat-attachment-link,\n.n3-citation-chip {\n  color: var(--n3-primary-color);\n}\n\n.ui-card-title,\n.ui-section-title,\n.n3-chat-group-label {\n  color: var(--n3-secondary-color);\n}\n\n.ui-element,\n.panel,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  padding: calc(10px * var(--n3-spacing-scale));\n}\n\n.ui-row,\n.ui-column,\n.ui-card-group,\n.n3-layout-root,\n.n3-layout-body {\n  gap: calc(10px * var(--n3-spacing-scale));\n}\n",
+      "css_hash": "af84b4058b81de1bba97dd498d5b53bb92defe1f5de89914b9ee0633692c1446",
+      "current": "light",
+      "effective": "light",
+      "font_url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+      "persisted_current": null,
+      "preference": {
+        "allow_override": false,
+        "persist": "none"
+      },
+      "runtime_supported": false,
+      "runtime_tokens": {},
+      "schema_version": "1",
+      "setting": "light",
+      "source": "app",
+      "theme_name": "default",
+      "tokens": {
+        "background_color": "#FFFFFF",
+        "border_radius": 10,
+        "font_family": "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+        "font_size_base": 14,
+        "font_weight": 500,
+        "foreground_color": "#111827",
+        "primary_color": "#2563EB",
+        "secondary_color": "#5856D6",
+        "shadow_level": 1,
+        "spacing_scale": 1.0
+      }
+    },
+    "ui": {
+      "persistence": {
+        "enabled": false,
+        "kind": "memory",
+        "path": null,
+        "schema_version": null
+      },
+      "settings": {
+        "accent_color": "blue",
+        "density": "comfortable",
+        "motion": "subtle",
+        "shape": "rounded",
+        "surface": "flat",
+        "theme": "light"
+      }
+    }
+  },
+  "summary": {
+    "action_types": [
+      "call_flow",
+      "scope_select"
+    ],
+    "element_types": [
+      "chat",
+      "citation_chips",
+      "composer",
+      "messages",
+      "page_layout",
+      "scope_selector",
+      "section",
+      "source_preview",
+      "text",
+      "title",
+      "trust_indicator"
+    ],
+    "warning_codes": []
+  }
+}

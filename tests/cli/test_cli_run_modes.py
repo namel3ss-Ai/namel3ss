@@ -67,3 +67,41 @@ def test_dispatch_run_rejects_conflicting_mode_flags():
     with pytest.raises(Namel3ssError) as exc:
         dispatch_run_command(["--studio", "--production", "app.ai"])
     assert "Use either --studio or --production, not both." in str(exc.value)
+
+
+def test_dispatch_run_sets_diagnostics_flag(monkeypatch):
+    seen: dict[str, object] = {}
+
+    def fake_run(args):
+        seen["args"] = list(args)
+        seen["mode"] = os.getenv("N3_UI_MODE")
+        seen["diagnostics"] = os.getenv("N3_UI_DIAGNOSTICS")
+        return 0
+
+    monkeypatch.setattr("namel3ss.cli.run_entry.run_run_command", fake_run)
+    code = dispatch_run_command(["app.ai", "--diagnostics"])
+
+    assert code == 0
+    assert seen["args"] == ["app.ai"]
+    assert seen["mode"] == "production"
+    assert seen["diagnostics"] == "true"
+
+
+def test_dispatch_run_warns_when_diagnostics_flag_is_used_in_studio(monkeypatch, capsys):
+    seen: dict[str, object] = {}
+
+    def fake_run(args):
+        seen["args"] = list(args)
+        seen["mode"] = os.getenv("N3_UI_MODE")
+        seen["diagnostics"] = os.getenv("N3_UI_DIAGNOSTICS")
+        return 0
+
+    monkeypatch.setattr("namel3ss.cli.run_entry.run_run_command", fake_run)
+    code = dispatch_run_command(["studio", "app.ai", "--diagnostics"])
+    captured = capsys.readouterr()
+
+    assert code == 0
+    assert seen["args"] == ["app.ai"]
+    assert seen["mode"] == "studio"
+    assert seen["diagnostics"] == "true"
+    assert "--diagnostics is ignored in Studio mode" in captured.err

@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 
 from namel3ss.parser.core import parse
-from namel3ss.spec_freeze.v1.rules import PARSER_GOLDEN_DIR
+from namel3ss.spec_freeze.contracts.rules import PARSER_GOLDEN_DIR
 from tests.spec_freeze.helpers.ast_dump import dump_ast
 from tests.spec_freeze.helpers.samples import sample_sources
 
