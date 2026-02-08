@@ -81,6 +81,8 @@ def test_cli_install_gate_workflow_contract() -> None:
     assert '$logDir = ".namel3ss/ci"' in ci_workflow
     assert "path: .namel3ss/ci/" in ci_workflow
     assert ".namel3ss\\\\ci" not in ci_workflow
+    assert "n3_script=" in ci_workflow
+    assert "$n3ScriptPath =" in ci_workflow
 
 
 def test_local_verify_includes_cli_gate_checks() -> None:
@@ -90,7 +92,8 @@ def test_local_verify_includes_cli_gate_checks() -> None:
     repo_root = Path(__file__).resolve().parents[1]
     verify_local = (repo_root / "tools" / "ci" / "verify_local.py").read_text(encoding="utf-8")
     assert "tests/test_cli_install.py" in verify_local
-    assert '["n3", "--version"]' in verify_local
-    assert '["n3", "--help"]' in verify_local
+    assert "def _resolve_n3_script()" in verify_local
+    assert "[n3_script, \"--version\"]" in verify_local
+    assert "[n3_script, \"--help\"]" in verify_local
     assert '[sys.executable, "-m", "namel3ss", "--version"]' in verify_local
     assert '[sys.executable, "-m", "namel3ss", "--help"]' in verify_local

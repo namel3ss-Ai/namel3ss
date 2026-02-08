@@ -311,13 +311,33 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p .namel3ss/ci
+          : > .namel3ss/ci/cli_install_gate_step.log
           python -m compileall src -q
           python tools/line_limit_check.py
           python -m pip install -e .
+          n3_script="$(python - <<'PY'
+import shutil
+import sys
+from pathlib import Path
+
+scripts_dir = Path(sys.executable).resolve().parent
+candidates = [scripts_dir / "n3", scripts_dir / "n3.exe", scripts_dir / "n3-script.py"]
+for candidate in candidates:
+    if candidate.exists():
+        print(candidate)
+        raise SystemExit(0)
+on_path = shutil.which("n3")
+if on_path:
+    print(on_path)
+    raise SystemExit(0)
+raise SystemExit("n3 console script was not found in interpreter scripts directory or PATH.")
+PY
+)"
+          printf 'n3 script path: %s\n' "$n3_script" | tee -a .namel3ss/ci/cli_install_gate_step.log
           python -m namel3ss --version | tee .namel3ss/ci/namel3ss_version.txt
-          n3 --version | tee .namel3ss/ci/n3_version.txt
+          "$n3_script" --version | tee .namel3ss/ci/n3_version.txt
           python -m namel3ss --help > .namel3ss/ci/namel3ss_help.txt
-          n3 --help > .namel3ss/ci/n3_help.txt
+          "$n3_script" --help > .namel3ss/ci/n3_help.txt
           python -m pytest -q tests/test_cli_install.py 2>&1 | tee .namel3ss/ci/pytest_cli_install_gate.log
 
       - name: CLI install gate (Windows)
@@ -325,20 +345,29 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
+          $PSNativeCommandUseErrorActionPreference = $true
           $logDir = ".namel3ss/ci"
+          $stepLogPath = Join-Path -Path $logDir -ChildPath "cli_install_gate_step.log"
           $logPath = Join-Path -Path $logDir -ChildPath "pytest_cli_install_gate.log"
           $moduleHelpPath = Join-Path -Path $logDir -ChildPath "namel3ss_help.txt"
           $scriptHelpPath = Join-Path -Path $logDir -ChildPath "n3_help.txt"
           $moduleVersionPath = Join-Path -Path $logDir -ChildPath "namel3ss_version.txt"
           $scriptVersionPath = Join-Path -Path $logDir -ChildPath "n3_version.txt"
           New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+          New-Item -ItemType File -Force -Path $stepLogPath | Out-Null
           python -m compileall src -q
           python tools/line_limit_check.py
           python -m pip install -e .
+          $n3ScriptPath = & python -c "import shutil, sys; from pathlib import Path; scripts = Path(sys.executable).resolve().parent; candidates = [scripts / 'n3', scripts / 'n3.exe', scripts / 'n3-script.py']; found = next((str(candidate) for candidate in candidates if candidate.exists()), shutil.which('n3')); sys.exit('n3 console script was not found in interpreter scripts directory or PATH.') if not found else print(found)" 2>$null
+          if (-not $n3ScriptPath) {
+            "n3 console script was not found in interpreter scripts directory or PATH." | Out-File -FilePath $stepLogPath -Encoding utf8 -Append
+            throw "n3 console script missing"
+          }
+          "n3 script path: $n3ScriptPath" | Out-File -FilePath $stepLogPath -Encoding utf8 -Append
           python -m namel3ss --version | Tee-Object -FilePath $moduleVersionPath
-          n3 --version | Tee-Object -FilePath $scriptVersionPath
+          & $n3ScriptPath --version | Tee-Object -FilePath $scriptVersionPath
           python -m namel3ss --help | Out-File -FilePath $moduleHelpPath -Encoding utf8
-          n3 --help | Out-File -FilePath $scriptHelpPath -Encoding utf8
+          & $n3ScriptPath --help | Out-File -FilePath $scriptHelpPath -Encoding utf8
           $pytestOutput = & python -m pytest -q tests/test_cli_install.py 2>&1
           $exitCode = $LASTEXITCODE
           $pytestOutput | Out-File -FilePath $logPath -Encoding utf8

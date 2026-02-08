@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -61,9 +62,27 @@ def _check_git_clean() -> None:
         raise SystemExit(1)
 
 
+def _resolve_n3_script() -> str:
+    scripts_dir = Path(sys.executable).resolve().parent
+    candidates = (
+        scripts_dir / "n3",
+        scripts_dir / "n3.exe",
+        scripts_dir / "n3-script.py",
+    )
+    for candidate in candidates:
+        if candidate.exists():
+            return str(candidate)
+    on_path = shutil.which("n3")
+    if on_path:
+        return on_path
+    print("Failed: could not find n3 console script in interpreter scripts directory or PATH.")
+    raise SystemExit(1)
+
+
 def main() -> int:
     os.chdir(_repo_root())
     _print_header()
+    n3_script = _resolve_n3_script()
     _run_command("Security hardening scan", [sys.executable, "tools/security_hardening_scan.py"])
     _run_command("Line limit check", [sys.executable, "tools/line_limit_check.py"])
     _run_command("Single responsibility check", [sys.executable, "tools/responsibility_check.py"])
@@ -89,12 +108,12 @@ def main() -> int:
     )
     _run_command(
         "CLI script version",
-        ["n3", "--version"],
+        [n3_script, "--version"],
         env={"PYTHONDONTWRITEBYTECODE": "1"},
     )
     _run_command(
         "CLI script help",
-        ["n3", "--help"],
+        [n3_script, "--help"],
         env={"PYTHONDONTWRITEBYTECODE": "1"},
     )
     _run_command(
