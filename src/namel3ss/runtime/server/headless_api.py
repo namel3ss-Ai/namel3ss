@@ -8,6 +8,9 @@ from urllib.parse import unquote
 
 from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.payload import build_error_payload
+from namel3ss.runtime.contracts.runtime_schema import RUNTIME_UI_CONTRACT_VERSION
+from namel3ss.runtime.errors.normalize import attach_runtime_error_payload
+from namel3ss.runtime.spec_version import apply_runtime_spec_versions
 
 HEADLESS_API_VERSION = "v1"
 HEADLESS_API_PREFIX = f"/api/{HEADLESS_API_VERSION}"
@@ -43,9 +46,10 @@ def headless_action_id(path: str) -> str | None:
 
 
 def unsupported_version_payload() -> dict:
-    payload = build_error_payload("Unsupported API version.", kind="engine")
+    payload = _headless_error_payload("Unsupported API version.", kind="engine")
     payload["supported_versions"] = list(SUPPORTED_HEADLESS_API_VERSIONS)
-    return payload
+    payload = attach_runtime_error_payload(payload, status_code=404, endpoint="/api/v1")
+    return _with_headless_contract(payload)
 
 
 def normalize_api_token(value: object) -> str | None:
@@ -93,15 +97,25 @@ def authorize_headless_request(
         return HeadlessRequestGate(
             ok=False,
             status=401,
-            payload=build_error_payload("Headless API token is required for /api/v1 endpoints.", kind="authentication"),
+            payload=_headless_error_payload(
+                "Headless API token is required for /api/v1 endpoints.",
+                kind="authentication",
+            ),
             headers=cors_gate.headers,
         )
     provided_token = _extract_request_token(headers)
-    if provided_token is None or not hmac.compare_digest(provided_token, expected_token):
+    if provided_token is None:
         return HeadlessRequestGate(
             ok=False,
             status=401,
-            payload=build_error_payload("Missing or invalid API token.", kind="authentication"),
+            payload=_headless_error_payload("API token is required.", kind="authentication"),
+            headers=cors_gate.headers,
+        )
+    if not hmac.compare_digest(provided_token, expected_token):
+        return HeadlessRequestGate(
+            ok=False,
+            status=401,
+            payload=_headless_error_payload("Invalid API token.", kind="authentication"),
             headers=cors_gate.headers,
         )
     return HeadlessRequestGate(ok=True, headers=cors_gate.headers)
@@ -115,7 +129,7 @@ def authorize_headless_preflight(
     cors_origins: object,
 ) -> HeadlessRequestGate:
     if not is_versioned_api_path(path):
-        return HeadlessRequestGate(ok=False, status=404, payload=build_error_payload("Not Found", kind="engine"))
+        return HeadlessRequestGate(ok=False, status=404, payload=_headless_error_payload("Not Found", kind="engine"))
     if not _is_supported_headless_path(path):
         return HeadlessRequestGate(ok=False, status=404, payload=unsupported_version_payload())
     cors_gate = _authorize_origin(headers=headers, cors_origins=cors_origins)
@@ -186,14 +200,20 @@ def request_etag_matches(headers: Mapping[str, object], etag: str) -> bool:
 
 def normalize_headless_action_payload(body: object) -> tuple[dict | None, dict | None]:
     if not isinstance(body, dict):
-        return None, build_error_payload("Body must be a JSON object", kind="engine")
+        payload = _headless_error_payload("Body must be a JSON object", kind="engine")
+        payload = attach_runtime_error_payload(payload, status_code=400, endpoint="/api/v1/actions")
+        payload = _with_headless_contract(payload)
+        return None, payload
     raw_payload = body.get("payload")
     if raw_payload is None:
         raw_payload = body.get("args")
     if raw_payload is None:
         raw_payload = {}
     if not isinstance(raw_payload, dict):
-        return None, build_error_payload("Action args must be an object", kind="engine")
+        payload = _headless_error_payload("Action args must be an object", kind="engine")
+        payload = attach_runtime_error_payload(payload, status_code=400, endpoint="/api/v1/actions")
+        payload = _with_headless_contract(payload)
+        return None, payload
     return raw_payload, None
 
 
@@ -210,29 +230,59 @@ def build_headless_ui_payload(
     actions: dict | None = None,
 ) -> dict:
     if not isinstance(manifest, dict):
-        return build_error_payload("Manifest payload is invalid", kind="engine")
+        return _headless_error_payload("Manifest payload is invalid", kind="engine")
     if manifest.get("ok") is False:
         payload = {
             "ok": False,
             "api_version": HEADLESS_API_VERSION,
+            "contract_version": RUNTIME_UI_CONTRACT_VERSION,
             "error": manifest.get("error") if isinstance(manifest.get("error"), dict) else {"message": "Manifest request failed"},
         }
         if isinstance(revision, str) and revision:
             payload["revision"] = revision
-        return payload
+        return _with_headless_contract(payload)
     payload = {
         "ok": True,
         "api_version": HEADLESS_API_VERSION,
+        "contract_version": RUNTIME_UI_CONTRACT_VERSION,
         "manifest": manifest,
         "hash": build_manifest_hash(manifest),
     }
     if isinstance(revision, str) and revision:
         payload["revision"] = revision
     if isinstance(state, dict):
-        payload["state"] = state
+        payload["state"] = _with_headless_contract(dict(state))
     if isinstance(actions, dict):
-        payload["actions"] = actions
-    return payload
+        payload["actions"] = _with_headless_contract(dict(actions))
+    capabilities_enabled = manifest.get("capabilities_enabled")
+    if isinstance(capabilities_enabled, list):
+        payload["capabilities_enabled"] = [entry for entry in capabilities_enabled if isinstance(entry, dict)]
+    capability_versions = manifest.get("capability_versions")
+    if isinstance(capability_versions, dict):
+        payload["capability_versions"] = {
+            str(key): str(value)
+            for key, value in sorted(capability_versions.items(), key=lambda item: str(item[0]))
+            if str(key).strip() and str(value).strip()
+        }
+    run_artifact = manifest.get("run_artifact")
+    if isinstance(run_artifact, dict):
+        payload["run_artifact"] = run_artifact
+    persistence_backend = manifest.get("persistence_backend")
+    if isinstance(persistence_backend, dict):
+        payload["persistence_backend"] = persistence_backend
+    state_schema_version = manifest.get("state_schema_version")
+    if isinstance(state_schema_version, str) and state_schema_version:
+        payload["state_schema_version"] = state_schema_version
+    migration_status = manifest.get("migration_status")
+    if isinstance(migration_status, dict):
+        payload["migration_status"] = migration_status
+    audit_bundle = manifest.get("audit_bundle")
+    if isinstance(audit_bundle, dict):
+        payload["audit_bundle"] = audit_bundle
+    audit_policy_status = manifest.get("audit_policy_status")
+    if isinstance(audit_policy_status, dict):
+        payload["audit_policy_status"] = audit_policy_status
+    return _with_headless_contract(payload)
 
 
 def build_headless_action_payload(
@@ -241,14 +291,14 @@ def build_headless_action_payload(
     action_response: dict,
 ) -> tuple[dict, int]:
     if not isinstance(action_response, dict):
-        payload = build_error_payload("Action response invalid", kind="engine")
-        payload["api_version"] = HEADLESS_API_VERSION
+        payload = _headless_error_payload("Action response invalid", kind="engine")
         payload["action_id"] = action_id
-        return payload, 500
+        return _with_headless_contract(payload), 500
     ok = bool(action_response.get("ok", False))
     payload: dict[str, object] = {
         "ok": ok,
         "api_version": HEADLESS_API_VERSION,
+        "contract_version": RUNTIME_UI_CONTRACT_VERSION,
         "action_id": action_id,
     }
     state_payload = action_response.get("state")
@@ -263,6 +313,40 @@ def build_headless_action_payload(
         payload["messages"] = [entry for entry in messages if isinstance(entry, dict)]
     if "result" in action_response:
         payload["result"] = action_response.get("result")
+    runtime_error = action_response.get("runtime_error")
+    if isinstance(runtime_error, dict):
+        payload["runtime_error"] = runtime_error
+    runtime_errors = action_response.get("runtime_errors")
+    if isinstance(runtime_errors, list):
+        payload["runtime_errors"] = [entry for entry in runtime_errors if isinstance(entry, dict)]
+    capabilities_enabled = action_response.get("capabilities_enabled")
+    if isinstance(capabilities_enabled, list):
+        payload["capabilities_enabled"] = [entry for entry in capabilities_enabled if isinstance(entry, dict)]
+    capability_versions = action_response.get("capability_versions")
+    if isinstance(capability_versions, dict):
+        payload["capability_versions"] = {
+            str(key): str(value)
+            for key, value in sorted(capability_versions.items(), key=lambda item: str(item[0]))
+            if str(key).strip() and str(value).strip()
+        }
+    run_artifact = action_response.get("run_artifact")
+    if isinstance(run_artifact, dict):
+        payload["run_artifact"] = run_artifact
+    persistence_backend = action_response.get("persistence_backend")
+    if isinstance(persistence_backend, dict):
+        payload["persistence_backend"] = persistence_backend
+    state_schema_version = action_response.get("state_schema_version")
+    if isinstance(state_schema_version, str) and state_schema_version:
+        payload["state_schema_version"] = state_schema_version
+    migration_status = action_response.get("migration_status")
+    if isinstance(migration_status, dict):
+        payload["migration_status"] = migration_status
+    audit_bundle = action_response.get("audit_bundle")
+    if isinstance(audit_bundle, dict):
+        payload["audit_bundle"] = audit_bundle
+    audit_policy_status = action_response.get("audit_policy_status")
+    if isinstance(audit_policy_status, dict):
+        payload["audit_policy_status"] = audit_policy_status
     if not ok:
         error_payload = action_response.get("error")
         if isinstance(error_payload, dict):
@@ -270,7 +354,7 @@ def build_headless_action_payload(
         else:
             payload["error"] = {"message": "Action failed"}
     status = 200 if ok else 400
-    return payload, status
+    return _with_headless_contract(payload), status
 
 
 def merge_response_headers(*header_groups: dict[str, str] | None) -> dict[str, str]:
@@ -328,7 +412,7 @@ def _authorize_origin(*, headers: Mapping[str, object], cors_origins: object) ->
         return HeadlessRequestGate(
             ok=False,
             status=403,
-            payload=build_error_payload("Origin is not allowed for this headless endpoint.", kind="authentication"),
+            payload=_headless_error_payload("Origin is not allowed for this headless endpoint.", kind="authentication"),
         )
     if "*" in allowed_origins:
         return HeadlessRequestGate(ok=True, headers={"Access-Control-Allow-Origin": "*"})
@@ -336,7 +420,7 @@ def _authorize_origin(*, headers: Mapping[str, object], cors_origins: object) ->
         return HeadlessRequestGate(
             ok=False,
             status=403,
-            payload=build_error_payload("Origin is not allowed for this headless endpoint.", kind="authentication"),
+            payload=_headless_error_payload("Origin is not allowed for this headless endpoint.", kind="authentication"),
         )
     return HeadlessRequestGate(
         ok=True,
@@ -345,6 +429,24 @@ def _authorize_origin(*, headers: Mapping[str, object], cors_origins: object) ->
             "Vary": "Origin",
         },
     )
+
+
+def _headless_error_payload(message: str, *, kind: str) -> dict:
+    payload = build_error_payload(message, kind=kind)
+    return _with_headless_contract(payload)
+
+
+def _with_headless_contract(payload: dict) -> dict:
+    if not isinstance(payload, dict):
+        return payload
+    payload.setdefault("api_version", HEADLESS_API_VERSION)
+    payload.setdefault("contract_version", RUNTIME_UI_CONTRACT_VERSION)
+    apply_runtime_spec_versions(payload)
+    return payload
+
+
+def ensure_headless_contract_fields(payload: dict) -> dict:
+    return _with_headless_contract(payload)
 
 
 def _parse_origins_text(value: str) -> tuple[str, ...]:
@@ -386,6 +488,7 @@ __all__ = [
     "build_headless_action_payload",
     "build_headless_ui_payload",
     "build_manifest_hash",
+    "ensure_headless_contract_fields",
     "headless_ui_etag",
     "headless_ui_response_headers",
     "headless_action_id",
