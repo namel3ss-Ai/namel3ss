@@ -372,7 +372,9 @@ class DrawerItem(PageItem):
 @dataclass
 class ButtonItem(PageItem):
     label: str
-    flow_name: str
+    flow_name: str | None = None
+    action_kind: str = "call_flow"
+    target: str | None = None
     availability_rule: ActionAvailabilityRule | None = field(default=None, kw_only=True)
 
 

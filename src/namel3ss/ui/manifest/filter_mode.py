@@ -172,6 +172,28 @@ def _filter_navigation(manifest: dict, pages: list[dict]) -> None:
     active = navigation.get("active")
     if isinstance(active, str) and active not in page_slugs:
         manifest.pop("navigation", None)
+        return
+    active_page = navigation.get("active_page")
+    if isinstance(active_page, dict):
+        slug = active_page.get("slug")
+        if isinstance(slug, str) and slug and slug not in page_slugs:
+            manifest.pop("navigation", None)
+            return
+    sidebar = navigation.get("sidebar")
+    if isinstance(sidebar, list):
+        filtered_sidebar = []
+        for entry in sidebar:
+            if not isinstance(entry, dict):
+                continue
+            target_slug = entry.get("target_slug")
+            if isinstance(target_slug, str) and target_slug and target_slug in page_slugs:
+                filtered_sidebar.append(dict(entry))
+        if filtered_sidebar:
+            navigation["sidebar"] = filtered_sidebar
+        else:
+            navigation.pop("sidebar", None)
+    if not navigation:
+        manifest.pop("navigation", None)
 
 
 def _filter_actions(

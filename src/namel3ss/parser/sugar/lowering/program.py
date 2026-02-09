@@ -55,6 +55,15 @@ def lower_program(program: ast.Program) -> ast.Program:
         line=program.line,
         column=program.column,
     )
+    lowered_navigation = getattr(program, "ui_navigation", None)
+    if lowered_navigation is not None:
+        setattr(lowered, "ui_navigation", lowered_navigation)
+    lowered_ui_state = getattr(program, "ui_state", None)
+    if lowered_ui_state is not None:
+        setattr(lowered, "ui_state", lowered_ui_state)
+    lowered_app_permissions = getattr(program, "app_permissions", None)
+    if lowered_app_permissions is not None:
+        setattr(lowered, "app_permissions", lowered_app_permissions)
     raw_allowlist = getattr(program, "pack_allowlist", None)
     setattr(lowered, "pack_allowlist", list(raw_allowlist) if raw_allowlist is not None else None)
     setattr(lowered, "theme_definition", getattr(program, "theme_definition", None))
@@ -199,7 +208,7 @@ def _lower_contract(contract: ast.ContractDecl) -> ast.ContractDecl:
 
 
 def _lower_page(page: ast.PageDecl) -> ast.PageDecl:
-    return ast.PageDecl(
+    lowered_page = ast.PageDecl(
         name=page.name,
         items=[_lower_page_item(item) for item in page.items],
         layout=_lower_page_layout(getattr(page, "layout", None)),
@@ -215,6 +224,10 @@ def _lower_page(page: ast.PageDecl) -> ast.PageDecl:
         line=page.line,
         column=page.column,
     )
+    lowered_navigation = getattr(page, "ui_navigation", None)
+    if lowered_navigation is not None:
+        setattr(lowered_page, "ui_navigation", lowered_navigation)
+    return lowered_page
 
 
 def _lower_page_layout(layout: ast.PageLayout | None) -> ast.PageLayout | None:

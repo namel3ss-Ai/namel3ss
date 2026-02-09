@@ -313,5 +313,21 @@
       "shadow_level": 1,
       "spacing_scale": 1.0
     }
+  },
+  "ui": {
+    "persistence": {
+      "enabled": false,
+      "kind": "memory",
+      "path": null,
+      "schema_version": null
+    },
+    "settings": {
+      "accent_color": "blue",
+      "density": "comfortable",
+      "motion": "subtle",
+      "shape": "rounded",
+      "surface": "flat",
+      "theme": "light"
+    }
   }
 }

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Iterable
 
 
-ALLOWED_LANGS = {"ai"}
+ALLOWED_LANGS = {"ai", "namel3ss"}
 SKIP_PREFIXES = (
     "# doc:skip",
     "# docs:skip",
@@ -23,6 +23,7 @@ class DocsExample:
     path: Path
     index: int
     start_line: int
+    end_line: int
     language: str
     source: str
 
@@ -30,10 +31,11 @@ class DocsExample:
 def default_doc_paths(root: Path | None = None) -> list[Path]:
     root = root or Path(".")
     candidates: set[Path] = set()
-    candidates.update(root.glob("docs/ui-dsl.md"))
-    candidates.update(root.glob("docs/ui-layout.md"))
-    candidates.update(root.glob("docs/ui/conditional-ui.md"))
-    candidates.update(root.glob("docs/ui-*.md"))
+    candidates.add(root / "docs" / "ui-dsl.md")
+    candidates.add(root / "docs" / "ui-layout.md")
+    candidates.add(root / "docs" / "conditional-ui.md")
+    candidates.add(root / "docs" / "ui" / "conditional-ui.md")
+    candidates.update(root.glob("docs/ui*.md"))
     candidates.update(root.glob("docs/ui/*.md"))
     existing = [path for path in candidates if path.exists()]
     return sorted(existing, key=lambda path: path.as_posix())
@@ -48,6 +50,7 @@ def extract_examples(path: Path, *, allowed_langs: Iterable[str] = ALLOWED_LANGS
     current_lang = ""
     buffer: list[str] = []
     start_line = 0
+    end_line = 0
     index = 0
 
     for line_no, line in enumerate(lines, 1):
@@ -60,8 +63,10 @@ def extract_examples(path: Path, *, allowed_langs: Iterable[str] = ALLOWED_LANGS
                     current_lang = lang.lower()
                     buffer = []
                     start_line = line_no + 1
+                    end_line = line_no + 1
             continue
         if stripped.startswith("```"):
+            end_line = line_no - 1
             source = "\n".join(buffer).rstrip("\n")
             if source and not _is_skipped_source(source):
                 index += 1
@@ -70,6 +75,7 @@ def extract_examples(path: Path, *, allowed_langs: Iterable[str] = ALLOWED_LANGS
                         path=path,
                         index=index,
                         start_line=start_line,
+                        end_line=max(start_line, end_line),
                         language=current_lang,
                         source=source,
                     )
@@ -78,6 +84,7 @@ def extract_examples(path: Path, *, allowed_langs: Iterable[str] = ALLOWED_LANGS
             current_lang = ""
             buffer = []
             start_line = 0
+            end_line = 0
             continue
         buffer.append(line)
     return examples
@@ -103,10 +110,12 @@ def _main() -> int:
     paths = default_doc_paths()
     examples = load_examples(paths)
     for example in examples:
-        print(f"{example.path}:{example.start_line} example {example.index}")
+        print(
+            f"{example.path}:{example.start_line}-{example.end_line} "
+            f"example {example.index} ({example.language})"
+        )
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(_main())
-

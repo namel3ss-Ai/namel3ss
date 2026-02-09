@@ -177,6 +177,11 @@ from namel3ss.ir.model import (  # noqa: F401
     RouteField,
     ThemeTokenOverrides,
     ThemeTokens,
+    NavigationItem,
+    NavigationSidebar,
+    UIStateField,
+    UIStateDecl,
+    iter_ui_state_fields,
 )
 
 __all__ = [
@@ -323,6 +328,11 @@ __all__ = [
     "ThemeChange",
     "ThemeTokenOverrides",
     "ThemeTokens",
+    "NavigationItem",
+    "NavigationSidebar",
+    "UIStateField",
+    "UIStateDecl",
+    "iter_ui_state_fields",
     "ViewItem",
     "TableItem",
     "TableColumnDirective",

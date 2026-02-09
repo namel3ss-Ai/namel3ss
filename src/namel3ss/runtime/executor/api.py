@@ -186,6 +186,9 @@ def execute_program_flow(
         flow_action_id=action_id,
         observability=obs,
         extension_hook_manager=getattr(program, "extension_hook_manager", None),
+        app_permissions=getattr(program, "app_permissions", None),
+        app_permissions_enabled=bool(getattr(program, "app_permissions_enabled", False)),
+        ui_state_scope_by_key=getattr(program, "ui_state_scope_by_key", None),
     )
     module_traces = getattr(program, "module_traces", None)
     if module_traces:

@@ -3,6 +3,7 @@ from __future__ import annotations
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
 from namel3ss.runtime.execution.recorder import record_step
+from namel3ss.runtime.app_permissions_engine import require_permission
 from namel3ss.runtime.executor.ai_runner import execute_ask_ai
 from namel3ss.runtime.executor.ai_streaming import emit_ask_stream_events
 from namel3ss.runtime.executor.agents import execute_run_agent, execute_run_agents_parallel
@@ -12,6 +13,24 @@ from namel3ss.runtime.purity import require_effect_allowed
 def execute_ask_ai_stmt(ctx, stmt: ir.AskAIStmt) -> None:
     if getattr(ctx, "call_stack", []):
         raise Namel3ssError("Functions cannot call ai", line=stmt.line, column=stmt.column)
+    require_permission(
+        "ai.call",
+        permissions=getattr(ctx, "app_permissions", None),
+        enabled=bool(getattr(ctx, "app_permissions_enabled", False)),
+        line=stmt.line,
+        column=stmt.column,
+        reason=f'flow "{getattr(getattr(ctx, "flow", None), "name", "")}" ask-ai statement',
+    )
+    profile = getattr(ctx, "ai_profiles", {}).get(stmt.ai_name)
+    if profile is not None and list(getattr(profile, "exposed_tools", []) or []):
+        require_permission(
+            "ai.tools",
+            permissions=getattr(ctx, "app_permissions", None),
+            enabled=bool(getattr(ctx, "app_permissions_enabled", False)),
+            line=stmt.line,
+            column=stmt.column,
+            reason=f'flow "{getattr(getattr(ctx, "flow", None), "name", "")}" ask-ai tool usage',
+        )
     require_effect_allowed(ctx, effect=f'call ai "{stmt.ai_name}"', line=stmt.line, column=stmt.column)
     output = execute_ask_ai(ctx, stmt)
     profile = ctx.ai_profiles.get(stmt.ai_name)

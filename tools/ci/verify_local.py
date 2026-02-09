@@ -91,6 +91,10 @@ def main() -> int:
         "Baseline metrics check",
         [sys.executable, "scripts/measure_baseline.py", "--check", "--timing", "deterministic"],
     )
+    _run_command(
+        "UI baseline drift check",
+        [sys.executable, "tools/ui_baseline_refresh.py", "--check"],
+    )
     _run_command("Spec freeze guard", [sys.executable, "tools/spec_freeze_check.py"])
     _run_command("Spec diff check", [sys.executable, "tools/spec_diff_check.py"])
     _run_command("Grammar snapshot check", [sys.executable, "tools/grammar_snapshot.py"])

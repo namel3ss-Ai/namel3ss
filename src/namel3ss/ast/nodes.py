@@ -134,6 +134,9 @@ from namel3ss.ast.ui_layout import (
     SidebarLayout,
 )
 from namel3ss.ast.ui_rag import RagUIBindings, RagUIBlock
+from namel3ss.ast.app_permissions import AppPermissionActionDecl, AppPermissionDomainDecl, AppPermissionsDecl
+from namel3ss.ast.ui_navigation import NavigationItem, NavigationSidebar
+from namel3ss.ast.ui_state import UIStateDecl, UIStateField
 from namel3ss.ast.ui_theme import ThemeTokenOverrides, ThemeTokens
 from namel3ss.ast.policy import PolicyDecl, PolicyRuleDecl
 from namel3ss.ast.ui_packs import UIPackDecl, UIPackFragment
@@ -322,8 +325,15 @@ __all__ = [
     "ConditionalBlock",
     "RagUIBindings",
     "RagUIBlock",
+    "AppPermissionActionDecl",
+    "AppPermissionDomainDecl",
+    "AppPermissionsDecl",
     "ThemeTokenOverrides",
     "ThemeTokens",
+    "NavigationItem",
+    "NavigationSidebar",
+    "UIStateField",
+    "UIStateDecl",
     "PageLayout",
     "StatusBlock",
     "StatusCase",

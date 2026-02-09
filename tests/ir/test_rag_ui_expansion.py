@@ -10,6 +10,7 @@ flow "answer_question":
 
 page "RAG":
   rag_ui:
+    features: conversation, evidence
     binds:
       messages from is state.chat.messages
       on_send calls flow "answer_question"

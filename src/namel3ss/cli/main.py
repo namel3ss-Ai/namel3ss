@@ -11,6 +11,7 @@ from namel3ss.cli.audit_mode import run_audit_command
 from namel3ss.cli.ast_mode import run_ast_command
 from namel3ss.cli.browser_mode import run_dev_command, run_preview_command
 from namel3ss.cli.build_mode import run_build_command
+from namel3ss.cli.build import run_build_archive_command
 from namel3ss.cli.create_mode import run_create_command
 from namel3ss.cli.dataset_mode import run_dataset_command
 from namel3ss.cli.constants import ROOT_APP_COMMANDS
@@ -64,6 +65,8 @@ from namel3ss.cli.icons_mode import run_icons_command
 from namel3ss.cli.policy_mode import run_policy_command
 from namel3ss.cli.release_check_mode import run_release_check_command
 from namel3ss.cli.run_entry import dispatch_run_command
+from namel3ss.cli.run import run_app_command
+from namel3ss.cli.inspect import run_inspect_command
 from namel3ss.cli.scaffold_mode import run_new
 from namel3ss.cli.secrets_mode import run_secrets_command
 from namel3ss.cli.serve_mode import run_serve_command
@@ -146,6 +149,8 @@ def main(argv: list[str] | None = None) -> int:
 
         cmd_raw = args[0]
         cmd = canonical_command(cmd_raw)
+        if cmd_raw.lower() == "build":
+            return run_build_archive_command(args[1:])
 
         if cmd_raw == "--version":
             print_version()
@@ -196,7 +201,7 @@ def main(argv: list[str] | None = None) -> int:
             print_usage()
             return 0
         if cmd == "run":
-            return dispatch_run_command(args[1:])
+            return run_app_command(args[1:], legacy_runner=dispatch_run_command)
         if cmd == "serve":
             return run_serve_command(args[1:])
         if cmd == "session":
@@ -205,6 +210,8 @@ def main(argv: list[str] | None = None) -> int:
             return run_studio_connect_command(args[2:])
         if cmd == "manifest":
             return run_manifest_command(args[1:])
+        if cmd == "inspect":
+            return run_inspect_command(args[1:])
         if cmd == "validate":
             return run_validate_command(args[1:])
         if cmd == "create":

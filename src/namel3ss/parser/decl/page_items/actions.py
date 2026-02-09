@@ -7,7 +7,6 @@ from namel3ss.parser.decl.page_common import (
     _parse_action_availability_rule_block,
     _parse_debug_only_clause,
     _is_visibility_rule_start,
-    _parse_optional_string_value,
     _parse_reference_name_value,
     _parse_style_hooks_block,
     _parse_string_value,
@@ -21,7 +20,6 @@ from namel3ss.parser.decl.page_common import (
 from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
 from .cards import parse_card_group_item, parse_card_item
-from .responsive import parse_columns_clause
 from .size_radius import apply_theme_override, parse_theme_override_line
 
 def parse_compose_item(parser, tok, parse_block, *, allow_pattern_params: bool = False) -> ast.ComposeItem:
@@ -141,7 +139,9 @@ def parse_button_item(parser, tok, *, allow_pattern_params: bool = False) -> ast
     parser._expect("COLON", "Expected ':' after button label")
     parser._expect("NEWLINE", "Expected newline after button header")
     parser._expect("INDENT", "Expected indented button body")
-    flow_name = None
+    action_kind: str | None = None
+    flow_name: str | None = None
+    target: str | None = None
     visibility_rule = None
     availability_rule = None
     variant = None
@@ -186,6 +186,12 @@ def parse_button_item(parser, tok, *, allow_pattern_params: bool = False) -> ast
             parser._match("NEWLINE")
             continue
         if tok_action.type == "CALLS":
+            if action_kind is not None:
+                raise Namel3ssError(
+                    "Button body can only declare one action.",
+                    line=tok_action.line,
+                    column=tok_action.column,
+                )
             parser._advance()
             parser._expect("FLOW", "Expected 'flow' keyword in button action")
             flow_name = _parse_reference_name_value(parser, allow_pattern_params=allow_pattern_params, context="flow")
@@ -198,17 +204,75 @@ def parse_button_item(parser, tok, *, allow_pattern_params: bool = False) -> ast
                         column=tok_action.column,
                     )
                 availability_rule = rule
+            action_kind = "call_flow"
+            parser._match("NEWLINE")
+            continue
+        if tok_action.type == "IDENT" and tok_action.value == "navigate_to":
+            if action_kind is not None:
+                raise Namel3ssError(
+                    "Button body can only declare one action.",
+                    line=tok_action.line,
+                    column=tok_action.column,
+                )
+            parser._advance()
+            target = _parse_string_value(
+                parser,
+                allow_pattern_params=allow_pattern_params,
+                context="navigation target page",
+            )
+            rule = _parse_action_availability_rule_block(parser, allow_pattern_params=allow_pattern_params)
+            if rule is not None:
+                if availability_rule is not None:
+                    raise Namel3ssError(
+                        "Action availability blocks may only declare one only-when rule.",
+                        line=tok_action.line,
+                        column=tok_action.column,
+                    )
+                availability_rule = rule
+            action_kind = "navigate_to"
+            parser._match("NEWLINE")
+            continue
+        if tok_action.type == "IDENT" and tok_action.value == "go_back":
+            if action_kind is not None:
+                raise Namel3ssError(
+                    "Button body can only declare one action.",
+                    line=tok_action.line,
+                    column=tok_action.column,
+                )
+            parser._advance()
+            rule = _parse_action_availability_rule_block(parser, allow_pattern_params=allow_pattern_params)
+            if rule is not None:
+                if availability_rule is not None:
+                    raise Namel3ssError(
+                        "Action availability blocks may only declare one only-when rule.",
+                        line=tok_action.line,
+                        column=tok_action.column,
+                    )
+                availability_rule = rule
+            action_kind = "go_back"
             parser._match("NEWLINE")
             continue
         raise Namel3ssError(
-            "Buttons must declare an action using 'calls flow \"<name>\"'",
+            "Buttons must declare one action: 'calls flow \"<name>\"', 'navigate_to \"<page>\"', or 'go_back'",
             line=tok_action.line,
             column=tok_action.column,
         )
     parser._expect("DEDENT", "Expected end of button body")
-    if flow_name is None:
+    if action_kind is None:
+        raise Namel3ssError(
+            "Button body must include one action.",
+            line=tok.line,
+            column=tok.column,
+        )
+    if action_kind == "call_flow" and flow_name is None:
         raise Namel3ssError(
             "Button body must include 'calls flow \"<name>\"'",
+            line=tok.line,
+            column=tok.column,
+        )
+    if action_kind == "navigate_to" and target is None:
+        raise Namel3ssError(
+            "Button body must include 'navigate_to \"<page>\"'",
             line=tok.line,
             column=tok.column,
         )
@@ -216,6 +280,8 @@ def parse_button_item(parser, tok, *, allow_pattern_params: bool = False) -> ast
     item = ast.ButtonItem(
         label=label,
         flow_name=flow_name,
+        action_kind=action_kind,
+        target=target,
         visibility=visibility,
         visibility_rule=visibility_rule,
         show_when=show_when,
@@ -350,114 +416,12 @@ def parse_link_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.L
     )
 
 
-def parse_section_item(parser, tok, parse_block, *, allow_pattern_params: bool = False) -> ast.SectionItem:
-    parser._advance()
-    label = _parse_optional_string_value(parser, allow_pattern_params=allow_pattern_params)
-    columns = parse_columns_clause(parser)
-    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
-    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
-    debug_only = _parse_debug_only_clause(parser)
-    parser._expect("COLON", "Expected ':' after section")
-    children, visibility_rule = parse_block(
-        parser,
-        columns_only=False,
-        allow_tabs=False,
-        allow_overlays=False,
-        allow_pattern_params=allow_pattern_params,
-    )
-    _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
-    item = ast.SectionItem(
-        label=label,
-        children=children,
-        visibility=visibility,
-        visibility_rule=visibility_rule,
-        show_when=show_when,
-        debug_only=debug_only,
-        line=tok.line,
-        column=tok.column,
-    )
-    if columns is not None:
-        item.columns = columns
-    return item
-
-
-def parse_row_item(parser, tok, parse_block, *, allow_pattern_params: bool = False) -> ast.RowItem:
-    parser._advance()
-    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
-    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
-    debug_only = _parse_debug_only_clause(parser)
-    parser._expect("COLON", "Expected ':' after row")
-    children, visibility_rule = parse_block(
-        parser,
-        columns_only=True,
-        allow_tabs=False,
-        allow_overlays=False,
-        allow_pattern_params=allow_pattern_params,
-    )
-    _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
-    return ast.RowItem(
-        children=children,
-        visibility=visibility,
-        visibility_rule=visibility_rule,
-        show_when=show_when,
-        debug_only=debug_only,
-        line=tok.line,
-        column=tok.column,
-    )
-
-
-def parse_column_item(parser, tok, parse_block, *, allow_pattern_params: bool = False) -> ast.ColumnItem:
-    parser._advance()
-    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
-    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
-    debug_only = _parse_debug_only_clause(parser)
-    parser._expect("COLON", "Expected ':' after column")
-    children, visibility_rule = parse_block(
-        parser,
-        columns_only=False,
-        allow_tabs=False,
-        allow_overlays=False,
-        allow_pattern_params=allow_pattern_params,
-    )
-    _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
-    return ast.ColumnItem(
-        children=children,
-        visibility=visibility,
-        visibility_rule=visibility_rule,
-        show_when=show_when,
-        debug_only=debug_only,
-        line=tok.line,
-        column=tok.column,
-    )
-
-
-def parse_divider_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.DividerItem:
-    parser._advance()
-    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
-    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
-    debug_only = _parse_debug_only_clause(parser)
-    visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
-    _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
-    return ast.DividerItem(
-        visibility=visibility,
-        visibility_rule=visibility_rule,
-        show_when=show_when,
-        debug_only=debug_only,
-        line=tok.line,
-        column=tok.column,
-    )
-
-
 __all__ = [
     "parse_button_item",
     "parse_link_item",
     "parse_card_group_item",
     "parse_card_item",
-    "parse_column_item",
     "parse_compose_item",
-    "parse_divider_item",
     "parse_drawer_item",
     "parse_modal_item",
-    "parse_row_item",
-    "parse_section_item",
 ]

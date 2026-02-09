@@ -276,8 +276,12 @@ def _parse_card_actions_block(parser, *, allow_pattern_params: bool) -> List[ast
             raise Namel3ssError("Action body must include 'calls flow \"<name>\"'", line=tok.line, column=tok.column)
         if kind == "call_flow" and flow_name is None:
             raise Namel3ssError("Action body must include 'calls flow \"<name>\"'", line=tok.line, column=tok.column)
-        if kind != "call_flow" and target is None:
-            raise Namel3ssError("Action body must include a modal or drawer target", line=tok.line, column=tok.column)
+        if kind in {"open_modal", "close_modal", "open_drawer", "close_drawer", "navigate_to"} and target is None:
+            raise Namel3ssError(
+                "Action body must include a modal/drawer target or navigation page.",
+                line=tok.line,
+                column=tok.column,
+            )
         actions.append(
             ast.CardAction(
                 label=label_tok.value,

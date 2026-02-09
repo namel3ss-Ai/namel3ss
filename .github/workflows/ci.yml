@@ -36,6 +36,9 @@ jobs:
       - name: Baseline metrics check
         run: python scripts/measure_baseline.py --check --timing deterministic
 
+      - name: UI baseline drift check
+        run: python tools/ui_baseline_refresh.py --check
+
       - name: Security hardening scan
         run: python tools/security_hardening_scan.py --json .namel3ss/ci_artifacts/security_scan.json
 

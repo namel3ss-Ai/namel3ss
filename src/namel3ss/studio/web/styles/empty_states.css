@@ -1,0 +1,41 @@
+.ui-empty-sources-panel {
+  border: 1px dashed #c9d6ec;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f7faff 0%, #ffffff 100%);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ui-empty-sources-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e2f4b;
+}
+
+.ui-empty-sources-text {
+  font-size: 12px;
+  color: #405472;
+  line-height: 1.45;
+}
+
+.ui-empty-sources-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.ui-empty-sources-actions .btn:focus-visible {
+  outline: 2px solid #1f5de1;
+  outline-offset: 2px;
+}
+
+.ui-chat-error-surface {
+  border: 1px solid #f0c9c9;
+  border-radius: 10px;
+  background: #fff5f5;
+  color: #822121;
+  padding: 10px;
+  font-size: 12px;
+  line-height: 1.4;
+}

@@ -14,6 +14,8 @@ dist/
 *.egg-info/
 !src/namel3ss/runtime/build/
 !src/namel3ss/runtime/build/**
+src/namel3ss/runtime/build/**/__pycache__/
+src/namel3ss/runtime/build/**/*.pyc
 !spec/programs/**/build/
 spec/programs/**/build/**
 !spec/programs/**/build/local/

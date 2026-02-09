@@ -21,6 +21,9 @@ def parse_program(parser) -> ast.Program:
     ui_line = None
     ui_column = None
     ui_active_page_rules = None
+    ui_navigation: ast.NavigationSidebar | None = None
+    ui_state: ast.UIStateDecl | None = None
+    app_permissions: ast.AppPermissionsDecl | None = None
     capabilities: list[str] = []
     policy: ast.PolicyDecl | None = None
     packs: list[str] = []
@@ -267,6 +270,20 @@ def parse_program(parser) -> ast.Program:
                 )
             capabilities = rule.parse(parser)
             continue
+        if rule.name == "permissions":
+            if app_permissions is not None:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Application permissions are already declared.",
+                        why="The permissions block is global and must appear only once.",
+                        fix="Remove duplicate permissions blocks and keep a single one in app.ai.",
+                        example="permissions:\n  ai:\n    call: allowed",
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            app_permissions = rule.parse(parser)
+            continue
         if rule.name == "packs":
             if packs:
                 raise Namel3ssError(
@@ -358,6 +375,34 @@ def parse_program(parser) -> ast.Program:
                 )
             ui_settings, ui_active_page_rules, ui_line, ui_column = rule.parse(parser)
             continue
+        if rule.name == "ui_state":
+            if ui_state is not None:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="UI state is already declared.",
+                        why="The ui_state block is global and must appear only once.",
+                        fix="Keep a single ui_state block in app.ai.",
+                        example='ui_state:\n  session:\n    current_page is text',
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            ui_state = rule.parse(parser)
+            continue
+        if rule.name == "nav_sidebar":
+            if ui_navigation is not None:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Navigation sidebar is already declared.",
+                        why="The nav_sidebar block is global and must appear only once.",
+                        fix="Keep a single nav_sidebar block in app.ai.",
+                        example='nav_sidebar:\n  item "Chat" goes_to "Chat"',
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            ui_navigation = rule.parse(parser)
+            continue
         raise Namel3ssError("Unexpected top-level token", line=tok.line, column=tok.column)
     if parser.require_spec and not parser.allow_capsule:
         if not spec_version:
@@ -416,6 +461,12 @@ def parse_program(parser) -> ast.Program:
         line=None,
         column=None,
     )
+    if ui_navigation is not None:
+        setattr(program, "ui_navigation", ui_navigation)
+    if ui_state is not None:
+        setattr(program, "ui_state", ui_state)
+    if app_permissions is not None:
+        setattr(program, "app_permissions", app_permissions)
     setattr(program, "pack_allowlist", list(packs) if packs_declared else None)
     setattr(program, "theme_definition", theme_definition)
     setattr(program, "theme_line", getattr(theme_definition, "line", None))

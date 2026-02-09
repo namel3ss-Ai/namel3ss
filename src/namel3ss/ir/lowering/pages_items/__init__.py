@@ -326,6 +326,7 @@ def _lower_page_item(
             item,
             flow_names,
             page_name,
+            page_names,
             attach_origin=_attach_origin,
         )
     if isinstance(item, ast.LinkItem):

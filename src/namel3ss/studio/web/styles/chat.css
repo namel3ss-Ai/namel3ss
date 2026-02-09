@@ -1,0 +1,107 @@
+:root {
+  --n3-chat-bg: #f8fafc;
+  --n3-chat-border: #dbe5f4;
+  --n3-chat-text: #142033;
+  --n3-chat-focus: #1f5de1;
+}
+
+.ui-chat-bubble {
+  background: var(--n3-chat-bg);
+  border-color: var(--n3-chat-border);
+  color: var(--n3-chat-text);
+  transition: min-height 120ms ease, padding 120ms ease;
+}
+
+.ui-chat-message.is-streaming .ui-chat-bubble {
+  min-height: 72px;
+}
+
+.ui-chat-content {
+  line-height: 1.45;
+}
+
+.ui-chat-content[data-stream-phase="thinking"] {
+  min-height: 1.2em;
+}
+
+.ui-chat-stream-thinking {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.ui-chat-stream-thinking::before,
+.ui-chat-stream-thinking::after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #7287ad;
+  opacity: 0.55;
+  animation: n3-chat-thinking-dot 900ms infinite;
+}
+
+.ui-chat-stream-thinking::after {
+  animation-delay: 200ms;
+}
+
+.ui-chat-stream-thinking-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #7287ad;
+  opacity: 0.55;
+  animation: n3-chat-thinking-dot 900ms 100ms infinite;
+}
+
+@keyframes n3-chat-thinking-dot {
+  0% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-1px);
+  }
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+}
+
+.ui-chat-attachments[data-stream-visible="false"] {
+  display: none;
+}
+
+.ui-chat-composer textarea,
+.ui-chat-composer input {
+  border-color: #d4dbe7;
+  background: #fff;
+}
+
+.ui-chat-composer textarea {
+  min-height: 42px;
+  max-height: 140px;
+  resize: vertical;
+}
+
+.ui-chat-composer textarea:focus-visible,
+.ui-chat-composer input:focus-visible,
+.ui-chat-message-actions .btn:focus-visible,
+.ui-citation-chip:focus-visible {
+  outline: 2px solid var(--n3-chat-focus);
+  outline-offset: 2px;
+}
+
+.ui-chat-inline-error {
+  border: 1px solid #f3d2d2;
+  background: #fff5f5;
+  color: #8f1f1f;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 12px;
+}
+
+.ui-chat-trust-row {
+  margin-top: 2px;
+}

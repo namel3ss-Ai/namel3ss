@@ -8,6 +8,7 @@ from namel3ss.ir.lowering.page_chart import _validate_chart_pairing
 from namel3ss.ir.lowering.pages_items import _lower_page_item, set_plugin_registry
 from namel3ss.ir.lowering.page_tokens import lower_page_theme_tokens
 from namel3ss.ir.lowering.rag_ui_expand import expand_rag_ui_page
+from namel3ss.ir.lowering.ui_navigation_expand import lower_navigation_sidebar
 from namel3ss.ir.lowering.ui_packs import expand_page_items
 from namel3ss.ir.lowering.ui_patterns import expand_pattern_items
 from namel3ss.ir.model.base import Expression as IRExpression
@@ -135,7 +136,12 @@ def _lower_page(
         items.extend(lowered_diagnostics_items)
     status_items = _collect_lowered_status_items(status_block)
     _validate_chart_pairing(items + status_items, page.name)
-    return Page(
+    lowered_navigation = lower_navigation_sidebar(
+        getattr(page, "ui_navigation", None),
+        page_names,
+        owner=f'Page "{page.name}"',
+    )
+    lowered_page = Page(
         name=page.name,
         items=items,
         layout=lowered_layout,
@@ -152,6 +158,9 @@ def _lower_page(
         theme_tokens=lower_page_theme_tokens(getattr(page, "theme_tokens", None)),
         ui_theme_overrides=lower_page_theme_tokens(rag_expansion.theme_overrides),
     )
+    if lowered_navigation is not None:
+        setattr(lowered_page, "ui_navigation", lowered_navigation)
+    return lowered_page
 
 
 def _expand_page_items(

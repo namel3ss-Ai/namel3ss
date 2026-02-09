@@ -42,8 +42,21 @@ def parse_ui_action_body(
         kind = f"{verb}_{target_tok.value}"
         availability_rule = _parse_action_availability_rule_block(parser, allow_pattern_params=allow_pattern_params)
         return kind, None, label_tok, availability_rule
+    if tok.type == "IDENT" and tok.value == "navigate_to":
+        parser._advance()
+        target = _parse_string_value(
+            parser,
+            allow_pattern_params=allow_pattern_params,
+            context="navigation target page",
+        )
+        availability_rule = _parse_action_availability_rule_block(parser, allow_pattern_params=allow_pattern_params)
+        return "navigate_to", None, target, availability_rule
+    if tok.type == "IDENT" and tok.value == "go_back":
+        parser._advance()
+        availability_rule = _parse_action_availability_rule_block(parser, allow_pattern_params=allow_pattern_params)
+        return "go_back", None, None, availability_rule
     raise Namel3ssError(
-        f"{entry_label} must call a flow or open/close a modal/drawer",
+        f"{entry_label} must call a flow, open/close a modal/drawer, navigate_to a page, or go_back",
         line=tok.line,
         column=tok.column,
     )

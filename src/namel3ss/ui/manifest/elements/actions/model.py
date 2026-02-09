@@ -127,7 +127,19 @@ def build_button_item(
         line=item.line,
         column=item.column,
     )
-    action_entry = {"id": action_id, "type": "call_flow", "flow": item.flow_name}
+    action_kind = str(getattr(item, "action_kind", "call_flow") or "call_flow")
+    if action_kind == "call_flow":
+        action_entry = {"id": action_id, "type": "call_flow", "flow": item.flow_name}
+        element_action = {"type": "call_flow", "flow": item.flow_name}
+    elif action_kind == "navigate_to":
+        action_entry = {"id": action_id, "type": "open_page", "target": getattr(item, "target", None)}
+        element_action = {"type": "open_page", "target": getattr(item, "target", None)}
+    elif action_kind == "go_back":
+        action_entry = {"id": action_id, "type": "go_back"}
+        element_action = {"type": "go_back"}
+    else:
+        action_entry = {"id": action_id, "type": "call_flow", "flow": item.flow_name}
+        element_action = {"type": "call_flow", "flow": item.flow_name}
     if availability is not None:
         action_entry["enabled"] = enabled
         action_entry["availability"] = availability
@@ -147,7 +159,7 @@ def build_button_item(
         "label": item.label,
         "id": action_id,
         "action_id": action_id,
-        "action": {"type": "call_flow", "flow": item.flow_name},
+        "action": element_action,
         **base,
     }
     if variant is not None:

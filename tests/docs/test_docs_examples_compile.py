@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import re
 from pathlib import Path
 
@@ -7,7 +8,7 @@ import pytest
 
 from namel3ss.ui.manifest import build_manifest
 from tests.conftest import lower_ir_program
-from tools.docs_example_extract import default_doc_paths, load_examples
+from tools.docs_example_extract import DocsExample, default_doc_paths, load_examples
 
 
 FLOW_DEF_RE = re.compile(r'^\s*flow\s+"([^"]+)"', re.MULTILINE)
@@ -39,21 +40,56 @@ IN_LIST_RE = re.compile(r'state\.([A-Za-z0-9_.]+)\s*(?:in|not\s+in)\s*\[([^\]]+)
 EMPTY_RE = re.compile(r'state\.([A-Za-z0-9_.]+)\s+is\s+empty')
 
 
-def test_docs_examples_compile() -> None:
+def test_docs_examples_compile(tmp_path: Path) -> None:
     paths = default_doc_paths(Path("."))
     examples = load_examples(paths)
     assert examples, "No docs examples found to compile."
 
     for example in examples:
-        source = _inject_missing_definitions(example.source)
-        state = _build_state_for_example(source)
-        try:
-            program = lower_ir_program(source)
-            build_manifest(program, state=state, store=None)
-        except Exception as exc:  # pragma: no cover - failure surface
-            raise AssertionError(
-                f"Docs example failed: {example.path}:{example.start_line} (example {example.index})\n{exc}"
-            ) from exc
+        _compile_docs_example(example, base_tmp=tmp_path)
+
+
+def test_docs_example_compile_error_reporting(tmp_path: Path) -> None:
+    broken = DocsExample(
+        path=Path("docs/ui-dsl.md"),
+        index=99,
+        start_line=12,
+        end_line=13,
+        language="ai",
+        source='page "broken":\n  table is',
+    )
+    with pytest.raises(AssertionError) as excinfo:
+        _compile_docs_example(broken, base_tmp=tmp_path)
+
+    text = str(excinfo.value)
+    assert "docs/ui-dsl.md" in text
+    assert "example 99" in text
+    assert "12-13" in text
+    assert "What happened" in text
+
+
+def _compile_docs_example(example: DocsExample, *, base_tmp: Path) -> None:
+    source = _inject_missing_definitions(example.source)
+    state = _build_state_for_example(source)
+    sandbox = _sandbox_dir(base_tmp, example)
+    sandbox.mkdir(parents=True, exist_ok=True)
+    app_path = sandbox / "app.ai"
+    app_path.write_text(source.rstrip() + "\n", encoding="utf-8")
+
+    try:
+        program = lower_ir_program(app_path.read_text(encoding="utf-8"))
+        build_manifest(program, state=state, store=None)
+    except Exception as exc:  # pragma: no cover - failure surface
+        line_range = f"{example.start_line}-{example.end_line}"
+        raise AssertionError(
+            f"Docs example failed: {example.path}:{line_range} (example {example.index})\n{exc}"
+        ) from exc
+
+
+def _sandbox_dir(base_tmp: Path, example: DocsExample) -> Path:
+    digest = hashlib.sha256(f"{example.path}:{example.index}".encode("utf-8")).hexdigest()[:8]
+    stem = example.path.stem.replace(".", "_")
+    return base_tmp / ".namel3ss" / "docs_examples" / f"{stem}_{example.index:03d}_{digest}"
 
 
 def _inject_missing_definitions(source: str) -> str:
@@ -234,4 +270,3 @@ def _set_path_if_missing(state: dict, path: str, value: object) -> None:
     if leaf in cursor:
         return
     cursor[leaf] = value
-

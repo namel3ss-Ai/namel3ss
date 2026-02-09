@@ -7,6 +7,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.parser.decl.page_common import _is_visibility_rule_start, _parse_visibility_rule_line
 
 from . import actions as actions_mod
+from . import containers as containers_mod
 from . import custom_component as custom_component_mod
 from . import media as media_mod
 from . import numbers as numbers_mod
@@ -72,6 +73,8 @@ def parse_page_item(
     tok = parser._current()
     if tok.type == "IDENT" and tok.value == "purpose":
         raise Namel3ssError("Purpose must be declared at the page root", line=tok.line, column=tok.column)
+    if tok.type == "IDENT" and tok.value == "nav_sidebar":
+        raise Namel3ssError("nav_sidebar must be declared at the page root", line=tok.line, column=tok.column)
     if tok.type == "IDENT" and tok.value == "rag_ui":
         raise Namel3ssError("rag_ui must be declared at the page root", line=tok.line, column=tok.column)
     if tok.type == "IF":
@@ -159,7 +162,7 @@ def parse_page_item(
     if tok.type == "IDENT" and tok.value == "link":
         return actions_mod.parse_link_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "SECTION":
-        return actions_mod.parse_section_item(parser, tok, _parse_block, allow_pattern_params=allow_pattern_params)
+        return containers_mod.parse_section_item(parser, tok, _parse_block, allow_pattern_params=allow_pattern_params)
     if tok.type == "IDENT" and tok.value == "card_group":
         return actions_mod.parse_card_group_item(parser, tok, parse_page_item, allow_pattern_params=allow_pattern_params)
     if tok.type == "CARD":
@@ -169,7 +172,7 @@ def parse_page_item(
     if tok.type == "ROW":
         return layout_mod.parse_row_item(parser, tok, _parse_block, allow_pattern_params=allow_pattern_params)
     if tok.type == "COLUMN":
-        return actions_mod.parse_column_item(parser, tok, _parse_block, allow_pattern_params=allow_pattern_params)
+        return containers_mod.parse_column_item(parser, tok, _parse_block, allow_pattern_params=allow_pattern_params)
     if tok.type == "IDENT" and tok.value == "col":
         return layout_mod.parse_col_item(parser, tok, _parse_block, allow_pattern_params=allow_pattern_params)
     if tok.type == "IDENT" and tok.value == "grid":
@@ -181,7 +184,7 @@ def parse_page_item(
     if tok.type == "IDENT" and tok.value == "sticky":
         return layout_mod.parse_sticky_item(parser, tok, _parse_block, allow_pattern_params=allow_pattern_params)
     if tok.type == "DIVIDER":
-        return actions_mod.parse_divider_item(parser, tok, allow_pattern_params=allow_pattern_params)
+        return containers_mod.parse_divider_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "IMAGE":
         return media_mod.parse_image_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if getattr(tok, "value", None) == "story":

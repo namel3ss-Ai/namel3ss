@@ -1,0 +1,25 @@
+spec is "1.0"
+
+capabilities:
+  ui_navigation
+
+flow "noop":
+  return "ok"
+
+nav_sidebar:
+  item "Chat" goes_to "Chat"
+  item "Sources" goes_to "Sources"
+  item "Settings" goes_to "Settings"
+
+page "Chat":
+  button "Sources":
+    navigate_to "Sources"
+  text is "Chat page"
+
+page "Sources":
+  button "Back":
+    go_back
+  text is "Sources page"
+
+page "Settings":
+  text is "Settings page"

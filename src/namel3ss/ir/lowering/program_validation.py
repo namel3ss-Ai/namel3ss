@@ -208,7 +208,9 @@ def _validate_chat_composers(
         for item in _walk_page_items(page.items):
             if isinstance(item, ChatItem) and bool(getattr(item, "streaming", False)):
                 composer_children = [child for child in getattr(item, "children", []) if isinstance(child, ChatComposerItem)]
-                if not composer_children:
+                origin = getattr(item, "origin", None)
+                rag_ui_chat = isinstance(origin, dict) and "rag_ui" in origin
+                if not composer_children and not rag_ui_chat:
                     raise Namel3ssError(
                         build_guidance_message(
                             what="Chat streaming is enabled without a composer.",

@@ -37,7 +37,9 @@ from namel3ss.ui.manifest.accessibility import apply_accessibility_contract
 from namel3ss.ui.manifest.display_mode import DISPLAY_MODE_STUDIO
 from namel3ss.ui.manifest.elements import _build_children
 from namel3ss.ui.manifest.filter_mode import apply_display_mode_filter
-from namel3ss.ui.manifest.navigation import select_active_page
+from namel3ss.ui.manifest.navigation_nodes import build_navigation
+from namel3ss.ui.manifest.app_permissions_nodes import build_app_permissions_payload
+from namel3ss.ui.manifest.ui_state_nodes import build_ui_state_payload
 from namel3ss.ui.manifest.plugin_assets import build_plugin_assets_manifest
 from namel3ss.ui.manifest.upload_analysis import (
     collect_upload_reference_names,
@@ -284,12 +286,17 @@ def build_manifest(
     )
     if injected_upload:
         warning_context["studio_injected_upload"] = True
-    navigation_state = StateContext(deepcopy(state_base), StateDefaults(app_defaults))
-    navigation = select_active_page(
-        getattr(program, "ui_active_page_rules", None),
+    navigation = build_navigation(
+        program,
         pages=pages,
-        state_ctx=navigation_state,
+        state_base=state_base,
+        app_defaults=app_defaults,
     )
+    ui_state = build_ui_state_payload(
+        program,
+        state_base=state_base,
+    )
+    app_permissions = build_app_permissions_payload(program)
     apply_responsive_layout_to_pages(pages, breakpoint_names=breakpoint_names)
     apply_spacing_to_pages(pages, ui_settings.get("density", UI_DEFAULTS["density"]))
     validate_ui_contrast(theme_setting, ui_settings.get("accent_color", ""), raw_ui_settings)
@@ -416,6 +423,13 @@ def build_manifest(
         }
     if navigation:
         manifest["navigation"] = navigation
+    if ui_state:
+        manifest["ui_state"] = ui_state
+    if app_permissions:
+        manifest["permissions"] = app_permissions["permissions"]
+        inspector = app_permissions.get("inspector")
+        if isinstance(inspector, dict):
+            manifest["app_permissions"] = inspector
     agent_team = build_agent_team_intent(program)
     if agent_team is not None:
         manifest["agent_team"] = agent_team

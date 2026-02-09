@@ -1,0 +1,1014 @@
+{
+  "actions": {
+    "page.rag_shell.button.run_ingestion": {
+      "flow": "ingest_latest",
+      "id": "page.rag_shell.button.run_ingestion",
+      "type": "call_flow"
+    },
+    "page.rag_shell.composer.0.1.1.0.0.1.0.0.composer": {
+      "flow": "answer_question",
+      "id": "page.rag_shell.composer.0.1.1.0.0.1.0.0.composer",
+      "type": "call_flow"
+    },
+    "page.rag_shell.theme_settings.0.1.1.0.1.0.3.0.update": {
+      "id": "page.rag_shell.theme_settings.0.1.1.0.1.0.3.0.update",
+      "type": "theme_settings_update"
+    },
+    "page.rag_shell.upload.intake": {
+      "id": "page.rag_shell.upload.intake",
+      "multiple": false,
+      "name": "intake",
+      "required": false,
+      "type": "upload_select"
+    },
+    "page.rag_shell.upload.intake.clear": {
+      "id": "page.rag_shell.upload.intake.clear",
+      "name": "intake",
+      "type": "upload_clear"
+    },
+    "page.rag_shell.upload.intake.ingestion": {
+      "id": "page.rag_shell.upload.intake.ingestion",
+      "type": "ingestion_run"
+    }
+  },
+  "diagnostics_enabled": true,
+  "mode": "studio",
+  "pages": [
+    {
+      "elements": [
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "column": 3,
+                      "density": "regular",
+                      "element_id": "page.rag_shell.title.0.0.0.0",
+                      "font": "md",
+                      "index": 0,
+                      "line": 14,
+                      "origin": {
+                        "rag_ui": {
+                          "base": "evidence",
+                          "features": [
+                            "conversation",
+                            "evidence"
+                          ],
+                          "region": "header"
+                        }
+                      },
+                      "page": "RAG Shell",
+                      "page_slug": "rag_shell",
+                      "radius": "lg",
+                      "size": "compact",
+                      "type": "title",
+                      "value": "RAG Shell"
+                    }
+                  ],
+                  "column": 3,
+                  "density": "regular",
+                  "element_id": "page.rag_shell.layout_row.0.0.0",
+                  "font": "md",
+                  "id": "page.rag_shell.layout_row.0.0.0",
+                  "index": 0,
+                  "line": 14,
+                  "origin": {
+                    "rag_ui": {
+                      "base": "evidence",
+                      "features": [
+                        "conversation",
+                        "evidence"
+                      ],
+                      "region": "header"
+                    }
+                  },
+                  "page": "RAG Shell",
+                  "page_slug": "rag_shell",
+                  "radius": "lg",
+                  "size": "compact",
+                  "spacing": {
+                    "gap": "m"
+                  },
+                  "type": "layout.row"
+                }
+              ],
+              "column": 3,
+              "density": "regular",
+              "element_id": "page.rag_shell.layout_sticky.0.0",
+              "font": "md",
+              "id": "page.rag_shell.layout_sticky.0.0",
+              "index": 0,
+              "line": 14,
+              "origin": {
+                "rag_ui": {
+                  "base": "evidence",
+                  "features": [
+                    "conversation",
+                    "evidence"
+                  ],
+                  "region": "header"
+                }
+              },
+              "page": "RAG Shell",
+              "page_slug": "rag_shell",
+              "position": "top",
+              "radius": "lg",
+              "size": "compact",
+              "spacing": {
+                "gap": "m"
+              },
+              "type": "layout.sticky"
+            },
+            {
+              "column": 3,
+              "density": "regular",
+              "element_id": "page.rag_shell.layout_sidebar.0.1",
+              "font": "md",
+              "id": "page.rag_shell.layout_sidebar.0.1",
+              "index": 1,
+              "line": 14,
+              "main": [
+                {
+                  "children": [
+                    {
+                      "children": [
+                        {
+                          "children": [
+                            {
+                              "actions": [],
+                              "attachments": false,
+                              "children": [
+                                {
+                                  "column": 3,
+                                  "density": "regular",
+                                  "element_id": "page.rag_shell.messages.0.1.1.0.0.0.0.0",
+                                  "font": "md",
+                                  "index": 0,
+                                  "line": 14,
+                                  "messages": [
+                                    {
+                                      "content": "Hello",
+                                      "group_start": true,
+                                      "role": "user"
+                                    },
+                                    {
+                                      "content": "Hi there",
+                                      "group_start": true,
+                                      "role": "assistant"
+                                    }
+                                  ],
+                                  "origin": {
+                                    "rag_ui": {
+                                      "base": "evidence",
+                                      "features": [
+                                        "conversation",
+                                        "evidence"
+                                      ],
+                                      "region": "main"
+                                    }
+                                  },
+                                  "page": "RAG Shell",
+                                  "page_slug": "rag_shell",
+                                  "radius": "lg",
+                                  "size": "compact",
+                                  "source": "state.chat.messages",
+                                  "spacing": {
+                                    "item_gap": "m",
+                                    "meta_gap": "s"
+                                  },
+                                  "type": "messages"
+                                },
+                                {
+                                  "active": false,
+                                  "column": 3,
+                                  "debug_only": false,
+                                  "density": "regular",
+                                  "element_id": "page.rag_shell.thinking.0.1.1.0.0.0.0.1",
+                                  "font": "md",
+                                  "index": 1,
+                                  "line": 14,
+                                  "origin": {
+                                    "rag_ui": {
+                                      "base": "evidence",
+                                      "features": [
+                                        "conversation",
+                                        "evidence"
+                                      ],
+                                      "region": "main"
+                                    }
+                                  },
+                                  "page": "RAG Shell",
+                                  "page_slug": "rag_shell",
+                                  "radius": "lg",
+                                  "size": "compact",
+                                  "spacing": {
+                                    "status_gap": "s"
+                                  },
+                                  "type": "thinking",
+                                  "user_visible": true,
+                                  "when": "state.loading"
+                                },
+                                {
+                                  "citations": [
+                                    {
+                                      "snippet": "Example snippet",
+                                      "title": "Doc A",
+                                      "url": "https://example.com"
+                                    }
+                                  ],
+                                  "column": 3,
+                                  "debug_only": true,
+                                  "density": "regular",
+                                  "element_id": "page.rag_shell.citations.0.1.1.0.0.0.0.2",
+                                  "font": "md",
+                                  "index": 2,
+                                  "line": 14,
+                                  "origin": {
+                                    "rag_ui": {
+                                      "base": "evidence",
+                                      "features": [
+                                        "conversation",
+                                        "evidence"
+                                      ],
+                                      "region": "main"
+                                    }
+                                  },
+                                  "page": "RAG Shell",
+                                  "page_slug": "rag_shell",
+                                  "radius": "lg",
+                                  "size": "compact",
+                                  "source": "state.chat.citations",
+                                  "spacing": {
+                                    "item_gap": "s"
+                                  },
+                                  "type": "citations"
+                                }
+                              ],
+                              "column": 3,
+                              "density": "regular",
+                              "element_id": "page.rag_shell.chat.0.1.1.0.0.0.0",
+                              "font": "md",
+                              "group_messages": true,
+                              "index": 0,
+                              "line": 14,
+                              "origin": {
+                                "rag_ui": {
+                                  "base": "evidence",
+                                  "features": [
+                                    "conversation",
+                                    "evidence"
+                                  ],
+                                  "region": "main"
+                                }
+                              },
+                              "page": "RAG Shell",
+                              "page_slug": "rag_shell",
+                              "radius": "lg",
+                              "show_avatars": false,
+                              "size": "compact",
+                              "spacing": {
+                                "composer_gap": "m",
+                                "message_gap": "m",
+                                "section_gap": "m"
+                              },
+                              "streaming": true,
+                              "style": "bubbles",
+                              "type": "chat"
+                            }
+                          ],
+                          "column": 3,
+                          "density": "regular",
+                          "element_id": "page.rag_shell.section.0.1.1.0.0.0",
+                          "font": "md",
+                          "index": 0,
+                          "label": "Chat",
+                          "line": 14,
+                          "origin": {
+                            "rag_ui": {
+                              "base": "evidence",
+                              "features": [
+                                "conversation",
+                                "evidence"
+                              ],
+                              "region": "main"
+                            }
+                          },
+                          "page": "RAG Shell",
+                          "page_slug": "rag_shell",
+                          "radius": "lg",
+                          "size": "compact",
+                          "spacing": {
+                            "gap": "l",
+                            "padding": "m",
+                            "title_gap": "s"
+                          },
+                          "type": "section"
+                        },
+                        {
+                          "children": [
+                            {
+                              "actions": [],
+                              "attachments": false,
+                              "children": [
+                                {
+                                  "action": {
+                                    "flow": "answer_question",
+                                    "type": "call_flow"
+                                  },
+                                  "action_id": "page.rag_shell.composer.0.1.1.0.0.1.0.0.composer",
+                                  "column": 3,
+                                  "density": "regular",
+                                  "element_id": "page.rag_shell.composer.0.1.1.0.0.1.0.0",
+                                  "flow": "answer_question",
+                                  "font": "md",
+                                  "id": "page.rag_shell.composer.0.1.1.0.0.1.0.0.composer",
+                                  "index": 0,
+                                  "line": 14,
+                                  "origin": {
+                                    "rag_ui": {
+                                      "base": "evidence",
+                                      "features": [
+                                        "conversation",
+                                        "evidence"
+                                      ],
+                                      "region": "composer"
+                                    }
+                                  },
+                                  "page": "RAG Shell",
+                                  "page_slug": "rag_shell",
+                                  "radius": "lg",
+                                  "size": "compact",
+                                  "spacing": {
+                                    "action_gap": "s",
+                                    "input_gap": "s"
+                                  },
+                                  "type": "composer"
+                                }
+                              ],
+                              "column": 3,
+                              "density": "regular",
+                              "element_id": "page.rag_shell.chat.0.1.1.0.0.1.0",
+                              "font": "md",
+                              "group_messages": true,
+                              "index": 0,
+                              "line": 14,
+                              "origin": {
+                                "rag_ui": {
+                                  "base": "evidence",
+                                  "features": [
+                                    "conversation",
+                                    "evidence"
+                                  ],
+                                  "region": "composer"
+                                }
+                              },
+                              "page": "RAG Shell",
+                              "page_slug": "rag_shell",
+                              "radius": "lg",
+                              "show_avatars": false,
+                              "size": "compact",
+                              "spacing": {
+                                "composer_gap": "m",
+                                "message_gap": "m",
+                                "section_gap": "m"
+                              },
+                              "streaming": false,
+                              "style": "bubbles",
+                              "type": "chat"
+                            }
+                          ],
+                          "column": 3,
+                          "density": "regular",
+                          "element_id": "page.rag_shell.layout_sticky.0.1.1.0.0.1",
+                          "font": "md",
+                          "id": "page.rag_shell.layout_sticky.0.1.1.0.0.1",
+                          "index": 1,
+                          "line": 14,
+                          "origin": {
+                            "rag_ui": {
+                              "base": "evidence",
+                              "features": [
+                                "conversation",
+                                "evidence"
+                              ],
+                              "region": "composer"
+                            }
+                          },
+                          "page": "RAG Shell",
+                          "page_slug": "rag_shell",
+                          "position": "bottom",
+                          "radius": "lg",
+                          "size": "compact",
+                          "spacing": {
+                            "gap": "m"
+                          },
+                          "type": "layout.sticky"
+                        }
+                      ],
+                      "column": 3,
+                      "density": "regular",
+                      "element_id": "page.rag_shell.layout_col.0.1.1.0.0",
+                      "font": "md",
+                      "id": "page.rag_shell.layout_col.0.1.1.0.0",
+                      "index": 0,
+                      "line": 14,
+                      "origin": {
+                        "rag_ui": {
+                          "base": "evidence",
+                          "features": [
+                            "conversation",
+                            "evidence"
+                          ],
+                          "region": "shell"
+                        }
+                      },
+                      "page": "RAG Shell",
+                      "page_slug": "rag_shell",
+                      "radius": "lg",
+                      "size": "compact",
+                      "spacing": {
+                        "gap": "m"
+                      },
+                      "type": "layout.col"
+                    },
+                    {
+                      "children": [
+                        {
+                          "active": "Citations",
+                          "children": [
+                            {
+                              "children": [
+                                {
+                                  "column": 3,
+                                  "density": "regular",
+                                  "element_id": "page.rag_shell.list.0.1.1.0.1.0.0.0",
+                                  "empty_state": {
+                                    "text": "No sources yet.",
+                                    "title": "No items"
+                                  },
+                                  "empty_text": "No sources yet.",
+                                  "font": "md",
+                                  "id": "page.rag_shell.list.statechatcitations",
+                                  "index": 0,
+                                  "item": {
+                                    "meta": "url",
+                                    "primary": "title",
+                                    "secondary": "snippet"
+                                  },
+                                  "line": 14,
+                                  "origin": {
+                                    "rag_ui": {
+                                      "base": "evidence",
+                                      "features": [
+                                        "conversation",
+                                        "evidence"
+                                      ],
+                                      "region": "drawer"
+                                    }
+                                  },
+                                  "page": "RAG Shell",
+                                  "page_slug": "rag_shell",
+                                  "radius": "lg",
+                                  "rows": [
+                                    {
+                                      "snippet": "Example snippet",
+                                      "title": "Doc A",
+                                      "url": "https://example.com"
+                                    }
+                                  ],
+                                  "size": "compact",
+                                  "source": "state.chat.citations",
+                                  "spacing": {
+                                    "item_gap": "m",
+                                    "meta_gap": "s",
+                                    "secondary_gap": "s"
+                                  },
+                                  "type": "list",
+                                  "variant": "two_line"
+                                }
+                              ],
+                              "column": 3,
+                              "element_id": "page.rag_shell.tab.0.1.1.0.1.0.0",
+                              "index": 0,
+                              "label": "Citations",
+                              "line": 14,
+                              "page": "RAG Shell",
+                              "page_slug": "rag_shell",
+                              "spacing": {
+                                "gap": "m"
+                              },
+                              "type": "tab"
+                            },
+                            {
+                              "children": [
+                                {
+                                  "column": 3,
+                                  "density": "regular",
+                                  "element_id": "page.rag_shell.source_preview.0.1.1.0.1.0.1.0",
+                                  "font": "md",
+                                  "index": 0,
+                                  "line": 14,
+                                  "origin": {
+                                    "rag_ui": {
+                                      "base": "evidence",
+                                      "features": [
+                                        "conversation",
+                                        "evidence"
+                                      ],
+                                      "region": "drawer"
+                                    }
+                                  },
+                                  "page": "RAG Shell",
+                                  "page_slug": "rag_shell",
+                                  "radius": "lg",
+                                  "size": "compact",
+                                  "snippet": "Example snippet",
+                                  "source": "state.ui.preview_source",
+                                  "title": "Doc A",
+                                  "type": "source_preview",
+                                  "url": "https://example.com"
+                                }
+                              ],
+                              "column": 3,
+                              "element_id": "page.rag_shell.tab.0.1.1.0.1.0.1",
+                              "index": 1,
+                              "label": "Preview",
+                              "line": 14,
+                              "page": "RAG Shell",
+                              "page_slug": "rag_shell",
+                              "spacing": {
+                                "gap": "m"
+                              },
+                              "type": "tab"
+                            },
+                            {
+                              "children": [
+                                {
+                                  "column": 3,
+                                  "density": "regular",
+                                  "element_id": "page.rag_shell.text.0.1.1.0.1.0.2.0",
+                                  "font": "md",
+                                  "index": 0,
+                                  "line": 14,
+                                  "origin": {
+                                    "rag_ui": {
+                                      "base": "evidence",
+                                      "features": [
+                                        "conversation",
+                                        "evidence"
+                                      ],
+                                      "region": "drawer"
+                                    }
+                                  },
+                                  "page": "RAG Shell",
+                                  "page_slug": "rag_shell",
+                                  "radius": "lg",
+                                  "size": "compact",
+                                  "type": "text",
+                                  "value": "Retrieval explain data appears after a run."
+                                }
+                              ],
+                              "column": 3,
+                              "element_id": "page.rag_shell.tab.0.1.1.0.1.0.2",
+                              "index": 2,
+                              "label": "Explain",
+                              "line": 14,
+                              "page": "RAG Shell",
+                              "page_slug": "rag_shell",
+                              "spacing": {
+                                "gap": "m"
+                              },
+                              "type": "tab"
+                            },
+                            {
+                              "children": [
+                                {
+                                  "action_id": "page.rag_shell.theme_settings.0.1.1.0.1.0.3.0.update",
+                                  "column": 3,
+                                  "current": {
+                                    "color_scheme": "system",
+                                    "density": "regular",
+                                    "font": "md",
+                                    "radius": "lg",
+                                    "size": "compact"
+                                  },
+                                  "density": "regular",
+                                  "element_id": "page.rag_shell.theme_settings.0.1.1.0.1.0.3.0",
+                                  "font": "md",
+                                  "id": "page.rag_shell.theme_settings.0.1.1.0.1.0.3.0.update",
+                                  "index": 0,
+                                  "line": 14,
+                                  "options": {
+                                    "color_scheme": [
+                                      "light",
+                                      "dark",
+                                      "system"
+                                    ],
+                                    "density": [
+                                      "tight",
+                                      "regular",
+                                      "airy"
+                                    ],
+                                    "font": [
+                                      "sm",
+                                      "md",
+                                      "lg"
+                                    ],
+                                    "radius": [
+                                      "none",
+                                      "sm",
+                                      "md",
+                                      "lg",
+                                      "full"
+                                    ],
+                                    "size": [
+                                      "compact",
+                                      "normal",
+                                      "comfortable"
+                                    ]
+                                  },
+                                  "origin": {
+                                    "rag_ui": {
+                                      "base": "evidence",
+                                      "features": [
+                                        "conversation",
+                                        "evidence"
+                                      ],
+                                      "region": "drawer"
+                                    }
+                                  },
+                                  "page": "RAG Shell",
+                                  "page_slug": "rag_shell",
+                                  "radius": "lg",
+                                  "size": "compact",
+                                  "type": "theme.settings_page"
+                                }
+                              ],
+                              "column": 3,
+                              "element_id": "page.rag_shell.tab.0.1.1.0.1.0.3",
+                              "index": 3,
+                              "label": "Settings",
+                              "line": 14,
+                              "page": "RAG Shell",
+                              "page_slug": "rag_shell",
+                              "spacing": {
+                                "gap": "m"
+                              },
+                              "type": "tab"
+                            }
+                          ],
+                          "column": 3,
+                          "default": "Citations",
+                          "density": "regular",
+                          "element_id": "page.rag_shell.tabs.0.1.1.0.1.0",
+                          "font": "md",
+                          "index": 0,
+                          "line": 14,
+                          "origin": {
+                            "rag_ui": {
+                              "base": "evidence",
+                              "features": [
+                                "conversation",
+                                "evidence"
+                              ],
+                              "region": "drawer"
+                            }
+                          },
+                          "page": "RAG Shell",
+                          "page_slug": "rag_shell",
+                          "radius": "lg",
+                          "size": "compact",
+                          "spacing": {
+                            "header_gap": "m",
+                            "tab_gap": "s"
+                          },
+                          "tabs": [
+                            "Citations",
+                            "Preview",
+                            "Explain",
+                            "Settings"
+                          ],
+                          "type": "tabs"
+                        }
+                      ],
+                      "column": 3,
+                      "density": "regular",
+                      "element_id": "page.rag_shell.layout_drawer.0.1.1.0.1",
+                      "font": "md",
+                      "id": "page.rag_shell.layout_drawer.0.1.1.0.1",
+                      "index": 1,
+                      "line": 14,
+                      "origin": {
+                        "rag_ui": {
+                          "base": "evidence",
+                          "features": [
+                            "conversation",
+                            "evidence"
+                          ],
+                          "region": "drawer"
+                        }
+                      },
+                      "page": "RAG Shell",
+                      "page_slug": "rag_shell",
+                      "radius": "lg",
+                      "show_when": {
+                        "predicate": "state.ui.show_drawer",
+                        "result": true,
+                        "state_paths": [
+                          "state.ui.show_drawer"
+                        ]
+                      },
+                      "size": "compact",
+                      "spacing": {
+                        "gap": "m",
+                        "padding": "l",
+                        "title_gap": "s"
+                      },
+                      "title": "Citations",
+                      "type": "layout.drawer"
+                    }
+                  ],
+                  "column": 3,
+                  "density": "regular",
+                  "element_id": "page.rag_shell.layout_row.0.1.1.0",
+                  "font": "md",
+                  "id": "page.rag_shell.layout_row.0.1.1.0",
+                  "index": 0,
+                  "line": 14,
+                  "origin": {
+                    "rag_ui": {
+                      "base": "evidence",
+                      "features": [
+                        "conversation",
+                        "evidence"
+                      ],
+                      "region": "shell"
+                    }
+                  },
+                  "page": "RAG Shell",
+                  "page_slug": "rag_shell",
+                  "radius": "lg",
+                  "size": "compact",
+                  "spacing": {
+                    "gap": "m"
+                  },
+                  "type": "layout.row"
+                }
+              ],
+              "origin": {
+                "rag_ui": {
+                  "base": "evidence",
+                  "features": [
+                    "conversation",
+                    "evidence"
+                  ],
+                  "region": "shell"
+                }
+              },
+              "page": "RAG Shell",
+              "page_slug": "rag_shell",
+              "radius": "lg",
+              "sidebar": [
+                {
+                  "children": [
+                    {
+                      "accept": [],
+                      "action_id": "page.rag_shell.upload.intake",
+                      "clear_action_id": "page.rag_shell.upload.intake.clear",
+                      "column": 3,
+                      "density": "regular",
+                      "element_id": "page.rag_shell.upload.0.1.0.0.0",
+                      "files": [],
+                      "font": "md",
+                      "id": "page.rag_shell.upload.intake",
+                      "index": 0,
+                      "label": "Upload",
+                      "line": 14,
+                      "multiple": false,
+                      "name": "intake",
+                      "origin": {
+                        "rag_ui": {
+                          "base": "evidence",
+                          "features": [
+                            "conversation",
+                            "evidence"
+                          ],
+                          "region": "sidebar"
+                        }
+                      },
+                      "page": "RAG Shell",
+                      "page_slug": "rag_shell",
+                      "preview": false,
+                      "radius": "lg",
+                      "required": false,
+                      "size": "compact",
+                      "type": "upload"
+                    },
+                    {
+                      "action": {
+                        "flow": "ingest_latest",
+                        "type": "call_flow"
+                      },
+                      "action_id": "page.rag_shell.button.run_ingestion",
+                      "column": 3,
+                      "density": "regular",
+                      "element_id": "page.rag_shell.button_item.0.1.0.0.1",
+                      "font": "md",
+                      "id": "page.rag_shell.button.run_ingestion",
+                      "index": 1,
+                      "label": "Run ingestion",
+                      "line": 14,
+                      "origin": {
+                        "rag_ui": {
+                          "base": "evidence",
+                          "features": [
+                            "conversation",
+                            "evidence"
+                          ],
+                          "region": "sidebar"
+                        }
+                      },
+                      "page": "RAG Shell",
+                      "page_slug": "rag_shell",
+                      "radius": "lg",
+                      "size": "compact",
+                      "type": "button"
+                    },
+                    {
+                      "column": 3,
+                      "density": "regular",
+                      "element_id": "page.rag_shell.list.0.1.0.0.2",
+                      "empty_state": {
+                        "text": "No sources yet.",
+                        "title": "No items"
+                      },
+                      "empty_text": "No sources yet.",
+                      "font": "md",
+                      "id": "page.rag_shell.list.statechatcitations",
+                      "index": 2,
+                      "item": {
+                        "meta": "url",
+                        "primary": "title",
+                        "secondary": "snippet"
+                      },
+                      "line": 14,
+                      "origin": {
+                        "rag_ui": {
+                          "base": "evidence",
+                          "features": [
+                            "conversation",
+                            "evidence"
+                          ],
+                          "region": "sidebar"
+                        }
+                      },
+                      "page": "RAG Shell",
+                      "page_slug": "rag_shell",
+                      "radius": "lg",
+                      "rows": [
+                        {
+                          "snippet": "Example snippet",
+                          "title": "Doc A",
+                          "url": "https://example.com"
+                        }
+                      ],
+                      "size": "compact",
+                      "source": "state.chat.citations",
+                      "spacing": {
+                        "item_gap": "m",
+                        "meta_gap": "s",
+                        "secondary_gap": "s"
+                      },
+                      "type": "list",
+                      "variant": "two_line"
+                    }
+                  ],
+                  "column": 3,
+                  "density": "regular",
+                  "element_id": "page.rag_shell.section.0.1.0.0",
+                  "font": "md",
+                  "index": 0,
+                  "label": "Sources",
+                  "line": 14,
+                  "origin": {
+                    "rag_ui": {
+                      "base": "evidence",
+                      "features": [
+                        "conversation",
+                        "evidence"
+                      ],
+                      "region": "sidebar"
+                    }
+                  },
+                  "page": "RAG Shell",
+                  "page_slug": "rag_shell",
+                  "radius": "lg",
+                  "size": "compact",
+                  "spacing": {
+                    "gap": "l",
+                    "padding": "m",
+                    "title_gap": "s"
+                  },
+                  "type": "section"
+                }
+              ],
+              "size": "compact",
+              "spacing": {
+                "gap": "m"
+              },
+              "type": "layout.sidebar"
+            }
+          ],
+          "column": 3,
+          "density": "regular",
+          "direction": "vertical",
+          "element_id": "page.rag_shell.layout_stack.0",
+          "font": "md",
+          "id": "page.rag_shell.layout_stack.0",
+          "index": 0,
+          "line": 14,
+          "origin": {
+            "rag_ui": {
+              "base": "evidence",
+              "features": [
+                "conversation",
+                "evidence"
+              ],
+              "region": "shell"
+            }
+          },
+          "page": "RAG Shell",
+          "page_slug": "rag_shell",
+          "radius": "lg",
+          "size": "compact",
+          "spacing": {
+            "gap": "m"
+          },
+          "type": "layout.stack"
+        }
+      ],
+      "name": "RAG Shell",
+      "slug": "rag_shell",
+      "ui_theme": {
+        "color_scheme": "system",
+        "density": "regular",
+        "font": "md",
+        "radius": "lg",
+        "size": "compact"
+      }
+    }
+  ],
+  "theme": {
+    "color_scheme": "light",
+    "css": ":root {\n  --n3-primary-color: #2563EB;\n  --n3-secondary-color: #5856D6;\n  --n3-background-color: #FFFFFF;\n  --n3-foreground-color: #111827;\n  --n3-font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;\n  --n3-font-size-base: 14px;\n  --n3-font-weight: 500;\n  --n3-spacing-scale: 1.0;\n  --n3-border-radius: 10px;\n  --n3-shadow-elevation: 0 2px 6px rgba(15, 23, 42, 0.08);\n}\n\nbody.n3-runtime,\nbody {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  font-family: var(--n3-font-family);\n  font-size: var(--n3-font-size-base);\n  font-weight: var(--n3-font-weight);\n}\n\n.ui-body,\n.panel,\n.ui-element,\n.list-item,\n.trace-row,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  border-radius: var(--n3-border-radius);\n  box-shadow: var(--n3-shadow-elevation);\n}\n\n.btn.primary,\n.ui-chat-action,\n.ui-upload-label {\n  background: var(--n3-primary-color);\n  border-color: var(--n3-primary-color);\n  color: #FFFFFF;\n}\n\n.ui-link,\n.n3-chat-attachment-link,\n.n3-citation-chip {\n  color: var(--n3-primary-color);\n}\n\n.ui-card-title,\n.ui-section-title,\n.n3-chat-group-label {\n  color: var(--n3-secondary-color);\n}\n\n.ui-element,\n.panel,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  padding: calc(10px * var(--n3-spacing-scale));\n}\n\n.ui-row,\n.ui-column,\n.ui-card-group,\n.n3-layout-root,\n.n3-layout-body {\n  gap: calc(10px * var(--n3-spacing-scale));\n}\n",
+    "css_hash": "af84b4058b81de1bba97dd498d5b53bb92defe1f5de89914b9ee0633692c1446",
+    "current": "light",
+    "density": "regular",
+    "effective": "light",
+    "font": "md",
+    "font_url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+    "persisted_current": null,
+    "preference": {
+      "allow_override": false,
+      "persist": "none"
+    },
+    "radius": "md",
+    "runtime_supported": false,
+    "runtime_tokens": {},
+    "schema_version": "1",
+    "setting": "light",
+    "size": "normal",
+    "source": "app",
+    "theme_name": "default",
+    "tokens": {
+      "background_color": "#FFFFFF",
+      "border_radius": 10,
+      "font_family": "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+      "font_size_base": 14,
+      "font_weight": 500,
+      "foreground_color": "#111827",
+      "primary_color": "#2563EB",
+      "secondary_color": "#5856D6",
+      "shadow_level": 1,
+      "spacing_scale": 1.0
+    }
+  },
+  "ui": {
+    "persistence": {
+      "enabled": false,
+      "kind": "memory",
+      "path": null,
+      "schema_version": null
+    },
+    "settings": {
+      "accent_color": "blue",
+      "density": "comfortable",
+      "motion": "subtle",
+      "shape": "rounded",
+      "surface": "flat",
+      "theme": "light"
+    }
+  }
+}

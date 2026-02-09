@@ -103,6 +103,28 @@ def _build_list_actions(
                 element_entry["enabled"] = enabled
             entries.append(element_entry)
             continue
+        if action.kind == "navigate_to":
+            entry = {"id": action_id, "type": "open_page", "target": action.target}
+            if availability is not None:
+                entry["enabled"] = enabled
+                entry["availability"] = availability
+            action_map[action_id] = entry
+            element_entry = {"id": action_id, "label": action.label, "type": "open_page", "target": action.target}
+            if availability is not None:
+                element_entry["enabled"] = enabled
+            entries.append(element_entry)
+            continue
+        if action.kind == "go_back":
+            entry = {"id": action_id, "type": "go_back"}
+            if availability is not None:
+                entry["enabled"] = enabled
+                entry["availability"] = availability
+            action_map[action_id] = entry
+            element_entry = {"id": action_id, "label": action.label, "type": "go_back"}
+            if availability is not None:
+                element_entry["enabled"] = enabled
+            entries.append(element_entry)
+            continue
         raise Namel3ssError(
             f"List action '{action.label}' is not supported",
             line=action.line,

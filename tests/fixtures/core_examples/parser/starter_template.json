@@ -71,6 +71,7 @@
           "column": 3,
           "line": 21,
           "show_when": null,
+          "theme_overrides": null,
           "type": "TitleItem",
           "value": "{{PROJECT_NAME}}",
           "visibility": null
@@ -79,6 +80,7 @@
           "column": 3,
           "line": 22,
           "show_when": null,
+          "theme_overrides": null,
           "type": "TextItem",
           "value": "starter app for namel3ss.",
           "visibility": null
@@ -90,6 +92,7 @@
           "role": "hero",
           "show_when": null,
           "src": "welcome",
+          "theme_overrides": null,
           "type": "ImageItem",
           "visibility": null
         },
@@ -112,6 +115,7 @@
                   ],
                   "line": 27,
                   "show_when": null,
+                  "theme_overrides": null,
                   "type": "NumberItem",
                   "visibility": null
                 },
@@ -120,6 +124,7 @@
                   "line": 29,
                   "record_name": "Note",
                   "show_when": null,
+                  "theme_overrides": null,
                   "type": "ViewItem",
                   "visibility": null
                 }
@@ -128,6 +133,7 @@
               "line": 26,
               "name": "overview",
               "show_when": null,
+              "theme_overrides": null,
               "type": "ComposeItem",
               "visibility": null
             },
@@ -141,6 +147,7 @@
                   "line": 31,
                   "record_name": "Note",
                   "show_when": null,
+                  "theme_overrides": null,
                   "type": "FormItem",
                   "visibility": null
                 }
@@ -150,6 +157,7 @@
               "line": 30,
               "show_when": null,
               "stat": null,
+              "theme_overrides": null,
               "type": "CardItem",
               "visibility": null
             },
@@ -168,6 +176,7 @@
                   "show_when": null,
                   "sort": null,
                   "source": null,
+                  "theme_overrides": null,
                   "type": "TableItem",
                   "visibility": null
                 }
@@ -177,6 +186,7 @@
               "line": 32,
               "show_when": null,
               "stat": null,
+              "theme_overrides": null,
               "type": "CardItem",
               "visibility": null
             }
@@ -186,6 +196,7 @@
           "label": "notes",
           "line": 25,
           "show_when": null,
+          "theme_overrides": null,
           "type": "SectionItem",
           "visibility": null
         },
@@ -221,6 +232,7 @@
               "type": "StoryStep"
             }
           ],
+          "theme_overrides": null,
           "title": "Getting started",
           "type": "StoryItem",
           "visibility": null
@@ -232,6 +244,7 @@
               "column": 5,
               "line": 44,
               "show_when": null,
+              "theme_overrides": null,
               "type": "TextItem",
               "value": "use the button to add a deterministic note.",
               "visibility": null
@@ -242,6 +255,7 @@
               "label": "add sample note",
               "line": 45,
               "show_when": null,
+              "theme_overrides": null,
               "type": "ButtonItem",
               "visibility": null
             }
@@ -251,6 +265,7 @@
           "line": 43,
           "show_when": null,
           "stat": null,
+          "theme_overrides": null,
           "type": "CardItem",
           "visibility": null
         }
@@ -264,6 +279,7 @@
         "type": "Literal",
         "value": true
       },
+      "theme_tokens": null,
       "type": "PageDecl"
     }
   ],

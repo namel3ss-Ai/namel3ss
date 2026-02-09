@@ -98,6 +98,30 @@ def _load_module(
                 line=program.ui_line,
                 column=program.ui_column,
             )
+        if getattr(program, "ui_state", None) is not None:
+            ui_state_decl = getattr(program, "ui_state", None)
+            raise Namel3ssError(
+                build_guidance_message(
+                    what="ui_state declarations are not allowed inside modules.",
+                    why="UI state lifecycle is global and must be declared in app.ai.",
+                    fix="Move the ui_state block to app.ai.",
+                    example='ui_state:\n  session:\n    current_page is text',
+                ),
+                line=getattr(ui_state_decl, "line", None),
+                column=getattr(ui_state_decl, "column", None),
+            )
+        if getattr(program, "app_permissions", None) is not None:
+            permissions_decl = getattr(program, "app_permissions", None)
+            raise Namel3ssError(
+                build_guidance_message(
+                    what="permissions declarations are not allowed inside modules.",
+                    why="Application permissions are global and must be declared in app.ai.",
+                    fix="Move the permissions block to app.ai.",
+                    example="permissions:\n  ai:\n    call: allowed",
+                ),
+                line=getattr(permissions_decl, "line", None),
+                column=getattr(permissions_decl, "column", None),
+            )
         programs.append(program)
 
     uses = list(capsule_program.uses)

@@ -200,6 +200,7 @@
           "column": 3,
           "line": 36,
           "show_when": null,
+          "theme_overrides": null,
           "type": "TitleItem",
           "value": "{{PROJECT_NAME}}",
           "visibility": null
@@ -208,6 +209,7 @@
           "column": 3,
           "line": 37,
           "show_when": null,
+          "theme_overrides": null,
           "type": "TextItem",
           "value": "ask the assistant and see why it answered.",
           "visibility": null
@@ -219,6 +221,7 @@
           "role": "iconic",
           "show_when": null,
           "src": "welcome",
+          "theme_overrides": null,
           "type": "ImageItem",
           "visibility": null
         },
@@ -232,6 +235,7 @@
               "flow_name": "ask_ai",
               "line": 41,
               "show_when": null,
+              "theme_overrides": null,
               "type": "ChatComposerItem",
               "visibility": null
             }
@@ -243,6 +247,7 @@
           "show_when": null,
           "streaming": false,
           "style": "bubbles",
+          "theme_overrides": null,
           "type": "ChatItem",
           "visibility": null
         },
@@ -263,6 +268,7 @@
               ],
               "line": 43,
               "show_when": null,
+              "theme_overrides": null,
               "type": "NumberItem",
               "visibility": null
             },
@@ -271,6 +277,7 @@
               "line": 45,
               "record_name": "Answer",
               "show_when": null,
+              "theme_overrides": null,
               "type": "ViewItem",
               "visibility": null
             }
@@ -279,6 +286,7 @@
           "line": 42,
           "name": "summary",
           "show_when": null,
+          "theme_overrides": null,
           "type": "ComposeItem",
           "visibility": null
         },
@@ -288,6 +296,7 @@
               "column": 5,
               "line": 47,
               "show_when": null,
+              "theme_overrides": null,
               "type": "TextItem",
               "value": "answers include a why field in the table below.",
               "visibility": null
@@ -307,6 +316,7 @@
                   "show_when": null,
                   "sort": null,
                   "source": null,
+                  "theme_overrides": null,
                   "type": "TableItem",
                   "visibility": null
                 }
@@ -316,6 +326,7 @@
               "line": 48,
               "show_when": null,
               "stat": null,
+              "theme_overrides": null,
               "type": "CardItem",
               "visibility": null
             },
@@ -334,6 +345,7 @@
                   "show_when": null,
                   "sort": null,
                   "source": null,
+                  "theme_overrides": null,
                   "type": "TableItem",
                   "visibility": null
                 }
@@ -343,6 +355,7 @@
               "line": 50,
               "show_when": null,
               "stat": null,
+              "theme_overrides": null,
               "type": "CardItem",
               "visibility": null
             }
@@ -352,6 +365,7 @@
           "label": "records",
           "line": 46,
           "show_when": null,
+          "theme_overrides": null,
           "type": "SectionItem",
           "visibility": null
         },
@@ -387,6 +401,7 @@
               "type": "StoryStep"
             }
           ],
+          "theme_overrides": null,
           "title": "How it works",
           "type": "StoryItem",
           "visibility": null
@@ -396,6 +411,7 @@
       "name": "home",
       "purpose": "Show the AI boundary and how records capture why.",
       "requires": null,
+      "theme_tokens": null,
       "type": "PageDecl"
     }
   ],

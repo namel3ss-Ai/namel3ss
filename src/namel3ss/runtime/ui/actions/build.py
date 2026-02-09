@@ -25,6 +25,7 @@ from namel3ss.runtime.ui.actions.action_build_errors import form_error_payload, 
 from namel3ss.runtime.ui.actions.ingestion_review import handle_ingestion_review_action
 from namel3ss.runtime.ui.actions.ingestion_run import handle_ingestion_run_action
 from namel3ss.runtime.ui.actions.ingestion_skip import handle_ingestion_skip_action
+from namel3ss.runtime.ui.actions.permissions import enforce_action_permission
 from namel3ss.runtime.ui.actions.retrieval_run import handle_retrieval_run_action
 from namel3ss.runtime.ui.actions.scope_select import handle_scope_select_action
 from namel3ss.runtime.ui.actions.theme_settings_update import handle_theme_settings_update_action
@@ -114,6 +115,7 @@ def handle_action(
     span_id = None
     span_status = "ok"
     try:
+        enforce_action_permission(program_ir, action_type=str(action_type or ""))
         if action_type == "call_flow":
             response, action_error = _handle_call_flow(
                 program_ir,

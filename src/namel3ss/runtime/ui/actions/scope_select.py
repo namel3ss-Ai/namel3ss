@@ -4,6 +4,7 @@ from typing import Optional
 
 from namel3ss.config.model import AppConfig
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.runtime.app_permissions_engine import require_permission
 from namel3ss.production_contract import build_run_payload
 from namel3ss.runtime.run_pipeline import finalize_run_payload
 from namel3ss.runtime.storage.base import Storage
@@ -26,6 +27,7 @@ def handle_scope_select_action(
     secret_values: list[str] | None = None,
 ) -> dict:
     target_path = _parse_target_path(action, action_id)
+    _enforce_persistent_ui_write_permission(program_ir, target_path)
     active = _parse_active(payload)
     _assign_state_path(state, target_path, active)
     target_label = f"state.{'.'.join(target_path)}"
@@ -90,6 +92,21 @@ def _assign_state_path(state: dict, path: list[str], value: object) -> None:
             cursor[segment] = next_value
         cursor = next_value
     cursor[path[-1]] = value
+
+
+def _enforce_persistent_ui_write_permission(program_ir, target_path: list[str]) -> None:
+    if len(target_path) < 2 or target_path[0] != "ui":
+        return
+    key = str(target_path[1] or "")
+    scope_map = getattr(program_ir, "ui_state_scope_by_key", {}) or {}
+    if scope_map.get(key) != "persistent":
+        return
+    require_permission(
+        "ui_state.persistent_write",
+        permissions=getattr(program_ir, "app_permissions", None),
+        enabled=bool(getattr(program_ir, "app_permissions_enabled", False)),
+        reason=f"ui action 'scope_select' writing state.ui.{key}",
+    )
 
 
 __all__ = ["handle_scope_select_action"]

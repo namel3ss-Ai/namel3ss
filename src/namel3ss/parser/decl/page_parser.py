@@ -14,6 +14,7 @@ from namel3ss.parser.decl.page_common import (
     _reject_list_transforms,
 )
 from namel3ss.parser.decl.page_layout import flatten_page_layout, parse_page_layout_block
+from namel3ss.parser.decl.page_navigation import parse_navigation_sidebar
 from namel3ss.parser.decl.page_tokens import parse_page_theme_tokens_block, parse_page_theme_tokens_inline
 from namel3ss.parser.decl.page_rag_ui import parse_rag_ui_block
 from namel3ss.parser.decl.page_items import parse_page_item
@@ -44,19 +45,25 @@ def parse_page(parser) -> ast.PageDecl:
     diagnostics: bool | None = None
     theme_tokens: ast.ThemeTokens | None = None
     rag_ui_block: ast.RagUIBlock | None = None
+    page_navigation: ast.NavigationSidebar | None = None
     if has_token_header:
         theme_tokens = parse_page_theme_tokens_inline(parser)
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
+        tok = parser._current()
+        if tok.type == "IDENT" and tok.value == "nav_sidebar":
+            if page_navigation is not None:
+                raise Namel3ssError("nav_sidebar is already declared for this page", line=tok.line, column=tok.column)
+            page_navigation = parse_navigation_sidebar(parser)
+            parser._match("NEWLINE")
+            continue
         if rag_ui_block is not None:
-            tok = parser._current()
             raise Namel3ssError(
                 "rag_ui must be the only page body entry.",
                 line=tok.line,
                 column=tok.column,
             )
-        tok = parser._current()
         if tok.type == "IDENT" and tok.value == "tokens":
             if theme_tokens is not None:
                 raise Namel3ssError("Tokens are already declared for this page", line=tok.line, column=tok.column)
@@ -134,7 +141,7 @@ def parse_page(parser) -> ast.PageDecl:
             items.append(parsed)
     parser._expect("DEDENT", "Expected end of page body")
     page_items = flatten_page_layout(layout) if layout is not None else items
-    return ast.PageDecl(
+    page_decl = ast.PageDecl(
         name=name_tok.value,
         items=page_items,
         layout=layout,
@@ -148,6 +155,9 @@ def parse_page(parser) -> ast.PageDecl:
         line=page_tok.line,
         column=page_tok.column,
     )
+    if page_navigation is not None:
+        setattr(page_decl, "ui_navigation", page_navigation)
+    return page_decl
 
 
 __all__ = ["parse_page"]

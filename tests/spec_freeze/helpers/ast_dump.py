@@ -66,6 +66,10 @@ def _to_data(value: Any, *, field_name: str | None = None) -> Any:
                 continue
             if field.name == "empty_state_hidden" and field_value is False:
                 continue
+            if field.name == "action_kind" and field_value == "call_flow":
+                continue
+            if field.name == "target" and field_value is None:
+                continue
             if field.name == "debug_only" and field_value is None:
                 continue
             if field.name in {"prompt_expr", "source_language", "target_language", "tests"} and field_value is None:
