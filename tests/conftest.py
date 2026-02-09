@@ -108,6 +108,10 @@ def pytest_sessionfinish(session, exitstatus):
     from namel3ss.beta_lock.repo_clean import repo_dirty_entries
 
     root = Path(__file__).resolve().parents[1]
+    # Deterministically remove any bytecode produced by subprocess Python invocations
+    # during tests (for example compileall or CLI subprocess calls) before enforcing
+    # the clean-repo assertions below.
+    _remove_runtime_artifacts(root)
     bytecode = _find_bytecode_artifacts(root)
     if bytecode:
         joined = "\n".join(bytecode)
@@ -153,7 +157,11 @@ def _find_bytecode_artifacts(root: Path) -> list[str]:
 def _force_remove_dir(path: Path) -> None:
     def _onerror(func, target, exc_info):
         try:
-            os.chmod(target, stat.S_IWRITE)
+            mode = os.stat(target).st_mode
+            if os.path.isdir(target):
+                os.chmod(target, mode | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+            else:
+                os.chmod(target, mode | stat.S_IRUSR | stat.S_IWUSR)
             func(target)
         except Exception:
             pass

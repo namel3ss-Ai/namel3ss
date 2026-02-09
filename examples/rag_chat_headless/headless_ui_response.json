@@ -1,0 +1,94 @@
+{
+  "ok": true,
+  "api_version": "v1",
+  "contract_version": "runtime-ui@1",
+  "spec_version": "namel3ss-spec@1",
+  "runtime_spec_version": "runtime-spec@1",
+  "hash": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "manifest": {
+    "ok": true,
+    "pages": [
+      {
+        "name": "RAG",
+        "slug": "rag",
+        "elements": [
+          {
+            "type": "upload",
+            "name": "docs"
+          },
+          {
+            "type": "ingestion_status",
+            "status": "warn",
+            "reasons": [
+              "low_unique_tokens"
+            ],
+            "details": [
+              {
+                "code": "low_unique_tokens",
+                "message": "Low number of unique tokens; content may be repetitive.",
+                "remediation": "Upload a source with richer text or run OCR for scanned files."
+              }
+            ]
+          },
+          {
+            "type": "chat"
+          }
+        ]
+      }
+    ],
+    "actions": {
+      "page.rag.upload.docs": {
+        "type": "upload_select"
+      },
+      "page.rag.ingestion.run": {
+        "type": "ingestion_run"
+      },
+      "page.rag.chat.send": {
+        "type": "call_flow",
+        "flow": "answer"
+      }
+    },
+    "runtime_errors": []
+  },
+  "actions": {
+    "ok": true,
+    "api_version": "1",
+    "contract_version": "runtime-ui@1",
+    "actions": [
+      {
+        "id": "page.rag.upload.docs",
+        "type": "upload_select"
+      },
+      {
+        "id": "page.rag.ingestion.run",
+        "type": "ingestion_run"
+      },
+      {
+        "id": "page.rag.chat.send",
+        "type": "call_flow"
+      }
+    ]
+  },
+  "state": {
+    "ok": true,
+    "api_version": "1",
+    "contract_version": "runtime-ui@1",
+    "spec_version": "namel3ss-spec@1",
+    "runtime_spec_version": "runtime-spec@1",
+    "state": {
+      "current_page": "RAG",
+      "values": {
+        "uploads": {
+          "docs": {}
+        },
+        "ingestion": {},
+        "chat": {
+          "messages": [],
+          "citations": [],
+          "trust": 0.72
+        }
+      },
+      "errors": []
+    }
+  }
+}

@@ -1,0 +1,124 @@
+{
+  "ok": true,
+  "api_version": "v1",
+  "contract_version": "runtime-ui@1",
+  "spec_version": "namel3ss-spec@1",
+  "runtime_spec_version": "runtime-spec@1",
+  "action_id": "page.rag.chat.send",
+  "state": {
+    "uploads": {
+      "docs": {
+        "abc123": {
+          "name": "example.pdf",
+          "type": "application/pdf",
+          "checksum": "abc123"
+        }
+      }
+    },
+    "ingestion": {
+      "abc123": {
+        "status": "warn",
+        "reasons": [
+          "low_unique_tokens"
+        ],
+        "reason_details": [
+          {
+            "code": "low_unique_tokens",
+            "message": "Low number of unique tokens; content may be repetitive.",
+            "remediation": "Upload a source with richer text or run OCR for scanned files."
+          }
+        ],
+        "fallback_used": "ocr"
+      }
+    },
+    "chat": {
+      "messages": [
+        {
+          "role": "assistant",
+          "content": "Summary generated."
+        }
+      ],
+      "citations": [
+        {
+          "title": "example.pdf",
+          "source_id": "abc123"
+        }
+      ],
+      "trust": 0.81
+    }
+  },
+  "result": {
+    "answer": "Summary generated.",
+    "retrieval": {
+      "query": "summarize uploaded document",
+      "retrieval_plan": {
+        "query": "summarize uploaded document",
+        "scope": {
+          "source": "state.active_docs",
+          "active": [],
+          "applied": false
+        },
+        "tier": {
+          "requested": "auto",
+          "selected": "deep_then_quick",
+          "reason": "deep_and_quick_available",
+          "available": [
+            "deep",
+            "quick"
+          ],
+          "counts": {
+            "deep": 1,
+            "quick": 1
+          },
+          "candidate_count": 2
+        },
+        "filters": [
+          {
+            "name": "quality_gate",
+            "preferred_quality": "warn",
+            "warn_allowed": true,
+            "policy": {
+              "action": "retrieval.include_warn",
+              "decision": "allowed",
+              "reason": "configured"
+            }
+          }
+        ],
+        "cutoffs": {
+          "limit": 4,
+          "candidate_count": 2,
+          "selected_count": 2
+        },
+        "ordering": "ingestion_phase, keyword_overlap, page_number, chunk_index, chunk_id",
+        "selected_chunk_ids": [
+          "abc123:0",
+          "abc123:1"
+        ]
+      },
+      "retrieval_trace": [
+        {
+          "chunk_id": "abc123:0",
+          "document_id": "abc123",
+          "page_number": 1,
+          "score": 0.79,
+          "rank": 1,
+          "reason": "fallback_inclusion"
+        },
+        {
+          "chunk_id": "abc123:1",
+          "document_id": "abc123",
+          "page_number": 2,
+          "score": 0.67,
+          "rank": 2,
+          "reason": "keyword_match"
+        }
+      ],
+      "trust_score_details": {
+        "formula_version": "rag_trust@1",
+        "score": 0.74,
+        "level": "medium"
+      }
+    }
+  },
+  "runtime_errors": []
+}
