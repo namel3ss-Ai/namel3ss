@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from tools.ui_baseline_refresh import (
@@ -47,3 +48,20 @@ def test_ui_baseline_refresh_check_reports_fix_command(capsys, tmp_path: Path) -
     assert "Baseline drift detected:" in captured
     assert "tests/fixtures/ui_manifest_baselines/test_case.json" in captured
     assert "Run: python tools/ui_baseline_refresh.py --write" in captured
+
+
+def test_tool_basic_snapshots_scrub_python_paths_and_trace_hashes() -> None:
+    payloads = build_baseline_payloads()
+    run_path = Path("tests/fixtures/golden_snapshots/tool_basic/run.json")
+    traces_path = Path("tests/fixtures/golden_snapshots/tool_basic/traces.json")
+
+    run_payload = payloads[run_path]
+    traces_payload = payloads[traces_path]
+    run_json = json.loads(run_payload)
+    contract = run_json.get("contract") if isinstance(run_json, dict) else None
+
+    assert "\"python_path\": \"<python>\"" in run_payload
+    assert "\"python_path\": \"<python>\"" in traces_payload
+    assert isinstance(contract, dict)
+    assert isinstance(contract.get("trace_hash"), str)
+    assert len(contract["trace_hash"]) == 64

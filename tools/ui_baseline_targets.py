@@ -4,7 +4,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from namel3ss.determinism import canonical_json_dumps
+from namel3ss.determinism import canonical_json_dumps, trace_hash
 from namel3ss.ir.nodes import lower_program
 from namel3ss.parser.core import parse
 from namel3ss.runtime.store.memory_store import MemoryStore
@@ -144,10 +144,13 @@ def _golden_snapshot_payloads() -> dict[Path, str]:
         tmp_root = Path(raw_tmp)
         for app in load_manifest():
             snapshot = run_golden_app(app, tmp_root / app.app_id)
+            normalized_run = _normalize_golden_snapshot(snapshot["run"])
+            normalized_traces = _normalize_golden_snapshot(snapshot["traces"])
+            _stabilize_trace_hashes(normalized_run, normalized_traces)
             base = GOLDEN_SNAPSHOTS_DIR / app.app_id
             payloads[base / "ir.json"] = _pretty_json(snapshot["ir"])
-            payloads[base / "run.json"] = _pretty_json(snapshot["run"])
-            payloads[base / "traces.json"] = _pretty_json(snapshot["traces"])
+            payloads[base / "run.json"] = _pretty_json(normalized_run)
+            payloads[base / "traces.json"] = _pretty_json(normalized_traces)
             payloads[base / "hashes.json"] = _pretty_json(snapshot["hashes"])
     return payloads
 
@@ -186,6 +189,42 @@ def _build_manifest_from_fixture(path: Path, *, state: dict) -> dict:
 
 def _pretty_json(value: object) -> str:
     return json.dumps(value, indent=2, sort_keys=True, ensure_ascii=True) + "\n"
+
+
+def _normalize_golden_snapshot(value: object) -> object:
+    if isinstance(value, dict):
+        normalized: dict[str, object] = {}
+        for key, item in value.items():
+            if key == "python_path":
+                normalized[key] = "<python>"
+                continue
+            normalized[key] = _normalize_golden_snapshot(item)
+        return normalized
+    if isinstance(value, list):
+        return [_normalize_golden_snapshot(item) for item in value]
+    return value
+
+
+def _stabilize_trace_hashes(run_payload: object, traces_payload: object) -> None:
+    if not isinstance(run_payload, dict):
+        return
+    if not isinstance(traces_payload, list):
+        return
+
+    run_hash = trace_hash(traces_payload)
+    if "trace_hash" in run_payload:
+        run_payload["trace_hash"] = run_hash
+
+    contract = run_payload.get("contract")
+    if not isinstance(contract, dict):
+        return
+    contract_traces = contract.get("traces")
+    if isinstance(contract_traces, list):
+        contract_hash = trace_hash(contract_traces)
+    else:
+        contract_hash = run_hash
+    if "trace_hash" in contract:
+        contract["trace_hash"] = contract_hash
 
 
 def _validate_targets(payloads: dict[Path, str]) -> None:
