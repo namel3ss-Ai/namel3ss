@@ -162,8 +162,29 @@ let renderUI = (manifest) => {
     (children || []).forEach((child) => {
       if (child && child.visible === false) return;
       const node = renderElement(child, pageName);
+      applyThemeClasses(node, child);
       container.appendChild(node);
     });
+  }
+  function applyPageTheme(page) {
+    if (typeof applyThemeBundle !== "function") return;
+    const bundle = manifest && typeof manifest.theme === "object" ? { ...manifest.theme } : {};
+    const pageTheme = page && typeof page.ui_theme === "object" ? page.ui_theme : null;
+    if (pageTheme && typeof pageTheme.color_scheme === "string") {
+      bundle.color_scheme = pageTheme.color_scheme;
+    }
+    applyThemeBundle(bundle);
+  }
+  function applyThemeClasses(node, el) {
+    if (!node || !node.classList || !el) return;
+    const size = typeof el.size === "string" ? el.size : null;
+    const radius = typeof el.radius === "string" ? el.radius : null;
+    const density = typeof el.density === "string" ? el.density : null;
+    const font = typeof el.font === "string" ? el.font : null;
+    if (size) node.classList.add(`n3-size-${size}`);
+    if (radius) node.classList.add(`n3-radius-${radius}`);
+    if (density) node.classList.add(`n3-density-${density}`);
+    if (font) node.classList.add(`n3-font-${font}`);
   }
   function _focusable(container) {
     return Array.from(
@@ -446,6 +467,172 @@ let renderUI = (manifest) => {
         card.appendChild(actions);
       }
       return card;
+    }
+    if (el.type === "layout.stack") {
+      const stack = document.createElement("div");
+      stack.className = "n3-layout-stack";
+      const direction = el.direction === "horizontal" ? "horizontal" : "vertical";
+      stack.dataset.direction = direction;
+      if (direction === "horizontal") stack.classList.add("horizontal");
+      renderChildren(stack, el.children, pageName);
+      return stack;
+    }
+    if (el.type === "layout.row") {
+      const row = document.createElement("div");
+      row.className = "n3-layout-row";
+      renderChildren(row, el.children, pageName);
+      return row;
+    }
+    if (el.type === "layout.col") {
+      const col = document.createElement("div");
+      col.className = "n3-layout-col";
+      renderChildren(col, el.children, pageName);
+      return col;
+    }
+    if (el.type === "layout.grid") {
+      const grid = document.createElement("div");
+      grid.className = "n3-layout-grid";
+      const columns = Number(el.columns) || 1;
+      const safeColumns = Math.max(columns, 1);
+      grid.style.setProperty("--n3-grid-columns", String(safeColumns));
+      renderChildren(grid, el.children, pageName);
+      return grid;
+    }
+    if (el.type === "layout.sidebar") {
+      const wrapper = document.createElement("div");
+      wrapper.className = "n3-layout-sidebar";
+      const sidebarItems = Array.isArray(el.sidebar) ? el.sidebar.filter((child) => child && child.visible !== false) : [];
+      const mainItems = Array.isArray(el.main) ? el.main.filter((child) => child && child.visible !== false) : [];
+      if (sidebarItems.length) {
+        const sidebar = document.createElement("aside");
+        sidebar.className = "n3-layout-sidebar-pane";
+        renderChildren(sidebar, sidebarItems, pageName);
+        wrapper.appendChild(sidebar);
+      }
+      const main = document.createElement("div");
+      main.className = "n3-layout-main-pane";
+      renderChildren(main, mainItems, pageName);
+      wrapper.appendChild(main);
+      return wrapper;
+    }
+    if (el.type === "layout.drawer") {
+      const drawer = document.createElement("section");
+      drawer.className = "n3-layout-drawer";
+      const showWhen = el.show_when && el.show_when.result === true;
+      drawer.dataset.open = showWhen ? "true" : "false";
+      drawer.setAttribute("aria-hidden", showWhen ? "false" : "true");
+      if (el.title) {
+        const header = document.createElement("div");
+        header.className = "n3-layout-drawer-header";
+        const title = document.createElement("div");
+        title.className = "n3-layout-drawer-title";
+        title.textContent = el.title;
+        header.appendChild(title);
+        drawer.appendChild(header);
+      }
+      const body = document.createElement("div");
+      body.className = "n3-layout-drawer-body";
+      renderChildren(body, el.children, pageName);
+      drawer.appendChild(body);
+      return drawer;
+    }
+    if (el.type === "layout.sticky") {
+      const sticky = document.createElement("div");
+      sticky.className = "n3-layout-sticky";
+      const position = el.position === "bottom" ? "bottom" : "top";
+      sticky.dataset.position = position;
+      if (position === "bottom") sticky.classList.add("bottom");
+      renderChildren(sticky, el.children, pageName);
+      return sticky;
+    }
+    if (el.type === "theme.settings_page") {
+      const wrapper = document.createElement("section");
+      wrapper.className = "ui-element n3-theme-settings";
+      const header = document.createElement("div");
+      header.className = "n3-theme-settings-header";
+      const title = document.createElement("div");
+      title.className = "n3-theme-settings-title";
+      title.textContent = "Theme settings";
+      const subtitle = document.createElement("div");
+      subtitle.className = "n3-theme-settings-subtitle";
+      subtitle.textContent = "Adjust size, corners, density, font, and color scheme.";
+      header.appendChild(title);
+      header.appendChild(subtitle);
+      wrapper.appendChild(header);
+
+      const fieldOrder = ["size", "radius", "density", "font", "color_scheme"];
+      const fieldLabels = {
+        size: "Size",
+        radius: "Corner radius",
+        density: "Density",
+        font: "Font size",
+        color_scheme: "Color scheme",
+      };
+      const fallbackOptions = {
+        size: ["compact", "normal", "comfortable"],
+        radius: ["none", "sm", "md", "lg", "full"],
+        density: ["tight", "regular", "airy"],
+        font: ["sm", "md", "lg"],
+        color_scheme: ["light", "dark", "system"],
+      };
+      const current = typeof el.current === "object" && el.current ? el.current : {};
+      const options = typeof el.options === "object" && el.options ? el.options : {};
+      const controls = document.createElement("div");
+      controls.className = "n3-theme-settings-controls";
+      const selects = {};
+
+      function collectSettings() {
+        const settings = {};
+        fieldOrder.forEach((field) => {
+          const select = selects[field];
+          if (!select) return;
+          settings[field] = select.value;
+        });
+        return settings;
+      }
+
+      function submitSettings(target) {
+        const actionId = el.action_id || el.id;
+        if (!actionId) return;
+        handleAction({ id: actionId }, { settings: collectSettings() }, target || wrapper);
+      }
+
+      fieldOrder.forEach((field) => {
+        const row = document.createElement("label");
+        row.className = "n3-theme-setting";
+        const label = document.createElement("span");
+        label.className = "n3-theme-setting-label";
+        label.textContent = fieldLabels[field] || field;
+        const select = document.createElement("select");
+        select.className = "n3-theme-setting-select";
+        select.setAttribute("aria-label", label.textContent);
+        const entries = Array.isArray(options[field]) ? options[field] : fallbackOptions[field] || [];
+        entries.forEach((value) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = value.replace(/_/g, " ");
+          select.appendChild(option);
+        });
+        if (current[field]) {
+          select.value = current[field];
+        }
+        select.onchange = (e) => submitSettings(e.currentTarget);
+        selects[field] = select;
+        row.appendChild(label);
+        row.appendChild(select);
+        controls.appendChild(row);
+      });
+
+      wrapper.appendChild(controls);
+      return wrapper;
+    }
+    if (el.type === "conditional.if") {
+      const fragment = document.createDocumentFragment();
+      const condition = el.condition || {};
+      const showThen = condition.result === true;
+      const branch = showThen ? el.then_children : el.else_children;
+      renderChildren(fragment, branch, pageName);
+      return fragment;
     }
     if (el.type === "row") {
       const row = document.createElement("div");
@@ -835,7 +1022,9 @@ let renderUI = (manifest) => {
   function appendRenderedItems(container, elements, pageName) {
     (elements || []).forEach((el) => {
       if (!el || el.visible === false) return;
-      container.appendChild(renderElement(el, pageName));
+      const node = renderElement(el, pageName);
+      applyThemeClasses(node, el);
+      container.appendChild(node);
     });
   }
 
@@ -986,7 +1175,9 @@ let renderUI = (manifest) => {
       const overlayLayer = document.createElement("div");
       overlayLayer.className = "ui-overlay-layer";
       overlayItems.forEach((el) => {
-        overlayLayer.appendChild(renderOverlay(el, page.name));
+        const overlayNode = renderOverlay(el, page.name);
+        applyThemeClasses(overlayNode, el);
+        overlayLayer.appendChild(overlayNode);
       });
       root.appendChild(overlayLayer);
     }
@@ -1003,18 +1194,23 @@ let renderUI = (manifest) => {
       showEmpty(uiContainer, emptyMessage);
       return;
     }
+    applyPageTheme(page);
     if (renderLayoutPage(page)) {
       return;
     }
     const split = splitOverlayItems(page.elements || []);
     split.items.forEach((el) => {
-      uiContainer.appendChild(renderElement(el, page.name));
+      const node = renderElement(el, page.name);
+      applyThemeClasses(node, el);
+      uiContainer.appendChild(node);
     });
     if (split.overlays.length) {
       const overlayLayer = document.createElement("div");
       overlayLayer.className = "ui-overlay-layer";
       split.overlays.forEach((el) => {
-        overlayLayer.appendChild(renderOverlay(el, page.name));
+        const overlayNode = renderOverlay(el, page.name);
+        applyThemeClasses(overlayNode, el);
+        overlayLayer.appendChild(overlayNode);
       });
       uiContainer.appendChild(overlayLayer);
     }

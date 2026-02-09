@@ -11,6 +11,7 @@ from namel3ss.parser.decl.page_common import (
     _is_visibility_rule_start,
     _parse_string_value,
     _parse_visibility_clause,
+    _parse_show_when_clause,
     _parse_visibility_rule_line,
     _validate_visibility_combo,
 )
@@ -24,6 +25,7 @@ def parse_story_block(parser, *, allow_pattern_params: bool = False) -> ast.Stor
     parser._advance()
     title = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="story title")
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     parser._expect("COLON", "Expected ':' after story title")
     parser._expect("NEWLINE", "Expected newline after story header")
@@ -65,6 +67,7 @@ def parse_story_block(parser, *, allow_pattern_params: bool = False) -> ast.Stor
         steps=steps,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=story_tok.line,
         column=story_tok.column,

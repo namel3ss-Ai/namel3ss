@@ -14,6 +14,7 @@ BASELINE_FIXTURES_DIR = Path("tests/fixtures/ui_manifest_baselines")
 CSS_PATHS = (
     Path("src/namel3ss/studio/web/studio_ui.css"),
     Path("src/namel3ss/studio/web/styles.css"),
+    Path("src/namel3ss/studio/web/styles/layout_tokens.css"),
 )
 
 TYPE_CSS_SELECTORS: dict[str, tuple[str, ...]] = {
@@ -41,6 +42,13 @@ TYPE_CSS_SELECTORS: dict[str, tuple[str, ...]] = {
     ),
     "modal": (".ui-overlay", ".ui-overlay-panel", ".ui-overlay-body"),
     "row": (".ui-row",),
+    "layout.stack": (".n3-layout-stack",),
+    "layout.row": (".n3-layout-row",),
+    "layout.col": (".n3-layout-col",),
+    "layout.grid": (".n3-layout-grid",),
+    "layout.sidebar": (".n3-layout-sidebar", ".n3-layout-sidebar-pane", ".n3-layout-main-pane"),
+    "layout.drawer": (".n3-layout-drawer", ".n3-layout-drawer-title"),
+    "layout.sticky": (".n3-layout-sticky",),
     "scope_selector": (".ui-scope-selector", ".ui-scope-option"),
     "section": (".ui-section", ".ui-section-title"),
     "source_preview": (".ui-source-preview", ".ui-source-preview-title"),
@@ -330,7 +338,8 @@ def _walk_elements(elements: object):
         if not isinstance(element, dict):
             continue
         yield element
-        yield from _walk_elements(element.get("children"))
+        for key in ("children", "sidebar", "main", "then_children", "else_children"):
+            yield from _walk_elements(element.get(key))
 
 
 def _collect_action_types(manifest: dict) -> set[str]:

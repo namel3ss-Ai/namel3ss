@@ -58,7 +58,7 @@
     "schema_version": "production",
     "state": {},
     "status": "ok",
-    "trace_hash": "c0d531ba9e85923f50c313ab5b2a12dae5ae858be211657aeec3a9e0b1499f2f",
+    "trace_hash": "71aad11c4f2e8ff72bc6b6e47d86237436d08751f7d9950b7d7e78ba2d7127f4",
     "trace_schema_version": "2024-10-01",
     "traces": [
       {
@@ -87,7 +87,7 @@
         },
         "protocol_version": 1,
         "python_env": "system",
-        "python_path": "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+        "python_path": "C:\\Users\\SBW\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
         "reason": "policy_allowed",
         "resolved_source": "binding",
         "result": "ok",
@@ -135,7 +135,7 @@
       },
       "protocol_version": 1,
       "python_env": "system",
-      "python_path": "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
+      "python_path": "C:\\Users\\SBW\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
       "reason": "policy_allowed",
       "resolved_source": "binding",
       "result": "ok",

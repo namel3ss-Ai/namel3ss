@@ -38,6 +38,7 @@
         {
           "column": 3,
           "line": 7,
+          "show_when": null,
           "type": "TitleItem",
           "value": "Restricted",
           "visibility": null
@@ -45,6 +46,7 @@
         {
           "column": 3,
           "line": 8,
+          "show_when": null,
           "type": "TextItem",
           "value": "Admins only",
           "visibility": null
@@ -54,6 +56,7 @@
           "flow_name": "demo",
           "label": "Run",
           "line": 9,
+          "show_when": null,
           "type": "ButtonItem",
           "visibility": null
         }

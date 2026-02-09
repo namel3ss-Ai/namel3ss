@@ -15,6 +15,12 @@ Use short sentences, unique labels, and verb-first actions.
 
 ## Example
 ```ai
+record "Ticket":
+  id text
+
+flow "create_ticket":
+  return "ok"
+
 page "home":
   title is "Support"
   text is "Triage tickets and reply with clarity."

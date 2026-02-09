@@ -50,8 +50,7 @@ def walk_elements(elements: Iterable[Any]) -> Iterator[dict]:
         if not isinstance(element, dict):
             continue
         yield element
-        children = element.get("children")
-        if isinstance(children, list):
+        for children in iter_element_children_lists(element):
             yield from walk_elements(children)
 
 
@@ -60,7 +59,17 @@ def walk_page_elements(page: Any) -> Iterator[dict]:
         yield from walk_elements(elements)
 
 
+def iter_element_children_lists(element: dict) -> Iterator[list]:
+    if not isinstance(element, dict):
+        return
+    for key in ("children", "sidebar", "main", "then_children", "else_children"):
+        value = element.get(key)
+        if isinstance(value, list):
+            yield value
+
+
 __all__ = [
+    "iter_element_children_lists",
     "iter_page_element_lists",
     "iter_page_slot_elements",
     "page_has_layout",

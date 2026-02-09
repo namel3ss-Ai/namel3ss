@@ -11,11 +11,12 @@ from namel3ss.parser.decl.page_common import (
     _parse_param_ref,
     _parse_state_path_value_relaxed,
     _parse_visibility_clause,
+    _parse_show_when_clause,
     _parse_visibility_rule_line,
     _validate_visibility_combo,
 )
 
-_COMPONENT_METADATA_KEYS = {"visibility", "visible", "visible_when", "when", "debug_only", "only"}
+_COMPONENT_METADATA_KEYS = {"visibility", "visible", "visible_when", "when", "show_when", "debug_only", "only"}
 
 
 def parse_custom_component_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.CustomComponentItem:
@@ -26,6 +27,7 @@ def parse_custom_component_item(parser, tok, *, allow_pattern_params: bool = Fal
     _parse_inline_properties(parser, props=props, seen_props=seen_props, allow_pattern_params=allow_pattern_params)
 
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
 
     visibility_rule = None
@@ -55,6 +57,7 @@ def parse_custom_component_item(parser, tok, *, allow_pattern_params: bool = Fal
         properties=props,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,

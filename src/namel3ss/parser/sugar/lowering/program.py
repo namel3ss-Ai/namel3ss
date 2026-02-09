@@ -211,6 +211,7 @@ def _lower_page(page: ast.PageDecl) -> ast.PageDecl:
         status=_lower_status_block(getattr(page, "status", None)),
         debug_only=getattr(page, "debug_only", None),
         diagnostics=getattr(page, "diagnostics", None),
+        theme_tokens=getattr(page, "theme_tokens", None),
         line=page.line,
         column=page.column,
     )

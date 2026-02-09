@@ -1,0 +1,28 @@
+spec is "1.0"
+
+capabilities:
+  ui_rag
+  ui_theme
+
+flow "answer_question":
+  return "ok"
+
+flow "ingest_latest":
+  return "ok"
+
+page "RAG Shell":
+  rag_ui:
+    base is "evidence"
+    features: conversation, evidence
+    size is "compact"
+    radius is "lg"
+    color_scheme is "system"
+
+    binds:
+      messages from is state.chat.messages
+      on_send calls flow "answer_question"
+      citations from is state.chat.citations
+      thinking when is state.loading
+      drawer_open when is state.ui.show_drawer
+      source_preview from is state.ui.preview_source
+      ingest_flow calls flow "ingest_latest"

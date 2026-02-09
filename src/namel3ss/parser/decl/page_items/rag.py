@@ -7,6 +7,7 @@ from namel3ss.parser.decl.page_common import (
     _parse_param_ref,
     _parse_state_path_value,
     _parse_visibility_clause,
+    _parse_show_when_clause,
     _parse_visibility_rule_block,
     _validate_visibility_combo,
     _is_param_ref,
@@ -19,6 +20,7 @@ def parse_citation_chips_item(parser, tok, *, allow_pattern_params: bool = False
     parser._match("IS")
     source = _parse_state_path_value(parser, allow_pattern_params=allow_pattern_params)
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
@@ -27,6 +29,7 @@ def parse_citation_chips_item(parser, tok, *, allow_pattern_params: bool = False
         source=source,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,
@@ -39,6 +42,7 @@ def parse_source_preview_item(parser, tok, *, allow_pattern_params: bool = False
     parser._match("IS")
     source = _parse_source_reference(parser, allow_pattern_params=allow_pattern_params)
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
@@ -47,6 +51,7 @@ def parse_source_preview_item(parser, tok, *, allow_pattern_params: bool = False
         source=source,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,
@@ -59,6 +64,7 @@ def parse_trust_indicator_item(parser, tok, *, allow_pattern_params: bool = Fals
     parser._match("IS")
     source = _parse_state_path_value(parser, allow_pattern_params=allow_pattern_params)
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
@@ -67,6 +73,7 @@ def parse_trust_indicator_item(parser, tok, *, allow_pattern_params: bool = Fals
         source=source,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,
@@ -89,6 +96,7 @@ def parse_scope_selector_item(parser, tok, *, allow_pattern_params: bool = False
     parser._expect("IN", "Expected 'in' after active")
     active = _parse_state_path_value(parser, allow_pattern_params=allow_pattern_params)
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
@@ -98,6 +106,7 @@ def parse_scope_selector_item(parser, tok, *, allow_pattern_params: bool = False
         active=active,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,

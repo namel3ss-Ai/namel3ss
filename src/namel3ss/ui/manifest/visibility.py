@@ -352,4 +352,10 @@ def apply_visibility(element: dict, visible: bool, info: dict | None) -> dict:
     return element
 
 
-__all__ = ["apply_visibility", "evaluate_visibility"]
+def apply_show_when(element: dict, info: dict | None) -> dict:
+    if info is not None:
+        element["show_when"] = info
+    return element
+
+
+__all__ = ["apply_show_when", "apply_visibility", "evaluate_visibility"]

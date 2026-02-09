@@ -31,6 +31,14 @@ Density controls spacing and rhythm. Choose one density for the app and keep it.
 Use short labels and plain sentences.
 
 ```ai
+record "Incident":
+  id text
+  summary text
+  status text
+
+flow "create_incident":
+  return "ok"
+
 page "home":
   title is "Operations"
   text is "Monitor incidents and keep owners aligned."
@@ -45,17 +53,23 @@ page "home":
 Use tones for signal. Pair non-neutral tones with a matching icon.
 
 ```ai
-story "Escalation":
-  step "Escalate quickly":
-    tone is "caution"
-    icon is warning
-    text is "Escalate high-severity incidents immediately."
+page "escalation":
+  story "Escalation":
+    step "Escalate quickly":
+      tone is "caution"
+      icon is warning
+      text is "Escalate high-severity incidents immediately."
 ```
 
 ## Record consistency
 Keep one component type and one configuration per record.
 
 ```ai
+record "Incident":
+  id text
+  summary text
+  status text
+
 page "active":
   section "Incidents":
     table is "Incident":

@@ -8,6 +8,7 @@ from namel3ss.parser.decl.page_common import (
     _parse_debug_only_clause,
     _parse_optional_string_value,
     _parse_visibility_clause,
+    _parse_show_when_clause,
     _parse_visibility_rule_block,
     _validate_visibility_combo,
 )
@@ -34,6 +35,7 @@ def parse_loading_item(parser, tok, *, allow_pattern_params: bool = False) -> as
             column=tok.column,
         )
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
@@ -41,6 +43,7 @@ def parse_loading_item(parser, tok, *, allow_pattern_params: bool = False) -> as
         variant=variant,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,
@@ -84,6 +87,7 @@ def parse_snackbar_item(parser, tok, *, allow_pattern_params: bool = False) -> a
     if message is None:
         raise Namel3ssError("Snackbar requires message.", line=tok.line, column=tok.column)
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
@@ -92,6 +96,7 @@ def parse_snackbar_item(parser, tok, *, allow_pattern_params: bool = False) -> a
         duration=duration,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,
@@ -149,6 +154,7 @@ def parse_icon_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.I
         )
 
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
@@ -159,6 +165,7 @@ def parse_icon_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.I
         label=label,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,
@@ -200,6 +207,7 @@ def parse_lightbox_item(parser, tok, *, allow_pattern_params: bool = False) -> a
         raise Namel3ssError("Lightbox requires at least one image.", line=tok.line, column=tok.column)
 
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
@@ -208,6 +216,7 @@ def parse_lightbox_item(parser, tok, *, allow_pattern_params: bool = False) -> a
         start_index=start_index,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,

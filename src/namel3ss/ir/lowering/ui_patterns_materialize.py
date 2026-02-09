@@ -15,6 +15,7 @@ from namel3ss.ir.lowering.ui_patterns_values import (
     resolve_state_optional,
     resolve_text,
     resolve_text_optional,
+    resolve_show_when,
     resolve_visibility,
     resolve_visibility_rule,
 )
@@ -33,6 +34,7 @@ def materialize_item(
     working = copy.deepcopy(item)
     working.visibility = resolve_visibility(working.visibility, param_values=param_values, param_defs=param_defs)
     working.visibility_rule = resolve_visibility_rule(working.visibility_rule, param_values=param_values, param_defs=param_defs)
+    working.show_when = resolve_show_when(working.show_when, param_values=param_values, param_defs=param_defs)
     if isinstance(working, ast.TitleItem):
         value = resolve_text(working.value, param_values=param_values, param_defs=param_defs)
         if value is None:
@@ -232,6 +234,20 @@ def materialize_item(
             return None
         working.label = label
         return working
+    if isinstance(working, ast.LayoutDrawer):
+        title = resolve_text(working.title, param_values=param_values, param_defs=param_defs)
+        if title is None:
+            return None
+        if working.show_when is None:
+            return None
+        working.title = title
+        return working
+    if isinstance(working, ast.ConditionalBlock):
+        condition = resolve_show_when(working.condition, param_values=param_values, param_defs=param_defs)
+        if condition is None:
+            return None
+        working.condition = condition
+        return working
     if isinstance(working, ast.CustomComponentItem):
         resolved_props: list[ast.CustomComponentProp] = []
         for prop in list(working.properties):
@@ -259,6 +275,7 @@ def materialize_tab(
 ) -> ast.TabItem | None:
     working = copy.deepcopy(tab)
     working.visibility = resolve_visibility(working.visibility, param_values=param_values, param_defs=param_defs)
+    working.show_when = resolve_show_when(working.show_when, param_values=param_values, param_defs=param_defs)
     return working
 
 

@@ -1,0 +1,21 @@
+spec is "1.0"
+
+capabilities:
+  ui_theme
+
+page "Theme Manifest" tokens:
+  size is "compact"
+  radius is "md"
+  density is "regular"
+  font is "sm"
+  color_scheme is "dark"
+
+  section "Panels":
+    card "Primary":
+      size is "comfortable"
+      text is "Hello"
+    card "Secondary":
+      radius is "full"
+      text is "World"
+
+  include theme_settings_page

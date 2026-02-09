@@ -48,9 +48,12 @@ from namel3ss.ui.manifest.state_defaults import StateContext, StateDefaults
 from namel3ss.ui.manifest.status import select_status_items
 from namel3ss.ui.manifest.visibility import evaluate_visibility
 from namel3ss.ui.manifest.warning_pipeline import append_manifest_warnings
+from namel3ss.ui.manifest.theme_nodes import resolve_page_theme_tokens
 from namel3ss.ui.responsive import apply_responsive_layout_to_pages
 from namel3ss.ui.spacing import apply_spacing_to_pages
 from namel3ss.ui.settings import UI_DEFAULTS, UI_RUNTIME_THEME_VALUES, normalize_ui_settings, validate_ui_contrast
+from namel3ss.runtime.theme_state import merge_theme_tokens, theme_settings_from_state
+from namel3ss.ui.theme_tokens import UI_THEME_TOKEN_ORDER
 from namel3ss.validation import ValidationMode
 
 
@@ -117,6 +120,8 @@ def build_manifest(
     breakpoint_names = tuple(getattr(getattr(responsive_layout, "breakpoints", None), "names", ()) or ())
     breakpoint_values = tuple(getattr(getattr(responsive_layout, "breakpoints", None), "values", ()) or ())
     capabilities = tuple(getattr(program, "capabilities", ()) or ())
+    ui_theme_enabled = "ui_theme" in set(capabilities or ())
+    runtime_theme_settings = theme_settings_from_state(state_base) if ui_theme_enabled else {}
     diagnostics_enabled = bool(diagnostics_enabled or display_mode == DISPLAY_MODE_STUDIO)
     upload_requests_with_location = collect_upload_requests(program)
     upload_requests = [public_upload_request(entry) for entry in upload_requests_with_location]
@@ -128,6 +133,8 @@ def build_manifest(
         state_ctx = StateContext(deepcopy(state_base), defaults)
         setattr(state_ctx, "ui_plugin_registry", ui_plugin_registry)
         setattr(state_ctx, "theme_tokens", getattr(program, "theme_tokens", {}) or {})
+        if ui_theme_enabled:
+            setattr(state_ctx, "ui_theme", resolve_page_theme_tokens(page, runtime_theme_settings))
         page_visible, _ = evaluate_visibility(
             getattr(page, "visibility", None),
             getattr(page, "visibility_rule", None),
@@ -235,6 +242,10 @@ def build_manifest(
             }
             if diagnostics_elements:
                 page_payload["diagnostics_blocks"] = diagnostics_elements
+        if ui_theme_enabled:
+            ui_theme = getattr(state_ctx, "ui_theme", None)
+            if isinstance(ui_theme, dict):
+                page_payload["ui_theme"] = {key: ui_theme.get(key) for key in UI_THEME_TOKEN_ORDER}
         for action_id, action_entry in action_entries.items():
             if action_id in actions:
                 raise Namel3ssError(
@@ -346,6 +357,10 @@ def build_manifest(
             "settings": ui_settings,
         },
     }
+    if ui_theme_enabled:
+        runtime_theme_tokens = merge_theme_tokens(runtime_theme_settings)
+        for key in UI_THEME_TOKEN_ORDER:
+            manifest["theme"][key] = runtime_theme_tokens.get(key)
     plugin_assets = build_plugin_assets_manifest(ui_plugin_registry)
     if plugin_assets:
         manifest["ui"]["plugins"] = plugin_assets

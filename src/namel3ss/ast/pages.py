@@ -5,6 +5,7 @@ from typing import List, TYPE_CHECKING
 
 from namel3ss.ast.base import Node
 from namel3ss.ast.expressions import Expression, Literal, StatePath
+from namel3ss.ast.ui_theme import ThemeTokenOverrides, ThemeTokens
 
 if TYPE_CHECKING:  # pragma: no cover - typing-only
     from namel3ss.ast.ui_patterns import PatternArgument
@@ -14,7 +15,9 @@ if TYPE_CHECKING:  # pragma: no cover - typing-only
 class PageItem(Node):
     visibility: Expression | "PatternParamRef" | None = field(default=None, kw_only=True)
     visibility_rule: "VisibilityRule | VisibilityExpressionRule" | None = field(default=None, kw_only=True)
+    show_when: Expression | "PatternParamRef" | None = field(default=None, kw_only=True)
     debug_only: bool | str | None = field(default=None, kw_only=True)
+    theme_overrides: ThemeTokenOverrides | None = field(default=None, kw_only=True)
 
 
 @dataclass
@@ -333,6 +336,7 @@ class TabItem(Node):
     children: List["PageItem"]
     visibility: Expression | "PatternParamRef" | None = field(default=None, kw_only=True)
     visibility_rule: VisibilityRule | VisibilityExpressionRule | None = field(default=None, kw_only=True)
+    show_when: Expression | "PatternParamRef" | None = field(default=None, kw_only=True)
 
 
 @dataclass
@@ -455,6 +459,11 @@ class LightboxItem(PageItem):
 
 
 @dataclass
+class ThemeSettingsPageItem(PageItem):
+    pass
+
+
+@dataclass
 class PageLayout(Node):
     header: list["PageItem"] = field(default_factory=list)
     sidebar_left: list["PageItem"] = field(default_factory=list)
@@ -477,3 +486,4 @@ class PageDecl(Node):
     debug_only: bool | str | None = None
     diagnostics: bool | None = None
     status: StatusBlock | None = None
+    theme_tokens: ThemeTokens | None = None

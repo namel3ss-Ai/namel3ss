@@ -140,15 +140,16 @@ def _filter_elements(
         if entry.get("visible") is False:
             continue
         element = dict(entry)
-        children = element.get("children")
-        if isinstance(children, list):
-            filtered_children, child_ids = _filter_elements(
-                children,
-                diagnostics_enabled=diagnostics_enabled,
-                diagnostics_categories=diagnostics_categories,
-            )
-            element["children"] = filtered_children
-            kept_ids.update(child_ids)
+        for child_key in ("children", "sidebar", "main", "then_children", "else_children"):
+            children = element.get(child_key)
+            if isinstance(children, list):
+                filtered_children, child_ids = _filter_elements(
+                    children,
+                    diagnostics_enabled=diagnostics_enabled,
+                    diagnostics_categories=diagnostics_categories,
+                )
+                element[child_key] = filtered_children
+                kept_ids.update(child_ids)
         element_id = element.get("element_id")
         if isinstance(element_id, str) and element_id:
             kept_ids.add(element_id)

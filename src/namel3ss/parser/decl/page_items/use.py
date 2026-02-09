@@ -10,6 +10,7 @@ from namel3ss.parser.decl.page_common import (
     _parse_param_ref,
     _parse_string_value,
     _parse_visibility_clause,
+    _parse_show_when_clause,
     _parse_visibility_rule_block,
     _parse_visibility_rule_line,
     _validate_visibility_combo,
@@ -29,6 +30,7 @@ def parse_use_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.Pa
         parser._advance()
         name_tok = parser._expect("STRING", "Expected fragment name string")
         visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+        show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
         debug_only = _parse_debug_only_clause(parser)
         visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
         _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
@@ -37,6 +39,7 @@ def parse_use_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.Pa
             fragment_name=name_tok.value,
             visibility=visibility,
             visibility_rule=visibility_rule,
+            show_when=show_when,
             debug_only=debug_only,
             line=tok.line,
             column=tok.column,
@@ -45,6 +48,7 @@ def parse_use_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.Pa
         parser._advance()
         pattern_tok = parser._expect("STRING", "Expected pattern name string")
         visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+        show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
         debug_only = _parse_debug_only_clause(parser)
         arguments = None
         visibility_rule = None
@@ -59,6 +63,7 @@ def parse_use_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.Pa
             arguments=arguments,
             visibility=visibility,
             visibility_rule=visibility_rule,
+            show_when=show_when,
             debug_only=debug_only,
             line=tok.line,
             column=tok.column,

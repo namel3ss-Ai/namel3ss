@@ -45,6 +45,9 @@ from namel3ss.ir.lowering.program_validation import (
     _validate_text_inputs,
     _validate_unique_upload_requests,
 )
+from namel3ss.ir.validation.ui_layout_validation import validate_ui_layout
+from namel3ss.ir.validation.ui_rag_validation import validate_ui_rag
+from namel3ss.ir.validation.ui_theme_validation import validate_ui_theme
 from namel3ss.ir.model.agents import RunAgentsParallelStmt
 from namel3ss.ir.model.program import Flow, Program
 from namel3ss.ir.model.statements import ThemeChange, If, Repeat, RepeatWhile, ForEach, Match, MatchCase, TryCatch, ParallelBlock
@@ -184,9 +187,21 @@ def lower_program(program: ast.Program) -> Program:
     pattern_index = build_pattern_index(getattr(program, "ui_patterns", []), pack_index)
     page_names = {page.name for page in program.pages}
     pages = [
-        _lower_page(page, record_map, flow_names, page_names, pack_index, pattern_index, plugin_registry)
+        _lower_page(
+            page,
+            record_map,
+            flow_names,
+            page_names,
+            pack_index,
+            pattern_index,
+            plugin_registry,
+            capabilities=capabilities,
+        )
         for page in program.pages
     ]
+    validate_ui_layout(pages, capabilities)
+    validate_ui_theme(pages, capabilities)
+    validate_ui_rag(pages, capabilities)
     ui_active_page_rules = _lower_active_page_rules(
         getattr(program, "ui_active_page_rules", None),
         page_names,

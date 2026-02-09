@@ -64,9 +64,9 @@ def expand_page_items(
                 )
             )
             continue
-        if columns_only and not isinstance(item, ast.ColumnItem):
+        if columns_only and not isinstance(item, (ast.ColumnItem, ast.LayoutColumn)):
             raise Namel3ssError("Rows may only contain columns", line=item.line, column=item.column)
-        if isinstance(item, ast.TabsItem) and not allow_tabs:
+        if isinstance(item, ast.TabsItem) and not allow_tabs and not _is_rag_ui_origin(item):
             raise Namel3ssError("Tabs may only appear at the page root", line=item.line, column=item.column)
         if isinstance(item, (ast.ModalItem, ast.DrawerItem)) and not allow_overlays:
             raise Namel3ssError("Overlays may only appear at the page root", line=item.line, column=item.column)
@@ -111,7 +111,54 @@ def _expand_children(
     origin: dict | None,
 ) -> ast.PageItem:
     working = copy.deepcopy(item) if origin is not None else item
-    if isinstance(working, ast.SectionItem):
+    existing_origin = getattr(working, "origin", None)
+    if isinstance(working, ast.ConditionalBlock):
+        then_children = expand_page_items(
+            working.then_children,
+            pack_index,
+            allow_tabs=allow_tabs,
+            allow_overlays=allow_overlays,
+            columns_only=False,
+            page_name=page_name,
+            stack=stack,
+            origin=origin,
+        )
+        else_children = None
+        if working.else_children is not None:
+            else_children = expand_page_items(
+                working.else_children,
+                pack_index,
+                allow_tabs=allow_tabs,
+                allow_overlays=allow_overlays,
+                columns_only=False,
+                page_name=page_name,
+                stack=stack,
+                origin=origin,
+            )
+        working = replace(working, then_children=then_children, else_children=else_children)
+    elif isinstance(working, ast.SidebarLayout):
+        sidebar = expand_page_items(
+            working.sidebar,
+            pack_index,
+            allow_tabs=False,
+            allow_overlays=False,
+            columns_only=False,
+            page_name=page_name,
+            stack=stack,
+            origin=origin,
+        )
+        main = expand_page_items(
+            working.main,
+            pack_index,
+            allow_tabs=False,
+            allow_overlays=False,
+            columns_only=False,
+            page_name=page_name,
+            stack=stack,
+            origin=origin,
+        )
+        working = replace(working, sidebar=sidebar, main=main)
+    elif isinstance(working, ast.SectionItem):
         children = expand_page_items(
             working.children,
             pack_index,
@@ -149,6 +196,66 @@ def _expand_children(
         previous = working
         working = replace(working, children=children)
         _copy_dynamic_style_metadata(previous, working)
+    elif isinstance(working, ast.LayoutStack):
+        children = expand_page_items(
+            working.children,
+            pack_index,
+            allow_tabs=False,
+            allow_overlays=False,
+            columns_only=False,
+            page_name=page_name,
+            stack=stack,
+            origin=origin,
+        )
+        working = replace(working, children=children)
+    elif isinstance(working, ast.LayoutRow):
+        children = expand_page_items(
+            working.children,
+            pack_index,
+            allow_tabs=False,
+            allow_overlays=False,
+            columns_only=False,
+            page_name=page_name,
+            stack=stack,
+            origin=origin,
+        )
+        working = replace(working, children=children)
+    elif isinstance(working, ast.LayoutColumn):
+        children = expand_page_items(
+            working.children,
+            pack_index,
+            allow_tabs=False,
+            allow_overlays=False,
+            columns_only=False,
+            page_name=page_name,
+            stack=stack,
+            origin=origin,
+        )
+        working = replace(working, children=children)
+    elif isinstance(working, ast.LayoutGrid):
+        children = expand_page_items(
+            working.children,
+            pack_index,
+            allow_tabs=False,
+            allow_overlays=False,
+            columns_only=False,
+            page_name=page_name,
+            stack=stack,
+            origin=origin,
+        )
+        working = replace(working, children=children)
+    elif isinstance(working, ast.LayoutSticky):
+        children = expand_page_items(
+            working.children,
+            pack_index,
+            allow_tabs=False,
+            allow_overlays=False,
+            columns_only=False,
+            page_name=page_name,
+            stack=stack,
+            origin=origin,
+        )
+        working = replace(working, children=children)
     elif isinstance(working, ast.RowItem):
         children = expand_page_items(
             working.children,
@@ -177,6 +284,7 @@ def _expand_children(
         tabs: list[ast.TabItem] = []
         for tab in working.tabs:
             next_tab = copy.deepcopy(tab) if origin is not None else tab
+            tab_origin = getattr(next_tab, "origin", None)
             children = expand_page_items(
                 next_tab.children,
                 pack_index,
@@ -190,8 +298,22 @@ def _expand_children(
             next_tab = replace(next_tab, children=children)
             if origin is not None:
                 setattr(next_tab, "origin", origin)
+            elif tab_origin is not None:
+                setattr(next_tab, "origin", tab_origin)
             tabs.append(next_tab)
         working = replace(working, tabs=tabs)
+    elif isinstance(working, ast.LayoutDrawer):
+        children = expand_page_items(
+            working.children,
+            pack_index,
+            allow_tabs=False,
+            allow_overlays=False,
+            columns_only=False,
+            page_name=page_name,
+            stack=stack,
+            origin=origin,
+        )
+        working = replace(working, children=children)
     elif isinstance(working, (ast.ModalItem, ast.DrawerItem)):
         children = expand_page_items(
             working.children,
@@ -218,7 +340,14 @@ def _expand_children(
         working = replace(working, children=children)
     if origin is not None:
         setattr(working, "origin", origin)
+    elif existing_origin is not None:
+        setattr(working, "origin", existing_origin)
     return working
+
+
+def _is_rag_ui_origin(item: object) -> bool:
+    origin = getattr(item, "origin", None)
+    return isinstance(origin, dict) and "rag_ui" in origin
 
 
 def _copy_dynamic_style_metadata(source: ast.PageItem, target: ast.PageItem) -> None:

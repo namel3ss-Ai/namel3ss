@@ -10,6 +10,7 @@ from namel3ss.ir.model.expressions import Literal as IRLiteral
 from namel3ss.ir.model.expressions import StatePath as IRStatePath
 from namel3ss.ir.model.pages import CustomComponentItem as IRCustomComponentItem
 from namel3ss.ir.model.pages import CustomComponentProp as IRCustomComponentProp
+from namel3ss.ir.model.pages import ThemeSettingsPageItem
 from namel3ss.ir.model.pages import VisibilityExpressionRule as IRVisibilityExpressionRule
 from namel3ss.ir.model.pages import VisibilityRule as IRVisibilityRule
 from namel3ss.ir.lowering.page_rag import (
@@ -18,6 +19,8 @@ from namel3ss.ir.lowering.page_rag import (
     _lower_source_preview_item,
     _lower_trust_indicator_item,
 )
+from namel3ss.ir.lowering.page_tokens import lower_theme_overrides
+from namel3ss.ir.lowering import page_layout as layout_mod
 from namel3ss.schema import records as schema
 from namel3ss.ui.theme import normalize_style_hooks, normalize_variant
 
@@ -43,12 +46,18 @@ def _attach_origin(target, source):
     visibility = _lower_visibility(source)
     if visibility is not None:
         setattr(target, "visibility", visibility)
+    show_when = _lower_show_when(source)
+    if show_when is not None:
+        setattr(target, "show_when", show_when)
     visibility_rule = _lower_visibility_rule(source)
     if visibility_rule is not None:
         setattr(target, "visibility_rule", visibility_rule)
     debug_only = getattr(source, "debug_only", None)
     if debug_only is not None:
         setattr(target, "debug_only", debug_only)
+    theme_overrides = lower_theme_overrides(getattr(source, "theme_overrides", None))
+    if theme_overrides is not None:
+        setattr(target, "theme_overrides", theme_overrides)
     component = _style_component_name(source)
     if component:
         variant = normalize_variant(
@@ -93,6 +102,26 @@ def _lower_visibility(source) -> IRExpression | None:
     if not isinstance(lowered, IRExpression):
         raise Namel3ssError(
             "Visibility requires a deterministic expression.",
+            line=getattr(source, "line", None),
+            column=getattr(source, "column", None),
+        )
+    return lowered
+
+
+def _lower_show_when(source) -> IRExpression | None:
+    show_when = getattr(source, "show_when", None)
+    if show_when is None:
+        return None
+    if isinstance(show_when, ast.PatternParamRef):
+        raise Namel3ssError(
+            "show_when expressions cannot use unresolved pattern parameters.",
+            line=getattr(source, "line", None),
+            column=getattr(source, "column", None),
+        )
+    lowered = _lower_expression(show_when)
+    if not isinstance(lowered, IRExpression):
+        raise Namel3ssError(
+            "show_when requires a deterministic expression.",
             line=getattr(source, "line", None),
             column=getattr(source, "column", None),
         )
@@ -264,6 +293,8 @@ def _lower_page_item(
             overlays,
             attach_origin=_attach_origin,
         )
+    if isinstance(item, ast.ThemeSettingsPageItem):
+        return _attach_origin(ThemeSettingsPageItem(line=item.line, column=item.column), item)
     if isinstance(item, ast.ChartItem):
         return views_mod.lower_chart_item(item, record_map, page_name, attach_origin=_attach_origin)
     if isinstance(item, ast.ChatItem):
@@ -404,6 +435,19 @@ def _lower_page_item(
             lower_page_item=_lower_page_item,
             attach_origin=_attach_origin,
         )
+    layout_item = layout_mod.lower_layout_item(
+        item,
+        record_map,
+        flow_names,
+        page_name,
+        page_names,
+        overlays,
+        compose_names,
+        lower_page_item=_lower_page_item,
+        attach_origin=_attach_origin,
+    )
+    if layout_item is not None:
+        return layout_item
     raise TypeError(f"Unhandled page item type: {type(item)}")
 
 

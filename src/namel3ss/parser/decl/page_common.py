@@ -141,6 +141,48 @@ def _parse_visibility_clause(parser, *, allow_pattern_params: bool = False) -> a
     return expr
 
 
+def _is_show_when_clause_start(parser) -> bool:
+    tok = parser._current()
+    return tok.type == "IDENT" and tok.value == "show_when"
+
+
+def _parse_show_when_clause(
+    parser,
+    *,
+    allow_pattern_params: bool = False,
+) -> ast.Expression | ast.PatternParamRef | None:
+    if not _is_show_when_clause_start(parser):
+        return None
+    tok = parser._current()
+    if tok.type != "IDENT" or tok.value != "show_when":
+        raise Namel3ssError("Expected show_when metadata", line=tok.line, column=tok.column)
+    parser._advance()
+    if parser._match("COLON"):
+        pass
+    else:
+        parser._expect("IS", "Expected ':' or 'is' after show_when")
+    next_tok = parser.tokens[parser.position + 1] if parser.position + 1 < len(parser.tokens) else parser._current()
+    if allow_pattern_params and _is_param_ref(parser) and next_tok.type in {"NEWLINE", "COLON", "DEDENT"}:
+        path = _parse_param_ref(parser)
+        return path
+    expr = parse_visibility_expression(parser, allow_pattern_params=allow_pattern_params)
+    if _is_show_when_clause_start(parser):
+        dup = parser._current()
+        raise Namel3ssError(
+            "show_when is declared more than once.",
+            line=dup.line,
+            column=dup.column,
+        )
+    if parser._current().type not in {"NEWLINE", "COLON", "DEDENT"}:
+        extra = parser._current()
+        raise Namel3ssError(
+            "show_when expressions must end at the line boundary.",
+            line=extra.line,
+            column=extra.column,
+        )
+    return expr
+
+
 def _is_debug_only_start(parser) -> bool:
     tok = parser._current()
     return tok.type == "IDENT" and tok.value == "debug_only"
@@ -423,6 +465,8 @@ __all__ = [
     "_match_ident_value",
     "_reject_list_transforms",
     "_parse_visibility_clause",
+    "_is_show_when_clause_start",
+    "_parse_show_when_clause",
     "_parse_debug_only_clause",
     "_parse_debug_only_line",
     "_is_debug_only_start",

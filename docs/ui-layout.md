@@ -53,6 +53,9 @@ Group related content, keep rows small, and keep record layouts consistent.
 
 ## Example
 ```ai
+record "Order":
+  id text
+
 page "home":
   layout:
     header:

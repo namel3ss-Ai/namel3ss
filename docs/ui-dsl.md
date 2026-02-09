@@ -1,10 +1,10 @@
 # UI DSL
 
-This is the authoritative description of the UI DSL. It is semantic and explicit. There is no styling DSL, no CSS, no custom colors.
+This is the authoritative description of the UI DSL. It is semantic and explicit. There is no styling DSL or custom CSS; visual control is limited to curated theme tokens.
 
 ## 1) What UI DSL is
 - Declarative, semantic UI that maps to flows and records.
-- Deterministic structure; no per-component styling knobs.
+- Deterministic structure; no per-component styling knobs beyond limited theme tokens when `ui_theme` is enabled.
 - Canonical serialization: UI manifests and their IR nodes use stable ordering and deterministic JSON.
 - Parser updates are deterministic; incremental parsing must match full-parse output for the UI DSL surface.
 - The generated parser is the single runtime parser path for UI DSL processing; legacy parser flags are not supported.
@@ -80,8 +80,64 @@ Rules:
 - Duplicate slot declarations are compile-time errors.
 - Without `layout:`, pages use the legacy vertical `elements` stack.
 
+### Layout containers and conditionals (ui_layout)
+Layout primitives and conditional rendering require capability `ui_layout`.
+
+Layout containers:
+- `stack:` vertical layout container. Children are any page items.
+- `row:` horizontal layout container. Children are any page items.
+- `col:` column container for use inside `row:` or other layout containers.
+- `grid columns is <positive integer>:` grid layout with fixed column count.
+- `sidebar_layout:` container that must include `sidebar:` and `main:` blocks.
+- `drawer title is "<text>" when is <boolean>:` layout drawer that opens when the condition is true.
+- `sticky top:` / `sticky bottom:` sticky containers that pin to the top or bottom of their scroll area.
+
+Conditionals:
+- `show_when is <boolean>` metadata on any UI block.
+- `if <boolean>:` with optional `else:` to render alternate children.
+
+Rules:
+- `sidebar_layout` must include both `sidebar:` and `main:` blocks.
+- `drawer title is ... when is ...` is required for layout drawers.
+- `drawer` blocks may appear only at the top level or inside `sidebar_layout main`.
+- `grid columns is <n>` requires a positive integer.
+- `else:` must immediately follow an `if` block.
+
 Example:
 ```ai
+capabilities:
+  ui_layout
+
+page "Layout Demo":
+  stack:
+    row:
+      col:
+        text is "Column 1"
+      col:
+        text is "Column 2"
+
+  sidebar_layout:
+    sidebar:
+      section "Sources":
+        text is "Sidebar"
+    main:
+      if state.ready:
+        text is "Ready"
+      else:
+        text is "Preparing"
+
+      drawer title is "Details" when is state.show_details:
+        text is "Drawer content"
+
+  sticky bottom:
+    text is "Sticky footer"
+```
+
+Example:
+```ai
+flow "reply":
+  return "ok"
+
 page "Support Inbox":
   layout:
     header:
@@ -96,12 +152,111 @@ page "Support Inbox":
           composer calls flow "reply"
     drawer_right:
       section "Details":
-        text is state.selected.details
+        text is "Select a message."
     footer:
       text is "Powered by Namel3ss"
     diagnostics:
       section "Trace":
-        text is state.debug.trace
+        text is "Trace output"
+```
+
+### Theme tokens (ui_theme)
+Theme token overrides require capability `ui_theme`.
+
+Page-level tokens:
+- `page "Name" tokens:` followed by token lines, or
+- `tokens:` as the first block inside a page.
+
+Tokens (closed enums):
+- `size`: `compact` | `normal` | `comfortable`
+- `radius`: `none` | `sm` | `md` | `lg` | `full`
+- `density`: `tight` | `regular` | `airy`
+- `font`: `sm` | `md` | `lg`
+- `color_scheme`: `light` | `dark` | `system` (page-only)
+
+Per-component overrides:
+- Inside any component block, you may declare `size is "<value>"`, `radius is "<value>"`, `density is "<value>"`, or `font is "<value>"`.
+- `color_scheme` is only allowed at the page level.
+
+Settings page:
+- `include theme_settings_page` inserts a built-in settings page that writes to `state.ui.settings.<token>`.
+
+Rules:
+- Tokens must be declared immediately after the page header.
+- Duplicate token definitions at the same level are parse errors.
+- Invalid values fail at parse time with allowed values listed.
+- Using tokens or `include theme_settings_page` without `ui_theme` raises a compile error.
+
+Example:
+```ai
+capabilities:
+  ui_theme
+
+flow "run_action":
+  return "ok"
+
+page "Theme Demo" tokens:
+  size is "compact"
+  radius is "lg"
+  density is "regular"
+  font is "sm"
+  color_scheme is "system"
+
+  section "Controls":
+    button "Run":
+      size is "comfortable"
+      calls flow "run_action"
+
+  include theme_settings_page
+```
+
+### RAG UI pattern (ui_rag)
+`rag_ui` is a deterministic, compiler-expanded RAG shell that produces a standard layout using existing layout primitives.
+
+Rules:
+- Using `rag_ui` requires capability `ui_rag`.
+- `rag_ui` must be the only page body entry.
+- Bases: `assistant`, `evidence`, `research`.
+- Features: `conversation`, `evidence`, `research_tools`.
+- `binds:` is required when features are enabled (messages + on_send for conversation; citations for evidence; scope_options + scope_active for research_tools).
+- Allowed slots: `header`, `sidebar`, `drawer`, `chat`, `composer`.
+- Theme token overrides (size, radius, density, font, color_scheme) may appear inside `rag_ui` and apply after runtime settings.
+
+Example:
+```ai
+# doc:skip rag_ui example (phase 3)
+capabilities:
+  ui_rag
+  ui_theme
+
+flow "answer_question":
+  ask ai "assistant" with stream: true and input: "Hello" as reply
+  return reply
+
+flow "ingest_latest":
+  return "ok"
+
+page "RAG Shell":
+  rag_ui:
+    base is "evidence"
+    features: conversation, evidence
+    size is "compact"
+    radius is "lg"
+    color_scheme is "system"
+
+    binds:
+      messages from is state.chat.messages
+      on_send calls flow "answer_question"
+      citations from is state.chat.citations
+      thinking when is state.loading
+      drawer_open when is state.ui.show_drawer
+      source_preview from is state.ui.preview_source
+      ingest_flow calls flow "ingest_latest"
+
+    slots:
+      sidebar:
+        section "Sources":
+          text is "Custom sidebar"
 ```
 
 Structural:
@@ -112,6 +267,7 @@ Structural:
 - `tab "Label":` children: any page items.
 - `modal "Label":` page-level overlay container.
 - `drawer "Label":` page-level overlay container.
+- `include theme_settings_page` inserts a built-in theme settings panel (requires `ui_theme`).
 - `chat:` children: chat elements only (`messages`, `composer`, `thinking`, `citations`, `trust_indicator`, `source_preview`, `scope_selector`, `memory`).
   - Optional chat settings inside `chat:`:
     - `style is "bubbles"|"plain"` (default `bubbles`)
@@ -120,8 +276,9 @@ Structural:
     - `actions are [copy, expand, view_sources]` (default `[]`)
     - `streaming is true|false` (default `false`)
     - `attachments are true|false` (default `false`)
-- `row:` children: only `column`.
-- `column:` children: any page items.
+- `row:` children: only `column` (legacy). Use `row` + `col` when `ui_layout` is enabled.
+- `column:` children: any page items (legacy).
+- `col:` children: any page items (`ui_layout` only).
 - `grid:` responsive container with deterministic column spans.
 - `divider`
 
@@ -200,6 +357,13 @@ Rules:
 
 Enhanced chat example:
 ```ai
+capabilities:
+  streaming
+
+flow "answer_question":
+  ask ai "assistant" with stream: true and input: "Hello" as reply
+  return reply
+
 page "assistant":
   chat:
     style is "bubbles"
@@ -214,13 +378,14 @@ page "assistant":
 ```
 
 Nesting rules:
-- `row` -> `column` only.
+- `row` -> `column` only (legacy). `row` + `col` requires `ui_layout`.
 - `chat` -> `messages`, `composer`, `thinking`, `citations`, `trust_indicator`, `source_preview`, `scope_selector`, `memory` only.
 - `tabs` -> `tab` only; `tab` is only valid inside `tabs`.
 - `modal`/`drawer` are page-level only; they are opened/closed via actions.
+- `drawer title is ... when is ...` may appear only at the top level or inside `sidebar_layout main`.
 - `card_group` -> `card` only.
 - Others may contain any page items.
-- Pages remain declarative: no let/set/if/match inside pages.
+- Pages remain declarative: no let/set/match inside pages. `if` blocks are allowed when `ui_layout` is enabled.
 
 Show blocks:
 - `show` can group tables and lists under one verb using indentation.
@@ -636,7 +801,7 @@ record "User":
 ## 9) Intentionally missing
 - CSS or styling DSL
 - Advanced routing (guards, parameters, auth)
-- Arbitrary per-component styles or raw CSS values
+- Arbitrary per-component styles or raw CSS values (theme tokens are the only styling surface)
 - Pixel-perfect layout controls
 - Implicit AI calls or memory access from UI elements
 

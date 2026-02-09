@@ -6,7 +6,7 @@ from namel3ss.compatibility import validate_spec_version
 from namel3ss.config.loader import load_config
 from namel3ss.config.model import AppConfig
 from namel3ss.errors.base import Namel3ssError
-from namel3ss.errors.payload import build_error_from_exception, build_error_payload
+from namel3ss.errors.payload import build_error_from_exception
 from namel3ss.ir import nodes as ir
 from namel3ss.observe import actor_summary, record_event, summarize_value
 from namel3ss.production_contract import build_run_payload
@@ -21,11 +21,13 @@ from namel3ss.observability.enablement import resolve_observability_context
 from namel3ss.secrets import collect_secret_values
 from namel3ss.ui.manifest import build_manifest
 from namel3ss.runtime.ui.actions.form_policy import enforce_form_policy, submit_form_trace
+from namel3ss.runtime.ui.actions.action_build_errors import form_error_payload, record_engine_error
 from namel3ss.runtime.ui.actions.ingestion_review import handle_ingestion_review_action
 from namel3ss.runtime.ui.actions.ingestion_run import handle_ingestion_run_action
 from namel3ss.runtime.ui.actions.ingestion_skip import handle_ingestion_skip_action
 from namel3ss.runtime.ui.actions.retrieval_run import handle_retrieval_run_action
 from namel3ss.runtime.ui.actions.scope_select import handle_scope_select_action
+from namel3ss.runtime.ui.actions.theme_settings_update import handle_theme_settings_update_action
 from namel3ss.runtime.ui.actions.upload_clear import handle_upload_clear_action
 from namel3ss.runtime.ui.actions.upload_requirements import validate_required_uploads_for_flow
 from namel3ss.runtime.ui.actions.upload_select import handle_upload_select_action
@@ -139,7 +141,7 @@ def handle_action(
             if action_error and raise_on_error:
                 raise action_error
             if action_error:
-                _record_engine_error(project_root, action_id, actor, action_error, secret_values)
+                record_engine_error(project_root, action_id, actor, action_error, secret_values)
         elif action_type == "submit_form":
             obs, owns_obs = resolve_observability_context(
                 None,
@@ -225,6 +227,20 @@ def handle_action(
                 auth_context=auth_context,
                 secret_values=secret_values,
             )
+        elif action_type == "theme_settings_update":
+            response = handle_theme_settings_update_action(
+                program_ir,
+                action=action,
+                action_id=action_id,
+                payload=payload or {},
+                state=working_state,
+                store=store,
+                runtime_theme=runtime_theme,
+                config=resolved_config,
+                identity=identity,
+                auth_context=auth_context,
+                secret_values=secret_values,
+            )
         elif action_type in _SIMPLE_ACTIONS:
             response = _SIMPLE_ACTIONS[action_type](
                 program_ir,
@@ -244,7 +260,7 @@ def handle_action(
         span_status = "error"
         action_error = err
         if project_root:
-            _record_engine_error(project_root, action_id, actor, err, secret_values)
+            record_engine_error(project_root, action_id, actor, err, secret_values)
         raise
     finally:
         if project_root:
@@ -270,30 +286,8 @@ def handle_action(
                 secret_values=secret_values,
             )
     return response
-def _record_engine_error(
-    project_root: str | Path | None,
-    action_id: str,
-    actor: dict,
-    err: Exception,
-    secret_values: list[str] | None,
-) -> None:
-    if not project_root:
-        return
-    record_event(
-        Path(str(project_root)),
-        {
-            "type": "engine_error",
-            "kind": err.__class__.__name__,
-            "message": str(err),
-            "action_id": action_id,
-            "actor": actor,
-            "time": time.time(),
-        },
-        secret_values=secret_values,
-    )
-def _form_error_payload(errors: list[dict]) -> dict:
-    details = {"error_id": "form_validation", "form_errors": errors}
-    return build_error_payload("Form validation failed.", kind="runtime", details=details)
+
+
 def _handle_call_flow(
     program_ir: ir.Program,
     action: dict,
@@ -446,7 +440,7 @@ def _handle_submit_form(
     if errors:
         trace["ok"] = False
         trace["errors"] = [err.get("field") for err in errors if err.get("field")]
-        error_payload = _form_error_payload(errors)
+        error_payload = form_error_payload(errors)
         response = build_run_payload(
             ok=False,
             flow_name=None,

@@ -153,11 +153,23 @@ from namel3ss.ir.model.pages import (
     TablePagination,
     TableRowAction,
     TableSort,
+    ThemeSettingsPageItem,
     ViewItem,
     TextItem,
     TextInputItem,
     TitleItem,
 )
+from namel3ss.ir.model.ui_layout import (
+    ConditionalBlock,
+    LayoutColumn,
+    LayoutDrawer,
+    LayoutGrid,
+    LayoutRow,
+    LayoutStack,
+    LayoutSticky,
+    SidebarLayout,
+)
+from namel3ss.ir.model.ui_theme import ThemeTokenOverrides, ThemeTokens
 from namel3ss.ir.model.tools import ToolDecl, ToolField
 from namel3ss.ir.model.prompts import PromptDefinition
 from namel3ss.ir.model.crud import CrudDefinition
@@ -283,6 +295,7 @@ __all__ = [
     "TablePagination",
     "TableRowAction",
     "TableSort",
+    "ThemeSettingsPageItem",
     "ListAction",
     "ListItem",
     "ListItemMapping",
@@ -300,6 +313,16 @@ __all__ = [
     "TrustIndicatorItem",
     "ScopeSelectorItem",
     "ChatItem",
+    "LayoutStack",
+    "LayoutRow",
+    "LayoutColumn",
+    "LayoutGrid",
+    "SidebarLayout",
+    "LayoutDrawer",
+    "LayoutSticky",
+    "ConditionalBlock",
+    "ThemeTokenOverrides",
+    "ThemeTokens",
     "StatusBlock",
     "StatusCase",
     "StatusCondition",

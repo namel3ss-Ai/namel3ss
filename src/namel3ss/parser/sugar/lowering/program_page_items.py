@@ -16,76 +16,96 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
             actions=actions,
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            show_when=getattr(item, "show_when", None),
             debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
         _copy_style_metadata(lowered, item)
+        _copy_page_metadata(lowered, item)
         return lowered
     if isinstance(item, ast.CardGroupItem):
         children = [_lower_page_item(child) for child in item.children]
-        return ast.CardGroupItem(
+        lowered = ast.CardGroupItem(
             children=children,
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            show_when=getattr(item, "show_when", None),
             debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
+        _copy_page_metadata(lowered, item)
+        return lowered
     if isinstance(item, ast.ComposeItem):
         children = [_lower_page_item(child) for child in item.children]
-        return ast.ComposeItem(
+        lowered = ast.ComposeItem(
             name=item.name,
             children=children,
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            show_when=getattr(item, "show_when", None),
             debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
+        _copy_page_metadata(lowered, item)
+        return lowered
     if isinstance(item, ast.RowItem):
         children = [_lower_page_item(child) for child in item.children]
-        return ast.RowItem(
+        lowered = ast.RowItem(
             children=children,
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            show_when=getattr(item, "show_when", None),
             debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
+        _copy_page_metadata(lowered, item)
+        return lowered
     if isinstance(item, ast.ColumnItem):
         children = [_lower_page_item(child) for child in item.children]
-        return ast.ColumnItem(
+        lowered = ast.ColumnItem(
             children=children,
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            show_when=getattr(item, "show_when", None),
             debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
+        _copy_page_metadata(lowered, item)
+        return lowered
     if isinstance(item, ast.GridItem):
         children = [_lower_page_item(child) for child in item.children]
-        return ast.GridItem(
+        lowered = ast.GridItem(
             columns=list(getattr(item, "columns", []) or []),
             children=children,
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            show_when=getattr(item, "show_when", None),
             debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
+        _copy_page_metadata(lowered, item)
+        return lowered
     if isinstance(item, ast.SectionItem):
         children = [_lower_page_item(child) for child in item.children]
-        return ast.SectionItem(
+        lowered = ast.SectionItem(
             label=item.label,
             children=children,
             columns=list(getattr(item, "columns", []) or []) or None,
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            show_when=getattr(item, "show_when", None),
             debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
+        _copy_page_metadata(lowered, item)
+        return lowered
     if isinstance(item, ast.TabsItem):
         tabs = [
             ast.TabItem(
@@ -93,22 +113,26 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
                 children=[_lower_page_item(child) for child in tab.children],
                 visibility=getattr(tab, "visibility", None),
                 visibility_rule=getattr(tab, "visibility_rule", None),
+                show_when=getattr(tab, "show_when", None),
                 line=tab.line,
                 column=tab.column,
             )
             for tab in item.tabs
         ]
-        return ast.TabsItem(
+        lowered = ast.TabsItem(
             tabs=tabs,
             default=item.default,
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            show_when=getattr(item, "show_when", None),
             debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
+        _copy_page_metadata(lowered, item)
+        return lowered
     if isinstance(item, ast.ChatItem):
-        return ast.ChatItem(
+        lowered = ast.ChatItem(
             children=[_lower_page_item(child) for child in item.children],
             style=getattr(item, "style", "bubbles"),
             show_avatars=bool(getattr(item, "show_avatars", False)),
@@ -118,90 +142,117 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
             attachments=bool(getattr(item, "attachments", False)),
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            show_when=getattr(item, "show_when", None),
             debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
+        _copy_page_metadata(lowered, item)
+        return lowered
     if isinstance(item, ast.ModalItem):
-        return ast.ModalItem(
+        lowered = ast.ModalItem(
             label=item.label,
             children=[_lower_page_item(child) for child in item.children],
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            show_when=getattr(item, "show_when", None),
             debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
+        _copy_page_metadata(lowered, item)
+        return lowered
     if isinstance(item, ast.DrawerItem):
-        return ast.DrawerItem(
+        lowered = ast.DrawerItem(
             label=item.label,
             children=[_lower_page_item(child) for child in item.children],
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            show_when=getattr(item, "show_when", None),
             debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
+        _copy_page_metadata(lowered, item)
+        return lowered
     if isinstance(item, ast.LoadingItem):
-        return ast.LoadingItem(
+        lowered = ast.LoadingItem(
             variant=getattr(item, "variant", "spinner"),
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            show_when=getattr(item, "show_when", None),
             debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
+        _copy_page_metadata(lowered, item)
+        return lowered
     if isinstance(item, ast.SnackbarItem):
-        return ast.SnackbarItem(
+        lowered = ast.SnackbarItem(
             message=getattr(item, "message", ""),
             duration=getattr(item, "duration", 3000),
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            show_when=getattr(item, "show_when", None),
             debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
+        _copy_page_metadata(lowered, item)
+        return lowered
     if isinstance(item, ast.IconItem):
-        return ast.IconItem(
+        lowered = ast.IconItem(
             name=getattr(item, "name", ""),
             size=getattr(item, "size", "medium"),
             role=getattr(item, "role", "decorative"),
             label=getattr(item, "label", None),
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            show_when=getattr(item, "show_when", None),
             debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
+        _copy_page_metadata(lowered, item)
+        return lowered
     if isinstance(item, ast.LightboxItem):
-        return ast.LightboxItem(
+        lowered = ast.LightboxItem(
             images=list(getattr(item, "images", []) or []),
             start_index=getattr(item, "start_index", 0),
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            show_when=getattr(item, "show_when", None),
             debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
+        _copy_page_metadata(lowered, item)
+        return lowered
     if isinstance(item, ast.NumberItem):
         entries = [ast.NumberEntry(kind=e.kind, value=e.value, record_name=e.record_name, label=e.label, line=e.line, column=e.column) for e in item.entries]
-        return ast.NumberItem(
+        lowered = ast.NumberItem(
             entries=entries,
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            show_when=getattr(item, "show_when", None),
             debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
+        _copy_page_metadata(lowered, item)
+        return lowered
     if isinstance(item, ast.ViewItem):
-        return ast.ViewItem(
+        lowered = ast.ViewItem(
             record_name=item.record_name,
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
+            show_when=getattr(item, "show_when", None),
             debug_only=getattr(item, "debug_only", None),
             line=item.line,
             column=item.column,
         )
+        _copy_page_metadata(lowered, item)
+        return lowered
     return item
 
 
@@ -234,6 +285,15 @@ def _copy_style_metadata(target, source) -> None:
     style_hooks = getattr(source, "style_hooks", None)
     if style_hooks is not None:
         setattr(target, "style_hooks", dict(style_hooks))
+
+
+def _copy_page_metadata(target, source) -> None:
+    show_when = getattr(source, "show_when", None)
+    if show_when is not None:
+        setattr(target, "show_when", show_when)
+    theme_overrides = getattr(source, "theme_overrides", None)
+    if theme_overrides is not None:
+        setattr(target, "theme_overrides", theme_overrides)
 
 
 __all__ = ["_lower_page_item"]

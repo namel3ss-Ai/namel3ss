@@ -12,14 +12,17 @@ from namel3ss.parser.decl.page_common import (
     _parse_style_hooks_block,
     _parse_variant_line,
     _parse_visibility_clause,
+    _parse_show_when_clause,
     _parse_visibility_rule_line,
     _validate_visibility_combo,
 )
+from .size_radius import apply_theme_override, parse_theme_override_line
 
 
 def parse_card_group_item(parser, tok, parse_page_item, *, allow_pattern_params: bool = False) -> ast.CardGroupItem:
     parser._advance()
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     parser._expect("COLON", "Expected ':' after card_group")
     children, visibility_rule = _parse_card_group_block(parser, parse_page_item, allow_pattern_params=allow_pattern_params)
@@ -28,6 +31,7 @@ def parse_card_group_item(parser, tok, parse_page_item, *, allow_pattern_params:
         children=children,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,
@@ -38,9 +42,10 @@ def parse_card_item(parser, tok, parse_page_item, *, allow_pattern_params: bool 
     parser._advance()
     label = _parse_optional_string_value(parser, allow_pattern_params=allow_pattern_params)
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     parser._expect("COLON", "Expected ':' after card")
-    children, stat, actions, visibility_rule, variant, style_hooks = _parse_card_block(
+    children, stat, actions, visibility_rule, variant, style_hooks, theme_overrides = _parse_card_block(
         parser,
         parse_page_item,
         allow_pattern_params=allow_pattern_params,
@@ -53,6 +58,7 @@ def parse_card_item(parser, tok, parse_page_item, *, allow_pattern_params: bool 
         actions=actions,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,
@@ -61,6 +67,8 @@ def parse_card_item(parser, tok, parse_page_item, *, allow_pattern_params: bool 
         setattr(item, "variant", variant)
     if style_hooks is not None:
         setattr(item, "style_hooks", style_hooks)
+    if theme_overrides is not None:
+        setattr(item, "theme_overrides", theme_overrides)
     return item
 
 
@@ -105,7 +113,15 @@ def _parse_card_block(
     parse_page_item,
     *,
     allow_pattern_params: bool,
-) -> tuple[List[ast.PageItem], ast.CardStat | None, List[ast.CardAction] | None, ast.VisibilityRule | None, str | None, dict[str, str] | None]:
+) -> tuple[
+    List[ast.PageItem],
+    ast.CardStat | None,
+    List[ast.CardAction] | None,
+    ast.VisibilityRule | None,
+    str | None,
+    dict[str, str] | None,
+    ast.ThemeTokenOverrides | None,
+]:
     parser._expect("NEWLINE", "Expected newline after card header")
     parser._expect("INDENT", "Expected indented card body")
     children: List[ast.PageItem] = []
@@ -114,6 +130,7 @@ def _parse_card_block(
     visibility_rule: ast.VisibilityRule | None = None
     variant: str | None = None
     style_hooks: dict[str, str] | None = None
+    theme_overrides: ast.ThemeTokenOverrides | None = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
@@ -129,6 +146,17 @@ def _parse_card_block(
             parser._match("NEWLINE")
             continue
         tok = parser._current()
+        token_name, override = parse_theme_override_line(parser)
+        if override is not None and token_name is not None:
+            theme_overrides = apply_theme_override(
+                theme_overrides,
+                override,
+                token_name=token_name,
+                line=override.line,
+                column=override.column,
+            )
+            parser._match("NEWLINE")
+            continue
         if tok.type == "IDENT" and tok.value == "stat":
             if stat is not None:
                 raise Namel3ssError("Stat block is declared more than once", line=tok.line, column=tok.column)
@@ -159,7 +187,7 @@ def _parse_card_block(
         else:
             children.append(parsed)
     parser._expect("DEDENT", "Expected end of card body")
-    return children, stat, actions, visibility_rule, variant, style_hooks
+    return children, stat, actions, visibility_rule, variant, style_hooks, theme_overrides
 
 
 def _parse_card_stat_block(parser, line: int, column: int) -> ast.CardStat:

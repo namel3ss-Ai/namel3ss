@@ -12,6 +12,11 @@ Pick one component type and keep its configuration aligned across pages.
 
 ## Example
 ```ai
+record "Incident":
+  id text
+  summary text
+  status text
+
 page "active":
   section "Incidents":
     table is "Incident":

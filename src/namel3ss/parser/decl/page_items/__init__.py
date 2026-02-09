@@ -14,6 +14,8 @@ from . import polish as polish_mod
 from . import rag as rag_mod
 from . import responsive as responsive_mod
 from . import story as story_mod
+from . import conditional_blocks as conditional_mod
+from . import layout_blocks as layout_mod
 from . import views as views_mod
 
 
@@ -70,6 +72,12 @@ def parse_page_item(
     tok = parser._current()
     if tok.type == "IDENT" and tok.value == "purpose":
         raise Namel3ssError("Purpose must be declared at the page root", line=tok.line, column=tok.column)
+    if tok.type == "IDENT" and tok.value == "rag_ui":
+        raise Namel3ssError("rag_ui must be declared at the page root", line=tok.line, column=tok.column)
+    if tok.type == "IF":
+        return conditional_mod.parse_if_block(parser, tok, parse_page_item, allow_pattern_params=allow_pattern_params)
+    if tok.type == "ELSE":
+        raise Namel3ssError("Else must follow an if block", line=tok.line, column=tok.column)
     if tok.type == "IDENT" and tok.value == "compose":
         return actions_mod.parse_compose_item(parser, tok, _parse_block, allow_pattern_params=allow_pattern_params)
     if tok.type == "IDENT" and tok.value == "story":
@@ -104,6 +112,8 @@ def parse_page_item(
         return views_mod.parse_chart_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "IDENT" and tok.value == "use":
         return views_mod.parse_use_item(parser, tok, allow_pattern_params=allow_pattern_params)
+    if tok.type == "IDENT" and tok.value == "include":
+        return views_mod.parse_include_item(parser, tok)
     if tok.type == "IDENT" and tok.value == "chat":
         return views_mod.parse_chat_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "IDENT" and tok.value == "citations":
@@ -133,6 +143,8 @@ def parse_page_item(
             allow_pattern_params=allow_pattern_params,
         )
     if tok.type == "IDENT" and tok.value == "drawer":
+        if layout_mod.is_layout_drawer_header(parser):
+            return layout_mod.parse_drawer_item(parser, tok, _parse_block, allow_pattern_params=allow_pattern_params)
         return actions_mod.parse_drawer_item(
             parser,
             tok,
@@ -152,12 +164,22 @@ def parse_page_item(
         return actions_mod.parse_card_group_item(parser, tok, parse_page_item, allow_pattern_params=allow_pattern_params)
     if tok.type == "CARD":
         return actions_mod.parse_card_item(parser, tok, parse_page_item, allow_pattern_params=allow_pattern_params)
+    if tok.type == "IDENT" and tok.value == "stack":
+        return layout_mod.parse_stack_item(parser, tok, _parse_block, allow_pattern_params=allow_pattern_params)
     if tok.type == "ROW":
-        return actions_mod.parse_row_item(parser, tok, _parse_block, allow_pattern_params=allow_pattern_params)
+        return layout_mod.parse_row_item(parser, tok, _parse_block, allow_pattern_params=allow_pattern_params)
     if tok.type == "COLUMN":
         return actions_mod.parse_column_item(parser, tok, _parse_block, allow_pattern_params=allow_pattern_params)
+    if tok.type == "IDENT" and tok.value == "col":
+        return layout_mod.parse_col_item(parser, tok, _parse_block, allow_pattern_params=allow_pattern_params)
     if tok.type == "IDENT" and tok.value == "grid":
+        if layout_mod.is_layout_grid_header(parser):
+            return layout_mod.parse_grid_item(parser, tok, _parse_block, allow_pattern_params=allow_pattern_params)
         return responsive_mod.parse_grid_item(parser, tok, parse_page_item, allow_pattern_params=allow_pattern_params)
+    if tok.type == "IDENT" and tok.value == "sidebar_layout":
+        return layout_mod.parse_sidebar_layout_item(parser, tok, parse_page_item, allow_pattern_params=allow_pattern_params)
+    if tok.type == "IDENT" and tok.value == "sticky":
+        return layout_mod.parse_sticky_item(parser, tok, _parse_block, allow_pattern_params=allow_pattern_params)
     if tok.type == "DIVIDER":
         return actions_mod.parse_divider_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "IMAGE":

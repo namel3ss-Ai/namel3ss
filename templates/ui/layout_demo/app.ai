@@ -1,0 +1,49 @@
+spec is "1.0"
+
+capabilities:
+  ui_layout
+
+flow "answer_question":
+  return "ok"
+
+flow "toggle_sources":
+  return "ok"
+
+page "Layout Demo":
+  title is "Layout Demo"
+
+  stack:
+    row:
+      col:
+        text is "Column 1"
+      col:
+        text is "Column 2"
+
+    grid columns is 3:
+      text is "Grid A"
+      text is "Grid B"
+      text is "Grid C"
+
+  sidebar_layout:
+    sidebar:
+      section "Sources":
+        text is "Sidebar content"
+    main:
+      section "Chat":
+        if state.chat.ready:
+          text is "Ready"
+        else:
+          text is "Preparing"
+
+      drawer title is "Citations" when is state.ui.show_drawer:
+        list from state.chat.citations:
+          item:
+            primary is title
+
+  sticky bottom:
+    row:
+      button "Open Sources" show_when is state.ui.can_open_sources:
+        calls flow "toggle_sources"
+      button "Ask":
+        calls flow "answer_question"
+

@@ -1,0 +1,116 @@
+:root {
+  --n3-layout-gap: 16px;
+  --n3-layout-row-gap: 16px;
+  --n3-layout-column-gap: 16px;
+  --n3-layout-grid-gap: 16px;
+  --n3-layout-sidebar-gap: 20px;
+  --n3-layout-sidebar-width: 260px;
+  --n3-layout-drawer-border: #e5e5e5;
+  --n3-layout-drawer-bg: #ffffff;
+  --n3-layout-drawer-radius: 12px;
+  --n3-layout-sticky-bg: rgba(255, 255, 255, 0.92);
+}
+
+.n3-layout-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--n3-layout-gap);
+}
+
+.n3-layout-stack.horizontal {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.n3-layout-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--n3-layout-row-gap);
+  align-items: stretch;
+}
+
+.n3-layout-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--n3-layout-column-gap);
+  flex: 1;
+  min-width: 220px;
+}
+
+.n3-layout-grid {
+  display: grid;
+  gap: var(--n3-layout-grid-gap);
+  grid-template-columns: repeat(var(--n3-grid-columns, 1), minmax(0, 1fr));
+}
+
+.n3-layout-sidebar {
+  display: grid;
+  gap: var(--n3-layout-sidebar-gap);
+  grid-template-columns: minmax(0, var(--n3-layout-sidebar-width)) minmax(0, 1fr);
+  align-items: start;
+}
+
+.n3-layout-sidebar-pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--n3-layout-gap);
+}
+
+.n3-layout-main-pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--n3-layout-gap);
+  min-width: 0;
+}
+
+.n3-layout-drawer {
+  background: var(--n3-layout-drawer-bg);
+  border: 1px solid var(--n3-layout-drawer-border);
+  border-radius: var(--n3-layout-drawer-radius);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.n3-layout-drawer[data-open="false"] {
+  display: none;
+}
+
+.n3-layout-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.n3-layout-drawer-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.n3-layout-drawer-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.n3-layout-sticky {
+  position: sticky;
+  z-index: 5;
+  background: var(--n3-layout-sticky-bg);
+  backdrop-filter: blur(6px);
+  padding: 8px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--n3-layout-gap);
+}
+
+.n3-layout-sticky.bottom {
+  bottom: 0;
+}
+
+.n3-layout-sticky:not(.bottom) {
+  top: 0;
+}

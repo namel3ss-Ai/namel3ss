@@ -6,6 +6,8 @@ from namel3ss.page_layout import PAGE_LAYOUT_SLOT_ORDER
 from namel3ss.ir.lowering.expressions import _lower_expression
 from namel3ss.ir.lowering.page_chart import _validate_chart_pairing
 from namel3ss.ir.lowering.pages_items import _lower_page_item, set_plugin_registry
+from namel3ss.ir.lowering.page_tokens import lower_page_theme_tokens
+from namel3ss.ir.lowering.rag_ui_expand import expand_rag_ui_page
 from namel3ss.ir.lowering.ui_packs import expand_page_items
 from namel3ss.ir.lowering.ui_patterns import expand_pattern_items
 from namel3ss.ir.model.base import Expression as IRExpression
@@ -31,15 +33,19 @@ def _lower_page(
     pack_index: dict[str, ast.UIPackDecl],
     pattern_index: dict[str, object],
     plugin_registry,
+    *,
+    capabilities: tuple[str, ...] | None = None,
 ) -> Page:
     set_plugin_registry(plugin_registry)
     context_module = page.name.split(".", 1)[0] if "." in page.name else None
+    rag_expansion = expand_rag_ui_page(page, capabilities=capabilities or ())
+    rag_items = rag_expansion.items
     layout = getattr(page, "layout", None)
     expanded_layout: dict[str, list[ast.PageItem]] | None = None
     expanded_diagnostics_items: list[ast.PageItem] = []
     if layout is None:
         expanded_items = _expand_page_items(
-            page.items,
+            rag_items,
             page_name=page.name,
             flow_names=flow_names,
             page_names=page_names,
@@ -143,6 +149,8 @@ def _lower_page(
         column=page.column,
         state_defaults=getattr(page, "state_defaults", None),
         status=status_block,
+        theme_tokens=lower_page_theme_tokens(getattr(page, "theme_tokens", None)),
+        ui_theme_overrides=lower_page_theme_tokens(rag_expansion.theme_overrides),
     )
 
 
@@ -304,6 +312,15 @@ def _walk_page_items(items: list[ast.PageItem]) -> list[ast.PageItem]:
             for tab in item.tabs:
                 collected.extend(_walk_page_items(tab.children))
             continue
+        if isinstance(item, ast.ConditionalBlock):
+            collected.extend(_walk_page_items(item.then_children))
+            if item.else_children:
+                collected.extend(_walk_page_items(item.else_children))
+            continue
+        if isinstance(item, ast.SidebarLayout):
+            collected.extend(_walk_page_items(item.sidebar))
+            collected.extend(_walk_page_items(item.main))
+            continue
         if isinstance(
             item,
             (
@@ -314,6 +331,12 @@ def _walk_page_items(items: list[ast.PageItem]) -> list[ast.PageItem]:
                 ast.ComposeItem,
                 ast.DrawerItem,
                 ast.GridItem,
+                ast.LayoutColumn,
+                ast.LayoutDrawer,
+                ast.LayoutGrid,
+                ast.LayoutRow,
+                ast.LayoutStack,
+                ast.LayoutSticky,
                 ast.ModalItem,
                 ast.RowItem,
                 ast.SectionItem,

@@ -12,6 +12,7 @@ from namel3ss.parser.decl.page_common import (
     _parse_state_path_value,
     _parse_string_value,
     _parse_visibility_clause,
+    _parse_show_when_clause,
     _parse_visibility_rule_block,
     _parse_visibility_rule_line,
     _validate_visibility_combo,
@@ -23,6 +24,7 @@ from namel3ss.parser.decl.page_items.rag import (
     parse_source_preview_item,
     parse_trust_indicator_item,
 )
+from namel3ss.parser.decl.page_items.size_radius import apply_theme_override, parse_theme_override_line
 from namel3ss.parser.decl.page_chat_options import ChatOptions, parse_chat_option_line
 
 _ALLOWED_MEMORY_LANES = {"my", "team", "system"}
@@ -32,13 +34,14 @@ def parse_chat_block(
     parser,
     *,
     allow_pattern_params: bool = False,
-) -> tuple[List[ast.PageItem], ast.VisibilityRule | None, ChatOptions]:
+) -> tuple[List[ast.PageItem], ast.VisibilityRule | None, ChatOptions, ast.ThemeTokenOverrides | None]:
     parser._expect("NEWLINE", "Expected newline after chat")
     parser._expect("INDENT", "Expected indented chat block")
     items: List[ast.PageItem] = []
     visibility_rule: ast.VisibilityRule | None = None
     options = ChatOptions()
     seen_options: set[str] = set()
+    theme_overrides: ast.ThemeTokenOverrides | None = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
@@ -49,6 +52,17 @@ def parse_chat_block(
             seen_options,
             allow_pattern_params=allow_pattern_params,
         ):
+            continue
+        token_name, override = parse_theme_override_line(parser)
+        if override is not None and token_name is not None:
+            theme_overrides = apply_theme_override(
+                theme_overrides,
+                override,
+                token_name=token_name,
+                line=override.line,
+                column=override.column,
+            )
+            parser._match("NEWLINE")
             continue
         if _is_visibility_rule_start(parser):
             if visibility_rule is not None:
@@ -89,7 +103,7 @@ def parse_chat_block(
     if not items:
         tok = parser._current()
         raise Namel3ssError("Chat block has no entries", line=tok.line, column=tok.column)
-    return items, visibility_rule, options
+    return items, visibility_rule, options, theme_overrides
 
 
 def _parse_messages(parser, *, allow_pattern_params: bool) -> ast.ChatMessagesItem:
@@ -101,6 +115,7 @@ def _parse_messages(parser, *, allow_pattern_params: bool) -> ast.ChatMessagesIt
     parser._expect("IS", "Expected 'is' after messages from")
     source = _parse_state_path_value(parser, allow_pattern_params=allow_pattern_params)
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
@@ -109,6 +124,7 @@ def _parse_messages(parser, *, allow_pattern_params: bool) -> ast.ChatMessagesIt
         source=source,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,
@@ -136,6 +152,7 @@ def _parse_composer(parser, *, allow_pattern_params: bool) -> ast.ChatComposerIt
                 column=action_tok.column,
             )
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     fields: list[ast.ChatComposerField] = []
     visibility_rule = None
@@ -154,6 +171,7 @@ def _parse_composer(parser, *, allow_pattern_params: bool) -> ast.ChatComposerIt
         fields=fields,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,
@@ -300,6 +318,7 @@ def _parse_thinking(parser, *, allow_pattern_params: bool) -> ast.ChatThinkingIt
     parser._match("IS")
     when = _parse_state_path_value(parser, allow_pattern_params=allow_pattern_params)
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
@@ -308,6 +327,7 @@ def _parse_thinking(parser, *, allow_pattern_params: bool) -> ast.ChatThinkingIt
         when=when,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,
@@ -323,6 +343,7 @@ def _parse_citations(parser, *, allow_pattern_params: bool) -> ast.ChatCitations
     parser._expect("IS", "Expected 'is' after citations from")
     source = _parse_state_path_value(parser, allow_pattern_params=allow_pattern_params)
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
@@ -331,6 +352,7 @@ def _parse_citations(parser, *, allow_pattern_params: bool) -> ast.ChatCitations
         source=source,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,
@@ -358,6 +380,7 @@ def _parse_memory(parser, *, allow_pattern_params: bool) -> ast.ChatMemoryItem:
     parser._expect("IS", "Expected 'is' after memory from")
     source = _parse_state_path_value(parser, allow_pattern_params=allow_pattern_params)
     lane = None
+    value_tok = None
     if parser._current().type == "IDENT" and parser._current().value == "lane":
         parser._advance()
         parser._expect("IS", "Expected 'is' after lane")
@@ -370,9 +393,14 @@ def _parse_memory(parser, *, allow_pattern_params: bool) -> ast.ChatMemoryItem:
         else:
             lane = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="lane")
         lane = str(lane).lower()
-        if lane not in _ALLOWED_MEMORY_LANES:
-            raise Namel3ssError("Lane must be 'my', 'team', or 'system'", line=value_tok.line, column=value_tok.column)
+    if lane is None:
+        lane = "system"
+    if lane not in _ALLOWED_MEMORY_LANES:
+        line = value_tok.line if value_tok is not None else tok.line
+        column = value_tok.column if value_tok is not None else tok.column
+        raise Namel3ssError("Lane must be 'my', 'team', or 'system'", line=line, column=column)
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
@@ -382,6 +410,7 @@ def _parse_memory(parser, *, allow_pattern_params: bool) -> ast.ChatMemoryItem:
         lane=lane,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,

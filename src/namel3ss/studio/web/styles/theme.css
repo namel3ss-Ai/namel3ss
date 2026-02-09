@@ -1,0 +1,315 @@
+:root {
+  --n3-size-compact-padding: 8px;
+  --n3-size-normal-padding: 12px;
+  --n3-size-comfortable-padding: 16px;
+  --n3-density-tight-gap: 6px;
+  --n3-density-regular-gap: 10px;
+  --n3-density-airy-gap: 16px;
+  --n3-radius-none: 0;
+  --n3-radius-sm: 6px;
+  --n3-radius-md: 10px;
+  --n3-radius-lg: 16px;
+  --n3-radius-full: 999px;
+}
+
+.ui-element.n3-size-compact {
+  padding: var(--n3-size-compact-padding);
+}
+
+.ui-element.n3-size-normal {
+  padding: var(--n3-size-normal-padding);
+}
+
+.ui-element.n3-size-comfortable {
+  padding: var(--n3-size-comfortable-padding);
+}
+
+.n3-size-compact .btn,
+.btn.n3-size-compact {
+  padding: 6px 10px;
+}
+
+.n3-size-normal .btn,
+.btn.n3-size-normal {
+  padding: 10px 16px;
+}
+
+.n3-size-comfortable .btn,
+.btn.n3-size-comfortable {
+  padding: 12px 20px;
+}
+
+.n3-size-compact .ui-input input,
+.ui-input.n3-size-compact input {
+  padding: 6px 8px;
+}
+
+.n3-size-normal .ui-input input,
+.ui-input.n3-size-normal input {
+  padding: 8px 10px;
+}
+
+.n3-size-comfortable .ui-input input,
+.ui-input.n3-size-comfortable input {
+  padding: 10px 12px;
+}
+
+.ui-element.n3-radius-none,
+.ui-card.n3-radius-none {
+  border-radius: var(--n3-radius-none);
+}
+
+.ui-element.n3-radius-sm,
+.ui-card.n3-radius-sm {
+  border-radius: var(--n3-radius-sm);
+}
+
+.ui-element.n3-radius-md,
+.ui-card.n3-radius-md {
+  border-radius: var(--n3-radius-md);
+}
+
+.ui-element.n3-radius-lg,
+.ui-card.n3-radius-lg {
+  border-radius: var(--n3-radius-lg);
+}
+
+.ui-element.n3-radius-full,
+.ui-card.n3-radius-full {
+  border-radius: var(--n3-radius-full);
+}
+
+.n3-radius-none .btn,
+.btn.n3-radius-none {
+  border-radius: var(--n3-radius-none);
+}
+
+.n3-radius-sm .btn,
+.btn.n3-radius-sm {
+  border-radius: var(--n3-radius-sm);
+}
+
+.n3-radius-md .btn,
+.btn.n3-radius-md {
+  border-radius: var(--n3-radius-md);
+}
+
+.n3-radius-lg .btn,
+.btn.n3-radius-lg {
+  border-radius: var(--n3-radius-lg);
+}
+
+.n3-radius-full .btn,
+.btn.n3-radius-full {
+  border-radius: var(--n3-radius-full);
+}
+
+.n3-radius-none .ui-input input,
+.ui-input.n3-radius-none input {
+  border-radius: var(--n3-radius-none);
+}
+
+.n3-radius-sm .ui-input input,
+.ui-input.n3-radius-sm input {
+  border-radius: var(--n3-radius-sm);
+}
+
+.n3-radius-md .ui-input input,
+.ui-input.n3-radius-md input {
+  border-radius: var(--n3-radius-md);
+}
+
+.n3-radius-lg .ui-input input,
+.ui-input.n3-radius-lg input {
+  border-radius: var(--n3-radius-lg);
+}
+
+.n3-radius-full .ui-input input,
+.ui-input.n3-radius-full input {
+  border-radius: var(--n3-radius-full);
+}
+
+.n3-radius-none .ui-image,
+.ui-image.n3-radius-none {
+  border-radius: var(--n3-radius-none);
+}
+
+.n3-radius-sm .ui-image,
+.ui-image.n3-radius-sm {
+  border-radius: var(--n3-radius-sm);
+}
+
+.n3-radius-md .ui-image,
+.ui-image.n3-radius-md {
+  border-radius: var(--n3-radius-md);
+}
+
+.n3-radius-lg .ui-image,
+.ui-image.n3-radius-lg {
+  border-radius: var(--n3-radius-lg);
+}
+
+.n3-radius-full .ui-image,
+.ui-image.n3-radius-full {
+  border-radius: var(--n3-radius-full);
+}
+
+.ui-element.n3-density-tight {
+  margin-bottom: 6px;
+}
+
+.ui-element.n3-density-regular {
+  margin-bottom: 10px;
+}
+
+.ui-element.n3-density-airy {
+  margin-bottom: 14px;
+}
+
+.ui-section.n3-density-tight {
+  gap: var(--n3-density-tight-gap);
+}
+
+.ui-section.n3-density-regular {
+  gap: var(--n3-density-regular-gap);
+}
+
+.ui-section.n3-density-airy {
+  gap: var(--n3-density-airy-gap);
+}
+
+.ui-card.n3-density-tight {
+  gap: 6px;
+}
+
+.ui-card.n3-density-regular {
+  gap: 8px;
+}
+
+.ui-card.n3-density-airy {
+  gap: 12px;
+}
+
+.ui-card-group.n3-density-tight {
+  gap: 8px;
+}
+
+.ui-card-group.n3-density-regular {
+  gap: 12px;
+}
+
+.ui-card-group.n3-density-airy {
+  gap: 16px;
+}
+
+.ui-row.n3-density-tight {
+  gap: 8px;
+}
+
+.ui-row.n3-density-regular {
+  gap: 12px;
+}
+
+.ui-row.n3-density-airy {
+  gap: 18px;
+}
+
+.ui-column.n3-density-tight {
+  gap: 8px;
+}
+
+.ui-column.n3-density-regular {
+  gap: 10px;
+}
+
+.ui-column.n3-density-airy {
+  gap: 16px;
+}
+
+.ui-element.n3-font-sm {
+  font-size: 12px;
+}
+
+.ui-element.n3-font-md {
+  font-size: 14px;
+}
+
+.ui-element.n3-font-lg {
+  font-size: 16px;
+}
+
+.n3-font-sm .btn,
+.btn.n3-font-sm {
+  font-size: 12px;
+}
+
+.n3-font-md .btn,
+.btn.n3-font-md {
+  font-size: 13px;
+}
+
+.n3-font-lg .btn,
+.btn.n3-font-lg {
+  font-size: 14px;
+}
+
+.n3-font-sm .ui-section-title,
+.n3-font-sm .ui-card-title {
+  font-size: 12px;
+}
+
+.n3-font-md .ui-section-title,
+.n3-font-md .ui-card-title {
+  font-size: 14px;
+}
+
+.n3-font-lg .ui-section-title,
+.n3-font-lg .ui-card-title {
+  font-size: 16px;
+}
+
+.n3-theme-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.n3-theme-settings-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.n3-theme-settings-title {
+  font-weight: 600;
+}
+
+.n3-theme-settings-subtitle {
+  color: #555;
+  font-size: 12px;
+}
+
+.n3-theme-settings-controls {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.n3-theme-setting {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.n3-theme-setting-label {
+  font-weight: 500;
+}
+
+.n3-theme-setting-select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  font-size: inherit;
+}

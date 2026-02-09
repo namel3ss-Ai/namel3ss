@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from namel3ss.ui.settings import UI_DEFAULTS
-from namel3ss.ui.manifest.page_structure import iter_page_element_lists
+from namel3ss.ui.manifest.page_structure import iter_element_children_lists, iter_page_element_lists
 
 SPACING_TOKENS: tuple[str, ...] = ("xs", "s", "m", "l", "xl", "xxl")
 
@@ -25,6 +25,13 @@ _CONTAINER_SPACING_RULES: dict[str, tuple[tuple[str, str], ...]] = {
     "row": (("gap", "base"),),
     "column": (("gap", "base"),),
     "grid": (("gap", "base"),),
+    "layout.stack": (("gap", "base"),),
+    "layout.row": (("gap", "base"),),
+    "layout.col": (("gap", "base"),),
+    "layout.grid": (("gap", "base"),),
+    "layout.sidebar": (("gap", "base"),),
+    "layout.drawer": (("padding", "loose"), ("gap", "base"), ("title_gap", "tight")),
+    "layout.sticky": (("gap", "base"),),
     "tabs": (("tab_gap", "tight"), ("header_gap", "base")),
     "tab": (("gap", "base"),),
     "modal": (("padding", "loose"), ("header_gap", "tight"), ("body_gap", "base")),
@@ -87,8 +94,7 @@ def apply_spacing_to_elements(elements: list[dict], density: str | None) -> None
         spacing = spacing_for_element(element, density)
         if spacing:
             element["spacing"] = spacing
-        children = element.get("children")
-        if isinstance(children, list):
+        for children in iter_element_children_lists(element):
             apply_spacing_to_elements(children, density)
 
 
