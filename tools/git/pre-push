@@ -9,14 +9,35 @@ fi
 
 cd "$root"
 
+is_python_314() {
+  candidate="$1"
+  if [ -x "$candidate" ]; then
+    python_bin="$candidate"
+  elif command -v "$candidate" >/dev/null 2>&1; then
+    python_bin="$candidate"
+  else
+    return 1
+  fi
+  version="$("$python_bin" -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")' 2>/dev/null || true)"
+  [ "$version" = "3.14" ]
+}
+
 python_cmd=""
-if command -v python >/dev/null 2>&1; then
+if [ -n "${VIRTUAL_ENV:-}" ] && is_python_314 "${VIRTUAL_ENV}/bin/python"; then
+  python_cmd="${VIRTUAL_ENV}/bin/python"
+elif is_python_314 "./.venv314/bin/python"; then
+  python_cmd="./.venv314/bin/python"
+elif is_python_314 "./.venv/bin/python"; then
+  python_cmd="./.venv/bin/python"
+elif is_python_314 "python"; then
   python_cmd="python"
-elif command -v python3 >/dev/null 2>&1; then
+elif is_python_314 "python3"; then
   python_cmd="python3"
+elif is_python_314 "python3.14"; then
+  python_cmd="python3.14"
 else
-  echo "pre-push: python is required to run local verification."
-  echo "pre-push: install python and re-run: python tools/ci/verify_local.py"
+  echo "pre-push: Python 3.14 is required to run local verification."
+  echo "pre-push: activate a 3.14 virtualenv or install Python 3.14 and run: python3.14 tools/ci/verify_local.py"
   exit 1
 fi
 

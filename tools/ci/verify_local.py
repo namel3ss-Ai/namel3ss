@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import importlib.util
 import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+
+REQUIRED_PYTHON = (3, 14)
 
 
 def _repo_root() -> Path:
@@ -13,7 +17,31 @@ def _repo_root() -> Path:
 
 def _print_header() -> None:
     print("Local verification")
+    print(f"Python: {sys.version.split()[0]} ({sys.executable})")
     print("Checks:")
+
+
+def _check_python_version() -> None:
+    current = sys.version_info[:2]
+    if current == REQUIRED_PYTHON:
+        return
+    required_text = ".".join(str(part) for part in REQUIRED_PYTHON)
+    current_text = ".".join(str(part) for part in current)
+    print(f"Failed: local verification requires Python {required_text} to match GitHub Actions.")
+    print(f"Current interpreter is Python {current_text} at {sys.executable}")
+    print(f"Re-run with: python{required_text} tools/ci/verify_local.py")
+    raise SystemExit(1)
+
+
+def _check_required_modules() -> None:
+    required = ("pytest",)
+    missing = [name for name in required if importlib.util.find_spec(name) is None]
+    if not missing:
+        return
+    joined = ", ".join(missing)
+    print(f"Failed: missing required Python packages for local verification: {joined}")
+    print('Install with: python3.14 -m pip install -e ".[dev]"')
+    raise SystemExit(1)
 
 
 def _format_command(cmd: list[str], env: dict[str, str] | None) -> str:
@@ -81,6 +109,8 @@ def _resolve_n3_script() -> str:
 
 def main() -> int:
     os.chdir(_repo_root())
+    _check_python_version()
+    _check_required_modules()
     _print_header()
     n3_script = _resolve_n3_script()
     _run_command("Security hardening scan", [sys.executable, "tools/security_hardening_scan.py"])
