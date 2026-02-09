@@ -369,9 +369,7 @@ def merge_response_headers(*header_groups: dict[str, str] | None) -> dict[str, s
 
 
 def _normalize_path(path: str) -> str:
-    text = str(path or "")
-    normalized = text.rstrip("/")
-    return normalized or "/"
+    return str(path or "").rstrip("/") or "/"
 
 
 def _is_supported_headless_path(path: str) -> bool:
@@ -432,8 +430,7 @@ def _authorize_origin(*, headers: Mapping[str, object], cors_origins: object) ->
 
 
 def _headless_error_payload(message: str, *, kind: str) -> dict:
-    payload = build_error_payload(message, kind=kind)
-    return _with_headless_contract(payload)
+    return _with_headless_contract(build_error_payload(message, kind=kind))
 
 
 def _with_headless_contract(payload: dict) -> dict:
@@ -450,9 +447,7 @@ def ensure_headless_contract_fields(payload: dict) -> dict:
 
 
 def _parse_origins_text(value: str) -> tuple[str, ...]:
-    parts = [segment.strip() for segment in value.split(",")]
-    items = [segment for segment in parts if segment]
-    return _dedupe(items)
+    return _dedupe([segment for segment in (part.strip() for part in value.split(",")) if segment])
 
 
 def _dedupe(values: list[str]) -> tuple[str, ...]:
