@@ -134,7 +134,9 @@ def require_app_path(app_path: str | Path | None) -> Path:
 def build_session_state(app_path: Path) -> SessionState:
     config = load_config(app_path=app_path, root=app_path.parent)
     store = create_store(config=config)
-    return SessionState(store=store)
+    session = SessionState(store=store)
+    session.attach_workspace(app_path)
+    return session
 
 
 def to_json_safe(value: Any) -> Any:

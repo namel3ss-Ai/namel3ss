@@ -17,9 +17,13 @@ from namel3ss.module_loader import load_project
 from namel3ss.module_loader.source_io import ParseCache
 from namel3ss.runtime.browser_state import record_data_effects, record_rows_snapshot, records_snapshot
 from namel3ss.runtime.answer.traces import extract_answer_explain
+from namel3ss.runtime.capabilities.contract_fields import attach_capability_manifest_fields
 from namel3ss.runtime.dev_overlay import build_dev_overlay_payload
 from namel3ss.runtime.identity.context import resolve_identity
 from namel3ss.runtime.auth.identity_model import normalize_identity
+from namel3ss.runtime.audit.runtime_capture import attach_audit_artifacts
+from namel3ss.runtime.errors.normalize import attach_runtime_error_payload, merge_runtime_errors
+from namel3ss.runtime.providers.guardrails import provider_guardrail_diagnostics
 from namel3ss.runtime.preferences.factory import app_pref_key, preference_store_for_app
 from namel3ss.runtime.ui.actions import handle_action
 from namel3ss.runtime.storage.factory import resolve_store
@@ -27,16 +31,12 @@ from namel3ss.secrets import set_audit_root, set_engine_target
 from namel3ss.studio.session import SessionState
 from namel3ss.determinism import canonical_json_dumps
 from namel3ss.ui.manifest import build_manifest
-from namel3ss.ui.manifest.display_mode import (
-    DISPLAY_MODE_PRODUCTION,
-    DISPLAY_MODE_STUDIO,
-    normalize_display_mode,
-)
+from namel3ss.ui.manifest.elements.audit_viewer import inject_audit_viewer_elements
+from namel3ss.ui.manifest.elements.runtime_error import inject_runtime_error_elements
+from namel3ss.ui.manifest.display_mode import DISPLAY_MODE_PRODUCTION, DISPLAY_MODE_STUDIO, normalize_display_mode
 from namel3ss.ui.settings import UI_ALLOWED_VALUES, UI_DEFAULTS
 from namel3ss.validation import ValidationMode, ValidationWarning
-
 from namel3ss.runtime.server.dev.errors import error_from_exception
-
 
 def _locked(method):
     @wraps(method)
@@ -45,7 +45,6 @@ def _locked(method):
             return method(self, *args, **kwargs)
 
     return wrapper
-
 
 class BrowserAppState:
     def __init__(
@@ -101,7 +100,12 @@ class BrowserAppState:
                 warnings=warnings,
             )
         resolved_identity = normalize_identity(resolved_identity)
-        cache_key = self._identity_cache_key(resolved_identity, auth_context=auth_context)
+        runtime_errors = self._current_runtime_errors(config)
+        cache_key = self._identity_cache_key(
+            resolved_identity,
+            auth_context=auth_context,
+            runtime_errors=runtime_errors,
+        )
         cached = self.manifest_cache.get(cache_key)
         if cached is not None:
             return cached
@@ -116,6 +120,14 @@ class BrowserAppState:
                 warnings=warnings,
                 auth_context=auth_context,
             )
+            manifest, capability_errors = attach_capability_manifest_fields(
+                manifest,
+                program_ir=self.program,
+                config=config,
+            )
+            runtime_errors = merge_runtime_errors(runtime_errors, capability_errors)
+            if runtime_errors:
+                inject_runtime_error_elements(manifest, runtime_errors)
             if warnings:
                 manifest["warnings"] = [warning.to_dict() for warning in warnings]
             self.manifest_cache[cache_key] = manifest
@@ -176,6 +188,7 @@ class BrowserAppState:
         store = self.session.ensure_store(config)
         runtime_theme = self.session.runtime_theme or getattr(self.program, "theme", UI_DEFAULTS["theme"])
         preference = getattr(self.program, "theme_preference", {}) or {}
+        guardrails = provider_guardrail_diagnostics(config) if self.ui_mode == DISPLAY_MODE_STUDIO else []
         response = {}
         identity_value = dict(identity) if isinstance(identity, dict) else None
         if identity_value is None:
@@ -185,7 +198,11 @@ class BrowserAppState:
                 mode=ValidationMode.RUNTIME,
             )
         identity_value = normalize_identity(identity_value)
-        cache_key = self._identity_cache_key(identity_value, auth_context=auth_context)
+        cache_key = self._identity_cache_key(
+            identity_value,
+            auth_context=auth_context,
+            runtime_errors=merge_runtime_errors(self.session.runtime_errors, guardrails),
+        )
         try:
             before_rows = None
             if self.program is not None:
@@ -227,13 +244,74 @@ class BrowserAppState:
                 mode=self.mode,
                 debug=self.debug,
             )
+            response = attach_runtime_error_payload(
+                response,
+                status_code=400,
+                endpoint="/api/action",
+                diagnostics=guardrails,
+            )
         except Exception as err:  # pragma: no cover - defensive guard
             response = build_error_payload(str(err), kind="internal")
             if self.mode == "dev":
                 response["overlay"] = build_dev_overlay_payload(response, debug=self.debug)
+            response = attach_runtime_error_payload(
+                response,
+                status_code=500,
+                endpoint="/api/action",
+                diagnostics=guardrails,
+            )
+        if isinstance(response, dict):
+            response = attach_runtime_error_payload(
+                response,
+                status_code=None,
+                endpoint="/api/action",
+                diagnostics=guardrails,
+            )
+            response = attach_audit_artifacts(
+                response,
+                program_ir=self.program,
+                config=config,
+                action_id=action_id,
+                input_payload=payload,
+                state_snapshot=response.get("state") if isinstance(response.get("state"), dict) else self.session.state,
+                source=self._main_source(),
+                endpoint="/api/action",
+            )
+            runtime_errors = response.get("runtime_errors")
+            if isinstance(runtime_errors, list):
+                self.session.runtime_errors = runtime_errors
+            else:
+                self.session.runtime_errors = []
+            if runtime_errors:
+                refreshed_manifest = self._build_manifest(
+                    self.program,
+                    config=config,
+                    identity=identity_value,
+                    warnings=[],
+                    auth_context=auth_context,
+                )
+                refreshed_manifest, capability_errors = attach_capability_manifest_fields(
+                    refreshed_manifest,
+                    program_ir=self.program,
+                    config=config,
+                )
+                runtime_errors = merge_runtime_errors(runtime_errors, capability_errors)
+                inject_runtime_error_elements(refreshed_manifest, runtime_errors)
+                response["ui"] = refreshed_manifest
         ui_payload = response.get("ui") if isinstance(response, dict) else None
         if isinstance(ui_payload, dict):
-            self.manifest_cache[cache_key] = ui_payload
+            inject_audit_viewer_elements(
+                ui_payload,
+                run_artifact=response.get("run_artifact"),
+                audit_bundle=response.get("audit_bundle"),
+                audit_policy_status=response.get("audit_policy_status"),
+            )
+            resolved_cache_key = self._identity_cache_key(
+                identity_value,
+                auth_context=auth_context,
+                runtime_errors=response.get("runtime_errors") if isinstance(response, dict) else None,
+            )
+            self.manifest_cache[resolved_cache_key] = ui_payload
             self.manifest_errors.pop(cache_key, None)
             theme_current = (ui_payload.get("theme") or {}).get("current")
             if isinstance(theme_current, str) and theme_current:
@@ -264,6 +342,7 @@ class BrowserAppState:
             self.manifest_cache = {}
             self.manifest_errors = {}
             self.error_payload = None
+            self.session.runtime_errors = []
         except Namel3ssError as err:
             self.error_payload = self._build_error_payload(err)
         except Exception as err:  # pragma: no cover - defensive guard
@@ -333,7 +412,12 @@ class BrowserAppState:
         )
         return manifest
 
-    def _identity_cache_key(self, identity: dict | None, auth_context: object | None = None) -> str:
+    def _identity_cache_key(
+        self,
+        identity: dict | None,
+        auth_context: object | None = None,
+        runtime_errors: list[dict[str, str]] | None = None,
+    ) -> str:
         normalized = normalize_identity(identity if isinstance(identity, dict) else {})
         payload_map: dict[str, object] = {"identity": normalized}
         if auth_context is not None:
@@ -343,9 +427,15 @@ class BrowserAppState:
                 payload_map["auth_error"] = error
             if isinstance(authenticated, bool):
                 payload_map["authenticated"] = authenticated
+        if isinstance(runtime_errors, list) and runtime_errors:
+            payload_map["runtime_errors"] = runtime_errors
         payload = canonical_json_dumps(payload_map, pretty=False, drop_run_keys=False)
         digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
         return digest[:12]
+
+    def _current_runtime_errors(self, config) -> list[dict[str, str]]:
+        guardrails = provider_guardrail_diagnostics(config) if self.ui_mode == DISPLAY_MODE_STUDIO else []
+        return merge_runtime_errors(self.session.runtime_errors, guardrails)
 
     def _build_error_payload(self, err: Namel3ssError) -> dict:
         return error_from_exception(
@@ -384,7 +474,6 @@ def _scan_project_sources(project_root: Path) -> list[Path]:
         paths.append(path)
     return paths or [project_root / "app.ai"]
 
-
 def _snapshot_paths(paths: list[Path]) -> dict[Path, tuple[int, int]]:
     snapshot: dict[Path, tuple[int, int]] = {}
     for path in paths:
@@ -395,7 +484,6 @@ def _snapshot_paths(paths: list[Path]) -> dict[Path, tuple[int, int]]:
             snapshot[path] = (-1, -1)
     return snapshot
 
-
 def _compute_revision(sources: dict[Path, str]) -> str:
     digest = hashlib.sha256()
     for path, text in sorted(sources.items(), key=lambda item: item[0].as_posix()):
@@ -403,12 +491,10 @@ def _compute_revision(sources: dict[Path, str]) -> str:
         digest.update(text.encode("utf-8"))
     return digest.hexdigest()[:12]
 
-
 def _read_source_fallback(app_path: Path) -> dict[Path, str]:
     try:
         return {app_path: app_path.read_text(encoding="utf-8")}
     except OSError:
         return {}
-
 
 __all__ = ["BrowserAppState"]

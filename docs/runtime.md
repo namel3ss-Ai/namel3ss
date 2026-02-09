@@ -85,3 +85,8 @@ Rules:
 ## See also
 - [Concurrency](concurrency.md) — parallel execution within flows.
 - [Execution how](execution-how.md) — explainable execution and flow inspection.
+- [Runtime error surfacing](runtime/runtime_errors.md) — canonical runtime error categories and diagnostics payloads.
+- [Headless contracts](runtime/headless_contracts.md) — strict versioned API contract for `/api/v1` integrations.
+- [Retrieval determinism](runtime/retrieval_determinism.md) — retrieval plan/trace and trust score evidence model.
+- [Audit replay](runtime/audit_replay.md) — deterministic run artifacts, policy modes, and replay verification.
+- [Persistence targets](runtime/persistence_targets.md) — deterministic persistence backends, migration lifecycle, and state inspection CLI.

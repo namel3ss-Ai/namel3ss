@@ -1,0 +1,16 @@
+spec is "1.0"
+
+capabilities:
+  uploads
+
+flow "answer":
+  return "Headless RAG response placeholder."
+
+page "RAG":
+  title is "Headless RAG"
+  upload docs
+  chat:
+    messages from is state.chat.messages
+    composer calls flow "answer"
+    citations from is state.chat.citations
+    trust_indicator from state.chat.trust

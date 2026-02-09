@@ -32,6 +32,7 @@ ENV_PERFORMANCE_METRICS_ENDPOINT = "N3_PERFORMANCE_METRICS_ENDPOINT"
 ENV_DETERMINISM_SEED = "N3_DETERMINISM_SEED"
 ENV_DETERMINISM_EXPLAIN = "N3_EXPLAIN"
 ENV_DETERMINISM_REDACT_USER_DATA = "N3_REDACT_USER_DATA"
+ENV_AUDIT_POLICY = "N3_AUDIT_POLICY"
 RESERVED_TRUE_VALUES = {"1", "true", "yes", "on"}
 RESERVED_FALSE_VALUES = {"0", "false", "no", "off"}
 
@@ -187,6 +188,13 @@ def apply_env_overrides(config: AppConfig) -> bool:
             config.determinism.redact_user_data = False
         else:
             raise Namel3ssError("N3_REDACT_USER_DATA must be true or false")
+        used = True
+    audit_policy = os.getenv(ENV_AUDIT_POLICY)
+    if audit_policy is not None:
+        token = audit_policy.strip().lower()
+        if token not in {"required", "optional", "forbidden"}:
+            raise Namel3ssError("N3_AUDIT_POLICY must be required, optional, or forbidden")
+        config.audit.mode = token
         used = True
     target = os.getenv("N3_PERSIST_TARGET")
     if target:
@@ -376,6 +384,7 @@ __all__ = [
     "ENV_DETERMINISM_SEED",
     "ENV_DETERMINISM_EXPLAIN",
     "ENV_DETERMINISM_REDACT_USER_DATA",
+    "ENV_AUDIT_POLICY",
     "RESERVED_TRUE_VALUES",
     "RESERVED_FALSE_VALUES",
     "apply_env_overrides",

@@ -186,6 +186,9 @@
       if (root.errors && typeof root.errors.renderErrors === "function") {
         root.errors.renderErrors();
       }
+      if (root.diagnostics && typeof root.diagnostics.renderDiagnostics === "function") {
+        root.diagnostics.renderDiagnostics();
+      }
     } catch (_err) {
       if (state && typeof state.setCachedDiagnostics === "function") {
         state.setCachedDiagnostics(null);

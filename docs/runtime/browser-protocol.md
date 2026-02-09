@@ -12,6 +12,8 @@ The App Runtime server that `n3 run` starts exposes a single browser protocol. T
 - Returns the UI manifest for the current program produced by the runtime manifest builder.
 - Includes `ok`, `pages`, `actions`, `revision`, and any `contract` or `errors` fields surfaced by validation.
 - Includes manifest `mode` (`production` or `studio`) in UI API payloads.
+- May include additive runtime diagnostics: `runtime_error` (primary) and `runtime_errors` (ordered list).
+- When runtime diagnostics are present, pages include a deterministic `runtime_error` manifest element prepended to page content.
 - Order matches source order; action ids are deterministic.
 
 ### GET /api/state
@@ -50,6 +52,10 @@ The App Runtime server that `n3 run` starts exposes a single browser protocol. T
 ### POST /api/action
 - Body: `{"id": "<action id>", "payload": {}}` with `Content-Type: application/json`.
 - Response mirrors the existing action response schema: `ok`, `state` snapshot, `revision`, and optional `overlay` and `error` keys for failures.
+- Responses include normalized runtime errors when present:
+  - `runtime_error`: primary structured error object.
+  - `runtime_errors`: deterministic ordered list containing the primary error plus diagnostics.
+- Degraded-but-successful responses (for example provider guardrail warnings) include `degraded: true`.
 - Errors are deterministic engine payloads; invalid bodies return an engine error payload with HTTP 400.
 
 ### POST /api/upload
@@ -96,6 +102,7 @@ The App Runtime server that `n3 run` starts exposes a single browser protocol. T
 - Ports start at 7340 and increment deterministically when occupied.
 - Revisions derive from source content hashing; identical sources yield identical revisions.
 - JSON serialization is canonical and ordered; no timestamps, host paths, or random ids appear in payloads.
+- Runtime error classification is deterministic: the same failure signal maps to the same `category`, `origin`, and `stable_code`.
 - Secrets are redacted and host paths are scrubbed in observability payloads.
 - Runtime artifacts remain under `.namel3ss/` and are ignored by git; running the server must not dirty the repo.
 

@@ -90,7 +90,7 @@ def _build_traces(result: dict) -> list[dict]:
     excluded_warn = result.get("excluded_warn")
     warn_policy = result.get("warn_policy")
     tier = result.get("tier") if isinstance(result.get("tier"), dict) else {}
-    return [
+    traces = [
         {
             "type": TraceEventType.RETRIEVAL_STARTED,
         },
@@ -112,6 +112,31 @@ def _build_traces(result: dict) -> list[dict]:
             "warn_policy": warn_policy,
         },
     ]
+    retrieval_plan = result.get("retrieval_plan")
+    if isinstance(retrieval_plan, dict):
+        traces.append(
+            {
+                "type": TraceEventType.RETRIEVAL_PLAN,
+                "retrieval_plan": retrieval_plan,
+            }
+        )
+    retrieval_trace = result.get("retrieval_trace")
+    if isinstance(retrieval_trace, list):
+        traces.append(
+            {
+                "type": TraceEventType.RETRIEVAL_TRACE,
+                "retrieval_trace": [entry for entry in retrieval_trace if isinstance(entry, dict)],
+            }
+        )
+    trust_score_details = result.get("trust_score_details")
+    if isinstance(trust_score_details, dict):
+        traces.append(
+            {
+                "type": TraceEventType.TRUST_SCORE_COMPUTED,
+                "trust_score_details": trust_score_details,
+            }
+        )
+    return traces
 
 
 def _require_uploads_capability(program_ir) -> None:

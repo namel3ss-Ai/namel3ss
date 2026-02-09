@@ -91,6 +91,10 @@ def main() -> int:
         "Baseline metrics check",
         [sys.executable, "scripts/measure_baseline.py", "--check", "--timing", "deterministic"],
     )
+    _run_command("Spec freeze guard", [sys.executable, "tools/spec_freeze_check.py"])
+    _run_command("Spec diff check", [sys.executable, "tools/spec_diff_check.py"])
+    _run_command("Grammar snapshot check", [sys.executable, "tools/grammar_snapshot.py"])
+    _run_command("Contract compatibility check", [sys.executable, "tools/contract_compat_check.py"])
     _run_command(
         "Compile check",
         [sys.executable, "-m", "compileall", "src", "-q"],

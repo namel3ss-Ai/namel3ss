@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from types import SimpleNamespace
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse
@@ -9,6 +8,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
 from namel3ss.runtime.backend.upload_handler import handle_upload, handle_upload_list
 from namel3ss.runtime.backend.upload_recorder import UploadRecorder, apply_upload_error_payload
+from namel3ss.runtime.errors.normalize import attach_runtime_error_payload
 from namel3ss.runtime.deploy_routes import get_build_payload, get_deploy_payload
 from namel3ss.runtime.router.registry import RouteRegistry
 from namel3ss.runtime.server.observability_helpers import (
@@ -46,7 +46,6 @@ from namel3ss.ui.actions.dispatch import dispatch_ui_action
 from namel3ss.ui.export.contract import build_ui_contract_payload
 from namel3ss.ui.external.serve import resolve_external_ui_file
 from namel3ss.utils.json_tools import dumps as json_dumps
-
 
 class ServiceRequestHandler(BaseHTTPRequestHandler):
     def log_message(self, format: str, *args) -> None:  # pragma: no cover - silence logs
@@ -269,19 +268,27 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
 
     def _handle_action_post(self, body: dict) -> None:
         if not isinstance(body, dict):
-            self._respond_json(build_error_payload("Body must be a JSON object", kind="engine"), status=400)
+            payload = build_error_payload("Body must be a JSON object", kind="engine")
+            payload = attach_runtime_error_payload(payload, status_code=400, endpoint="/api/action")
+            self._respond_json(payload, status=400)
             return
         action_id = body.get("id")
         payload = body.get("payload") or {}
         if not isinstance(action_id, str):
-            self._respond_json(build_error_payload("Action id is required", kind="engine"), status=400)
+            response = build_error_payload("Action id is required", kind="engine")
+            response = attach_runtime_error_payload(response, status_code=400, endpoint="/api/action")
+            self._respond_json(response, status=400)
             return
         if not isinstance(payload, dict):
-            self._respond_json(build_error_payload("Payload must be an object", kind="engine"), status=400)
+            response = build_error_payload("Payload must be an object", kind="engine")
+            response = attach_runtime_error_payload(response, status_code=400, endpoint="/api/action")
+            self._respond_json(response, status=400)
             return
         program_ir = self._program()
         if program_ir is None:
-            self._respond_json(build_error_payload("Program not loaded", kind="engine"), status=500)
+            response = build_error_payload("Program not loaded", kind="engine")
+            response = attach_runtime_error_payload(response, status_code=500, endpoint="/api/action")
+            self._respond_json(response, status=500)
             return
         if session_manager(self) is not None:
             handle_session_action_post(self, body, action_id=action_id, payload=payload, program_ir=program_ir)
@@ -303,14 +310,21 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
             if isinstance(response, dict):
                 if worker_pool is not None:
                     response.setdefault("process_model", "worker_pool")
+                response = attach_runtime_error_payload(response, endpoint="/api/action")
                 status = 200 if response.get("ok", True) else 400
                 self._respond_json(response, status=status)
                 return
-            self._respond_json(build_error_payload("Action response invalid", kind="engine"), status=500)
+            response = build_error_payload("Action response invalid", kind="engine")
+            response = attach_runtime_error_payload(response, status_code=500, endpoint="/api/action")
+            self._respond_json(response, status=500)
         except Namel3ssError as err:
-            self._respond_json(build_error_from_exception(err, kind="engine"), status=400)
+            response = build_error_from_exception(err, kind="engine")
+            response = attach_runtime_error_payload(response, status_code=400, endpoint="/api/action")
+            self._respond_json(response, status=400)
         except Exception as err:  # pragma: no cover - defensive
-            self._respond_json(build_error_payload(f"Action failed: {err}", kind="engine"), status=500)
+            response = build_error_payload(f"Action failed: {err}", kind="engine")
+            response = attach_runtime_error_payload(response, status_code=500, endpoint="/api/action")
+            self._respond_json(response, status=500)
 
     def _handle_upload_post(self, query: str) -> tuple[dict, int]:
         program_ir = self._program()
@@ -468,7 +482,6 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
 
     def _route_registry(self) -> RouteRegistry:
         return get_or_create_route_registry(self.server)
-
     def _ensure_store(self, program):
         store = getattr(self.server, "flow_store", None)  # type: ignore[attr-defined]
         if store is not None:
@@ -480,12 +493,8 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         store = create_store(config=config)
         self.server.flow_store = store  # type: ignore[attr-defined]
         return store
-
     def _program_state(self):
         return getattr(self.server, "program_state", None)  # type: ignore[attr-defined]
-
     def _program(self):
         return self._ensure_program()
-
-
 __all__ = ["ServiceRequestHandler"]

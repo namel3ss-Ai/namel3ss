@@ -16,6 +16,12 @@ let renderUI = (manifest) => {
   const renderTrustIndicatorElement = collectionRender.renderTrustIndicatorElement;
   const renderScopeSelectorElement = collectionRender.renderScopeSelectorElement;
   const renderUploadElement = collectionRender.renderUploadElement;
+  const renderIngestionStatusElement = collectionRender.renderIngestionStatusElement;
+  const renderRuntimeErrorElement = collectionRender.renderRuntimeErrorElement;
+  const renderCapabilitiesElement = collectionRender.renderCapabilitiesElement;
+  const renderStateInspectorElement = collectionRender.renderStateInspectorElement;
+  const renderRunDiffElement = collectionRender.renderRunDiffElement || window.renderRunDiffElement;
+  const renderDiagnosticsElement = collectionRender.renderDiagnosticsElement || window.renderDiagnosticsElement;
   const overlayRegistry = new Map();
   const LAYOUT_SLOTS = ["header", "sidebar_left", "main", "drawer_right", "footer"];
   const diagnosticsEnabled = Boolean(manifest && manifest.diagnostics_enabled) || manifest.mode === "studio";
@@ -682,6 +688,62 @@ let renderUI = (manifest) => {
       }
       const empty = document.createElement("div");
       empty.textContent = "Upload renderer unavailable.";
+      wrapper.appendChild(empty);
+    } else if (el.type === "ingestion_status") {
+      if (typeof renderIngestionStatusElement === "function") {
+        return renderIngestionStatusElement(el);
+      }
+      const empty = document.createElement("div");
+      empty.textContent = "Ingestion status renderer unavailable.";
+      wrapper.appendChild(empty);
+    } else if (el.type === "runtime_error") {
+      if (typeof renderRuntimeErrorElement === "function") {
+        return renderRuntimeErrorElement(el);
+      }
+      const empty = document.createElement("div");
+      empty.textContent = "Runtime error renderer unavailable.";
+      wrapper.appendChild(empty);
+    } else if (el.type === "capabilities") {
+      if (typeof renderCapabilitiesElement === "function") {
+        return renderCapabilitiesElement(el);
+      }
+      const empty = document.createElement("div");
+      empty.textContent = "Capabilities renderer unavailable.";
+      wrapper.appendChild(empty);
+    } else if (el.type === "state_inspector") {
+      if (typeof renderStateInspectorElement === "function") {
+        return renderStateInspectorElement(el);
+      }
+      const empty = document.createElement("div");
+      empty.textContent = "State inspector renderer unavailable.";
+      wrapper.appendChild(empty);
+    } else if (el.type === "retrieval_explain") {
+      if (typeof renderRetrievalExplainElement === "function") {
+        return renderRetrievalExplainElement(el);
+      }
+      const empty = document.createElement("div");
+      empty.textContent = "Retrieval explain renderer unavailable.";
+      wrapper.appendChild(empty);
+    } else if (el.type === "audit_viewer") {
+      if (typeof renderAuditViewerElement === "function") {
+        return renderAuditViewerElement(el);
+      }
+      const empty = document.createElement("div");
+      empty.textContent = "Audit viewer renderer unavailable.";
+      wrapper.appendChild(empty);
+    } else if (el.type === "run_diff") {
+      if (typeof renderRunDiffElement === "function") {
+        return renderRunDiffElement(el);
+      }
+      const empty = document.createElement("div");
+      empty.textContent = "Run diff renderer unavailable.";
+      wrapper.appendChild(empty);
+    } else if (el.type === "diagnostics_panel") {
+      if (typeof renderDiagnosticsElement === "function") {
+        return renderDiagnosticsElement(el);
+      }
+      const empty = document.createElement("div");
+      empty.textContent = "Diagnostics renderer unavailable.";
       wrapper.appendChild(empty);
     } else if (el.type === "custom_component") {
       wrapper.classList.add("ui-custom-component");

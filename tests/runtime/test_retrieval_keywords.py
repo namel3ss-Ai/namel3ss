@@ -64,61 +64,62 @@ def test_keyword_overlap_ranking_prefers_higher_overlap() -> None:
         app_path=None,
         policy_decision=_allow_warn(),
     )
-    assert result == {
-        "query": "alpha beta",
-        "query_keywords": ["alpha", "beta"],
-        "preferred_quality": "pass",
-        "included_warn": False,
-        "excluded_blocked": 0,
-        "excluded_warn": 0,
-        "warn_allowed": True,
-        "warn_policy": {
-            "action": ACTION_RETRIEVAL_INCLUDE_WARN,
-            "decision": "allowed",
-            "reason": "test",
-        },
-        "tier": {
-            "requested": "auto",
-            "selected": "deep",
-            "reason": "deep_available",
-            "available": ["deep"],
-            "counts": {"deep": 2, "quick": 0},
-        },
-        "results": [
-            {
-                "upload_id": "u1",
-                "chunk_id": "u1:0",
-                "quality": "pass",
-                "low_quality": False,
-                "text": "alpha beta",
-                "document_id": "u1",
-                "source_name": "one.txt",
-                "page_number": 2,
-                "chunk_index": 0,
-                "ingestion_phase": "deep",
-                "keywords": ["alpha", "beta"],
-                "keyword_source": "stored",
-                "keyword_matches": ["alpha", "beta"],
-                "keyword_overlap": 2,
-            },
-            {
-                "upload_id": "u2",
-                "chunk_id": "u2:0",
-                "quality": "pass",
-                "low_quality": False,
-                "text": "alpha",
-                "document_id": "u2",
-                "source_name": "two.txt",
-                "page_number": 1,
-                "chunk_index": 0,
-                "ingestion_phase": "deep",
-                "keywords": ["alpha"],
-                "keyword_source": "stored",
-                "keyword_matches": ["alpha"],
-                "keyword_overlap": 1,
-            },
-        ],
+    assert result["query"] == "alpha beta"
+    assert result["query_keywords"] == ["alpha", "beta"]
+    assert result["preferred_quality"] == "pass"
+    assert result["included_warn"] is False
+    assert result["excluded_blocked"] == 0
+    assert result["excluded_warn"] == 0
+    assert result["warn_allowed"] is True
+    assert result["warn_policy"] == {
+        "action": ACTION_RETRIEVAL_INCLUDE_WARN,
+        "decision": "allowed",
+        "reason": "test",
     }
+    assert result["tier"] == {
+        "requested": "auto",
+        "selected": "deep",
+        "reason": "deep_available",
+        "available": ["deep"],
+        "counts": {"deep": 2, "quick": 0},
+    }
+    assert result["results"] == [
+        {
+            "upload_id": "u1",
+            "chunk_id": "u1:0",
+            "quality": "pass",
+            "low_quality": False,
+            "text": "alpha beta",
+            "document_id": "u1",
+            "source_name": "one.txt",
+            "page_number": 2,
+            "chunk_index": 0,
+            "ingestion_phase": "deep",
+            "keywords": ["alpha", "beta"],
+            "keyword_source": "stored",
+            "keyword_matches": ["alpha", "beta"],
+            "keyword_overlap": 2,
+        },
+        {
+            "upload_id": "u2",
+            "chunk_id": "u2:0",
+            "quality": "pass",
+            "low_quality": False,
+            "text": "alpha",
+            "document_id": "u2",
+            "source_name": "two.txt",
+            "page_number": 1,
+            "chunk_index": 0,
+            "ingestion_phase": "deep",
+            "keywords": ["alpha"],
+            "keyword_source": "stored",
+            "keyword_matches": ["alpha"],
+            "keyword_overlap": 1,
+        },
+    ]
+    assert isinstance(result.get("retrieval_plan"), dict)
+    assert isinstance(result.get("retrieval_trace"), list)
+    assert isinstance(result.get("trust_score_details"), dict)
 
 
 def test_keyword_overlap_tiebreaks_by_page_and_chunk() -> None:

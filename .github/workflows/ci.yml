@@ -42,6 +42,15 @@ jobs:
       - name: Spec freeze guard
         run: python tools/spec_freeze_check.py
 
+      - name: Spec diff check
+        run: python tools/spec_diff_check.py
+
+      - name: Grammar snapshot check
+        run: python tools/grammar_snapshot.py
+
+      - name: Contract compatibility check
+        run: python tools/contract_compat_check.py
+
       - name: RFC compliance check
         run: python tools/rfc_compliance_check.py
 

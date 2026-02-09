@@ -171,9 +171,60 @@
     statusLabel.textContent = text;
   }
 
+  function runtimeError(category, message, hint, origin, stableCode) {
+    return {
+      category: category,
+      message: message,
+      hint: hint,
+      origin: origin,
+      stable_code: stableCode,
+    };
+  }
+
+  function networkRuntimeError(path) {
+    return runtimeError(
+      "server_unavailable",
+      "Runtime server is unavailable.",
+      `Start the runtime server and retry ${path}.`,
+      "network",
+      "runtime.server_unavailable"
+    );
+  }
+
+  function errorWithRuntime(err, runtimeErr, status, payload) {
+    const message = (runtimeErr && runtimeErr.message) || (err && err.message) || "Request failed";
+    const wrapped = new Error(message);
+    wrapped.runtime_error = runtimeErr;
+    if (Number.isInteger(status)) wrapped.status = status;
+    if (payload && typeof payload === "object") wrapped.payload = payload;
+    return wrapped;
+  }
+
   async function fetchJson(path, options) {
-    const response = await fetch(path, options);
-    return response.json();
+    let response;
+    try {
+      response = await fetch(path, options);
+    } catch (err) {
+      throw errorWithRuntime(err, networkRuntimeError(path));
+    }
+    let payload = null;
+    try {
+      payload = await response.json();
+    } catch (_err) {
+      payload = null;
+    }
+    if (payload && typeof payload === "object") {
+      return payload;
+    }
+    if (response.ok) return {};
+    const runtimeErr = runtimeError(
+      response.status === 401 || response.status === 403 ? "auth_invalid" : "runtime_internal",
+      `Request failed with status ${response.status}.`,
+      "Check server logs and retry the request.",
+      "runtime",
+      `runtime.http_${response.status}`
+    );
+    throw errorWithRuntime(null, runtimeErr, response.status, payload);
   }
 
   function handleError(payload) {
@@ -212,7 +263,8 @@
       setStatus("Up to date");
       applyManifest(payload);
     } catch (err) {
-      handleError(err && err.message ? err.message : "Unable to load UI.");
+      const runtimeErr = err && err.runtime_error ? err.runtime_error : null;
+      handleError(runtimeErr || (err && err.message ? err.message : "Unable to load UI."));
     }
   }
 
@@ -250,7 +302,8 @@
       }
       return response;
     } catch (err) {
-      handleError(err && err.message ? err.message : "Action failed.");
+      const runtimeErr = err && err.runtime_error ? err.runtime_error : null;
+      handleError(runtimeErr || (err && err.message ? err.message : "Action failed."));
       return { ok: false, error: "Action failed." };
     }
   }

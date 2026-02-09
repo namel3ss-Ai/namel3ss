@@ -12,6 +12,7 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.lang.capabilities import normalize_builtin_capability
 from namel3ss.runtime.performance.config import normalize_performance_runtime_config
 from namel3ss.runtime.performance.guard import require_performance_capability
+from namel3ss.runtime.lifecycle.hooks import run_shutdown_hooks, run_startup_hooks
 from namel3ss.runtime.router.program_state import ProgramState
 from namel3ss.runtime.router.refresh import refresh_routes
 from namel3ss.runtime.router.registry import RouteRegistry
@@ -73,6 +74,7 @@ class ServiceRunner:
         self._retention_stop = threading.Event()
         self._worker_pool: ServiceActionWorkerPool | None = None
         self._cluster_control: ClusterControlPlane | None = None
+        self._lifecycle_snapshot = None
         self.program_summary: dict[str, object] = {}
         self.concurrency = load_concurrency_config(app_path=self.app_path)
 
@@ -88,6 +90,16 @@ class ServiceRunner:
         allow_multi_user = "multi_user" in capabilities
         remote_studio_enabled = "remote_studio" in capabilities
         resolved_config = load_config(app_path=self.app_path, root=self.app_path.parent)
+        self._lifecycle_snapshot = run_startup_hooks(
+            target=self.target,
+            program=program_ir,
+            config=resolved_config,
+            project_root=getattr(program_ir, "project_root", None),
+            app_path=getattr(program_ir, "app_path", None),
+            allow_pending_migrations=_allow_pending_migrations(),
+            auto_migrate=_auto_migrate_enabled(),
+            dry_run=False,
+        )
         runtime_config = normalize_performance_runtime_config(resolved_config)
         require_performance_capability(
             getattr(program_ir, "capabilities", ()),
@@ -127,6 +139,7 @@ class ServiceRunner:
         server.external_ui_enabled = bool(not self.headless and external_ui_root is not None)  # type: ignore[attr-defined]
         server.ui_mode = self.ui_mode  # type: ignore[attr-defined]
         server.ui_diagnostics_enabled = self.diagnostics_enabled  # type: ignore[attr-defined]
+        server.lifecycle = self._lifecycle_snapshot.as_dict() if self._lifecycle_snapshot is not None else None  # type: ignore[attr-defined]
         if has_service_capability:
             idle_timeout = _service_idle_timeout()
             base_store = create_store(config=resolved_config)
@@ -189,6 +202,8 @@ class ServiceRunner:
         if self._worker_pool is not None:
             self._worker_pool.shutdown()
             self._worker_pool = None
+        run_shutdown_hooks(self._lifecycle_snapshot)
+        self._lifecycle_snapshot = None
 
     @property
     def bound_port(self) -> int:
@@ -218,6 +233,16 @@ def _service_idle_timeout() -> int:
     except ValueError:
         return DEFAULT_IDLE_TIMEOUT_SECONDS
     return max(0, value)
+
+
+def _allow_pending_migrations() -> bool:
+    token = os.getenv("N3_ALLOW_PENDING_MIGRATIONS", "true").strip().lower()
+    return token in {"1", "true", "yes", "on"}
+
+
+def _auto_migrate_enabled() -> bool:
+    token = os.getenv("N3_AUTO_MIGRATE", "false").strip().lower()
+    return token in {"1", "true", "yes", "on"}
 
 
 def _missing_service_capability_message() -> str:

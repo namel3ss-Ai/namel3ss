@@ -3,6 +3,7 @@
 Ingestion converts uploaded files into clean, deterministic text chunks that can be safely indexed and retrieved. The pipeline is explicit and does not use AI or probabilistic logic.
 
 For the full end-to-end RAG workflow (ingest -> retrieve -> answer -> cite -> preview -> highlight -> explain), see [docs/rag/overview.md](docs/rag/overview.md).
+For canonical ingestion reason mappings, see [docs/runtime/ingestion_diagnostics.md](docs/runtime/ingestion_diagnostics.md).
 
 ## What ingestion does
 - Detects the upload type (`text`, `pdf`, `image`, `docx`) and basic traits (page count, embedded images).
@@ -31,6 +32,8 @@ Report fields:
 - `signals`
 - `preview`
 - `reasons`
+- `reason_details` (when diagnostics are enabled)
+- `fallback_used` (`"ocr"` when OCR fallback ran)
 - `provenance`
 
 Provenance fields:
@@ -67,6 +70,8 @@ Modes:
 - `layout` (PDF layout extraction)
 - `ocr` (image OCR extraction)
 
+When `mode` is `primary`, ingestion can automatically attempt a deterministic OCR fallback for blocked PDF uploads.
+
 Use the upload checksum from `state.uploads` as `upload_id`.
 
 ## Indexing policy
@@ -86,6 +91,20 @@ Embeddings are written only during deep ingestion. Quick-phase ingestion never w
 Embeddings are written only during deep ingestion. Quick-phase ingestion never writes embedding rows.
 
 
+## Diagnostics and fallback
+Diagnostics and fallback are controlled in `namel3ss.toml`:
+
+```
+[ingestion]
+enable_diagnostics = true
+enable_ocr_fallback = true
+```
+
+- `enable_diagnostics = true` adds `reason_details` to ingestion reports using stable reason-code mappings.
+- `enable_ocr_fallback = true` runs OCR exactly once for blocked PDFs when reasons include `text_too_short`, `empty_text`, or `low_unique_tokens`.
+
+If OCR fallback succeeds, ingestion status is forced to `warn` and indexing proceeds. If OCR fallback fails, status remains `block` and `ocr_failed` is added.
+
 ## Review and corrective actions
 Ingestion reports are inspectable and read-only until a user takes an explicit action. Actions are deterministic and must be invoked deliberately:
 
@@ -93,8 +112,6 @@ Ingestion reports are inspectable and read-only until a user takes an explicit a
 - `ingestion_run { upload_id, mode: primary | layout | ocr }` to re-run extraction.
 - `ingestion_skip { upload_id }` to explicitly exclude a warn/block upload from indexing.
 - `upload_replace { upload_id }` as a placeholder to signal a replacement is needed.
-
-No ingestion retries or overrides happen automatically. Indexing only changes when an explicit action is executed.
 
 ## Policy and permissions
 Ingestion actions are gated by a declarative policy block in `app.ai`:

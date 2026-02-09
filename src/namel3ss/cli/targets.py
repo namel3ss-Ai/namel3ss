@@ -28,6 +28,12 @@ TARGETS: Dict[str, TargetSpec] = {
         persistence_default="postgres",
         description="Long-running service mode with health endpoints.",
     ),
+    "embedded": TargetSpec(
+        name="embedded",
+        process_model="embedded",
+        persistence_default="memory",
+        description="Library-style embedded execution mode without an HTTP server.",
+    ),
     "edge": TargetSpec(
         name="edge",
         process_model="edge",
@@ -46,7 +52,7 @@ def parse_target(raw: str | None) -> TargetSpec:
     raise Namel3ssError(
         build_guidance_message(
             what=f"Unknown target '{raw}'.",
-            why="Targets must be one of local, service, or edge.",
+            why="Targets must be one of local, service, embedded, or edge.",
             fix="Choose a supported target with --target.",
             example="n3 run --target service",
         )

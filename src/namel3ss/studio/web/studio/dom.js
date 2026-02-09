@@ -30,6 +30,14 @@
 
   function buildErrorLines(detail) {
     const lines = ["Couldn't run."];
+    const runtimeError = _runtimeError(detail);
+    if (runtimeError) {
+      lines.push(`Category: ${runtimeError.category}`);
+      lines.push(`What happened: ${runtimeError.message}`);
+      if (runtimeError.hint) lines.push(`How to fix: ${runtimeError.hint}`);
+      lines.push(`Origin: ${runtimeError.origin}`);
+      return lines;
+    }
     const rawText = redactText(_extractErrorText(detail));
     const parsed = guidance.parseGuidance ? guidance.parseGuidance(rawText) : { raw: rawText };
     const hasGuidance = Boolean(parsed && (parsed.what || parsed.why || parsed.fix || parsed.where || parsed.example));
@@ -70,6 +78,18 @@
     }
     lines.push("Try: Run again.");
     return lines;
+  }
+
+  function _runtimeError(detail) {
+    if (!detail || typeof detail !== "object") return null;
+    const entry = detail.runtime_error;
+    if (!entry || typeof entry !== "object") return null;
+    const category = typeof entry.category === "string" ? entry.category : "";
+    const message = typeof entry.message === "string" ? entry.message : "";
+    const hint = typeof entry.hint === "string" ? entry.hint : "";
+    const origin = typeof entry.origin === "string" ? entry.origin : "";
+    if (!category || !message || !origin) return null;
+    return { category, message, hint, origin };
   }
 
   function _extractErrorText(detail) {

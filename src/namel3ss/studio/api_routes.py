@@ -163,7 +163,7 @@ def handle_api_get(handler: Any) -> None:
         _respond_with_source(handler, source, get_dependencies_payload, kind="dependencies", include_app_path=True)
         return
     if handler.path == "/api/diagnostics":
-        _respond_with_source(handler, source, get_diagnostics_payload, kind="diagnostics", include_app_path=True)
+        _respond_with_source(handler, source, get_diagnostics_payload, kind="diagnostics", include_session=True)
         return
     if handler.path == "/api/graph":
         _respond_simple(handler, source, get_graph_payload, kind="graph")

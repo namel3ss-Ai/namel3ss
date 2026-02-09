@@ -26,6 +26,8 @@ def extract_text(content: bytes, *, detected: dict, mode: str) -> tuple[str, str
             return "", "layout"
         return _extract_pdf_text(content, layout=True), "layout"
     if mode == "ocr":
+        if kind == "pdf":
+            return _extract_pdf_text(content, layout=True), "ocr"
         if kind != "image":
             return "", "ocr"
         return _extract_image_ocr(content), "ocr"
@@ -57,6 +59,11 @@ def extract_pages(content: bytes, *, detected: dict, mode: str) -> tuple[list[st
             pages = _split_pages(_extract_pdf_text(content, layout=True))
         return pages, "layout"
     if mode == "ocr":
+        if kind == "pdf":
+            pages = _extract_pdf_pages(content, layout=True)
+            if pages is None:
+                pages = _split_pages(_extract_pdf_text(content, layout=True))
+            return pages, "ocr"
         if kind != "image":
             return [""], "ocr"
         return _split_pages(_extract_image_ocr(content)), "ocr"

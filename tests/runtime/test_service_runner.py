@@ -5,6 +5,7 @@ import urllib.error
 import urllib.request
 
 from namel3ss.runtime.service_runner import ServiceRunner
+from namel3ss.runtime.spec_version import NAMEL3SS_SPEC_VERSION, RUNTIME_SPEC_VERSION
 
 
 APP_SOURCE = '''spec is "1.0"
@@ -211,6 +212,9 @@ def test_service_runner_headless_api_requires_token_and_respects_cors(tmp_path):
         )
         assert payload.get("ok") is True
         assert payload.get("api_version") == "v1"
+        assert payload.get("contract_version") == "runtime-ui@1"
+        assert payload.get("spec_version") == NAMEL3SS_SPEC_VERSION
+        assert payload.get("runtime_spec_version") == RUNTIME_SPEC_VERSION
         assert isinstance(payload.get("hash"), str) and len(payload["hash"]) == 64
         assert isinstance(payload.get("manifest"), dict)
         assert isinstance(payload.get("actions"), dict)
@@ -224,6 +228,9 @@ def test_service_runner_headless_api_requires_token_and_respects_cors(tmp_path):
         )
         assert result.get("ok") is True
         assert result.get("action_id") == action_id
+        assert result.get("contract_version") == "runtime-ui@1"
+        assert result.get("spec_version") == NAMEL3SS_SPEC_VERSION
+        assert result.get("runtime_spec_version") == RUNTIME_SPEC_VERSION
         try:
             _fetch_json(
                 f"http://127.0.0.1:{port}/api/v1/ui",

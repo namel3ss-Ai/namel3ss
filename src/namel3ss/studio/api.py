@@ -3,8 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Mapping
 
-from namel3ss.cli.promotion_state import load_state
-from namel3ss.cli.targets import parse_target
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
@@ -15,15 +13,22 @@ from namel3ss.parser.core import parse
 from namel3ss.module_loader import load_project
 from namel3ss.secrets import collect_secret_values, discover_required_secrets
 from namel3ss.production_contract import build_run_payload
+from namel3ss.runtime.audit.runtime_capture import attach_audit_artifacts
 from namel3ss.runtime.run_pipeline import finalize_run_payload
 from namel3ss.runtime.answer.traces import extract_answer_explain
+from namel3ss.runtime.spec_version import NAMEL3SS_SPEC_VERSION, RUNTIME_SPEC_VERSION
 from namel3ss.runtime.browser_state import record_data_effects, record_rows_snapshot
 from namel3ss.runtime.auth.auth_context import resolve_auth_context
 from namel3ss.runtime.ui.actions import handle_action
 from namel3ss.runtime.preferences.factory import preference_store_for_app, app_pref_key
 from namel3ss.studio.session import SessionState
 from namel3ss.studio.trace_adapter import normalize_action_response
-from namel3ss.runtime.tools.bindings import bindings_path
+from namel3ss.studio.payload_enrichment import (
+    attach_studio_metadata,
+    build_diagnostics_payload,
+    record_run_artifact,
+)
+from namel3ss.studio.tool_inventory import resolve_target, tool_inventory_payload
 from namel3ss.tools.health.analyze import analyze_tool_health
 from namel3ss.validation_entrypoint import build_static_manifest
 from namel3ss.ui.settings import UI_ALLOWED_VALUES, UI_DEFAULTS
@@ -141,7 +146,7 @@ def get_ui_payload(source: str, session: SessionState | None = None, app_path: s
         )
         if validation_warnings:
             manifest["warnings"] = [warning.to_dict() for warning in validation_warnings]
-        return manifest
+        return attach_studio_metadata(manifest, session)
     except Namel3ssError as err:
         return build_error_from_exception(err, kind="manifest", source=source)
     except Exception as err:  # pragma: no cover - defensive guard rail
@@ -193,7 +198,7 @@ def get_tools_payload(source: str, app_path: str) -> dict:
         project = load_project(app_file, source_overrides={app_file: source})
         report = analyze_tool_health(project)
         app_root = project.app_path.parent
-        payload = _tool_inventory_payload(report, app_root)
+        payload = tool_inventory_payload(report, app_root)
         payload["ok"] = True
         return payload
     except Namel3ssError as err:
@@ -207,7 +212,7 @@ def get_secrets_payload(source: str, app_path: str) -> dict:
         app_file = Path(app_path)
         project = load_project(app_file, source_overrides={app_file: source})
         config = load_config(app_path=project.app_path, root=project.app_path.parent)
-        target = _resolve_target(project.app_path.parent)
+        target = resolve_target(project.app_path.parent)
         refs = discover_required_secrets(project.program, config, target=target, app_path=project.app_path)
         return {
             "ok": True,
@@ -224,12 +229,25 @@ def get_secrets_payload(source: str, app_path: str) -> dict:
         return build_error_payload(str(err), kind="internal")
 
 
-def get_diagnostics_payload(source: str, app_path: str) -> dict:
-    return {"ok": True, "schema_version": 1, "diagnostics": []}
+def get_diagnostics_payload(source: str, session: SessionState | str | None = None, app_path: str | None = None) -> dict:
+    resolved_session: SessionState | None = session if isinstance(session, SessionState) else None
+    resolved_app_path: str | None
+    if isinstance(session, str) and app_path is None:
+        resolved_app_path = session
+        resolved_session = None
+    else:
+        resolved_app_path = app_path
+    app_file = _require_app_path(resolved_app_path)
+    return build_diagnostics_payload(source, resolved_session, app_file.as_posix())
 
 
 def get_version_payload() -> dict:
-    return {"ok": True, "version": get_version()}
+    return {
+        "ok": True,
+        "version": get_version(),
+        "spec_version": NAMEL3SS_SPEC_VERSION,
+        "runtime_spec_version": RUNTIME_SPEC_VERSION,
+    }
 
 
 def get_agents_payload_wrapper(source: str, session: SessionState | None, app_path: str | None = None) -> dict:
@@ -300,6 +318,10 @@ def execute_action(
             source=source,
             raise_on_error=False,
         )
+        if isinstance(response, dict):
+            response = attach_audit_artifacts(
+                response, program_ir=program_ir, config=config, action_id=action_id, input_payload=payload, state_snapshot=response.get("state"), source=source, endpoint="/studio/action"
+            )
         session.data_effects = record_data_effects(
             program_ir,
             store,
@@ -309,16 +331,16 @@ def execute_action(
             before_rows,
             identity=identity,
         )
-        if response and isinstance(response, dict):
+        if isinstance(response, dict):
             ui_theme = (response.get("ui") or {}).get("theme") if response.get("ui") else None
             if ui_theme and ui_theme.get("current"):
                 session.runtime_theme = ui_theme.get("current")
-        if response and isinstance(response, dict):
             normalized = normalize_action_response(response)
             explain = extract_answer_explain(normalized.get("traces"))
             if explain is not None:
                 session.last_answer_explain = explain
-            return normalized
+            record_run_artifact(normalized, session)
+            return attach_studio_metadata(normalized, session)
         return response
     except Namel3ssError as err:
         error_payload = build_error_from_exception(err, kind="engine", source=source)
@@ -332,13 +354,10 @@ def execute_action(
             error=err,
             error_payload=error_payload,
         )
-        if config is not None:
-            secret_values = collect_secret_values(config)
-        else:
-            secret_values = collect_secret_values()
+        secret_values = collect_secret_values(config) if config is not None else collect_secret_values()
         redacted = finalize_run_payload(contract_payload, secret_values)
         normalized = normalize_action_response(redacted)
-        return normalized
+        return attach_studio_metadata(normalized, session)
     except Exception as err:  # pragma: no cover - defensive guard rail
         error_payload = build_error_payload(str(err), kind="internal")
         contract_payload = build_run_payload(
@@ -354,119 +373,7 @@ def execute_action(
         secret_values = collect_secret_values(config) if config is not None else collect_secret_values()
         redacted = finalize_run_payload(contract_payload, secret_values)
         normalized = normalize_action_response(redacted)
-        return normalized
-
-
-def _tool_inventory_payload(report, app_root: Path) -> dict:
-    packs = []
-    for name in sorted(report.pack_tools):
-        for provider in report.pack_tools[name]:
-            packs.append(
-                {
-                    "name": name,
-                    "pack_id": provider.pack_id,
-                    "pack_name": provider.pack_name,
-                    "pack_version": provider.pack_version,
-                    "verified": provider.verified,
-                    "enabled": provider.enabled,
-                    "runner": provider.runner,
-                    "source": provider.source,
-                    "status": _status_for_pack(report, name, provider),
-                }
-            )
-    declared = [
-        {"name": tool.name, "kind": tool.kind, "status": _status_for_declared(report, tool.name)}
-        for tool in sorted(report.declared_tools, key=lambda item: item.name)
-    ]
-    bindings = [
-        {
-            "name": name,
-            "entry": binding.entry,
-            "runner": binding.runner or "local",
-            "status": _status_for_binding(report, name),
-        }
-        for name, binding in sorted(report.bindings.items())
-    ]
-    invalid = sorted(
-        set(
-            report.invalid_bindings
-            + report.invalid_runners
-            + report.service_missing_urls
-            + report.container_missing_images
-            + report.container_missing_runtime
-        )
-    )
-    ok_count = len([tool for tool in declared if tool["kind"] == "python" and tool["status"] == "ok"])
-    summary = {
-        "ok": ok_count,
-        "missing": len(report.missing_bindings),
-        "unused": len(report.unused_bindings),
-        "collisions": len(report.collisions) + len(report.pack_collisions),
-        "invalid": len(invalid),
-    }
-    return {
-        "app_root": str(app_root),
-        "bindings_path": str(bindings_path(app_root)),
-        "bindings_valid": report.bindings_valid,
-        "bindings_error": report.bindings_error,
-        "summary": summary,
-        "packs": packs,
-        "pack_collisions": report.pack_collisions,
-        "pack_status": [pack.__dict__ for pack in report.packs],
-        "declared": declared,
-        "bindings": bindings,
-        "missing_bindings": report.missing_bindings,
-        "unused_bindings": report.unused_bindings,
-        "collisions": report.collisions,
-        "invalid_bindings": report.invalid_bindings,
-        "invalid_runners": report.invalid_runners,
-        "service_missing_urls": report.service_missing_urls,
-        "container_missing_images": report.container_missing_images,
-        "container_missing_runtime": report.container_missing_runtime,
-        "issues": [issue.__dict__ for issue in report.issues],
-    }
-
-
-def _status_for_pack(report, name: str, provider) -> str:
-    if name in report.pack_collisions:
-        return "collision"
-    if provider.source == "builtin_pack":
-        return "ok"
-    if not provider.verified:
-        return "unverified"
-    if not provider.enabled:
-        return "disabled"
-    return "ok"
-
-
-def _resolve_target(project_root: Path) -> str:
-    state = load_state(project_root)
-    active = state.get("active") or {}
-    return parse_target(active.get("target")).name
-
-
-def _status_for_declared(report, name: str) -> str:
-    if name in report.collisions:
-        return "collision"
-    if name in report.missing_bindings:
-        return "missing binding"
-    return "ok"
-
-
-def _status_for_binding(report, name: str) -> str:
-    if name in report.collisions:
-        return "collision"
-    if name in report.invalid_bindings or name in report.invalid_runners:
-        return "invalid binding"
-    if name in report.service_missing_urls:
-        return "invalid binding"
-    if name in report.container_missing_images:
-        return "invalid binding"
-    if name in report.container_missing_runtime:
-        return "invalid binding"
-    if name in report.unused_bindings:
-        return "unused binding"
-    return "ok"
+        return attach_studio_metadata(normalized, session)
 
 
 def _actions_from_manifest(manifest: dict) -> list[dict]:

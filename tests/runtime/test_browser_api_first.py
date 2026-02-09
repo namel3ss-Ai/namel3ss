@@ -8,6 +8,7 @@ import urllib.request
 from pathlib import Path
 
 from namel3ss.runtime.dev_server import BrowserRunner
+from namel3ss.runtime.spec_version import NAMEL3SS_SPEC_VERSION, RUNTIME_SPEC_VERSION
 
 
 APP_SOURCE = '''spec is "1.0"
@@ -149,6 +150,9 @@ def test_headless_browser_runner_versioned_api_requires_token(tmp_path: Path) ->
         payload = _fetch_json(f"{base_url}/api/v1/ui?include_actions=1", headers=headers)
         assert payload["ok"] is True
         assert payload["api_version"] == "v1"
+        assert payload["contract_version"] == "runtime-ui@1"
+        assert payload["spec_version"] == NAMEL3SS_SPEC_VERSION
+        assert payload["runtime_spec_version"] == RUNTIME_SPEC_VERSION
         assert isinstance(payload.get("manifest"), dict)
         assert isinstance(payload.get("hash"), str) and len(payload["hash"]) == 64
         actions = payload.get("actions")
@@ -158,6 +162,9 @@ def test_headless_browser_runner_versioned_api_requires_token(tmp_path: Path) ->
         result = _post_json(f"{base_url}/api/v1/actions/{action_id}", {"args": {}}, headers=headers)
         assert result["ok"] is True
         assert result["action_id"] == action_id
+        assert result["contract_version"] == "runtime-ui@1"
+        assert result["spec_version"] == NAMEL3SS_SPEC_VERSION
+        assert result["runtime_spec_version"] == RUNTIME_SPEC_VERSION
 
         status, response_headers, _ = _fetch_text_with_status(f"{base_url}/api/v1/ui", headers=headers)
         assert status == 200

@@ -68,8 +68,8 @@ def run_run_command(args: list[str]) -> int:
             force_check=_has_performance_overrides(params),
         )
         run_path, build_id = resolve_run_path(target.name, project_root, app_path, params.build_id)
-        if target.name == "local":
-            if params.json_mode or params.explain:
+        if target.name in {"local", "embedded"}:
+            if params.json_mode or params.explain or target.name == "embedded":
                 program_ir, sources = load_program(run_path.as_posix())
                 output = run_flow(program_ir, None, sources=sources)
                 render_payload = canonicalize_run_payload(output)
@@ -162,7 +162,7 @@ def run_run_command(args: list[str]) -> int:
         raise Namel3ssError(
             build_guidance_message(
                 what=f"Unsupported target '{target.name}'.",
-                why="Targets must be local, service, or edge.",
+                why="Targets must be local, service, embedded, or edge.",
                 fix="Choose a supported target.",
                 example="n3 run --target local",
             )
@@ -232,7 +232,7 @@ def _parse_args(args: list[str]) -> _RunParams:
                     build_guidance_message(
                         what="--target flag is missing a value.",
                         why="Run requires a target name.",
-                        fix="Provide local, service, or edge.",
+                        fix="Provide local, service, embedded, or edge.",
                         example="n3 run --target service",
                     )
                 )

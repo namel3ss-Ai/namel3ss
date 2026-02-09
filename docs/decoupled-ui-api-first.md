@@ -20,14 +20,21 @@ This phase adds a headless runtime mode and stable UI API contracts so front-end
 
 ## Runtime contracts
 
-All API-first responses include `api_version` and deterministic field ordering.
+All API-first responses include `api_version`, `contract_version`, and deterministic field ordering.
 
 Headless `v1` responses include:
 
 - `manifest` (existing UI manifest payload)
 - `hash` (`sha256` of canonical manifest JSON)
 - optional `state` and `actions` when `include_state=1` / `include_actions=1` are set
+- optional `runtime_error` and `runtime_errors`
+- optional `contract_warnings` in Studio/dev when runtime validation detects schema drift
 - OpenAPI reference: `docs/headless-api-openapi.json`
+
+Contract version:
+
+- `contract_version: "runtime-ui@1"`
+- Version changes only on breaking schema changes.
 
 - `UIManifest`
   - `manifest.pages`
@@ -74,11 +81,16 @@ When headless mode is enabled, `/` returns `404` and UI clients should call API 
 
 ## Front-end package
 
-`packages/namel3ss-ui-client/src/index.js` provides a tiny API client with:
+`packages/namel3ss-ui-client/src/index.js` provides a tiny compatibility client with:
 
 - `getManifest()`
 - `getState()`
 - `getActions()`
 - `runAction(id, payload)`
 
-The package is intentionally small and dependency-free.
+Official strict SDK:
+
+- `packages/namel3ss-client`
+- package name: `@namel3ss/client`
+- typed payloads for UI, actions, runtime errors, and ingestion/RAG state
+- contract validation backed by runtime-generated schema (`runtime_contract_schema.json`)

@@ -7,6 +7,7 @@ from urllib.parse import parse_qs, urlparse
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
+from namel3ss.runtime.errors.normalize import attach_runtime_error_payload
 from namel3ss.runtime.backend.upload_handler import handle_upload, handle_upload_list
 from namel3ss.runtime.backend.upload_recorder import UploadRecorder, apply_upload_error_payload
 from namel3ss.runtime.auth.auth_context import resolve_auth_context
@@ -159,7 +160,6 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             "target": getattr(self.server, "target", "service"),  # type: ignore[attr-defined]
             "build_id": getattr(self.server, "build_id", None),  # type: ignore[attr-defined]
         }
-
     def _respond_json(
         self,
         payload: dict,
@@ -177,7 +177,6 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
                 self.send_header(key, value)
         self.end_headers()
         self.wfile.write(data)
-
     def _respond_bytes(
         self,
         payload: bytes,
@@ -194,7 +193,6 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
                 self.send_header(key, value)
         self.end_headers()
         self.wfile.write(payload)
-
     def _dispatch_dynamic_route(self) -> bool:
         state = self._state()
         state._refresh_if_needed()
@@ -238,18 +236,23 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             return True
         self._respond_json(result.payload or {}, status=result.status, headers=result.headers)
         return True
-
     def _handle_action_post(self, body: dict) -> None:
         if not isinstance(body, dict):
-            self._respond_json(build_error_payload("Body must be a JSON object.", kind="engine"), status=400)
+            payload = build_error_payload("Body must be a JSON object.", kind="engine")
+            payload = attach_runtime_error_payload(payload, status_code=400, endpoint="/api/action")
+            self._respond_json(payload, status=400)
             return
         action_id = body.get("id")
         payload = body.get("payload") or {}
         if not isinstance(action_id, str):
-            self._respond_json(build_error_payload("Action id is required.", kind="engine"), status=400)
+            response = build_error_payload("Action id is required.", kind="engine")
+            response = attach_runtime_error_payload(response, status_code=400, endpoint="/api/action")
+            self._respond_json(response, status=400)
             return
         if not isinstance(payload, dict):
-            self._respond_json(build_error_payload("Payload must be an object.", kind="engine"), status=400)
+            response = build_error_payload("Payload must be an object.", kind="engine")
+            response = attach_runtime_error_payload(response, status_code=400, endpoint="/api/action")
+            self._respond_json(response, status=400)
             return
         auth_context = self._auth_context_or_error(kind="engine")
         if auth_context is None:
@@ -261,15 +264,17 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
                 identity=getattr(auth_context, "identity", None),
                 auth_context=auth_context,
             )
+            response = attach_runtime_error_payload(response, endpoint="/api/action")
             status = 200 if response.get("ok", True) else 400
             self._respond_json(response, status=status)
         except Namel3ssError as err:
             payload = build_error_from_exception(err, kind="engine")
+            payload = attach_runtime_error_payload(payload, status_code=400, endpoint="/api/action")
             self._respond_json(payload, status=400)
         except Exception as err:  # pragma: no cover - defensive guard rail
             payload = build_error_payload(str(err), kind="internal")
+            payload = attach_runtime_error_payload(payload, status_code=500, endpoint="/api/action")
             self._respond_json(payload, status=500)
-
     def _handle_upload_post(self, query: str) -> tuple[dict, int]:
         program = getattr(self._state(), "program", None)
         if program is None:
@@ -310,7 +315,6 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             payload = build_error_payload(str(err), kind="internal")
             payload = apply_upload_error_payload(payload, recorder)
             return payload, 500
-
     def _handle_upload_list(self) -> tuple[dict, int]:
         program = getattr(self._state(), "program", None)
         if program is None:
@@ -329,7 +333,6 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
         except Exception as err:  # pragma: no cover - defensive guard rail
             payload = build_error_payload(str(err), kind="internal")
             return payload, 500
-
     def _handle_observability(self, kind: str) -> tuple[dict, int]:
         program = getattr(self._state(), "program", None)
         if program is None:
@@ -344,7 +347,6 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
         payload = builder(getattr(program, "project_root", None), getattr(program, "app_path", None))
         status = 200 if payload.get("ok", True) else 400
         return payload, status
-
     def _handle_build(self) -> tuple[dict, int]:
         state = self._state()
         state._refresh_if_needed()
@@ -354,7 +356,6 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
         payload = get_build_payload(root, app_path)
         status = 200 if payload.get("ok", True) else 400
         return payload, status
-
     def _handle_deploy(self) -> tuple[dict, int]:
         state = self._state()
         state._refresh_if_needed()
@@ -364,7 +365,6 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
         payload = get_deploy_payload(root, app_path, program=program, target=getattr(self.server, "target", None))
         status = 200 if payload.get("ok", True) else 400
         return payload, status
-
     def _handle_data_status(self) -> tuple[dict, int]:
         state = self._state()
         state._refresh_if_needed()
@@ -381,7 +381,6 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             return build_error_from_exception(err, kind="data"), 400
         except Exception as err:  # pragma: no cover - defensive guard rail
             return build_error_payload(str(err), kind="internal"), 500
-
     def _handle_migrations(self, builder) -> tuple[dict, int]:
         state = self._state()
         state._refresh_if_needed()
@@ -396,7 +395,6 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             return build_error_from_exception(err, kind="data"), 400
         except Exception as err:  # pragma: no cover - defensive guard rail
             return build_error_payload(str(err), kind="internal"), 500
-
     def _auth_params(self) -> tuple[object, object | None, object]:
         state = self._state()
         state._refresh_if_needed()
@@ -405,7 +403,6 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
         store = state.session.ensure_store(config)
         identity_schema = getattr(program, "identity", None) if program is not None else None
         return config, identity_schema, store
-
     def _handle_session_get(self) -> tuple[dict, int, dict[str, str]]:
         try:
             config, identity_schema, store = self._auth_params()

@@ -5,6 +5,8 @@ from typing import Any, Callable
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
+from namel3ss.runtime.contracts import validate_contract_payload_for_mode, with_contract_warnings
+from namel3ss.runtime.errors.normalize import attach_runtime_error_payload
 from namel3ss.runtime.auth.auth_context import resolve_auth_context
 from namel3ss.runtime.auth.auth_routes import handle_login, handle_logout, handle_session
 from namel3ss.runtime.data.data_routes import (
@@ -51,6 +53,7 @@ def handle_ui_manifest_get(handler: Any, path: str) -> bool:
     state = handler._state()
     manifest = state.manifest_payload(identity=auth_context.identity, auth_context=auth_context)
     payload = build_ui_manifest_payload(manifest, revision=state.revision)
+    payload = _contract_checked_payload(handler, payload, schema_name="ui_manifest_response")
     status = 200 if payload.get("ok", True) else 400
     handler._respond_json(payload, status=status)
     return True
@@ -77,6 +80,7 @@ def handle_ui_state_get(handler: Any, path: str) -> bool:
     state = handler._state()
     payload = state.state_payload(identity=auth_context.identity)
     ui_payload = build_ui_state_payload(payload, revision=state.revision)
+    ui_payload = _contract_checked_payload(handler, ui_payload, schema_name="ui_state_response")
     status = 200 if ui_payload.get("ok", True) else 400
     handler._respond_json(ui_payload, status=status)
     return True
@@ -91,6 +95,7 @@ def handle_ui_actions_get(handler: Any, path: str) -> bool:
     state = handler._state()
     manifest = state.manifest_payload(identity=auth_context.identity, auth_context=auth_context)
     payload = build_ui_actions_payload(manifest, revision=state.revision)
+    payload = _contract_checked_payload(handler, payload, schema_name="ui_actions_response")
     status = 200 if payload.get("ok", True) else 400
     handler._respond_json(payload, status=status)
     return True
@@ -143,15 +148,21 @@ def handle_deploy_get(handler: Any, path: str) -> bool:
 
 def handle_action_post(handler: Any, body: dict) -> None:
     if not isinstance(body, dict):
-        handler._respond_json(build_error_payload("Body must be a JSON object.", kind="engine"), status=400)
+        payload = build_error_payload("Body must be a JSON object.", kind="engine")
+        payload = attach_runtime_error_payload(payload, status_code=400, endpoint="/api/action")
+        handler._respond_json(payload, status=400)
         return
     action_id = body.get("id")
     payload = body.get("payload") or {}
     if not isinstance(action_id, str):
-        handler._respond_json(build_error_payload("Action id is required.", kind="engine"), status=400)
+        response = build_error_payload("Action id is required.", kind="engine")
+        response = attach_runtime_error_payload(response, status_code=400, endpoint="/api/action")
+        handler._respond_json(response, status=400)
         return
     if not isinstance(payload, dict):
-        handler._respond_json(build_error_payload("Payload must be an object.", kind="engine"), status=400)
+        response = build_error_payload("Payload must be an object.", kind="engine")
+        response = attach_runtime_error_payload(response, status_code=400, endpoint="/api/action")
+        handler._respond_json(response, status=400)
         return
     auth_context = _auth_context_or_error(handler, kind="engine")
     if auth_context is None:
@@ -162,21 +173,28 @@ def handle_action_post(handler: Any, body: dict) -> None:
         identity=auth_context.identity,
         auth_context=auth_context,
     )
+    response = attach_runtime_error_payload(response, endpoint="/api/action")
     status = 200 if response.get("ok", True) else 400
     handler._respond_json(response, status=status)
 
 
 def handle_ui_action_post(handler: Any, body: dict) -> None:
     if not isinstance(body, dict):
-        handler._respond_json(build_error_payload("Body must be a JSON object.", kind="engine"), status=400)
+        payload = build_error_payload("Body must be a JSON object.", kind="engine")
+        payload = attach_runtime_error_payload(payload, status_code=400, endpoint="/api/ui/action")
+        handler._respond_json(payload, status=400)
         return
     action_id = body.get("id")
     payload = body.get("payload") or {}
     if not isinstance(action_id, str):
-        handler._respond_json(build_error_payload("Action id is required.", kind="engine"), status=400)
+        response = build_error_payload("Action id is required.", kind="engine")
+        response = attach_runtime_error_payload(response, status_code=400, endpoint="/api/ui/action")
+        handler._respond_json(response, status=400)
         return
     if not isinstance(payload, dict):
-        handler._respond_json(build_error_payload("Payload must be an object.", kind="engine"), status=400)
+        response = build_error_payload("Payload must be an object.", kind="engine")
+        response = attach_runtime_error_payload(response, status_code=400, endpoint="/api/ui/action")
+        handler._respond_json(response, status=400)
         return
     auth_context = _auth_context_or_error(handler, kind="engine")
     if auth_context is None:
@@ -188,7 +206,9 @@ def handle_ui_action_post(handler: Any, body: dict) -> None:
         identity=auth_context.identity,
         auth_context=auth_context,
     )
+    response = attach_runtime_error_payload(response, endpoint="/api/ui/action")
     ui_response = build_action_result_payload(response, revision=state.revision)
+    ui_response = _contract_checked_payload(handler, ui_response, schema_name="ui_action_result")
     status = 200 if ui_response.get("ok", False) else 400
     handler._respond_json(ui_response, status=status)
 
@@ -353,6 +373,17 @@ def _deploy_payload(handler: Any) -> dict:
     root = getattr(program, "project_root", None) if program is not None else state.project_root
     app_path = getattr(program, "app_path", None) if program is not None else state.app_path
     return get_deploy_payload(root, app_path, program=program)
+
+
+def _contract_checked_payload(handler: Any, payload: dict, *, schema_name: str) -> dict:
+    warnings = validate_contract_payload_for_mode(
+        payload,
+        schema_name=schema_name,
+        ui_mode=getattr(handler.server, "ui_mode", "production"),  # type: ignore[attr-defined]
+        diagnostics_enabled=bool(getattr(handler.server, "ui_diagnostics_enabled", False)),  # type: ignore[attr-defined]
+    )
+    annotated = with_contract_warnings(payload, warnings)
+    return annotated if isinstance(annotated, dict) else payload
 
 
 __all__ = [

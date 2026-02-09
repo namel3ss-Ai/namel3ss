@@ -1,0 +1,21 @@
+{
+  "name": "@namel3ss/client",
+  "version": "0.1.0",
+  "description": "Official typed headless client for Namel3ss runtime contracts.",
+  "license": "MIT",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/types.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "keywords": [
+    "namel3ss",
+    "headless",
+    "sdk",
+    "rag"
+  ]
+}

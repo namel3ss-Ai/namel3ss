@@ -36,7 +36,7 @@ from namel3ss.cli.fix_mode import run_fix_command
 from namel3ss.cli.how_mode import run_how_command
 from namel3ss.cli.kit_mode import run_kit_command
 from namel3ss.cli.memory_mode import run_memory_command
-from namel3ss.cli.migrate_mode import run_migrate_command
+from namel3ss.cli.migrate import run_migrate_command
 from namel3ss.cli.metrics_mode import run_metrics_command
 from namel3ss.cli.observe_mode import run_observe_command
 from namel3ss.cli.formats_mode import run_formats_command
@@ -56,7 +56,7 @@ from namel3ss.cli.sdk_mode import run_sdk_command
 from namel3ss.cli.promote_mode import run_promote_command
 from namel3ss.cli.proof_mode import run_proof_command
 from namel3ss.cli.readability_mode import run_readability_command
-from namel3ss.cli.replay_mode import run_replay_command
+from namel3ss.cli.replay import run_replay_command
 from namel3ss.cli.registry_mode import run_registry
 from namel3ss.cli.reserved_mode import run_reserved_command
 from namel3ss.cli.secret_mode import run_secret_command
@@ -89,6 +89,7 @@ from namel3ss.cli.lsp_mode import run_lsp_command
 from namel3ss.cli.see_mode import run_see_command
 from namel3ss.cli.scaffold_tool_mode import run_scaffold_command
 from namel3ss.cli.status_mode import run_status_command
+from namel3ss.cli.state import run_state_command
 from namel3ss.cli.test_mode import run_test_command
 from namel3ss.cli.train_mode import run_train_command
 from namel3ss.cli.text_output import prepare_cli_text, prepare_first_run_text
@@ -234,6 +235,8 @@ def main(argv: list[str] | None = None) -> int:
             return run_proof_command(args[1:])
         if cmd == "memory":
             return run_memory_command(args[1:])
+        if cmd == "state":
+            return run_state_command(args[1:])
         if cmd == "verify":
             return run_verify_command(args[1:])
         if cmd == "release-check":

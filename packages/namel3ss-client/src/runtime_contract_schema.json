@@ -1,0 +1,2712 @@
+{
+  "contract_version": "runtime-ui@1",
+  "runtime_spec_version": "runtime-spec@1",
+  "schema_version": "runtime_contract_schema@1",
+  "schemas": {
+    "audit_bundle": {
+      "additional_fields": true,
+      "fields": [
+        {
+          "default": null,
+          "name": "schema_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "run_id",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "integrity_hash",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "run_artifact_path",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "bundle_path",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        }
+      ],
+      "name": "audit_bundle",
+      "notes": "Immutable audit bundle metadata under .namel3ss/audit."
+    },
+    "audit_policy_status": {
+      "additional_fields": true,
+      "fields": [
+        {
+          "default": null,
+          "name": "mode",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "required",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "boolean"
+        },
+        {
+          "default": null,
+          "name": "forbidden",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "boolean"
+        },
+        {
+          "default": null,
+          "name": "attempted",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "boolean"
+        },
+        {
+          "default": null,
+          "name": "written",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "boolean"
+        },
+        {
+          "default": null,
+          "name": "error",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        }
+      ],
+      "name": "audit_policy_status",
+      "notes": "Resolved audit mode and write outcome for the current response."
+    },
+    "capability_pack": {
+      "additional_fields": true,
+      "fields": [
+        {
+          "default": null,
+          "name": "name",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": [],
+          "item_type": "string",
+          "name": "provided_actions",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": [],
+          "item_type": "string",
+          "name": "required_permissions",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": null,
+          "name": "runtime_bindings",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_type": "string",
+          "name": "effect_capabilities",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": null,
+          "name": "contract_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "purity",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "replay_mode",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        }
+      ],
+      "name": "capability_pack",
+      "notes": "Versioned capability pack metadata exposed to Studio and headless clients."
+    },
+    "capability_usage": {
+      "additional_fields": true,
+      "fields": [
+        {
+          "default": null,
+          "name": "pack_name",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "pack_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "action",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "capability",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "status",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "reason",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "purity",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "replay_mode",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": [],
+          "item_type": "string",
+          "name": "required_permissions",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        }
+      ],
+      "name": "capability_usage",
+      "notes": "Deterministic capability usage entries emitted into run artifacts for replay/audit."
+    },
+    "contract_warning": {
+      "additional_fields": false,
+      "fields": [
+        {
+          "default": null,
+          "name": "code",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "message",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "path",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "expected",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "actual",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        }
+      ],
+      "name": "contract_warning",
+      "notes": "Non-blocking contract validation warning emitted in dev/studio."
+    },
+    "headless_action_response": {
+      "additional_fields": true,
+      "fields": [
+        {
+          "default": null,
+          "name": "ok",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "boolean"
+        },
+        {
+          "default": "v1",
+          "name": "api_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "contract_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "spec_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "runtime_spec_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "action_id",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "state",
+          "notes": "",
+          "ref": "rag_state",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "manifest",
+          "notes": "",
+          "ref": "ui_manifest",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "hash",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": [],
+          "item_type": "object",
+          "name": "messages",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": null,
+          "name": "result",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "any"
+        },
+        {
+          "default": null,
+          "name": "error",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "runtime_error",
+          "notes": "",
+          "ref": "runtime_error",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_ref": "runtime_error",
+          "name": "runtime_errors",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": [],
+          "item_ref": "capability_pack",
+          "name": "capabilities_enabled",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": null,
+          "name": "capability_versions",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "persistence_backend",
+          "notes": "",
+          "ref": "persistence_backend",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "state_schema_version",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "migration_status",
+          "notes": "",
+          "ref": "migration_status",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "run_artifact",
+          "notes": "",
+          "ref": "run_artifact",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "audit_bundle",
+          "notes": "",
+          "ref": "audit_bundle",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "audit_policy_status",
+          "notes": "",
+          "ref": "audit_policy_status",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "workspace_id",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "session_id",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "run_diff",
+          "notes": "",
+          "ref": "run_diff",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "repro_bundle",
+          "notes": "",
+          "ref": "repro_bundle",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_type": "string",
+          "name": "run_history",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": [],
+          "item_ref": "contract_warning",
+          "name": "contract_warnings",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        }
+      ],
+      "name": "headless_action_response",
+      "notes": "Response contract for POST /api/v1/actions/<action_id>."
+    },
+    "headless_ui_response": {
+      "additional_fields": true,
+      "fields": [
+        {
+          "default": null,
+          "name": "ok",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "boolean"
+        },
+        {
+          "default": "v1",
+          "name": "api_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "contract_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "spec_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "runtime_spec_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "manifest",
+          "notes": "",
+          "ref": "ui_manifest",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "hash",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "revision",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "state",
+          "notes": "",
+          "ref": "ui_state_response",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "actions",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "error",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "runtime_error",
+          "notes": "",
+          "ref": "runtime_error",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_ref": "runtime_error",
+          "name": "runtime_errors",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": [],
+          "item_ref": "capability_pack",
+          "name": "capabilities_enabled",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": null,
+          "name": "capability_versions",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "persistence_backend",
+          "notes": "",
+          "ref": "persistence_backend",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "state_schema_version",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "migration_status",
+          "notes": "",
+          "ref": "migration_status",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "run_artifact",
+          "notes": "",
+          "ref": "run_artifact",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "audit_bundle",
+          "notes": "",
+          "ref": "audit_bundle",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "audit_policy_status",
+          "notes": "",
+          "ref": "audit_policy_status",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "workspace_id",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "session_id",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "run_diff",
+          "notes": "",
+          "ref": "run_diff",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "repro_bundle",
+          "notes": "",
+          "ref": "repro_bundle",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_type": "string",
+          "name": "run_history",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": [],
+          "item_ref": "contract_warning",
+          "name": "contract_warnings",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        }
+      ],
+      "name": "headless_ui_response",
+      "notes": "Response contract for GET /api/v1/ui."
+    },
+    "manifest_page": {
+      "additional_fields": true,
+      "fields": [
+        {
+          "default": null,
+          "name": "name",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "slug",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": [],
+          "item_type": "object",
+          "name": "elements",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": null,
+          "name": "layout",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        }
+      ],
+      "name": "manifest_page",
+      "notes": "Minimal page shape for deterministic UI manifests."
+    },
+    "migration_status": {
+      "additional_fields": true,
+      "fields": [
+        {
+          "default": null,
+          "name": "schema_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "state_schema_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "plan_id",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "last_plan_id",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "applied_plan_id",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "pending",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "boolean"
+        },
+        {
+          "default": null,
+          "name": "breaking",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "boolean"
+        },
+        {
+          "default": null,
+          "name": "reversible",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "boolean"
+        },
+        {
+          "default": null,
+          "name": "plan_changed",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "boolean"
+        },
+        {
+          "default": null,
+          "name": "change_count",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "number"
+        },
+        {
+          "default": null,
+          "name": "error",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        }
+      ],
+      "name": "migration_status",
+      "notes": "Deterministic migration status for runtime startup and inspection."
+    },
+    "persistence_backend": {
+      "additional_fields": true,
+      "fields": [
+        {
+          "default": null,
+          "name": "target",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "kind",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "enabled",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "boolean"
+        },
+        {
+          "default": null,
+          "name": "durable",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "boolean"
+        },
+        {
+          "default": null,
+          "name": "deterministic_ordering",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "boolean"
+        },
+        {
+          "default": null,
+          "name": "descriptor",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": false,
+          "name": "requires_network",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "boolean"
+        },
+        {
+          "default": [],
+          "item_type": "string",
+          "name": "replicas",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        }
+      ],
+      "name": "persistence_backend",
+      "notes": "Configured persistence backend descriptor."
+    },
+    "rag_state": {
+      "additional_fields": true,
+      "fields": [
+        {
+          "default": null,
+          "name": "uploads",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "ingestion",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "retrieval",
+          "notes": "",
+          "ref": "retrieval_state",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "chat",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        }
+      ],
+      "name": "rag_state",
+      "notes": "RAG-focused state subset used by upload, ingestion, and retrieval clients."
+    },
+    "repro_bundle": {
+      "additional_fields": true,
+      "fields": [
+        {
+          "default": null,
+          "name": "schema_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "workspace_id",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "session_id",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "run_id",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "repro_path",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "app_hash",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "program_entrypoint",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "input_snapshot",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "prompt",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "output",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "any"
+        },
+        {
+          "default": [],
+          "item_ref": "retrieval_trace_entry",
+          "name": "retrieval_trace",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": null,
+          "name": "trust_score_details",
+          "notes": "",
+          "ref": "trust_score_details",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_ref": "runtime_error",
+          "name": "runtime_errors",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        }
+      ],
+      "name": "repro_bundle",
+      "notes": "Minimal deterministic repro payload for Studio sharing."
+    },
+    "retrieval_plan": {
+      "additional_fields": true,
+      "fields": [
+        {
+          "default": null,
+          "name": "query",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "scope",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "tier",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_type": "object",
+          "name": "filters",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": null,
+          "name": "cutoffs",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "ordering",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": [],
+          "item_type": "string",
+          "name": "selected_chunk_ids",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        }
+      ],
+      "name": "retrieval_plan",
+      "notes": "Serializable retrieval plan with filters, cutoffs, and deterministic ordering metadata."
+    },
+    "retrieval_state": {
+      "additional_fields": true,
+      "fields": [
+        {
+          "default": null,
+          "name": "retrieval_plan",
+          "notes": "",
+          "ref": "retrieval_plan",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_ref": "retrieval_trace_entry",
+          "name": "retrieval_trace",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": null,
+          "name": "trust_score_details",
+          "notes": "",
+          "ref": "trust_score_details",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        }
+      ],
+      "name": "retrieval_state",
+      "notes": "Structured retrieval state shared by headless and Studio clients."
+    },
+    "retrieval_trace_entry": {
+      "additional_fields": true,
+      "fields": [
+        {
+          "default": null,
+          "name": "chunk_id",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "document_id",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "page_number",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "number"
+        },
+        {
+          "default": null,
+          "name": "score",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "number"
+        },
+        {
+          "default": null,
+          "name": "rank",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "number"
+        },
+        {
+          "default": null,
+          "name": "reason",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        }
+      ],
+      "name": "retrieval_trace_entry",
+      "notes": "Deterministic retrieval evidence row used for citations and explainability."
+    },
+    "run_artifact": {
+      "additional_fields": true,
+      "fields": [
+        {
+          "default": null,
+          "name": "schema_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "run_id",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "program",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "inputs",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "ingestion_artifacts",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "retrieval_plan",
+          "notes": "",
+          "ref": "retrieval_plan",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_ref": "retrieval_trace_entry",
+          "name": "retrieval_trace",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": null,
+          "name": "trust_score_details",
+          "notes": "",
+          "ref": "trust_score_details",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "prompt",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "model_config",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_ref": "capability_pack",
+          "name": "capabilities_enabled",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": null,
+          "name": "capability_versions",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_ref": "capability_usage",
+          "name": "capability_usage",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": null,
+          "name": "output",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "any"
+        },
+        {
+          "default": [],
+          "item_ref": "runtime_error",
+          "name": "runtime_errors",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": null,
+          "name": "checksums",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        }
+      ],
+      "name": "run_artifact",
+      "notes": "Deterministic replay artifact for a runtime flow/action execution."
+    },
+    "run_diff": {
+      "additional_fields": false,
+      "fields": [
+        {
+          "default": null,
+          "name": "schema_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "left_run_id",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "right_run_id",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "changed",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "boolean"
+        },
+        {
+          "default": null,
+          "name": "change_count",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "number"
+        },
+        {
+          "default": [],
+          "item_ref": "run_diff_change",
+          "name": "changes",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        }
+      ],
+      "name": "run_diff",
+      "notes": "Deterministic run diff comparing the latest two run artifacts."
+    },
+    "run_diff_change": {
+      "additional_fields": false,
+      "fields": [
+        {
+          "default": null,
+          "name": "field",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "changed",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "boolean"
+        },
+        {
+          "default": null,
+          "name": "left_hash",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "right_hash",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        }
+      ],
+      "name": "run_diff_change",
+      "notes": "Deterministic field-level diff entry for Studio run comparison."
+    },
+    "run_response": {
+      "additional_fields": true,
+      "fields": [
+        {
+          "default": null,
+          "name": "contract_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "spec_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "runtime_spec_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "ui",
+          "notes": "",
+          "ref": "headless_ui_response",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "state",
+          "notes": "",
+          "ref": "ui_state",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "result",
+          "notes": "",
+          "ref": "headless_action_response",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "runtime_error",
+          "notes": "",
+          "ref": "runtime_error",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_ref": "capability_pack",
+          "name": "capabilities_enabled",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": null,
+          "name": "capability_versions",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "persistence_backend",
+          "notes": "",
+          "ref": "persistence_backend",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "state_schema_version",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "migration_status",
+          "notes": "",
+          "ref": "migration_status",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "run_artifact",
+          "notes": "",
+          "ref": "run_artifact",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "audit_bundle",
+          "notes": "",
+          "ref": "audit_bundle",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "audit_policy_status",
+          "notes": "",
+          "ref": "audit_policy_status",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "workspace_id",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "session_id",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "run_diff",
+          "notes": "",
+          "ref": "run_diff",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "repro_bundle",
+          "notes": "",
+          "ref": "repro_bundle",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_type": "string",
+          "name": "run_history",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        }
+      ],
+      "name": "run_response",
+      "notes": "Forward-compatible aggregate envelope used by SDK examples."
+    },
+    "runtime_error": {
+      "additional_fields": false,
+      "fields": [
+        {
+          "default": null,
+          "name": "category",
+          "notes": "Closed-set runtime error category.",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "message",
+          "notes": "User-safe summary.",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "hint",
+          "notes": "Actionable remediation.",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "origin",
+          "notes": "Subsystem origin.",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "stable_code",
+          "notes": "Deterministic stable code.",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        }
+      ],
+      "name": "runtime_error",
+      "notes": "Canonical user-safe runtime error payload."
+    },
+    "trust_score_details": {
+      "additional_fields": true,
+      "fields": [
+        {
+          "default": null,
+          "name": "formula_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "score",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "number"
+        },
+        {
+          "default": null,
+          "name": "level",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "inputs",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_type": "object",
+          "name": "components",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": [],
+          "item_type": "object",
+          "name": "penalties",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        }
+      ],
+      "name": "trust_score_details",
+      "notes": "Deterministic trust score metadata derived from retrieval evidence."
+    },
+    "ui_action_result": {
+      "additional_fields": true,
+      "fields": [
+        {
+          "default": null,
+          "name": "ok",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "boolean"
+        },
+        {
+          "default": "1",
+          "name": "api_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "contract_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "spec_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "runtime_spec_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "success",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "boolean"
+        },
+        {
+          "default": null,
+          "name": "new_state",
+          "notes": "",
+          "ref": "rag_state",
+          "required": true,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "message",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "result",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "any"
+        },
+        {
+          "default": null,
+          "name": "revision",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "runtime_error",
+          "notes": "",
+          "ref": "runtime_error",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_ref": "runtime_error",
+          "name": "runtime_errors",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": [],
+          "item_ref": "capability_pack",
+          "name": "capabilities_enabled",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": null,
+          "name": "capability_versions",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "persistence_backend",
+          "notes": "",
+          "ref": "persistence_backend",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "state_schema_version",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "migration_status",
+          "notes": "",
+          "ref": "migration_status",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "run_artifact",
+          "notes": "",
+          "ref": "run_artifact",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "audit_bundle",
+          "notes": "",
+          "ref": "audit_bundle",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "audit_policy_status",
+          "notes": "",
+          "ref": "audit_policy_status",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "workspace_id",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "session_id",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "run_diff",
+          "notes": "",
+          "ref": "run_diff",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "repro_bundle",
+          "notes": "",
+          "ref": "repro_bundle",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_type": "string",
+          "name": "run_history",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": [],
+          "item_ref": "contract_warning",
+          "name": "contract_warnings",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        }
+      ],
+      "name": "ui_action_result",
+      "notes": "Response contract for POST /api/ui/action."
+    },
+    "ui_actions_response": {
+      "additional_fields": true,
+      "fields": [
+        {
+          "default": null,
+          "name": "ok",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "boolean"
+        },
+        {
+          "default": "1",
+          "name": "api_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "contract_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "spec_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "runtime_spec_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": [],
+          "item_type": "object",
+          "name": "actions",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": [],
+          "item_type": "object",
+          "name": "warnings",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": null,
+          "name": "revision",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "error",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "runtime_error",
+          "notes": "",
+          "ref": "runtime_error",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_ref": "runtime_error",
+          "name": "runtime_errors",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": null,
+          "name": "workspace_id",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "session_id",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        }
+      ],
+      "name": "ui_actions_response",
+      "notes": "Response contract for GET /api/ui/actions."
+    },
+    "ui_manifest": {
+      "additional_fields": true,
+      "fields": [
+        {
+          "default": true,
+          "name": "ok",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "boolean"
+        },
+        {
+          "default": [],
+          "item_ref": "manifest_page",
+          "name": "pages",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": null,
+          "name": "actions",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_type": "object",
+          "name": "upload_requests",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": [],
+          "item_type": "object",
+          "name": "warnings",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": null,
+          "name": "mode",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "theme",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "runtime_error",
+          "notes": "",
+          "ref": "runtime_error",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_ref": "runtime_error",
+          "name": "runtime_errors",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": [],
+          "item_ref": "capability_pack",
+          "name": "capabilities_enabled",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": null,
+          "name": "capability_versions",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "persistence_backend",
+          "notes": "",
+          "ref": "persistence_backend",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "state_schema_version",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "migration_status",
+          "notes": "",
+          "ref": "migration_status",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "run_artifact",
+          "notes": "",
+          "ref": "run_artifact",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "audit_bundle",
+          "notes": "",
+          "ref": "audit_bundle",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "audit_policy_status",
+          "notes": "",
+          "ref": "audit_policy_status",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "workspace_id",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "session_id",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "run_diff",
+          "notes": "",
+          "ref": "run_diff",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "repro_bundle",
+          "notes": "",
+          "ref": "repro_bundle",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_type": "string",
+          "name": "run_history",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        }
+      ],
+      "name": "ui_manifest",
+      "notes": "Canonical UI manifest payload shape consumed by headless and browser clients."
+    },
+    "ui_manifest_response": {
+      "additional_fields": true,
+      "fields": [
+        {
+          "default": null,
+          "name": "ok",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "boolean"
+        },
+        {
+          "default": "1",
+          "name": "api_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "contract_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "spec_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "runtime_spec_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "manifest",
+          "notes": "",
+          "ref": "ui_manifest",
+          "required": true,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "theme",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "revision",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "error",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "runtime_error",
+          "notes": "",
+          "ref": "runtime_error",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_ref": "runtime_error",
+          "name": "runtime_errors",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": [],
+          "item_ref": "capability_pack",
+          "name": "capabilities_enabled",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        },
+        {
+          "default": null,
+          "name": "capability_versions",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "persistence_backend",
+          "notes": "",
+          "ref": "persistence_backend",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "state_schema_version",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "migration_status",
+          "notes": "",
+          "ref": "migration_status",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "run_artifact",
+          "notes": "",
+          "ref": "run_artifact",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "audit_bundle",
+          "notes": "",
+          "ref": "audit_bundle",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "audit_policy_status",
+          "notes": "",
+          "ref": "audit_policy_status",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "workspace_id",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "session_id",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "run_diff",
+          "notes": "",
+          "ref": "run_diff",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "repro_bundle",
+          "notes": "",
+          "ref": "repro_bundle",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_type": "string",
+          "name": "run_history",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        }
+      ],
+      "name": "ui_manifest_response",
+      "notes": "Response contract for GET /api/ui/manifest."
+    },
+    "ui_state": {
+      "additional_fields": false,
+      "fields": [
+        {
+          "default": null,
+          "name": "current_page",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "values",
+          "notes": "",
+          "ref": "rag_state",
+          "required": true,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_type": "object",
+          "name": "errors",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "array"
+        }
+      ],
+      "name": "ui_state",
+      "notes": "State envelope used by /api/ui/state and optional headless state inclusion."
+    },
+    "ui_state_response": {
+      "additional_fields": true,
+      "fields": [
+        {
+          "default": null,
+          "name": "ok",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "boolean"
+        },
+        {
+          "default": "1",
+          "name": "api_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "contract_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "spec_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "runtime_spec_version",
+          "notes": "",
+          "required": true,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "state",
+          "notes": "",
+          "ref": "ui_state",
+          "required": true,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "revision",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "string"
+        },
+        {
+          "default": null,
+          "name": "error",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": null,
+          "name": "runtime_error",
+          "notes": "",
+          "ref": "runtime_error",
+          "required": false,
+          "stability": "additive",
+          "type": "object"
+        },
+        {
+          "default": [],
+          "item_ref": "runtime_error",
+          "name": "runtime_errors",
+          "notes": "",
+          "required": false,
+          "stability": "additive",
+          "type": "array"
+        }
+      ],
+      "name": "ui_state_response",
+      "notes": "Response contract for GET /api/ui/state."
+    }
+  },
+  "spec_version": "namel3ss-spec@1"
+}
+

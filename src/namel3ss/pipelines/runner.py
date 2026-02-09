@@ -52,6 +52,7 @@ def _run_ingestion(ctx, definition, payload: dict) -> PipelineRunResult:
         app_path=ctx.app_path,
         secret_values=secret_list,
         job_ctx=ctx,
+        config=ctx.config,
     )
     report = result.get("report") if isinstance(result, dict) else None
     if not isinstance(report, dict):

@@ -22,7 +22,7 @@ TRACE_VOLATILE_KEYS = {
     "tool_use_id",
     "trace_id",
 }
-_DROP_RUN_KEYS = {"ui"}
+_DROP_RUN_KEYS = {"ui", "run_artifact", "audit_bundle", "audit_policy_status"}
 
 
 def normalize_traces(traces: Iterable[Any] | None) -> list[dict]:

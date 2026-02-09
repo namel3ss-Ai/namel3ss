@@ -28,9 +28,60 @@
     return { event, data: _safeJsonParse(dataLines.join("\n")) };
   }
 
+  function _runtimeError(category, message, hint, origin, stableCode) {
+    return {
+      category: category,
+      message: message,
+      hint: hint,
+      origin: origin,
+      stable_code: stableCode,
+    };
+  }
+
+  function _networkRuntimeError(path) {
+    return _runtimeError(
+      "server_unavailable",
+      "Runtime server is unavailable.",
+      `Start the runtime server and retry ${path}.`,
+      "network",
+      "runtime.server_unavailable"
+    );
+  }
+
+  function _errorWithRuntime(error, runtimeError, status, payload) {
+    const message = (runtimeError && runtimeError.message) || (error && error.message) || "Request failed";
+    const wrapped = new Error(message);
+    wrapped.runtime_error = runtimeError;
+    if (Number.isInteger(status)) wrapped.status = status;
+    if (payload && typeof payload === "object") wrapped.payload = payload;
+    return wrapped;
+  }
+
   async function fetchJson(path, options) {
-    const response = await fetch(path, options);
-    return response.json();
+    let response;
+    try {
+      response = await fetch(path, options);
+    } catch (err) {
+      throw _errorWithRuntime(err, _networkRuntimeError(path));
+    }
+    let payload = null;
+    try {
+      payload = await response.json();
+    } catch (_err) {
+      payload = null;
+    }
+    if (payload && typeof payload === "object") {
+      return payload;
+    }
+    if (response.ok) return {};
+    const runtimeError = _runtimeError(
+      response.status === 401 || response.status === 403 ? "auth_invalid" : "runtime_internal",
+      `Request failed with status ${response.status}.`,
+      "Check server logs and retry the request.",
+      "runtime",
+      `runtime.http_${response.status}`
+    );
+    throw _errorWithRuntime(null, runtimeError, response.status, payload);
   }
 
   async function postJson(path, body) {
@@ -44,15 +95,31 @@
   async function postSse(path, body, options) {
     const opts = options || {};
     const onEvent = typeof opts.onEvent === "function" ? opts.onEvent : null;
-    const response = await fetch(path, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
-      body: JSON.stringify(body || {}),
-      signal: opts.signal || undefined,
-    });
+    let response;
+    try {
+      response = await fetch(path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+        body: JSON.stringify(body || {}),
+        signal: opts.signal || undefined,
+      });
+    } catch (err) {
+      throw _errorWithRuntime(err, _networkRuntimeError(path));
+    }
     if (!response.ok) {
       const text = await response.text();
-      throw new Error(text || `Request failed with status ${response.status}`);
+      const parsed = _safeJsonParse(text);
+      if (parsed && typeof parsed === "object" && parsed.runtime_error) {
+        throw _errorWithRuntime(null, parsed.runtime_error, response.status, parsed);
+      }
+      const runtimeError = _runtimeError(
+        response.status === 401 || response.status === 403 ? "auth_invalid" : "runtime_internal",
+        text || `Request failed with status ${response.status}`,
+        "Check server logs and retry the request.",
+        "runtime",
+        `runtime.http_${response.status}`
+      );
+      throw _errorWithRuntime(null, runtimeError, response.status, parsed);
     }
     if (!response.body) {
       const text = await response.text();

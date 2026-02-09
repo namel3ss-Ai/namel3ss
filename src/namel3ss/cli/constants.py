@@ -39,6 +39,7 @@ RESERVED = {
     "status",
     "proof",
     "memory",
+    "state",
     "verify",
     "release-check",
     "expr-check",
@@ -106,4 +107,4 @@ RESERVED = {
     "lsp",
 }
 
-ROOT_APP_COMMANDS = {"check", "ui", "actions", "studio", "console", "fmt", "format", "lint", "graph", "exports", "data", "persist"}
+ROOT_APP_COMMANDS = {"check", "ui", "actions", "studio", "console", "fmt", "format", "lint", "graph", "exports", "data", "persist", "state"}

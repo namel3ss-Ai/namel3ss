@@ -125,6 +125,9 @@
       if (root.refresh && typeof root.refresh.refreshSession === "function") {
         root.refresh.refreshSession();
       }
+      if (root.refresh && typeof root.refresh.refreshDiagnostics === "function") {
+        root.refresh.refreshDiagnostics();
+      }
       if (data && data.ok === false) {
         setRunStatus("error", dom.buildErrorLines(data));
       } else {

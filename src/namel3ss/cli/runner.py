@@ -8,6 +8,7 @@ from namel3ss.determinism import canonical_json_dumps, canonicalize_run_payload
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.runtime.artifact_contract import ArtifactContract
+from namel3ss.runtime.audit.runtime_capture import attach_audit_artifacts
 from namel3ss.runtime.preferences.factory import preference_store_for_app, app_pref_key
 from namel3ss.runtime.run_pipeline import build_flow_payload, finalize_run_payload
 from namel3ss.runtime.auth import resolve_auth_context
@@ -58,6 +59,16 @@ def run_flow(
         project_root=getattr(program_ir, "project_root", None),
     )
     payload = finalize_run_payload(outcome.payload, secret_values)
+    payload = attach_audit_artifacts(
+        payload,
+        program_ir=program_ir,
+        config=config,
+        flow_name=selected,
+        input_payload={},
+        state_snapshot=payload.get("state") if isinstance(payload.get("state"), dict) else {},
+        source=source_text,
+        endpoint="/cli/run",
+    )
     _write_last_run(program_ir, payload)
     if outcome.error:
         raise outcome.error

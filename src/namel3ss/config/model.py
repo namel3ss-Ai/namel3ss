@@ -112,6 +112,17 @@ class DeterminismConfig:
 
 
 @dataclass
+class IngestionConfig:
+    enable_diagnostics: bool = True
+    enable_ocr_fallback: bool = True
+
+
+@dataclass
+class AuditConfig:
+    mode: str = "optional"
+
+
+@dataclass
 class RegistrySourceConfig:
     id: str
     kind: str
@@ -143,6 +154,8 @@ class AppConfig:
     memory_packs: MemoryPacksConfig = field(default_factory=MemoryPacksConfig)
     performance: PerformanceConfig = field(default_factory=PerformanceConfig)
     determinism: DeterminismConfig = field(default_factory=DeterminismConfig)
+    ingestion: IngestionConfig = field(default_factory=IngestionConfig)
+    audit: AuditConfig = field(default_factory=AuditConfig)
     registries: RegistriesConfig = field(default_factory=RegistriesConfig)
     capability_overrides: dict[str, dict[str, object]] = field(default_factory=dict)
 
@@ -165,6 +178,8 @@ __all__ = [
     "MemoryPacksConfig",
     "PerformanceConfig",
     "DeterminismConfig",
+    "IngestionConfig",
+    "AuditConfig",
     "RegistrySourceConfig",
     "RegistriesConfig",
 ]

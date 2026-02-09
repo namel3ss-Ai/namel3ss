@@ -7,6 +7,8 @@ from namel3ss.runtime.ui_api.contracts import (
     build_ui_manifest_payload,
     build_ui_state_payload,
 )
+from namel3ss.runtime.contracts.runtime_schema import RUNTIME_UI_CONTRACT_VERSION
+from namel3ss.runtime.spec_version import NAMEL3SS_SPEC_VERSION, RUNTIME_SPEC_VERSION
 
 
 def test_manifest_contract_collects_components_and_flows() -> None:
@@ -33,6 +35,9 @@ def test_manifest_contract_collects_components_and_flows() -> None:
 
     assert payload["ok"] is True
     assert payload["api_version"] == UI_API_VERSION
+    assert payload["contract_version"] == RUNTIME_UI_CONTRACT_VERSION
+    assert payload["spec_version"] == NAMEL3SS_SPEC_VERSION
+    assert payload["runtime_spec_version"] == RUNTIME_SPEC_VERSION
     assert payload["manifest"]["flows"] == ["echo"]
     assert payload["manifest"]["components"] == ["button", "form", "input"]
     assert payload["manifest"]["diagnostics_enabled"] is True
@@ -120,16 +125,25 @@ def test_actions_contract_is_stable_list() -> None:
     payload = build_ui_actions_payload(manifest)
 
     assert payload["ok"] is True
+    assert payload["contract_version"] == RUNTIME_UI_CONTRACT_VERSION
+    assert payload["spec_version"] == NAMEL3SS_SPEC_VERSION
+    assert payload["runtime_spec_version"] == RUNTIME_SPEC_VERSION
     assert [item["id"] for item in payload["actions"]] == ["a.action", "b.action"]
 
 
 def test_state_and_action_result_contracts() -> None:
     state_payload = build_ui_state_payload({"ok": True, "state": {"counter": 1, "page": "home"}, "revision": "rev1"})
+    assert state_payload["contract_version"] == RUNTIME_UI_CONTRACT_VERSION
+    assert state_payload["spec_version"] == NAMEL3SS_SPEC_VERSION
+    assert state_payload["runtime_spec_version"] == RUNTIME_SPEC_VERSION
     assert state_payload["state"]["current_page"] == "home"
     assert state_payload["state"]["values"] == {"counter": 1, "page": "home"}
     assert state_payload["revision"] == "rev1"
 
     action_payload = build_action_result_payload({"ok": True, "state": {"counter": 2}, "result": "ok", "revision": "rev2"})
+    assert action_payload["contract_version"] == RUNTIME_UI_CONTRACT_VERSION
+    assert action_payload["spec_version"] == NAMEL3SS_SPEC_VERSION
+    assert action_payload["runtime_spec_version"] == RUNTIME_SPEC_VERSION
     assert action_payload["success"] is True
     assert action_payload["new_state"] == {"counter": 2}
     assert action_payload["result"] == "ok"
@@ -139,9 +153,30 @@ def test_state_and_action_result_contracts() -> None:
 def test_contract_error_payloads_are_explicit() -> None:
     manifest_error = build_ui_manifest_payload({"ok": False, "error": {"message": "bad"}})
     assert manifest_error["ok"] is False
+    assert manifest_error["contract_version"] == RUNTIME_UI_CONTRACT_VERSION
     assert manifest_error["error"]["message"] == "bad"
 
     action_error = build_action_result_payload({"ok": False, "error": {"message": "blocked"}})
     assert action_error["ok"] is False
     assert action_error["success"] is False
     assert action_error["message"] == "blocked"
+
+
+def test_action_contract_preserves_runtime_error_payload() -> None:
+    runtime_error = {
+        "category": "policy_denied",
+        "message": "Policy blocked this action.",
+        "hint": "Update policy rules.",
+        "origin": "policy",
+        "stable_code": "runtime.policy_denied",
+    }
+    payload = build_action_result_payload(
+        {
+            "ok": False,
+            "error": {"message": "blocked"},
+            "runtime_error": runtime_error,
+            "runtime_errors": [runtime_error],
+        }
+    )
+    assert payload["runtime_error"] == runtime_error
+    assert payload["runtime_errors"] == [runtime_error]

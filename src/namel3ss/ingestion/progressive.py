@@ -121,6 +121,7 @@ def deep_scan_job_handler(prepare_ingestion: Callable[..., object]) -> Callable[
                 project_root=getattr(ctx, "project_root", None),
                 app_path=getattr(ctx, "app_path", None),
                 secret_values=secret_values,
+                config=getattr(ctx, "config", None),
             )
             if not isinstance(report.get("page_text"), list):
                 report["page_text"] = list(prepared.sanitized_pages)

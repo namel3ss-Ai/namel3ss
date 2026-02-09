@@ -28,6 +28,8 @@ def _apply_toml_config(config: AppConfig, data: Dict[str, Any]) -> None:
     _apply_memory_packs_toml(config, data.get("memory_packs"))
     _apply_performance_toml(config, data.get("performance"))
     _apply_determinism_toml(config, data.get("determinism"))
+    _apply_ingestion_toml(config, data.get("ingestion"))
+    _apply_audit_toml(config, data.get("audit"))
     _apply_registries_toml(config, data.get("registries"))
     _apply_capability_overrides_toml(config, data.get("capability_overrides"))
 
@@ -334,6 +336,33 @@ def _apply_determinism_toml(config: AppConfig, table: Any) -> None:
         config.determinism.redact_user_data = redact_user_data
 
 
+def _apply_ingestion_toml(config: AppConfig, table: Any) -> None:
+    if not isinstance(table, dict):
+        return
+    enable_diagnostics = table.get("enable_diagnostics")
+    if enable_diagnostics is not None:
+        if not isinstance(enable_diagnostics, bool):
+            raise Namel3ssError("ingestion.enable_diagnostics must be true or false")
+        config.ingestion.enable_diagnostics = enable_diagnostics
+    enable_ocr_fallback = table.get("enable_ocr_fallback")
+    if enable_ocr_fallback is not None:
+        if not isinstance(enable_ocr_fallback, bool):
+            raise Namel3ssError("ingestion.enable_ocr_fallback must be true or false")
+        config.ingestion.enable_ocr_fallback = enable_ocr_fallback
+
+
+def _apply_audit_toml(config: AppConfig, table: Any) -> None:
+    if not isinstance(table, dict):
+        return
+    mode = table.get("mode")
+    if mode is None:
+        return
+    mode_text = str(mode).strip().lower()
+    if mode_text not in {"required", "optional", "forbidden"}:
+        raise Namel3ssError("audit.mode must be required, optional, or forbidden")
+    config.audit.mode = mode_text
+
+
 def _apply_registries_toml(config: AppConfig, table: Any) -> None:
     from namel3ss.config.model import RegistriesConfig, RegistrySourceConfig
 
@@ -412,6 +441,8 @@ __all__ = [
     "_apply_memory_packs_toml",
     "_apply_performance_toml",
     "_apply_determinism_toml",
+    "_apply_ingestion_toml",
+    "_apply_audit_toml",
     "_apply_registries_toml",
     "_apply_capability_overrides_toml",
     "_ensure_str_list",

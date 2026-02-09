@@ -154,6 +154,8 @@ Data/UI bindings:
 - `scope_selector from state.<options_path> active in state.<active_path>` renders selectable retrieval scopes and emits `scope_select`.
 - `memory from is state.<path> [lane is "my"|"team"|"system"]` display-only memory list from state.
 - `upload <name>` declares an upload request (intent-only). Optional `accept` list and `multiple` flag.
+- `ingestion_status` is a runtime-manifest element (not a DSL keyword). When an upload has a matching `state.ingestion[upload_id]` report, Studio renders a status card after the upload element with deterministic `status`, `reasons`, `details`, and optional `fallback_used`.
+- `runtime_error` is a runtime-manifest element (not a DSL keyword). When runtime emits normalized errors, Studio renders category, message, hint, origin, and stable code.
 - `button "Label":` `calls flow "flow_name"` creates `call_flow` action.
 - `link "Label" to page "PageName"` navigates to a named page; emits an `open_page` action.
 - `use ui_pack "pack_name" fragment "fragment_name"` static expansion of a pack fragment.

@@ -14,6 +14,7 @@ from namel3ss.ingestion.policy import (
 from namel3ss.retrieval.embedding_plan import build_embedding_plan
 from namel3ss.retrieval.explain import RetrievalExplainBuilder
 from namel3ss.retrieval.ordering import coerce_int, ordering_label, rank_key, select_tier
+from namel3ss.runtime.pipelines.rag_pipeline import build_retrieval_artifacts
 
 
 def run_retrieval(
@@ -214,6 +215,25 @@ def run_retrieval(
         "tier": _tier_summary(tier_request, tier_selection),
         "results": results,
     }
+    vector_scores = {
+        str(entry.get("chunk_id") or ""): embedding_plan.score_for(str(entry.get("chunk_id") or ""))
+        for entry in results
+        if isinstance(entry, dict) and isinstance(entry.get("chunk_id"), str)
+    }
+    response.update(
+        build_retrieval_artifacts(
+            query=query_text,
+            state=state,
+            tier=response["tier"] if isinstance(response.get("tier"), dict) else {},
+            limit=limit if isinstance(limit, int) and not isinstance(limit, bool) else None,
+            ordering=ordering,
+            warn_policy=response["warn_policy"] if isinstance(response.get("warn_policy"), dict) else {},
+            warn_allowed=warn_allowed,
+            preferred_quality=preferred,
+            results=results,
+            vector_scores=vector_scores,
+        )
+    )
     if explain_builder is not None:
         response["explain"] = explain_builder.finalize(
             selected=results,

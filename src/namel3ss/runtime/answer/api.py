@@ -100,6 +100,16 @@ def run_answer(
     output_text = normalize_ai_text(raw_output, provider_name=resolved_provider_name, secret_values=secrets)
     citations = _validate_citations(output_text, chunk_ids, prompt_hash, explain_base)
     answer_text = output_text.strip()
+    retrieval_plan = retrieval.get("retrieval_plan") if isinstance(retrieval.get("retrieval_plan"), dict) else {}
+    retrieval_trace = retrieval.get("retrieval_trace") if isinstance(retrieval.get("retrieval_trace"), list) else []
+    trust_score_details = (
+        retrieval.get("trust_score_details") if isinstance(retrieval.get("trust_score_details"), dict) else {}
+    )
+    trust_score = _answer_confidence_from_retrieval(
+        trust_score_details,
+        citation_count=len(citations),
+        source_count=len(results),
+    )
     explain_bundle = _with_answer_validation(
         explain_base,
         status="ok",
@@ -111,8 +121,12 @@ def run_answer(
     report = {
         "answer_text": answer_text,
         "citations": citations,
-        "confidence": _confidence_score(len(citations), len(results)),
+        "confidence": trust_score,
+        "trust": trust_score,
         "source_count": len(results),
+        "retrieval_plan": retrieval_plan,
+        "retrieval_trace": retrieval_trace,
+        "trust_score_details": trust_score_details,
         "explain": explain_bundle,
     }
     meta = {
@@ -228,6 +242,20 @@ def _confidence_score(citation_count: int, source_count: int) -> float:
     if ratio > Decimal("1"):
         ratio = Decimal("1")
     return float(ratio.quantize(Decimal("0.001")))
+
+
+def _answer_confidence_from_retrieval(
+    trust_score_details: dict | None,
+    *,
+    citation_count: int,
+    source_count: int,
+) -> float:
+    if isinstance(trust_score_details, dict):
+        score = trust_score_details.get("score")
+        if isinstance(score, (int, float)) and not isinstance(score, bool):
+            bounded = max(0.0, min(1.0, float(score)))
+            return round(bounded, 4)
+    return _confidence_score(citation_count, source_count)
 
 
 def _chunk_ids(results: list[dict]) -> list[str]:

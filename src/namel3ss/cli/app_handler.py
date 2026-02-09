@@ -24,6 +24,7 @@ from namel3ss.cli.secrets_mode import run_secrets_command
 from namel3ss.cli.console_mode import run_console
 from namel3ss.cli.studio_mode import run_studio
 from namel3ss.cli.browser_mode import run_dev_command, run_preview_command
+from namel3ss.cli.state import run_state_command
 from namel3ss.cli.ui_mode import bundle_ui_contract, export_ui_contract, render_manifest, run_action
 from namel3ss.cli.run_entry import dispatch_run_command
 from namel3ss.cli.type_mode import run_type_command
@@ -163,6 +164,9 @@ def handle_app_commands(path: str | None, remainder: list[str], context: dict | 
     if remainder and canonical_first in {"data", "persist"}:
         tail = remainder[1:]
         return run_data(resolved_path.as_posix(), tail) if canonical_first == "data" else run_persist(resolved_path.as_posix(), tail)
+    if remainder and canonical_first == "state":
+        tail = remainder[1:]
+        return run_state_command([resolved_path.as_posix(), *tail])
 
     program_ir, sources = load_program(resolved_path.as_posix(), allow_legacy_type_aliases=allow_aliases_from_flags([]))
     if context is not None:

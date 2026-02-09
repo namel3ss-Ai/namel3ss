@@ -90,6 +90,7 @@ def handle_ingestion_run_action(
         app_path=getattr(program_ir, "app_path", None),
         secret_values=secret_values,
         job_ctx=job_ctx,
+        config=config,
     )
     report = result["report"]
     traces.extend(_build_traces(report))

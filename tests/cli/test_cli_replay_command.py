@@ -5,6 +5,7 @@ from pathlib import Path
 
 from namel3ss.cli.main import main as cli_main
 from namel3ss.runtime.explainability.logger import explain_replay_hash
+from namel3ss.runtime.audit.run_artifact import build_run_artifact
 
 
 def _write_app(tmp_path: Path) -> None:
@@ -97,3 +98,27 @@ def test_replay_command_can_skip_hash_verification_with_explicit_log(
     assert payload["ok"] is True
     assert payload["hash_verified"] is False
 
+
+def test_replay_command_supports_run_artifact_mode(tmp_path: Path, capsys) -> None:
+    app_path = tmp_path / "app.ai"
+    app_path.write_text('spec is "1.0"\n\nflow "demo":\n  return "ok"\n', encoding="utf-8")
+    artifact = build_run_artifact(
+        response={"ok": True, "state": {}, "result": {"value": "ok"}},
+        app_path=app_path,
+        source=app_path.read_text(encoding="utf-8"),
+        flow_name="demo",
+        action_id=None,
+        input_payload={},
+        state_snapshot={},
+        provider_name="mock",
+        model_name="mock-model",
+        project_root=tmp_path,
+    )
+    artifact_path = tmp_path / ".namel3ss" / "audit" / "last" / "run_artifact.json"
+    artifact_path.parent.mkdir(parents=True, exist_ok=True)
+    artifact_path.write_text(json.dumps(artifact, indent=2), encoding="utf-8")
+
+    assert cli_main(["replay", "--artifact", str(artifact_path), "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ok"] is True
+    assert payload["run_id"] == artifact["run_id"]

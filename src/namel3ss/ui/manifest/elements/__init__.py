@@ -10,6 +10,7 @@ from namel3ss.runtime.storage.base import Storage
 from namel3ss.schema import records as schema
 from namel3ss.ui.manifest.state_defaults import StateContext
 from namel3ss.validation import ValidationMode
+from .ingestion_status import build_ingestion_status_element
 from .dispatch import page_item_to_manifest
 
 
@@ -32,13 +33,14 @@ def _build_children(
     elements: List[dict] = []
     actions: Dict[str, dict] = {}
     for idx, child in enumerate(children):
+        child_path = path + [idx]
         seen_before = set(taken_actions)
         element, child_actions, child_visible = page_item_to_manifest(
             child,
             record_map,
             page_name,
             page_slug,
-            path + [idx],
+            child_path,
             store,
             identity,
             state_ctx,
@@ -51,6 +53,17 @@ def _build_children(
             _build_children,
         )
         elements.append(element)
+        if child_visible and isinstance(child, ir.UploadItem):
+            ingestion_status = build_ingestion_status_element(
+                child,
+                upload_element=element,
+                page_name=page_name,
+                page_slug=page_slug,
+                path=child_path + [1],
+                state_ctx=state_ctx,
+            )
+            if isinstance(ingestion_status, dict):
+                elements.append(ingestion_status)
         source_element_id = element.get("element_id") if isinstance(element, dict) else None
         debug_only_value = element.get("debug_only") if isinstance(element, dict) else None
         is_debug_only = bool(debug_only_value) and debug_only_value is not False

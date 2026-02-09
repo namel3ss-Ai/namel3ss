@@ -6,9 +6,11 @@ from urllib.parse import parse_qs, urlparse
 from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
+from namel3ss.runtime.audit.runtime_capture import attach_audit_artifacts
 from namel3ss.runtime.executor import execute_program_flow
 from namel3ss.runtime.server.session_manager import ServiceSession
 from namel3ss.runtime.ui.actions import handle_action
+from namel3ss.ui.manifest.elements.audit_viewer import inject_audit_viewer_elements
 from namel3ss.ui.manifest import build_manifest
 from namel3ss.ui.settings import UI_DEFAULTS
 
@@ -111,10 +113,26 @@ def handle_session_action_post(handler, body: dict, *, action_id: str, payload: 
             ui_mode=getattr(handler.server, "ui_mode", "production"),  # type: ignore[attr-defined]
         )
         if isinstance(response, dict):
+            response = attach_audit_artifacts(
+                response,
+                program_ir=program_ir,
+                config=config,
+                action_id=action_id,
+                input_payload=payload,
+                state_snapshot=response.get("state") if isinstance(response.get("state"), dict) else session.state,
+                source=main_source(handler),
+                endpoint="/api/action",
+            )
             if isinstance(response.get("state"), dict):
                 session.state = deepcopy(response["state"])
             ui_payload = response.get("ui")
             if isinstance(ui_payload, dict):
+                inject_audit_viewer_elements(
+                    ui_payload,
+                    run_artifact=response.get("run_artifact"),
+                    audit_bundle=response.get("audit_bundle"),
+                    audit_policy_status=response.get("audit_policy_status"),
+                )
                 theme_current = (ui_payload.get("theme") or {}).get("current")
                 if isinstance(theme_current, str) and theme_current:
                     session.runtime_theme = theme_current

@@ -6,8 +6,10 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.config.model import AppConfig
 from namel3ss.ingestion.detect import detect_upload
+from namel3ss.ingestion.diagnostics import canonical_reason_codes, diagnostics_enabled, get_reason_details
 from namel3ss.ingestion.embeddings import store_chunk_embeddings
 from namel3ss.ingestion.extract import extract_pages, extract_pages_fallback
+from namel3ss.ingestion.fallback_handler import maybe_run_ocr_fallback, ocr_fallback_enabled
 from namel3ss.ingestion.gate import gate_quality, should_fallback
 from namel3ss.ingestion.gate_probe import probe_content
 from namel3ss.ingestion.normalize import normalize_text, preview_text, sanitize_text
@@ -54,6 +56,7 @@ def run_ingestion(
         project_root=project_root,
         app_path=app_path,
         secret_values=secret_values,
+        config=config,
     )
     report = prepared.report
     store_report(state, upload_id=upload_id, report=report)
@@ -97,6 +100,7 @@ def run_ingestion_progressive(
     app_path: str | None,
     secret_values: list[str] | None = None,
     job_ctx: object | None = None,
+    config: AppConfig | None = None,
 ) -> dict:
     prepared = _prepare_ingestion(
         upload_id=upload_id,
@@ -104,6 +108,7 @@ def run_ingestion_progressive(
         project_root=project_root,
         app_path=app_path,
         secret_values=secret_values,
+        config=config,
     )
     report = prepared.report
     report["phases"] = initial_phase_status(prepared.status)
@@ -304,6 +309,7 @@ def _prepare_ingestion(
     project_root: str | None,
     app_path: str | None,
     secret_values: list[str] | None,
+    config: AppConfig | None = None,
 ) -> SimpleNamespace:
     resolved_mode = _normalize_mode(mode)
     ctx = SimpleNamespace(project_root=project_root, app_path=app_path)
@@ -331,14 +337,43 @@ def _prepare_ingestion(
             detected=detected,
             source_name=_source_name_from_metadata(metadata),
         )
+    source_name = _source_name_from_metadata(metadata)
     normalized_for_signals = normalized or ""
     signals = compute_signals(normalized_for_signals, detected=detected)
     status, reasons = gate_quality(signals)
+    prepared = SimpleNamespace(
+        upload_id=upload_id,
+        metadata=metadata,
+        content=content,
+        detected=detected,
+        probe=probe,
+        probe_blocked=probe_blocked,
+        pages=pages,
+        normalized=normalized,
+        signals=signals,
+        status=status,
+        reasons=list(reasons),
+        method_used=method_used,
+        source_name=source_name,
+        resolved_mode=resolved_mode,
+        enable_ocr_fallback=ocr_fallback_enabled(config),
+        fallback_used=None,
+        fallback_attempted=False,
+        join_pages=_join_pages,
+        validate_pages=_validate_page_provenance,
+    )
+    prepared = maybe_run_ocr_fallback(prepared)
+
+    normalized_for_signals = str(prepared.normalized or "")
+    signals = dict(prepared.signals)
+    status = str(prepared.status)
+    reasons = list(prepared.reasons)
+    method_used = str(prepared.method_used)
     gate = evaluate_gate(
         content=content,
         metadata=metadata,
         detected=detected,
-        normalized_text=normalized,
+        normalized_text=prepared.normalized,
         quality_status=status,
         quality_reasons=reasons,
         project_root=project_root,
@@ -346,7 +381,11 @@ def _prepare_ingestion(
         secret_values=secret_values,
         probe=probe,
     )
+    merged_reasons = canonical_reason_codes(gate.get("reasons") or reasons)
     if gate.get("status") == "blocked":
+        status = "block"
+    fallback_used = getattr(prepared, "fallback_used", None)
+    if fallback_used == "ocr" and "ocr_failed" in reasons:
         status = "block"
     sanitized = sanitize_text(
         normalized_for_signals,
@@ -354,7 +393,7 @@ def _prepare_ingestion(
         app_path=app_path,
         secret_values=secret_values,
     )
-    source_name = _source_name_from_metadata(metadata)
+    include_reason_details = diagnostics_enabled(config)
     report = {
         "upload_id": upload_id,
         "status": status,
@@ -369,13 +408,17 @@ def _prepare_ingestion(
             app_path=app_path,
             secret_values=secret_values,
         ),
-        "reasons": list(reasons),
+        "reasons": merged_reasons,
         "gate": gate,
         "provenance": {
             "document_id": upload_id,
             "source_name": source_name,
         },
     }
+    if include_reason_details:
+        report["reason_details"] = get_reason_details(merged_reasons)
+    if fallback_used == "ocr":
+        report["fallback_used"] = "ocr"
     sanitized_pages = sanitized.split("\f") if "\f" in sanitized else [sanitized]
     report["page_text"] = list(sanitized_pages)
     return SimpleNamespace(
@@ -384,15 +427,16 @@ def _prepare_ingestion(
         content=content,
         detected=detected,
         probe=probe,
-        pages=pages,
-        normalized=normalized,
+        pages=list(prepared.pages),
+        normalized=prepared.normalized,
         sanitized=sanitized,
         signals=signals,
         status=status,
-        reasons=reasons,
+        reasons=merged_reasons,
         gate=gate,
         method_used=method_used,
         source_name=source_name,
+        fallback_used=fallback_used,
         report=report,
         sanitized_pages=sanitized_pages,
         resolved_mode=resolved_mode,

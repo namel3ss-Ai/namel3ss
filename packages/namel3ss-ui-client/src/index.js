@@ -80,19 +80,29 @@ export class Namel3ssUiClient {
   }
 
   async _get(path) {
-    const response = await this.fetch(`${this.baseUrl}${path}`, {
-      method: "GET",
-      headers: this._headers()
-    });
+    let response;
+    try {
+      response = await this.fetch(`${this.baseUrl}${path}`, {
+        method: "GET",
+        headers: this._headers()
+      });
+    } catch (error) {
+      throw this._networkError(path, error);
+    }
     return this._decode(response);
   }
 
   async _post(path, body) {
-    const response = await this.fetch(`${this.baseUrl}${path}`, {
-      method: "POST",
-      headers: this._headers(),
-      body: JSON.stringify(body || {})
-    });
+    let response;
+    try {
+      response = await this.fetch(`${this.baseUrl}${path}`, {
+        method: "POST",
+        headers: this._headers(),
+        body: JSON.stringify(body || {})
+      });
+    } catch (error) {
+      throw this._networkError(path, error);
+    }
     return this._decode(response);
   }
 
@@ -118,11 +128,29 @@ export class Namel3ssUiClient {
     if (response.ok) {
       return payload;
     }
-    const message = payload?.error?.message || payload?.message || "Request failed";
+    const runtimeError = payload && payload.runtime_error && typeof payload.runtime_error === "object"
+      ? payload.runtime_error
+      : null;
+    const message = runtimeError?.message || payload?.error?.message || payload?.message || "Request failed";
     const error = new Error(message);
     error.status = response.status;
     error.payload = payload;
+    if (runtimeError) error.runtime_error = runtimeError;
     throw error;
+  }
+
+  _networkError(path, originalError) {
+    const runtimeError = {
+      category: "server_unavailable",
+      message: "Runtime server is unavailable.",
+      hint: `Start the runtime server and retry ${path}.`,
+      origin: "network",
+      stable_code: "runtime.server_unavailable"
+    };
+    const error = new Error(runtimeError.message);
+    error.runtime_error = runtimeError;
+    error.cause = originalError;
+    return error;
   }
 }
 

@@ -39,6 +39,14 @@ Studio is an optional inspection lens for namel3ss. It stays fast and minimal wh
 - Tenant scoping status and keys.
 - Audit timeline with flow/action filters and text search.
 
+## Workspace, sessions, and replay diffs
+- Studio emits deterministic `workspace_id` and `session_id` values for each app.
+- Session run ordering is stable and persisted under `.namel3ss/studio/`.
+- Diagnostics tab includes a run history list and a deterministic run diff.
+- Run diffs compare: inputs, retrieval trace, prompt, output, and trust score details.
+- Repro bundles are minimal, read-only payloads written to `.namel3ss/studio/repro/`.
+- Studio shares data from runtime artifacts; it does not recompute retrieval or trust logic.
+
 ## Errors & guidance
 - Errors panel uses normalized error payloads (same what/why/fix hints as CLI).
 - Fix hints are deterministic and never apply changes automatically.
