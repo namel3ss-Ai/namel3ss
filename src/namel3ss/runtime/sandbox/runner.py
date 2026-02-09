@@ -13,7 +13,7 @@ from namel3ss.runtime.sandbox.config import SandboxFlow, load_sandbox_config
 from namel3ss.runtime.tools.runners.container_detect import detect_container_runtime
 
 
-DEFAULT_BASE_IMAGE = "python:3.11-slim"
+DEFAULT_BASE_IMAGE = "python:3.14-slim"
 
 
 @dataclass(frozen=True)

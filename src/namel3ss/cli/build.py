@@ -5,7 +5,7 @@ from pathlib import Path
 
 from namel3ss.cli.build_mode import run_build_command
 from namel3ss.errors.base import Namel3ssError
-from tools.app_packager import build_app_archive
+from namel3ss.tools.app_packager import build_app_archive
 
 
 def run_build_archive_command(args: list[str]) -> int:

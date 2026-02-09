@@ -14,8 +14,8 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.resources import studio_web_root
 from namel3ss.version import get_version
 
-MIN_PYTHON = (3, 10)
-SUPPORTED_PYTHON_RANGE = ">=3.10"
+MIN_PYTHON = (3, 14)
+SUPPORTED_PYTHON_RANGE = ">=3.14"
 STATUS_ICONS = {"ok": "✅", "warning": "⚠️", "error": "❌"}
 RESERVED_TRUE_VALUES = {"1", "true", "yes", "on"}
 SUPPORTED_TARGETS = {"memory", "sqlite", "postgres", "mysql", "edge"}
@@ -32,7 +32,7 @@ def python_check() -> DoctorCheck:
     supported = version_tuple >= MIN_PYTHON
     status = "ok" if supported else "error"
     message = f"Python {version_str} requires {SUPPORTED_PYTHON_RANGE}"
-    fix = "Install Python 3.10+ and re-run `pip install namel3ss`."
+    fix = "Install Python 3.14+ and re-run `pip install namel3ss`."
     return DoctorCheck(id="python_version", category="environment", code="python.version", status=status, message=message, fix=fix)
 
 

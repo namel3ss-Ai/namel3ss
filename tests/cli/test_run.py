@@ -5,7 +5,7 @@ from pathlib import Path
 
 from namel3ss.cli.main import main
 from namel3ss.determinism import canonical_json_dumps
-from tools.app_archive import read_archive, write_archive
+from namel3ss.tools.app_archive import read_archive, write_archive
 
 
 APP_SOURCE = '''spec is "1.0"

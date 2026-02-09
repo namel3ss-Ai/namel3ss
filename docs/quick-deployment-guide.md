@@ -15,7 +15,7 @@ Before deploying, ensure you have:
 
 - **Git**: For cloning your application repository
 - **Docker and Docker Compose**: For containerized deployment (recommended)
-- **Python 3.10+**: For non-containerized deployment
+- **Python 3.14+**: For non-containerized deployment
 - **Nginx** (optional): For reverse proxy and SSL
 - **PostgreSQL**: For production database (or use managed database service)
 
@@ -31,7 +31,7 @@ Create these files in your project root:
 
 **Dockerfile**:
 ```dockerfile
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 WORKDIR /app
 

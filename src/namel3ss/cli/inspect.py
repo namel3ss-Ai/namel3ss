@@ -7,7 +7,7 @@ from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.app_loader import load_app_archive
 from namel3ss.runtime.app_validator import build_inspection_payload, validate_loaded_archive
-from tools.app_packager import inspect_source_app
+from namel3ss.tools.app_packager import inspect_source_app
 
 
 def run_inspect_command(args: list[str]) -> int:
