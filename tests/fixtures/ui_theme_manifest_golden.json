@@ -1,0 +1,222 @@
+{
+  "actions": {
+    "page.theme_manifest.theme_settings.1.update": {
+      "id": "page.theme_manifest.theme_settings.1.update",
+      "type": "theme_settings_update"
+    }
+  },
+  "diagnostics_enabled": true,
+  "mode": "studio",
+  "pages": [
+    {
+      "elements": [
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "column": 7,
+                  "density": "regular",
+                  "element_id": "page.theme_manifest.text.0.0.0",
+                  "font": "sm",
+                  "index": 0,
+                  "line": 16,
+                  "page": "Theme Manifest",
+                  "page_slug": "theme_manifest",
+                  "radius": "lg",
+                  "size": "normal",
+                  "type": "text",
+                  "value": "Hello"
+                }
+              ],
+              "column": 5,
+              "density": "regular",
+              "element_id": "page.theme_manifest.card.0.0",
+              "font": "sm",
+              "index": 0,
+              "label": "Primary",
+              "line": 14,
+              "page": "Theme Manifest",
+              "page_slug": "theme_manifest",
+              "radius": "lg",
+              "size": "comfortable",
+              "spacing": {
+                "actions_gap": "s",
+                "gap": "m",
+                "padding": "m",
+                "stat_gap": "s",
+                "title_gap": "s"
+              },
+              "type": "card"
+            },
+            {
+              "children": [
+                {
+                  "column": 7,
+                  "density": "regular",
+                  "element_id": "page.theme_manifest.text.0.1.0",
+                  "font": "sm",
+                  "index": 0,
+                  "line": 19,
+                  "page": "Theme Manifest",
+                  "page_slug": "theme_manifest",
+                  "radius": "lg",
+                  "size": "normal",
+                  "type": "text",
+                  "value": "World"
+                }
+              ],
+              "column": 5,
+              "density": "regular",
+              "element_id": "page.theme_manifest.card.0.1",
+              "font": "sm",
+              "index": 1,
+              "label": "Secondary",
+              "line": 17,
+              "page": "Theme Manifest",
+              "page_slug": "theme_manifest",
+              "radius": "full",
+              "size": "normal",
+              "spacing": {
+                "actions_gap": "s",
+                "gap": "m",
+                "padding": "m",
+                "stat_gap": "s",
+                "title_gap": "s"
+              },
+              "type": "card"
+            }
+          ],
+          "column": 3,
+          "density": "regular",
+          "element_id": "page.theme_manifest.section.0",
+          "font": "sm",
+          "index": 0,
+          "label": "Panels",
+          "line": 13,
+          "page": "Theme Manifest",
+          "page_slug": "theme_manifest",
+          "radius": "lg",
+          "size": "normal",
+          "spacing": {
+            "gap": "l",
+            "padding": "m",
+            "title_gap": "s"
+          },
+          "type": "section"
+        },
+        {
+          "action_id": "page.theme_manifest.theme_settings.1.update",
+          "column": 3,
+          "current": {
+            "color_scheme": "dark",
+            "density": "regular",
+            "font": "sm",
+            "radius": "lg",
+            "size": "normal"
+          },
+          "density": "regular",
+          "element_id": "page.theme_manifest.theme_settings.1",
+          "font": "sm",
+          "id": "page.theme_manifest.theme_settings.1.update",
+          "index": 1,
+          "line": 21,
+          "options": {
+            "color_scheme": [
+              "light",
+              "dark",
+              "system"
+            ],
+            "density": [
+              "tight",
+              "regular",
+              "airy"
+            ],
+            "font": [
+              "sm",
+              "md",
+              "lg"
+            ],
+            "radius": [
+              "none",
+              "sm",
+              "md",
+              "lg",
+              "full"
+            ],
+            "size": [
+              "compact",
+              "normal",
+              "comfortable"
+            ]
+          },
+          "page": "Theme Manifest",
+          "page_slug": "theme_manifest",
+          "radius": "lg",
+          "size": "normal",
+          "type": "theme.settings_page"
+        }
+      ],
+      "name": "Theme Manifest",
+      "slug": "theme_manifest",
+      "ui_theme": {
+        "color_scheme": "dark",
+        "density": "regular",
+        "font": "sm",
+        "radius": "lg",
+        "size": "normal"
+      }
+    }
+  ],
+  "theme": {
+    "color_scheme": "light",
+    "css": ":root {\n  --n3-primary-color: #2563EB;\n  --n3-secondary-color: #5856D6;\n  --n3-background-color: #FFFFFF;\n  --n3-foreground-color: #111827;\n  --n3-font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;\n  --n3-font-size-base: 14px;\n  --n3-font-weight: 500;\n  --n3-spacing-scale: 1.0;\n  --n3-border-radius: 10px;\n  --n3-shadow-elevation: 0 2px 6px rgba(15, 23, 42, 0.08);\n}\n\nbody.n3-runtime,\nbody {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  font-family: var(--n3-font-family);\n  font-size: var(--n3-font-size-base);\n  font-weight: var(--n3-font-weight);\n}\n\n.ui-body,\n.panel,\n.ui-element,\n.list-item,\n.trace-row,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  border-radius: var(--n3-border-radius);\n  box-shadow: var(--n3-shadow-elevation);\n}\n\n.btn.primary,\n.ui-chat-action,\n.ui-upload-label {\n  background: var(--n3-primary-color);\n  border-color: var(--n3-primary-color);\n  color: #FFFFFF;\n}\n\n.ui-link,\n.n3-chat-attachment-link,\n.n3-citation-chip {\n  color: var(--n3-primary-color);\n}\n\n.ui-card-title,\n.ui-section-title,\n.n3-chat-group-label {\n  color: var(--n3-secondary-color);\n}\n\n.ui-element,\n.panel,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  padding: calc(10px * var(--n3-spacing-scale));\n}\n\n.ui-row,\n.ui-column,\n.ui-card-group,\n.n3-layout-root,\n.n3-layout-body {\n  gap: calc(10px * var(--n3-spacing-scale));\n}\n",
+    "css_hash": "af84b4058b81de1bba97dd498d5b53bb92defe1f5de89914b9ee0633692c1446",
+    "current": "light",
+    "density": "regular",
+    "effective": "light",
+    "font": "md",
+    "font_url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+    "persisted_current": null,
+    "preference": {
+      "allow_override": false,
+      "persist": "none"
+    },
+    "radius": "lg",
+    "runtime_supported": false,
+    "runtime_tokens": {},
+    "schema_version": "1",
+    "setting": "light",
+    "size": "normal",
+    "source": "app",
+    "theme_name": "default",
+    "tokens": {
+      "background_color": "#FFFFFF",
+      "border_radius": 10,
+      "font_family": "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+      "font_size_base": 14,
+      "font_weight": 500,
+      "foreground_color": "#111827",
+      "primary_color": "#2563EB",
+      "secondary_color": "#5856D6",
+      "shadow_level": 1,
+      "spacing_scale": 1.0
+    }
+  },
+  "ui": {
+    "persistence": {
+      "enabled": false,
+      "kind": "memory",
+      "path": null,
+      "schema_version": null
+    },
+    "settings": {
+      "accent_color": "blue",
+      "density": "comfortable",
+      "motion": "subtle",
+      "shape": "rounded",
+      "surface": "flat",
+      "theme": "light"
+    }
+  }
+}

@@ -29,6 +29,33 @@
     }
   }
 
+  function citationEntryFromRow(row, mapping) {
+    if (!row || typeof row !== "object") return null;
+    const titleField = mapping && mapping.primary ? mapping.primary : "title";
+    const title = typeof row[titleField] === "string" ? row[titleField].trim() : "";
+    const sourceId = typeof row.source_id === "string" ? row.source_id.trim() : "";
+    const url = typeof row.url === "string" ? row.url.trim() : "";
+    const documentId = typeof row.document_id === "string" ? row.document_id.trim() : "";
+    const chunkId = typeof row.chunk_id === "string" ? row.chunk_id.trim() : "";
+    const pageNumber = row.page_number ?? row.page;
+    if (!title || (!sourceId && !url && !documentId && !chunkId)) {
+      return null;
+    }
+    const entry = { title: title };
+    if (sourceId) entry.source_id = sourceId;
+    if (url) entry.url = url;
+    if (documentId) entry.document_id = documentId;
+    if (chunkId) entry.chunk_id = chunkId;
+    if (typeof row.snippet === "string" && row.snippet.trim()) entry.snippet = row.snippet.trim();
+    if (typeof pageNumber === "number" || typeof pageNumber === "string") entry.page_number = pageNumber;
+    return entry;
+  }
+
+  function interactiveListTarget(node) {
+    if (!node || !node.closest) return false;
+    return Boolean(node.closest("button, input, a, textarea, select, label"));
+  }
+
   function renderListElement(el, handleAction) {
     const wrapper = document.createElement("div");
     wrapper.className = "ui-element";
@@ -68,6 +95,7 @@
       const rowId = idField ? row[idField] : null;
       const item = document.createElement("div");
       item.className = `ui-list-item ui-list-${variant}`;
+      const citationEntry = citationEntryFromRow(row, mapping);
       if (selectionMode !== "none") {
         const selectWrap = document.createElement("div");
         selectWrap.className = "ui-list-select";
@@ -150,6 +178,19 @@
 
       if (selectionMode === "single" && rowId != null) {
         rowMap.set(rowId, item);
+      }
+      if (citationEntry) {
+        item.classList.add("ui-list-citation-item");
+        item.addEventListener("click", (event) => {
+          if (interactiveListTarget(event.target)) return;
+          if (typeof root.focusDrawerPreviewForCitation === "function") {
+            root.focusDrawerPreviewForCitation(citationEntry, item);
+            return;
+          }
+          if (typeof root.openCitationPreview === "function") {
+            root.openCitationPreview(citationEntry, item, [citationEntry]);
+          }
+        });
       }
       listWrap.appendChild(item);
     });

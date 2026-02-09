@@ -17,7 +17,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.14"
 
       - name: Install package (editable)
         run: |
@@ -35,6 +35,9 @@ jobs:
 
       - name: Baseline metrics check
         run: python scripts/measure_baseline.py --check --timing deterministic
+
+      - name: UI baseline drift check
+        run: python tools/ui_baseline_refresh.py --check
 
       - name: Security hardening scan
         run: python tools/security_hardening_scan.py --json .namel3ss/ci_artifacts/security_scan.json
@@ -237,7 +240,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.14"
 
       - name: Install package (editable)
         run: |
@@ -301,7 +304,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.14"
           cache: pip
           cache-dependency-path: |
             pyproject.toml

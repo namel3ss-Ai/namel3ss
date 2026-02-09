@@ -6,10 +6,8 @@
     wrapper.className = `ui-citation-chips${el && el.compact ? " compact" : ""}`;
     const citations = normalizeCitations(el && el.citations);
     if (!citations.length) {
-      const empty = document.createElement("span");
-      empty.className = "ui-citation-chips-empty";
-      empty.textContent = "No sources";
-      wrapper.appendChild(empty);
+      wrapper.dataset.empty = "true";
+      wrapper.hidden = true;
       return wrapper;
     }
     citations.forEach((entry) => {
@@ -19,7 +17,7 @@
       button.textContent = `[${entry.index}]`;
       button.title = entry.title || "Source";
       button.setAttribute("aria-label", `Open source ${entry.index}: ${entry.title || "Source"}`);
-      button.onclick = () => openCitation(entry, button);
+      button.onclick = () => openCitation(entry, button, citations);
       wrapper.appendChild(button);
     });
     return wrapper;
@@ -51,7 +49,7 @@
     previewButton.className = "btn small ghost";
     previewButton.textContent = "Open preview";
     previewButton.onclick = () => {
-      openCitation(toCitationEntry(el), previewButton);
+      openCitation(toCitationEntry(el), previewButton, [toCitationEntry(el)]);
     };
     actions.appendChild(previewButton);
     if (el && typeof el.url === "string" && el.url.trim()) {
@@ -78,10 +76,18 @@
     const value = el ? el.value : null;
     const trust = normalizeTrustValue(value);
     const badge = document.createElement("span");
-    badge.className = `ui-trust-indicator ui-trust-${trust.tone}${el && el.compact ? " compact" : ""}`;
+    badge.className = `ui-trust-indicator${el && el.compact ? " compact" : ""}`;
+    badge.setAttribute("role", "status");
+    if (!trust) {
+      badge.classList.add("hidden");
+      badge.setAttribute("aria-hidden", "true");
+      badge.textContent = "";
+      return badge;
+    }
+    badge.classList.add(`ui-trust-${trust.tone}`);
     badge.textContent = trust.label;
     badge.title = trust.title;
-    badge.setAttribute("role", "status");
+    badge.setAttribute("aria-label", trust.title);
     return badge;
   }
 
@@ -164,6 +170,11 @@
         url: typeof entry.url === "string" ? entry.url : undefined,
         source_id: typeof entry.source_id === "string" ? entry.source_id : undefined,
         snippet: typeof entry.snippet === "string" ? entry.snippet : undefined,
+        chunk_id: typeof entry.chunk_id === "string" ? entry.chunk_id : undefined,
+        document_id: typeof entry.document_id === "string" ? entry.document_id : undefined,
+        page: typeof entry.page === "number" || typeof entry.page === "string" ? entry.page : undefined,
+        page_number:
+          typeof entry.page_number === "number" || typeof entry.page_number === "string" ? entry.page_number : undefined,
       }));
   }
 
@@ -176,7 +187,7 @@
   }
 
   function toCitationEntry(el) {
-    const entry = {
+    return {
       title: (el && el.title) || "Source",
       snippet: el && el.snippet,
       source_id: el && el.source_id,
@@ -186,12 +197,15 @@
       page: el && el.page,
       page_number: el && el.page_number,
     };
-    return entry;
   }
 
-  function openCitation(entry, opener) {
+  function openCitation(entry, opener, citationSet) {
+    const citations = Array.isArray(citationSet) ? citationSet : undefined;
+    if (typeof root.focusCitationInDrawer === "function") {
+      root.focusCitationInDrawer(entry);
+    }
     if (typeof root.openCitationPreview === "function") {
-      root.openCitationPreview(entry, opener);
+      root.openCitationPreview(entry, opener, citations);
       return;
     }
     if (entry && typeof entry.url === "string" && entry.url.trim()) {
@@ -200,24 +214,40 @@
   }
 
   function normalizeTrustValue(value) {
-    if (typeof value === "boolean") {
-      if (value) {
-        return { tone: "high", label: "Trusted", title: "Answer is fully grounded." };
-      }
-      return { tone: "low", label: "Needs review", title: "Answer may not be fully grounded." };
+    if (value === true) {
+      return { tone: "high", label: "Grounded", title: "Grounded by cited sources." };
+    }
+    if (value === false) {
+      return { tone: "low", label: "No sources", title: "No supporting sources were available." };
     }
     if (typeof value === "number" && Number.isFinite(value)) {
       const clamped = Math.max(0, Math.min(1, value));
-      const percent = Math.round(clamped * 100);
-      if (clamped >= 0.8) return { tone: "high", label: `Trust ${percent}%`, title: "High grounding confidence." };
-      if (clamped >= 0.5) return { tone: "medium", label: `Trust ${percent}%`, title: "Moderate grounding confidence." };
-      return { tone: "low", label: `Trust ${percent}%`, title: "Low grounding confidence." };
+      if (clamped >= 0.75) {
+        return { tone: "high", label: "Grounded", title: "Grounded by cited sources." };
+      }
+      if (clamped > 0) {
+        return { tone: "medium", label: "Partial", title: "Partially grounded answer." };
+      }
+      return { tone: "low", label: "No sources", title: "No supporting sources were available." };
     }
-    return { tone: "medium", label: "Trust unknown", title: "No trust value available." };
+    if (typeof value === "string") {
+      const normalized = value.trim().toLowerCase();
+      if (normalized === "grounded") {
+        return { tone: "high", label: "Grounded", title: "Grounded by cited sources." };
+      }
+      if (normalized === "partial") {
+        return { tone: "medium", label: "Partial", title: "Partially grounded answer." };
+      }
+      if (normalized === "no_sources" || normalized === "no sources") {
+        return { tone: "low", label: "No sources", title: "No supporting sources were available." };
+      }
+    }
+    return null;
   }
 
   root.renderCitationChipsElement = renderCitationChipsElement;
   root.renderSourcePreviewElement = renderSourcePreviewElement;
   root.renderTrustIndicatorElement = renderTrustIndicatorElement;
   root.renderScopeSelectorElement = renderScopeSelectorElement;
+  root.normalizeRagConfidenceValue = normalizeTrustValue;
 })();

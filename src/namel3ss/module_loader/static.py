@@ -137,6 +137,18 @@ def _merge_programs(
     setattr(combined, "theme_definition", getattr(app_ast, "theme_definition", None))
     setattr(combined, "theme_line", getattr(app_ast, "theme_line", None))
     setattr(combined, "theme_column", getattr(app_ast, "theme_column", None))
+    ui_navigation = getattr(app_ast, "ui_navigation", None)
+    if ui_navigation is not None:
+        setattr(combined, "ui_navigation", ui_navigation)
+    ui_state = getattr(app_ast, "ui_state", None)
+    if ui_state is not None:
+        setattr(combined, "ui_state", ui_state)
+    app_permissions = getattr(app_ast, "app_permissions", None)
+    if app_permissions is not None:
+        setattr(combined, "app_permissions", app_permissions)
+    setattr(combined, "responsive_definition", getattr(app_ast, "responsive_definition", None))
+    setattr(combined, "responsive_line", getattr(app_ast, "responsive_line", None))
+    setattr(combined, "responsive_column", getattr(app_ast, "responsive_column", None))
     return combined
 
 

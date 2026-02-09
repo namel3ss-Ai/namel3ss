@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -41,6 +43,10 @@ def _create_minimal_repo(root: Path) -> None:
         "from namel3ss.runtime.engine import run\n\n\ndef test_run():\n    assert run() == 'ok'\n",
     )
     _write(root / "docs" / "quickstart.md", "# Quickstart\n")
+
+
+def _git(root: Path, *args: str) -> None:
+    subprocess.run(["git", *args], cwd=root, check=True, capture_output=True, text=True)
 
 
 def test_collect_module_entries_and_contract_fields(tmp_path: Path) -> None:
@@ -126,3 +132,25 @@ def test_missing_required_directory_fails(tmp_path: Path) -> None:
 
     with pytest.raises(module.AuditFailure):
         module.build_audit_report(tmp_path)
+
+
+def test_untracked_local_directories_do_not_affect_git_report(tmp_path: Path) -> None:
+    if shutil.which("git") is None:
+        pytest.skip("git is required for this determinism check")
+
+    module = _load_module()
+    _create_minimal_repo(tmp_path)
+
+    _git(tmp_path, "init")
+    _git(tmp_path, "config", "user.email", "ci@example.com")
+    _git(tmp_path, "config", "user.name", "CI")
+    _git(tmp_path, "add", "src", "tests", "docs")
+    _git(tmp_path, "commit", "-m", "seed")
+
+    _write(
+        tmp_path / "tests" / "build" / "test_app_build_determinism.py",
+        "def test_local_only():\n    assert True\n",
+    )
+
+    report = module.build_audit_report(tmp_path)
+    assert "`tests/build`" not in report

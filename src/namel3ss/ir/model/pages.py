@@ -5,6 +5,7 @@ from typing import List
 
 from namel3ss.ir.model.base import Node
 from namel3ss.ir.model.expressions import Expression, Literal, StatePath
+from namel3ss.ir.model.ui_theme import ThemeTokenOverrides, ThemeTokens
 
 
 @dataclass
@@ -20,6 +21,8 @@ class Page(Node):
     status: "StatusBlock" | None = None
     debug_only: bool | str | None = None
     diagnostics: bool | None = None
+    theme_tokens: ThemeTokens | None = None
+    ui_theme_overrides: ThemeTokens | None = None
 
 
 @dataclass
@@ -36,7 +39,9 @@ class PageLayout(Node):
 class PageItem(Node):
     visibility: Expression | None = field(default=None, kw_only=True)
     visibility_rule: "VisibilityRule | VisibilityExpressionRule" | None = field(default=None, kw_only=True)
+    show_when: Expression | None = field(default=None, kw_only=True)
     debug_only: bool | str | None = field(default=None, kw_only=True)
+    theme_overrides: ThemeTokenOverrides | None = field(default=None, kw_only=True)
 
 
 @dataclass
@@ -343,6 +348,7 @@ class TabItem(Node):
     children: List["PageItem"]
     visibility: Expression | None = field(default=None, kw_only=True)
     visibility_rule: VisibilityRule | VisibilityExpressionRule | None = field(default=None, kw_only=True)
+    show_when: Expression | None = field(default=None, kw_only=True)
 
 
 @dataclass
@@ -366,7 +372,9 @@ class DrawerItem(PageItem):
 @dataclass
 class ButtonItem(PageItem):
     label: str
-    flow_name: str
+    flow_name: str | None = None
+    action_kind: str = "call_flow"
+    target: str | None = None
     availability_rule: ActionAvailabilityRule | None = field(default=None, kw_only=True)
 
 
@@ -462,3 +470,8 @@ class IconItem(PageItem):
 class LightboxItem(PageItem):
     images: list[str] | None = None
     start_index: int = 0
+
+
+@dataclass
+class ThemeSettingsPageItem(PageItem):
+    pass

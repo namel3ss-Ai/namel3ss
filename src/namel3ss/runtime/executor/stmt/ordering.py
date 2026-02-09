@@ -5,6 +5,7 @@ from decimal import Decimal
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ir import nodes as ir
+from namel3ss.runtime.app_permissions_engine import require_permission
 from namel3ss.runtime.execution.normalize import format_assignable
 from namel3ss.runtime.execution.recorder import record_step
 from namel3ss.runtime.executor.assign import assign
@@ -72,6 +73,7 @@ def _require_mutation_allowed(ctx: ExecutionContext, target: ir.Assignable, stmt
     if getattr(ctx, "call_stack", []) and isinstance(target, ir.StatePath):
         raise Namel3ssError("Functions cannot change state", line=stmt.line, column=stmt.column)
     if isinstance(target, ir.StatePath):
+        _enforce_persistent_state_write_permission(ctx, target, line=stmt.line, column=stmt.column)
         require_effect_allowed(ctx, effect="write state", line=stmt.line, column=stmt.column)
 
 
@@ -135,6 +137,30 @@ def _require_count(value: object, *, line: int | None, column: int | None) -> in
     if count_int < 0:
         raise Namel3ssError("keep first needs zero or more", line=line, column=column)
     return count_int
+
+
+def _enforce_persistent_state_write_permission(
+    ctx: ExecutionContext,
+    target: ir.StatePath,
+    *,
+    line: int | None,
+    column: int | None,
+) -> None:
+    path = list(getattr(target, "path", []) or [])
+    if len(path) < 2 or path[0] != "ui":
+        return
+    scope_map = getattr(ctx, "ui_state_scope_by_key", {}) or {}
+    key = str(path[1] or "")
+    if scope_map.get(key) != "persistent":
+        return
+    require_permission(
+        "ui_state.persistent_write",
+        permissions=getattr(ctx, "app_permissions", None),
+        enabled=bool(getattr(ctx, "app_permissions_enabled", False)),
+        line=line,
+        column=column,
+        reason=f"state.ui.{key} write",
+    )
 
 
 __all__ = ["execute_keep_first", "execute_order_list"]

@@ -101,6 +101,7 @@ def _lower_list_actions(
     actions: list[ast.ListAction] | None,
     flow_names: set[str],
     page_name: str,
+    page_names: set[str],
     overlays: dict[str, set[str]],
 ) -> list[ListAction] | None:
     if not actions:
@@ -116,7 +117,7 @@ def _lower_list_actions(
                     column=action.column,
                 )
         else:
-            _validate_overlay_action(action, overlays, page_name)
+            _validate_overlay_action(action, overlays, page_name, page_names)
         if action.label in seen_labels:
             raise Namel3ssError(
                 f"List action label '{action.label}' is duplicated",

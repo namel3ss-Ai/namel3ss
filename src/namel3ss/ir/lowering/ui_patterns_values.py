@@ -29,6 +29,28 @@ def resolve_visibility(
     return resolved
 
 
+def resolve_show_when(
+    value: ast.Expression | ast.PatternParamRef | None,
+    *,
+    param_values: dict[str, object] | None,
+    param_defs: dict[str, ast.PatternParam] | None,
+) -> ast.Expression | None:
+    if value is None:
+        return None
+    resolved = resolve_param_ref(value, expected_kinds={"state", "boolean"}, param_values=param_values, param_defs=param_defs)
+    if resolved is None:
+        return None
+    if isinstance(resolved, bool):
+        return ast.Literal(value=resolved, line=getattr(value, "line", None), column=getattr(value, "column", None))
+    if not isinstance(resolved, ast.Expression):
+        raise Namel3ssError(
+            "show_when requires a deterministic expression.",
+            line=getattr(value, "line", None),
+            column=getattr(value, "column", None),
+        )
+    return resolved
+
+
 def resolve_visibility_rule(
     value: ast.VisibilityRule | ast.VisibilityExpressionRule | None,
     *,
@@ -321,6 +343,7 @@ __all__ = [
     "resolve_state_optional",
     "resolve_text",
     "resolve_text_optional",
+    "resolve_show_when",
     "resolve_visibility",
     "resolve_visibility_rule",
     "value_matches_kind",

@@ -1,4 +1,5 @@
 from __future__ import annotations
+from copy import deepcopy
 from typing import Dict, List
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
@@ -33,6 +34,7 @@ from namel3ss.ir.lowering.tools import _lower_tools
 from namel3ss.ir.lowering.ui_packs import build_pack_index
 from namel3ss.ir.lowering.ui_patterns import build_pattern_index
 from namel3ss.ir.lowering.program_capabilities import require_program_capabilities
+from namel3ss.ir.lowering.ui_navigation_expand import lower_navigation_sidebar
 from namel3ss.ir.lowering.responsive import lower_responsive_definition
 from namel3ss.ir.lowering.program_validation import (
     _ensure_unique_pages,
@@ -45,6 +47,19 @@ from namel3ss.ir.lowering.program_validation import (
     _validate_text_inputs,
     _validate_unique_upload_requests,
 )
+from namel3ss.ir.validation.ui_layout_validation import validate_ui_layout
+from namel3ss.ir.validation.ui_rag_validation import validate_ui_rag
+from namel3ss.ir.validation.ui_navigation_validation import validate_ui_navigation
+from namel3ss.ir.validation.app_permissions_validation import (
+    build_ui_state_scope_map,
+    validate_app_permissions,
+)
+from namel3ss.ir.validation.ui_state_validation import (
+    build_ui_state_defaults,
+    lower_ui_state_declaration,
+    validate_ui_state,
+)
+from namel3ss.ir.validation.ui_theme_validation import validate_ui_theme
 from namel3ss.ir.model.agents import RunAgentsParallelStmt
 from namel3ss.ir.model.program import Flow, Program
 from namel3ss.ir.model.statements import ThemeChange, If, Repeat, RepeatWhile, ForEach, Match, MatchCase, TryCatch, ParallelBlock
@@ -85,6 +100,27 @@ def _statement_has_theme_change(stmt) -> bool:
     return False
 def _flow_has_theme_change(flow: Flow) -> bool:
     return any(_statement_has_theme_change(stmt) for stmt in flow.body)
+
+
+def _merge_state_defaults(base: dict | None, overlay: dict | None) -> dict | None:
+    if not isinstance(base, dict) and not isinstance(overlay, dict):
+        return None
+    merged = deepcopy(base) if isinstance(base, dict) else {}
+    addition = deepcopy(overlay) if isinstance(overlay, dict) else {}
+    _merge_state_defaults_in_place(merged, addition)
+    return merged or None
+
+
+def _merge_state_defaults_in_place(target: dict, source: dict) -> None:
+    for key in sorted(source.keys(), key=str):
+        source_value = source[key]
+        target_value = target.get(key)
+        if isinstance(target_value, dict) and isinstance(source_value, dict):
+            _merge_state_defaults_in_place(target_value, source_value)
+            continue
+        target[key] = source_value
+
+
 def lower_program(program: ast.Program) -> Program:
     if not getattr(program, "spec_version", None):
         raise Namel3ssError(
@@ -184,9 +220,31 @@ def lower_program(program: ast.Program) -> Program:
     pattern_index = build_pattern_index(getattr(program, "ui_patterns", []), pack_index)
     page_names = {page.name for page in program.pages}
     pages = [
-        _lower_page(page, record_map, flow_names, page_names, pack_index, pattern_index, plugin_registry)
+        _lower_page(
+            page,
+            record_map,
+            flow_names,
+            page_names,
+            pack_index,
+            pattern_index,
+            plugin_registry,
+            capabilities=capabilities,
+        )
         for page in program.pages
     ]
+    validate_ui_layout(pages, capabilities)
+    validate_ui_theme(pages, capabilities)
+    validate_ui_rag(pages, capabilities)
+    ui_navigation = lower_navigation_sidebar(
+        getattr(program, "ui_navigation", None),
+        page_names,
+        owner="App",
+    )
+    validate_ui_navigation(
+        pages,
+        ui_navigation,
+        capabilities,
+    )
     ui_active_page_rules = _lower_active_page_rules(
         getattr(program, "ui_active_page_rules", None),
         page_names,
@@ -209,6 +267,11 @@ def lower_program(program: ast.Program) -> Program:
     legacy_theme_tokens = {name: val for name, (val, _, _) in program.theme_tokens.items()}
     merged_theme_tokens = resolve_token_registry(theme_resolution, legacy_tokens=legacy_theme_tokens)
     _validate_page_style_hook_tokens(pages, merged_theme_tokens)
+    ui_state = lower_ui_state_declaration(getattr(program, "ui_state", None))
+    merged_state_defaults = _merge_state_defaults(
+        getattr(program, "state_defaults", None),
+        build_ui_state_defaults(ui_state),
+    )
     lowered = Program(
         spec_version=str(program.spec_version),
         theme=theme_setting,
@@ -236,12 +299,16 @@ def lower_program(program: ast.Program) -> Program:
         policy=lower_policy(getattr(program, "policy", None)),
         agent_team=agent_team,
         identity=identity_schema,
-        state_defaults=getattr(program, "state_defaults", None),
+        state_defaults=merged_state_defaults,
         ui_active_page_rules=ui_active_page_rules,
         ui_plugins=plugin_registry.plugin_names,
         line=program.line,
         column=program.column,
     )
+    if ui_navigation is not None:
+        setattr(lowered, "ui_navigation", ui_navigation)
+    if ui_state is not None:
+        setattr(lowered, "ui_state", ui_state)
     setattr(lowered, "pack_allowlist", pack_allowlist)
     setattr(lowered, "ui_plugin_registry", plugin_registry)
     setattr(lowered, "extension_hook_manager", hook_manager)
@@ -255,4 +322,18 @@ def lower_program(program: ast.Program) -> Program:
     setattr(lowered, "ui_visual_theme_css", visual_theme.css)
     setattr(lowered, "ui_visual_theme_css_hash", visual_theme.css_hash)
     setattr(lowered, "ui_visual_theme_font_url", visual_theme.font_url)
+    validate_ui_state(lowered, ui_state, capabilities)
+    ui_state_scope_by_key = build_ui_state_scope_map(ui_state)
+    permissions_result = validate_app_permissions(
+        program=lowered,
+        declaration=getattr(program, "app_permissions", None),
+        capabilities=capabilities,
+        ai_profiles=ai_map,
+        ui_state_declaration=ui_state,
+    )
+    setattr(lowered, "ui_state_scope_by_key", ui_state_scope_by_key)
+    setattr(lowered, "app_permissions", dict(permissions_result.matrix))
+    setattr(lowered, "app_permissions_enabled", bool(permissions_result.enabled))
+    setattr(lowered, "app_permissions_usage", list(permissions_result.usage))
+    setattr(lowered, "app_permissions_warnings", list(permissions_result.warnings))
     return lowered

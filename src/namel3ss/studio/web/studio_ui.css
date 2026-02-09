@@ -1741,3 +1741,85 @@
   color: #7d6f5c;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
+
+.n3-navigation-shell {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.n3-navigation-content {
+  min-width: 0;
+}
+
+.n3-navigation-sidebar {
+  position: sticky;
+  top: 12px;
+  border: 1px solid #e7dcc8;
+  border-radius: 12px;
+  background: #fffdf8;
+  padding: 10px;
+}
+
+.n3-navigation-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.n3-navigation-list-item {
+  margin: 0;
+  padding: 0;
+}
+
+.n3-navigation-item {
+  width: 100%;
+  border: 1px solid #e3d4b8;
+  border-radius: 9px;
+  background: #fff;
+  color: #1f1d17;
+  font-size: 0.88rem;
+  text-align: left;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.n3-navigation-item:hover {
+  background: #f8f1e3;
+}
+
+.n3-navigation-item.active {
+  border-color: #be8b4a;
+  background: #f2e4cb;
+  font-weight: 600;
+}
+
+.n3-navigation-item:focus-visible {
+  outline: 2px solid #2f2c24;
+  outline-offset: 2px;
+}
+
+@media (max-width: 960px) {
+  .n3-navigation-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .n3-navigation-sidebar {
+    position: static;
+    overflow-x: auto;
+  }
+
+  .n3-navigation-list {
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    gap: 8px;
+  }
+
+  .n3-navigation-item {
+    width: auto;
+    white-space: nowrap;
+  }
+}

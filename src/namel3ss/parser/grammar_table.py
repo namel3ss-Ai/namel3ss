@@ -57,6 +57,7 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
     from namel3ss.parser.decl.capsule import parse_capsule_decl
     from namel3ss.parser.decl.capabilities import parse_capabilities
     from namel3ss.parser.decl.packs import parse_packs
+    from namel3ss.parser.decl.permissions import parse_permissions_decl
     from namel3ss.parser.decl.policy import parse_policy_decl
     from namel3ss.parser.decl.flow import parse_flow
     from namel3ss.parser.decl.job import parse_job
@@ -65,6 +66,7 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
     from namel3ss.parser.decl.function import parse_function_decl
     from namel3ss.parser.decl.identity import parse_identity
     from namel3ss.parser.decl.page import parse_page
+    from namel3ss.parser.decl.page_navigation import parse_navigation_sidebar
     from namel3ss.parser.decl.prompt import parse_prompt_decl
     from namel3ss.parser.decl.record import parse_record
     from namel3ss.parser.decl.responsive import parse_responsive_decl
@@ -73,6 +75,7 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
     from namel3ss.parser.decl.theme import parse_theme_decl
     from namel3ss.parser.decl.tool import parse_tool
     from namel3ss.parser.decl.ui import parse_ui_decl
+    from namel3ss.parser.decl.ui_state import parse_ui_state_decl
     from namel3ss.parser.decl.ui_pack import parse_ui_pack_decl
     from namel3ss.parser.decl.ui_pattern import parse_ui_pattern_decl
     from namel3ss.parser.decl.use import parse_use_decl
@@ -90,6 +93,7 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
         TopLevelRule("theme", "THEME", parse_theme_decl),
         TopLevelRule("responsive", "IDENT", parse_responsive_decl, token_value="responsive"),
         TopLevelRule("capabilities", "CAPABILITIES", parse_capabilities),
+        TopLevelRule("permissions", "IDENT", parse_permissions_decl, token_value="permissions"),
         TopLevelRule("policy", "IDENT", parse_policy_decl, token_value="policy"),
         TopLevelRule("packs", "IDENT", parse_packs, token_value="packs"),
         TopLevelRule("foreign", "IDENT", parse_foreign_decl, token_value="foreign"),
@@ -113,6 +117,8 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
         TopLevelRule("flow", "FLOW", parse_flow),
         TopLevelRule("job", "JOB", parse_job),
         TopLevelRule("page", "PAGE", parse_page),
+        TopLevelRule("nav_sidebar", "IDENT", parse_navigation_sidebar, token_value="nav_sidebar"),
+        TopLevelRule("ui_state", "IDENT", parse_ui_state_decl, token_value="ui_state"),
         TopLevelRule("ui", "UI", parse_ui_decl),
         TopLevelRule("ui_pack", "IDENT", parse_ui_pack_decl, token_value="ui_pack"),
         TopLevelRule("ui_pattern", "PATTERN", parse_ui_pattern_decl),

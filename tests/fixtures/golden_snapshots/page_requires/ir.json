@@ -38,6 +38,8 @@
         {
           "column": 3,
           "line": 7,
+          "show_when": null,
+          "theme_overrides": null,
           "type": "TitleItem",
           "value": "Restricted",
           "visibility": null
@@ -45,6 +47,8 @@
         {
           "column": 3,
           "line": 8,
+          "show_when": null,
+          "theme_overrides": null,
           "type": "TextItem",
           "value": "Admins only",
           "visibility": null
@@ -54,6 +58,8 @@
           "flow_name": "demo",
           "label": "Run",
           "line": 9,
+          "show_when": null,
+          "theme_overrides": null,
           "type": "ButtonItem",
           "visibility": null
         }
@@ -82,7 +88,9 @@
         },
         "type": "Comparison"
       },
-      "type": "Page"
+      "theme_tokens": null,
+      "type": "Page",
+      "ui_theme_overrides": null
     }
   ],
   "records": [],

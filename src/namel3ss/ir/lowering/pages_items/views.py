@@ -126,7 +126,7 @@ def lower_table_item(
         columns = _lower_table_columns(item.columns, record)
         sort = _lower_table_sort(item.sort, record)
         pagination = _lower_table_pagination(item.pagination)
-        row_actions = _lower_table_row_actions(item.row_actions, flow_names, page_name, overlays)
+        row_actions = _lower_table_row_actions(item.row_actions, flow_names, page_name, page_names, overlays)
         return attach_origin(
             TableItem(
                 record_name=item.record_name,
@@ -195,7 +195,7 @@ def lower_list_item(
             )
         record = record_map[item.record_name]
         mapping = _lower_list_item_mapping(item.item, record, variant, item.line, item.column)
-        actions = _lower_list_actions(item.actions, flow_names, page_name, overlays)
+        actions = _lower_list_actions(item.actions, flow_names, page_name, page_names, overlays)
         return attach_origin(
             ListItem(
                 record_name=item.record_name,

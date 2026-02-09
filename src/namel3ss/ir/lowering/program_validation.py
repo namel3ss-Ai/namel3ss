@@ -28,6 +28,16 @@ from namel3ss.ir.model.pages import (
     TextInputItem,
     UploadItem,
 )
+from namel3ss.ir.model.ui_layout import (
+    ConditionalBlock,
+    LayoutColumn,
+    LayoutDrawer,
+    LayoutGrid,
+    LayoutRow,
+    LayoutStack,
+    LayoutSticky,
+    SidebarLayout,
+)
 from namel3ss.ir.model.program import Flow
 from namel3ss.ir.model.responsive import ResponsiveLayout
 from namel3ss.lang.capabilities import normalize_builtin_capability
@@ -198,7 +208,9 @@ def _validate_chat_composers(
         for item in _walk_page_items(page.items):
             if isinstance(item, ChatItem) and bool(getattr(item, "streaming", False)):
                 composer_children = [child for child in getattr(item, "children", []) if isinstance(child, ChatComposerItem)]
-                if not composer_children:
+                origin = getattr(item, "origin", None)
+                rag_ui_chat = isinstance(origin, dict) and "rag_ui" in origin
+                if not composer_children and not rag_ui_chat:
                     raise Namel3ssError(
                         build_guidance_message(
                             what="Chat streaming is enabled without a composer.",
@@ -389,6 +401,15 @@ def _walk_page_items(items: list[object]) -> list[object]:
     collected: list[object] = []
     for item in items:
         collected.append(item)
+        if isinstance(item, ConditionalBlock):
+            collected.extend(_walk_page_items(item.then_children))
+            if item.else_children:
+                collected.extend(_walk_page_items(item.else_children))
+            continue
+        if isinstance(item, SidebarLayout):
+            collected.extend(_walk_page_items(item.sidebar))
+            collected.extend(_walk_page_items(item.main))
+            continue
         if isinstance(
             item,
             (
@@ -402,6 +423,12 @@ def _walk_page_items(items: list[object]) -> list[object]:
                 ModalItem,
                 ChatItem,
                 GridItem,
+                LayoutStack,
+                LayoutRow,
+                LayoutColumn,
+                LayoutGrid,
+                LayoutDrawer,
+                LayoutSticky,
             ),
         ):
             collected.extend(_walk_page_items(getattr(item, "children", [])))

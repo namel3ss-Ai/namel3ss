@@ -70,4 +70,4 @@ page "home":
 '''
     with pytest.raises(Namel3ssError) as exc:
         lower_ir_program(source)
-    assert "rows may only contain columns" in str(exc.value).lower()
+    assert "ui layout requires capability ui_layout" in str(exc.value).lower()

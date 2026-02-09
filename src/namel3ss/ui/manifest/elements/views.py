@@ -19,7 +19,7 @@ from namel3ss.ui.manifest_chat_enhanced import apply_chat_configuration
 from namel3ss.ui.manifest_form import _build_form_element
 from namel3ss.ui.manifest_list import _build_list_actions, _list_id, _list_id_field, _list_item_mapping, _list_state_id
 from namel3ss.ui.manifest.state_defaults import StateContext
-from namel3ss.ui.manifest.visibility import apply_visibility, evaluate_visibility
+from namel3ss.ui.manifest.visibility import apply_show_when, apply_visibility, evaluate_visibility
 from namel3ss.ui.manifest_table import _apply_table_pagination, _apply_table_sort, _build_row_actions, _resolve_state_table_columns, _resolve_table_columns, _table_id, _table_id_field, _table_state_id
 from namel3ss.validation import ValidationMode
 from .base import _base_element, _require_record, _stable_rows_by_id, _view_representation
@@ -409,7 +409,16 @@ def build_tabs_item(
             line=tab.line,
             column=tab.column,
         )
-        tab_visible = parent_visible and tab_predicate_visible
+        tab_show_when_visible, tab_show_when = evaluate_visibility(
+            getattr(tab, "show_when", None),
+            None,
+            state_ctx,
+            mode,
+            warnings,
+            line=tab.line,
+            column=tab.column,
+        )
+        tab_visible = parent_visible and tab_predicate_visible and tab_show_when_visible
         children, actions = build_children(
             tab.children,
             record_map,
@@ -437,7 +446,7 @@ def build_tabs_item(
             },
             tab,
         )
-        tabs.append(apply_visibility(tab_element, tab_visible, tab_visibility))
+        tabs.append(apply_show_when(apply_visibility(tab_element, tab_visible, tab_visibility), tab_show_when))
     default_label = item.default or (labels[0] if labels else "")
     base = _base_element(element_id, page_name, page_slug, index, item)
     element = {

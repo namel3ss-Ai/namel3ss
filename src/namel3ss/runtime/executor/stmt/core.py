@@ -9,6 +9,7 @@ from namel3ss.runtime.execution.explain import (
 )
 from namel3ss.runtime.execution.normalize import format_assignable
 from namel3ss.runtime.execution.recorder import record_step
+from namel3ss.runtime.app_permissions_engine import require_permission
 from namel3ss.runtime.executor.async_tasks import await_async_handle, is_async_handle, launch_async_call
 from namel3ss.runtime.executor.assign import assign
 from namel3ss.runtime.executor.context import ExecutionContext
@@ -186,6 +187,7 @@ def _execute_set(ctx: ExecutionContext, stmt: ir.Set) -> None:
         raise Namel3ssError("Parallel tasks cannot change state", line=stmt.line, column=stmt.column)
     if getattr(ctx, "call_stack", []) and isinstance(stmt.target, ir.StatePath):
         raise Namel3ssError("Functions cannot change state", line=stmt.line, column=stmt.column)
+    _enforce_persistent_state_write_permission(ctx, stmt.target, line=stmt.line, column=stmt.column)
     if isinstance(stmt.target, ir.StatePath):
         require_effect_allowed(ctx, effect="write state", line=stmt.line, column=stmt.column)
     calc_info = _calc_assignment_info(ctx, stmt.line)
@@ -212,6 +214,32 @@ def _execute_set(ctx: ExecutionContext, stmt: ir.Set) -> None:
             column=stmt.column,
         )
     ctx.last_value = value
+
+
+def _enforce_persistent_state_write_permission(
+    ctx: ExecutionContext,
+    target: ir.Assignable,
+    *,
+    line: int | None,
+    column: int | None,
+) -> None:
+    if not isinstance(target, ir.StatePath):
+        return
+    path = list(getattr(target, "path", []) or [])
+    if len(path) < 2 or path[0] != "ui":
+        return
+    scope_map = getattr(ctx, "ui_state_scope_by_key", {}) or {}
+    key = str(path[1] or "")
+    if scope_map.get(key) != "persistent":
+        return
+    require_permission(
+        "ui_state.persistent_write",
+        permissions=getattr(ctx, "app_permissions", None),
+        enabled=bool(getattr(ctx, "app_permissions_enabled", False)),
+        line=line,
+        column=column,
+        reason=f"state.ui.{key} write",
+    )
 
 
 def _execute_return(ctx: ExecutionContext, stmt: ir.Return) -> None:

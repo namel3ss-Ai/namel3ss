@@ -1,0 +1,30 @@
+spec is "1.0"
+
+capabilities:
+  ui_layout
+
+page "Layout Demo":
+  title is "Layout Demo"
+  stack:
+    text is "Top" show_when is state.show_top
+    row:
+      col:
+        text is "Left"
+      col:
+        text is "Right"
+    grid columns is 2:
+      text is "Grid A"
+      text is "Grid B"
+  sidebar_layout:
+    sidebar:
+      text is "Side"
+    main:
+      if state.show_main:
+        text is "Main On"
+      else:
+        text is "Main Off"
+      drawer title is "Details" when is state.show_drawer:
+        text is "Drawer Body"
+  sticky bottom:
+    text is "Sticky Footer"
+

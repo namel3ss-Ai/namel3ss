@@ -181,6 +181,7 @@
                         "text": "Account active"
                       }
                     ],
+                    "lane": "system",
                     "line": 15,
                     "page": "chat",
                     "page_slug": "chat",

@@ -1,24 +1,19 @@
 from __future__ import annotations
 
-import re
 from typing import List
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
-from namel3ss.lang.keywords import is_keyword
 from namel3ss.parser.decl.page_chat import parse_chat_block
 from namel3ss.parser.decl.page_chart import parse_chart_block, parse_chart_header
 from namel3ss.parser.decl.page_common import (
-    _is_param_ref,
     _parse_debug_only_clause,
     _match_ident_value,
-    _parse_boolean_value,
-    _parse_param_ref,
     _parse_reference_name_value,
-    _parse_state_path_value,
     _parse_state_path_value_relaxed,
     _parse_string_value,
     _parse_visibility_clause,
+    _parse_show_when_clause,
     _parse_visibility_rule_block,
     _parse_visibility_rule_line,
     _is_visibility_rule_start,
@@ -27,13 +22,9 @@ from namel3ss.parser.decl.page_common import (
 from namel3ss.parser.decl.page_form import parse_form_block
 from namel3ss.parser.decl.page_list import parse_list_block
 from namel3ss.parser.decl.page_table import parse_table_block
-from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
-
 from .tabs import parse_tabs_item
+from .uploads import parse_upload_item
 from .use import parse_use_item
-
-_MIME_TYPE_RE = re.compile(r"^[A-Za-z0-9!#$&^_.+\-]+/[A-Za-z0-9!#$&^_.+*\-]+$")
-_MIME_EXTENSION_RE = re.compile(r"^[A-Za-z0-9.+\-]+$")
 
 
 def parse_view_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.ViewItem:
@@ -43,6 +34,7 @@ def parse_view_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.V
         raise Namel3ssError("Expected 'of' after view", line=of_tok.line, column=of_tok.column)
     record_name = _parse_reference_name_value(parser, allow_pattern_params=allow_pattern_params, context="record")
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
@@ -50,6 +42,7 @@ def parse_view_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.V
         record_name=record_name,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,
@@ -61,6 +54,7 @@ def parse_title_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.
     parser._expect("IS", "Expected 'is' after 'title'")
     value = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="title")
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
@@ -68,6 +62,7 @@ def parse_title_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.
         value=value,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,
@@ -79,6 +74,7 @@ def parse_text_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.T
     parser._expect("IS", "Expected 'is' after 'text'")
     value = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="text")
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
@@ -86,163 +82,11 @@ def parse_text_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.T
         value=value,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,
     )
-
-
-def parse_upload_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.UploadItem:
-    parser._advance()
-    if allow_pattern_params and _is_param_ref(parser):
-        name = _parse_param_ref(parser)
-    else:
-        name_tok = parser._expect("IDENT", "Expected upload name")
-        if is_keyword(name_tok.value) and not getattr(name_tok, "escaped", False):
-            guidance, details = reserved_identifier_diagnostic(name_tok.value)
-            raise Namel3ssError(guidance, line=name_tok.line, column=name_tok.column, details=details)
-        name = name_tok.value
-    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
-    debug_only = _parse_debug_only_clause(parser)
-    visibility_rule = None
-    accept = None
-    multiple = None
-    required = None
-    label = None
-    preview = None
-    if parser._match("COLON"):
-        parser._expect("NEWLINE", "Expected newline after upload header")
-        parser._expect("INDENT", "Expected indented upload block")
-        while parser._current().type != "DEDENT":
-            if parser._match("NEWLINE"):
-                continue
-            entry_tok = parser._current()
-            if _is_visibility_rule_start(parser):
-                if visibility_rule is not None:
-                    raise Namel3ssError("Visibility blocks may only declare one only-when rule.", line=entry_tok.line, column=entry_tok.column)
-                visibility_rule = _parse_visibility_rule_line(parser, allow_pattern_params=allow_pattern_params)
-                parser._match("NEWLINE")
-                continue
-            if entry_tok.type == "IDENT" and entry_tok.value == "accept":
-                if accept is not None:
-                    raise Namel3ssError("Accept is declared more than once", line=entry_tok.line, column=entry_tok.column)
-                parser._advance()
-                parser._expect("IS", "Expected 'is' after accept")
-                accept = _parse_upload_accept_list(parser, line=entry_tok.line, column=entry_tok.column)
-                if parser._match("NEWLINE"):
-                    continue
-                continue
-            if entry_tok.type == "IDENT" and entry_tok.value == "multiple":
-                if multiple is not None:
-                    raise Namel3ssError("Multiple is declared more than once", line=entry_tok.line, column=entry_tok.column)
-                parser._advance()
-                parser._expect("IS", "Expected 'is' after multiple")
-                try:
-                    multiple = _parse_boolean_value(parser, allow_pattern_params=allow_pattern_params)
-                except Namel3ssError as err:
-                    raise Namel3ssError(
-                        "Multiple must be true or false",
-                        line=err.line,
-                        column=err.column,
-                    ) from err
-                if parser._match("NEWLINE"):
-                    continue
-                continue
-            if entry_tok.type == "IDENT" and entry_tok.value == "required":
-                if required is not None:
-                    raise Namel3ssError("Required is declared more than once", line=entry_tok.line, column=entry_tok.column)
-                parser._advance()
-                parser._expect("IS", "Expected 'is' after required")
-                try:
-                    required = _parse_boolean_value(parser, allow_pattern_params=allow_pattern_params)
-                except Namel3ssError as err:
-                    raise Namel3ssError(
-                        "Required must be true or false",
-                        line=err.line,
-                        column=err.column,
-                    ) from err
-                if parser._match("NEWLINE"):
-                    continue
-                continue
-            if entry_tok.type == "IDENT" and entry_tok.value == "label":
-                if label is not None:
-                    raise Namel3ssError("Label is declared more than once", line=entry_tok.line, column=entry_tok.column)
-                parser._advance()
-                parser._expect("IS", "Expected 'is' after label")
-                label = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="upload label")
-                if parser._match("NEWLINE"):
-                    continue
-                continue
-            if entry_tok.type == "IDENT" and entry_tok.value == "preview":
-                if preview is not None:
-                    raise Namel3ssError("Preview is declared more than once", line=entry_tok.line, column=entry_tok.column)
-                parser._advance()
-                parser._expect("IS", "Expected 'is' after preview")
-                try:
-                    preview = _parse_boolean_value(parser, allow_pattern_params=allow_pattern_params)
-                except Namel3ssError as err:
-                    raise Namel3ssError(
-                        "Preview must be true or false",
-                        line=err.line,
-                        column=err.column,
-                    ) from err
-                if parser._match("NEWLINE"):
-                    continue
-                continue
-            raise Namel3ssError(
-                f"Unknown upload setting '{entry_tok.value}'",
-                line=entry_tok.line,
-                column=entry_tok.column,
-            )
-        parser._expect("DEDENT", "Expected end of upload block")
-    else:
-        visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
-    _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
-    return ast.UploadItem(
-        name=name,
-        accept=accept,
-        multiple=multiple,
-        required=required,
-        label=label,
-        preview=preview,
-        visibility=visibility,
-        visibility_rule=visibility_rule,
-        debug_only=debug_only,
-        line=tok.line,
-        column=tok.column,
-    )
-
-
-def _parse_upload_accept_list(parser, *, line: int, column: int) -> list[str]:
-    values: list[str] = []
-    while True:
-        tok = parser._current()
-        if tok.type not in {"STRING", "IDENT"}:
-            raise Namel3ssError("Accept must be a list of non-empty strings", line=tok.line, column=tok.column)
-        parser._advance()
-        raw = str(tok.value).strip()
-        if not raw:
-            raise Namel3ssError("Accept entries cannot be empty", line=tok.line, column=tok.column)
-        for segment in raw.split(","):
-            value = segment.strip().lower()
-            if not value:
-                raise Namel3ssError("Accept entries cannot be empty", line=tok.line, column=tok.column)
-            if not _is_valid_upload_accept(value):
-                raise Namel3ssError(
-                    "Accept entries must be MIME types like image/png or extension shorthands like pdf.",
-                    line=tok.line,
-                    column=tok.column,
-                )
-            values.append(value)
-        if not parser._match("COMMA"):
-            break
-    if not values:
-        raise Namel3ssError("Accept must be a list of non-empty strings", line=line, column=column)
-    return values
-
-
-def _is_valid_upload_accept(value: str) -> bool:
-    return bool(_MIME_TYPE_RE.match(value) or _MIME_EXTENSION_RE.match(value))
 
 
 def parse_form_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.FormItem:
@@ -250,26 +94,32 @@ def parse_form_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.F
     parser._expect("IS", "Expected 'is' after 'form'")
     record_name = _parse_reference_name_value(parser, allow_pattern_params=allow_pattern_params, context="record")
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     if parser._match("COLON"):
-        groups, fields, visibility_rule = parse_form_block(parser, allow_pattern_params=allow_pattern_params)
+        groups, fields, visibility_rule, theme_overrides = parse_form_block(parser, allow_pattern_params=allow_pattern_params)
         _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
-        return ast.FormItem(
+        item = ast.FormItem(
             record_name=record_name,
             groups=groups,
             fields=fields,
             visibility=visibility,
             visibility_rule=visibility_rule,
+            show_when=show_when,
             debug_only=debug_only,
             line=tok.line,
             column=tok.column,
         )
+        if theme_overrides is not None:
+            setattr(item, "theme_overrides", theme_overrides)
+        return item
     visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
     return ast.FormItem(
         record_name=record_name,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,
@@ -280,14 +130,25 @@ def parse_table_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.
     parser._advance()
     record_name, source = _parse_table_list_source(parser, allow_pattern_params=allow_pattern_params, label="table")
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     if parser._match("COLON"):
-        columns, empty_text, empty_state_hidden, sort, pagination, selection, row_actions, visibility_rule = parse_table_block(
+        (
+            columns,
+            empty_text,
+            empty_state_hidden,
+            sort,
+            pagination,
+            selection,
+            row_actions,
+            visibility_rule,
+            theme_overrides,
+        ) = parse_table_block(
             parser,
             allow_pattern_params=allow_pattern_params,
         )
         _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
-        return ast.TableItem(
+        item = ast.TableItem(
             record_name=record_name,
             source=source,
             columns=columns,
@@ -299,10 +160,14 @@ def parse_table_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.
             row_actions=row_actions,
             visibility=visibility,
             visibility_rule=visibility_rule,
+            show_when=show_when,
             debug_only=debug_only,
             line=tok.line,
             column=tok.column,
         )
+        if theme_overrides is not None:
+            setattr(item, "theme_overrides", theme_overrides)
+        return item
     visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
     return ast.TableItem(
@@ -310,6 +175,7 @@ def parse_table_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.
         source=source,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,
@@ -320,14 +186,15 @@ def parse_list_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.L
     parser._advance()
     record_name, source = _parse_table_list_source(parser, allow_pattern_params=allow_pattern_params, label="list")
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     if parser._match("COLON"):
-        variant, item, empty_text, empty_state_hidden, selection, actions, visibility_rule = parse_list_block(
+        variant, item, empty_text, empty_state_hidden, selection, actions, visibility_rule, theme_overrides = parse_list_block(
             parser,
             allow_pattern_params=allow_pattern_params,
         )
         _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
-        return ast.ListItem(
+        list_item = ast.ListItem(
             record_name=record_name,
             source=source,
             variant=variant,
@@ -338,10 +205,14 @@ def parse_list_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.L
             actions=actions,
             visibility=visibility,
             visibility_rule=visibility_rule,
+            show_when=show_when,
             debug_only=debug_only,
             line=tok.line,
             column=tok.column,
         )
+        if theme_overrides is not None:
+            setattr(list_item, "theme_overrides", theme_overrides)
+        return list_item
     visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
     return ast.ListItem(
@@ -349,6 +220,7 @@ def parse_list_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.L
         source=source,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,
@@ -437,6 +309,7 @@ def parse_chart_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.
     y = None
     explain = None
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     if parser._match("COLON"):
         chart_type, x, y, explain, visibility_rule = parse_chart_block(parser, allow_pattern_params=allow_pattern_params)
@@ -453,6 +326,7 @@ def parse_chart_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.
         explain=explain,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,
@@ -462,11 +336,12 @@ def parse_chart_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.
 def parse_chat_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.ChatItem:
     parser._advance()
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     parser._expect("COLON", "Expected ':' after chat")
-    children, visibility_rule, options = parse_chat_block(parser, allow_pattern_params=allow_pattern_params)
+    children, visibility_rule, options, theme_overrides = parse_chat_block(parser, allow_pattern_params=allow_pattern_params)
     _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
-    return ast.ChatItem(
+    item = ast.ChatItem(
         children=children,
         style=options.style,
         show_avatars=options.show_avatars,
@@ -476,16 +351,38 @@ def parse_chat_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.C
         attachments=options.attachments,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,
     )
+    if theme_overrides is not None:
+        setattr(item, "theme_overrides", theme_overrides)
+    return item
+
+
+def parse_include_item(parser, tok) -> ast.PageItem:
+    parser._advance()
+    name_tok = parser._current()
+    if name_tok.type not in {"IDENT", "STRING"}:
+        raise Namel3ssError("Expected include target name", line=name_tok.line, column=name_tok.column)
+    parser._advance()
+    name = str(name_tok.value)
+    if name != "theme_settings_page":
+        raise Namel3ssError(
+            f"Unknown include target '{name}'.",
+            line=name_tok.line,
+            column=name_tok.column,
+        )
+    parser._match("NEWLINE")
+    return ast.ThemeSettingsPageItem(line=tok.line, column=tok.column)
 
 
 __all__ = [
     "parse_chart_item",
     "parse_chat_item",
     "parse_form_item",
+    "parse_include_item",
     "parse_list_item",
     "parse_table_item",
     "parse_tabs_item",

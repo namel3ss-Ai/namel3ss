@@ -8,6 +8,7 @@ from namel3ss.parser.decl.page_common import (
     _parse_debug_only_clause,
     _is_visibility_rule_start,
     _parse_visibility_clause,
+    _parse_show_when_clause,
     _parse_visibility_rule_line,
     _validate_visibility_combo,
 )
@@ -16,6 +17,7 @@ from namel3ss.parser.decl.page_common import (
 def parse_tabs_item(parser, tok, parse_block, *, allow_pattern_params: bool = False) -> ast.TabsItem:
     parser._advance()
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     parser._expect("COLON", "Expected ':' after tabs")
     tabs, default_label, visibility_rule = _parse_tabs_block(parser, parse_block, allow_pattern_params=allow_pattern_params)
@@ -25,6 +27,7 @@ def parse_tabs_item(parser, tok, parse_block, *, allow_pattern_params: bool = Fa
         default=default_label,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,
@@ -73,6 +76,7 @@ def _parse_tabs_block(parser, parse_block, *, allow_pattern_params: bool) -> tup
                 )
             seen_labels.add(label_tok.value)
             visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+            show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
             parser._expect("COLON", "Expected ':' after tab label")
             children, tab_visibility_rule = parse_block(
                 parser,
@@ -87,6 +91,7 @@ def _parse_tabs_block(parser, parse_block, *, allow_pattern_params: bool) -> tup
                     children=children,
                     visibility=visibility,
                     visibility_rule=tab_visibility_rule,
+                    show_when=show_when,
                     line=tok.line,
                     column=tok.column,
                 )

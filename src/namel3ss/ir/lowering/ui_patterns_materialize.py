@@ -15,6 +15,7 @@ from namel3ss.ir.lowering.ui_patterns_values import (
     resolve_state_optional,
     resolve_text,
     resolve_text_optional,
+    resolve_show_when,
     resolve_visibility,
     resolve_visibility_rule,
 )
@@ -33,6 +34,7 @@ def materialize_item(
     working = copy.deepcopy(item)
     working.visibility = resolve_visibility(working.visibility, param_values=param_values, param_defs=param_defs)
     working.visibility_rule = resolve_visibility_rule(working.visibility_rule, param_values=param_values, param_defs=param_defs)
+    working.show_when = resolve_show_when(working.show_when, param_values=param_values, param_defs=param_defs)
     if isinstance(working, ast.TitleItem):
         value = resolve_text(working.value, param_values=param_values, param_defs=param_defs)
         if value is None:
@@ -97,6 +99,7 @@ def materialize_item(
             param_defs=param_defs,
             context_module=context_module,
             flow_names=flow_names,
+            page_names=page_names,
         )
         working.pagination = resolve_pagination(working.pagination, param_values=param_values, param_defs=param_defs)
         return working
@@ -116,6 +119,7 @@ def materialize_item(
             param_defs=param_defs,
             context_module=context_module,
             flow_names=flow_names,
+            page_names=page_names,
         )
         return working
     if isinstance(working, ast.ChartItem):
@@ -131,12 +135,33 @@ def materialize_item(
         return working
     if isinstance(working, ast.ButtonItem):
         label = resolve_text(working.label, param_values=param_values, param_defs=param_defs)
-        flow = resolve_text(working.flow_name, param_values=param_values, param_defs=param_defs)
-        if label is None or flow is None:
+        if label is None:
             return None
         working.label = label
-        working.flow_name = qualify_name(flow, context_module, flow_names)
-        return working
+        action_kind = str(getattr(working, "action_kind", "call_flow") or "call_flow")
+        if action_kind == "call_flow":
+            flow = resolve_text(working.flow_name, param_values=param_values, param_defs=param_defs)
+            if flow is None:
+                return None
+            working.flow_name = qualify_name(flow, context_module, flow_names)
+            working.target = None
+            return working
+        if action_kind == "navigate_to":
+            target = resolve_page(getattr(working, "target", None), param_values=param_values, param_defs=param_defs)
+            if target is None:
+                return None
+            working.flow_name = None
+            working.target = qualify_name(target, context_module, page_names)
+            return working
+        if action_kind == "go_back":
+            working.flow_name = None
+            working.target = None
+            return working
+        raise Namel3ssError(
+            f"Unsupported button action '{action_kind}' in UI pattern expansion.",
+            line=getattr(working, "line", None),
+            column=getattr(working, "column", None),
+        )
     if isinstance(working, ast.LinkItem):
         label = resolve_text(working.label, param_values=param_values, param_defs=param_defs)
         target = resolve_page(working.page_name, param_values=param_values, param_defs=param_defs)
@@ -224,6 +249,7 @@ def materialize_item(
             param_defs=param_defs,
             context_module=context_module,
             flow_names=flow_names,
+            page_names=page_names,
         )
         return working
     if isinstance(working, (ast.ModalItem, ast.DrawerItem)):
@@ -231,6 +257,20 @@ def materialize_item(
         if label is None:
             return None
         working.label = label
+        return working
+    if isinstance(working, ast.LayoutDrawer):
+        title = resolve_text(working.title, param_values=param_values, param_defs=param_defs)
+        if title is None:
+            return None
+        if working.show_when is None:
+            return None
+        working.title = title
+        return working
+    if isinstance(working, ast.ConditionalBlock):
+        condition = resolve_show_when(working.condition, param_values=param_values, param_defs=param_defs)
+        if condition is None:
+            return None
+        working.condition = condition
         return working
     if isinstance(working, ast.CustomComponentItem):
         resolved_props: list[ast.CustomComponentProp] = []
@@ -259,6 +299,7 @@ def materialize_tab(
 ) -> ast.TabItem | None:
     working = copy.deepcopy(tab)
     working.visibility = resolve_visibility(working.visibility, param_values=param_values, param_defs=param_defs)
+    working.show_when = resolve_show_when(working.show_when, param_values=param_values, param_defs=param_defs)
     return working
 
 
@@ -307,6 +348,7 @@ def resolve_row_actions(
     param_defs: dict[str, ast.PatternParam] | None,
     context_module: str | None,
     flow_names: set[str],
+    page_names: set[str],
 ) -> list[ast.TableRowAction] | None:
     if not actions:
         return None
@@ -322,6 +364,13 @@ def resolve_row_actions(
             if flow is None:
                 continue
             next_action.flow_name = qualify_name(flow, context_module, flow_names)
+        elif next_action.kind == "navigate_to":
+            target = resolve_page(next_action.target, param_values=param_values, param_defs=param_defs)
+            if target is None:
+                continue
+            next_action.target = qualify_name(target, context_module, page_names)
+        elif next_action.kind == "go_back":
+            next_action.target = None
         else:
             target = resolve_text(next_action.target, param_values=param_values, param_defs=param_defs)
             if target is None:
@@ -338,6 +387,7 @@ def resolve_list_actions(
     param_defs: dict[str, ast.PatternParam] | None,
     context_module: str | None,
     flow_names: set[str],
+    page_names: set[str],
 ) -> list[ast.ListAction] | None:
     if not actions:
         return None
@@ -353,6 +403,13 @@ def resolve_list_actions(
             if flow is None:
                 continue
             next_action.flow_name = qualify_name(flow, context_module, flow_names)
+        elif next_action.kind == "navigate_to":
+            target = resolve_page(next_action.target, param_values=param_values, param_defs=param_defs)
+            if target is None:
+                continue
+            next_action.target = qualify_name(target, context_module, page_names)
+        elif next_action.kind == "go_back":
+            next_action.target = None
         else:
             target = resolve_text(next_action.target, param_values=param_values, param_defs=param_defs)
             if target is None:
@@ -369,6 +426,7 @@ def resolve_card_actions(
     param_defs: dict[str, ast.PatternParam] | None,
     context_module: str | None,
     flow_names: set[str],
+    page_names: set[str],
 ) -> list[ast.CardAction] | None:
     if not actions:
         return None
@@ -380,6 +438,13 @@ def resolve_card_actions(
             if flow is None:
                 continue
             next_action.flow_name = qualify_name(flow, context_module, flow_names)
+        elif next_action.kind == "navigate_to":
+            target = resolve_page(next_action.target, param_values=param_values, param_defs=param_defs)
+            if target is None:
+                continue
+            next_action.target = qualify_name(target, context_module, page_names)
+        elif next_action.kind == "go_back":
+            next_action.target = None
         else:
             target = resolve_text(next_action.target, param_values=param_values, param_defs=param_defs)
             if target is None:

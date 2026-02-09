@@ -80,6 +80,9 @@ def run_flow(
         policy=getattr(ir_program, "policy", None),
         project_root=project_root,
         app_path=app_path,
+        app_permissions=getattr(ir_program, "app_permissions", None),
+        app_permissions_enabled=bool(getattr(ir_program, "app_permissions_enabled", False)),
+        ui_state_scope_by_key=getattr(ir_program, "ui_state_scope_by_key", None),
     )
     return executor.run()
 

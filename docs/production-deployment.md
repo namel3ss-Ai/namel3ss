@@ -80,7 +80,7 @@ This guide covers production deployment of namel3ss applications. It includes:
 
 ### Software Requirements
 
-- **Python**: 3.10, 3.11, or 3.12
+- **Python**: 3.14
 - **Database**: PostgreSQL 13+ (production) or SQLite (development)
 - **Reverse Proxy**: Nginx or Caddy (recommended)
 - **Container Runtime**: Docker 20.10+ or containerd (if using containers)
@@ -153,7 +153,7 @@ This guide covers production deployment of namel3ss applications. It includes:
 Create `Dockerfile` in your project root:
 
 ```dockerfile
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 # Set working directory
 WORKDIR /app

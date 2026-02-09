@@ -6,6 +6,7 @@ from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.lang.keywords import is_keyword
 from namel3ss.parser.decl.page_common import _is_visibility_rule_start, _parse_boolean_value, _parse_string_value, _parse_visibility_rule_line
+from namel3ss.parser.decl.page_items.size_radius import apply_theme_override, parse_theme_override_line
 from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
 
@@ -19,10 +20,22 @@ def parse_form_block(
     groups: List[ast.FormGroup] | None = None
     fields: List[ast.FormFieldConfig] | None = None
     visibility_rule: ast.VisibilityRule | None = None
+    theme_overrides: ast.ThemeTokenOverrides | None = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
         tok = parser._current()
+        token_name, override = parse_theme_override_line(parser)
+        if override is not None and token_name is not None:
+            theme_overrides = apply_theme_override(
+                theme_overrides,
+                override,
+                token_name=token_name,
+                line=override.line,
+                column=override.column,
+            )
+            parser._match("NEWLINE")
+            continue
         if _is_visibility_rule_start(parser):
             if visibility_rule is not None:
                 raise Namel3ssError("Visibility blocks may only declare one only-when rule.", line=tok.line, column=tok.column)
@@ -47,7 +60,7 @@ def parse_form_block(
             column=tok.column,
         )
     parser._expect("DEDENT", "Expected end of form block")
-    return groups, fields, visibility_rule
+    return groups, fields, visibility_rule, theme_overrides
 
 
 def _parse_form_groups_block(parser, *, allow_pattern_params: bool) -> List[ast.FormGroup]:

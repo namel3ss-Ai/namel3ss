@@ -1,0 +1,21 @@
+spec is "1.0"
+
+capabilities:
+  ui_theme
+
+page "Theme Demo" tokens:
+  size is "normal"
+  radius is "lg"
+  density is "regular"
+  font is "md"
+  color_scheme is "system"
+
+  section "Preview":
+    card "Primary":
+      size is "comfortable"
+      text is "Theme tokens apply to cards, buttons, and inputs."
+    card "Secondary":
+      radius is "full"
+      text is "Adjust settings below to see live updates."
+
+  include theme_settings_page

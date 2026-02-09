@@ -7,6 +7,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.lang.keywords import is_keyword
 from namel3ss.parser.decl.page_actions import parse_ui_action_body
 from namel3ss.parser.decl.page_common import _is_visibility_rule_start, _parse_string_value, _parse_visibility_rule_line
+from namel3ss.parser.decl.page_items.size_radius import apply_theme_override, parse_theme_override_line
 from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
 
@@ -20,10 +21,22 @@ def parse_list_block(parser, *, allow_pattern_params: bool = False):
     selection = None
     actions = None
     visibility_rule = None
+    theme_overrides: ast.ThemeTokenOverrides | None = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
         tok = parser._current()
+        token_name, override = parse_theme_override_line(parser)
+        if override is not None and token_name is not None:
+            theme_overrides = apply_theme_override(
+                theme_overrides,
+                override,
+                token_name=token_name,
+                line=override.line,
+                column=override.column,
+            )
+            parser._match("NEWLINE")
+            continue
         if _is_visibility_rule_start(parser):
             if visibility_rule is not None:
                 raise Namel3ssError("Visibility blocks may only declare one only-when rule.", line=tok.line, column=tok.column)
@@ -111,7 +124,7 @@ def parse_list_block(parser, *, allow_pattern_params: bool = False):
             column=tok.column,
         )
     parser._expect("DEDENT", "Expected end of list block")
-    return variant, item, empty_text, empty_state_hidden, selection, actions, visibility_rule
+    return variant, item, empty_text, empty_state_hidden, selection, actions, visibility_rule, theme_overrides
 
 
 def _parse_list_item_block(parser, line: int, column: int) -> ast.ListItemMapping:
@@ -285,8 +298,12 @@ def _parse_list_actions_block(parser, *, allow_pattern_params: bool) -> List[ast
             raise Namel3ssError("Action body must include 'calls flow \"<name>\"'", line=tok.line, column=tok.column)
         if kind == "call_flow" and flow_name is None:
             raise Namel3ssError("Action body must include 'calls flow \"<name>\"'", line=tok.line, column=tok.column)
-        if kind != "call_flow" and target is None:
-            raise Namel3ssError("Action body must include a modal or drawer target", line=tok.line, column=tok.column)
+        if kind in {"open_modal", "close_modal", "open_drawer", "close_drawer", "navigate_to"} and target is None:
+            raise Namel3ssError(
+                "Action body must include a modal/drawer target or navigation page.",
+                line=tok.line,
+                column=tok.column,
+            )
         actions.append(
             ast.ListAction(
                 label=label,

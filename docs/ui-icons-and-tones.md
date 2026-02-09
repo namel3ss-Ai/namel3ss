@@ -15,11 +15,12 @@ Reserve tones and icons for signal. Use one icon per tone.
 
 ## Example
 ```ai
-story "Resolution":
-  step "Acknowledge":
-    text is "Confirm receipt and set expectations."
-  step "Resolve":
-    tone is "success"
-    icon is check
-    text is "Summarize the outcome and next step."
+page "resolution":
+  story "Resolution":
+    step "Acknowledge":
+      text is "Confirm receipt and set expectations."
+    step "Resolve":
+      tone is "success"
+      icon is check
+      text is "Summarize the outcome and next step."
 ```

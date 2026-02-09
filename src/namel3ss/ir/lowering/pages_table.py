@@ -185,6 +185,7 @@ def _lower_table_row_actions(
     actions: list[ast.TableRowAction] | None,
     flow_names: set[str],
     page_name: str,
+    page_names: set[str],
     overlays: dict[str, set[str]],
 ) -> list[TableRowAction] | None:
     if not actions:
@@ -200,7 +201,7 @@ def _lower_table_row_actions(
                     column=action.column,
                 )
         else:
-            _validate_overlay_action(action, overlays, page_name)
+            _validate_overlay_action(action, overlays, page_name, page_names)
         if action.label in seen_labels:
             raise Namel3ssError(
                 f"Row action label '{action.label}' is duplicated",

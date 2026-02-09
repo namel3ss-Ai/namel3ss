@@ -1,10 +1,4 @@
 {
-  "state": {
-    "counter": "2",
-    "label": "big",
-    "match": "two"
-  },
-  "last_value": "two",
   "execution_steps": [
     {
       "because": null,
@@ -167,7 +161,13 @@
       "what": "flow \"control\" ended"
     }
   ],
-  "traces": [],
+  "last_value": "two",
   "runtime_theme": "light",
-  "theme_source": null
+  "state": {
+    "counter": "2",
+    "label": "big",
+    "match": "two"
+  },
+  "theme_source": null,
+  "traces": []
 }

@@ -1,8 +1,4 @@
 {
-  "state": {
-    "status": "ok"
-  },
-  "last_value": "ok",
   "execution_steps": [
     {
       "because": null,
@@ -50,12 +46,16 @@
       "what": "flow \"theme_demo\" ended"
     }
   ],
+  "last_value": "ok",
+  "runtime_theme": "light",
+  "state": {
+    "status": "ok"
+  },
+  "theme_source": null,
   "traces": [
     {
       "type": "theme_change",
       "value": "light"
     }
-  ],
-  "runtime_theme": "light",
-  "theme_source": null
+  ]
 }

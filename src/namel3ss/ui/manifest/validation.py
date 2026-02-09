@@ -5,7 +5,7 @@ from typing import Iterable
 from namel3ss.ui.consistency_rules import collect_consistency_findings
 from namel3ss.ui.copy_rules import collect_copy_findings
 from namel3ss.ui.icon_rules import collect_icon_findings
-from namel3ss.ui.manifest.page_structure import page_root_elements
+from namel3ss.ui.manifest.page_structure import iter_element_children_lists, page_root_elements
 from namel3ss.ui.layout_rules import (
     LayoutFinding,
     LayoutLocation,
@@ -202,9 +202,10 @@ def collect_layout_findings(pages: list[dict]) -> list[LayoutFinding]:
                 element_type = element.get("type")
                 location = _element_location(page_name, page_slug, element)
                 label = container_label(element)
-                if element_type in {"card", "compose", "drawer", "modal", "section", "tab"} and not label:
+                if element_type in {"card", "compose", "drawer", "layout.drawer", "modal", "section", "tab"} and not label:
                     findings.append(rule_unlabeled_container(container_type=str(element_type), location=location))
 
+                child_lists = list(iter_element_children_lists(element))
                 if is_container_type(element_type):
                     container_depth = depth + 1
                     deep = rule_deep_nesting(
@@ -225,7 +226,7 @@ def collect_layout_findings(pages: list[dict]) -> list[LayoutFinding]:
                     if heavy:
                         findings.append(heavy)
 
-                    if element_type == "row":
+                    if element_type in {"row", "layout.row"}:
                         column_count = _count_columns(element)
                         grid = rule_grid_sprawl(column_count=column_count, location=location)
                         if grid:
@@ -246,9 +247,11 @@ def collect_layout_findings(pages: list[dict]) -> list[LayoutFinding]:
 
                 if is_container_type(element_type):
                     next_grouped = grouped or is_labeled_container(element)
-                    nested = element.get("children")
-                    if isinstance(nested, list):
+                    for nested in child_lists:
                         walk(nested, depth=container_depth, grouped=next_grouped)
+                elif child_lists:
+                    for nested in child_lists:
+                        walk(nested, depth=depth, grouped=grouped)
 
         walk(elements, depth=0, grouped=False)
 
@@ -279,7 +282,7 @@ def collect_visibility_findings(pages: list[dict]) -> list[LayoutFinding]:
             for element in elements:
                 if not isinstance(element, dict):
                     continue
-                has_guard = isinstance(element.get("visibility"), dict)
+                has_guard = isinstance(element.get("visibility"), dict) or isinstance(element.get("show_when"), dict)
                 if _warns_for_missing_guard(element, guarded=guarded, has_guard=has_guard):
                     location = _element_location(page_name, page_slug, element)
                     component = str(element.get("type") or "component")
@@ -294,8 +297,7 @@ def collect_visibility_findings(pages: list[dict]) -> list[LayoutFinding]:
                             location=location,
                         )
                     )
-                children = element.get("children")
-                if isinstance(children, list):
+                for children in iter_element_children_lists(element):
                     walk(children, guarded=guarded or has_guard)
 
         walk(root_elements, guarded=False)
@@ -354,7 +356,7 @@ def _count_columns(element: dict) -> int:
     children = element.get("children")
     if not isinstance(children, list):
         return 0
-    return sum(1 for child in children if child.get("type") == "column")
+    return sum(1 for child in children if child.get("type") in {"column", "layout.col"})
 
 
 def _table_columns_signature(element: dict) -> tuple[tuple[str, str | None], ...] | None:

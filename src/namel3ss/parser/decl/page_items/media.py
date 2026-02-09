@@ -7,6 +7,7 @@ from namel3ss.parser.decl.page_common import (
     _is_visibility_rule_start,
     _parse_string_value,
     _parse_visibility_clause,
+    _parse_show_when_clause,
     _parse_visibility_rule_block,
     _parse_visibility_rule_line,
     _validate_visibility_combo,
@@ -18,6 +19,7 @@ def parse_image_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.
     parser._expect("IS", "Expected 'is' after 'image'")
     src = _parse_string_value(parser, allow_pattern_params=allow_pattern_params, context="image source")
     visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     role = None
     visibility_rule = None
@@ -55,6 +57,7 @@ def parse_image_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.
         role=role,
         visibility=visibility,
         visibility_rule=visibility_rule,
+        show_when=show_when,
         debug_only=debug_only,
         line=tok.line,
         column=tok.column,

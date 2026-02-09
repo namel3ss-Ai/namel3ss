@@ -91,12 +91,29 @@ def lower_button_item(
     item: ast.ButtonItem,
     flow_names: set[str],
     page_name: str,
+    page_names: set[str],
     *,
     attach_origin,
 ) -> ButtonItem:
-    if item.flow_name not in flow_names:
+    action_kind = str(getattr(item, "action_kind", "call_flow") or "call_flow")
+    target = getattr(item, "target", None)
+    if action_kind == "call_flow":
+        if item.flow_name not in flow_names:
+            raise Namel3ssError(
+                unknown_flow_message(item.flow_name, flow_names, page_name),
+                line=item.line,
+                column=item.column,
+            )
+    elif action_kind == "navigate_to":
+        if target not in page_names:
+            raise Namel3ssError(
+                f"Page '{page_name}' button '{item.label}' references unknown page '{target}'",
+                line=item.line,
+                column=item.column,
+            )
+    elif action_kind != "go_back":
         raise Namel3ssError(
-            unknown_flow_message(item.flow_name, flow_names, page_name),
+            f"Unsupported button action '{action_kind}'",
             line=item.line,
             column=item.column,
         )
@@ -105,6 +122,8 @@ def lower_button_item(
         ButtonItem(
             label=item.label,
             flow_name=item.flow_name,
+            action_kind=action_kind,
+            target=target,
             availability_rule=availability_rule,
             line=item.line,
             column=item.column,
@@ -199,7 +218,7 @@ def lower_card_item(
         for child in item.children
     ]
     stat = _lower_card_stat(item.stat)
-    actions = _lower_card_actions(item.actions, flow_names, page_name, overlays)
+    actions = _lower_card_actions(item.actions, flow_names, page_name, page_names, overlays)
     return attach_origin(
         CardItem(label=item.label, children=children, stat=stat, actions=actions, line=item.line, column=item.column),
         item,
@@ -293,6 +312,7 @@ def _lower_card_actions(
     actions: list[ast.CardAction] | None,
     flow_names: set[str],
     page_name: str,
+    page_names: set[str],
     overlays: dict[str, set[str]],
 ) -> list[CardAction] | None:
     if not actions:
@@ -308,7 +328,7 @@ def _lower_card_actions(
                     column=action.column,
                 )
         else:
-            _validate_overlay_action(action, overlays, page_name)
+            _validate_overlay_action(action, overlays, page_name, page_names)
         if action.label in seen_labels:
             raise Namel3ssError(
                 f"Card action label '{action.label}' is duplicated",

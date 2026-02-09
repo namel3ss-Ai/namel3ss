@@ -98,7 +98,7 @@ function applyThemeTokens(tokens, settingOverride) {
 
 function applyThemeBundle(theme) {
   const bundle = theme || {};
-  const setting = bundle.current || bundle.setting || runtimeTheme || themeSetting;
+  const setting = bundle.color_scheme || bundle.current || bundle.setting || runtimeTheme || themeSetting;
   applyTheme(setting);
   applyThemeTokens(bundle.tokens || {}, setting);
   _applyThemeCss(bundle.css || "", bundle.css_hash || "");

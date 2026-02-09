@@ -1,0 +1,333 @@
+{
+  "actions": {},
+  "diagnostics_enabled": true,
+  "mode": "studio",
+  "pages": [
+    {
+      "elements": [
+        {
+          "column": 3,
+          "element_id": "page.layout_demo.title.0",
+          "index": 0,
+          "line": 7,
+          "page": "Layout Demo",
+          "page_slug": "layout_demo",
+          "type": "title",
+          "value": "Layout Demo"
+        },
+        {
+          "children": [
+            {
+              "column": 5,
+              "element_id": "page.layout_demo.text.1.0",
+              "index": 0,
+              "line": 9,
+              "page": "Layout Demo",
+              "page_slug": "layout_demo",
+              "show_when": {
+                "predicate": "state.show_top",
+                "result": true,
+                "state_paths": [
+                  "state.show_top"
+                ]
+              },
+              "type": "text",
+              "value": "Top"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "column": 9,
+                      "element_id": "page.layout_demo.text.1.1.0.0",
+                      "index": 0,
+                      "line": 12,
+                      "page": "Layout Demo",
+                      "page_slug": "layout_demo",
+                      "type": "text",
+                      "value": "Left"
+                    }
+                  ],
+                  "column": 7,
+                  "element_id": "page.layout_demo.layout_col.1.1.0",
+                  "id": "page.layout_demo.layout_col.1.1.0",
+                  "index": 0,
+                  "line": 11,
+                  "page": "Layout Demo",
+                  "page_slug": "layout_demo",
+                  "spacing": {
+                    "gap": "m"
+                  },
+                  "type": "layout.col"
+                },
+                {
+                  "children": [
+                    {
+                      "column": 9,
+                      "element_id": "page.layout_demo.text.1.1.1.0",
+                      "index": 0,
+                      "line": 14,
+                      "page": "Layout Demo",
+                      "page_slug": "layout_demo",
+                      "type": "text",
+                      "value": "Right"
+                    }
+                  ],
+                  "column": 7,
+                  "element_id": "page.layout_demo.layout_col.1.1.1",
+                  "id": "page.layout_demo.layout_col.1.1.1",
+                  "index": 1,
+                  "line": 13,
+                  "page": "Layout Demo",
+                  "page_slug": "layout_demo",
+                  "spacing": {
+                    "gap": "m"
+                  },
+                  "type": "layout.col"
+                }
+              ],
+              "column": 5,
+              "element_id": "page.layout_demo.layout_row.1.1",
+              "id": "page.layout_demo.layout_row.1.1",
+              "index": 1,
+              "line": 10,
+              "page": "Layout Demo",
+              "page_slug": "layout_demo",
+              "spacing": {
+                "gap": "m"
+              },
+              "type": "layout.row"
+            },
+            {
+              "children": [
+                {
+                  "column": 7,
+                  "element_id": "page.layout_demo.text.1.2.0",
+                  "index": 0,
+                  "line": 16,
+                  "page": "Layout Demo",
+                  "page_slug": "layout_demo",
+                  "type": "text",
+                  "value": "Grid A"
+                },
+                {
+                  "column": 7,
+                  "element_id": "page.layout_demo.text.1.2.1",
+                  "index": 1,
+                  "line": 17,
+                  "page": "Layout Demo",
+                  "page_slug": "layout_demo",
+                  "type": "text",
+                  "value": "Grid B"
+                }
+              ],
+              "column": 5,
+              "columns": 2,
+              "element_id": "page.layout_demo.layout_grid.1.2",
+              "id": "page.layout_demo.layout_grid.1.2",
+              "index": 2,
+              "line": 15,
+              "page": "Layout Demo",
+              "page_slug": "layout_demo",
+              "spacing": {
+                "gap": "m"
+              },
+              "type": "layout.grid"
+            }
+          ],
+          "column": 3,
+          "direction": "vertical",
+          "element_id": "page.layout_demo.layout_stack.1",
+          "id": "page.layout_demo.layout_stack.1",
+          "index": 1,
+          "line": 8,
+          "page": "Layout Demo",
+          "page_slug": "layout_demo",
+          "spacing": {
+            "gap": "m"
+          },
+          "type": "layout.stack"
+        },
+        {
+          "column": 3,
+          "element_id": "page.layout_demo.layout_sidebar.2",
+          "id": "page.layout_demo.layout_sidebar.2",
+          "index": 2,
+          "line": 18,
+          "main": [
+            {
+              "column": 7,
+              "condition": {
+                "predicate": "state.show_main",
+                "result": false,
+                "state_paths": [
+                  "state.show_main"
+                ]
+              },
+              "element_id": "page.layout_demo.conditional_if.2.1.0",
+              "else_children": [
+                {
+                  "column": 9,
+                  "element_id": "page.layout_demo.text.2.1.0.1.0",
+                  "index": 0,
+                  "line": 25,
+                  "page": "Layout Demo",
+                  "page_slug": "layout_demo",
+                  "type": "text",
+                  "value": "Main Off"
+                }
+              ],
+              "id": "page.layout_demo.conditional_if.2.1.0",
+              "index": 0,
+              "line": 22,
+              "page": "Layout Demo",
+              "page_slug": "layout_demo",
+              "then_children": [
+                {
+                  "column": 9,
+                  "element_id": "page.layout_demo.text.2.1.0.0.0",
+                  "index": 0,
+                  "line": 23,
+                  "page": "Layout Demo",
+                  "page_slug": "layout_demo",
+                  "type": "text",
+                  "value": "Main On",
+                  "visible": false
+                }
+              ],
+              "type": "conditional.if"
+            },
+            {
+              "children": [
+                {
+                  "column": 9,
+                  "element_id": "page.layout_demo.text.2.1.1.0",
+                  "index": 0,
+                  "line": 27,
+                  "page": "Layout Demo",
+                  "page_slug": "layout_demo",
+                  "type": "text",
+                  "value": "Drawer Body"
+                }
+              ],
+              "column": 7,
+              "element_id": "page.layout_demo.layout_drawer.2.1.1",
+              "id": "page.layout_demo.layout_drawer.2.1.1",
+              "index": 1,
+              "line": 26,
+              "page": "Layout Demo",
+              "page_slug": "layout_demo",
+              "show_when": {
+                "predicate": "state.show_drawer",
+                "result": true,
+                "state_paths": [
+                  "state.show_drawer"
+                ]
+              },
+              "spacing": {
+                "gap": "m",
+                "padding": "l",
+                "title_gap": "s"
+              },
+              "title": "Details",
+              "type": "layout.drawer"
+            }
+          ],
+          "page": "Layout Demo",
+          "page_slug": "layout_demo",
+          "sidebar": [
+            {
+              "column": 7,
+              "element_id": "page.layout_demo.text.2.0.0",
+              "index": 0,
+              "line": 20,
+              "page": "Layout Demo",
+              "page_slug": "layout_demo",
+              "type": "text",
+              "value": "Side"
+            }
+          ],
+          "spacing": {
+            "gap": "m"
+          },
+          "type": "layout.sidebar"
+        },
+        {
+          "children": [
+            {
+              "column": 5,
+              "element_id": "page.layout_demo.text.3.0",
+              "index": 0,
+              "line": 29,
+              "page": "Layout Demo",
+              "page_slug": "layout_demo",
+              "type": "text",
+              "value": "Sticky Footer"
+            }
+          ],
+          "column": 3,
+          "element_id": "page.layout_demo.layout_sticky.3",
+          "id": "page.layout_demo.layout_sticky.3",
+          "index": 3,
+          "line": 28,
+          "page": "Layout Demo",
+          "page_slug": "layout_demo",
+          "position": "bottom",
+          "spacing": {
+            "gap": "m"
+          },
+          "type": "layout.sticky"
+        }
+      ],
+      "name": "Layout Demo",
+      "slug": "layout_demo"
+    }
+  ],
+  "theme": {
+    "css": ":root {\n  --n3-primary-color: #2563EB;\n  --n3-secondary-color: #5856D6;\n  --n3-background-color: #FFFFFF;\n  --n3-foreground-color: #111827;\n  --n3-font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;\n  --n3-font-size-base: 14px;\n  --n3-font-weight: 500;\n  --n3-spacing-scale: 1.0;\n  --n3-border-radius: 10px;\n  --n3-shadow-elevation: 0 2px 6px rgba(15, 23, 42, 0.08);\n}\n\nbody.n3-runtime,\nbody {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  font-family: var(--n3-font-family);\n  font-size: var(--n3-font-size-base);\n  font-weight: var(--n3-font-weight);\n}\n\n.ui-body,\n.panel,\n.ui-element,\n.list-item,\n.trace-row,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  border-radius: var(--n3-border-radius);\n  box-shadow: var(--n3-shadow-elevation);\n}\n\n.btn.primary,\n.ui-chat-action,\n.ui-upload-label {\n  background: var(--n3-primary-color);\n  border-color: var(--n3-primary-color);\n  color: #FFFFFF;\n}\n\n.ui-link,\n.n3-chat-attachment-link,\n.n3-citation-chip {\n  color: var(--n3-primary-color);\n}\n\n.ui-card-title,\n.ui-section-title,\n.n3-chat-group-label {\n  color: var(--n3-secondary-color);\n}\n\n.ui-element,\n.panel,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  padding: calc(10px * var(--n3-spacing-scale));\n}\n\n.ui-row,\n.ui-column,\n.ui-card-group,\n.n3-layout-root,\n.n3-layout-body {\n  gap: calc(10px * var(--n3-spacing-scale));\n}\n",
+    "css_hash": "af84b4058b81de1bba97dd498d5b53bb92defe1f5de89914b9ee0633692c1446",
+    "current": "light",
+    "effective": "light",
+    "font_url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+    "persisted_current": null,
+    "preference": {
+      "allow_override": false,
+      "persist": "none"
+    },
+    "runtime_supported": false,
+    "runtime_tokens": {},
+    "schema_version": "1",
+    "setting": "light",
+    "source": "app",
+    "theme_name": "default",
+    "tokens": {
+      "background_color": "#FFFFFF",
+      "border_radius": 10,
+      "font_family": "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+      "font_size_base": 14,
+      "font_weight": 500,
+      "foreground_color": "#111827",
+      "primary_color": "#2563EB",
+      "secondary_color": "#5856D6",
+      "shadow_level": 1,
+      "spacing_scale": 1.0
+    }
+  },
+  "ui": {
+    "persistence": {
+      "enabled": false,
+      "kind": "memory",
+      "path": null,
+      "schema_version": null
+    },
+    "settings": {
+      "accent_color": "blue",
+      "density": "comfortable",
+      "motion": "subtle",
+      "shape": "rounded",
+      "surface": "flat",
+      "theme": "light"
+    }
+  }
+}

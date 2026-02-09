@@ -4,8 +4,10 @@ from __future__ import annotations
 import argparse
 import os
 import re
+import subprocess
 import sys
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Iterable
 
@@ -409,8 +411,12 @@ def _read_text(path: Path) -> str:
     except OSError as err:
         raise AuditFailure(f"Unreadable file: {path} ({err})") from err
 
-
 def _iter_files(root: Path) -> Iterable[Path]:
+    git_root = _find_git_root(root)
+    tracked_paths: frozenset[str] | None = None
+    if git_root is not None:
+        tracked_paths = _tracked_repo_paths(git_root)
+
     def _on_walk_error(err: OSError) -> None:
         raise AuditFailure(f"Unreadable directory: {err.filename} ({err.strerror})")
 
@@ -419,7 +425,37 @@ def _iter_files(root: Path) -> Iterable[Path]:
         for file_name in sorted(file_names):
             file_path = Path(current) / file_name
             if file_path.is_file():
+                if tracked_paths is not None and git_root is not None:
+                    rel_path = file_path.resolve().relative_to(git_root.resolve()).as_posix()
+                    if rel_path not in tracked_paths:
+                        continue
                 yield file_path
+
+def _find_git_root(path: Path) -> Path | None:
+    current = path.resolve()
+    for candidate in (current, *current.parents):
+        if (candidate / ".git").exists():
+            return candidate
+    return None
+
+@lru_cache(maxsize=8)
+def _tracked_repo_paths(git_root: Path) -> frozenset[str] | None:
+    try:
+        result = subprocess.run(
+            ["git", "-C", git_root.as_posix(), "ls-files", "-z"],
+            check=True,
+            capture_output=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+    entries = [part.decode("utf-8") for part in result.stdout.split(b"\0") if part]
+    filtered = [
+        path
+        for path in sorted(entries)
+        if not any(segment in SKIP_DIRECTORIES for segment in Path(path).parts)
+    ]
+    return frozenset(filtered)
 
 
 def _require_directory(path: Path) -> None:

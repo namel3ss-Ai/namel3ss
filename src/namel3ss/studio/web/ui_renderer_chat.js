@@ -4,6 +4,13 @@
     container: null,
     panel: null,
     title: null,
+    tabs: null,
+    sourcesView: null,
+    previewView: null,
+    explainView: null,
+    explainText: null,
+    sourcesList: null,
+    sourceItems: [],
     meta: null,
     snippet: null,
     pageText: null,
@@ -19,6 +26,10 @@
     pageCount: null,
     entrySnippet: null,
     chunkId: null,
+    citations: [],
+    selectedCitationIndex: -1,
+    tabButtons: [],
+    trapHandler: null,
   };
 
   function renderChatElement(el, handleAction) {
@@ -30,8 +41,12 @@
     wrapper.classList.add(`ui-chat-style-${style}`);
 
     const children = Array.isArray(chat.children) ? chat.children : [];
+    const chatConfig = {
+      ...chat,
+      _hasCitationPanel: children.some((child) => child && child.type === "citations"),
+    };
     children.forEach((child) => {
-      const node = renderChatChild(child, handleAction, chat);
+      const node = renderChatChild(child, handleAction, chatConfig);
       if (node) wrapper.appendChild(node);
     });
 
@@ -54,10 +69,14 @@
     container.className = `ui-chat-messages ui-chat-messages-${style}`;
     const messages = Array.isArray(child.messages) ? child.messages : [];
     if (!messages.length) {
-      const empty = document.createElement("div");
-      empty.className = "ui-chat-empty";
-      empty.textContent = "No messages yet.";
-      container.appendChild(empty);
+      if (chatConfig && chatConfig._hasCitationPanel) {
+        container.appendChild(renderNoSourcesPanel());
+      } else {
+        const empty = document.createElement("div");
+        empty.className = "ui-chat-empty";
+        empty.textContent = "No messages yet.";
+        container.appendChild(empty);
+      }
       return container;
     }
     let previousRole = "";
@@ -92,21 +111,34 @@
       } else {
         content.textContent = fullText;
       }
-      if (chatConfig && chatConfig.streaming && message && message.streaming === true && roleValue === "assistant") {
-        renderStreamingContent(content, message);
+      const isStreamingMessage =
+        Boolean(chatConfig && chatConfig.streaming) &&
+        Boolean(message && message.streaming === true) &&
+        roleValue === "assistant";
+      if (isStreamingMessage) {
         row.classList.add("is-streaming");
       }
       bubble.appendChild(role);
       bubble.appendChild(content);
+      if (isStreamingMessage) {
+        renderStreamingContent(content, message, () => revealMessageCitations(row));
+      }
       if (Object.prototype.hasOwnProperty.call(message, "trust") && typeof root.renderTrustIndicatorElement === "function") {
         const trustNode = root.renderTrustIndicatorElement({
           type: "trust_indicator",
           value: message.trust,
           compact: true,
         });
+        trustNode.classList.add("ui-chat-trust-row");
         bubble.appendChild(trustNode);
       }
-      renderMessageAttachments(bubble, message, chatConfig);
+      renderMessageAttachments(bubble, message, chatConfig, { deferCitations: isStreamingMessage });
+      if (typeof message.error === "string" && message.error.trim()) {
+        const errorSurface = document.createElement("div");
+        errorSurface.className = "ui-chat-error-surface";
+        errorSurface.textContent = "Something went wrong while generating this response.";
+        bubble.appendChild(errorSurface);
+      }
       if (message.created) {
         const created = document.createElement("div");
         created.className = "ui-chat-created";
@@ -147,7 +179,8 @@
     return normalized;
   }
 
-  function renderMessageAttachments(container, message, chatConfig) {
+  function renderMessageAttachments(container, message, chatConfig, options) {
+    const config = options && typeof options === "object" ? options : {};
     const attachmentsEnabled = Boolean(chatConfig && chatConfig.attachments);
     const attachments = Array.isArray(message && message.attachments) ? message.attachments : [];
     const citations = collectMessageCitations(message);
@@ -160,6 +193,9 @@
         citations: citations,
         compact: true,
       });
+      if (config.deferCitations && attachments.filter((entry) => entry && entry.type !== "citation").length === 0) {
+        block.dataset.streamVisible = "false";
+      }
       block.appendChild(chips);
     }
     attachments.forEach((attachment) => {
@@ -228,7 +264,7 @@
             }, 1000);
             return;
           }
-          openCitationPreview(citations[0], button);
+          openCitationPreview(citations[0], button, citations);
         };
       }
       bar.appendChild(button);
@@ -244,6 +280,44 @@
       return;
     }
     node.textContent = `${fullText.slice(0, 280)}...`;
+  }
+
+  function renderNoSourcesPanel() {
+    const wrapper = document.createElement("div");
+    wrapper.className = "ui-empty-sources-panel";
+    const title = document.createElement("div");
+    title.className = "ui-empty-sources-title";
+    title.textContent = "No sources available";
+    const text = document.createElement("div");
+    text.className = "ui-empty-sources-text";
+    text.textContent = "Upload a document to ground answers with citations.";
+    const actions = document.createElement("div");
+    actions.className = "ui-empty-sources-actions";
+    const upload = document.createElement("button");
+    upload.type = "button";
+    upload.className = "btn small";
+    upload.textContent = "Upload document";
+    upload.onclick = () => {
+      const fileInput = document.querySelector(".ui-upload-input");
+      if (fileInput && typeof fileInput.click === "function") {
+        fileInput.click();
+        return;
+      }
+      document.dispatchEvent(new CustomEvent("n3:upload-document"));
+    };
+    actions.appendChild(upload);
+    wrapper.appendChild(title);
+    wrapper.appendChild(text);
+    wrapper.appendChild(actions);
+    return wrapper;
+  }
+
+  function revealMessageCitations(rowNode) {
+    if (!rowNode) return;
+    const hiddenBlocks = rowNode.querySelectorAll('.ui-chat-attachments[data-stream-visible="false"]');
+    hiddenBlocks.forEach((block) => {
+      block.dataset.streamVisible = "true";
+    });
   }
 
   function collectMessageCitations(message) {
@@ -292,27 +366,49 @@
     document.body.removeChild(area);
   }
 
-  function renderStreamingContent(contentNode, message) {
+  function renderStreamingContent(contentNode, message, onComplete) {
     const fullText = typeof message.content === "string" ? message.content : "";
     const tokenValues = Array.isArray(message.tokens)
       ? message.tokens.filter((entry) => typeof entry === "string")
       : fullText.split(/(\s+)/).filter((entry) => entry.length > 0);
     if (!tokenValues.length) {
       contentNode.textContent = fullText;
+      contentNode.dataset.streamPhase = "complete";
+      if (typeof onComplete === "function") onComplete();
       return;
     }
     contentNode.textContent = "";
+    contentNode.dataset.streamPhase = "thinking";
+    const thinking = document.createElement("span");
+    thinking.className = "ui-chat-stream-thinking";
+    const dot = document.createElement("span");
+    dot.className = "ui-chat-stream-thinking-dot";
+    thinking.appendChild(dot);
+    contentNode.appendChild(thinking);
     let cursor = 0;
+    let finalized = false;
+    const complete = () => {
+      if (finalized) return;
+      finalized = true;
+      contentNode.dataset.streamPhase = "complete";
+      if (typeof onComplete === "function") onComplete();
+    };
     const interval = window.setInterval(() => {
       if (!contentNode.isConnected) {
         window.clearInterval(interval);
+        complete();
         return;
+      }
+      if (cursor === 0) {
+        contentNode.textContent = "";
+        contentNode.dataset.streamPhase = "streaming";
       }
       const token = tokenValues[cursor];
       contentNode.textContent += token;
       cursor += 1;
       if (cursor >= tokenValues.length) {
         window.clearInterval(interval);
+        complete();
       }
     }, 14);
   }
@@ -323,10 +419,24 @@
     const fields = normalizeComposerFields(child);
     const inputs = new Map();
     fields.forEach((field) => {
-      const input = document.createElement("input");
-      input.type = "text";
       const name = field.name || "message";
       const placeholder = name === "message" ? "Type a message" : String(name);
+      const input = name === "message" ? document.createElement("textarea") : document.createElement("input");
+      if (input.tagName.toLowerCase() === "input") {
+        input.type = "text";
+      } else {
+        input.className = "ui-chat-composer-message";
+        input.rows = 1;
+        input.addEventListener("keydown", (event) => {
+          if (event.key !== "Enter" || event.shiftKey) return;
+          event.preventDefault();
+          if (typeof form.requestSubmit === "function") {
+            form.requestSubmit();
+          } else {
+            form.dispatchEvent(new Event("submit", { cancelable: true }));
+          }
+        });
+      }
       input.placeholder = placeholder;
       input.setAttribute("aria-label", placeholder);
       inputs.set(name, input);
@@ -354,6 +464,10 @@
         payload,
         button
       );
+      const messageInput = inputs.get("message");
+      if (messageInput && typeof messageInput.focus === "function") {
+        messageInput.focus();
+      }
     };
     return form;
   }
@@ -424,9 +538,44 @@
     header.appendChild(closeBtn);
     panel.appendChild(header);
 
+    const tabs = document.createElement("div");
+    tabs.className = "ui-citation-preview-tabs";
+    const sourcesTab = document.createElement("button");
+    sourcesTab.type = "button";
+    sourcesTab.className = "ui-citation-preview-tab";
+    sourcesTab.dataset.tab = "sources";
+    sourcesTab.textContent = "Sources";
+    const previewTab = document.createElement("button");
+    previewTab.type = "button";
+    previewTab.className = "ui-citation-preview-tab";
+    previewTab.dataset.tab = "preview";
+    previewTab.textContent = "Preview";
+    const explainTab = document.createElement("button");
+    explainTab.type = "button";
+    explainTab.className = "ui-citation-preview-tab";
+    explainTab.dataset.tab = "explain";
+    explainTab.textContent = "Explain";
+    sourcesTab.onclick = () => setCitationPreviewTab("sources");
+    previewTab.onclick = () => setCitationPreviewTab("preview");
+    explainTab.onclick = () => setCitationPreviewTab("explain");
+    tabs.appendChild(sourcesTab);
+    tabs.appendChild(previewTab);
+    tabs.appendChild(explainTab);
+    panel.appendChild(tabs);
+
+    const sourcesView = document.createElement("div");
+    sourcesView.className = "ui-citation-preview-view ui-citation-preview-sources-view";
+    const sourcesList = document.createElement("div");
+    sourcesList.className = "ui-citation-preview-sources";
+    sourcesView.appendChild(sourcesList);
+    panel.appendChild(sourcesView);
+
+    const previewView = document.createElement("div");
+    previewView.className = "ui-citation-preview-view ui-citation-preview-preview-view";
+
     const meta = document.createElement("div");
     meta.className = "ui-citation-preview-meta";
-    panel.appendChild(meta);
+    previewView.appendChild(meta);
 
     const snippetSection = document.createElement("div");
     snippetSection.className = "ui-citation-preview-section";
@@ -437,7 +586,7 @@
     snippet.className = "ui-citation-preview-snippet";
     snippetSection.appendChild(snippetLabel);
     snippetSection.appendChild(snippet);
-    panel.appendChild(snippetSection);
+    previewView.appendChild(snippetSection);
 
     const textSection = document.createElement("div");
     textSection.className = "ui-citation-preview-section";
@@ -453,7 +602,7 @@
     textSection.appendChild(textLabel);
     textSection.appendChild(notice);
     textSection.appendChild(pageText);
-    panel.appendChild(textSection);
+    previewView.appendChild(textSection);
 
     const controls = document.createElement("div");
     controls.className = "ui-citation-preview-controls";
@@ -470,29 +619,49 @@
     controls.appendChild(prevBtn);
     controls.appendChild(pageLabel);
     controls.appendChild(nextBtn);
-    panel.appendChild(controls);
+    previewView.appendChild(controls);
 
     const frame = document.createElement("iframe");
     frame.className = "ui-citation-preview-frame";
     frame.title = "Document preview";
-    panel.appendChild(frame);
+    previewView.appendChild(frame);
 
     const error = document.createElement("div");
     error.className = "ui-citation-preview-error";
-    panel.appendChild(error);
+    previewView.appendChild(error);
+    panel.appendChild(previewView);
+
+    const explainView = document.createElement("div");
+    explainView.className = "ui-citation-preview-view ui-citation-preview-explain-view";
+    const explainText = document.createElement("div");
+    explainText.className = "ui-citation-preview-explain";
+    explainText.textContent = "This panel explains why a source was selected.";
+    explainView.appendChild(explainText);
+    panel.appendChild(explainView);
 
     overlay.appendChild(panel);
     overlay.addEventListener("click", (event) => {
       if (event.target === overlay) closeCitationPreview();
     });
     overlay.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") closeCitationPreview();
+      if (event.key === "Escape") {
+        closeCitationPreview();
+        return;
+      }
+      trapCitationPreviewFocus(event);
     });
     document.body.appendChild(overlay);
 
     previewState.container = overlay;
     previewState.panel = panel;
     previewState.title = title;
+    previewState.tabs = tabs;
+    previewState.sourcesView = sourcesView;
+    previewState.previewView = previewView;
+    previewState.explainView = explainView;
+    previewState.explainText = explainText;
+    previewState.sourcesList = sourcesList;
+    previewState.tabButtons = [sourcesTab, previewTab, explainTab];
     previewState.meta = meta;
     previewState.snippet = snippet;
     previewState.pageText = pageText;
@@ -502,25 +671,142 @@
     previewState.nextButton = nextBtn;
     previewState.frame = frame;
     previewState.error = error;
+    previewState.sourceItems = [];
 
     prevBtn.onclick = () => navigatePreviewPage(-1);
     nextBtn.onclick = () => navigatePreviewPage(1);
+    setCitationPreviewTab("sources");
 
     return previewState;
   }
 
-  function openCitationPreview(entry, opener) {
+  function trapCitationPreviewFocus(event) {
+    if (event.key !== "Tab") return;
+    if (!(window.matchMedia && window.matchMedia("(max-width: 960px)").matches)) return;
+    const preview = previewState;
+    if (!preview.panel) return;
+    const focusable = Array.from(
+      preview.panel.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+    ).filter((el) => !el.disabled && !el.hidden);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+      return;
+    }
+    if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  function setCitationPreviewTab(tab) {
+    const preview = ensureCitationPreview();
+    const selected = tab === "preview" || tab === "explain" ? tab : "sources";
+    preview.tabButtons.forEach((button) => {
+      const active = button.dataset.tab === selected;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+    preview.sourcesView.hidden = selected !== "sources";
+    preview.previewView.hidden = selected !== "preview";
+    preview.explainView.hidden = selected !== "explain";
+  }
+
+  function renderPreviewSources(citations, selectedIndex) {
+    const preview = ensureCitationPreview();
+    preview.sourcesList.textContent = "";
+    preview.sourceItems = [];
+    citations.forEach((entry, index) => {
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "ui-citation-preview-source";
+      if (index === selectedIndex) item.classList.add("active");
+      item.onclick = () => {
+        selectPreviewCitation(index, { openPreviewTab: true });
+      };
+      const title = document.createElement("div");
+      title.className = "ui-citation-preview-source-title";
+      title.textContent = entry.title || `Source ${index + 1}`;
+      const meta = document.createElement("div");
+      meta.className = "ui-citation-preview-source-meta";
+      const target = resolveCitationTarget(entry);
+      if (target && target.pageNumber) {
+        meta.textContent = `Page ${target.pageNumber}`;
+      } else if (entry.url) {
+        meta.textContent = entry.url;
+      } else if (entry.source_id) {
+        meta.textContent = entry.source_id;
+      } else {
+        meta.textContent = "Preview unavailable";
+      }
+      const snippet = document.createElement("div");
+      snippet.className = "ui-citation-preview-source-snippet";
+      snippet.textContent = formatSnippet(entry.snippet || "", "");
+      item.appendChild(title);
+      item.appendChild(meta);
+      item.appendChild(snippet);
+      preview.sourcesList.appendChild(item);
+      preview.sourceItems.push(item);
+    });
+  }
+
+  function selectPreviewCitation(index, options) {
+    const preview = ensureCitationPreview();
+    const config = options && typeof options === "object" ? options : {};
+    if (!Array.isArray(preview.citations) || !preview.citations.length) return;
+    const bounded = Math.max(0, Math.min(index, preview.citations.length - 1));
+    preview.selectedCitationIndex = bounded;
+    preview.sourceItems.forEach((item, idx) => {
+      item.classList.toggle("active", idx === bounded);
+    });
+    const selectedItem = preview.sourceItems[bounded];
+    if (selectedItem && typeof selectedItem.scrollIntoView === "function") {
+      selectedItem.scrollIntoView({ block: "nearest" });
+    }
+    const entry = preview.citations[bounded];
+    preview.entrySnippet = typeof entry.snippet === "string" ? entry.snippet : "";
+    preview.title.textContent = entry.title || "Source";
+    preview.explainText.textContent =
+      typeof entry.explain === "string" && entry.explain.trim()
+        ? entry.explain
+        : "The answer cited this source for matching context.";
     const target = resolveCitationTarget(entry);
-    if (!target) return;
+    if (!target) {
+      preview.meta.textContent = "Preview unavailable";
+      preview.error.textContent = "Preview unavailable for this citation.";
+      preview.snippet.textContent = formatSnippet(preview.entrySnippet, "");
+      preview.pageText.textContent = "No extracted text for this page.";
+      preview.pageLabel.textContent = "";
+      preview.prevButton.disabled = true;
+      preview.nextButton.disabled = true;
+    } else {
+      preview.chunkId = target.chunkId || null;
+      loadPreviewPage(target.documentId, target.pageNumber, preview.chunkId);
+    }
+    if (config.openPreviewTab) {
+      setCitationPreviewTab("preview");
+    }
+  }
+
+  function openCitationPreview(entry, opener, citationSet) {
+    if (!entry || typeof entry !== "object") return;
     const preview = ensureCitationPreview();
     preview.returnFocus = opener || document.activeElement;
-    preview.entrySnippet = typeof entry.snippet === "string" ? entry.snippet : "";
-    preview.chunkId = target.chunkId || null;
-    preview.title.textContent = entry.title || "Source";
+    const citations = normalizeCitationEntries(Array.isArray(citationSet) && citationSet.length ? citationSet : [entry]);
+    preview.citations = citations;
+    const selectedIndex = Math.max(
+      0,
+      citations.findIndex((item) => citationIdentity(item) === citationIdentity(entry))
+    );
+    renderPreviewSources(citations, selectedIndex);
+    selectPreviewCitation(selectedIndex, { openPreviewTab: false });
     preview.container.classList.remove("hidden");
     preview.container.setAttribute("aria-hidden", "false");
+    setCitationPreviewTab("sources");
     preview.panel.focus();
-    loadPreviewPage(target.documentId, target.pageNumber, preview.chunkId);
   }
 
   function closeCitationPreview() {
@@ -533,6 +819,9 @@
     preview.pageCount = null;
     preview.entrySnippet = null;
     preview.chunkId = null;
+    preview.citations = [];
+    preview.selectedCitationIndex = -1;
+    preview.sourceItems = [];
     if (preview.returnFocus && preview.returnFocus.focus) {
       preview.returnFocus.focus();
     }
@@ -702,7 +991,14 @@
     const indicator = document.createElement("div");
     indicator.className = "ui-chat-thinking";
     const userVisible = Boolean(child.user_visible) || Boolean(chatConfig && chatConfig.streaming);
-    indicator.textContent = userVisible ? "Assistant is typing..." : "Thinking...";
+    const phase = typeof child.phase === "string" ? child.phase.trim().toLowerCase() : "";
+    if (phase === "retrieving") {
+      indicator.textContent = "Searching sources...";
+    } else if (phase === "generating" || userVisible) {
+      indicator.textContent = "Assistant is typing...";
+    } else {
+      indicator.textContent = "Thinking...";
+    }
     if (userVisible) indicator.classList.add("user-visible");
     indicator.hidden = !child.active;
     return indicator;
@@ -759,7 +1055,7 @@
         openBtn.textContent = "Open page";
         openBtn.onclick = (event) => {
           event.stopPropagation();
-          openCitationPreview(entry, event.currentTarget);
+          openCitationPreview(entry, event.currentTarget, citations);
         };
         actions.appendChild(openBtn);
         item.appendChild(actions);
@@ -791,6 +1087,7 @@
       if (typeof entry.url === "string" && entry.url.trim()) payload.url = entry.url.trim();
       if (typeof entry.source_id === "string" && entry.source_id.trim()) payload.source_id = entry.source_id.trim();
       if (typeof entry.snippet === "string" && entry.snippet.trim()) payload.snippet = entry.snippet.trim();
+      if (typeof entry.explain === "string" && entry.explain.trim()) payload.explain = entry.explain.trim();
       if (typeof entry.chunk_id === "string" && entry.chunk_id.trim()) payload.chunk_id = entry.chunk_id.trim();
       if (typeof entry.document_id === "string" && entry.document_id.trim()) payload.document_id = entry.document_id.trim();
       if (typeof entry.page === "number" || typeof entry.page === "string") payload.page = entry.page;

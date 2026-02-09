@@ -114,6 +114,9 @@ class ExecutionContext:
     performance_state: object | None = None
     explain_log: list[dict] = field(default_factory=list)
     explain_sequence: int = 0
+    app_permissions: dict[str, bool] = field(default_factory=dict)
+    app_permissions_enabled: bool = False
+    ui_state_scope_by_key: dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not isinstance(self.traces, TraceList):

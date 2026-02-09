@@ -23,6 +23,8 @@ PROD_HTML_FILENAME = "prod.html"
 RUNTIME_WEB_ASSETS = ("runtime.css", "runtime.js")
 STUDIO_WEB_ASSETS = (
     "studio_ui.css",
+    "styles/layout_tokens.css",
+    "styles/theme.css",
     "theme_tokens.css",
     "theme_tokens.js",
     "theme_runtime.js",

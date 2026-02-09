@@ -80,6 +80,9 @@ class Executor:
         policy: ir.PolicyDecl | None = None,
         observability: ObservabilityContext | None = None,
         extension_hook_manager: object | None = None,
+        app_permissions: dict[str, bool] | None = None,
+        app_permissions_enabled: bool = False,
+        ui_state_scope_by_key: dict[str, str] | None = None,
     ) -> None:
         resolved_config = config or load_config()
         default_ai_provider = ai_provider or MockProvider()
@@ -157,6 +160,9 @@ class Executor:
             model_manager=model_manager,
             sandbox_config=sandbox_config,
             resource_limits=resource_limits,
+            app_permissions=dict(app_permissions or {}),
+            app_permissions_enabled=bool(app_permissions_enabled),
+            ui_state_scope_by_key=dict(ui_state_scope_by_key or {}),
         )
         self.ctx.performance_state = build_or_get_performance_state(
             config=resolved_config,

@@ -20,7 +20,9 @@ def inject_state_inspector_elements(
     backend = _sanitize(persistence_backend) if isinstance(persistence_backend, dict) else {}
     status = _sanitize(migration_status) if isinstance(migration_status, dict) else {}
     schema_version = str(state_schema_version or "").strip()
-    if not backend and not status and not schema_version:
+    ui_state = _sanitize(manifest.get("ui_state")) if isinstance(manifest.get("ui_state"), dict) else {}
+    app_permissions = _sanitize(manifest.get("app_permissions")) if isinstance(manifest.get("app_permissions"), dict) else {}
+    if not backend and not status and not schema_version and not ui_state and not app_permissions:
         return manifest
     for page in pages:
         if not isinstance(page, dict):
@@ -33,6 +35,8 @@ def inject_state_inspector_elements(
             persistence_backend=backend,
             migration_status=status,
             state_schema_version=schema_version,
+            ui_state=ui_state,
+            app_permissions=app_permissions,
         )
         if isinstance(page.get("layout"), dict):
             layout = page["layout"]
@@ -69,6 +73,8 @@ def _state_inspector_element(
     persistence_backend: dict[str, Any],
     migration_status: dict[str, Any],
     state_schema_version: str,
+    ui_state: dict[str, Any],
+    app_permissions: dict[str, Any],
 ) -> dict[str, Any]:
     return {
         "type": "state_inspector",
@@ -82,6 +88,8 @@ def _state_inspector_element(
         "persistence_backend": persistence_backend,
         "migration_status": migration_status,
         "state_schema_version": state_schema_version,
+        "ui_state": ui_state,
+        "app_permissions": app_permissions,
     }
 
 

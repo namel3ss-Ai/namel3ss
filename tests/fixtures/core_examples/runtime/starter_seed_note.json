@@ -1,10 +1,4 @@
 {
-  "state": {},
-  "last_value": {
-    "_id": 1,
-    "details": "this note is created by a flow",
-    "summary": "hello"
-  },
   "execution_steps": [
     {
       "because": null,
@@ -38,6 +32,14 @@
       "what": "flow \"seed_note\" ended"
     }
   ],
+  "last_value": {
+    "_id": 1,
+    "details": "this note is created by a flow",
+    "summary": "hello"
+  },
+  "runtime_theme": "light",
+  "state": {},
+  "theme_source": null,
   "traces": [
     {
       "flow_id": "flow:seed_note",
@@ -69,7 +71,5 @@
       "what": "create \"Note\"",
       "why": "flow \"seed_note\" ran"
     }
-  ],
-  "runtime_theme": "light",
-  "theme_source": null
+  ]
 }

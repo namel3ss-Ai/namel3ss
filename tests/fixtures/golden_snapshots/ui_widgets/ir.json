@@ -59,6 +59,8 @@
         {
           "column": 3,
           "line": 12,
+          "show_when": null,
+          "theme_overrides": null,
           "type": "TitleItem",
           "value": "Golden UI",
           "visibility": null
@@ -66,6 +68,8 @@
         {
           "column": 3,
           "line": 13,
+          "show_when": null,
+          "theme_overrides": null,
           "type": "TextItem",
           "value": "Widgets",
           "visibility": null
@@ -85,6 +89,8 @@
                           "groups": null,
                           "line": 18,
                           "record_name": "Note",
+                          "show_when": null,
+                          "theme_overrides": null,
                           "type": "FormItem",
                           "visibility": null
                         }
@@ -92,13 +98,17 @@
                       "column": 9,
                       "label": "Entry",
                       "line": 17,
+                      "show_when": null,
                       "stat": null,
+                      "theme_overrides": null,
                       "type": "CardItem",
                       "visibility": null
                     }
                   ],
                   "column": 7,
                   "line": 16,
+                  "show_when": null,
+                  "theme_overrides": null,
                   "type": "ColumnItem",
                   "visibility": null
                 },
@@ -116,8 +126,10 @@
                           "record_name": "Note",
                           "row_actions": null,
                           "selection": null,
+                          "show_when": null,
                           "sort": null,
                           "source": null,
+                          "theme_overrides": null,
                           "type": "TableItem",
                           "visibility": null
                         }
@@ -125,19 +137,25 @@
                       "column": 9,
                       "label": "List",
                       "line": 20,
+                      "show_when": null,
                       "stat": null,
+                      "theme_overrides": null,
                       "type": "CardItem",
                       "visibility": null
                     }
                   ],
                   "column": 7,
                   "line": 19,
+                  "show_when": null,
+                  "theme_overrides": null,
                   "type": "ColumnItem",
                   "visibility": null
                 }
               ],
               "column": 5,
               "line": 15,
+              "show_when": null,
+              "theme_overrides": null,
               "type": "RowItem",
               "visibility": null
             }
@@ -146,6 +164,8 @@
           "columns": null,
           "label": "Layout",
           "line": 14,
+          "show_when": null,
+          "theme_overrides": null,
           "type": "SectionItem",
           "visibility": null
         },
@@ -157,6 +177,8 @@
               "flow_name": "demo",
               "label": "Run",
               "line": 23,
+              "show_when": null,
+              "theme_overrides": null,
               "type": "ButtonItem",
               "visibility": null
             }
@@ -164,7 +186,9 @@
           "column": 3,
           "label": "Actions",
           "line": 22,
+          "show_when": null,
           "stat": null,
+          "theme_overrides": null,
           "type": "CardItem",
           "visibility": null
         }
@@ -178,7 +202,9 @@
         "type": "Literal",
         "value": true
       },
-      "type": "Page"
+      "theme_tokens": null,
+      "type": "Page",
+      "ui_theme_overrides": null
     }
   ],
   "records": [

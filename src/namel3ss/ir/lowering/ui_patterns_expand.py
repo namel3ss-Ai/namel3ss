@@ -1,12 +1,20 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
-from namel3ss.ir.lowering.ui_patterns_materialize import (
-    materialize_item,
-    materialize_tab,
+from namel3ss.ir.lowering.ui_patterns_children import expand_item_children
+from namel3ss.ir.lowering.ui_patterns_materialize import materialize_item
+from namel3ss.ir.lowering.ui_patterns_origin import (
+    PatternContext,
+    _attach_pattern_origin,
+    _format_invocation_id,
+    _merge_origin,
+    _pattern_parameters,
+)
+from namel3ss.ir.lowering.ui_patterns_visibility import (
+    _apply_visibility,
+    _apply_visibility_rule,
+    _ensure_no_top_level_visibility,
 )
 from namel3ss.ir.lowering.ui_patterns_values import (
     resolve_pattern_params,
@@ -14,12 +22,6 @@ from namel3ss.ir.lowering.ui_patterns_values import (
     resolve_visibility_rule,
 )
 from namel3ss.ui.patterns.model import PatternDefinition
-
-@dataclass(frozen=True)
-class PatternContext:
-    name: str
-    invocation_id: str
-    parameters: dict[str, object]
 
 def expand_pattern_items(
     items: list[ast.PageItem],
@@ -113,15 +115,16 @@ def _expand_items(
         )
         if working is None:
             continue
-        if columns_only and not isinstance(working, ast.ColumnItem):
+        if columns_only and not isinstance(working, (ast.ColumnItem, ast.LayoutColumn)):
             raise Namel3ssError("Rows may only contain columns", line=working.line, column=working.column)
-        if isinstance(working, ast.TabsItem) and not allow_tabs:
+        if isinstance(working, ast.TabsItem) and not allow_tabs and not _is_rag_ui_origin(working):
             raise Namel3ssError("Tabs may only appear at the page root", line=working.line, column=working.column)
         if isinstance(working, (ast.ModalItem, ast.DrawerItem)) and not allow_overlays:
             raise Namel3ssError("Overlays may only appear at the page root", line=working.line, column=working.column)
-        working = _expand_item_children(
+        working = expand_item_children(
             working,
             pattern_index,
+            expand_items=_expand_items,
             page_name=page_name,
             allow_tabs=allow_tabs,
             allow_overlays=allow_overlays,
@@ -220,276 +223,8 @@ def _expand_use_pattern(
             expanded = [_apply_visibility_rule(entry, visibility_rule) for entry in expanded]
     return expanded
 
-def _expand_item_children(
-    item: ast.PageItem,
-    pattern_index: dict[str, PatternDefinition],
-    *,
-    page_name: str,
-    allow_tabs: bool,
-    allow_overlays: bool,
-    flow_names: set[str],
-    page_names: set[str],
-    record_names: set[str],
-    context_module: str | None,
-    page_path_prefix: list[int],
-    pattern_context: PatternContext | None,
-    pattern_path_prefix: list[int] | None,
-    base_origin: dict | None,
-    param_values: dict[str, object] | None,
-    param_defs: dict[str, ast.PatternParam] | None,
-    stack: list[str],
-) -> ast.PageItem:
-    if isinstance(item, ast.SectionItem):
-        item.children = _expand_items(
-            item.children,
-            pattern_index,
-            page_name=page_name,
-            allow_tabs=False,
-            allow_overlays=False,
-            columns_only=False,
-            flow_names=flow_names,
-            page_names=page_names,
-            record_names=record_names,
-            context_module=context_module,
-            page_path_prefix=page_path_prefix,
-            pattern_context=pattern_context,
-            pattern_path_prefix=pattern_path_prefix,
-            base_origin=base_origin,
-            param_values=param_values,
-            param_defs=param_defs,
-            stack=stack,
-        )
-        return item
-    if isinstance(item, ast.CardGroupItem):
-        item.children = _expand_items(
-            item.children,
-            pattern_index,
-            page_name=page_name,
-            allow_tabs=False,
-            allow_overlays=False,
-            columns_only=False,
-            flow_names=flow_names,
-            page_names=page_names,
-            record_names=record_names,
-            context_module=context_module,
-            page_path_prefix=page_path_prefix,
-            pattern_context=pattern_context,
-            pattern_path_prefix=pattern_path_prefix,
-            base_origin=base_origin,
-            param_values=param_values,
-            param_defs=param_defs,
-            stack=stack,
-        )
-        return item
-    if isinstance(item, ast.CardItem):
-        item.children = _expand_items(
-            item.children,
-            pattern_index,
-            page_name=page_name,
-            allow_tabs=False,
-            allow_overlays=False,
-            columns_only=False,
-            flow_names=flow_names,
-            page_names=page_names,
-            record_names=record_names,
-            context_module=context_module,
-            page_path_prefix=page_path_prefix,
-            pattern_context=pattern_context,
-            pattern_path_prefix=pattern_path_prefix,
-            base_origin=base_origin,
-            param_values=param_values,
-            param_defs=param_defs,
-            stack=stack,
-        )
-        return item
-    if isinstance(item, ast.RowItem):
-        item.children = _expand_items(
-            item.children,
-            pattern_index,
-            page_name=page_name,
-            allow_tabs=False,
-            allow_overlays=False,
-            columns_only=True,
-            flow_names=flow_names,
-            page_names=page_names,
-            record_names=record_names,
-            context_module=context_module,
-            page_path_prefix=page_path_prefix,
-            pattern_context=pattern_context,
-            pattern_path_prefix=pattern_path_prefix,
-            base_origin=base_origin,
-            param_values=param_values,
-            param_defs=param_defs,
-            stack=stack,
-        )
-        return item
-    if isinstance(item, ast.ColumnItem):
-        item.children = _expand_items(
-            item.children,
-            pattern_index,
-            page_name=page_name,
-            allow_tabs=False,
-            allow_overlays=False,
-            columns_only=False,
-            flow_names=flow_names,
-            page_names=page_names,
-            record_names=record_names,
-            context_module=context_module,
-            page_path_prefix=page_path_prefix,
-            pattern_context=pattern_context,
-            pattern_path_prefix=pattern_path_prefix,
-            base_origin=base_origin,
-            param_values=param_values,
-            param_defs=param_defs,
-            stack=stack,
-        )
-        return item
-    if isinstance(item, ast.TabsItem):
-        tabs: list[ast.TabItem] = []
-        for idx, tab in enumerate(item.tabs):
-            tab_item = materialize_tab(tab, param_values=param_values, param_defs=param_defs)
-            if tab_item is None:
-                continue
-            tab_item.children = _expand_items(
-                tab_item.children,
-                pattern_index,
-                page_name=page_name,
-                allow_tabs=False,
-                allow_overlays=False,
-                columns_only=False,
-                flow_names=flow_names,
-                page_names=page_names,
-                record_names=record_names,
-                context_module=context_module,
-                page_path_prefix=page_path_prefix + [idx],
-                pattern_context=pattern_context,
-                pattern_path_prefix=(pattern_path_prefix or []) + [idx] if pattern_context else None,
-                base_origin=base_origin,
-                param_values=param_values,
-                param_defs=param_defs,
-                stack=stack,
-            )
-            if pattern_context and pattern_path_prefix is not None:
-                tab_item = _attach_pattern_origin(
-                    tab_item,
-                    pattern_context,
-                    (pattern_path_prefix or []) + [idx],
-                    base_origin,
-                )
-            tabs.append(tab_item)
-        item.tabs = tabs
-        if item.default and item.default not in {tab.label for tab in tabs}:
-            item.default = None
-        return item
-    if isinstance(item, (ast.ModalItem, ast.DrawerItem, ast.ComposeItem, ast.ChatItem)):
-        item.children = _expand_items(
-            item.children,
-            pattern_index,
-            page_name=page_name,
-            allow_tabs=False,
-            allow_overlays=False,
-            columns_only=False,
-            flow_names=flow_names,
-            page_names=page_names,
-            record_names=record_names,
-            context_module=context_module,
-            page_path_prefix=page_path_prefix,
-            pattern_context=pattern_context,
-            pattern_path_prefix=pattern_path_prefix,
-            base_origin=base_origin,
-            param_values=param_values,
-            param_defs=param_defs,
-            stack=stack,
-        )
-        return item
-    return item
 
-def _merge_origin(base: dict | None, override: dict | None) -> dict | None:
-    if base is None and override is None:
-        return None
-    merged: dict = {}
-    if base:
-        merged.update(base)
-    if override:
-        merged.update(override)
-    return merged
-
-def _attach_pattern_origin(
-    item: ast.PageItem,
-    context: PatternContext,
-    element_path: list[int],
-    base_origin: dict | None,
-) -> ast.PageItem:
-    existing = getattr(item, "origin", None)
-    origin = _merge_origin(base_origin, existing) or {}
-    origin.update(
-        {
-            "pattern": context.name,
-            "invocation": context.invocation_id,
-            "element": _format_element_path(element_path),
-            "parameters": context.parameters,
-        }
-    )
-    setattr(item, "origin", origin)
-    return item
-
-def _pattern_parameters(pattern: PatternDefinition, values: dict[str, object]) -> dict[str, object]:
-    ordered: dict[str, object] = {}
-    for param in pattern.parameters:
-        ordered[param.name] = _sanitize_param_value(values.get(param.name))
-    return ordered
-
-def _sanitize_param_value(value: object) -> object:
-    if value is None:
-        return None
-    if isinstance(value, (bool, int, float)):
-        return value
-    if isinstance(value, ast.StatePath):
-        return _truncate_text(f"state.{'.'.join(value.path)}")
-    if isinstance(value, str):
-        return _truncate_text(value)
-    return _truncate_text(str(value))
-
-def _truncate_text(value: str, limit: int = 80) -> str:
-    cleaned = " ".join(str(value).split())
-    if _looks_like_path(cleaned):
-        return "<redacted>"
-    if len(cleaned) <= limit:
-        return cleaned
-    return f"{cleaned[: max(0, limit - 3)]}..."
-
-def _looks_like_path(value: str) -> bool:
-    if value.startswith(("/", "\\", "~")):
-        return True
-    if len(value) >= 3 and value[1] == ":" and value[0].isalpha() and value[2] in {"/", "\\"}:
-        return True
-    return False
-
-def _ensure_no_top_level_visibility(items: list[ast.PageItem], source: ast.PageItem) -> None:
-    for entry in items:
-        if getattr(entry, "visibility", None) is not None or getattr(entry, "visibility_rule", None) is not None:
-            raise Namel3ssError(
-                "Pattern visibility cannot be combined with item visibility",
-                line=source.line,
-                column=source.column,
-            )
-
-def _apply_visibility(item: ast.PageItem, visibility: ast.Expression) -> ast.PageItem:
-    item.visibility = visibility
-    return item
-
-def _apply_visibility_rule(
-    item: ast.PageItem,
-    visibility_rule: ast.VisibilityRule | ast.VisibilityExpressionRule,
-) -> ast.PageItem:
-    item.visibility_rule = visibility_rule
-    return item
-
-def _format_invocation_id(page_name: str, path: list[int]) -> str:
-    path_text = ".".join(str(entry) for entry in path)
-    return f"page:{page_name}:pattern:{path_text}" if path_text else f"page:{page_name}:pattern"
-
-def _format_element_path(path: list[int]) -> str:
-    return ".".join(str(entry) for entry in path)
-
+def _is_rag_ui_origin(item: object) -> bool:
+    origin = getattr(item, "origin", None)
+    return isinstance(origin, dict) and "rag_ui" in origin
 __all__ = ["PatternContext", "expand_pattern_items"]

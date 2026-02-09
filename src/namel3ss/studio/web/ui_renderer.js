@@ -3,7 +3,11 @@ let renderUI = (manifest) => {
   const uiContainer = document.getElementById("ui");
   const pages = manifest.pages || [];
   const navigation = manifest.navigation || {};
+  const appPermissions = manifest.app_permissions || {};
+  const explicitPermissionsEnabled = appPermissions && appPermissions.enabled === true;
+  const declaredPermissionMatrix = manifest && typeof manifest.permissions === "object" && manifest.permissions ? manifest.permissions : {};
   const activePage = navigation.active_page || null;
+  const sidebarItems = Array.isArray(navigation.sidebar) ? navigation.sidebar : [];
   const emptyMessage = "Run your app to see it here.";
   const collectionRender = window.N3UIRender || {};
   const renderListElement = collectionRender.renderListElement;
@@ -39,6 +43,12 @@ let renderUI = (manifest) => {
     }));
   const pageBySlug = new Map(pageEntries.map((entry) => [entry.slug, entry]));
   const pageByName = new Map(pageEntries.map((entry) => [entry.name, entry]));
+
+  function hasAppPermission(permission) {
+    if (!explicitPermissionsEnabled) return true;
+    if (typeof permission !== "string" || !permission) return false;
+    return declaredPermissionMatrix[permission] === true;
+  }
 
   function resolvePageEntry(value) {
     if (!value) return null;
@@ -108,6 +118,7 @@ let renderUI = (manifest) => {
 
   const activeSlug = activePage ? resolvePageSlug(activePage.slug || activePage.name) : "";
   const navigationLocked = Boolean(activeSlug);
+  let currentPageSlug = "";
 
   function readRouteSlug() {
     if (typeof window === "undefined") return "";
@@ -115,7 +126,7 @@ let renderUI = (manifest) => {
     return resolvePageSlug(params.get("page"));
   }
 
-  function writeRouteSlug(slug) {
+  function writeRouteSlug(slug, options = {}) {
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     if (slug) {
@@ -123,8 +134,14 @@ let renderUI = (manifest) => {
     } else {
       url.searchParams.delete("page");
     }
+    const push = options.push === true;
+    const state = { ...(window.history ? window.history.state : null), n3PageSlug: slug || "" };
     if (window.history && window.history.replaceState) {
-      window.history.replaceState(null, "", url.toString());
+      if (push && typeof window.history.pushState === "function") {
+        window.history.pushState(state, "", url.toString());
+      } else {
+        window.history.replaceState(state, "", url.toString());
+      }
     } else {
       window.location.search = url.search;
     }
@@ -162,8 +179,29 @@ let renderUI = (manifest) => {
     (children || []).forEach((child) => {
       if (child && child.visible === false) return;
       const node = renderElement(child, pageName);
+      applyThemeClasses(node, child);
       container.appendChild(node);
     });
+  }
+  function applyPageTheme(page) {
+    if (typeof applyThemeBundle !== "function") return;
+    const bundle = manifest && typeof manifest.theme === "object" ? { ...manifest.theme } : {};
+    const pageTheme = page && typeof page.ui_theme === "object" ? page.ui_theme : null;
+    if (pageTheme && typeof pageTheme.color_scheme === "string") {
+      bundle.color_scheme = pageTheme.color_scheme;
+    }
+    applyThemeBundle(bundle);
+  }
+  function applyThemeClasses(node, el) {
+    if (!node || !node.classList || !el) return;
+    const size = typeof el.size === "string" ? el.size : null;
+    const radius = typeof el.radius === "string" ? el.radius : null;
+    const density = typeof el.density === "string" ? el.density : null;
+    const font = typeof el.font === "string" ? el.font : null;
+    if (size) node.classList.add(`n3-size-${size}`);
+    if (radius) node.classList.add(`n3-radius-${radius}`);
+    if (density) node.classList.add(`n3-density-${density}`);
+    if (font) node.classList.add(`n3-font-${font}`);
   }
   function _focusable(container) {
     return Array.from(
@@ -184,7 +222,13 @@ let renderUI = (manifest) => {
     entry.returnFocus = opener || document.activeElement;
     entry.container.classList.remove("hidden");
     entry.container.setAttribute("aria-hidden", "false");
-    if (entry.type === "modal") {
+    const trapFocus =
+      entry.type === "modal" ||
+      (entry.type === "drawer" &&
+        typeof window !== "undefined" &&
+        Boolean(window.matchMedia) &&
+        window.matchMedia("(max-width: 960px)").matches);
+    if (trapFocus) {
       if (!entry.trapHandler) {
         entry.trapHandler = (e) => {
           if (e.key !== "Tab") return;
@@ -223,15 +267,16 @@ let renderUI = (manifest) => {
     }
     entry.returnFocus = null;
   }
-  function navigateToPage(value) {
+  function navigateToPage(value, options = {}) {
     if (navigationLocked) return;
     const slug = resolvePageSlug(value);
     if (!slug) return;
+    if (slug === currentPageSlug) return;
     if (select) {
       select.value = slug;
     }
-    writeRouteSlug(slug);
-    renderPage(slug);
+    writeRouteSlug(slug, { push: options.push === true });
+    renderPage(slug, { skipRouteSync: true });
   }
   function handleAction(action, payload, opener) {
     if (!action || !action.id) return;
@@ -246,12 +291,77 @@ let renderUI = (manifest) => {
       return { ok: true };
     }
     if (actionType === "open_page") {
+      if (!hasAppPermission("navigation.change_page")) return { ok: false };
       if (navigationLocked) return { ok: false };
-      navigateToPage(action.target);
+      navigateToPage(action.target, { push: true });
+      return { ok: true };
+    }
+    if (actionType === "go_back") {
+      if (!hasAppPermission("navigation.change_page")) return { ok: false };
+      if (typeof window !== "undefined" && window.history && typeof window.history.back === "function") {
+        window.history.back();
+      }
       return { ok: true };
     }
     return executeAction(action.id, payload);
   }
+  function activateTabByLabel(container, label) {
+    if (!container) return false;
+    const tabs = container.querySelectorAll(".ui-tabs");
+    const target = typeof label === "string" ? label.trim().toLowerCase() : "";
+    if (!target) return false;
+    for (const tabsNode of tabs) {
+      if (typeof tabsNode.n3SetActiveTabByLabel === "function" && tabsNode.n3SetActiveTabByLabel(label)) {
+        return true;
+      }
+      const buttons = Array.from(tabsNode.querySelectorAll(".ui-tab"));
+      const button = buttons.find((item) => String(item.textContent || "").trim().toLowerCase() === target);
+      if (button) {
+        button.click();
+        return true;
+      }
+    }
+    return false;
+  }
+  function focusCitationInDrawer(entry) {
+    const drawer = uiContainer.querySelector(".n3-layout-drawer");
+    if (!drawer) return false;
+    activateTabByLabel(drawer, "Citations");
+    const title = entry && typeof entry.title === "string" ? entry.title.trim().toLowerCase() : "";
+    const sourceId = entry && typeof entry.source_id === "string" ? entry.source_id.trim().toLowerCase() : "";
+    const listRows = Array.from(drawer.querySelectorAll(".ui-list-item"));
+    let target = null;
+    listRows.forEach((row) => {
+      row.classList.remove("selected");
+      if (target) return;
+      const primary = row.querySelector(".ui-list-primary");
+      const meta = row.querySelector(".ui-list-meta");
+      const primaryValue = String((primary && primary.textContent) || "").trim().toLowerCase();
+      const metaValue = String((meta && meta.textContent) || "").trim().toLowerCase();
+      if ((title && primaryValue === title) || (sourceId && (metaValue === sourceId || primaryValue === sourceId))) {
+        target = row;
+      }
+    });
+    if (target) {
+      target.classList.add("selected");
+      if (typeof target.scrollIntoView === "function") target.scrollIntoView({ block: "nearest" });
+      return true;
+    }
+    return false;
+  }
+  function focusDrawerPreviewForCitation(entry, opener) {
+    const drawer = uiContainer.querySelector(".n3-layout-drawer");
+    if (drawer) {
+      activateTabByLabel(drawer, "Preview");
+    }
+    if (collectionRender && typeof collectionRender.openCitationPreview === "function") {
+      collectionRender.openCitationPreview(entry, opener, [entry]);
+      return true;
+    }
+    return false;
+  }
+  collectionRender.focusCitationInDrawer = focusCitationInDrawer;
+  collectionRender.focusDrawerPreviewForCitation = focusDrawerPreviewForCitation;
   function renderOverlay(el, pageName) {
     const overlayId = el.id || "";
     const overlay = document.createElement("div");
@@ -384,6 +494,15 @@ let renderUI = (manifest) => {
 
       wrapper.appendChild(tabList);
       panels.forEach((panel) => wrapper.appendChild(panel));
+      wrapper.n3SetActiveTab = (index) => setActive(index);
+      wrapper.n3SetActiveTabByLabel = (label) => {
+        const target = typeof label === "string" ? label.trim().toLowerCase() : "";
+        if (!target) return false;
+        const tabIndex = tabs.findIndex((tab) => String(tab.label || "").trim().toLowerCase() === target);
+        if (tabIndex < 0) return false;
+        setActive(tabIndex);
+        return true;
+      };
       setActive(activeIndex);
       return wrapper;
     }
@@ -446,6 +565,172 @@ let renderUI = (manifest) => {
         card.appendChild(actions);
       }
       return card;
+    }
+    if (el.type === "layout.stack") {
+      const stack = document.createElement("div");
+      stack.className = "n3-layout-stack";
+      const direction = el.direction === "horizontal" ? "horizontal" : "vertical";
+      stack.dataset.direction = direction;
+      if (direction === "horizontal") stack.classList.add("horizontal");
+      renderChildren(stack, el.children, pageName);
+      return stack;
+    }
+    if (el.type === "layout.row") {
+      const row = document.createElement("div");
+      row.className = "n3-layout-row";
+      renderChildren(row, el.children, pageName);
+      return row;
+    }
+    if (el.type === "layout.col") {
+      const col = document.createElement("div");
+      col.className = "n3-layout-col";
+      renderChildren(col, el.children, pageName);
+      return col;
+    }
+    if (el.type === "layout.grid") {
+      const grid = document.createElement("div");
+      grid.className = "n3-layout-grid";
+      const columns = Number(el.columns) || 1;
+      const safeColumns = Math.max(columns, 1);
+      grid.style.setProperty("--n3-grid-columns", String(safeColumns));
+      renderChildren(grid, el.children, pageName);
+      return grid;
+    }
+    if (el.type === "layout.sidebar") {
+      const wrapper = document.createElement("div");
+      wrapper.className = "n3-layout-sidebar";
+      const sidebarItems = Array.isArray(el.sidebar) ? el.sidebar.filter((child) => child && child.visible !== false) : [];
+      const mainItems = Array.isArray(el.main) ? el.main.filter((child) => child && child.visible !== false) : [];
+      if (sidebarItems.length) {
+        const sidebar = document.createElement("aside");
+        sidebar.className = "n3-layout-sidebar-pane";
+        renderChildren(sidebar, sidebarItems, pageName);
+        wrapper.appendChild(sidebar);
+      }
+      const main = document.createElement("div");
+      main.className = "n3-layout-main-pane";
+      renderChildren(main, mainItems, pageName);
+      wrapper.appendChild(main);
+      return wrapper;
+    }
+    if (el.type === "layout.drawer") {
+      const drawer = document.createElement("section");
+      drawer.className = "n3-layout-drawer";
+      const showWhen = el.show_when && el.show_when.result === true;
+      drawer.dataset.open = showWhen ? "true" : "false";
+      drawer.setAttribute("aria-hidden", showWhen ? "false" : "true");
+      if (el.title) {
+        const header = document.createElement("div");
+        header.className = "n3-layout-drawer-header";
+        const title = document.createElement("div");
+        title.className = "n3-layout-drawer-title";
+        title.textContent = el.title;
+        header.appendChild(title);
+        drawer.appendChild(header);
+      }
+      const body = document.createElement("div");
+      body.className = "n3-layout-drawer-body";
+      renderChildren(body, el.children, pageName);
+      drawer.appendChild(body);
+      return drawer;
+    }
+    if (el.type === "layout.sticky") {
+      const sticky = document.createElement("div");
+      sticky.className = "n3-layout-sticky";
+      const position = el.position === "bottom" ? "bottom" : "top";
+      sticky.dataset.position = position;
+      if (position === "bottom") sticky.classList.add("bottom");
+      renderChildren(sticky, el.children, pageName);
+      return sticky;
+    }
+    if (el.type === "theme.settings_page") {
+      const wrapper = document.createElement("section");
+      wrapper.className = "ui-element n3-theme-settings";
+      const header = document.createElement("div");
+      header.className = "n3-theme-settings-header";
+      const title = document.createElement("div");
+      title.className = "n3-theme-settings-title";
+      title.textContent = "Theme settings";
+      const subtitle = document.createElement("div");
+      subtitle.className = "n3-theme-settings-subtitle";
+      subtitle.textContent = "Adjust size, corners, density, font, and color scheme.";
+      header.appendChild(title);
+      header.appendChild(subtitle);
+      wrapper.appendChild(header);
+
+      const fieldOrder = ["size", "radius", "density", "font", "color_scheme"];
+      const fieldLabels = {
+        size: "Size",
+        radius: "Corner radius",
+        density: "Density",
+        font: "Font size",
+        color_scheme: "Color scheme",
+      };
+      const fallbackOptions = {
+        size: ["compact", "normal", "comfortable"],
+        radius: ["none", "sm", "md", "lg", "full"],
+        density: ["tight", "regular", "airy"],
+        font: ["sm", "md", "lg"],
+        color_scheme: ["light", "dark", "system"],
+      };
+      const current = typeof el.current === "object" && el.current ? el.current : {};
+      const options = typeof el.options === "object" && el.options ? el.options : {};
+      const controls = document.createElement("div");
+      controls.className = "n3-theme-settings-controls";
+      const selects = {};
+
+      function collectSettings() {
+        const settings = {};
+        fieldOrder.forEach((field) => {
+          const select = selects[field];
+          if (!select) return;
+          settings[field] = select.value;
+        });
+        return settings;
+      }
+
+      function submitSettings(target) {
+        const actionId = el.action_id || el.id;
+        if (!actionId) return;
+        handleAction({ id: actionId }, { settings: collectSettings() }, target || wrapper);
+      }
+
+      fieldOrder.forEach((field) => {
+        const row = document.createElement("label");
+        row.className = "n3-theme-setting";
+        const label = document.createElement("span");
+        label.className = "n3-theme-setting-label";
+        label.textContent = fieldLabels[field] || field;
+        const select = document.createElement("select");
+        select.className = "n3-theme-setting-select";
+        select.setAttribute("aria-label", label.textContent);
+        const entries = Array.isArray(options[field]) ? options[field] : fallbackOptions[field] || [];
+        entries.forEach((value) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = value.replace(/_/g, " ");
+          select.appendChild(option);
+        });
+        if (current[field]) {
+          select.value = current[field];
+        }
+        select.onchange = (e) => submitSettings(e.currentTarget);
+        selects[field] = select;
+        row.appendChild(label);
+        row.appendChild(select);
+        controls.appendChild(row);
+      });
+
+      wrapper.appendChild(controls);
+      return wrapper;
+    }
+    if (el.type === "conditional.if") {
+      const fragment = document.createDocumentFragment();
+      const condition = el.condition || {};
+      const showThen = condition.result === true;
+      const branch = showThen ? el.then_children : el.else_children;
+      renderChildren(fragment, branch, pageName);
+      return fragment;
     }
     if (el.type === "row") {
       const row = document.createElement("div");
@@ -835,7 +1120,9 @@ let renderUI = (manifest) => {
   function appendRenderedItems(container, elements, pageName) {
     (elements || []).forEach((el) => {
       if (!el || el.visible === false) return;
-      container.appendChild(renderElement(el, pageName));
+      const node = renderElement(el, pageName);
+      applyThemeClasses(node, el);
+      container.appendChild(node);
     });
   }
 
@@ -877,7 +1164,55 @@ let renderUI = (manifest) => {
     return section;
   }
 
-  function renderLayoutPage(page) {
+  function renderNavigationSidebar(activeSlugForPage) {
+    if (!sidebarItems.length) return null;
+    const nav = document.createElement("nav");
+    nav.className = "n3-navigation-sidebar";
+    nav.setAttribute("aria-label", "Primary navigation");
+    nav.setAttribute("role", "navigation");
+    const list = document.createElement("ul");
+    list.className = "n3-navigation-list";
+    sidebarItems.forEach((entry) => {
+      if (!entry || typeof entry !== "object") return;
+      const target = resolvePageSlug(entry.target_slug || entry.target_name);
+      if (!target) return;
+      const item = document.createElement("li");
+      item.className = "n3-navigation-list-item";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "n3-navigation-item";
+      button.textContent = entry.label || entry.target_name || target;
+      const isActive = target === activeSlugForPage;
+      button.classList.toggle("active", isActive);
+      if (isActive) {
+        button.setAttribute("aria-current", "page");
+      } else {
+        button.removeAttribute("aria-current");
+      }
+      button.onclick = (event) => {
+        event.preventDefault();
+        navigateToPage(target, { push: true });
+      };
+      button.onkeydown = (event) => {
+        if (!["ArrowDown", "ArrowUp"].includes(event.key)) return;
+        event.preventDefault();
+        const focusable = Array.from(list.querySelectorAll(".n3-navigation-item"));
+        const currentIndex = focusable.indexOf(button);
+        if (currentIndex < 0 || !focusable.length) return;
+        const step = event.key === "ArrowDown" ? 1 : -1;
+        const nextIndex = (currentIndex + step + focusable.length) % focusable.length;
+        focusable[nextIndex].focus();
+      };
+      item.appendChild(button);
+      list.appendChild(item);
+    });
+    if (!list.children.length) return null;
+    nav.appendChild(list);
+    return nav;
+  }
+
+  function renderLayoutPage(page, mountNode) {
+    const targetNode = mountNode || uiContainer;
     const layout = normalizeLayout(page);
     if (!layout) return false;
     const root = document.createElement("div");
@@ -986,15 +1321,17 @@ let renderUI = (manifest) => {
       const overlayLayer = document.createElement("div");
       overlayLayer.className = "ui-overlay-layer";
       overlayItems.forEach((el) => {
-        overlayLayer.appendChild(renderOverlay(el, page.name));
+        const overlayNode = renderOverlay(el, page.name);
+        applyThemeClasses(overlayNode, el);
+        overlayLayer.appendChild(overlayNode);
       });
       root.appendChild(overlayLayer);
     }
-    uiContainer.appendChild(root);
+    targetNode.appendChild(root);
     return true;
   }
 
-  function renderPage(pageKey) {
+  function renderPage(pageKey, options = {}) {
     uiContainer.innerHTML = "";
     overlayRegistry.clear();
     const entry = resolvePageEntry(pageKey) || pageEntries[0];
@@ -1003,32 +1340,72 @@ let renderUI = (manifest) => {
       showEmpty(uiContainer, emptyMessage);
       return;
     }
-    if (renderLayoutPage(page)) {
+    const resolvedSlug = entry ? entry.slug : "";
+    currentPageSlug = resolvedSlug;
+    if (!navigationLocked && !options.skipRouteSync) {
+      writeRouteSlug(resolvedSlug, { push: false });
+    }
+    applyPageTheme(page);
+    let pageContainer = uiContainer;
+    const sidebar = renderNavigationSidebar(resolvedSlug);
+    if (sidebar) {
+      const shell = document.createElement("div");
+      shell.className = "n3-navigation-shell";
+      const content = document.createElement("div");
+      content.className = "n3-navigation-content";
+      shell.appendChild(sidebar);
+      shell.appendChild(content);
+      uiContainer.appendChild(shell);
+      pageContainer = content;
+    }
+    if (renderLayoutPage(page, pageContainer)) {
       return;
     }
     const split = splitOverlayItems(page.elements || []);
     split.items.forEach((el) => {
-      uiContainer.appendChild(renderElement(el, page.name));
+      const node = renderElement(el, page.name);
+      applyThemeClasses(node, el);
+      pageContainer.appendChild(node);
     });
     if (split.overlays.length) {
       const overlayLayer = document.createElement("div");
       overlayLayer.className = "ui-overlay-layer";
       split.overlays.forEach((el) => {
-        overlayLayer.appendChild(renderOverlay(el, page.name));
+        const overlayNode = renderOverlay(el, page.name);
+        applyThemeClasses(overlayNode, el);
+        overlayLayer.appendChild(overlayNode);
       });
-      uiContainer.appendChild(overlayLayer);
+      pageContainer.appendChild(overlayLayer);
     }
     const diagnosticsSection = buildDiagnosticsSection(page);
     if (diagnosticsSection) {
-      uiContainer.appendChild(diagnosticsSection);
+      pageContainer.appendChild(diagnosticsSection);
     }
   }
   if (select) {
-    select.onchange = (e) => navigateToPage(e.target.value);
+    select.onchange = (e) => navigateToPage(e.target.value, { push: true });
+  }
+  if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+    const popKey = "__n3PagePopstateHandler";
+    const previous = window[popKey];
+    if (typeof previous === "function") {
+      window.removeEventListener("popstate", previous);
+    }
+    const handler = () => {
+      if (navigationLocked) return;
+      const routeSlug = readRouteSlug();
+      const stateSlug = resolvePageSlug(window.history && window.history.state ? window.history.state.n3PageSlug : "");
+      const nextSlug = routeSlug || stateSlug || (pageEntries[0] ? pageEntries[0].slug : "");
+      if (!nextSlug) return;
+      if (select) select.value = nextSlug;
+      renderPage(nextSlug, { skipRouteSync: true });
+    };
+    window[popKey] = handler;
+    window.addEventListener("popstate", handler);
   }
   const initialPage = (select && select.value) || (pageEntries[0] ? pageEntries[0].slug : "");
   if (initialPage) {
-    renderPage(initialPage);
+    renderPage(initialPage, { skipRouteSync: navigationLocked });
   } else {
     showEmpty(uiContainer, emptyMessage);
   }

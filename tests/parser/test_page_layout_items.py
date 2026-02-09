@@ -2,7 +2,7 @@ import pytest
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
-from tests.conftest import parse_program
+from tests.conftest import lower_ir_program, parse_program
 
 
 def test_parse_layout_items_and_nesting():
@@ -36,11 +36,11 @@ def test_parse_layout_items_and_nesting():
     assert isinstance(page.items[2], ast.ImageItem)
 
 
-def test_row_requires_columns():
+def test_row_with_non_columns_requires_layout_capability():
     source = '''page "home":
   row:
-    text is "Not allowed"
+    text is "Not allowed without ui_layout"
 '''
     with pytest.raises(Namel3ssError) as err:
-        parse_program(source)
-    assert "Rows may only contain columns" in str(err.value)
+        lower_ir_program(source)
+    assert "UI layout requires capability ui_layout" in str(err.value)
