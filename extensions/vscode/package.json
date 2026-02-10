@@ -2,7 +2,7 @@
   "name": "namel3ss-editor",
   "displayName": "namel3ss Editor",
   "description": "Editor support for namel3ss (.ai) files.",
-  "version": "0.1.0a14",
+  "version": "0.1.0a16",
   "publisher": "namel3ss",
   "engines": {
     "vscode": "^1.80.0"

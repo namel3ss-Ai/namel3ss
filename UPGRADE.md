@@ -2,6 +2,20 @@
 
 This guide lists breaking changes and the manual steps to move between versions.
 
+## 0.1.0a16
+
+### Breaking changes
+- None.
+
+### Behavior updates to review
+- None.
+
+### How to detect breaking changes
+- Run `n3 app.ai check` and verify new warnings are expected.
+
+### How to fix or migrate manually
+- No migration required.
+
 ## 0.1.0a15
 
 ### Breaking changes

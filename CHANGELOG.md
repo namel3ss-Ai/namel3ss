@@ -2,6 +2,22 @@
 
 No breaking changes without an explicit changelog entry.
 
+## v0.1.0a16
+### Added
+- None.
+
+### Changed
+- None.
+
+### Fixed
+- None.
+
+### Deprecated
+- None.
+
+### Removed
+- None.
+
 ## v0.1.0a15
 ### Added
 - Integration tests for combined UI features (layout, conditional rendering, RAG, diagnostics, uploads, plugins, theming).
