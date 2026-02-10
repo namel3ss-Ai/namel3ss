@@ -1,246 +1,74 @@
-# Contributing to namel3ss
+# Contributing to Namel3ss
 
-Clarity beats cleverness. Every change should make the language easier to understand, safer to run, and more enjoyable to use.
+This project is GA-focused: clarity, determinism, and backward compatibility come first.
 
----
+## Contribution standards
 
-## Non-Negotiables
+- Keep behavior explicit and deterministic.
+- Preserve public APIs unless an RFC explicitly changes them.
+- Keep each file under 500 lines and split around 450 lines.
+- Keep one responsibility per file.
+- Use descriptive file names; avoid placeholders and version suffixes.
 
-1) Line Limit  
-- Enforced limits: `src/**/*.py` stays under 500 lines; all files under `templates/` may be up to 1000 lines.  
-- Split near ~400 lines. If a file grows, turn it into a folder module.
+## Branch and PR workflow
 
-2) Single Responsibility  
-- One file does one job. If it starts doing two, split it — even at 150 lines.
+1. Open an issue or RFC for substantial changes.
+2. Create a focused branch.
+3. Add tests for every behavioral change.
+4. Update docs when contracts or UX change.
+5. Submit a PR with a clear scope and migration impact.
 
-3) Folder-First Naming  
-- Prefer folders over filename prefixes.  
-  - ✅ `parser/statements/control_flow.py`  
-  - ❌ `parser_statements_control_flow.py`
+## Required checks
 
-4) Tests Mirror Source  
-- If you change `src/namel3ss/<area>/`, add or update tests under `tests/<area>/`.
+Run locally before opening a PR:
 
-5) Package Safety  
-- Packages must ship `capsule.ai` with explicit exports.  
-- LICENSE + checksums are required; package distributions must not ship install scripts or hooks.  
-- Run `n3 pkg validate`, `n3 test`, and `n3 verify --prod` where applicable.
-
-6) `.ai` Is the Extension  
-- Examples and templates use `.ai` only. Do not add `.n3` or other extensions.
-
----
-
-## Contributing to Official Capability Packs
-
-- Official packs live under `packs/official/`.
-- Packs are integrated via `pack.yaml`, `capabilities.yaml`, `intent.md`, and signing (where applicable).
-- Tools must not be registered via Python runtime hooks or side effects.
-- Official packs must not introduce third-party dependencies (standard library only).
-- Prefer extending existing official packs instead of creating overlapping ones. Example: extend `packs/official/http` rather than introducing a new HTTP/web pack.
-- Write-enabled capabilities (POST / PUT / DELETE) introduce side effects, require stronger governance, and should live in a separate, explicitly governed pack; do not add them casually to existing read-only packs.
-
----
-
-## Expectations for Every Change
-
-- Keep behavior stable unless a change is explicitly required. Preserve public imports and facades.  
-- Memory imports outside the memory subsystem must go through `namel3ss.runtime.memory.api` or `namel3ss.runtime.memory.types`.  
-- Errors must be clear, actionable, and include line/column when possible (use caret rendering where applicable).  
-- Determinism first: AI is the only non-deterministic boundary, and it must stay explicit.
-
----
-
-## Development Setup
-
-Install in editable mode:
 ```bash
-pip install -e .
+python -m compileall src -q
+python -m pytest -q
+python tools/line_limit_check.py
+python tools/responsibility_check.py
+python -m namel3ss.beta_lock.repo_clean
 ```
 
-Run tests:
-```bash
-python3 -m pytest -q
-```
+## Public vs internal APIs
 
-Compile check:
-```bash
-python3 -m compileall src -q
-```
+- Public APIs are declared in `src/namel3ss/lang/public_api.py`.
+- Internal APIs are declared in `src/namel3ss/lang/internal_api.py`.
+- Plugins and apps must not import internal modules.
 
-Local verification (matches CI core checks):
-```bash
-python3 tools/ci/verify_local.py
-```
+## Compatibility and deprecation
 
-Install the pre-push hook:
-```bash
-python3 tools/git/install_hooks.py
-```
+- Follow semantic versioning and compatibility rules in `docs/compatibility_policy.md`.
+- Follow deprecation policy in `docs/deprecation_policy.md`.
+- New deprecations must include deterministic warnings and migration instructions.
 
-The pre-push hook enforces the local verification gate and blocks pushes when any check fails.
+## Security reporting
 
-Memory import guard:
-```bash
-python3 tools/memory_import_guard.py
-```
+Do not open public issues for vulnerabilities.
+Use `SECURITY.md` for private reporting instructions.
 
-Enforce line limit:
-```bash
-python3 tools/line_limit_check.py
-```
+## Review expectations
 
-Validate audit and baseline reports:
-```bash
-python3 scripts/audit_codebase.py --check
-python3 scripts/measure_baseline.py --check --timing deterministic
-```
+- Small, focused PRs are preferred.
+- Contract changes require two maintainer reviews.
+- Governance, security, and release process changes require LSC review.
 
-Formatting and linting for `.ai`:
-```bash
-n3 <your_app.ai> format
-n3 <your_app.ai> lint
-```
+## Commit message format
 
-If you change language/engine/parsing, update examples and integration tests accordingly.
+Use scoped, descriptive messages:
 
-### Repository map
-- `src/namel3ss/` — runtime, parser, validators, UI manifest generation.
-- `tests/` — mirrors source structure; contract/grammar guards live here.
-- `docs/language/grammar_contract.md` — frozen grammar/semantics (do not change without RFC).
-- `docs/language/backward_compatibility.md` — policy for breaking/compatible changes.
-- `docs/language/rfc_process.md` — when/how to propose breaking or semantic changes.
-- `src/namel3ss/templates/` — onboarding surfaces; must pass STATIC validation.
+- `lang: add deprecation warning for ui_theme capability`
+- `release: add deterministic GA checklist script`
+- `docs: publish compatibility and deprecation policies`
 
-Quick reminders:
-- Line limits: `src/**/*.py` <=500 lines; `templates/**` <=1000 lines (all files); split near 400 with folder-first naming.
-- Single responsibility per file.
-- Propose grammar/UI changes as small PRs with examples and tests.
+## RFC requirement
 
----
+RFCs are required for:
 
-## Grammar and RFC boundaries
-- The grammar and semantics are frozen; see `docs/language/grammar_contract.md`.
-- Backward compatibility rules are in `docs/language/backward_compatibility.md`.
-- Grammar, syntax, semantic, or validation-mode changes require an RFC (`docs/language/rfc_process.md`) before code changes.
-- Most contributions should not touch the parser or grammar tables; prefer adding tests, diagnostics, or docs.
+- grammar or syntax changes
+- public API changes
+- manifest schema changes
+- compatibility policy changes
+- release governance changes
 
-To add validators/UI elements/tools:
-- Add source under the appropriate `src/namel3ss/<area>/` folder.
-- Add focused tests under `tests/<area>/`.
-- Keep Studio/CLI parity and STATIC validation behavior unchanged.
-
----
-
-## What to Work On
-- Fix bugs with clear reproduction tests.  
-- Improve error messages.  
-- Add or strengthen tests and coverage.  
-- Improve documentation.  
-- Improve Studio UX without weakening language authority.  
-- Improve packaging/install reliability.  
-- Provider improvements (stable and tested).
-
-## What Not to Do (Without Discussion)
-- Grammar changes or new syntax sugar.  
-- Breaking changes.  
-- Big architectural refactors.  
-- Adding providers beyond Tier-1.  
-- Feature bloat (styling DSL, GraphQL, distributed engine).
-
----
-
-## Commit Style
-- Use clear, scoped messages:  
-  - `parser: enforce block-only buttons`  
-  - `engine(ai): add provider registry`  
-  - `studio: add /api/action endpoint`  
-  - `docs: add quickstart`
-- Keep commits small and descriptive.
-
----
-
-## Pull Request Checklist
-- Line limits enforced: `src/**/*.py` <=500 lines; `templates/**` <=1000 lines; single responsibility maintained.  
-- Tests added/updated and `python3 -m pytest -q` passes.  
-- `python3 tools/line_limit_check.py` passes.  
-- Docs updated if behavior changed.  
-- No unintended breaking changes.
-- No grammar or semantic changes unless an approved RFC is linked.
-
----
-
-## Philosophy
-namel3ss is not trying to be everything. It must stay understandable, deterministic, and explicit about AI. If a feature makes namel3ss harder to learn, we don’t ship it — we redesign it.
-
----
-
-## Before opening an issue
-
-Thank you for contributing to namel3ss.
-
-This repository uses **GitHub Issue Forms** to keep issues focused and actionable.
-When opening an issue, please select the appropriate form provided by GitHub:
-
-- **Bug report** — concrete defects with a minimal reproduction  
-  https://github.com/namel3ss-Ai/namel3ss/issues/new?template=bug.yml
-
-- **Documentation improvement** — small, scoped doc fixes or clarifications  
-  https://github.com/namel3ss-Ai/namel3ss/issues/new?template=docs.yml
-
-- **Tests / Regression coverage** — test-only additions to lock existing behavior  
-  https://github.com/namel3ss-Ai/namel3ss/issues/new?template=tests.yml
-
-- **Developer experience (DX)** — small polish to messages, help output, or UX  
-  https://github.com/namel3ss-Ai/namel3ss/issues/new?template=dx.yml
-
-Issues opened outside these forms may be closed or redirected.
-
-For language design proposals, new syntax ideas, architectural discussions, or
-open-ended questions, please use **Discussions** instead.
-
-### What issues are for
-Issues are used to track **concrete, actionable work**, such as:
-- Bugs with a clear reproduction
-- Small, scoped improvements
-- Missing tests
-- Documentation clarifications
-- Developer experience polish
-
-Each issue should be solvable without redesigning the language.
-
-### What issues are NOT for
-Please do NOT open issues for:
-- Language design proposals
-- New syntax ideas
-- Architectural changes
-- Feature brainstorming
-- Open-ended discussions
-
-### Scope expectations
-A good issue should:
-- Be focused on one thing
-- Be solvable in a few hours
-- Touch a small number of files
-- Have a clear definition of “done”
-
-If an issue requires design debate, it is probably not an issue.
-
-### Title requirements
-Issue titles must:
-- Start with a verb (Fix / Add / Improve / Align / Clarify)
-- Describe a concrete action
-- Avoid questions or speculative language
-
-### Roadmap relationship
-The roadmap describes the **future shape of the language**.
-Issues describe **work that may or may not contribute to that future**.
-
-Opening an issue does not imply roadmap inclusion.
-
-### Maintainer discretion
-Maintainers may close issues that are out of scope, ask to move topics to
-Discussions, or narrow issues for clarity. This is intentional and helps keep
-the project focused.
-
-Thank you for helping build namel3ss.
+See `RFC_PROCESS.md` for details.

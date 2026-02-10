@@ -25,7 +25,7 @@ record "RunStatus":
 tool "retrieve docs":
   implemented using python
   purity is "pure"
-  timeout_seconds is 5
+  timeout_seconds is 20
 
   input:
     query is text

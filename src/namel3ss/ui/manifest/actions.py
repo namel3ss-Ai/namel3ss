@@ -63,6 +63,74 @@ def _allocate_action_id(base_id: str, element_id: str, taken: set[str]) -> str:
         index += 1
 
 
+LAYOUT_ACTION_TYPES = (
+    "layout.drawer.open",
+    "layout.drawer.close",
+    "layout.drawer.toggle",
+    "layout.sticky.show",
+    "layout.sticky.hide",
+    "layout.sticky.toggle",
+    "layout.selection.set",
+    "layout.shortcut",
+    "layout.interaction",
+)
+
+
+def build_layout_action_entry(
+    *,
+    action_id: str,
+    action_type: str,
+    target: str | None = None,
+    event: str | None = None,
+    node_id: str | None = None,
+    payload: dict | None = None,
+    line: int | None = None,
+    column: int | None = None,
+    order: int = 0,
+    shortcut: str | None = None,
+) -> dict:
+    entry = {
+        "id": action_id,
+        "type": action_type,
+        "target": target,
+        "event": event,
+        "node_id": node_id,
+        "payload": payload or {},
+        "line": line,
+        "column": column,
+        "order": int(order),
+    }
+    if shortcut:
+        entry["shortcut"] = shortcut
+    return entry
+
+
+def normalize_action_entry(action_id: str, action: dict) -> dict:
+    normalized = dict(action)
+    normalized["id"] = str(normalized.get("id") or action_id)
+    normalized["type"] = str(normalized.get("type") or "call_flow")
+    target = normalized.get("target")
+    normalized["target"] = str(target) if isinstance(target, str) else target
+    event = normalized.get("event")
+    normalized["event"] = str(event) if isinstance(event, str) else event
+    node_id = normalized.get("node_id")
+    normalized["node_id"] = str(node_id) if isinstance(node_id, str) else node_id
+    payload = normalized.get("payload")
+    normalized["payload"] = dict(payload) if isinstance(payload, dict) else {}
+    line = normalized.get("line")
+    column = normalized.get("column")
+    order = normalized.get("order")
+    normalized["line"] = int(line) if isinstance(line, int) else None
+    normalized["column"] = int(column) if isinstance(column, int) else None
+    normalized["order"] = int(order) if isinstance(order, int) else 0
+    shortcut = normalized.get("shortcut")
+    if isinstance(shortcut, str):
+        normalized["shortcut"] = shortcut
+    elif "shortcut" in normalized:
+        normalized.pop("shortcut", None)
+    return normalized
+
+
 def _wire_overlay_actions(elements: list[dict], actions: Dict[str, dict]) -> None:
     overlay_map: Dict[str, dict] = {}
     for element in _walk_elements(elements):
@@ -115,4 +183,7 @@ __all__ = [
     "_upload_replace_action_id",
     "_wire_overlay_actions",
     "_allocate_action_id",
+    "LAYOUT_ACTION_TYPES",
+    "build_layout_action_entry",
+    "normalize_action_entry",
 ]

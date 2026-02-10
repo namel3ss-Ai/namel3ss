@@ -7,6 +7,16 @@
     }
   },
   "diagnostics_enabled": true,
+  "i18n": {
+    "available_locales": [
+      "en"
+    ],
+    "direction": "ltr",
+    "enabled": true,
+    "fallback_locale": "en",
+    "locale": "en",
+    "rtl": false
+  },
   "mode": "studio",
   "pages": [
     {
@@ -99,6 +109,11 @@
     }
   ],
   "theme": {
+    "base_theme": "default",
+    "config": {
+      "base_theme": "default",
+      "overrides": {}
+    },
     "css": ":root {\n  --n3-primary-color: #2563EB;\n  --n3-secondary-color: #5856D6;\n  --n3-background-color: #FFFFFF;\n  --n3-foreground-color: #111827;\n  --n3-font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;\n  --n3-font-size-base: 14px;\n  --n3-font-weight: 500;\n  --n3-spacing-scale: 1.0;\n  --n3-border-radius: 10px;\n  --n3-shadow-elevation: 0 2px 6px rgba(15, 23, 42, 0.08);\n}\n\nbody.n3-runtime,\nbody {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  font-family: var(--n3-font-family);\n  font-size: var(--n3-font-size-base);\n  font-weight: var(--n3-font-weight);\n}\n\n.ui-body,\n.panel,\n.ui-element,\n.list-item,\n.trace-row,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  border-radius: var(--n3-border-radius);\n  box-shadow: var(--n3-shadow-elevation);\n}\n\n.btn.primary,\n.ui-chat-action,\n.ui-upload-label {\n  background: var(--n3-primary-color);\n  border-color: var(--n3-primary-color);\n  color: #FFFFFF;\n}\n\n.ui-link,\n.n3-chat-attachment-link,\n.n3-citation-chip {\n  color: var(--n3-primary-color);\n}\n\n.ui-card-title,\n.ui-section-title,\n.n3-chat-group-label {\n  color: var(--n3-secondary-color);\n}\n\n.ui-element,\n.panel,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  padding: calc(10px * var(--n3-spacing-scale));\n}\n\n.ui-row,\n.ui-column,\n.ui-card-group,\n.n3-layout-root,\n.n3-layout-body {\n  gap: calc(10px * var(--n3-spacing-scale));\n}\n",
     "css_hash": "af84b4058b81de1bba97dd498d5b53bb92defe1f5de89914b9ee0633692c1446",
     "current": "light",
@@ -115,6 +130,63 @@
     "setting": "light",
     "source": "app",
     "theme_name": "default",
+    "themes_available": [
+      "default",
+      "dark",
+      "high_contrast"
+    ],
+    "token_schema": {
+      "background_color": {
+        "category": "color",
+        "description": "Application background color.",
+        "type": "color"
+      },
+      "border_radius": {
+        "category": "radius",
+        "description": "Default corner radius in pixels.",
+        "type": "number"
+      },
+      "font_family": {
+        "category": "typography",
+        "description": "Font family stack.",
+        "type": "string"
+      },
+      "font_size_base": {
+        "category": "typography",
+        "description": "Base font size in pixels.",
+        "type": "number"
+      },
+      "font_weight": {
+        "category": "typography",
+        "description": "Default text weight.",
+        "type": "number"
+      },
+      "foreground_color": {
+        "category": "color",
+        "description": "Primary text color.",
+        "type": "color"
+      },
+      "primary_color": {
+        "category": "color",
+        "description": "Primary accent used for primary actions and links.",
+        "type": "color"
+      },
+      "secondary_color": {
+        "category": "color",
+        "description": "Secondary accent for supporting emphasis.",
+        "type": "color"
+      },
+      "shadow_level": {
+        "category": "elevation",
+        "description": "Shadow intensity level from 0 to 3.",
+        "type": "number"
+      },
+      "spacing_scale": {
+        "category": "spacing",
+        "description": "Global spacing multiplier.",
+        "type": "number"
+      }
+    },
     "tokens": {
       "background_color": "#FFFFFF",
       "border_radius": 10,

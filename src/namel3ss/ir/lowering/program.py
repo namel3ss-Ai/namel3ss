@@ -191,8 +191,13 @@ def lower_program(program: ast.Program) -> Program:
     )
     plugin_decls = tuple(getattr(program, "plugin_uses", []) or [])
     plugin_names = tuple(str(getattr(plugin, "name", "") or "") for plugin in plugin_decls)
+    plugin_capabilities = set(capabilities)
+    has_ui_plugins_capability = "ui.plugins" in plugin_capabilities
+    if has_ui_plugins_capability:
+        # Backward-compatible bridge into the existing plugin runtime gate model.
+        plugin_capabilities.update({"custom_ui", "sandbox"})
     if plugin_names:
-        missing_plugin_caps = [name for name in ("custom_ui", "sandbox") if name not in capabilities]
+        missing_plugin_caps = [name for name in ("custom_ui", "sandbox") if name not in plugin_capabilities]
         if missing_plugin_caps:
             missing_text = ", ".join(missing_plugin_caps)
             example_caps = "\n  ".join(["custom_ui", "sandbox"])
@@ -200,15 +205,15 @@ def lower_program(program: ast.Program) -> Program:
                 build_guidance_message(
                     what=f"Missing capabilities: {missing_text}.",
                     why="UI plug-ins require explicit capability opt-in for custom UI rendering and sandbox isolation.",
-                    fix="Add the missing capabilities to the capabilities block.",
-                    example=f"capabilities:\n  {example_caps}",
+                    fix="Add ui.plugins or the legacy custom_ui + sandbox capabilities.",
+                    example="capabilities:\n  ui.plugins",
                 )
             )
     plugin_registry = load_ui_plugin_registry(
         plugin_names=plugin_names,
         project_root=getattr(program, "project_root", None),
         app_path=getattr(program, "app_path", None),
-        allowed_capabilities=capabilities,
+        allowed_capabilities=tuple(sorted(plugin_capabilities)),
     )
     hook_manager = build_extension_hook_manager(
         plugin_registry=plugin_registry,

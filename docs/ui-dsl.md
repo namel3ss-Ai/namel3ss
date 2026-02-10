@@ -818,3 +818,10 @@ record "User":
 - `empty_state` may be:
   - indented text block (existing behavior), or
   - inline `hidden`/`false` to suppress rendering when rows are empty.
+
+## 12) GA stability notes
+- Public UI DSL contracts are frozen for 1.x and governed by `GOVERNANCE.md`.
+- Compatibility and deprecation timelines are tracked in:
+  - `docs/compatibility_policy.md`
+  - `docs/deprecation_policy.md`
+- Studio may expose extra debug surfaces, but production manifests keep deterministic ordering and stable IDs.

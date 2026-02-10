@@ -1,8 +1,9 @@
 :root {
-  --n3-chat-bg: #f8fafc;
-  --n3-chat-border: #dbe5f4;
-  --n3-chat-text: #142033;
-  --n3-chat-focus: #1f5de1;
+  --n3-chat-bg: var(--n3-surface-default, #f8fafc);
+  --n3-chat-border: var(--n3-border-color, #dbe5f4);
+  --n3-chat-text: var(--n3-foreground-color, #142033);
+  --n3-chat-focus: var(--n3-focus-ring, #1f5de1);
+  --n3-chat-thinking-dot: var(--n3-muted-text-color, #7287ad);
 }
 
 .ui-chat-bubble {
@@ -36,7 +37,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #7287ad;
+  background: var(--n3-chat-thinking-dot);
   opacity: 0.55;
   animation: n3-chat-thinking-dot 900ms infinite;
 }
@@ -49,7 +50,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #7287ad;
+  background: var(--n3-chat-thinking-dot);
   opacity: 0.55;
   animation: n3-chat-thinking-dot 900ms 100ms infinite;
 }
@@ -75,8 +76,8 @@
 
 .ui-chat-composer textarea,
 .ui-chat-composer input {
-  border-color: #d4dbe7;
-  background: #fff;
+  border-color: var(--n3-border-color, #d4dbe7);
+  background: var(--n3-surface-raised, #fff);
 }
 
 .ui-chat-composer textarea {
@@ -94,9 +95,9 @@
 }
 
 .ui-chat-inline-error {
-  border: 1px solid #f3d2d2;
-  background: #fff5f5;
-  color: #8f1f1f;
+  border: 1px solid var(--n3-error-color, #b91c1c);
+  background: var(--n3-error-surface, #fff5f5);
+  color: var(--n3-error-color, #8f1f1f);
   border-radius: 10px;
   padding: 10px;
   font-size: 12px;

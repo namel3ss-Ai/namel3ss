@@ -3,6 +3,17 @@ spec is "1.0"
 capabilities:
   ui_rag
   ui_theme
+  ui_layout
+  ui.custom_layouts
+  ui.rag_patterns
+  ui.i18n
+  ui.plugins
+
+ui:
+  theme is "modern"
+  primary_color is "#2563EB"
+  spacing_scale is 1.0
+  border_radius is 10
 
 flow "answer_question":
   return "ok"
@@ -10,20 +21,36 @@ flow "answer_question":
 flow "ingest_latest":
   return "ok"
 
-page "RAG Shell":
-  rag_ui:
-    base is "evidence"
-    features: conversation, evidence
-    size is "normal"
-    radius is "lg"
-    density is "regular"
-    color_scheme is "system"
+flow "open_sources":
+  return "ok"
 
-    binds:
-      messages from is state.chat.messages
-      on_send calls flow "answer_question"
-      citations from is state.chat.citations
-      thinking when is state.loading
-      drawer_open when is state.ui.show_drawer
-      source_preview from is state.ui.preview_source
-      ingest_flow calls flow "ingest_latest"
+page "RAG Shell":
+  title is "RAG Shell"
+
+  sidebar_layout:
+    sidebar:
+      section "Documents":
+        list from state.documents:
+          item:
+            primary is name
+        button "Run ingestion":
+          calls flow "ingest_latest"
+
+    main:
+      section "Conversation":
+        chat:
+          messages from is state.chat.messages
+          citations from is state.chat.citations
+          composer calls flow "answer_question"
+
+      drawer title is "Sources" when is state.ui.show_drawer:
+        source_preview from state.ui.preview_source
+        list from state.chat.citations:
+          item:
+            primary is title
+
+  sticky bottom:
+    row:
+      button "Open Sources":
+        calls flow "open_sources"
+      text is "Ready"

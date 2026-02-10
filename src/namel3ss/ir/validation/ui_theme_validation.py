@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.lang.capabilities import has_ui_theming_capability
 from namel3ss.ir.model.pages import Page, TabsItem, ThemeSettingsPageItem
 from namel3ss.ir.model.ui_layout import ConditionalBlock, LayoutDrawer, LayoutGrid, LayoutRow, LayoutStack, LayoutSticky, SidebarLayout
 
@@ -23,9 +24,9 @@ def validate_ui_theme(pages: list[Page], capabilities: tuple[str, ...]) -> None:
             overrides = getattr(page, "ui_theme_overrides", None)
             usage = _ThemeUsage(line=getattr(overrides, "line", None), column=getattr(overrides, "column", None))
         usage = _walk_page_items(page.items, usage)
-    if usage is not None and "ui_theme" not in set(capabilities or ()):
+    if usage is not None and not has_ui_theming_capability(capabilities):
         raise Namel3ssError(
-            "Token customization requires capability ui_theme. Add 'ui_theme' to the capabilities list.",
+            "Token customization requires capability ui_theme or ui.theming. Add one token to the capabilities list.",
             line=usage.line,
             column=usage.column,
         )

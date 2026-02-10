@@ -27,6 +27,9 @@ jobs:
       - name: Release guard
         run: python tools/release_guard.py --require-ci --workflow ci.yml
 
+      - name: GA checklist
+        run: python tools/release/checklist.py
+
       - name: Docker build guard
         run: python tools/docker_build_guard.py
 
@@ -128,6 +131,17 @@ jobs:
 
       - name: Generate release notes
         run: python tools/release_notes.py --output .namel3ss/release_notes.txt
+
+      - name: Export changelog entry
+        run: python tools/release/changelog.py --output .namel3ss/changelog.txt
+
+      - name: Generate release checksums
+        shell: bash
+        run: |
+          mkdir -p .namel3ss/release
+          ls -1 dist | LC_ALL=C sort | while read -r artifact; do
+            sha256sum "dist/${artifact}"
+          done > .namel3ss/release/checksums.txt
 
       - name: Upload release artifacts
         uses: actions/upload-artifact@v4

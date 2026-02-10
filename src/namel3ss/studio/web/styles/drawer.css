@@ -25,21 +25,21 @@
 }
 
 .ui-citation-preview-tab {
-  border: 1px solid #d4dbe7;
-  background: #fff;
+  border: 1px solid var(--n3-border-color, #d4dbe7);
+  background: var(--n3-surface-raised, #fff);
   border-radius: 999px;
-  color: #1d2f4f;
+  color: var(--n3-foreground-color, #1d2f4f);
   font-size: 12px;
   padding: 6px 12px;
 }
 
 .ui-citation-preview-tab.active {
-  border-color: #2852a4;
-  background: #ebf1ff;
+  border-color: var(--n3-primary-color, #2852a4);
+  background: var(--n3-surface-default, #ebf1ff);
 }
 
 .ui-citation-preview-tab:focus-visible {
-  outline: 2px solid #1f5de1;
+  outline: 2px solid var(--n3-focus-ring, #1f5de1);
   outline-offset: 2px;
 }
 
@@ -53,31 +53,31 @@
   gap: 8px;
   max-height: 220px;
   overflow: auto;
-  border: 1px solid #e6ebf4;
+  border: 1px solid var(--n3-border-color, #e6ebf4);
   border-radius: 10px;
   padding: 8px;
-  background: #f9fbff;
+  background: var(--n3-surface-default, #f9fbff);
 }
 
 .ui-citation-preview-source {
   text-align: left;
-  border: 1px solid #dde4f0;
-  background: #fff;
+  border: 1px solid var(--n3-border-color, #dde4f0);
+  background: var(--n3-surface-raised, #fff);
   border-radius: 8px;
   padding: 8px;
   display: flex;
   flex-direction: column;
   gap: 3px;
-  color: #18253b;
+  color: var(--n3-foreground-color, #18253b);
 }
 
 .ui-citation-preview-source.active {
-  border-color: #355eb2;
-  background: #eef3ff;
+  border-color: var(--n3-primary-color, #355eb2);
+  background: var(--n3-surface-default, #eef3ff);
 }
 
 .ui-citation-preview-source:focus-visible {
-  outline: 2px solid #1f5de1;
+  outline: 2px solid var(--n3-focus-ring, #1f5de1);
   outline-offset: 2px;
 }
 
@@ -88,21 +88,21 @@
 
 .ui-citation-preview-source-meta {
   font-size: 11px;
-  color: #42526e;
+  color: var(--n3-muted-text-color, #42526e);
 }
 
 .ui-citation-preview-source-snippet {
   font-size: 11px;
-  color: #30405e;
+  color: var(--n3-muted-text-color, #30405e);
 }
 
 .ui-citation-preview-explain {
-  border: 1px solid #e2e7ef;
+  border: 1px solid var(--n3-border-color, #e2e7ef);
   border-radius: 10px;
-  background: #f9fafc;
+  background: var(--n3-surface-default, #f9fafc);
   padding: 10px;
   font-size: 12px;
-  color: #253247;
+  color: var(--n3-foreground-color, #253247);
   line-height: 1.45;
 }
 

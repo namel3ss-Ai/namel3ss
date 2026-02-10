@@ -1,4 +1,23 @@
 :root {
+  --n3-primary-color: #2563eb;
+  --n3-secondary-color: #5856d6;
+  --n3-background-color: #ffffff;
+  --n3-foreground-color: #111827;
+  --n3-font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --n3-font-size-base: 14px;
+  --n3-font-weight: 500;
+  --n3-spacing-scale: 1;
+  --n3-border-radius: 10px;
+  --n3-surface-default: var(--n3-background-color);
+  --n3-surface-raised: #ffffff;
+  --n3-border-color: #d4dbe7;
+  --n3-border-strong: #a9b7cd;
+  --n3-muted-text-color: #52617d;
+  --n3-focus-ring: #1f5de1;
+  --n3-success-color: #15803d;
+  --n3-warning-color: #c2410c;
+  --n3-error-color: #b91c1c;
+  --n3-error-surface: #fff5f5;
   --n3-size-compact-padding: 8px;
   --n3-size-normal-padding: 12px;
   --n3-size-comfortable-padding: 16px;
@@ -10,6 +29,24 @@
   --n3-radius-md: 10px;
   --n3-radius-lg: 16px;
   --n3-radius-full: 999px;
+}
+
+body.n3-runtime,
+body {
+  background: var(--n3-background-color);
+  color: var(--n3-foreground-color);
+  font-family: var(--n3-font-family);
+  font-size: var(--n3-font-size-base);
+  font-weight: var(--n3-font-weight);
+}
+
+.ui-element,
+.ui-card,
+.panel,
+.ui-overlay-panel {
+  border-color: var(--n3-border-color);
+  border-radius: var(--n3-border-radius);
+  background: var(--n3-surface-default);
 }
 
 .ui-element.n3-size-compact {
@@ -285,7 +322,7 @@
 }
 
 .n3-theme-settings-subtitle {
-  color: #555;
+  color: var(--n3-muted-text-color);
   font-size: 12px;
 }
 
@@ -309,7 +346,18 @@
 .n3-theme-setting-select {
   padding: 8px 10px;
   border-radius: 8px;
-  border: 1px solid #e0e0e0;
-  background: #fff;
+  border: 1px solid var(--n3-border-color);
+  background: var(--n3-surface-raised);
   font-size: inherit;
+}
+
+.n3-theme-setting-select:focus-visible,
+.btn:focus-visible,
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--n3-focus-ring);
+  outline-offset: 2px;
 }

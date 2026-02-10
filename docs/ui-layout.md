@@ -4,6 +4,8 @@ Layout supports two deterministic page shapes:
 - Legacy stack: `page.elements` (vertical order as declared).
 - Slot layout: `page.layout` with `header`, `sidebar_left`, `main`, `drawer_right`, `footer`.
 
+For the Phase 1 custom layout grammar (`sidebar`, `drawer`, `sticky`, `scroll area`, `two_pane`, `three_pane`, and interaction hooks), see `docs/specs/layout_interaction_spec.md`.
+
 For slot layouts:
 - Evaluation order is fixed: `header` -> `sidebar_left` -> `main` -> `drawer_right` -> `footer`.
 - Responsive sidebar collapse uses a fixed breakpoint at `960px`.
