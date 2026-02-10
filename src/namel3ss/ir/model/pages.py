@@ -459,6 +459,12 @@ class SnackbarItem(PageItem):
 
 
 @dataclass
+class BadgeItem(PageItem):
+    source: StatePath
+    style: str = "neutral"
+
+
+@dataclass
 class IconItem(PageItem):
     name: str
     size: str = "medium"

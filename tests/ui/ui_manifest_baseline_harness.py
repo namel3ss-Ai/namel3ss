@@ -57,6 +57,7 @@ TYPE_CSS_SELECTORS: dict[str, tuple[str, ...]] = {
     "thinking": (".ui-chat-thinking",),
     "trust_indicator": (".ui-trust-indicator",),
     "upload": (".ui-upload", ".ui-upload-file-item", ".ui-upload-status"),
+    "badge": (".ui-badge",),
 }
 
 BASE_SELECTORS = (".btn", ".btn.small", ".topbar")

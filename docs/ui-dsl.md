@@ -289,6 +289,7 @@ Content:
 - `loading [variant: spinner|skeleton]`
 - `snackbar message: "..." duration: <ms>`
 - `icon name: "<icon>" size: small|medium|large role: decorative|semantic [label: "..."]`
+ - `badge from state.<path> [style is neutral|success|warning]` renders a small status badge from bound text; `style` tokens are validated deterministically.
 - `lightbox images: ["a.png", "b.png"] [startIndex: <n>]`
 
 Data/UI bindings:

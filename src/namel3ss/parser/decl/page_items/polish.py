@@ -7,6 +7,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.parser.decl.page_common import (
     _parse_debug_only_clause,
     _parse_optional_string_value,
+    _parse_state_path_value,
     _parse_visibility_clause,
     _parse_show_when_clause,
     _parse_visibility_rule_block,
@@ -16,6 +17,7 @@ from namel3ss.parser.decl.page_common import (
 _ALLOWED_LOADING_VARIANTS = {"spinner", "skeleton"}
 _ALLOWED_ICON_SIZES = {"small", "medium", "large"}
 _ALLOWED_ICON_ROLES = {"decorative", "semantic"}
+_ALLOWED_BADGE_STYLES = {"neutral", "success", "warning"}
 
 
 def parse_loading_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.LoadingItem:
@@ -247,9 +249,62 @@ def _parse_string_list(parser) -> list[str]:
     return values
 
 
+def parse_badge_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.BadgeItem:
+    parser._advance()
+    from_tok = parser._current()
+    if from_tok.type != "IDENT" or from_tok.value != "from":
+        raise Namel3ssError(
+            "Badges must use: badge from state.<path> [style is neutral|success|warning].",
+            line=from_tok.line,
+            column=from_tok.column,
+        )
+    parser._advance()
+    parser._match("IS")
+    source = _parse_state_path_value(parser, allow_pattern_params=allow_pattern_params)
+
+    style = "neutral"
+    while parser._current().type not in {"NEWLINE", "DEDENT", "EOF"}:
+        key_tok = parser._current()
+        if key_tok.type != "IDENT":
+            break
+        key = str(key_tok.value)
+        if key != "style":
+            break
+        parser._advance()
+        if parser._match("COLON"):
+            pass
+        else:
+            parser._expect("IS", "Expected ':' or 'is' after style")
+        value = _parse_ident_or_string(parser, context="badge style").lower()
+        if value not in _ALLOWED_BADGE_STYLES:
+            raise Namel3ssError(
+                f"Badge style must be one of: {', '.join(sorted(_ALLOWED_BADGE_STYLES))}.",
+                line=key_tok.line,
+                column=key_tok.column,
+            )
+        style = value
+
+    visibility = _parse_visibility_clause(parser, allow_pattern_params=allow_pattern_params)
+    show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
+    debug_only = _parse_debug_only_clause(parser)
+    visibility_rule = _parse_visibility_rule_block(parser, allow_pattern_params=allow_pattern_params)
+    _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
+    return ast.BadgeItem(
+        source=source,
+        style=style,
+        visibility=visibility,
+        visibility_rule=visibility_rule,
+        show_when=show_when,
+        debug_only=debug_only,
+        line=tok.line,
+        column=tok.column,
+    )
+
+
 __all__ = [
     "parse_icon_item",
     "parse_lightbox_item",
     "parse_loading_item",
     "parse_snackbar_item",
+    "parse_badge_item",
 ]

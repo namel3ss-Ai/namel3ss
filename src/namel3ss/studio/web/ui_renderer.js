@@ -932,6 +932,16 @@ let renderUI = (manifest) => {
       const empty = document.createElement("div");
       empty.textContent = "Form renderer unavailable.";
       wrapper.appendChild(empty);
+    } else if (el.type === "badge") {
+      const badge = document.createElement("span");
+      badge.className = "ui-badge";
+      const style = typeof el.style === "string" ? el.style : "neutral";
+      const normalizedStyle = style === "success" || style === "warning" || style === "neutral" ? style : "neutral";
+      badge.classList.add(`is-${normalizedStyle}`);
+      const text = typeof el.text === "string" ? el.text : "";
+      badge.textContent = text;
+      badge.setAttribute("role", "status");
+      wrapper.appendChild(badge);
     } else if (el.type === "chat") {
       if (typeof renderChatElement === "function") {
         return renderChatElement(el, handleAction);

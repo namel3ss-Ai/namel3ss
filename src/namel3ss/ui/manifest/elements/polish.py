@@ -72,6 +72,36 @@ def build_loading_item(item: ir.LoadingItem, *, page_name: str, page_slug: str, 
     return _attach_origin(element, item), {}
 
 
+def build_badge_item(
+    item: ir.BadgeItem,
+    *,
+    page_name: str,
+    page_slug: str,
+    path: List[int],
+    state_ctx: StateContext,
+) -> tuple[dict, Dict[str, dict]]:
+    index = path[-1] if path else 0
+    element_id = _element_id(page_slug, "badge", path)
+    base = _base_element(element_id, page_name, page_slug, index, item)
+    source = f"state.{'.'.join(item.source.path)}"
+    value, _ = state_ctx.value(item.source.path, default=None, register_default=True)
+    if value is None:
+        text = ""
+    elif isinstance(value, str):
+        text = value
+    else:
+        raise Namel3ssError("Badges expect text values bound from state.<path>.", line=item.line, column=item.column)
+    style = str(getattr(item, "style", "neutral") or "neutral")
+    element = {
+        "type": "badge",
+        "source": source,
+        "text": text,
+        "style": style,
+        **base,
+    }
+    return _attach_origin(element, item), {}
+
+
 def build_snackbar_item(item: ir.SnackbarItem, *, page_name: str, page_slug: str, path: List[int]) -> tuple[dict, Dict[str, dict]]:
     index = path[-1] if path else 0
     base = _base_element(_element_id(page_slug, "snackbar", path), page_name, page_slug, index, item)
@@ -123,4 +153,5 @@ __all__ = [
     "build_lightbox_item",
     "build_loading_item",
     "build_snackbar_item",
+    "build_badge_item",
 ]

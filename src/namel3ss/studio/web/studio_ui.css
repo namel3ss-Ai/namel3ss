@@ -625,6 +625,29 @@
   font-size: 12px;
   color: #48526a;
 }
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.ui-badge.is-neutral {
+  background: #edf1f7;
+  color: #283447;
+}
+.ui-badge.is-success {
+  background: #e5f6ed;
+  color: #1b5e34;
+}
+.ui-badge.is-warning {
+  background: #fff7e0;
+  color: #7c5b10;
+}
 .ui-capabilities {
   border: 1px solid #d7e3d4;
   border-radius: 10px;

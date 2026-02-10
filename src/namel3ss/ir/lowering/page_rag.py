@@ -31,6 +31,12 @@ def _lower_trust_indicator_item(item: ast.TrustIndicatorItem, *, attach_origin) 
     return attach_origin(ir.TrustIndicatorItem(source=source, line=item.line, column=item.column), item)
 
 
+def _lower_badge_item(item: ast.BadgeItem, *, attach_origin) -> ir.BadgeItem:
+    source = _ensure_state_path(_lower_expression(item.source), "Badges must bind to state.<path>", item)
+    style = str(getattr(item, "style", "neutral") or "neutral").lower()
+    return attach_origin(ir.BadgeItem(source=source, style=style, line=item.line, column=item.column), item)
+
+
 def _lower_scope_selector_item(item: ast.ScopeSelectorItem, *, attach_origin) -> ir.ScopeSelectorItem:
     options_source = _ensure_state_path(
         _lower_expression(item.options_source),
@@ -59,4 +65,5 @@ __all__ = [
     "_lower_scope_selector_item",
     "_lower_source_preview_item",
     "_lower_trust_indicator_item",
+    "_lower_badge_item",
 ]

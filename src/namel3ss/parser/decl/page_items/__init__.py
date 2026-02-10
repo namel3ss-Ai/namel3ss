@@ -127,6 +127,8 @@ def parse_page_item(
         return rag_mod.parse_trust_indicator_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "IDENT" and tok.value == "scope_selector":
         return rag_mod.parse_scope_selector_item(parser, tok, allow_pattern_params=allow_pattern_params)
+    if tok.type == "IDENT" and tok.value == "badge":
+        return polish_mod.parse_badge_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "IDENT" and tok.value in {"messages", "composer", "thinking"}:
         raise Namel3ssError("Chat elements must be inside a chat block", line=tok.line, column=tok.column)
     if tok.type == "MEMORY":

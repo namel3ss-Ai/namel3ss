@@ -18,6 +18,7 @@ from namel3ss.ir.lowering.page_rag import (
     _lower_scope_selector_item,
     _lower_source_preview_item,
     _lower_trust_indicator_item,
+    _lower_badge_item,
 )
 from namel3ss.ir.lowering.page_tokens import lower_theme_overrides
 from namel3ss.ir.lowering import page_layout as layout_mod
@@ -307,6 +308,8 @@ def _lower_page_item(
         return _lower_trust_indicator_item(item, attach_origin=_attach_origin)
     if isinstance(item, ast.ScopeSelectorItem):
         return _lower_scope_selector_item(item, attach_origin=_attach_origin)
+    if isinstance(item, ast.BadgeItem):
+        return _lower_badge_item(item, attach_origin=_attach_origin)
     if isinstance(item, ast.CustomComponentItem):
         return _lower_custom_component_item(item, flow_names)
     if isinstance(item, ast.TabsItem):
