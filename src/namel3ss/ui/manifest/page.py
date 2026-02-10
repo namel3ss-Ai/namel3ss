@@ -11,6 +11,8 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.foreign.intent import build_foreign_functions_intent
 from namel3ss.foreign.policy import foreign_policy_mode
 from namel3ss.ir import nodes as ir
+from namel3ss.lang.deprecation import append_capability_deprecation_warnings
+from namel3ss.lang.capabilities import has_ui_theming_capability
 from namel3ss.page_layout import PAGE_LAYOUT_SLOT_ORDER
 from namel3ss.flow_contract import validate_declarative_flows
 from namel3ss.media import MediaValidationMode, media_registry, media_root_for_program
@@ -37,6 +39,7 @@ from namel3ss.ui.manifest.accessibility import apply_accessibility_contract
 from namel3ss.ui.manifest.display_mode import DISPLAY_MODE_STUDIO
 from namel3ss.ui.manifest.elements import _build_children
 from namel3ss.ui.manifest.filter_mode import apply_display_mode_filter
+from namel3ss.ui.manifest.i18n_builder import build_i18n_manifest
 from namel3ss.ui.manifest.navigation_nodes import build_navigation
 from namel3ss.ui.manifest.app_permissions_nodes import build_app_permissions_payload
 from namel3ss.ui.manifest.ui_state_nodes import build_ui_state_payload
@@ -51,11 +54,13 @@ from namel3ss.ui.manifest.status import select_status_items
 from namel3ss.ui.manifest.visibility import evaluate_visibility
 from namel3ss.ui.manifest.warning_pipeline import append_manifest_warnings
 from namel3ss.ui.manifest.theme_nodes import resolve_page_theme_tokens
+from namel3ss.ui.manifest.theme_builder import build_theme_manifest
 from namel3ss.ui.responsive import apply_responsive_layout_to_pages
 from namel3ss.ui.spacing import apply_spacing_to_pages
 from namel3ss.ui.settings import UI_DEFAULTS, UI_RUNTIME_THEME_VALUES, normalize_ui_settings, validate_ui_contrast
-from namel3ss.runtime.theme_state import merge_theme_tokens, theme_settings_from_state
+from namel3ss.runtime.theme_state import theme_settings_from_state
 from namel3ss.ui.theme_tokens import UI_THEME_TOKEN_ORDER
+from namel3ss.i18n.rtl_utils import apply_rtl_to_manifest
 from namel3ss.validation import ValidationMode
 
 
@@ -122,7 +127,8 @@ def build_manifest(
     breakpoint_names = tuple(getattr(getattr(responsive_layout, "breakpoints", None), "names", ()) or ())
     breakpoint_values = tuple(getattr(getattr(responsive_layout, "breakpoints", None), "values", ()) or ())
     capabilities = tuple(getattr(program, "capabilities", ()) or ())
-    ui_theme_enabled = "ui_theme" in set(capabilities or ())
+    append_capability_deprecation_warnings(capabilities, warnings)
+    ui_theme_enabled = has_ui_theming_capability(capabilities)
     runtime_theme_settings = theme_settings_from_state(state_base) if ui_theme_enabled else {}
     diagnostics_enabled = bool(diagnostics_enabled or display_mode == DISPLAY_MODE_STUDIO)
     upload_requests_with_location = collect_upload_requests(program)
@@ -312,67 +318,35 @@ def build_manifest(
     persistence = _resolve_persistence(store)
     if actions:
         actions = {action_id: actions[action_id] for action_id in sorted(actions)}
-    resolved_theme = getattr(program, "resolved_theme", None)
-    theme_definition = getattr(resolved_theme, "definition", None)
-    has_theme_definition = bool(
-        theme_definition is not None
-        and (
-            theme_definition.preset
-            or theme_definition.brand_palette
-            or theme_definition.tokens
-            or getattr(theme_definition, "responsive_tokens", None)
-            or theme_definition.harmonize
-            or theme_definition.allow_low_contrast
-            or theme_definition.density
-            or theme_definition.motion
-            or theme_definition.shape
-            or theme_definition.surface
-        )
-    )
-    theme_preference = dict(getattr(program, "theme_preference", {"allow_override": False, "persist": "none"}) or {})
-    if has_theme_definition:
-        theme_preference.setdefault("storage_key", "namel3ss_theme")
-    legacy_theme_tokens = dict(getattr(program, "theme_tokens", {}) or {})
-    visual_theme_tokens = dict(getattr(program, "ui_visual_theme_tokens", {}) or {})
-    merged_theme_tokens = dict(legacy_theme_tokens)
-    merged_theme_tokens.update(visual_theme_tokens)
-    visual_theme_name = str(getattr(program, "ui_visual_theme_name", "default") or "default")
-    visual_theme_css = str(getattr(program, "ui_visual_theme_css", "") or "")
-    visual_theme_css_hash = str(getattr(program, "ui_visual_theme_css_hash", "") or "")
-    visual_theme_font_url = getattr(program, "ui_visual_theme_font_url", None)
     manifest = {
         "pages": pages,
         "actions": actions,
         "diagnostics_enabled": diagnostics_enabled,
-        "theme": {
-            "schema_version": ui_schema_version,
-            "setting": theme_setting,
-            "current": theme_current,
-            "persisted_current": persisted_theme_normalized,
-            "effective": effective.value,
-            "source": source,
-            "runtime_supported": getattr(program, "theme_runtime_supported", False),
-            "theme_name": visual_theme_name,
-            "tokens": merged_theme_tokens,
-            "runtime_tokens": legacy_theme_tokens,
-            "css": visual_theme_css,
-            "css_hash": visual_theme_css_hash,
-            "preference": theme_preference,
-        },
+        "theme": build_theme_manifest(
+            program,
+            ui_schema_version=ui_schema_version,
+            theme_setting=theme_setting,
+            theme_current=theme_current,
+            persisted_theme_normalized=persisted_theme_normalized,
+            effective_value=effective.value,
+            source_value=source,
+            ui_theme_enabled=ui_theme_enabled,
+            runtime_theme_settings=runtime_theme_settings,
+        ),
         "ui": {
             "persistence": persistence,
             "settings": ui_settings,
         },
+        "i18n": build_i18n_manifest(
+            program,
+            capabilities=capabilities,
+            state=state_base,
+            studio_mode=display_mode == DISPLAY_MODE_STUDIO,
+        ),
     }
-    if ui_theme_enabled:
-        runtime_theme_tokens = merge_theme_tokens(runtime_theme_settings)
-        for key in UI_THEME_TOKEN_ORDER:
-            manifest["theme"][key] = runtime_theme_tokens.get(key)
     plugin_assets = build_plugin_assets_manifest(ui_plugin_registry)
     if plugin_assets:
         manifest["ui"]["plugins"] = plugin_assets
-    if isinstance(visual_theme_font_url, str) and visual_theme_font_url:
-        manifest["theme"]["font_url"] = visual_theme_font_url
     if upload_requests:
         manifest["upload_requests"] = upload_requests
     hook_manager = getattr(program, "extension_hook_manager", None)
@@ -386,12 +360,6 @@ def build_manifest(
         if studio_panels:
             manifest.setdefault("studio", {})
             manifest["studio"]["extension_panels"] = list(studio_panels)
-    responsive_theme_tokens = dict(getattr(program, "responsive_theme_tokens", {}) or {})
-    if responsive_theme_tokens:
-        manifest["theme"]["responsive_tokens"] = {
-            key: list(value)
-            for key, value in responsive_theme_tokens.items()
-        }
     responsive_token_scales = dict(getattr(program, "responsive_theme_tokens", {}) or {})
     if responsive_layout is not None or responsive_token_scales:
         manifest["ui"]["responsive"] = {
@@ -402,24 +370,6 @@ def build_manifest(
             ],
             "columns": int(getattr(responsive_layout, "total_columns", 12) if responsive_layout is not None else 12),
             "token_scales": {key: list(value) for key, value in responsive_token_scales.items()},
-        }
-    if has_theme_definition:
-        manifest["theme"]["definition"] = {
-            "preset": theme_definition.preset,
-            "brand_palette": dict(theme_definition.brand_palette),
-            "tokens": dict(theme_definition.tokens),
-            "responsive_tokens": {
-                key: list(value)
-                for key, value in dict(getattr(theme_definition, "responsive_tokens", {}) or {}).items()
-            },
-            "harmonize": bool(theme_definition.harmonize),
-            "allow_low_contrast": bool(theme_definition.allow_low_contrast),
-            "axes": {
-                "density": theme_definition.density,
-                "motion": theme_definition.motion,
-                "shape": theme_definition.shape,
-                "surface": theme_definition.surface,
-            },
         }
     if navigation:
         manifest["navigation"] = navigation
@@ -438,6 +388,12 @@ def build_manifest(
         manifest["foreign_functions"] = foreign_intent
     if app_defaults or manifest_state_defaults_pages:
         manifest["state_defaults"] = {"app": deepcopy(app_defaults) if app_defaults else {}, "pages": manifest_state_defaults_pages}
+    i18n_locale = None
+    if isinstance(manifest.get("i18n"), dict):
+        candidate_locale = manifest["i18n"].get("locale")
+        if isinstance(candidate_locale, str):
+            i18n_locale = candidate_locale
+    manifest = apply_rtl_to_manifest(manifest, locale=i18n_locale)
     return apply_display_mode_filter(
         manifest,
         display_mode=display_mode,

@@ -82,7 +82,7 @@ def _compile_docs_example(example: DocsExample, *, base_tmp: Path) -> None:
     except Exception as exc:  # pragma: no cover - failure surface
         line_range = f"{example.start_line}-{example.end_line}"
         raise AssertionError(
-            f"Docs example failed: {example.path}:{line_range} (example {example.index})\n{exc}"
+            f"Docs example failed: {example.path.as_posix()}:{line_range} (example {example.index})\n{exc}"
         ) from exc
 
 

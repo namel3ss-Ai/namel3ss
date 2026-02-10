@@ -24,6 +24,11 @@ BUILTIN_CAPABILITIES = (
     "ecosystem_developer_experience",
     "security_compliance",
     "custom_ui",
+    "ui.custom_layouts",
+    "ui.rag_patterns",
+    "ui.theming",
+    "ui.i18n",
+    "ui.plugins",
     "ui_layout",
     "ui_rag",
     "ui_theme",
@@ -56,8 +61,30 @@ def normalize_builtin_capability(name: str | None) -> str | None:
     return None
 
 
+def normalize_capability_tokens(values: tuple[str, ...] | list[str] | set[str] | None) -> tuple[str, ...]:
+    if not values:
+        return ()
+    normalized: list[str] = []
+    for item in values:
+        token = normalize_builtin_capability(item if isinstance(item, str) else None)
+        if token is not None:
+            normalized.append(token)
+    return tuple(sorted(set(normalized)))
+
+
 def is_builtin_capability(name: str | None) -> bool:
     return normalize_builtin_capability(name) is not None
 
 
-__all__ = ["BUILTIN_CAPABILITIES", "is_builtin_capability", "normalize_builtin_capability"]
+def has_ui_theming_capability(values: tuple[str, ...] | list[str] | set[str] | None) -> bool:
+    normalized = set(normalize_capability_tokens(values))
+    return "ui.theming" in normalized or "ui_theme" in normalized
+
+
+__all__ = [
+    "BUILTIN_CAPABILITIES",
+    "has_ui_theming_capability",
+    "is_builtin_capability",
+    "normalize_builtin_capability",
+    "normalize_capability_tokens",
+]

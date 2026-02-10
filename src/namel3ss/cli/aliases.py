@@ -7,6 +7,9 @@ ALIAS_MAP: Dict[str, str] = {
     # Phase 5 targets
     "pack": "pack",
     "build": "pack",
+    "bundle": "bundle",
+    "bundle-build": "bundle",
+    "deploy": "deploy",
     "ship": "ship",
     "promote": "ship",
     "where": "where",

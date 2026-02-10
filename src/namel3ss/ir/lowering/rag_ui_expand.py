@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.lang.capabilities import has_ui_theming_capability
 
 _DEFAULT_DRAWER_OPEN_PATH = ["ui", "show_drawer"]
 _DEFAULT_UPLOAD_NAME = "intake"
@@ -161,7 +162,7 @@ def _default_header_items(
         items.append(_flow_button("Sources", binds.toggle_sources_flow, rag))
     if binds.toggle_drawer_flow:
         items.append(_flow_button("Citations", binds.toggle_drawer_flow, rag))
-    if binds.toggle_settings_flow and "ui_theme" in set(capabilities or ()):
+    if binds.toggle_settings_flow and has_ui_theming_capability(capabilities):
         items.append(_flow_button("Settings", binds.toggle_settings_flow, rag))
     return items
 
@@ -246,7 +247,7 @@ def _default_drawer_items(
     tabs.append(ast.TabItem(label="Preview", children=preview_items, line=rag.line, column=rag.column))
     explain_items = [ast.TextItem(value="Retrieval explain data appears after a run.", line=rag.line, column=rag.column)]
     tabs.append(ast.TabItem(label="Explain", children=explain_items, line=rag.line, column=rag.column))
-    if "ui_theme" in set(capabilities or ()):
+    if has_ui_theming_capability(capabilities):
         tabs.append(
             ast.TabItem(
                 label="Settings",

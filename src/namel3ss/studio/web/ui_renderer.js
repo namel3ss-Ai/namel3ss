@@ -43,11 +43,82 @@ let renderUI = (manifest) => {
     }));
   const pageBySlug = new Map(pageEntries.map((entry) => [entry.slug, entry]));
   const pageByName = new Map(pageEntries.map((entry) => [entry.name, entry]));
+  const actionsById = manifest && typeof manifest.actions === "object" && manifest.actions ? manifest.actions : {};
+  const keyboardShortcutMap = new Map();
 
   function hasAppPermission(permission) {
     if (!explicitPermissionsEnabled) return true;
     if (typeof permission !== "string" || !permission) return false;
     return declaredPermissionMatrix[permission] === true;
+  }
+
+  function normalizeShortcut(value) {
+    if (typeof value !== "string") return "";
+    const parts = value
+      .split("+")
+      .map((part) => String(part || "").trim().toLowerCase())
+      .filter(Boolean);
+    const modifiers = parts.filter((part) => ["ctrl", "shift", "alt", "meta"].includes(part)).sort();
+    const keys = parts.filter((part) => !["ctrl", "shift", "alt", "meta"].includes(part));
+    if (!keys.length) return modifiers.join("+");
+    return [...modifiers, ...keys].join("+");
+  }
+
+  function shortcutFromEvent(event) {
+    const parts = [];
+    if (event.ctrlKey) parts.push("ctrl");
+    if (event.shiftKey) parts.push("shift");
+    if (event.altKey) parts.push("alt");
+    if (event.metaKey) parts.push("meta");
+    const key = String(event.key || "").toLowerCase();
+    if (key && !["control", "shift", "alt", "meta"].includes(key)) {
+      parts.push(key);
+    }
+    return normalizeShortcut(parts.join("+"));
+  }
+
+  function registerShortcut(shortcut, actionId) {
+    const normalized = normalizeShortcut(shortcut);
+    if (!normalized || typeof actionId !== "string" || !actionId) return;
+    const current = keyboardShortcutMap.get(normalized) || [];
+    if (!current.includes(actionId)) {
+      keyboardShortcutMap.set(normalized, [...current, actionId]);
+    }
+  }
+
+  function registerKeyboardShortcuts() {
+    if (typeof window === "undefined" || typeof window.addEventListener !== "function") return;
+    keyboardShortcutMap.clear();
+    Object.values(actionsById).forEach((action) => {
+      if (!action || typeof action !== "object") return;
+      const actionId = typeof action.id === "string" && action.id ? action.id : "";
+      if (!actionId) return;
+      const actionType = action.type || "";
+      if (actionType === "layout.shortcut") {
+        registerShortcut(action.shortcut || action.target, actionId);
+      } else if (action.event === "keyboard_shortcut" && typeof action.target === "string") {
+        registerShortcut(action.target, actionId);
+      }
+    });
+    const handlerKey = "__n3KeyboardShortcutHandler";
+    const previous = window[handlerKey];
+    if (typeof previous === "function") {
+      window.removeEventListener("keydown", previous);
+    }
+    const handler = (event) => {
+      const combo = shortcutFromEvent(event);
+      if (!combo || !keyboardShortcutMap.has(combo)) return;
+      const actionIds = keyboardShortcutMap.get(combo) || [];
+      if (!actionIds.length) return;
+      event.preventDefault();
+      actionIds.forEach((actionId) => {
+        const action = actionsById[actionId];
+        if (!action) return;
+        handleAction(action, { shortcut: combo }, document.activeElement);
+      });
+    };
+    window[handlerKey] = handler;
+    window.addEventListener("keydown", handler);
   }
 
   function resolvePageEntry(value) {
@@ -175,6 +246,7 @@ let renderUI = (manifest) => {
     });
     select.disabled = navigationLocked;
   }
+  registerKeyboardShortcuts();
   function renderChildren(container, children, pageName) {
     (children || []).forEach((child) => {
       if (child && child.visible === false) return;
@@ -191,6 +263,19 @@ let renderUI = (manifest) => {
       bundle.color_scheme = pageTheme.color_scheme;
     }
     applyThemeBundle(bundle);
+  }
+  function applyLocaleSettings() {
+    const i18n = manifest && typeof manifest.i18n === "object" ? manifest.i18n : {};
+    const direction = i18n && typeof i18n.direction === "string" ? i18n.direction : "ltr";
+    const locale = i18n && typeof i18n.locale === "string" ? i18n.locale : "en";
+    if (document && document.documentElement) {
+      document.documentElement.setAttribute("dir", direction === "rtl" ? "rtl" : "ltr");
+      document.documentElement.setAttribute("lang", locale);
+    }
+    if (document && document.body) {
+      document.body.dataset.locale = locale;
+      document.body.dataset.direction = direction === "rtl" ? "rtl" : "ltr";
+    }
   }
   function applyThemeClasses(node, el) {
     if (!node || !node.classList || !el) return;
@@ -267,6 +352,51 @@ let renderUI = (manifest) => {
     }
     entry.returnFocus = null;
   }
+
+  function setLayoutDrawerOpen(targetId, open) {
+    if (typeof targetId !== "string" || !targetId) return false;
+    const drawer = uiContainer.querySelector(`[data-layout-drawer-id="${targetId}"]`);
+    if (!drawer) return false;
+    drawer.dataset.open = open ? "true" : "false";
+    drawer.setAttribute("aria-hidden", open ? "false" : "true");
+    return true;
+  }
+
+  function applyInteractionBindings(node, el) {
+    if (!node || !el) return;
+    const bindings = node.bindings;
+    if (!bindings || typeof bindings !== "object") return;
+    if (typeof bindings.selected_item === "string" && bindings.selected_item) {
+      el.dataset.selectedItemPath = bindings.selected_item;
+    }
+    if (typeof bindings.keyboard_shortcut === "string" && bindings.keyboard_shortcut) {
+      const fallbackAction = typeof bindings.on_click === "string" ? bindings.on_click : null;
+      if (fallbackAction) {
+        registerShortcut(bindings.keyboard_shortcut, fallbackAction);
+      }
+    }
+    if (typeof bindings.on_click === "string" && bindings.on_click) {
+      const targetActionId = bindings.on_click;
+      el.classList.add("n3-interactive");
+      if (!el.hasAttribute("tabindex")) {
+        el.setAttribute("tabindex", "0");
+      }
+      el.onclick = (event) => {
+        event.stopPropagation();
+        const action = actionsById[targetActionId];
+        if (action) {
+          handleAction(action, { source_element_id: node.id || null }, event.currentTarget);
+          return;
+        }
+        executeAction(targetActionId, { source_element_id: node.id || null });
+      };
+      el.onkeydown = (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        el.click();
+      };
+    }
+  }
   function navigateToPage(value, options = {}) {
     if (navigationLocked) return;
     const slug = resolvePageSlug(value);
@@ -288,6 +418,86 @@ let renderUI = (manifest) => {
     }
     if (actionType === "close_modal" || actionType === "close_drawer") {
       closeOverlay(action.target);
+      return { ok: true };
+    }
+    if (actionType === "layout.drawer.open") {
+      setLayoutDrawerOpen(action.target, true);
+      return { ok: true };
+    }
+    if (actionType === "layout.drawer.close") {
+      setLayoutDrawerOpen(action.target, false);
+      return { ok: true };
+    }
+    if (actionType === "layout.drawer.toggle") {
+      const drawer = uiContainer.querySelector(`[data-layout-drawer-id="${action.target}"]`);
+      if (!drawer) return { ok: false };
+      const nextOpen = drawer.dataset.open !== "true";
+      setLayoutDrawerOpen(action.target, nextOpen);
+      return { ok: true };
+    }
+    if (actionType === "layout.sticky.show" || actionType === "layout.sticky.hide" || actionType === "layout.sticky.toggle") {
+      const sticky = uiContainer.querySelector(`[data-layout-sticky-id="${action.target}"]`);
+      if (!sticky) return { ok: false };
+      const current = sticky.dataset.visible !== "false";
+      const nextVisible =
+        actionType === "layout.sticky.show" ? true : actionType === "layout.sticky.hide" ? false : !current;
+      sticky.dataset.visible = nextVisible ? "true" : "false";
+      sticky.style.display = nextVisible ? "" : "none";
+      return { ok: true };
+    }
+    if (actionType === "layout.selection.set") {
+      const path = (payload && payload.path) || action.path || "";
+      if (typeof path === "string" && path) {
+        const nodes = uiContainer.querySelectorAll(`[data-selected-item-path="${path}"]`);
+        nodes.forEach((node) => node.classList.add("selected"));
+      }
+      return { ok: true };
+    }
+    if (actionType === "layout.shortcut") {
+      const actionPayload = action && typeof action.payload === "object" && action.payload ? action.payload : {};
+      const dispatchActionId = typeof actionPayload.dispatch_action_id === "string" ? actionPayload.dispatch_action_id : "";
+      if (dispatchActionId && actionsById[dispatchActionId]) {
+        return handleAction(actionsById[dispatchActionId], payload, opener);
+      }
+      const targetActionId = typeof actionPayload.target_action === "string" ? actionPayload.target_action : "";
+      if (targetActionId) {
+        return executeAction(targetActionId, payload);
+      }
+      return { ok: true };
+    }
+    if (actionType === "layout.interaction") {
+      if (typeof action.target === "string" && action.target) {
+        return executeAction(action.target, payload);
+      }
+      return { ok: false };
+    }
+    if (actionType === "component.chat.send" || actionType === "component.ingestion.retry") {
+      if (typeof action.target === "string" && action.target) {
+        return executeAction(action.target, payload);
+      }
+      return executeAction(action.id, payload);
+    }
+    if (actionType === "component.document.select") {
+      const selectedId = payload && typeof payload.document_id === "string" ? payload.document_id : "";
+      if (!selectedId) return { ok: false };
+      const rows = uiContainer.querySelectorAll("[data-document-id]");
+      rows.forEach((row) => {
+        row.classList.toggle("selected", row.dataset.documentId === selectedId);
+      });
+      if (typeof action.target === "string" && action.target) {
+        return executeAction(action.target, payload);
+      }
+      return { ok: true };
+    }
+    if (actionType === "component.citation.open") {
+      const selectedId = payload && typeof payload.citation_id === "string" ? payload.citation_id : "";
+      const rows = uiContainer.querySelectorAll("[data-citation-id]");
+      rows.forEach((row) => {
+        row.classList.toggle("selected", selectedId && row.dataset.citationId === selectedId);
+      });
+      if (typeof action.target === "string" && action.target) {
+        setLayoutDrawerOpen(action.target, true);
+      }
       return { ok: true };
     }
     if (actionType === "open_page") {
@@ -599,7 +809,12 @@ let renderUI = (manifest) => {
     if (el.type === "layout.sidebar") {
       const wrapper = document.createElement("div");
       wrapper.className = "n3-layout-sidebar";
-      const sidebarItems = Array.isArray(el.sidebar) ? el.sidebar.filter((child) => child && child.visible !== false) : [];
+      const hasLegacyBranches = Array.isArray(el.sidebar) || Array.isArray(el.main);
+      const sidebarItems = Array.isArray(el.sidebar)
+        ? el.sidebar.filter((child) => child && child.visible !== false)
+        : Array.isArray(el.children)
+          ? el.children.filter((child) => child && child.visible !== false)
+          : [];
       const mainItems = Array.isArray(el.main) ? el.main.filter((child) => child && child.visible !== false) : [];
       if (sidebarItems.length) {
         const sidebar = document.createElement("aside");
@@ -607,18 +822,32 @@ let renderUI = (manifest) => {
         renderChildren(sidebar, sidebarItems, pageName);
         wrapper.appendChild(sidebar);
       }
-      const main = document.createElement("div");
-      main.className = "n3-layout-main-pane";
-      renderChildren(main, mainItems, pageName);
-      wrapper.appendChild(main);
+      if (hasLegacyBranches) {
+        const main = document.createElement("div");
+        main.className = "n3-layout-main-pane";
+        renderChildren(main, mainItems, pageName);
+        wrapper.appendChild(main);
+      }
+      applyInteractionBindings(el, wrapper);
       return wrapper;
+    }
+    if (el.type === "layout.main") {
+      const main = document.createElement("section");
+      main.className = "n3-layout-main";
+      renderChildren(main, el.children, pageName);
+      applyInteractionBindings(el, main);
+      return main;
     }
     if (el.type === "layout.drawer") {
       const drawer = document.createElement("section");
       drawer.className = "n3-layout-drawer";
+      const drawerSide = el.side === "left" ? "left" : "right";
+      drawer.dataset.side = drawerSide;
       const showWhen = el.show_when && el.show_when.result === true;
-      drawer.dataset.open = showWhen ? "true" : "false";
-      drawer.setAttribute("aria-hidden", showWhen ? "false" : "true");
+      const openState = typeof el.open_state === "boolean" ? el.open_state : showWhen;
+      drawer.dataset.open = openState ? "true" : "false";
+      drawer.setAttribute("aria-hidden", openState ? "false" : "true");
+      if (el.id) drawer.dataset.layoutDrawerId = el.id;
       if (el.title) {
         const header = document.createElement("div");
         header.className = "n3-layout-drawer-header";
@@ -632,6 +861,7 @@ let renderUI = (manifest) => {
       body.className = "n3-layout-drawer-body";
       renderChildren(body, el.children, pageName);
       drawer.appendChild(body);
+      applyInteractionBindings(el, drawer);
       return drawer;
     }
     if (el.type === "layout.sticky") {
@@ -639,9 +869,370 @@ let renderUI = (manifest) => {
       sticky.className = "n3-layout-sticky";
       const position = el.position === "bottom" ? "bottom" : "top";
       sticky.dataset.position = position;
+       if (el.id) sticky.dataset.layoutStickyId = el.id;
+      const visible = typeof el.visible === "boolean" ? el.visible : true;
+      sticky.dataset.visible = visible ? "true" : "false";
+      if (!visible) sticky.style.display = "none";
       if (position === "bottom") sticky.classList.add("bottom");
       renderChildren(sticky, el.children, pageName);
+      applyInteractionBindings(el, sticky);
       return sticky;
+    }
+    if (el.type === "layout.scroll_area") {
+      const scrollArea = document.createElement("div");
+      scrollArea.className = "n3-layout-scroll-area";
+      const axis = el.axis === "horizontal" ? "horizontal" : "vertical";
+      scrollArea.dataset.axis = axis;
+      if (axis === "horizontal") scrollArea.classList.add("horizontal");
+      renderChildren(scrollArea, el.children, pageName);
+      applyInteractionBindings(el, scrollArea);
+      return scrollArea;
+    }
+    if (el.type === "layout.two_pane") {
+      const wrapper = document.createElement("div");
+      wrapper.className = "n3-layout-two-pane";
+      const primary = document.createElement("div");
+      primary.className = "n3-layout-two-pane-primary";
+      const secondary = document.createElement("div");
+      secondary.className = "n3-layout-two-pane-secondary";
+      renderChildren(primary, el.primary || [], pageName);
+      renderChildren(secondary, el.secondary || [], pageName);
+      wrapper.appendChild(primary);
+      wrapper.appendChild(secondary);
+      applyInteractionBindings(el, wrapper);
+      return wrapper;
+    }
+    if (el.type === "layout.three_pane") {
+      const wrapper = document.createElement("div");
+      wrapper.className = "n3-layout-three-pane";
+      const left = document.createElement("div");
+      left.className = "n3-layout-three-pane-left";
+      const center = document.createElement("div");
+      center.className = "n3-layout-three-pane-center";
+      const right = document.createElement("div");
+      right.className = "n3-layout-three-pane-right";
+      renderChildren(left, el.left || [], pageName);
+      renderChildren(center, el.center || [], pageName);
+      renderChildren(right, el.right || [], pageName);
+      wrapper.appendChild(left);
+      wrapper.appendChild(center);
+      wrapper.appendChild(right);
+      applyInteractionBindings(el, wrapper);
+      return wrapper;
+    }
+    if (el.type === "component.form") {
+      const form = document.createElement("section");
+      form.className = "n3-component-form";
+      form.dataset.formName = el.name || "";
+      if (el.wizard) form.classList.add("wizard");
+      if (Array.isArray(el.sections) && el.sections.length) {
+        const sectionBar = document.createElement("div");
+        sectionBar.className = "n3-component-form-sections";
+        el.sections.forEach((label) => {
+          const chip = document.createElement("span");
+          chip.className = "n3-component-form-section";
+          chip.textContent = label;
+          sectionBar.appendChild(chip);
+        });
+        form.appendChild(sectionBar);
+      }
+      renderChildren(form, el.children || [], pageName);
+      applyInteractionBindings(el, form);
+      return form;
+    }
+    if (el.type === "component.table") {
+      const table = document.createElement("section");
+      table.className = "n3-component-table";
+      table.dataset.tableName = el.name || "";
+      table.dataset.reorderableColumns = el.reorderable_columns ? "true" : "false";
+      table.dataset.fixedHeader = el.fixed_header ? "true" : "false";
+      renderChildren(table, el.children || [], pageName);
+      applyInteractionBindings(el, table);
+      return table;
+    }
+    if (el.type === "component.card") {
+      const card = document.createElement("section");
+      card.className = "n3-component-card";
+      card.dataset.cardName = el.name || "";
+      const header = document.createElement("div");
+      header.className = "n3-component-card-header";
+      header.textContent = el.name || "Card";
+      card.appendChild(header);
+      const body = document.createElement("div");
+      body.className = "n3-component-card-body";
+      const collapsed = Boolean(el.collapsed);
+      if (collapsed) body.style.display = "none";
+      renderChildren(body, el.children || [], pageName);
+      card.appendChild(body);
+      if (el.expandable) {
+        header.classList.add("expandable");
+        header.onclick = () => {
+          const hidden = body.style.display === "none";
+          body.style.display = hidden ? "" : "none";
+        };
+      }
+      applyInteractionBindings(el, card);
+      return card;
+    }
+    if (el.type === "component.tabs") {
+      const tabs = document.createElement("section");
+      tabs.className = "n3-component-tabs";
+      tabs.dataset.tabsName = el.name || "";
+      if (typeof el.dynamic_from_state === "string") {
+        tabs.dataset.dynamicFromState = el.dynamic_from_state;
+      }
+      renderChildren(tabs, el.children || [], pageName);
+      applyInteractionBindings(el, tabs);
+      return tabs;
+    }
+    if (el.type === "component.media") {
+      const media = document.createElement("section");
+      media.className = "n3-component-media";
+      media.dataset.mediaName = el.name || "";
+      media.dataset.inlineCrop = el.inline_crop ? "true" : "false";
+      media.dataset.annotation = el.annotation ? "true" : "false";
+      renderChildren(media, el.children || [], pageName);
+      applyInteractionBindings(el, media);
+      return media;
+    }
+    if (el.type === "component.chat_thread") {
+      const thread = document.createElement("section");
+      thread.className = "n3-component-chat-thread";
+      if (el.title) {
+        const title = document.createElement("div");
+        title.className = "n3-chat-title";
+        title.textContent = el.title;
+        thread.appendChild(title);
+      }
+      const messages = Array.isArray(el.messages) ? el.messages : [];
+      messages.forEach((entry) => {
+        if (!entry || typeof entry !== "object") return;
+        const message = document.createElement("article");
+        message.className = "n3-chat-message";
+        message.dataset.role = entry.role || "assistant";
+        message.dataset.status = entry.status || "complete";
+        const content = document.createElement("div");
+        content.className = "n3-chat-content";
+        content.textContent = typeof entry.content === "string" ? entry.content : "";
+        message.appendChild(content);
+        const citations = Array.isArray(entry.citations) ? entry.citations : [];
+        if (citations.length) {
+          const row = document.createElement("div");
+          row.className = "n3-chat-citations";
+          citations.forEach((citationId) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "n3-chat-citation";
+            button.textContent = String(citationId);
+            button.onclick = (event) => {
+              event.preventDefault();
+              const actionId = el.bindings && typeof el.bindings.on_click === "string" ? el.bindings.on_click : null;
+              if (!actionId) return;
+              const action = actionsById[actionId];
+              if (action) {
+                handleAction(action, { citation_id: String(citationId), message_id: entry.id || null }, button);
+              } else {
+                executeAction(actionId, { citation_id: String(citationId), message_id: entry.id || null });
+              }
+            };
+            row.appendChild(button);
+          });
+          message.appendChild(row);
+        }
+        thread.appendChild(message);
+      });
+      if (el.streaming) {
+        const streaming = document.createElement("div");
+        streaming.className = "n3-chat-streaming";
+        streaming.textContent = "Streaming...";
+        thread.appendChild(streaming);
+      }
+      applyInteractionBindings(el, thread);
+      return thread;
+    }
+    if (el.type === "component.citation_panel") {
+      const panel = document.createElement("section");
+      panel.className = "n3-component-citation-panel";
+      const citations = Array.isArray(el.citations) ? el.citations : [];
+      const selectedId = typeof el.selected_id === "string" ? el.selected_id : "";
+      citations.forEach((entry) => {
+        if (!entry || typeof entry !== "object") return;
+        const row = document.createElement("button");
+        row.type = "button";
+        row.className = "n3-citation-item";
+        row.dataset.citationId = entry.id || "";
+        if (selectedId && entry.id === selectedId) row.classList.add("selected");
+        const title = document.createElement("div");
+        title.className = "n3-citation-title";
+        title.textContent = entry.title || entry.id || "Citation";
+        row.appendChild(title);
+        if (entry.snippet) {
+          const snippet = document.createElement("div");
+          snippet.className = "n3-citation-snippet";
+          snippet.textContent = entry.snippet;
+          row.appendChild(snippet);
+        }
+        if (Number.isInteger(entry.page)) {
+          const page = document.createElement("div");
+          page.className = "n3-citation-page";
+          page.textContent = `Page ${entry.page}`;
+          row.appendChild(page);
+        }
+        row.onclick = (event) => {
+          event.preventDefault();
+          const actionId = el.bindings && typeof el.bindings.on_click === "string" ? el.bindings.on_click : null;
+          if (!actionId) return;
+          const payload = { citation_id: entry.id || null, source_id: entry.source_id || null };
+          const action = actionsById[actionId];
+          if (action) {
+            handleAction(action, payload, row);
+          } else {
+            executeAction(actionId, payload);
+          }
+        };
+        panel.appendChild(row);
+      });
+      applyInteractionBindings(el, panel);
+      return panel;
+    }
+    if (el.type === "component.document_library") {
+      const panel = document.createElement("section");
+      panel.className = "n3-component-document-library";
+      const docs = Array.isArray(el.documents) ? el.documents : [];
+      const selectedId = typeof el.selected_document_id === "string" ? el.selected_document_id : "";
+      const selectActionId =
+        (el.actions && typeof el.actions.select === "string" && el.actions.select) ||
+        (el.bindings && typeof el.bindings.on_click === "string" && el.bindings.on_click) ||
+        "";
+      const deleteActionId = el.actions && typeof el.actions.delete === "string" ? el.actions.delete : "";
+      docs.forEach((entry) => {
+        if (!entry || typeof entry !== "object") return;
+        const row = document.createElement("div");
+        row.className = "n3-document-item";
+        row.dataset.documentId = entry.id || "";
+        if (selectedId && entry.id === selectedId) row.classList.add("selected");
+        const selectBtn = document.createElement("button");
+        selectBtn.type = "button";
+        selectBtn.className = "n3-document-select";
+        selectBtn.textContent = entry.name || entry.id || "Document";
+        selectBtn.onclick = (event) => {
+          event.preventDefault();
+          if (!selectActionId) return;
+          const payload = { document_id: entry.id || null };
+          const action = actionsById[selectActionId];
+          if (action) {
+            handleAction(action, payload, selectBtn);
+          } else {
+            executeAction(selectActionId, payload);
+          }
+        };
+        row.appendChild(selectBtn);
+        if (deleteActionId) {
+          const deleteBtn = document.createElement("button");
+          deleteBtn.type = "button";
+          deleteBtn.className = "n3-document-delete";
+          deleteBtn.textContent = "Delete";
+          deleteBtn.onclick = (event) => {
+            event.preventDefault();
+            const payload = { document_id: entry.id || null };
+            const action = actionsById[deleteActionId];
+            if (action) {
+              handleAction(action, payload, deleteBtn);
+            } else {
+              executeAction(deleteActionId, payload);
+            }
+          };
+          row.appendChild(deleteBtn);
+        }
+        panel.appendChild(row);
+      });
+      applyInteractionBindings(el, panel);
+      return panel;
+    }
+    if (el.type === "component.ingestion_progress") {
+      const progress = document.createElement("section");
+      progress.className = "n3-component-ingestion-progress";
+      const status = document.createElement("div");
+      status.className = "n3-ingestion-status";
+      status.textContent = `Status: ${el.status || "idle"}`;
+      progress.appendChild(status);
+      const meter = document.createElement("progress");
+      meter.max = 100;
+      meter.value = Number.isInteger(el.percent) ? el.percent : 0;
+      meter.className = "n3-ingestion-meter";
+      progress.appendChild(meter);
+      const percent = document.createElement("div");
+      percent.className = "n3-ingestion-percent";
+      percent.textContent = `${meter.value}%`;
+      progress.appendChild(percent);
+      const errors = Array.isArray(el.errors) ? el.errors : [];
+      errors.forEach((messageText) => {
+        const line = document.createElement("div");
+        line.className = "n3-ingestion-error";
+        line.textContent = String(messageText);
+        progress.appendChild(line);
+      });
+      if (el.bindings && typeof el.bindings.on_click === "string" && el.bindings.on_click) {
+        const retry = document.createElement("button");
+        retry.type = "button";
+        retry.className = "n3-ingestion-retry";
+        retry.textContent = "Retry";
+        retry.onclick = (event) => {
+          event.preventDefault();
+          const actionId = el.bindings.on_click;
+          const action = actionsById[actionId];
+          if (action) {
+            handleAction(action, { source_component: el.id || null }, retry);
+          } else {
+            executeAction(actionId, { source_component: el.id || null });
+          }
+        };
+        progress.appendChild(retry);
+      }
+      applyInteractionBindings(el, progress);
+      return progress;
+    }
+    if (el.type === "component.explain_mode") {
+      if (el.studio_only === true && manifest.mode !== "studio") {
+        const hidden = document.createElement("div");
+        hidden.className = "n3-component-explain-mode hidden";
+        return hidden;
+      }
+      const explain = document.createElement("section");
+      explain.className = "n3-component-explain-mode";
+      if (el.visible === false) {
+        explain.style.display = "none";
+      }
+      const entries = Array.isArray(el.entries) ? el.entries : [];
+      entries.forEach((entry) => {
+        if (!entry || typeof entry !== "object") return;
+        const block = document.createElement("article");
+        block.className = "n3-explain-entry";
+        const id = document.createElement("div");
+        id.className = "n3-explain-id";
+        id.textContent = entry.chunk_id || "chunk";
+        block.appendChild(id);
+        const score = document.createElement("div");
+        score.className = "n3-explain-score";
+        score.textContent = `score ${Number(entry.score || 0).toFixed(3)}`;
+        block.appendChild(score);
+        if (entry.text) {
+          const text = document.createElement("div");
+          text.className = "n3-explain-text";
+          text.textContent = String(entry.text);
+          block.appendChild(text);
+        }
+        explain.appendChild(block);
+      });
+      applyInteractionBindings(el, explain);
+      return explain;
+    }
+    if (el.type === "component.literal") {
+      const text = document.createElement("div");
+      text.className = "n3-component-literal";
+      text.textContent = typeof el.text === "string" ? el.text : "";
+      applyInteractionBindings(el, text);
+      return text;
     }
     if (el.type === "theme.settings_page") {
       const wrapper = document.createElement("section");
@@ -1345,6 +1936,7 @@ let renderUI = (manifest) => {
     if (!navigationLocked && !options.skipRouteSync) {
       writeRouteSlug(resolvedSlug, { push: false });
     }
+    applyLocaleSettings();
     applyPageTheme(page);
     let pageContainer = uiContainer;
     const sidebar = renderNavigationSidebar(resolvedSlug);

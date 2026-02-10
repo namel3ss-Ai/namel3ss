@@ -10,13 +10,15 @@ from namel3ss.cli.artifacts_mode import run_artifacts_clean, run_artifacts_statu
 from namel3ss.cli.audit_mode import run_audit_command
 from namel3ss.cli.ast_mode import run_ast_command
 from namel3ss.cli.browser_mode import run_dev_command, run_preview_command
-from namel3ss.cli.build_mode import run_build_command
 from namel3ss.cli.build import run_build_archive_command
+from namel3ss.cli.build_command import run_build_cli_command
+from namel3ss.cli.build_mode import run_build_command
 from namel3ss.cli.create_mode import run_create_command
 from namel3ss.cli.dataset_mode import run_dataset_command
 from namel3ss.cli.constants import ROOT_APP_COMMANDS
 from namel3ss.cli.deps_mode import run_deps
 from namel3ss.cli.dependency_management_mode import run_dependency_root
+from namel3ss.cli.deploy_command import run_deploy_cli_command
 from namel3ss.cli.discover_mode import run_discover
 from namel3ss.cli.doctor import run_doctor
 from namel3ss.cli.editor_mode import run_editor_command
@@ -234,6 +236,10 @@ def main(argv: list[str] | None = None) -> int:
                 if next_token in PACK_SUBCOMMANDS:
                     return run_packs(args[1:])
             return run_build_command(args[1:])
+        if cmd == "deploy":
+            return run_deploy_cli_command(args[1:])
+        if cmd == "bundle":
+            return run_build_cli_command(args[1:])
         if cmd == "ship":
             return run_promote_command(args[1:])
         if cmd == "where":

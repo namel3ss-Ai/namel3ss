@@ -1,38 +1,46 @@
 # Code of Conduct
 
-This community is committed to a respectful, inclusive, and technically constructive environment.
+Namel3ss contributors and users are expected to keep discussions respectful, technical, and inclusive.
 
 ## Expected behavior
+
 - Be respectful and professional.
 - Critique ideas, not people.
-- Provide clear, reproducible technical feedback.
-- Help newcomers with patience and practical guidance.
+- Keep technical feedback concrete and reproducible.
+- Help newer contributors with patience and clear guidance.
 
 ## Unacceptable behavior
+
 - Harassment, discrimination, or personal attacks.
 - Doxxing or sharing private information without consent.
-- Threats, intimidation, or sustained disruption.
-- Deliberate misinformation about project behavior.
+- Threats, intimidation, or repeated disruption.
+- Deliberate misinformation about project behavior or security.
 
 ## Scope
-This code of conduct applies to:
-- repository issues and pull requests
-- discussions and chats
-- events and workshops under the namel3ss project
+
+This policy applies to:
+
+- GitHub issues and pull requests
+- discussions, chats, and project forums
+- community events hosted by project maintainers
 
 ## Reporting
-Report concerns to project maintainers through private channels listed in repository settings.
 
-Reports will be reviewed promptly and handled confidentially.
+Report conduct concerns privately to maintainers at `info@namel3ss.com` with subject `[CONDUCT]`.
+
+Include:
+
+- a short description of what happened
+- links or evidence where available
+- whether immediate moderation is needed
 
 ## Enforcement
-Possible actions include:
+
+Maintainers may apply one or more actions:
+
 - warning
-- temporary moderation
+- temporary moderation limits
 - temporary suspension
 - permanent ban for severe or repeated violations
 
-Maintainers may remove content that violates this policy.
-
-## Governance alignment
-Conduct enforcement supports transparent governance and safe collaboration as described in `GOVERNANCE.md`.
+Enforcement decisions are made by maintainers and may be escalated to the LSC.

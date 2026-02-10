@@ -1,7 +1,7 @@
 .ui-empty-sources-panel {
-  border: 1px dashed #c9d6ec;
+  border: 1px dashed var(--n3-border-color, #c9d6ec);
   border-radius: 12px;
-  background: linear-gradient(180deg, #f7faff 0%, #ffffff 100%);
+  background: linear-gradient(180deg, var(--n3-surface-default, #f7faff) 0%, var(--n3-surface-raised, #ffffff) 100%);
   padding: 14px;
   display: flex;
   flex-direction: column;
@@ -11,12 +11,12 @@
 .ui-empty-sources-title {
   font-size: 14px;
   font-weight: 600;
-  color: #1e2f4b;
+  color: var(--n3-foreground-color, #1e2f4b);
 }
 
 .ui-empty-sources-text {
   font-size: 12px;
-  color: #405472;
+  color: var(--n3-muted-text-color, #405472);
   line-height: 1.45;
 }
 
@@ -26,15 +26,15 @@
 }
 
 .ui-empty-sources-actions .btn:focus-visible {
-  outline: 2px solid #1f5de1;
+  outline: 2px solid var(--n3-focus-ring, #1f5de1);
   outline-offset: 2px;
 }
 
 .ui-chat-error-surface {
-  border: 1px solid #f0c9c9;
+  border: 1px solid var(--n3-error-color, #f0c9c9);
   border-radius: 10px;
-  background: #fff5f5;
-  color: #822121;
+  background: var(--n3-error-surface, #fff5f5);
+  color: var(--n3-error-color, #822121);
   padding: 10px;
   font-size: 12px;
   line-height: 1.4;
