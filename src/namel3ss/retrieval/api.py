@@ -14,9 +14,13 @@ from namel3ss.ingestion.policy import (
 from namel3ss.retrieval.embedding_plan import build_embedding_plan
 from namel3ss.retrieval.explain import RetrievalExplainBuilder
 from namel3ss.retrieval.ordering import coerce_int, ordering_label, rank_key, select_tier
+from namel3ss.retrieval.result_helpers import candidate_fields, normalize_tags
 from namel3ss.retrieval.tuning import read_tuning_from_state
 from namel3ss.retrieval.tuning_engine import apply_retrieval_tuning, build_tuning_summary
 from namel3ss.runtime.pipelines.rag_pipeline import build_retrieval_artifacts
+from namel3ss.runtime.retrieval.preview_engine import build_preview_rows
+from namel3ss.runtime.retrieval.tag_filtering import apply_filter_tags, resolve_filter_tags
+from namel3ss.runtime.retrieval.trace_collector import collect_retrieval_trace
 
 
 def run_retrieval(
@@ -34,6 +38,8 @@ def run_retrieval(
     policy_decl: object | None = None,
     config: AppConfig | None = None,
     capabilities: tuple[str, ...] | list[str] | None = None,
+    filter_tags: list[str] | str | None = None,
+    diagnostics_trace_enabled: bool = False,
 ) -> dict:
     if not isinstance(state, dict):
         raise Namel3ssError(_state_type_message())
@@ -78,7 +84,7 @@ def run_retrieval(
                     app_path=app_path,
                     secret_values=secret_values,
                 )
-                candidate = _candidate_fields(entry, upload_id=upload_id, keyword_overlap=overlap)
+                candidate = candidate_fields(entry, upload_id=upload_id, keyword_overlap=overlap)
                 vector_score = embedding_plan.score_for(candidate["chunk_id"])
                 explain_builder.add_blocked(
                     chunk_id=candidate["chunk_id"],
@@ -152,6 +158,9 @@ def run_retrieval(
             "keyword_matches": matches,
             "keyword_overlap": overlap,
         }
+        normalized_tags = normalize_tags(entry.get("tags"))
+        if normalized_tags:
+            result["tags"] = normalized_tags
         if quality == "pass":
             pass_entries.append((result, index))
         else:
@@ -201,6 +210,9 @@ def run_retrieval(
         tier_selection = pass_selection if pass_entries else warn_selection
         explain_quality = "pass"
         explain_selection = pass_selected
+    resolved_filter_tags = resolve_filter_tags(filter_tags, state=state)
+    results, applied_filter_tags = apply_filter_tags(results, filter_tags=resolved_filter_tags)
+    explain_selection = [dict(entry) for entry in results]
     if limit is not None and (not isinstance(limit, int) or isinstance(limit, bool) or limit < 0):
         raise Namel3ssError(_limit_message())
     retrieval_tuning = read_tuning_from_state(state)
@@ -224,6 +236,19 @@ def run_retrieval(
         vector_scores=candidate_vector_scores,
         tie_break_chunk_id=embedding_plan.enabled,
     )
+    preview_rows = build_preview_rows(
+        candidate_results,
+        vector_scores=candidate_vector_scores,
+        semantic_weight=retrieval_tuning.semantic_weight,
+    )
+    diagnostics_trace = collect_retrieval_trace(
+        enabled=diagnostics_trace_enabled,
+        query=query_text,
+        tuning=retrieval_tuning,
+        filter_tags=applied_filter_tags,
+        results=candidate_results,
+        vector_scores=candidate_vector_scores,
+    )
     response = {
         "query": query_text,
         "query_keywords": query_keywords,
@@ -234,9 +259,13 @@ def run_retrieval(
         "warn_allowed": warn_allowed,
         "warn_policy": _policy_summary(decision),
         "tier": _tier_summary(tier_request, tier_selection),
+        "filter_tags": applied_filter_tags,
         "retrieval_tuning": tuning_summary,
+        "retrieval_preview": preview_rows,
         "results": results,
     }
+    if isinstance(diagnostics_trace, dict):
+        response["retrieval_trace_diagnostics"] = diagnostics_trace
     vector_scores = {
         str(entry.get("chunk_id") or ""): embedding_plan.score_for(str(entry.get("chunk_id") or ""))
         for entry in results
@@ -398,7 +427,6 @@ def _invalid_phase_message(value: str) -> str:
         example='{"query":"invoice"}',
     )
 
-
 def _invalid_keywords_message() -> str:
     return build_guidance_message(
         what="Retrieval chunk has invalid keywords.",
@@ -406,7 +434,6 @@ def _invalid_keywords_message() -> str:
         fix="Re-run ingestion to rebuild the index with keywords.",
         example='{"query":"invoice"}',
     )
-
 
 def _require_string_field(entry: dict, field: str) -> str:
     value = entry.get(field)
@@ -467,18 +494,6 @@ def _safe_keyword_overlap(
         keywords = extract_keywords(cleaned) if cleaned else []
     matches = keyword_matches(query_keywords, keywords)
     return len(matches)
-
-
-def _candidate_fields(entry: dict, *, upload_id: str, keyword_overlap: int) -> dict:
-    chunk_index = coerce_int(entry.get("chunk_index")) or 0
-    chunk_id = entry.get("chunk_id")
-    return {
-        "chunk_id": str(chunk_id or f"{upload_id}:{chunk_index}"),
-        "ingestion_phase": str(entry.get("ingestion_phase") or ""),
-        "keyword_overlap": int(keyword_overlap),
-        "page_number": coerce_int(entry.get("page_number")) or 0,
-        "chunk_index": chunk_index,
-    }
 
 
 __all__ = ["run_retrieval"]

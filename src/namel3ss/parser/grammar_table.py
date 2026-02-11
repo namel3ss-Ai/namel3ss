@@ -65,6 +65,7 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
     from namel3ss.parser.decl.contract import parse_contract_decl
     from namel3ss.parser.decl.function import parse_function_decl
     from namel3ss.parser.decl.identity import parse_identity
+    from namel3ss.parser.decl.includes import parse_include_decl
     from namel3ss.parser.decl.page import parse_page
     from namel3ss.parser.decl.page_navigation import parse_navigation_sidebar
     from namel3ss.parser.decl.prompt import parse_prompt_decl
@@ -86,6 +87,7 @@ def top_level_rules() -> tuple[TopLevelRule, ...]:
         TopLevelRule("spec", "SPEC", parse_spec_decl),
         TopLevelRule("contract", "IDENT", parse_contract_decl, token_value="contract"),
         TopLevelRule("function", "IDENT", parse_function_decl, token_value="define"),
+        TopLevelRule("include", "IDENT", parse_include_decl, token_value="include"),
         TopLevelRule("use", "IDENT", parse_use_decl, token_value="use"),
         TopLevelRule("capsule", "IDENT", parse_capsule_decl, token_value="capsule"),
         TopLevelRule("identity", "IDENT", parse_identity, token_value="identity"),

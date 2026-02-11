@@ -5,6 +5,7 @@ from typing import Mapping
 from namel3ss.runtime.theme_state import merge_theme_tokens
 from namel3ss.ui.theme.theme_config import serialize_theme_config, theme_config_from_program
 from namel3ss.ui.theme.theme_loader import load_theme_bundle_from_program
+from namel3ss.ui.theme.theme_token_validation import build_theme_token_contract
 from namel3ss.ui.theme.theme_tokens import base_theme_names, token_schema
 from namel3ss.ui.theme_tokens import UI_THEME_TOKEN_ORDER
 
@@ -73,6 +74,7 @@ def build_theme_manifest(
     }
 
     if ui_theme_enabled:
+        payload["tokens_v2"] = build_theme_token_contract(merged_theme_tokens, mode=theme_current)
         runtime_tokens = merge_theme_tokens(dict(runtime_theme_settings or {}))
         for key in UI_THEME_TOKEN_ORDER:
             payload[key] = runtime_tokens.get(key)

@@ -111,6 +111,7 @@
         "layout": {
           "drawer_right": [
             {
+              "citation_id": "citation.1",
               "column": 7,
               "element_id": "page.rag.source_preview.3.0",
               "index": 0,
@@ -153,6 +154,7 @@
                 {
                   "citations": [
                     {
+                      "citation_id": "citation.1",
                       "index": 1,
                       "source_id": "doc-policy",
                       "title": "Policy"
@@ -160,6 +162,7 @@
                   ],
                   "column": 9,
                   "element_id": "page.rag.citation_chips.2.0.1",
+                  "enhanced": false,
                   "index": 1,
                   "line": 15,
                   "page": "rag",
@@ -244,6 +247,7 @@
                   "type": "composer"
                 }
               ],
+              "citations_enhanced": false,
               "column": 7,
               "element_id": "page.rag.chat.2.1",
               "group_messages": true,
@@ -402,7 +406,19 @@
         "surface": "flat",
         "theme": "light"
       }
-    }
+    },
+    "warnings": [
+      {
+        "category": "citations",
+        "code": "citations.enhanced_disabled",
+        "column": 0,
+        "enforced_at": null,
+        "fix": "Add capability 'ui.citations_enhanced' to enable inline citation chips and snippet previews.",
+        "line": 0,
+        "message": "Warning: Enhanced citations are disabled (missing capability ui.citations_enhanced). Falling back to legacy citations UI.",
+        "path": "manifest.pages"
+      }
+    ]
   },
   "summary": {
     "action_types": [
@@ -422,6 +438,8 @@
       "title",
       "trust_indicator"
     ],
-    "warning_codes": []
+    "warning_codes": [
+      "citations.enhanced_disabled"
+    ]
   }
 }

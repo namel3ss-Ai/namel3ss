@@ -11,6 +11,8 @@ from namel3ss.studio.diagnostics import (
 )
 from namel3ss.studio.diagnostics.ai_context import collect_runtime_ai_context_diagnostics
 from namel3ss.studio.diff.run_diff import build_run_diff
+from namel3ss.studio.panels.context_inspector import build_context_inspector_payload
+from namel3ss.studio.payload_enrichment_trace import build_retrieval_trace_payload
 from namel3ss.studio.session import SessionState
 from namel3ss.studio.share.repro_bundle import load_repro_bundle
 
@@ -87,6 +89,17 @@ def build_diagnostics_payload(source: str, session: SessionState | None, app_pat
             run_ids=run_history,
         ),
         "repro_bundle": _latest_repro_bundle(workspace.project_root if workspace else app_file.parent.as_posix()),
+        "context_inspector": build_context_inspector_payload(
+            source=source,
+            app_path=app_path,
+            state_snapshot=session.state if session else {},
+            run_artifact=latest_artifact if isinstance(latest_artifact, Mapping) else {},
+        ),
+        "retrieval_trace_panel": build_retrieval_trace_payload(
+            source=source,
+            app_path=app_path,
+            run_artifact=latest_artifact if isinstance(latest_artifact, Mapping) else {},
+        ),
     }
     return attach_studio_metadata(payload, session)
 

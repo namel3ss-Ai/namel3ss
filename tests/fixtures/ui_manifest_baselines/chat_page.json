@@ -202,6 +202,7 @@
                     "type": "memory"
                   }
                 ],
+                "citations_enhanced": false,
                 "column": 5,
                 "element_id": "page.chat.chat.2.0",
                 "group_messages": true,

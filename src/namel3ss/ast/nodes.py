@@ -52,6 +52,7 @@ from namel3ss.ast.functions import (
 )
 from namel3ss.ast.modules import CapsuleDecl, CapsuleExport, PluginUseDecl, UseDecl
 from namel3ss.ast.jobs import JobDecl
+from namel3ss.ast.includes import IncludeDecl
 from namel3ss.ast.pages import (
     ActivePageRule,
     ActionAvailabilityRule,
@@ -72,6 +73,8 @@ from namel3ss.ast.pages import (
     ChatMemoryItem,
     ChatMessagesItem,
     ChatThinkingItem,
+    SliderItem,
+    TooltipItem,
     ScopeSelectorItem,
     SourcePreviewItem,
     TrustIndicatorItem,
@@ -279,6 +282,8 @@ __all__ = [
     "TitleItem",
     "TextItem",
     "TextInputItem",
+    "SliderItem",
+    "TooltipItem",
     "UploadItem",
     "FormItem",
     "FormFieldConfig",
@@ -388,6 +393,7 @@ __all__ = [
     "AgentDecl",
     "UseDecl",
     "PluginUseDecl",
+    "IncludeDecl",
     "CapsuleExport",
     "CapsuleDecl",
     "PolicyDecl",

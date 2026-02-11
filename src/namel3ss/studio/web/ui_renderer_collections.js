@@ -31,6 +31,12 @@
 
   function citationEntryFromRow(row, mapping) {
     if (!row || typeof row !== "object") return null;
+    const citationId =
+      typeof row.citation_id === "string" && row.citation_id.trim()
+        ? row.citation_id.trim()
+        : typeof row.id === "string" && row.id.trim()
+          ? row.id.trim()
+          : "";
     const titleField = mapping && mapping.primary ? mapping.primary : "title";
     const title = typeof row[titleField] === "string" ? row[titleField].trim() : "";
     const sourceId = typeof row.source_id === "string" ? row.source_id.trim() : "";
@@ -42,6 +48,7 @@
       return null;
     }
     const entry = { title: title };
+    if (citationId) entry.citation_id = citationId;
     if (sourceId) entry.source_id = sourceId;
     if (url) entry.url = url;
     if (documentId) entry.document_id = documentId;
@@ -181,8 +188,14 @@
       }
       if (citationEntry) {
         item.classList.add("ui-list-citation-item");
+        if (typeof citationEntry.citation_id === "string" && citationEntry.citation_id) {
+          item.dataset.citationId = citationEntry.citation_id;
+        }
         item.addEventListener("click", (event) => {
           if (interactiveListTarget(event.target)) return;
+          if (typeof citationEntry.citation_id === "string" && citationEntry.citation_id && typeof root.selectCitationId === "function") {
+            root.selectCitationId(citationEntry.citation_id);
+          }
           if (typeof root.focusDrawerPreviewForCitation === "function") {
             root.focusDrawerPreviewForCitation(citationEntry, item);
             return;

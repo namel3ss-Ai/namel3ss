@@ -147,6 +147,24 @@ class TextInputItem(PageItem):
 
 
 @dataclass
+class SliderItem(PageItem):
+    label: str
+    min_value: float
+    max_value: float
+    step: float
+    value: StatePath
+    flow_name: str
+    help_text: str | None = None
+
+
+@dataclass
+class TooltipItem(PageItem):
+    text: str
+    anchor_label: str
+    collapsed_by_default: bool = True
+
+
+@dataclass
 class UploadItem(PageItem):
     name: str
     accept: list[str]

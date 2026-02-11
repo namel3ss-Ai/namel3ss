@@ -54,6 +54,11 @@ from namel3ss.ui.manifest.state_defaults import StateContext, StateDefaults
 from namel3ss.ui.manifest.status import select_status_items
 from namel3ss.ui.manifest.visibility import evaluate_visibility
 from namel3ss.ui.manifest.warning_pipeline import append_manifest_warnings
+from namel3ss.ui.manifest.citation_warnings import append_citation_capability_warning
+from namel3ss.ui.manifest.composition_warnings import (
+    append_composition_include_warnings,
+    append_diagnostics_trace_warning,
+)
 from namel3ss.ui.manifest.theme_nodes import resolve_page_theme_tokens
 from namel3ss.ui.manifest.theme_builder import build_theme_manifest
 from namel3ss.ui.responsive import apply_responsive_layout_to_pages
@@ -143,6 +148,7 @@ def build_manifest(
         state_ctx = StateContext(deepcopy(state_base), defaults)
         setattr(state_ctx, "ui_plugin_registry", ui_plugin_registry)
         setattr(state_ctx, "theme_tokens", getattr(program, "theme_tokens", {}) or {})
+        setattr(state_ctx, "capabilities", capabilities)
         if ui_theme_enabled:
             setattr(state_ctx, "ui_theme", resolve_page_theme_tokens(page, runtime_theme_settings))
         page_visible, _ = evaluate_visibility(
@@ -312,6 +318,9 @@ def build_manifest(
         validate_ui_contrast(theme_current, ui_settings.get("accent_color", ""), None)
     apply_accessibility_contract(pages)
     append_manifest_warnings(pages, warnings, context=warning_context)
+    append_composition_include_warnings(program, warnings)
+    append_diagnostics_trace_warning(program, warnings)
+    append_citation_capability_warning(pages, warnings, context=warning_context)
     if "uploads" in capabilities:
         _add_system_action(actions, taken_actions, _retrieval_action_id(), "retrieval_run")
         _add_system_action(actions, taken_actions, _ingestion_review_action_id(), "ingestion_review")

@@ -15,11 +15,11 @@ def parse_capabilities(parser) -> list[str]:
         raw_items = parse_bracketed_items(
             parser,
             context="capabilities",
-            parse_item=lambda: parser._expect("IDENT", "Expected capability name"),
+            parse_item=lambda: _parse_capability_entry(parser),
             allow_empty=True,
         )
-        for token in raw_items:
-            _append_capability(items, seen, token.value, line=token.line, column=token.column)
+        for value, line, column in raw_items:
+            _append_capability(items, seen, value, line=line, column=column)
         parser._match("NEWLINE")
     else:
         parser._expect("NEWLINE", "Expected newline after capabilities")
@@ -27,8 +27,8 @@ def parse_capabilities(parser) -> list[str]:
         while parser._current().type != "DEDENT":
             if parser._match("NEWLINE"):
                 continue
-            token = parser._expect("IDENT", "Expected capability name")
-            _append_capability(items, seen, token.value, line=token.line, column=token.column)
+            value, line, column = _parse_capability_entry(parser)
+            _append_capability(items, seen, value, line=line, column=column)
             parser._match("NEWLINE")
         parser._expect("DEDENT", "Expected end of capabilities block")
     while parser._match("NEWLINE"):
@@ -70,6 +70,38 @@ def _append_capability(
         )
     seen.add(normalized)
     items.append(normalized)
+
+
+def _parse_capability_entry(parser) -> tuple[str, int | None, int | None]:
+    tok = parser._current()
+    if tok.type == "STRING":
+        parser._advance()
+        value = str(tok.value or "").strip()
+        if value:
+            return value, tok.line, tok.column
+        raise Namel3ssError("Expected capability name", line=tok.line, column=tok.column)
+
+    start_line = tok.line
+    start_column = tok.column
+    parts: list[str] = []
+    while True:
+        current = parser._current()
+        if current.type in {"NEWLINE", "DEDENT", "COMMA", "RBRACKET", "EOF"}:
+            break
+        if current.type == "DOT":
+            parts.append(".")
+            parser._advance()
+            continue
+        value = current.value if isinstance(current.value, str) else None
+        if value is None:
+            break
+        parts.append(value)
+        parser._advance()
+    capability = "".join(parts).strip()
+    if not capability:
+        bad = parser._current()
+        raise Namel3ssError("Expected capability name", line=bad.line, column=bad.column)
+    return capability, start_line, start_column
 
 
 __all__ = ["parse_capabilities"]

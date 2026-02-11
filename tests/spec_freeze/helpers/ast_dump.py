@@ -56,6 +56,8 @@ def _to_data(value: Any, *, field_name: str | None = None) -> Any:
                 continue
             if field.name == "plugin_uses" and not field_value:
                 continue
+            if field.name == "includes" and not field_value:
+                continue
             if field.name == "generated" and not field_value:
                 continue
             if field.name == "visibility_rule" and field_value is None:

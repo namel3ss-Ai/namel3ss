@@ -18,6 +18,8 @@ from namel3ss.ast.ui.layout_nodes import (
     ThreePaneNode,
     TwoPaneNode,
 )
+from namel3ss.ast.ui.slider import SliderItem
+from namel3ss.ast.ui.tooltip import TooltipItem
 
 __all__ = [
     "CardNode",
@@ -35,5 +37,7 @@ __all__ = [
     "StickyNode",
     "TableNode",
     "ThreePaneNode",
+    "SliderItem",
+    "TooltipItem",
     "TwoPaneNode",
 ]

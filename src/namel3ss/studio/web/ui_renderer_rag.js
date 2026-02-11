@@ -10,6 +10,9 @@
       wrapper.hidden = true;
       return wrapper;
     }
+    if (el && el.enhanced === false) {
+      return renderLegacyCitations(citations, { compact: Boolean(el.compact) });
+    }
     citations.forEach((entry) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -17,8 +20,40 @@
       button.textContent = `[${entry.index}]`;
       button.title = entry.title || "Source";
       button.setAttribute("aria-label", `Open source ${entry.index}: ${entry.title || "Source"}`);
+      if (typeof entry.citation_id === "string" && entry.citation_id) {
+        button.dataset.citationId = entry.citation_id;
+      }
       button.onclick = () => openCitation(entry, button, citations);
       wrapper.appendChild(button);
+    });
+    return wrapper;
+  }
+
+  function renderLegacyCitations(citations, options) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "ui-citation-legacy";
+    if (options && options.compact) {
+      wrapper.classList.add("compact");
+    }
+    citations.forEach((entry) => {
+      const row = document.createElement("div");
+      row.className = "ui-citation-legacy-row";
+      const title = document.createElement("button");
+      title.type = "button";
+      title.className = "ui-citation-legacy-link";
+      title.textContent = `${entry.index}. ${entry.title || "Source"}`;
+      if (typeof entry.citation_id === "string" && entry.citation_id) {
+        row.dataset.citationId = entry.citation_id;
+      }
+      title.onclick = () => openCitation(entry, title, citations);
+      row.appendChild(title);
+      if (entry.snippet) {
+        const snippet = document.createElement("div");
+        snippet.className = "ui-citation-legacy-snippet";
+        snippet.textContent = entry.snippet;
+        row.appendChild(snippet);
+      }
+      wrapper.appendChild(row);
     });
     return wrapper;
   }
@@ -157,11 +192,24 @@
   }
 
   function normalizeCitations(raw) {
-    if (typeof root.normalizeCitationEntries === "function") return root.normalizeCitationEntries(raw);
+    if (typeof root.normalizeCitationEntries === "function") {
+      const normalized = root.normalizeCitationEntries(raw);
+      return normalized.map((entry, idx) => ({
+        citation_id:
+          typeof entry.citation_id === "string" && entry.citation_id.trim()
+            ? entry.citation_id.trim()
+            : `citation.${idx + 1}`,
+        ...entry,
+      }));
+    }
     if (!Array.isArray(raw)) return [];
     return raw
       .filter((entry) => entry && typeof entry === "object")
       .map((entry, idx) => ({
+        citation_id:
+          typeof entry.citation_id === "string" && entry.citation_id.trim()
+            ? entry.citation_id.trim()
+            : `citation.${idx + 1}`,
         index:
           typeof entry.index === "number" && Number.isFinite(entry.index)
             ? Math.max(1, Math.trunc(entry.index))
@@ -188,6 +236,7 @@
 
   function toCitationEntry(el) {
     return {
+      citation_id: el && typeof el.citation_id === "string" ? el.citation_id : undefined,
       title: (el && el.title) || "Source",
       snippet: el && el.snippet,
       source_id: el && el.source_id,
@@ -201,6 +250,9 @@
 
   function openCitation(entry, opener, citationSet) {
     const citations = Array.isArray(citationSet) ? citationSet : undefined;
+    if (entry && typeof entry.citation_id === "string" && entry.citation_id && typeof root.selectCitationId === "function") {
+      root.selectCitationId(entry.citation_id);
+    }
     if (typeof root.focusCitationInDrawer === "function") {
       root.focusCitationInDrawer(entry);
     }

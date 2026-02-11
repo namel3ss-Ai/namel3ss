@@ -8,7 +8,6 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.parser.grammar_table import select_top_level_rule
 from namel3ss.ui.settings import default_ui_settings_with_meta
 
-
 def parse_program(parser) -> ast.Program:
     spec_version: str | None = None
     app_theme = default_ui_settings_with_meta()["theme"][0]
@@ -45,11 +44,13 @@ def parse_program(parser) -> ast.Program:
     agents: List[ast.AgentDecl] = []
     agent_team: ast.AgentTeamDecl | None = None
     uses: List[ast.UseDecl] = []
+    includes: List[ast.IncludeDecl] = []
     plugin_uses: List[ast.PluginUseDecl] = []
     plugin_declarations_closed_at: int | None = None
     capsule: ast.CapsuleDecl | None = None
     identity: ast.IdentityDecl | None = None
     theme_preference = {"allow_override": (False, None, None), "persist": ("none", None, None)}
+    include_window_open = True
     while parser._current().type != "EOF":
         if parser._match("NEWLINE"):
             continue
@@ -68,6 +69,8 @@ def parse_program(parser) -> ast.Program:
                     column=tok.column,
                 )
             raise Namel3ssError("Unexpected top-level token", line=tok.line, column=tok.column)
+        if rule.name not in {"spec", "use", "include", "app", "theme", "responsive", "capabilities", "permissions", "policy", "packs"}:
+            include_window_open = False
         if rule.name == "spec":
             if spec_version is not None:
                 raise Namel3ssError(
@@ -99,6 +102,20 @@ def parse_program(parser) -> ast.Program:
                 plugin_uses.append(parsed_use)
             else:
                 uses.append(parsed_use)
+            continue
+        if rule.name == "include":
+            if not include_window_open:
+                raise Namel3ssError(
+                    build_guidance_message(
+                        what="Include directives must be declared before app declarations that use symbols.",
+                        why="Include files are resolved in deterministic order before flow and page compilation.",
+                        fix='Move all `include "path.ai"` directives to the top of the file.',
+                        example='include "modules/retrieval.ai"',
+                    ),
+                    line=tok.line,
+                    column=tok.column,
+                )
+            includes.append(rule.parse(parser))
             continue
         if rule.name == "function":
             if parser.allow_capsule:
@@ -454,6 +471,7 @@ def parse_program(parser) -> ast.Program:
         agents=agents,
         agent_team=agent_team,
         uses=uses,
+        includes=includes,
         plugin_uses=plugin_uses,
         capsule=capsule,
         identity=identity,
@@ -478,3 +496,4 @@ def parse_program(parser) -> ast.Program:
 
 
 __all__ = ["parse_program"]
+

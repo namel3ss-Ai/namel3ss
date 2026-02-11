@@ -61,6 +61,8 @@ from namel3ss.ir.validation.ui_state_validation import (
     validate_ui_state,
 )
 from namel3ss.ir.validation.ui_theme_validation import validate_ui_theme
+from namel3ss.ir.validation.ui_slider_validation import validate_ui_slider
+from namel3ss.ir.validation.ui_tooltip_validation import validate_ui_tooltip
 from namel3ss.ir.model.agents import RunAgentsParallelStmt
 from namel3ss.ir.model.program import Flow, Program
 from namel3ss.ir.model.statements import ThemeChange, If, Repeat, RepeatWhile, ForEach, Match, MatchCase, TryCatch, ParallelBlock
@@ -241,6 +243,8 @@ def lower_program(program: ast.Program) -> Program:
     ]
     validate_ui_layout(pages, capabilities)
     validate_ui_theme(pages, capabilities)
+    validate_ui_slider(pages, capabilities)
+    validate_ui_tooltip(pages, capabilities)
     validate_ui_rag(pages, capabilities)
     ui_navigation = lower_navigation_sidebar(
         getattr(program, "ui_navigation", None),

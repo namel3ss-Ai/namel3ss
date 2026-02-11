@@ -8,6 +8,7 @@ from namel3ss.ui.manifest.state_defaults import StateContext
 from namel3ss.validation import ValidationMode
 
 _ALLOWED_ROLES = {"user", "assistant", "system", "tool"}
+_SNIPPET_MAX_LENGTH = 220
 
 
 def _build_chat_messages(
@@ -365,9 +366,31 @@ def _index_citations(citations: list[dict]) -> list[dict]:
     indexed: list[dict] = []
     for idx, entry in enumerate(citations):
         payload = dict(entry)
+        payload["citation_id"] = _normalize_citation_id(entry, idx=idx)
+        snippet = payload.get("snippet")
+        if isinstance(snippet, str) and snippet.strip():
+            payload["snippet"] = _normalize_snippet(snippet)
         payload["index"] = idx + 1
         indexed.append(payload)
     return indexed
+
+
+def _normalize_citation_id(entry: dict, *, idx: int) -> str:
+    value = entry.get("citation_id")
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    fallback = entry.get("id")
+    if isinstance(fallback, str) and fallback.strip():
+        return fallback.strip()
+    return f"citation.{idx + 1}"
+
+
+def _normalize_snippet(value: str) -> str:
+    compact = " ".join(value.split())
+    if len(compact) <= _SNIPPET_MAX_LENGTH:
+        return compact
+    truncated = compact[:_SNIPPET_MAX_LENGTH].rstrip()
+    return f"{truncated}..."
 
 
 def _validate_memory(items: list, line: int | None, column: int | None) -> None:

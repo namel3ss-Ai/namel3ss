@@ -24,6 +24,8 @@ let renderUI = (manifest) => {
   const renderRuntimeErrorElement = collectionRender.renderRuntimeErrorElement;
   const renderCapabilitiesElement = collectionRender.renderCapabilitiesElement;
   const renderStateInspectorElement = collectionRender.renderStateInspectorElement;
+  const renderSliderElement = collectionRender.renderSliderElement;
+  const renderTooltipElement = collectionRender.renderTooltipElement;
   const renderRunDiffElement = collectionRender.renderRunDiffElement || window.renderRunDiffElement;
   const renderDiagnosticsElement = collectionRender.renderDiagnosticsElement || window.renderDiagnosticsElement;
   const overlayRegistry = new Map();
@@ -491,10 +493,7 @@ let renderUI = (manifest) => {
     }
     if (actionType === "component.citation.open") {
       const selectedId = payload && typeof payload.citation_id === "string" ? payload.citation_id : "";
-      const rows = uiContainer.querySelectorAll("[data-citation-id]");
-      rows.forEach((row) => {
-        row.classList.toggle("selected", selectedId && row.dataset.citationId === selectedId);
-      });
+      selectCitationId(selectedId, uiContainer);
       if (typeof action.target === "string" && action.target) {
         setLayoutDrawerOpen(action.target, true);
       }
@@ -533,10 +532,34 @@ let renderUI = (manifest) => {
     }
     return false;
   }
+  function selectCitationId(citationId, scope) {
+    const targetId = typeof citationId === "string" ? citationId.trim() : "";
+    const rootScope = scope && typeof scope.querySelectorAll === "function" ? scope : uiContainer;
+    const rows = Array.from(rootScope.querySelectorAll("[data-citation-id]"));
+    let firstMatch = null;
+    rows.forEach((row) => {
+      const active = Boolean(targetId) && row.dataset.citationId === targetId;
+      row.classList.toggle("selected", active);
+      if (!firstMatch && active) {
+        firstMatch = row;
+      }
+    });
+    return firstMatch;
+  }
   function focusCitationInDrawer(entry) {
     const drawer = uiContainer.querySelector(".n3-layout-drawer");
     if (!drawer) return false;
     activateTabByLabel(drawer, "Citations");
+    const citationId = entry && typeof entry.citation_id === "string" ? entry.citation_id.trim() : "";
+    if (citationId) {
+      selectCitationId(citationId, uiContainer);
+      const exact = selectCitationId(citationId, drawer);
+      if (exact) {
+        exact.classList.add("selected");
+        if (typeof exact.scrollIntoView === "function") exact.scrollIntoView({ block: "nearest" });
+        return true;
+      }
+    }
     const title = entry && typeof entry.title === "string" ? entry.title.trim().toLowerCase() : "";
     const sourceId = entry && typeof entry.source_id === "string" ? entry.source_id.trim().toLowerCase() : "";
     const listRows = Array.from(drawer.querySelectorAll(".ui-list-item"));
@@ -554,6 +577,10 @@ let renderUI = (manifest) => {
     });
     if (target) {
       target.classList.add("selected");
+      const fallbackId = target && target.dataset ? target.dataset.citationId : "";
+      if (fallbackId) {
+        selectCitationId(fallbackId, uiContainer);
+      }
       if (typeof target.scrollIntoView === "function") target.scrollIntoView({ block: "nearest" });
       return true;
     }
@@ -572,6 +599,7 @@ let renderUI = (manifest) => {
   }
   collectionRender.focusCitationInDrawer = focusCitationInDrawer;
   collectionRender.focusDrawerPreviewForCitation = focusDrawerPreviewForCitation;
+  collectionRender.selectCitationId = (citationId) => selectCitationId(citationId, uiContainer);
   function renderOverlay(el, pageName) {
     const overlayId = el.id || "";
     const overlay = document.createElement("div");
@@ -1468,6 +1496,20 @@ let renderUI = (manifest) => {
         input.value = "";
       };
       return form;
+    } else if (el.type === "slider") {
+      if (typeof renderSliderElement === "function") {
+        return renderSliderElement(el, handleAction);
+      }
+      const empty = document.createElement("div");
+      empty.textContent = "Slider renderer unavailable.";
+      wrapper.appendChild(empty);
+    } else if (el.type === "tooltip") {
+      if (typeof renderTooltipElement === "function") {
+        return renderTooltipElement(el);
+      }
+      const empty = document.createElement("div");
+      empty.textContent = "Tooltip renderer unavailable.";
+      wrapper.appendChild(empty);
     } else if (el.type === "button") {
       const actions = document.createElement("div");
       actions.className = "ui-buttons";

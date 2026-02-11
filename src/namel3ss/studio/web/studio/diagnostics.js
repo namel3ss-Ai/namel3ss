@@ -130,6 +130,16 @@
       host.appendChild(window.renderRunDiffElement(payload.run_diff));
     }
 
+    if (payload.context_inspector && typeof payload.context_inspector === "object") {
+      host.appendChild(renderContextInspectorSection(payload.context_inspector));
+    }
+    if (payload.retrieval_trace_panel && typeof payload.retrieval_trace_panel === "object") {
+      const traceSection = renderTracePanelSection(payload.retrieval_trace_panel);
+      if (traceSection) {
+        host.appendChild(traceSection);
+      }
+    }
+
     if (hasRepro) {
       host.appendChild(renderReproSection(payload.repro_bundle));
     }
@@ -191,6 +201,61 @@
       list.appendChild(listItem("No runs recorded."));
     }
     section.appendChild(list);
+    return section;
+  }
+
+  function renderContextInspectorSection(contextInspector) {
+    const section = document.createElement("section");
+    section.className = "data-section";
+    const title = document.createElement("div");
+    title.className = "data-title";
+    title.textContent = "Context Inspector (Studio)";
+    section.appendChild(title);
+
+    const retrieval = contextInspector.retrieval_settings && typeof contextInspector.retrieval_settings === "object"
+      ? contextInspector.retrieval_settings
+      : {};
+    const retrievalText = Object.keys(retrieval)
+      .sort()
+      .map((key) => `${key}: ${JSON.stringify(retrieval[key])}`)
+      .join(", ");
+    section.appendChild(listItem(`retrieval_settings: ${retrievalText || "none"}`));
+
+    const tags = Array.isArray(contextInspector.filter_tags) ? contextInspector.filter_tags.map(String) : [];
+    section.appendChild(listItem(`filter_tags: ${tags.join(", ") || "none"}`));
+
+    const runtimePrompt = textValue(contextInspector.runtime_prompt_preview) || "No runtime AI prompt captured.";
+    section.appendChild(listItem(`runtime_prompt_preview: ${runtimePrompt}`));
+
+    const prompts = Array.isArray(contextInspector.compiled_prompt_context) ? contextInspector.compiled_prompt_context : [];
+    if (prompts.length) {
+      const list = document.createElement("div");
+      list.className = "list";
+      prompts.forEach((entry) => {
+        if (!entry || typeof entry !== "object") return;
+        const flow = textValue(entry.flow) || "flow";
+        const prompt = textValue(entry.prompt_preview) || "(empty)";
+        list.appendChild(listItem(`${flow}: ${prompt}`));
+      });
+      section.appendChild(list);
+    }
+    return section;
+  }
+
+  function renderTracePanelSection(tracePanel) {
+    if (typeof window.renderRetrievalTracePanel === "function") {
+      return window.renderRetrievalTracePanel(tracePanel);
+    }
+    const section = document.createElement("section");
+    section.className = "data-section";
+    const title = document.createElement("div");
+    title.className = "data-title";
+    title.textContent = "Retrieval Trace";
+    section.appendChild(title);
+    const empty = document.createElement("div");
+    empty.className = "data-empty";
+    empty.textContent = "Trace renderer unavailable.";
+    section.appendChild(empty);
     return section;
   }
 

@@ -33,6 +33,7 @@ _ESCAPE_TABLE = {
     "n": "\n",
     "t": "\t",
     '"': '"',
+    "'": "'",
     "\\": "\\",
 }
 
@@ -46,7 +47,7 @@ class Lexer:
     def tokenize(self) -> List[Token]:
         # Keep native scanner for plain inputs, but force python fallback when
         # new lexer features are present so behavior stays deterministic.
-        use_fallback = any(token in self.source for token in ('"""', "\\", "#", "|", "==", "!=", "<=", ">=", "{", "}"))
+        use_fallback = any(token in self.source for token in ('"""', "\\", "#", "|", "==", "!=", "<=", ">=", "{", "}", "'"))
         if not use_fallback:
             from namel3ss.lexer.native_scan import scan_tokens_native
 
@@ -139,8 +140,8 @@ class Lexer:
                 tokens.append(Token(ESCAPED_IDENTIFIER, value, line_idx + 1, column, escaped=True))
                 i += consumed
                 continue
-            if ch == '"':
-                value, end_line_idx, end_offset = self._read_string(lines, line_idx, i)
+            if ch in {'"', "'"}:
+                value, end_line_idx, end_offset = self._read_string(lines, line_idx, i, quote_char=ch)
                 tokens.append(Token("STRING", value, line_idx + 1, column))
                 line_idx = end_line_idx
                 line = lines[line_idx]
@@ -160,19 +161,33 @@ class Lexer:
                 continue
             raise Namel3ssError(_unsupported_character_message(ch), line=line_idx + 1, column=column)
 
-    def _read_string(self, lines: list[str], line_idx: int, start_col_idx: int) -> tuple[str, int, int]:
+    def _read_string(
+        self,
+        lines: list[str],
+        line_idx: int,
+        start_col_idx: int,
+        *,
+        quote_char: str,
+    ) -> tuple[str, int, int]:
         line = lines[line_idx]
-        if line.startswith('"""', start_col_idx):
+        if quote_char == '"' and line.startswith('"""', start_col_idx):
             return self._read_triple_string(lines, line_idx, start_col_idx)
-        return self._read_single_string(line, line_idx, start_col_idx)
+        return self._read_single_string(line, line_idx, start_col_idx, quote_char=quote_char)
 
-    def _read_single_string(self, line: str, line_idx: int, start_col_idx: int) -> tuple[str, int, int]:
-        assert line[start_col_idx] == '"'
+    def _read_single_string(
+        self,
+        line: str,
+        line_idx: int,
+        start_col_idx: int,
+        *,
+        quote_char: str,
+    ) -> tuple[str, int, int]:
+        assert line[start_col_idx] == quote_char
         value_chars: list[str] = []
         i = start_col_idx + 1
         while i < len(line):
             ch = line[i]
-            if ch == '"':
+            if ch == quote_char:
                 return "".join(value_chars), line_idx, i + 1
             if ch == "\\":
                 escaped, consumed = self._read_escape(line, line_idx, i, in_multiline=False)
@@ -300,7 +315,7 @@ def _unsupported_escape_message(marker: str) -> str:
     value = f"\\{marker}" if marker else "\\"
     return build_guidance_message(
         what=f"Unsupported escape sequence '{value}'.",
-        why="Only \\n, \\t, \\\\, and \\\" are supported.",
+        why="Only \\n, \\t, \\\\, \\\" and \\' are supported.",
         fix="Use a supported escape sequence.",
         example='text is "line one\\nline two"',
     )
