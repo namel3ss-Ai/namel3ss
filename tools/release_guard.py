@@ -54,13 +54,13 @@ def read_changelog(repo_root: Path) -> str:
 
 
 def extract_notes(changelog: str, version: str) -> str:
-    pattern = re.compile(rf"^##\\s+v?{re.escape(version)}\\b", re.MULTILINE)
+    pattern = re.compile(rf"^##\s+v?{re.escape(version)}\b", re.MULTILINE)
     match = pattern.search(changelog)
     if not match:
         raise RuntimeError(f"Release notes for v{version} were not found in CHANGELOG.md.")
     start = match.start()
     following = changelog[match.end() :]
-    next_match = re.search(r"^##\\s+", following, re.MULTILINE)
+    next_match = re.search(r"^##\s+", following, re.MULTILINE)
     end = match.end() + (next_match.start() if next_match else len(following))
     return changelog[start:end].strip()
 
