@@ -56,6 +56,7 @@ from namel3ss.ast.includes import IncludeDecl
 from namel3ss.ast.pages import (
     ActivePageRule,
     ActionAvailabilityRule,
+    BadgeItem,
     ButtonItem,
     CardAction,
     CardGroupItem,
@@ -345,6 +346,7 @@ __all__ = [
     "StatusCondition",
     "ActionAvailabilityRule",
     "ActivePageRule",
+    "BadgeItem",
     "VisibilityRule",
     "VisibilityExpressionRule",
     "ModalItem",

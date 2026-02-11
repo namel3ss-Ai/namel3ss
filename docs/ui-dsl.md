@@ -291,6 +291,7 @@ Content:
 - `snackbar message: "..." duration: <ms>`
 - `icon name: "<icon>" size: small|medium|large role: decorative|semantic [label: "..."]`
 - `lightbox images: ["a.png", "b.png"] [startIndex: <n>]`
+- `badge from state.<path> [style is "neutral"|"success"|"warning"]` read-only status badge; text is rendered from the bound state value.
 
 Data/UI bindings:
 - `form is "RecordName"` auto-fields from record; optional `groups`/`help`/`readonly`; submits as `submit_form` action.

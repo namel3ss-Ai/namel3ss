@@ -471,6 +471,12 @@ class LoadingItem(PageItem):
 
 
 @dataclass
+class BadgeItem(PageItem):
+    source: StatePath
+    style: str = "neutral"
+
+
+@dataclass
 class SnackbarItem(PageItem):
     message: str
     duration: int = 3000

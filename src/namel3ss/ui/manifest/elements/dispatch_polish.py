@@ -32,6 +32,14 @@ def dispatch_polish_item(
 ) -> tuple[dict, Dict[str, dict]] | None:
     if isinstance(item, ir.LoadingItem):
         return polish_mod.build_loading_item(item, page_name=page_name, page_slug=page_slug, path=path)
+    if isinstance(item, ir.BadgeItem):
+        return polish_mod.build_badge_item(
+            item,
+            page_name=page_name,
+            page_slug=page_slug,
+            path=path,
+            state_ctx=state_ctx,
+        )
     if isinstance(item, ir.SnackbarItem):
         return polish_mod.build_snackbar_item(item, page_name=page_name, page_slug=page_slug, path=path)
     if isinstance(item, ir.IconItem):

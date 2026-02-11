@@ -101,6 +101,8 @@ def parse_page_item(
         return polish_mod.parse_loading_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "IDENT" and tok.value == "snackbar":
         return polish_mod.parse_snackbar_item(parser, tok, allow_pattern_params=allow_pattern_params)
+    if tok.type == "IDENT" and tok.value == "badge":
+        return polish_mod.parse_badge_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "IDENT" and tok.value == "icon":
         return polish_mod.parse_icon_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "IDENT" and tok.value == "lightbox":

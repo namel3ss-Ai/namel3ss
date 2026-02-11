@@ -99,6 +99,12 @@ class TextItem(PageItem):
     value: str
 
 @dataclass
+class BadgeItem(PageItem):
+    source: StatePath
+    style: str = "neutral"
+
+
+@dataclass
 class TextInputItem(PageItem):
     name: str
     flow_name: str

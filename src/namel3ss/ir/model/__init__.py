@@ -93,6 +93,7 @@ from namel3ss.ir.model.agents import (
 from namel3ss.ir.model.pages import (
     ActionAvailabilityRule,
     ActivePageRule,
+    BadgeItem,
     ButtonItem,
     CardAction,
     CardGroupItem,
@@ -300,6 +301,7 @@ __all__ = [
     "TableRowAction",
     "TableSort",
     "ThemeSettingsPageItem",
+    "BadgeItem",
     "ListAction",
     "ListItem",
     "ListItemMapping",
