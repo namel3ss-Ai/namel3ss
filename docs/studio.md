@@ -44,6 +44,7 @@ Studio is an optional inspection lens for namel3ss. It stays fast and minimal wh
 - Session run ordering is stable and persisted under `.namel3ss/studio/`.
 - Diagnostics tab includes a run history list and a deterministic run diff.
 - Run diffs compare: inputs, retrieval trace, prompt, output, and trust score details.
+- Context Inspector (Studio-only) surfaces compiled prompt previews, runtime prompt preview, retrieval tuning, and filter tags from stored state/artifacts.
 - Repro bundles are minimal, read-only payloads written to `.namel3ss/studio/repro/`.
 - Studio shares data from runtime artifacts; it does not recompute retrieval or trust logic.
 
