@@ -4,6 +4,8 @@ from typing import List
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.parser.ui.slider_decl import parse_slider_item
+from namel3ss.parser.ui.tooltip_decl import parse_tooltip_item
 from namel3ss.parser.decl.page_common import _is_visibility_rule_start, _parse_visibility_rule_line
 
 from . import actions as actions_mod
@@ -157,6 +159,10 @@ def parse_page_item(
         )
     if tok.type == "BUTTON":
         return actions_mod.parse_button_item(parser, tok, allow_pattern_params=allow_pattern_params)
+    if tok.type == "IDENT" and tok.value == "slider":
+        return parse_slider_item(parser, tok, allow_pattern_params=allow_pattern_params)
+    if tok.type == "IDENT" and tok.value == "tooltip":
+        return parse_tooltip_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "INPUT":
         return actions_mod.parse_text_input_item(parser, tok, allow_pattern_params=allow_pattern_params)
     if tok.type == "IDENT" and tok.value == "link":

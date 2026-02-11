@@ -20,6 +20,8 @@ from namel3ss.ir.lowering.page_rag import (
     _lower_trust_indicator_item,
 )
 from namel3ss.ir.lowering.page_tokens import lower_theme_overrides
+from namel3ss.ir.lowering.ui_slider_lower import lower_slider_item
+from namel3ss.ir.lowering.ui_tooltip_lower import lower_tooltip_item
 from namel3ss.ir.lowering import page_layout as layout_mod
 from namel3ss.schema import records as schema
 from namel3ss.ui.theme import normalize_style_hooks, normalize_variant
@@ -254,6 +256,18 @@ def _lower_page_item(
             item,
             flow_names,
             page_name,
+            attach_origin=_attach_origin,
+        )
+    if isinstance(item, ast.SliderItem):
+        return lower_slider_item(
+            item,
+            flow_names,
+            page_name,
+            attach_origin=_attach_origin,
+        )
+    if isinstance(item, ast.TooltipItem):
+        return lower_tooltip_item(
+            item,
             attach_origin=_attach_origin,
         )
     if isinstance(item, ast.UploadItem):

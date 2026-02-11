@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, TYPE_CHECKING
 
 from namel3ss.ast.base import Node
+from namel3ss.ast.includes import IncludeDecl
 from namel3ss.ast.jobs import JobDecl
 from namel3ss.ast.modules import CapsuleDecl, PluginUseDecl, UseDecl
 from namel3ss.ast.expressions import Expression
@@ -62,6 +63,7 @@ class Program(Node):
     ui_patterns: List[UIPatternDecl]
     uses: List[UseDecl]
     capsule: Optional[CapsuleDecl]
+    includes: List[IncludeDecl] = field(default_factory=list)
     ui_active_page_rules: list["ActivePageRule"] | None = None
     policy: PolicyDecl | None = None
     agent_team: "AgentTeamDecl | None" = None

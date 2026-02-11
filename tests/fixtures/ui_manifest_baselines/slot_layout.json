@@ -200,6 +200,7 @@
                       "type": "composer"
                     }
                   ],
+                  "citations_enhanced": false,
                   "column": 9,
                   "element_id": "page.support.chat.2.0.0",
                   "group_messages": true,

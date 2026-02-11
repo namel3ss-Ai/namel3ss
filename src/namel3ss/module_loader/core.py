@@ -6,7 +6,11 @@ from typing import Dict, Iterable
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.ir.lowering.includes_expand import compose_program_with_includes
 from namel3ss.ir.nodes import lower_program
+from namel3ss.ir.validation.duplicate_symbols_validation import validate_duplicate_symbols
+from namel3ss.ir.validation.includes_validation import ensure_include_capability, normalize_include_warnings
+from namel3ss.ir.validation.root_authority_validation import validate_root_authority
 from namel3ss.module_loader.graph import build_graph, topo_sort
 from namel3ss.module_loader.module_files import (
     apply_module_file_results,
@@ -26,6 +30,7 @@ from namel3ss.module_loader.static import (
 )
 from namel3ss.module_loader.types import ModuleInfo, ProjectLoadResult
 from namel3ss.ui.external.detect import detect_external_ui
+from namel3ss.parser.program_loader import load_included_programs
 
 ROOT_NODE = "(app)"
 
@@ -59,6 +64,36 @@ def load_project(
         allow_legacy_type_aliases=allow_legacy_type_aliases,
         parse_cache=parse_cache,
     )
+    ensure_include_capability(app_ast)
+    include_result = load_included_programs(
+        root_program=app_ast,
+        root_file=app_file,
+        read_source=lambda path: _read_source(path, source_overrides),
+        parse_source=lambda source, path: _parse_source(
+            source,
+            path,
+            allow_legacy_type_aliases=allow_legacy_type_aliases,
+            require_spec=False,
+            parse_cache=parse_cache,
+        ),
+    )
+    validate_root_authority(include_result.entries)
+    validate_duplicate_symbols(
+        root_program=app_ast,
+        root_path=app_file.name,
+        include_entries=include_result.entries,
+    )
+    for include_entry in include_result.entries:
+        sources[include_entry.path] = _read_source(include_entry.path, source_overrides)
+    app_ast = compose_program_with_includes(
+        root_program=app_ast,
+        include_entries=list(include_result.entries),
+    )
+    include_warnings = normalize_include_warnings(include_result.warnings)
+    if include_warnings:
+        setattr(app_ast, "composition_include_warnings", include_warnings)
+    if getattr(app_ast, "composition_source_map", None):
+        setattr(app_ast, "composition_source_map", list(getattr(app_ast, "composition_source_map", []) or []))
 
     app_uses = list(app_ast.uses)
     legacy_app_uses = [use for use in app_uses if not use.module_path]
@@ -112,6 +147,9 @@ def load_project(
     setattr(combined, "project_root", root)
     setattr(combined, "app_path", app_file)
     program_ir = lower_program(combined)
+    setattr(program_ir, "composition_include_warnings", list(getattr(app_ast, "composition_include_warnings", []) or []))
+    setattr(program_ir, "composition_source_map", list(getattr(app_ast, "composition_source_map", []) or []))
+    setattr(program_ir, "composed_include_paths", list(getattr(app_ast, "composed_include_paths", []) or []))
     setattr(program_ir, "project_root", root)
     setattr(program_ir, "app_path", app_file)
     setattr(program_ir, "external_ui_enabled", detect_external_ui(root, app_file))

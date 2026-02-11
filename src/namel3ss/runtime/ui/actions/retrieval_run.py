@@ -13,6 +13,7 @@ from namel3ss.ingestion.policy import (
 )
 from namel3ss.production_contract import build_run_payload
 from namel3ss.retrieval.api import run_retrieval
+from namel3ss.runtime.retrieval.trace_collector import diagnostics_trace_enabled
 from namel3ss.runtime.run_pipeline import finalize_run_payload
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.ui.actions.validate import ensure_json_serializable
@@ -39,6 +40,8 @@ def handle_retrieval_run_action(
     query = payload.get("query")
     limit = payload.get("limit")
     tier = payload.get("tier")
+    filter_tags = payload.get("filter_tags")
+    capabilities = tuple(getattr(program_ir, "capabilities", ()) or ())
     policy = load_ingestion_policy(
         project_root=getattr(program_ir, "project_root", None),
         app_path=getattr(program_ir, "app_path", None),
@@ -49,6 +52,7 @@ def handle_retrieval_run_action(
         query=query,
         limit=limit,
         tier=tier,
+        filter_tags=filter_tags,
         state=state,
         project_root=getattr(program_ir, "project_root", None),
         app_path=getattr(program_ir, "app_path", None),
@@ -56,7 +60,8 @@ def handle_retrieval_run_action(
         identity=identity,
         policy_decision=decision,
         config=config,
-        capabilities=getattr(program_ir, "capabilities", ()) or (),
+        capabilities=capabilities,
+        diagnostics_trace_enabled=diagnostics_trace_enabled(capabilities),
     )
     traces = [policy_trace(ACTION_RETRIEVAL_INCLUDE_WARN, decision)]
     traces.extend(_build_traces(result))

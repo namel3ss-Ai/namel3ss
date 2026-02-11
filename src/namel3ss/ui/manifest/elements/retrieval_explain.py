@@ -2,6 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from namel3ss.retrieval.tuning import (
+    DEFAULT_SEMANTIC_WEIGHT,
+    RETRIEVAL_TUNING_FLOW_TO_FIELD,
+    RETRIEVAL_TUNING_FLOWS,
+)
 from namel3ss.ui.manifest.canonical import _element_id
 
 
@@ -14,6 +19,8 @@ def inject_retrieval_explain_elements(manifest: dict, retrieval_report: dict[str
     normalized = _normalize_retrieval_report(retrieval_report)
     if normalized is None:
         return manifest
+    controls = _build_retrieval_controls(manifest, normalized.get("retrieval_tuning"))
+    normalized["retrieval_controls"] = controls
     for page in pages:
         if not isinstance(page, dict):
             continue
@@ -57,6 +64,8 @@ def _retrieval_explain_element(*, page_name: str, page_slug: str, payload: dict[
         "retrieval_plan": payload["retrieval_plan"],
         "retrieval_trace": payload["retrieval_trace"],
         "trust_score_details": payload["trust_score_details"],
+        "retrieval_tuning": payload["retrieval_tuning"],
+        "retrieval_controls": payload["retrieval_controls"],
     }
 
 
@@ -69,12 +78,105 @@ def _normalize_retrieval_report(value: dict[str, Any] | None) -> dict[str, Any] 
     query = str(value.get("query") or "")
     plan = _sanitize(value.get("retrieval_plan")) if isinstance(value.get("retrieval_plan"), dict) else {}
     trust = _sanitize(value.get("trust_score_details")) if isinstance(value.get("trust_score_details"), dict) else {}
+    tuning = _normalize_tuning(value.get("retrieval_tuning"))
     return {
         "query": query,
         "retrieval_plan": plan,
         "retrieval_trace": trace,
         "trust_score_details": trust,
+        "retrieval_tuning": tuning,
     }
+
+
+def _normalize_tuning(value: object) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {
+            "semantic_k": None,
+            "lexical_k": None,
+            "final_top_k": None,
+            "semantic_weight": DEFAULT_SEMANTIC_WEIGHT,
+            "explicit": False,
+        }
+    payload = _sanitize(value) if isinstance(value, dict) else {}
+    return {
+        "semantic_k": _as_nullable_int(payload.get("semantic_k")),
+        "lexical_k": _as_nullable_int(payload.get("lexical_k")),
+        "final_top_k": _as_nullable_int(payload.get("final_top_k")),
+        "semantic_weight": _as_score(payload.get("semantic_weight")),
+        "explicit": bool(payload.get("explicit")),
+    }
+
+
+def _build_retrieval_controls(manifest: dict, tuning: object) -> dict[str, Any]:
+    actions = manifest.get("actions") if isinstance(manifest, dict) else None
+    action_map = actions if isinstance(actions, dict) else {}
+    tuning_map = tuning if isinstance(tuning, dict) else {}
+    controls: list[dict[str, Any]] = []
+    enabled_count = 0
+    for flow_name in RETRIEVAL_TUNING_FLOWS:
+        action = _find_flow_action(action_map, flow_name)
+        field = RETRIEVAL_TUNING_FLOW_TO_FIELD.get(flow_name)
+        value = tuning_map.get(field) if isinstance(field, str) else None
+        if action is None:
+            controls.append(
+                {
+                    "flow": flow_name,
+                    "action_id": "",
+                    "input_field": _default_input_field(field),
+                    "enabled": False,
+                    "disabled_reason": f'Flow "{flow_name}" is not available in this app.',
+                    "value": value if value is not None else _default_value(field),
+                }
+            )
+            continue
+        action_id = str(action.get("id") or "")
+        input_field = str(action.get("input_field") or _default_input_field(field))
+        action_enabled = action.get("enabled") is not False
+        if action_enabled:
+            enabled_count += 1
+        controls.append(
+            {
+                "flow": flow_name,
+                "action_id": action_id,
+                "input_field": input_field,
+                "enabled": action_enabled,
+                "disabled_reason": "" if action_enabled else f'Flow "{flow_name}" is currently disabled.',
+                "value": value if value is not None else _default_value(field),
+            }
+        )
+    return {
+        "enabled": enabled_count > 0,
+        "disabled_reason": "" if enabled_count > 0 else "Retrieval tuning flows are not available.",
+        "items": controls,
+    }
+
+
+def _find_flow_action(actions: dict[str, Any], flow_name: str) -> dict[str, Any] | None:
+    for action_id in sorted(actions.keys()):
+        action = actions.get(action_id)
+        if not isinstance(action, dict):
+            continue
+        if action.get("type") != "call_flow":
+            continue
+        if action.get("flow") != flow_name:
+            continue
+        if not isinstance(action.get("id"), str) or not action.get("id"):
+            action = dict(action)
+            action["id"] = action_id
+        return action
+    return None
+
+
+def _default_input_field(field: object) -> str:
+    if field == "semantic_weight":
+        return "weight"
+    return "k"
+
+
+def _default_value(field: object) -> object:
+    if field == "semantic_weight":
+        return DEFAULT_SEMANTIC_WEIGHT
+    return None
 
 
 def _normalize_trace(value: object) -> list[dict[str, Any]]:
@@ -142,6 +244,17 @@ def _as_rank(value: object) -> int:
     if isinstance(value, float) and value.is_integer():
         return int(value)
     return 0
+
+
+def _as_nullable_int(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
+    rank = _as_rank(value)
+    if rank < 0:
+        return None
+    if rank == 0 and value not in {0, 0.0}:
+        return None
+    return rank
 
 
 def _as_page_number(value: object) -> int:

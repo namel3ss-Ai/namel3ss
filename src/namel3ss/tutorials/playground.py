@@ -10,6 +10,7 @@ from namel3ss.runtime.run_pipeline import build_flow_payload
 
 DEFAULT_PLAYGROUND_TIMEOUT_SECONDS = 5.0
 MAX_PLAYGROUND_TIMEOUT_SECONDS = 30.0
+_SPAWN_TIMEOUT_GRACE_SECONDS = 3.0
 
 
 def check_snippet(source: str) -> dict[str, object]:
@@ -34,13 +35,16 @@ def run_snippet(
     timeout_seconds: float = DEFAULT_PLAYGROUND_TIMEOUT_SECONDS,
 ) -> dict[str, object]:
     context = multiprocessing.get_context("spawn")
+    effective_timeout = float(timeout_seconds)
+    if context.get_start_method() == "spawn":
+        effective_timeout += _SPAWN_TIMEOUT_GRACE_SECONDS
     queue = context.Queue()
     process = context.Process(
         target=_run_worker,
         args=(queue, source, flow_name, input_payload if isinstance(input_payload, dict) else {}),
     )
     process.start()
-    process.join(timeout_seconds)
+    process.join(effective_timeout)
     if process.is_alive():
         process.terminate()
         process.join()

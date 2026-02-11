@@ -11,6 +11,8 @@ from namel3ss.ui.manifest.state_defaults import StateContext
 from namel3ss.validation import ValidationMode
 
 from . import views as views_mod
+from namel3ss.ui.manifest.components.slider_component import build_slider_component
+from namel3ss.ui.manifest.components.tooltip_component import build_tooltip_component
 
 
 def dispatch_view_item(
@@ -96,6 +98,22 @@ def dispatch_view_item(
             state_ctx=state_ctx,
             mode=mode,
             warnings=warnings,
+        )
+    if isinstance(item, ir.SliderItem):
+        return build_slider_component(
+            item,
+            page_name=page_name,
+            page_slug=page_slug,
+            path=path,
+            state_ctx=state_ctx,
+            taken_actions=taken_actions,
+        )
+    if isinstance(item, ir.TooltipItem):
+        return build_tooltip_component(
+            item,
+            page_name=page_name,
+            page_slug=page_slug,
+            path=path,
         )
     if isinstance(item, ir.ChatItem):
         return views_mod.build_chat_item(

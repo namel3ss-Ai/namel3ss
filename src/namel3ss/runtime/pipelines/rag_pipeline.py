@@ -17,6 +17,7 @@ def build_retrieval_artifacts(
     warn_policy: Mapping[str, object] | None,
     warn_allowed: bool,
     preferred_quality: str,
+    tuning: Mapping[str, object] | None,
     results: object,
     vector_scores: Mapping[str, float | None] | None = None,
 ) -> dict[str, object]:
@@ -36,6 +37,7 @@ def build_retrieval_artifacts(
         warn_policy=warn_policy,
         warn_allowed=warn_allowed,
         preferred_quality=preferred_quality,
+        tuning=tuning,
         selected_results=selected_results,
         retrieval_trace=retrieval_trace,
     )

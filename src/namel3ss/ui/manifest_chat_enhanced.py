@@ -5,9 +5,15 @@ from namel3ss.ir import nodes as ir
 
 _ALLOWED_MESSAGE_ACTIONS = {"copy", "expand", "view_sources"}
 _ALLOWED_ATTACHMENT_TYPES = {"citation", "file", "image"}
+_SNIPPET_MAX_LENGTH = 220
 
 
-def apply_chat_configuration(chat_element: dict, item: ir.ChatItem) -> dict:
+def apply_chat_configuration(
+    chat_element: dict,
+    item: ir.ChatItem,
+    *,
+    citations_enhanced_enabled: bool = True,
+) -> dict:
     if not isinstance(chat_element, dict):
         return chat_element
     chat_element["style"] = _normalize_style(getattr(item, "style", "bubbles"), line=item.line, column=item.column)
@@ -15,6 +21,7 @@ def apply_chat_configuration(chat_element: dict, item: ir.ChatItem) -> dict:
     chat_element["group_messages"] = bool(getattr(item, "group_messages", True))
     chat_element["streaming"] = bool(getattr(item, "streaming", False))
     chat_element["attachments"] = bool(getattr(item, "attachments", False))
+    chat_element["citations_enhanced"] = bool(citations_enhanced_enabled)
     chat_element["actions"] = _normalize_actions(getattr(item, "actions", []), line=item.line, column=item.column)
 
     children = chat_element.get("children")
@@ -157,13 +164,14 @@ def _normalize_citations(value: object, *, line: int | None, column: int | None)
         if url is None and source_id is None:
             raise Namel3ssError(f"Message citation {idx} must include url or source_id.", line=line, column=column)
         citation = {"type": "citation", "title": title.strip()}
+        citation["citation_id"] = _normalize_citation_id(entry, idx=idx)
         if isinstance(url, str) and url.strip():
             citation["url"] = url.strip()
         if isinstance(source_id, str) and source_id.strip():
             citation["source_id"] = source_id.strip()
         snippet = entry.get("snippet")
         if isinstance(snippet, str) and snippet.strip():
-            citation["snippet"] = snippet.strip()
+            citation["snippet"] = _normalize_snippet(snippet)
         index = entry.get("index")
         if isinstance(index, int):
             citation["index"] = max(1, index)
@@ -230,6 +238,24 @@ def _last_assistant_message(messages: list[object]) -> int:
         if isinstance(entry, dict) and str(entry.get("role") or "") == "assistant":
             return index
     return -1
+
+
+def _normalize_citation_id(entry: dict, *, idx: int) -> str:
+    value = entry.get("citation_id")
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    fallback = entry.get("id")
+    if isinstance(fallback, str) and fallback.strip():
+        return fallback.strip()
+    return f"citation.{idx + 1}"
+
+
+def _normalize_snippet(value: str) -> str:
+    compact = " ".join(value.split())
+    if len(compact) <= _SNIPPET_MAX_LENGTH:
+        return compact
+    truncated = compact[:_SNIPPET_MAX_LENGTH].rstrip()
+    return f"{truncated}..."
 
 
 __all__ = ["apply_chat_configuration"]

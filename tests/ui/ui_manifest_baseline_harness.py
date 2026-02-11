@@ -259,7 +259,7 @@ page "rag":
                 "preview": {"title": "Policy", "source_id": "doc-policy", "snippet": "Policy source"},
                 "chat": {"messages": [{"role": "assistant", "content": "Grounded answer"}]},
             },
-            expected_warning_codes=(),
+            expected_warning_codes=("citations.enhanced_disabled",),
             required_element_types=("scope_selector", "citation_chips", "trust_indicator", "source_preview", "chat"),
             required_action_types=("scope_select", "call_flow"),
         ),

@@ -341,7 +341,13 @@ def build_chat_item(
     element_id = _element_id(page_slug, "chat", path)
     base = _base_element(element_id, page_name, page_slug, index, item)
     element = {"type": "chat", "children": children, **base}
-    element = apply_chat_configuration(element, item)
+    capabilities = getattr(state_ctx, "capabilities", ())
+    enhanced_citations = "ui.citations_enhanced" in set(capabilities or ())
+    element = apply_chat_configuration(
+        element,
+        item,
+        citations_enhanced_enabled=enhanced_citations,
+    )
     return _attach_origin(element, item), actions
 
 

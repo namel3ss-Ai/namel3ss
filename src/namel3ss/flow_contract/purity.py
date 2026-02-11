@@ -7,7 +7,16 @@ from namel3ss.pipelines.registry import pipeline_purity
 from namel3ss.purity import is_pure, pure_effect_message
 
 
-EFFECTFUL_BUILTINS = {"secret", "auth_bearer", "auth_basic", "auth_header"}
+EFFECTFUL_BUILTINS = {
+    "secret",
+    "auth_bearer",
+    "auth_basic",
+    "auth_header",
+    "set_semantic_k",
+    "set_lexical_k",
+    "set_final_top_k",
+    "set_semantic_weight",
+}
 
 
 def validate_flow_purity(flows: list[ir.Flow], flow_contracts: dict[str, ir.ContractDecl]) -> None:

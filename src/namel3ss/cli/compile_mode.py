@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import sys
 
-from namel3ss.cli.app_path import resolve_app_path
+from namel3ss.cli.compile_entry import resolve_compile_entry_path
 from namel3ss.cli.devex import parse_project_overrides
 from namel3ss.cli.text_output import prepare_cli_text
 from namel3ss.compilation.runner import (
@@ -41,7 +41,7 @@ def run_compile_command(args: list[str]) -> int:
         if params.app_arg and overrides.app_path:
             raise Namel3ssError("App path was provided twice. Use either an explicit app path or --app.")
 
-        app_path = resolve_app_path(
+        app_path = resolve_compile_entry_path(
             params.app_arg or overrides.app_path,
             project_root=overrides.project_root,
         )

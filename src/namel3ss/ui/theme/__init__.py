@@ -24,6 +24,7 @@ from .theme_tokens import (
     resolve_theme_tokens,
     token_schema,
 )
+from .theme_token_validation import build_theme_token_contract, validate_theme_token_contract
 
 __all__ = [
     "COMPONENT_STYLE_HOOKS",
@@ -50,5 +51,7 @@ __all__ = [
     "serialize_theme_config",
     "theme_config_from_program",
     "token_schema",
+    "build_theme_token_contract",
+    "validate_theme_token_contract",
     "variant_token_defaults",
 ]

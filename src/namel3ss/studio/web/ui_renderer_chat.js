@@ -191,6 +191,7 @@
       const chips = root.renderCitationChipsElement({
         type: "citation_chips",
         citations: citations,
+        enhanced: !chatConfig || chatConfig.citations_enhanced !== false,
         compact: true,
       });
       if (config.deferCitations && attachments.filter((entry) => entry && entry.type !== "citation").length === 0) {
@@ -340,11 +341,21 @@
   }
 
   function citationIdentity(entry) {
+    const citationId = typeof entry.citation_id === "string" ? entry.citation_id : "";
     const title = typeof entry.title === "string" ? entry.title : "";
     const sourceId = typeof entry.source_id === "string" ? entry.source_id : "";
     const url = typeof entry.url === "string" ? entry.url : "";
     const page = typeof entry.page_number === "number" || typeof entry.page_number === "string" ? String(entry.page_number) : "";
-    return [title, sourceId, url, page].join("|");
+    return [citationId, title, sourceId, url, page].join("|");
+  }
+
+  function sameCitationEntry(left, right) {
+    const leftId = left && typeof left.citation_id === "string" ? left.citation_id.trim() : "";
+    const rightId = right && typeof right.citation_id === "string" ? right.citation_id.trim() : "";
+    if (leftId && rightId) {
+      return leftId === rightId;
+    }
+    return citationIdentity(left) === citationIdentity(right);
   }
 
   async function copyToClipboard(value) {
@@ -723,6 +734,9 @@
       const item = document.createElement("button");
       item.type = "button";
       item.className = "ui-citation-preview-source";
+      if (typeof entry.citation_id === "string" && entry.citation_id) {
+        item.dataset.citationId = entry.citation_id;
+      }
       if (index === selectedIndex) item.classList.add("active");
       item.onclick = () => {
         selectPreviewCitation(index, { openPreviewTab: true });
@@ -799,7 +813,7 @@
     preview.citations = citations;
     const selectedIndex = Math.max(
       0,
-      citations.findIndex((item) => citationIdentity(item) === citationIdentity(entry))
+      citations.findIndex((item) => sameCitationEntry(item, entry))
     );
     renderPreviewSources(citations, selectedIndex);
     selectPreviewCitation(selectedIndex, { openPreviewTab: false });
@@ -1022,6 +1036,9 @@
     citations.forEach((entry) => {
       const item = document.createElement("div");
       item.className = "ui-chat-citation";
+      if (typeof entry.citation_id === "string" && entry.citation_id) {
+        item.dataset.citationId = entry.citation_id;
+      }
       const heading = document.createElement("div");
       heading.className = "ui-chat-citation-title";
       heading.textContent = entry.title || "Source";
@@ -1078,6 +1095,10 @@
       if (!entry || typeof entry !== "object") return;
       const title = typeof entry.title === "string" && entry.title.trim() ? entry.title.trim() : "Source";
       const payload = {
+        citation_id:
+          typeof entry.citation_id === "string" && entry.citation_id.trim()
+            ? entry.citation_id.trim()
+            : `citation.${idx + 1}`,
         index:
           typeof entry.index === "number" && Number.isFinite(entry.index)
             ? Math.max(1, Math.trunc(entry.index))

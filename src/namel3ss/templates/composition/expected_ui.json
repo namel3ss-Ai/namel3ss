@@ -293,6 +293,7 @@
                   "type": "composer"
                 }
               ],
+              "citations_enhanced": false,
               "column": 5,
               "element_id": "page.composition.chat.4.1",
               "group_messages": true,

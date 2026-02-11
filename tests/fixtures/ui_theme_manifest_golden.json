@@ -273,6 +273,33 @@
       "secondary_color": "#5856D6",
       "shadow_level": 1,
       "spacing_scale": 1.0
+    },
+    "tokens_v2": {
+      "colors": {
+        "accent": "#2563EB",
+        "border": "#5856D6",
+        "muted": "#5856D6",
+        "surface": "#FFFFFF",
+        "text": "#111827"
+      },
+      "mode": "light",
+      "radii": {
+        "l": 15.0,
+        "m": 10.0,
+        "s": 5.0
+      },
+      "spacing": {
+        "l": 12.0,
+        "m": 8.0,
+        "s": 6.0,
+        "xl": 16.0,
+        "xs": 4.0
+      },
+      "typography": {
+        "font_family": "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+        "font_size_base": 14.0,
+        "font_weight": 500
+      }
     }
   },
   "ui": {

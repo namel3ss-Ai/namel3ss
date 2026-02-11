@@ -10,6 +10,8 @@ from namel3ss.ui.manifest.origin import _attach_origin
 from namel3ss.ui.manifest.state_defaults import StateContext
 from namel3ss.validation import ValidationMode, add_warning
 
+_SNIPPET_MAX_LENGTH = 220
+
 
 def build_citation_chips_item(
     item: ir.CitationChipsItem,
@@ -28,6 +30,8 @@ def build_citation_chips_item(
     source = _state_path_label(item.source)
     value = _resolve_state_path(item.source, state_ctx, default=[], register_default=True)
     citations = _normalize_citations(value, line=item.line, column=item.column)
+    capabilities = set(getattr(state_ctx, "capabilities", ()) or ())
+    citations_enhanced = "ui.citations_enhanced" in capabilities
     if not citations:
         add_warning(
             warnings,
@@ -42,6 +46,7 @@ def build_citation_chips_item(
     element = {
         "type": "citation_chips",
         "source": source,
+        "enhanced": citations_enhanced,
         "citations": citations,
         **base,
     }
@@ -188,6 +193,9 @@ def _normalize_citation_entry(
     title = entry.get("title")
     if not isinstance(title, str):
         raise Namel3ssError(f"Citation {idx} title must be text", line=line, column=column)
+    normalized_title = title.strip()
+    if not normalized_title:
+        raise Namel3ssError(f"Citation {idx} title must be text", line=line, column=column)
     url = entry.get("url")
     source_id = entry.get("source_id")
     if url is None and source_id is None:
@@ -199,7 +207,8 @@ def _normalize_citation_entry(
     snippet = entry.get("snippet")
     if snippet is not None and not isinstance(snippet, str):
         raise Namel3ssError(f"Citation {idx} snippet must be text", line=line, column=column)
-    result = {"title": title}
+    citation_id = _normalize_citation_id(entry, idx=idx)
+    result = {"citation_id": citation_id, "title": normalized_title}
     if include_index:
         result["index"] = idx + 1
     if url:
@@ -207,12 +216,30 @@ def _normalize_citation_entry(
     if source_id:
         result["source_id"] = source_id
     if snippet:
-        result["snippet"] = snippet
+        result["snippet"] = _normalize_snippet(snippet)
     for passthrough in ("chunk_id", "document_id", "page", "page_number"):
         value = entry.get(passthrough)
         if isinstance(value, (str, int, float)):
             result[passthrough] = value
     return result
+
+
+def _normalize_citation_id(entry: dict, *, idx: int) -> str:
+    raw = entry.get("citation_id")
+    if isinstance(raw, str) and raw.strip():
+        return raw.strip()
+    fallback = entry.get("id")
+    if isinstance(fallback, str) and fallback.strip():
+        return fallback.strip()
+    return f"citation.{idx + 1}"
+
+
+def _normalize_snippet(value: str) -> str:
+    compact = " ".join(value.split())
+    if len(compact) <= _SNIPPET_MAX_LENGTH:
+        return compact
+    truncated = compact[:_SNIPPET_MAX_LENGTH].rstrip()
+    return f"{truncated}..."
 
 
 def _normalize_trust_value(value: object, *, line: int | None, column: int | None) -> bool | float:
