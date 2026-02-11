@@ -1595,7 +1595,7 @@ let renderUI = (manifest) => {
       wrapper.appendChild(empty);
     } else if (el.type === "retrieval_explain") {
       if (typeof renderRetrievalExplainElement === "function") {
-        return renderRetrievalExplainElement(el);
+        return renderRetrievalExplainElement(el, handleAction);
       }
       const empty = document.createElement("div");
       empty.textContent = "Retrieval explain renderer unavailable.";

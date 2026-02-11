@@ -14,6 +14,8 @@ from namel3ss.ingestion.policy import (
 from namel3ss.retrieval.embedding_plan import build_embedding_plan
 from namel3ss.retrieval.explain import RetrievalExplainBuilder
 from namel3ss.retrieval.ordering import coerce_int, ordering_label, rank_key, select_tier
+from namel3ss.retrieval.tuning import read_tuning_from_state
+from namel3ss.retrieval.tuning_engine import apply_retrieval_tuning, build_tuning_summary
 from namel3ss.runtime.pipelines.rag_pipeline import build_retrieval_artifacts
 
 
@@ -199,10 +201,29 @@ def run_retrieval(
         tier_selection = pass_selection if pass_entries else warn_selection
         explain_quality = "pass"
         explain_selection = pass_selected
-    if limit is not None:
-        if not isinstance(limit, int) or isinstance(limit, bool) or limit < 0:
-            raise Namel3ssError(_limit_message())
-        results = results[:limit]
+    if limit is not None and (not isinstance(limit, int) or isinstance(limit, bool) or limit < 0):
+        raise Namel3ssError(_limit_message())
+    retrieval_tuning = read_tuning_from_state(state)
+    ordering_value = ordering if not retrieval_tuning.explicit else f"{ordering}; combined_score(weighted)"
+    candidate_results = [dict(entry) for entry in results]
+    candidate_vector_scores = {
+        str(entry.get("chunk_id") or ""): embedding_plan.score_for(str(entry.get("chunk_id") or ""))
+        for entry in results
+        if isinstance(entry, dict) and isinstance(entry.get("chunk_id"), str)
+    }
+    results = apply_retrieval_tuning(
+        results,
+        tuning=retrieval_tuning,
+        vector_scores=candidate_vector_scores,
+        tie_break_chunk_id=embedding_plan.enabled,
+        limit=limit,
+    )
+    tuning_summary = build_tuning_summary(
+        tuning=retrieval_tuning,
+        results=candidate_results,
+        vector_scores=candidate_vector_scores,
+        tie_break_chunk_id=embedding_plan.enabled,
+    )
     response = {
         "query": query_text,
         "query_keywords": query_keywords,
@@ -213,6 +234,7 @@ def run_retrieval(
         "warn_allowed": warn_allowed,
         "warn_policy": _policy_summary(decision),
         "tier": _tier_summary(tier_request, tier_selection),
+        "retrieval_tuning": tuning_summary,
         "results": results,
     }
     vector_scores = {
@@ -226,10 +248,11 @@ def run_retrieval(
             state=state,
             tier=response["tier"] if isinstance(response.get("tier"), dict) else {},
             limit=limit if isinstance(limit, int) and not isinstance(limit, bool) else None,
-            ordering=ordering,
+            ordering=ordering_value,
             warn_policy=response["warn_policy"] if isinstance(response.get("warn_policy"), dict) else {},
             warn_allowed=warn_allowed,
             preferred_quality=preferred,
+            tuning=tuning_summary if isinstance(tuning_summary, dict) else {},
             results=results,
             vector_scores=vector_scores,
         )

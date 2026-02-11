@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from namel3ss.ui.export.guard import filter_export_actions
+
 
 ACTIONS_EXPORT_VERSION = "1"
 
@@ -27,9 +29,11 @@ def build_actions_list(actions: dict) -> list[dict]:
 def build_actions_export(manifest: dict) -> dict:
     actions = manifest.get("actions") if isinstance(manifest, dict) else {}
     actions_map = actions if isinstance(actions, dict) else {}
+    filtered_actions, skipped = filter_export_actions(actions_map)
     return {
         "schema_version": ACTIONS_EXPORT_VERSION,
-        "actions": build_actions_list(actions_map),
+        "actions": build_actions_list(filtered_actions),
+        "skipped": skipped,
     }
 
 

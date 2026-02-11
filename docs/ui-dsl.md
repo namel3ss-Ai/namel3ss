@@ -643,6 +643,17 @@ page "home":
   - `upload.missing_control` when uploads capability is enabled but no upload control is declared
   - `upload.unused_declaration` when an upload declaration is never referenced from `state.uploads.<name>`
 
+## 4.4) Retrieval tuning controls (Studio)
+- Retrieval tuning uses normal flow calls and does not add new UI DSL syntax.
+- Supported runtime tuning flows are:
+  - `set_semantic_k(<int>)`
+  - `set_lexical_k(<int>)`
+  - `set_final_top_k(<int>)`
+  - `set_semantic_weight(<number in [0, 1]>)`
+- Studio may render interim controls (dropdowns/radios) when these flows exist with valid one-field numeric contracts.
+- Production behavior is unchanged: if these flows are not defined, retrieval keeps legacy defaults.
+- Control metadata and any disabled reasons are deterministic and emitted in canonical manifest order.
+
 ## 5) Core UI primitives
 - `page "<title>":` container with optional `purpose is "<string>"` metadata (page-only; deterministic id generation). Duplicate page titles are rejected.
 - `purpose is "<string>"` may only appear at the page root; it is persisted to manifests and Studio payloads as metadata for runtime decisions.

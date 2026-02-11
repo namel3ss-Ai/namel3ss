@@ -49,6 +49,10 @@ def _upload_replace_action_id() -> str:
     return "app.upload.replace"
 
 
+def _retrieval_tuning_action_id(flow_name: str) -> str:
+    return f"app.retrieval.tuning.{_slugify(flow_name)}"
+
+
 def _allocate_action_id(base_id: str, element_id: str, taken: set[str]) -> str:
     if base_id not in taken:
         return base_id
@@ -181,6 +185,7 @@ __all__ = [
     "_ingestion_review_action_id",
     "_ingestion_skip_action_id",
     "_upload_replace_action_id",
+    "_retrieval_tuning_action_id",
     "_wire_overlay_actions",
     "_allocate_action_id",
     "LAYOUT_ACTION_TYPES",

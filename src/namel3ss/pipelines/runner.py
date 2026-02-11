@@ -146,8 +146,10 @@ def _run_retrieval(ctx, definition, payload: dict) -> PipelineRunResult:
     retrieve_summary = {"matched_results": len(results)}
     steps.append(_build_step(definition, 3, retrieve_summary, status="ok"))
 
+    tuning = result.get("retrieval_tuning") if isinstance(result, dict) else {}
+    explicit_tuning = bool(tuning.get("explicit")) if isinstance(tuning, dict) else False
     rank_summary = {
-        "ordering": "phase_keyword_overlap_page_chunk",
+        "ordering": "weighted_semantic_lexical_then_tie_break" if explicit_tuning else "phase_keyword_overlap_page_chunk",
         "tie_break": "index_order",
     }
     steps.append(_build_step(definition, 4, rank_summary, status="ok"))

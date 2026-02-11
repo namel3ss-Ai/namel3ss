@@ -79,9 +79,11 @@ def build_retrieval_explain_metadata(report: dict[str, object]) -> dict[str, obj
     modalities = [str(item.get("modality") or "text") for item in selected or candidate_chunks]
     modality = _summarize_modality(modalities)
     top_chunk = selected[0] if selected else None
+    tuning = report.get("retrieval_tuning")
     return {
         "preferred_quality": report.get("preferred_quality"),
         "warn_policy": report.get("warn_policy"),
+        "retrieval_tuning": tuning if isinstance(tuning, dict) else {},
         "modality": modality,
         "candidate_chunks": candidate_chunks,
         "scores": scores,

@@ -48,6 +48,7 @@ from namel3ss.ir.lowering.program_validation import (
     _validate_unique_upload_requests,
 )
 from namel3ss.ir.validation.ui_layout_validation import validate_ui_layout
+from namel3ss.ir.validation.retrieval_flow_validation import validate_retrieval_flow_usage
 from namel3ss.ir.validation.ui_rag_validation import validate_ui_rag
 from namel3ss.ir.validation.ui_navigation_validation import validate_ui_navigation
 from namel3ss.ir.validation.app_permissions_validation import (
@@ -164,6 +165,7 @@ def lower_program(program: ast.Program) -> Program:
     validate_flow_contracts(flow_irs, flow_contracts)
     validate_flow_composition(flow_irs, flow_contracts, pipeline_contracts())
     validate_flow_purity(flow_irs, flow_contracts)
+    retrieval_flow_usage = validate_retrieval_flow_usage(flow_irs, flow_contracts)
     validate_declarative_flows(flow_irs, record_map, tool_map, mode=ValidationMode.RUNTIME, warnings=None)
     capabilities = _normalize_capabilities(getattr(program, "capabilities", []) or [])
     require_program_capabilities(
@@ -327,6 +329,7 @@ def lower_program(program: ast.Program) -> Program:
     setattr(lowered, "ui_visual_theme_css", visual_theme.css)
     setattr(lowered, "ui_visual_theme_css_hash", visual_theme.css_hash)
     setattr(lowered, "ui_visual_theme_font_url", visual_theme.font_url)
+    setattr(lowered, "retrieval_flow_usage", retrieval_flow_usage)
     validate_ui_state(lowered, ui_state, capabilities)
     ui_state_scope_by_key = build_ui_state_scope_map(ui_state)
     permissions_result = validate_app_permissions(

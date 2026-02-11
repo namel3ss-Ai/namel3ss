@@ -13,6 +13,7 @@ def build_retrieval_plan(
     warn_policy: Mapping[str, object] | None,
     warn_allowed: bool,
     preferred_quality: str,
+    tuning: Mapping[str, object] | None,
     selected_results: list[dict[str, object]],
     retrieval_trace: list[dict[str, object]],
 ) -> dict[str, object]:
@@ -47,6 +48,7 @@ def build_retrieval_plan(
         "scope": scope,
         "tier": tier_info,
         "filters": filters,
+        "tuning": _tuning_summary(tuning),
         "cutoffs": {
             "limit": _normalize_limit(limit),
             "candidate_count": tier_info["candidate_count"],
@@ -120,6 +122,25 @@ def _policy_summary(value: Mapping[str, object] | None) -> dict[str, str]:
     }
 
 
+def _tuning_summary(value: Mapping[str, object] | None) -> dict[str, object]:
+    tuning = value if isinstance(value, Mapping) else {}
+    counts_value = tuning.get("counts")
+    counts = counts_value if isinstance(counts_value, Mapping) else {}
+    return {
+        "semantic_k": _optional_non_negative_int(tuning.get("semantic_k")),
+        "lexical_k": _optional_non_negative_int(tuning.get("lexical_k")),
+        "final_top_k": _optional_non_negative_int(tuning.get("final_top_k")),
+        "semantic_weight": _coerce_score(tuning.get("semantic_weight")),
+        "explicit": bool(tuning.get("explicit")),
+        "counts": {
+            "candidates": _coerce_non_negative_int(counts.get("candidates")),
+            "lexical_selected": _coerce_non_negative_int(counts.get("lexical_selected")),
+            "semantic_selected": _coerce_non_negative_int(counts.get("semantic_selected")),
+            "union_selected": _coerce_non_negative_int(counts.get("union_selected")),
+        },
+    }
+
+
 def _normalize_limit(value: int | None) -> int | None:
     if isinstance(value, bool):
         return None
@@ -137,6 +158,12 @@ def _coerce_non_negative_int(value: object) -> int:
         parsed = int(value)
         return parsed if parsed >= 0 else 0
     return 0
+
+
+def _optional_non_negative_int(value: object) -> int | None:
+    if value is None:
+        return None
+    return _coerce_non_negative_int(value)
 
 
 def _coerce_score(value: object) -> float:

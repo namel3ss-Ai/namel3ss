@@ -18,6 +18,7 @@ from namel3ss.runtime.executor.expr.lists import (
 from namel3ss.runtime.executor.expr.ops import eval_binary_op, eval_comparison, eval_unary_op
 from namel3ss.runtime.backend.http_auth_helpers import auth_basic, auth_bearer, auth_header
 from namel3ss.runtime.auth.permission_helpers import has_permission, has_role
+from namel3ss.runtime.retrieval import set_final_top_k, set_lexical_k, set_semantic_k, set_semantic_weight
 from namel3ss.runtime.secrets_store import SecretValue, resolve_secret_value
 from namel3ss.runtime.tools.executor import execute_tool_call
 from namel3ss.runtime.values.coerce import require_type
@@ -264,11 +265,34 @@ def _evaluate_builtin_call(
         _require_arg_count(expr, 1)
         perm_value = evaluate_expression(ctx, expr.arguments[0], collector)
         return has_permission(ctx.identity, perm_value)
+    if name == "set_semantic_k":
+        require_effect_allowed(ctx, effect="call set_semantic_k", line=expr.line, column=expr.column)
+        _require_arg_count(expr, 1)
+        k_value = evaluate_expression(ctx, expr.arguments[0], collector)
+        return set_semantic_k(ctx.state, k_value)
+    if name == "set_lexical_k":
+        require_effect_allowed(ctx, effect="call set_lexical_k", line=expr.line, column=expr.column)
+        _require_arg_count(expr, 1)
+        k_value = evaluate_expression(ctx, expr.arguments[0], collector)
+        return set_lexical_k(ctx.state, k_value)
+    if name == "set_final_top_k":
+        require_effect_allowed(ctx, effect="call set_final_top_k", line=expr.line, column=expr.column)
+        _require_arg_count(expr, 1)
+        k_value = evaluate_expression(ctx, expr.arguments[0], collector)
+        return set_final_top_k(ctx.state, k_value)
+    if name == "set_semantic_weight":
+        require_effect_allowed(ctx, effect="call set_semantic_weight", line=expr.line, column=expr.column)
+        _require_arg_count(expr, 1)
+        weight_value = evaluate_expression(ctx, expr.arguments[0], collector)
+        return set_semantic_weight(ctx.state, weight_value)
     raise Namel3ssError(
         build_guidance_message(
             what=f"Unknown builtin '{name}'.",
-            why="Only secret, auth helpers, and identity checks are supported here.",
-            fix="Use secret(), auth_bearer(), auth_basic(), auth_header(), has_role(), or has_permission().",
+            why="Only supported runtime helper builtins can be called in expressions.",
+            fix=(
+                "Use secret(), auth helpers, identity checks, or retrieval tuning helpers: "
+                "set_semantic_k(), set_lexical_k(), set_final_top_k(), set_semantic_weight()."
+            ),
             example='auth_bearer(secret("stripe_key"))',
         ),
         line=expr.line,
@@ -308,6 +332,10 @@ def _builtin_example(name: str) -> str:
         "auth_header": 'auth_header("X-API-Key", secret("stripe_key"))',
         "has_role": 'has_role("admin")',
         "has_permission": 'has_permission("records.read")',
+        "set_semantic_k": "set_semantic_k(20)",
+        "set_lexical_k": "set_lexical_k(20)",
+        "set_final_top_k": "set_final_top_k(10)",
+        "set_semantic_weight": "set_semantic_weight(0.5)",
     }.get(name, 'secret("stripe_key")')
 
 

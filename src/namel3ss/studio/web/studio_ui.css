@@ -705,6 +705,64 @@
   font-size: 12px;
   color: #3d4d68;
 }
+.ui-retrieval-explain-controls {
+  border: 1px solid #e1e8f3;
+  border-radius: 8px;
+  padding: 8px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ui-retrieval-explain-controls-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2f3f5c;
+}
+.ui-retrieval-explain-controls-disabled {
+  font-size: 11px;
+  color: #5e6f8e;
+}
+.ui-retrieval-explain-controls-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.ui-retrieval-explain-control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ui-retrieval-explain-control.is-disabled {
+  opacity: 0.75;
+}
+.ui-retrieval-explain-control-label {
+  font-size: 11px;
+  color: #3f4e69;
+  font-weight: 600;
+}
+.ui-retrieval-explain-control-input {
+  width: 100%;
+  max-width: 240px;
+  padding: 4px 6px;
+  border: 1px solid #ccd8ea;
+  border-radius: 6px;
+  background: #fff;
+  color: #2f3f5c;
+  font-size: 12px;
+}
+.ui-retrieval-explain-control-weight {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ui-retrieval-explain-weight-option {
+  font-size: 11px;
+  color: #3f4e69;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
 .ui-retrieval-explain-trust {
   display: flex;
   align-items: center;

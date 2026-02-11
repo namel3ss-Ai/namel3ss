@@ -1,7 +1,28 @@
 (() => {
   const root = window.N3UIRender || (window.N3UIRender = {});
 
-  function renderRetrievalExplainElement(el) {
+  const K_OPTIONS = [0, 1, 2, 3, 5, 8, 10, 20, 50];
+  const WEIGHT_OPTIONS = [0.0, 0.25, 0.5, 0.75, 1.0];
+  const CONTROL_ORDER = {
+    set_semantic_k: 0,
+    set_lexical_k: 1,
+    set_semantic_weight: 2,
+    set_final_top_k: 3,
+  };
+  const CONTROL_LABELS = {
+    set_semantic_k: "Semantic candidates (k)",
+    set_lexical_k: "Lexical candidates (k)",
+    set_semantic_weight: "Semantic weight",
+    set_final_top_k: "Final top-k",
+  };
+  const CONTROL_DEFAULTS = {
+    set_semantic_k: 20,
+    set_lexical_k: 20,
+    set_final_top_k: 10,
+    set_semantic_weight: 0.5,
+  };
+
+  function renderRetrievalExplainElement(el, handleAction) {
     const wrapper = document.createElement("section");
     wrapper.className = "ui-element ui-retrieval-explain";
 
@@ -17,6 +38,9 @@
       queryNode.textContent = `Query: ${query}`;
       wrapper.appendChild(queryNode);
     }
+
+    const controlsNode = renderRetrievalControls(el && el.retrieval_controls, handleAction);
+    wrapper.appendChild(controlsNode);
 
     const trustNode = renderTrustSummary(el && el.trust_score_details);
     wrapper.appendChild(trustNode);
@@ -73,6 +97,176 @@
     });
     wrapper.appendChild(traceList);
     return wrapper;
+  }
+
+  function renderRetrievalControls(raw, handleAction) {
+    const controls = normalizeControls(raw);
+    const box = document.createElement("div");
+    box.className = "ui-retrieval-explain-controls";
+
+    const title = document.createElement("div");
+    title.className = "ui-retrieval-explain-controls-title";
+    title.textContent = "Retrieval tuning";
+    box.appendChild(title);
+
+    if (!controls.enabled && controls.disabled_reason) {
+      const disabled = document.createElement("div");
+      disabled.className = "ui-retrieval-explain-controls-disabled";
+      disabled.textContent = controls.disabled_reason;
+      box.appendChild(disabled);
+    }
+
+    const list = document.createElement("div");
+    list.className = "ui-retrieval-explain-controls-list";
+    box.appendChild(list);
+
+    controls.items.forEach((item) => {
+      const field = document.createElement("div");
+      field.className = "ui-retrieval-explain-control";
+      if (!item.enabled) field.classList.add("is-disabled");
+      if (item.disabled_reason) field.title = item.disabled_reason;
+
+      const label = document.createElement("label");
+      label.className = "ui-retrieval-explain-control-label";
+      label.textContent = item.label;
+      field.appendChild(label);
+
+      if (item.flow === "set_semantic_weight") {
+        field.appendChild(renderWeightControl(item, handleAction));
+      } else {
+        field.appendChild(renderKControl(item, handleAction));
+      }
+      list.appendChild(field);
+    });
+    return box;
+  }
+
+  function renderKControl(item, handleAction) {
+    const select = document.createElement("select");
+    select.className = "ui-retrieval-explain-control-input";
+    const options = uniqueSortedInts(K_OPTIONS.concat([item.value]));
+    options.forEach((value) => {
+      const option = document.createElement("option");
+      option.value = String(value);
+      option.textContent = String(value);
+      select.appendChild(option);
+    });
+    select.value = String(item.value);
+    const disabled = !item.enabled || typeof handleAction !== "function" || !item.action_id;
+    select.disabled = disabled;
+    select.addEventListener("change", async () => {
+      const previous = item.value;
+      const nextValue = toPositiveInt(select.value);
+      item.value = nextValue;
+      const ok = await executeControlAction(
+        item,
+        { [item.input_field]: nextValue },
+        select,
+        handleAction
+      );
+      if (!ok) {
+        item.value = previous;
+        select.value = String(previous);
+      }
+    });
+    return select;
+  }
+
+  function renderWeightControl(item, handleAction) {
+    const group = document.createElement("div");
+    group.className = "ui-retrieval-explain-control-weight";
+    const disabled = !item.enabled || typeof handleAction !== "function" || !item.action_id;
+    WEIGHT_OPTIONS.forEach((value) => {
+      const option = document.createElement("label");
+      option.className = "ui-retrieval-explain-weight-option";
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = `retrieval-weight-${item.flow}`;
+      input.value = value.toFixed(2);
+      input.checked = Math.abs(item.value - value) < 0.001;
+      input.disabled = disabled;
+      input.addEventListener("change", async () => {
+        if (!input.checked) return;
+        const previous = item.value;
+        const nextValue = toScore(input.value);
+        item.value = nextValue;
+        const ok = await executeControlAction(
+          item,
+          { [item.input_field]: nextValue },
+          input,
+          handleAction
+        );
+        if (!ok) {
+          item.value = previous;
+          const fallback = group.querySelector(`input[value="${previous.toFixed(2)}"]`);
+          if (fallback) fallback.checked = true;
+        }
+      });
+      option.appendChild(input);
+      const text = document.createElement("span");
+      text.textContent = `${Math.round(value * 100)}%`;
+      option.appendChild(text);
+      group.appendChild(option);
+    });
+    return group;
+  }
+
+  async function executeControlAction(item, payload, source, handleAction) {
+    if (typeof handleAction !== "function" || !item.action_id) return false;
+    const action = {
+      id: item.action_id,
+      type: "call_flow",
+      flow: item.flow,
+      input_field: item.input_field,
+    };
+    try {
+      const response = await handleAction(action, payload, source);
+      return !(response && response.ok === false);
+    } catch (_err) {
+      return false;
+    }
+  }
+
+  function normalizeControls(raw) {
+    const value = raw && typeof raw === "object" ? raw : {};
+    const items = Array.isArray(value.items) ? value.items : [];
+    const normalized = items
+      .filter((item) => item && typeof item === "object")
+      .map((item) => normalizeControlItem(item))
+      .sort((left, right) => {
+        const leftOrder = CONTROL_ORDER[left.flow] ?? 999;
+        const rightOrder = CONTROL_ORDER[right.flow] ?? 999;
+        if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+        return left.flow.localeCompare(right.flow);
+      });
+    const enabled = normalized.some((item) => item.enabled);
+    const disabled_reason =
+      typeof value.disabled_reason === "string" && value.disabled_reason
+        ? value.disabled_reason
+        : "Retrieval tuning flows are not available.";
+    return {
+      enabled: enabled,
+      disabled_reason: enabled ? "" : disabled_reason,
+      items: normalized,
+    };
+  }
+
+  function normalizeControlItem(raw) {
+    const flow = typeof raw.flow === "string" ? raw.flow : "";
+    const isWeight = flow === "set_semantic_weight";
+    const inputField =
+      typeof raw.input_field === "string" && raw.input_field ? raw.input_field : isWeight ? "weight" : "k";
+    const defaultValue = CONTROL_DEFAULTS[flow] ?? (isWeight ? 0.5 : 10);
+    const value = isWeight ? toScore(raw.value) : raw.value === null ? defaultValue : toPositiveInt(raw.value);
+    return {
+      flow: flow,
+      label: CONTROL_LABELS[flow] || flow || "retrieval tuning",
+      action_id: typeof raw.action_id === "string" ? raw.action_id : "",
+      input_field: inputField,
+      enabled: raw.enabled === true,
+      disabled_reason: typeof raw.disabled_reason === "string" ? raw.disabled_reason : "",
+      value: value,
+    };
   }
 
   function renderTrustSummary(raw) {
@@ -142,7 +336,8 @@
   function normalizeTrustDetails(raw) {
     const value = raw && typeof raw === "object" ? raw : {};
     const score = toScore(value.score);
-    const level = typeof value.level === "string" && value.level ? value.level : score >= 0.8 ? "high" : score >= 0.55 ? "medium" : "low";
+    const level =
+      typeof value.level === "string" && value.level ? value.level : score >= 0.8 ? "high" : score >= 0.55 ? "medium" : "low";
     const formula_version =
       typeof value.formula_version === "string" && value.formula_version ? value.formula_version : "rag_trust@1";
     return { score, level, formula_version };
@@ -169,6 +364,19 @@
     return entries;
   }
 
+  function uniqueSortedInts(values) {
+    const seen = new Set();
+    const out = [];
+    values.forEach((value) => {
+      const number = toPositiveInt(value);
+      if (seen.has(number)) return;
+      seen.add(number);
+      out.push(number);
+    });
+    out.sort((a, b) => a - b);
+    return out;
+  }
+
   function toPositiveInt(value) {
     const parsed = Number(value);
     if (!Number.isFinite(parsed)) return 0;
@@ -182,7 +390,7 @@
     if (!Number.isFinite(parsed)) return 0;
     if (parsed < 0) return 0;
     if (parsed > 1) return 1;
-    return parsed;
+    return Math.round(parsed * 10000) / 10000;
   }
 
   root.renderRetrievalExplainElement = renderRetrievalExplainElement;

@@ -31,6 +31,7 @@ from namel3ss.ui.manifest.actions import (
     _ingestion_review_action_id,
     _ingestion_skip_action_id,
     _retrieval_action_id,
+    _retrieval_tuning_action_id,
     _upload_replace_action_id,
     _wire_overlay_actions,
 )
@@ -62,6 +63,7 @@ from namel3ss.runtime.theme_state import theme_settings_from_state
 from namel3ss.ui.theme_tokens import UI_THEME_TOKEN_ORDER
 from namel3ss.i18n.rtl_utils import apply_rtl_to_manifest
 from namel3ss.validation import ValidationMode
+from namel3ss.retrieval.tuning import RETRIEVAL_TUNING_FLOWS
 
 
 def build_manifest(
@@ -315,6 +317,7 @@ def build_manifest(
         _add_system_action(actions, taken_actions, _ingestion_review_action_id(), "ingestion_review")
         _add_system_action(actions, taken_actions, _ingestion_skip_action_id(), "ingestion_skip")
         _add_system_action(actions, taken_actions, _upload_replace_action_id(), "upload_replace")
+        _add_retrieval_tuning_actions(program, actions, taken_actions)
     persistence = _resolve_persistence(store)
     if actions:
         actions = {action_id: actions[action_id] for action_id in sorted(actions)}
@@ -427,6 +430,38 @@ def _add_system_action(actions: Dict[str, dict], taken_actions: set[str], base_i
         return
     actions[action_id] = {"id": action_id, "type": action_type, "debug_only": True}
     taken_actions.add(action_id)
+
+
+def _add_retrieval_tuning_actions(program: ir.Program, actions: Dict[str, dict], taken_actions: set[str]) -> None:
+    usage = getattr(program, "retrieval_flow_usage", None)
+    controls = usage.get("controls") if isinstance(usage, dict) else {}
+    if not isinstance(controls, dict):
+        return
+    for flow_name in RETRIEVAL_TUNING_FLOWS:
+        control = controls.get(flow_name)
+        if not isinstance(control, dict):
+            continue
+        if control.get("available") is not True:
+            continue
+        input_field = str(control.get("input_field") or "")
+        if not input_field:
+            continue
+        action_id = _allocate_action_id(
+            _retrieval_tuning_action_id(flow_name),
+            f"system.retrieval_tuning.{flow_name}",
+            taken_actions,
+        )
+        if action_id in actions:
+            continue
+        actions[action_id] = {
+            "id": action_id,
+            "type": "call_flow",
+            "flow": flow_name,
+            "input_field": input_field,
+            "debug_only": True,
+            "system_action": "retrieval_tuning",
+        }
+        taken_actions.add(action_id)
 
 
 __all__ = ["build_manifest", "_build_children", "_wire_overlay_actions", "_slugify"]
