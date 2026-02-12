@@ -10,6 +10,7 @@ from namel3ss.runtime.server.concurrency import create_runtime_http_server, load
 from namel3ss.runtime.server.dev.routes import BrowserRequestHandler
 from namel3ss.runtime.server.dev.state import BrowserAppState
 from namel3ss.runtime.server.headless_api import normalize_api_token, normalize_cors_origins
+from namel3ss.studio.startup import validate_renderer_registry_startup
 from namel3ss.ui.manifest.display_mode import (
     DISPLAY_MODE_PRODUCTION,
     DISPLAY_MODE_STUDIO,
@@ -60,6 +61,8 @@ class BrowserRunner:
         env_diagnostics = parse_diagnostics_flag(os.getenv("N3_UI_DIAGNOSTICS"))
         self.diagnostics_enabled = env_diagnostics if diagnostics_enabled is None else bool(diagnostics_enabled)
         self.concurrency = load_concurrency_config(app_path=self.app_path)
+        if not self.headless:
+            validate_renderer_registry_startup()
         self.app_state = BrowserAppState(
             self.app_path,
             mode=mode,

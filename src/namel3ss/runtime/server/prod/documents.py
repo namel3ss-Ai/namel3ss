@@ -6,7 +6,8 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
-from namel3ss.runtime.backend.document_handler import handle_document_page, handle_document_pdf
+from namel3ss.runtime.backend.document_handler import handle_document_pdf
+from namel3ss.runtime.preview.preview_endpoint import handle_preview_page_request
 
 
 def handle_documents_get(handler: Any, raw_path: str) -> bool:
@@ -53,23 +54,16 @@ def handle_documents_get(handler: Any, raw_path: str) -> bool:
             payload = build_error_payload(str(err), kind="internal")
             handler._respond_json(payload, status=500)
         return True
-    try:
-        response = handle_document_page(
-            ctx,
-            document_id=document_id,
-            page_number=parsed["page_number"],
-            state=state_value if isinstance(state_value, dict) else None,
-            chunk_id=chunk_id,
-            identity=identity,
-            policy_decl=policy_decl,
-        )
-        handler._respond_json(response, status=200)
-    except Namel3ssError as err:
-        payload = build_error_from_exception(err, kind="engine")
-        handler._respond_json(payload, status=400)
-    except Exception as err:  # pragma: no cover - defensive guard rail
-        payload = build_error_payload(str(err), kind="internal")
-        handler._respond_json(payload, status=500)
+    response, status = handle_preview_page_request(
+        ctx,
+        document_id=document_id,
+        page_number=parsed["page_number"],
+        state=state_value if isinstance(state_value, dict) else None,
+        chunk_id=chunk_id,
+        identity=identity,
+        policy_decl=policy_decl,
+    )
+    handler._respond_json(response, status=status)
     return True
 
 

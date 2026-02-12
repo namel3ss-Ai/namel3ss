@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from namel3ss.studio.diagnostics.panel_model import build_diagnostics_panel_payload
@@ -70,8 +71,12 @@ def test_diagnostics_panel_aggregates_and_orders_entries() -> None:
 
 def test_diagnostics_renderers_wired_in_studio() -> None:
     html = Path("src/namel3ss/studio/web/index.html").read_text(encoding="utf-8")
-    assert "/ui_renderer_diagnostics.js" in html
-    assert "/ui_renderer_run_diff.js" in html
+    assert "/renderer_registry.js" in html
+    manifest = json.loads(Path("src/namel3ss/studio/web/renderer_manifest.json").read_text(encoding="utf-8"))
+    renderer_ids = [entry.get("renderer_id") for entry in manifest.get("renderers", [])]
+    # Deviation from legacy tag checks: renderers are loaded through renderer_registry.js.
+    assert "diagnostics" in renderer_ids
+    assert "run_diff" in renderer_ids
 
     ui_renderer = Path("src/namel3ss/studio/web/ui_renderer.js").read_text(encoding="utf-8")
     assert 'el.type === "diagnostics_panel"' in ui_renderer

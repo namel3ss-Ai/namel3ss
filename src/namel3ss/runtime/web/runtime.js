@@ -19,6 +19,16 @@
     manifest: null,
     revision: "",
   };
+  const rendererRegistryReady = resolveRendererRegistryReady();
+
+  function resolveRendererRegistryReady() {
+    const registry = window.N3RendererRegistry;
+    if (!registry || typeof registry !== "object") return Promise.resolve();
+    if (!registry.ready || typeof registry.ready.then !== "function") {
+      return Promise.reject(new Error("Renderer registry readiness promise is missing."));
+    }
+    return registry.ready;
+  }
 
   function showEmpty(container, message) {
     if (!container) return;
@@ -312,9 +322,16 @@
   window.showError = showError;
   window.executeAction = executeAction;
 
-  refreshUI();
-  if (mode === "dev") {
-    setStatus("Watching for changes");
-    setInterval(pollStatus, pollInterval);
-  }
+  rendererRegistryReady
+    .then(() => {
+      refreshUI();
+      if (mode === "dev") {
+        setStatus("Watching for changes");
+        setInterval(pollStatus, pollInterval);
+      }
+    })
+    .catch((err) => {
+      const stableCode = err && err.error_code ? String(err.error_code) : "N3E_RENDERER_REGISTRY_INVALID";
+      handleError({ message: `${stableCode}: renderer registry failed to load.` });
+    });
 })();

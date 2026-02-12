@@ -1,5 +1,32 @@
 (() => {
-  function boot() {
+  async function waitForRendererRegistry() {
+    const registry = window.N3RendererRegistry;
+    if (!registry || typeof registry !== "object") {
+      throw new Error("Studio boot missing renderer registry.");
+    }
+    if (!registry.ready || typeof registry.ready.then !== "function") {
+      throw new Error("Studio boot missing renderer registry readiness promise.");
+    }
+    await registry.ready;
+  }
+
+  function renderBootError(error) {
+    const banner = document.getElementById("errorBanner");
+    if (!banner) return;
+    const stableCode =
+      error &&
+      typeof error === "object" &&
+      typeof error.error_code === "string" &&
+      error.error_code.trim()
+        ? error.error_code.trim()
+        : "";
+    const message = error && error.message ? error.message : "Studio boot failed.";
+    banner.textContent = stableCode ? `${stableCode}: ${message}` : message;
+    banner.classList.remove("hidden");
+  }
+
+  async function boot() {
+    await waitForRendererRegistry();
     const root = window.N3Studio || {};
     const missing = [];
 
@@ -42,9 +69,16 @@
     if (root.refresh && root.refresh.refreshDiagnostics) root.refresh.refreshDiagnostics();
   }
 
+  function startBoot() {
+    boot().catch((error) => {
+      renderBootError(error);
+      throw error;
+    });
+  }
+
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", boot);
+    document.addEventListener("DOMContentLoaded", startBoot);
   } else {
-    boot();
+    startBoot();
   }
 })();

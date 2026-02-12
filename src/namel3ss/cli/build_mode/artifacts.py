@@ -22,18 +22,31 @@ WEB_DIRNAME = "web"
 PROD_HTML_FILENAME = "prod.html"
 RUNTIME_WEB_ASSETS = ("runtime.css", "runtime.js")
 STUDIO_WEB_ASSETS = (
+    "renderer_manifest.json",
+    "renderer_registry.js",
     "studio_ui.css",
     "styles/layout_tokens.css",
     "styles/theme.css",
     "theme_tokens.css",
     "theme_tokens.js",
     "theme_runtime.js",
-    "ui_renderer.js",
+    "ui_renderer_audit_viewer.js",
+    "ui_renderer_capabilities.js",
     "ui_renderer_chart.js",
     "ui_renderer_chat.js",
-    "ui_renderer_upload.js",
     "ui_renderer_collections.js",
+    "ui_renderer_controls.js",
+    "ui_renderer_diagnostics.js",
     "ui_renderer_form.js",
+    "ui_renderer_ingestion_status.js",
+    "ui_renderer_rag.js",
+    "ui_renderer_retrieval_explain.js",
+    "ui_renderer_run_diff.js",
+    "ui_renderer_runtime_error.js",
+    "ui_renderer_state_viewer.js",
+    "ui_renderer_trace.js",
+    "ui_renderer_upload.js",
+    "ui_renderer.js",
 )
 _TEXT_ASSET_SUFFIXES = {".css", ".html", ".js"}
 

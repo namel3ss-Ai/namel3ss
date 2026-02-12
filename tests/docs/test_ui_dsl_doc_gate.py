@@ -6,15 +6,8 @@ from pathlib import Path
 
 import pytest
 
+from tools.spec_gates.ui_dsl_doc_gate import classify_ui_dsl_semantic_files
 
-RELEVANT_PREFIXES = [
-    "src/namel3ss/parser/",
-    "src/namel3ss/ast/",
-    "src/namel3ss/ir/",
-    "src/namel3ss/ui/manifest.py",
-    "src/namel3ss/lint/",
-    "src/namel3ss/studio/web/",
-]
 SPEC_PATH = "docs/ui-dsl.md"
 
 
@@ -48,12 +41,7 @@ def _changed_files() -> list[str]:
 def test_ui_dsl_doc_gate():
     files = _changed_files()
     spec_changed = SPEC_PATH in files
-    offenders = []
-    for f in files:
-        for prefix in RELEVANT_PREFIXES:
-            if f.startswith(prefix):
-                offenders.append(f)
-                break
+    offenders = classify_ui_dsl_semantic_files(files)
     if offenders and not spec_changed:
         msg = [
             "UI DSL related files changed but docs/ui-dsl.md was not updated.",

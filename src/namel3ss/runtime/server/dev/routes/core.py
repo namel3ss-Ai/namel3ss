@@ -6,7 +6,7 @@ from typing import Any
 
 from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.payload import build_error_payload
-from namel3ss.resources import studio_web_root
+from namel3ss.resources import package_root, studio_web_root
 from namel3ss.ui.external.serve import resolve_external_ui_file
 
 
@@ -134,7 +134,7 @@ def _resolve_runtime_file(path: str, mode: str) -> tuple[Path | None, str | None
 
 
 def _runtime_web_root() -> Path:
-    return Path(__file__).resolve().parents[3] / "web"
+    return package_root() / "runtime" / "web"
 
 
 def _load_observability_builder(kind: str):

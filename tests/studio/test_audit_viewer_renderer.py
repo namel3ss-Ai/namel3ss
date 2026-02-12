@@ -3,7 +3,8 @@ from pathlib import Path
 
 def test_audit_viewer_renderer_scripts_and_wiring() -> None:
     html = Path("src/namel3ss/studio/web/index.html").read_text(encoding="utf-8")
-    assert "/ui_renderer_audit_viewer.js" in html
+    assert "/renderer_registry.js" in html
+    assert "/ui_renderer_audit_viewer.js" not in html
 
     renderer = Path("src/namel3ss/studio/web/ui_renderer.js").read_text(encoding="utf-8")
     assert 'el.type === "audit_viewer"' in renderer

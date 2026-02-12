@@ -1,11 +1,25 @@
 from __future__ import annotations
 
+from contextlib import ExitStack
+from importlib import resources as importlib_resources
 from pathlib import Path
 import sys
 
+_RESOURCE_CONTEXTS = ExitStack()
+
+
+def _resource_path(*parts: str) -> Path:
+    resource = importlib_resources.files("namel3ss")
+    for part in parts:
+        resource = resource.joinpath(part)
+    try:
+        return Path(resource)
+    except TypeError:
+        return _RESOURCE_CONTEXTS.enter_context(importlib_resources.as_file(resource))
+
 
 def package_root() -> Path:
-    return Path(__file__).resolve().parent
+    return _resource_path()
 
 
 def templates_root() -> Path:
@@ -21,7 +35,7 @@ def demos_root() -> Path:
 
 
 def studio_web_root() -> Path:
-    return package_root() / "studio" / "web"
+    return _resource_path("studio", "web")
 
 
 def icons_root() -> Path:

@@ -1,4 +1,4 @@
-(() => {
+﻿(() => {
   const root = window.N3UIRender || (window.N3UIRender = {});
   const previewState = {
     container: null,
@@ -874,26 +874,59 @@
           ? `/api/documents/${encodeURIComponent(documentId)}/pages/${pageNumber}?${query}`
           : `/api/documents/${encodeURIComponent(documentId)}/pages/${pageNumber}`;
       const response = await fetch(url);
+      const payload = await response.json();
+      if (!payload || typeof payload !== "object") {
+        throw new Error(`Preview request failed (${response.status})`);
+      }
+      if (typeof payload.error_code === "string" && payload.error_code) {
+        const message = typeof payload.message === "string" && payload.message ? payload.message : "Preview request failed.";
+        throw new Error(`${payload.error_code}: ${message}`);
+      }
       if (!response.ok) {
         throw new Error(`Preview request failed (${response.status})`);
       }
-      const payload = await response.json();
-      if (!payload || payload.ok !== true) {
+      if (payload.status === "unavailable") {
+        const docMeta = payload.doc_meta && typeof payload.doc_meta === "object" ? payload.doc_meta : {};
+        const fallback = typeof payload.fallback_snippet === "string" ? payload.fallback_snippet : "";
+        const reason =
+          typeof payload.reason === "string" && payload.reason.trim() ? payload.reason.trim() : "Preview unavailable for this citation.";
+        const unavailablePage = Number(docMeta.page_number) || pageNumber;
+        const unavailablePageCount = Number(docMeta.page_count) || unavailablePage;
+        preview.pageCount = unavailablePageCount;
+        preview.pageNumber = unavailablePage;
+        preview.pageLabel.textContent = unavailablePageCount > 0 ? `Page ${unavailablePage} of ${unavailablePageCount}` : "";
+        const name = docMeta.source_name || preview.title.textContent || "Document";
+        preview.meta.textContent = `${name} - Preview unavailable`;
+        preview.error.textContent = reason;
+        preview.prevButton.disabled = true;
+        preview.nextButton.disabled = true;
+        preview.frame.removeAttribute("src");
+        preview.pageNotice.hidden = true;
+        preview.pageNotice.textContent = "";
+        preview.pageText.textContent = fallback || "No extracted text for this page.";
+        preview.snippet.textContent = formatSnippet(preview.entrySnippet, fallback);
+        return;
+      }
+
+      if (payload.status !== "ok" && payload.ok !== true) {
         throw new Error("Preview response was not ok.");
       }
-      const doc = payload.document || {};
-      const page = payload.page || {};
+      const previewPayload = payload.preview && typeof payload.preview === "object" ? payload.preview : payload;
+      const doc = previewPayload.document || payload.document || {};
+      const page = previewPayload.page || payload.page || {};
       const pageCount = Number(doc.page_count) || pageNumber;
       preview.pageCount = pageCount;
       preview.pageNumber = Number(page.number) || pageNumber;
       preview.pageLabel.textContent = `Page ${preview.pageNumber} of ${pageCount}`;
       const name = doc.source_name || preview.title.textContent || "Document";
-      preview.meta.textContent = `${name} · ${preview.pageLabel.textContent}`;
+      preview.meta.textContent = `${name} - ${preview.pageLabel.textContent}`;
       preview.prevButton.disabled = preview.pageNumber <= 1;
       preview.nextButton.disabled = preview.pageNumber >= pageCount;
-      preview.frame.src = payload.pdf_url || `/api/documents/${encodeURIComponent(documentId)}/pdf#page=${preview.pageNumber}`;
+      preview.frame.src =
+        previewPayload.pdf_url || payload.pdf_url || `/api/documents/${encodeURIComponent(documentId)}/pdf#page=${preview.pageNumber}`;
       const pageText = typeof page.text === "string" ? page.text : "";
-      const highlights = Array.isArray(payload.highlights) ? payload.highlights : [];
+      const highlightsSource = Array.isArray(previewPayload.highlights) ? previewPayload.highlights : payload.highlights;
+      const highlights = Array.isArray(highlightsSource) ? highlightsSource : [];
       renderPageText(preview.pageText, pageText, highlights);
       setHighlightNotice(preview.pageNotice, highlights);
       preview.snippet.textContent = formatSnippet(preview.entrySnippet, pageText);
@@ -1160,3 +1193,4 @@
   root.normalizeCitationEntries = normalizeCitationEntries;
   root.resolveCitationTarget = resolveCitationTarget;
 })();
+

@@ -15,6 +15,7 @@ from namel3ss.runtime.server.prod.security_requirements import build_tls_context
 from namel3ss.runtime.server.prod.routes import ProductionRequestHandler
 from namel3ss.runtime.router.refresh import refresh_routes
 from namel3ss.runtime.router.registry import RouteRegistry
+from namel3ss.studio.startup import validate_renderer_registry_startup
 from namel3ss.ui.manifest.display_mode import DISPLAY_MODE_PRODUCTION
 
 
@@ -50,6 +51,8 @@ class ProductionRunner:
         self._thread: threading.Thread | None = None
         self.artifacts = artifacts or {}
         self.concurrency = load_concurrency_config(app_path=self.app_path)
+        if not self.headless:
+            validate_renderer_registry_startup()
         self.web_root = None if self.headless else self._resolve_web_root(self.artifacts)
         self.app_state = BrowserAppState(
             self.app_path,

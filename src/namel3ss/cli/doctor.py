@@ -4,6 +4,7 @@ import json
 from dataclasses import asdict
 from typing import Any, Dict
 
+from namel3ss.cli.doctor_contract.doctor_command import append_contract_checks, contract_failure_codes
 from namel3ss.cli.devex import build_doctor_report, parse_project_overrides, _status_icon
 from namel3ss.cli.doctor_models import DoctorCheck
 from namel3ss.errors.base import Namel3ssError
@@ -86,11 +87,17 @@ def run_doctor(args: list[str] | None = None) -> int:
                 _print_human(report)
             return 1
         report = build_doctor_report(overrides)
+        report = append_contract_checks(report)
+        failure_codes = contract_failure_codes(report)
+        if failure_codes:
+            report["error_codes"] = failure_codes
         if json_mode:
             print(json.dumps(report, indent=2, sort_keys=True))
         else:
             _print_human(report)
-        return 0
+            if failure_codes:
+                print(f"error_codes: {', '.join(failure_codes)}")
+        return 1 if failure_codes else 0
     except Exception as exc:  # pragma: no cover - defensive guard rail
         _print_failure(exc, "--json" in argv)
         return 1

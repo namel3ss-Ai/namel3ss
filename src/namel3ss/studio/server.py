@@ -13,6 +13,7 @@ from namel3ss.resources import studio_web_root
 from namel3ss.runtime.storage.factory import create_store
 from namel3ss.studio.api_routes import handle_api_get, handle_api_post
 from namel3ss.studio.session import SessionState
+from namel3ss.studio.startup import validate_renderer_registry_startup
 from namel3ss.utils.json_tools import dumps as json_dumps
 
 
@@ -96,6 +97,7 @@ def _resolve_repo_static(path_only: str, fallback: Path) -> Path:
 
 def start_server(app_path: str | Path, port: int) -> None:
     app_file = require_app_path(app_path)
+    validate_renderer_registry_startup()
     handler = StudioRequestHandler
     server = HTTPServer(("127.0.0.1", port), handler)
     server.app_path = app_file  # type: ignore[attr-defined]
