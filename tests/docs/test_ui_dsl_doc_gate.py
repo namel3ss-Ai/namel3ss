@@ -6,9 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from tools.spec_gates.ui_dsl_doc_gate import classify_ui_dsl_semantic_files
+from tools.spec_gates.ui_dsl_classifier import classify_ui_dsl_semantic_files
 
 SPEC_PATH = "docs/ui-dsl.md"
+DOC_GATE_ERROR_CODE = "N3E_UI_DSL_DOC_GATE_FAILED"
 
 
 def _git_cmd(args: list[str]) -> list[str]:
@@ -44,7 +45,7 @@ def test_ui_dsl_doc_gate():
     offenders = classify_ui_dsl_semantic_files(files)
     if offenders and not spec_changed:
         msg = [
-            "UI DSL related files changed but docs/ui-dsl.md was not updated.",
+            f"{DOC_GATE_ERROR_CODE}: UI DSL semantic files changed but docs/ui-dsl.md was not updated.",
             "Changed files:",
             *offenders,
         ]

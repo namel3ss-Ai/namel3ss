@@ -1,0 +1,270 @@
+(() => {
+  const MANIFEST = {
+  "renderers": [
+    {
+      "entrypoint": "ui_renderer_audit_viewer.js",
+      "entrypoint_hash": "sha256:f9ccf67f347075fc4d5e26d59176f4f01e3fd190490eb4472653dfefacb7ba2b",
+      "exports": [
+        "renderAuditViewerElement"
+      ],
+      "integrity_hash": "sha256:4c257836cedba7f3e955b3d6598ae555ed930810bdec56eaba654800b299f3e2",
+      "renderer_id": "audit_viewer",
+      "version": "1"
+    },
+    {
+      "entrypoint": "ui_renderer_capabilities.js",
+      "entrypoint_hash": "sha256:71a5d65508f07865ea6cd0c14f1bd5d4fa0ee1f360898814a46fa5cfc4e19822",
+      "exports": [
+        "renderCapabilitiesElement"
+      ],
+      "integrity_hash": "sha256:934c143d260f8570e18f3e889a45bc5e2cc178d00cb151a1f75cb3320e4cb3be",
+      "renderer_id": "capabilities",
+      "version": "1"
+    },
+    {
+      "entrypoint": "ui_renderer_chart.js",
+      "entrypoint_hash": "sha256:8c439f7502e382e3e329ad2ac6059a4325a28c3d472ceb996b03b964ccd6da22",
+      "exports": [
+        "renderChartElement"
+      ],
+      "integrity_hash": "sha256:dca3a85879a43d7c6c31acdaa1dd592410371ab991aca95a36f557833566f336",
+      "renderer_id": "chart",
+      "version": "1"
+    },
+    {
+      "entrypoint": "ui_renderer_chat.js",
+      "entrypoint_hash": "sha256:0d475cbe66b23390440e1deda4167154373df78cdc5fcaafa0f52b8148f0436b",
+      "exports": [
+        "renderChatElement",
+        "renderCitationChipsElement",
+        "renderTrustIndicatorElement"
+      ],
+      "integrity_hash": "sha256:d5aafa2831bebb2f351b6436b92ffc3e6174f53e8edec5d5e9293e15dc24bb21",
+      "renderer_id": "chat",
+      "version": "1"
+    },
+    {
+      "entrypoint": "ui_renderer_collections.js",
+      "entrypoint_hash": "sha256:c661e18c3f1f5351598bd8d21b78be8c4129b93480baf3c93ec72df5411ed8b0",
+      "exports": [
+        "renderListElement",
+        "renderTableElement"
+      ],
+      "integrity_hash": "sha256:5a80adbb5f53ad58c1b357839df498188495de795c82e40faac0551a7e8797eb",
+      "renderer_id": "collections",
+      "version": "1"
+    },
+    {
+      "entrypoint": "ui_renderer_controls.js",
+      "entrypoint_hash": "sha256:d576d97c1f90385a3819b005d6a13782e0f98c2b4b1add54d84ee1c0d27653fa",
+      "exports": [
+        "renderSliderElement",
+        "renderTooltipElement"
+      ],
+      "integrity_hash": "sha256:d5ca6ee16ba8f3d74de7192d3b9612ffa999724fb7be6791592e29ceb19eb196",
+      "renderer_id": "controls",
+      "version": "1"
+    },
+    {
+      "entrypoint": "ui_renderer_diagnostics.js",
+      "entrypoint_hash": "sha256:2f12c5b16193a1919afcd0ba8d385e9ca6fc1f5208023c62a583429373455b41",
+      "exports": [
+        "renderDiagnosticsElement"
+      ],
+      "integrity_hash": "sha256:0cb1ac5e60e58757d4ecd6e98322982c33b4a19cff4c52eff98202029fe64edd",
+      "renderer_id": "diagnostics",
+      "version": "1"
+    },
+    {
+      "entrypoint": "ui_renderer_form.js",
+      "entrypoint_hash": "sha256:53bf9bf416c2eb8c16f475b5bd5caeaeb74604fe8120b4a612e24cc91c4bc0dd",
+      "exports": [
+        "renderFormElement"
+      ],
+      "integrity_hash": "sha256:026ec36465eadc5d24feee4aaa11912f66359bdadd938249d8bdab226545fa6a",
+      "renderer_id": "form",
+      "version": "1"
+    },
+    {
+      "entrypoint": "ui_renderer_ingestion_status.js",
+      "entrypoint_hash": "sha256:b3c36d4d79b67834928b4a1ec9814a34f437c23c11460868fc774cdb1748852d",
+      "exports": [
+        "renderIngestionStatusElement"
+      ],
+      "integrity_hash": "sha256:f2672add922ef5e14899c80a62d4ed5cd24d17eb9a71052379ce9a452b949f9f",
+      "renderer_id": "ingestion_status",
+      "version": "1"
+    },
+    {
+      "entrypoint": "ui_renderer_rag.js",
+      "entrypoint_hash": "sha256:9ac16a4e1af1b4419054970418aeb1197d55a458c65b52c10fd340018d43e36a",
+      "exports": [
+        "renderCitationChipsElement",
+        "renderScopeSelectorElement",
+        "renderSourcePreviewElement",
+        "renderTrustIndicatorElement"
+      ],
+      "integrity_hash": "sha256:f24c8094760d142e3c486c84cc38673608c2d215434b43e9f0618bce134f3830",
+      "renderer_id": "rag",
+      "version": "1"
+    },
+    {
+      "entrypoint": "ui_renderer_retrieval_explain.js",
+      "entrypoint_hash": "sha256:e84f9e241584a4dc21c66d1a0af2344330db8e20db697cd6733b3a1e95408774",
+      "exports": [
+        "renderRetrievalExplainElement"
+      ],
+      "integrity_hash": "sha256:9ca0081e592c170e82ce062e6da3e85f0736313e931669f0e2dc92568d25d55b",
+      "renderer_id": "retrieval_explain",
+      "version": "1"
+    },
+    {
+      "entrypoint": "ui_renderer_run_diff.js",
+      "entrypoint_hash": "sha256:d58a3f4e11f66a38618ff28e1ca0a040b1a10e278f3bb02ca371f6158bd5061a",
+      "exports": [
+        "renderRunDiffElement"
+      ],
+      "integrity_hash": "sha256:f124c0b2e0286c560700a53638d4f82c4dd969a5d89b45ae078168fe7c4865ed",
+      "renderer_id": "run_diff",
+      "version": "1"
+    },
+    {
+      "entrypoint": "ui_renderer_runtime_error.js",
+      "entrypoint_hash": "sha256:f8478b56daa527ca178edaaf73b3c7a0fac7a8209a71cae49b7b59f42e2850a4",
+      "exports": [
+        "renderRuntimeErrorElement"
+      ],
+      "integrity_hash": "sha256:00ad5d905731a911755bde71347134ceb8b80de912786d9256a2abdaf611bc39",
+      "renderer_id": "runtime_error",
+      "version": "1"
+    },
+    {
+      "entrypoint": "ui_renderer_state_viewer.js",
+      "entrypoint_hash": "sha256:b908c17625c8176100404daa12be3b80303eebc38f99f3ac27aed62d445eb06e",
+      "exports": [
+        "renderStateInspectorElement"
+      ],
+      "integrity_hash": "sha256:9e66ed1c7ee4947894b3711ae9b21f5efd6caa0364c999e575a595963f092e01",
+      "renderer_id": "state_inspector",
+      "version": "1"
+    },
+    {
+      "entrypoint": "ui_renderer_trace.js",
+      "entrypoint_hash": "sha256:6fc79b9dc89dd168b96eb29c095364e36df002776b8e216a88b4b46feb3bfc16",
+      "exports": [
+        "renderRetrievalTracePanel"
+      ],
+      "integrity_hash": "sha256:431266708bc6b4f5c8986a0a8639362163113954f38f9b5a7af0b5143b9ce7c9",
+      "renderer_id": "trace",
+      "version": "1"
+    },
+    {
+      "entrypoint": "ui_renderer_upload.js",
+      "entrypoint_hash": "sha256:7449279b9871418b68644e99519bf6feec21e7be7b14806a863cf89dc5991d3c",
+      "exports": [
+        "renderUploadElement"
+      ],
+      "integrity_hash": "sha256:e1fbfbc821e0bf4b8468b37c1b372d51ade4347d0dd8a6bf17ba077dc0357597",
+      "renderer_id": "upload",
+      "version": "1"
+    }
+  ],
+  "schema_version": "renderer_registry@1"
+};
+  const REQUIRED_RENDERERS = ["audit_viewer", "state_inspector"];
+  const ERROR_REQUIRED_MISSING = "N3E_RENDERER_REQUIRED_MISSING";
+  const ERROR_REGISTRY_INVALID = "N3E_RENDERER_REGISTRY_INVALID";
+  const loadedEntrypoints = new Set();
+  const root = window.N3UIRender || (window.N3UIRender = {});
+
+  function fail(errorCode, message) {
+    const error = new Error(message);
+    error.error_code = errorCode;
+    throw error;
+  }
+
+  function asText(value) {
+    return typeof value === "string" ? value.trim() : "";
+  }
+
+  function validateManifestShape() {
+    if (!MANIFEST || typeof MANIFEST !== "object") {
+      fail(ERROR_REGISTRY_INVALID, "renderer manifest must be an object.");
+    }
+    const renderers = Array.isArray(MANIFEST.renderers) ? MANIFEST.renderers : null;
+    if (!renderers) {
+      fail(ERROR_REGISTRY_INVALID, "renderer manifest.renderers must be a list.");
+    }
+    const ids = [];
+    const seen = new Set();
+    for (const entry of renderers) {
+      if (!entry || typeof entry !== "object") {
+        fail(ERROR_REGISTRY_INVALID, "renderer entries must be objects.");
+      }
+      const rendererId = asText(entry.renderer_id);
+      const entrypoint = asText(entry.entrypoint);
+      if (!rendererId || !entrypoint) {
+        fail(ERROR_REGISTRY_INVALID, "renderer entry requires renderer_id and entrypoint.");
+      }
+      if (seen.has(rendererId)) {
+        fail(ERROR_REGISTRY_INVALID, `duplicate renderer_id: ${rendererId}`);
+      }
+      seen.add(rendererId);
+      ids.push(rendererId);
+    }
+    const sorted = ids.slice().sort();
+    if (JSON.stringify(ids) !== JSON.stringify(sorted)) {
+      fail(ERROR_REGISTRY_INVALID, "renderer entries must be sorted by renderer_id.");
+    }
+    const missing = REQUIRED_RENDERERS.filter((item) => !seen.has(item));
+    if (missing.length) {
+      fail(ERROR_REQUIRED_MISSING, `required renderer(s) missing: ${missing.join(", ")}`);
+    }
+    return renderers;
+  }
+
+  function loadRendererScript(entrypoint) {
+    if (loadedEntrypoints.has(entrypoint)) return Promise.resolve();
+    loadedEntrypoints.add(entrypoint);
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = `/${entrypoint}`;
+      script.async = false;
+      script.defer = false;
+      script.dataset.n3RendererEntrypoint = entrypoint;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error(`failed to load renderer script: ${entrypoint}`));
+      document.head.appendChild(script);
+    });
+  }
+
+  function assertExports(entry) {
+    const rendererId = asText(entry.renderer_id);
+    const exports = Array.isArray(entry.exports) ? entry.exports : [];
+    for (const exportName of exports) {
+      const key = asText(exportName);
+      if (!key) continue;
+      const value = root[key] || window[key];
+      if (typeof value !== "function") {
+        fail(ERROR_REGISTRY_INVALID, `renderer '${rendererId}' missing export '${key}'.`);
+      }
+    }
+  }
+
+  async function bootstrap() {
+    const renderers = validateManifestShape();
+    for (const entry of renderers) {
+      await loadRendererScript(asText(entry.entrypoint));
+      assertExports(entry);
+    }
+  }
+
+  const ready = bootstrap();
+  window.N3RendererRegistry = {
+    manifest: MANIFEST,
+    ready,
+    rendererIds: Array.isArray(MANIFEST.renderers)
+      ? MANIFEST.renderers.map((entry) => asText(entry.renderer_id)).filter(Boolean)
+      : [],
+  };
+})();
