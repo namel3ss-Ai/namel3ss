@@ -10,6 +10,21 @@
       "id": "page.rag_shell.composer.0.1.1.0.0.1.0.0.composer",
       "type": "call_flow"
     },
+    "page.rag_shell.messages.0.1.1.0.0.0.0.0.branch_select": {
+      "id": "page.rag_shell.messages.0.1.1.0.0.0.0.0.branch_select",
+      "target_state": "state.chat.messages_graph.active_message_id",
+      "type": "chat.branch.select"
+    },
+    "page.rag_shell.messages.0.1.1.0.0.0.0.0.message_regenerate": {
+      "id": "page.rag_shell.messages.0.1.1.0.0.0.0.0.message_regenerate",
+      "target_state": "state.chat.messages_graph.active_message_id",
+      "type": "chat.message.regenerate"
+    },
+    "page.rag_shell.messages.0.1.1.0.0.0.0.0.stream_cancel": {
+      "id": "page.rag_shell.messages.0.1.1.0.0.0.0.0.stream_cancel",
+      "target_state": "state.chat.stream_state.cancel_requested",
+      "type": "chat.stream.cancel"
+    },
     "page.rag_shell.theme_settings.0.1.1.0.1.0.3.0.update": {
       "id": "page.rag_shell.theme_settings.0.1.1.0.1.0.3.0.update",
       "type": "theme_settings_update"
@@ -151,6 +166,8 @@
                               "attachments": false,
                               "children": [
                                 {
+                                  "active_message_id": null,
+                                  "branch_action_id": "page.rag_shell.messages.0.1.1.0.0.0.0.0.branch_select",
                                   "column": 3,
                                   "density": "regular",
                                   "element_id": "page.rag_shell.messages.0.1.1.0.0.0.0.0",
@@ -182,12 +199,16 @@
                                   "page": "RAG Shell",
                                   "page_slug": "rag_shell",
                                   "radius": "lg",
+                                  "regenerate_action_id": "page.rag_shell.messages.0.1.1.0.0.0.0.0.message_regenerate",
                                   "size": "compact",
                                   "source": "state.chat.messages",
                                   "spacing": {
                                     "item_gap": "m",
                                     "meta_gap": "s"
                                   },
+                                  "stream_cancel_action_id": "page.rag_shell.messages.0.1.1.0.0.0.0.0.stream_cancel",
+                                  "stream_cancel_requested": false,
+                                  "stream_phase": "",
                                   "type": "messages"
                                 },
                                 {
@@ -329,6 +350,7 @@
                                     "type": "call_flow"
                                   },
                                   "action_id": "page.rag_shell.composer.0.1.1.0.0.1.0.0.composer",
+                                  "action_type": "call_flow",
                                   "column": 3,
                                   "density": "regular",
                                   "element_id": "page.rag_shell.composer.0.1.1.0.0.1.0.0",
@@ -973,6 +995,16 @@
       }
     }
   ],
+  "state_defaults": {
+    "app": {},
+    "pages": {
+      "rag_shell": {
+        "chat": {
+          "stream_state": {}
+        }
+      }
+    }
+  },
   "theme": {
     "base_theme": "default",
     "color_scheme": "light",
