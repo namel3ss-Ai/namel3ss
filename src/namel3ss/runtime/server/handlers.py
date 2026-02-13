@@ -2,7 +2,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse
-
+from namel3ss.config.loader import load_config
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
 from namel3ss.runtime.backend.upload_handler import handle_upload, handle_upload_list
@@ -43,6 +43,7 @@ from namel3ss.runtime.router.renderer_registry_health import (
     handle_renderer_registry_health_get,
 )
 from namel3ss.runtime.service_helpers import contract_kind_for_path, summarize_program
+from namel3ss.runtime.storage.factory import create_store
 from namel3ss.ui.actions.dispatch import dispatch_ui_action
 from namel3ss.ui.export.contract import build_ui_contract_payload
 from namel3ss.ui.external.serve import resolve_external_ui_file
@@ -485,6 +486,13 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
 
     def _route_registry(self) -> RouteRegistry:
         return get_or_create_route_registry(self.server)
+    def _ensure_store(self, program):
+        store = getattr(self.server, "flow_store", None)  # type: ignore[attr-defined]
+        if store is None:
+            config = load_config(app_path=getattr(program, "app_path", None), root=getattr(program, "project_root", None))
+            store = create_store(config=config)
+            self.server.flow_store = store  # type: ignore[attr-defined]
+        return store
     def _program_state(self):
         return getattr(self.server, "program_state", None)  # type: ignore[attr-defined]
     def _program(self):
