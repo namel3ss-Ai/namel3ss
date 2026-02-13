@@ -421,7 +421,6 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             project_root=str(getattr(self._state(), "project_root", "") or "") or None,
             app_path=str(getattr(self._state(), "app_path", "") or "") or None,
         )
-
     def _handle_login_post(self, body: dict) -> tuple[dict, int, dict[str, str]]:
         try:
             config, identity_schema, store = self._auth_params()
@@ -448,7 +447,6 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             project_root=str(getattr(self._state(), "project_root", "") or "") or None,
             app_path=str(getattr(self._state(), "app_path", "") or "") or None,
         )
-
     def _resolve_auth_context(self) -> object:
         config, identity_schema, store = self._auth_params()
         return resolve_auth_context(
