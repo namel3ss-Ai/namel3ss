@@ -12,6 +12,8 @@ env/
 build/
 dist/
 *.egg-info/
+!src/namel3ss/**/build/
+!src/namel3ss/**/build/**
 !src/namel3ss/runtime/build/
 !src/namel3ss/runtime/build/**
 src/namel3ss/runtime/build/**/__pycache__/
