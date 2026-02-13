@@ -17,6 +17,9 @@ from namel3ss.runtime.server.plugin_assets import (
     request_etag_matches as plugin_request_etag_matches,
     resolve_plugin_asset,
 )
+from namel3ss.runtime.router.renderer_registry_health import (
+    handle_renderer_registry_health_get,
+)
 from namel3ss.runtime.router.dispatch import dispatch_route
 from namel3ss.runtime.router.refresh import refresh_routes
 from namel3ss.runtime.router.registry import RouteRegistry
@@ -92,6 +95,8 @@ class BrowserRequestHandler(BaseHTTPRequestHandler):
 
     def _handle_api_get(self, path: str, raw_path: str) -> None:
         if handle_stateful_headless_get(self, path=path, body_path=raw_path):
+            return
+        if handle_renderer_registry_health_get(self, path):
             return
         if path.startswith("/api/plugins/"):
             state = self._state()

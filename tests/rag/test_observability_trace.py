@@ -16,7 +16,7 @@ from namel3ss.rag.retrieval import run_retrieval_service
 from namel3ss.rag.retrieval.rerank_service import build_ranked_retrieval_results
 
 
-def test_phase4_rerank_rows_are_deterministic_with_tie_breaks() -> None:
+def test_rerank_rows_are_deterministic_with_tie_breaks() -> None:
     results = [
         {"chunk_id": "doc-b:1", "document_id": "doc-b", "page_number": 2},
         {"chunk_id": "doc-a:0", "document_id": "doc-a", "page_number": 1},
@@ -44,7 +44,7 @@ def test_phase4_rerank_rows_are_deterministic_with_tie_breaks() -> None:
     assert [entry["rank"] for entry in first] == [1, 2]
 
 
-def test_phase4_explain_payload_is_deterministic() -> None:
+def test_explain_payload_is_deterministic() -> None:
     payload = {
         "query": "policy",
         "retrieval_results": [
@@ -91,7 +91,7 @@ def test_phase4_explain_payload_is_deterministic() -> None:
     assert [entry["chunk_id"] for entry in first["retrieval_trace"]] == ["doc-a:0", "doc-b:1"]
 
 
-def test_phase4_stream_event_sequence_contract_is_strict() -> None:
+def test_stream_event_sequence_contract_is_strict() -> None:
     events = normalize_stream_events(
         [
             {"event_type": STREAM_EVENT_FINAL, "payload": {"done": True}, "sequence": 1},
@@ -111,24 +111,24 @@ def test_phase4_stream_event_sequence_contract_is_strict() -> None:
     assert [entry["sequence"] for entry in events] == [1, 2, 3, 4]
 
 
-def test_phase4_retrieval_service_emits_observability_contracts_end_to_end() -> None:
+def test_retrieval_service_emits_observability_contracts_end_to_end() -> None:
     state: dict = {}
     run_ingestion_pipeline(
         state=state,
         content=b"Alpha policy runbook and escalation.",
         source_name="alpha.txt",
-        source_identity="fixtures/phase4-alpha.txt",
+        source_identity="fixtures/observability-alpha.txt",
         source_type="upload",
-        source_uri="upload://fixtures/phase4-alpha.txt",
+        source_uri="upload://fixtures/observability-alpha.txt",
         mime_type="text/plain",
     )
     run_ingestion_pipeline(
         state=state,
         content=b"Beta policy runbook and support.",
         source_name="beta.txt",
-        source_identity="fixtures/phase4-beta.txt",
+        source_identity="fixtures/observability-beta.txt",
         source_type="upload",
-        source_uri="upload://fixtures/phase4-beta.txt",
+        source_uri="upload://fixtures/observability-beta.txt",
         mime_type="text/plain",
     )
 

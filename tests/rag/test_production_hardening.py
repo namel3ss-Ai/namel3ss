@@ -24,7 +24,7 @@ from namel3ss.rag.migrations import (
 )
 
 
-def test_phase6_migration_manifest_is_replay_safe_and_idempotent() -> None:
+def test_migration_manifest_is_replay_safe_and_idempotent() -> None:
     state: dict = {"rag": {"legacy": {"enabled": True}}}
     manifest = build_migration_manifest(
         name="rag-runtime-foundation",
@@ -59,7 +59,7 @@ def test_phase6_migration_manifest_is_replay_safe_and_idempotent() -> None:
     assert "legacy" not in state["rag"]
 
 
-def test_phase6_migration_dry_run_does_not_mutate_state() -> None:
+def test_migration_dry_run_does_not_mutate_state() -> None:
     state: dict = {"rag": {"settings": {"mode": "legacy"}}}
     before = deepcopy(state)
     manifest = build_migration_manifest(
@@ -81,7 +81,7 @@ def test_phase6_migration_dry_run_does_not_mutate_state() -> None:
     assert state == before
 
 
-def test_phase6_deployment_and_load_soak_assessment_are_deterministic() -> None:
+def test_deployment_and_load_soak_assessment_are_deterministic() -> None:
     first_profile = normalize_deployment_profile(
         {
             "feature_flags": ["rag_trace", "rag_preview", "rag_trace"],
@@ -143,7 +143,7 @@ def test_phase6_deployment_and_load_soak_assessment_are_deterministic() -> None:
     assert first_assessment["passed"] is True
 
 
-def test_phase6_load_and_soak_gate_fails_on_slo_breach() -> None:
+def test_load_and_soak_gate_fails_on_slo_breach() -> None:
     profile = build_deployment_profile()
     bad_result = build_load_soak_result(
         run_label="degraded",
@@ -169,7 +169,7 @@ def test_phase6_load_and_soak_gate_fails_on_slo_breach() -> None:
     assert "retrieval_drift" in failed_checks
 
 
-def test_phase6_release_gate_validates_checklist_and_blocks_failures() -> None:
+def test_release_gate_validates_checklist_and_blocks_failures() -> None:
     profile = build_deployment_profile(
         service_slo={
             "availability_target": 0.999,
@@ -187,7 +187,7 @@ def test_phase6_release_gate_validates_checklist_and_blocks_failures() -> None:
     )
     state: dict = {}
     migration_manifest = build_migration_manifest(
-        name="phase6-release-check",
+        name="release-check",
         steps=[
             build_migration_step(
                 operation="set_value",
@@ -274,7 +274,7 @@ def test_phase6_release_gate_validates_checklist_and_blocks_failures() -> None:
         raise_on_release_blockers(failed_report)
 
 
-def test_phase6_operations_runbook_has_required_sections() -> None:
+def test_operations_runbook_has_required_sections() -> None:
     runbook = Path("docs/rag_v1_operations_runbook.md")
     text = runbook.read_text(encoding="utf-8")
 

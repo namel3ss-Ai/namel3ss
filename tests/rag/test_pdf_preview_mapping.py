@@ -13,7 +13,7 @@ from namel3ss.rag.retrieval.highlight_resolver import (
 from namel3ss.rag.retrieval.pdf_preview_mapper import build_pdf_preview_routes, citation_color_index
 
 
-def test_phase2_citation_mapper_is_deterministic_for_multi_chunk_answer() -> None:
+def test_citation_mapper_is_deterministic_for_multi_chunk_answer() -> None:
     answer_text = "Answer cites [doc-b:1] before [doc-a:0]."
     citation_chunk_ids = ["doc-b:1", "doc-a:0"]
     retrieval_trace = [
@@ -65,7 +65,7 @@ def test_phase2_citation_mapper_is_deterministic_for_multi_chunk_answer() -> Non
     )
 
 
-def test_phase2_pdf_preview_routes_are_deterministic_and_carry_color_index() -> None:
+def test_pdf_preview_routes_are_deterministic_and_carry_color_index() -> None:
     citations = [
         {
             "citation_id": "cit.alpha",
@@ -98,7 +98,7 @@ def test_phase2_pdf_preview_routes_are_deterministic_and_carry_color_index() -> 
     assert first[0]["color_index"] == citation_color_index("cit.beta")
 
 
-def test_phase2_highlight_resolver_uses_fixed_fallback_order() -> None:
+def test_highlight_resolver_uses_fixed_fallback_order() -> None:
     page_text = "Alpha words for token span and anchor matching."
 
     bbox_first = resolve_highlight_target(

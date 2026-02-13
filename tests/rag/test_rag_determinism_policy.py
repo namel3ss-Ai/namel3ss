@@ -3,6 +3,9 @@ from __future__ import annotations
 from namel3ss.rag.contracts import build_chunk_model
 from namel3ss.rag.determinism import (
     build_boundary_signature,
+    build_citation_id,
+    build_doc_id,
+    build_run_determinism_fingerprint,
     normalize_score,
     sort_citation_rows,
     sort_retrieval_results,
@@ -81,3 +84,54 @@ def test_citation_sort_policy_orders_by_mention_and_source_keys() -> None:
 def test_stable_preview_query_is_replay_safe() -> None:
     query = stable_preview_query(doc_id="doc.alpha", page_number=12, citation_id="cit.9")
     assert query == "doc=doc.alpha&page=12&cit=cit.9"
+
+
+def test_doc_id_is_stable_for_same_source_identity() -> None:
+    first = build_doc_id(source_type="upload", source_identity="policies/handbook.pdf")
+    second = build_doc_id(source_type="upload", source_identity="policies/handbook.pdf")
+    changed = build_doc_id(source_type="upload", source_identity="policies/retention.pdf")
+    assert first == second
+    assert first != changed
+
+
+def test_citation_id_is_stable_for_same_target_and_span() -> None:
+    first = build_citation_id(
+        doc_id="doc.alpha",
+        page_number=3,
+        chunk_id="chunk.alpha.3",
+        answer_span={"start_char": 12, "end_char": 31},
+    )
+    second = build_citation_id(
+        doc_id="doc.alpha",
+        page_number=3,
+        chunk_id="chunk.alpha.3",
+        answer_span={"start_char": 12, "end_char": 31},
+    )
+    changed = build_citation_id(
+        doc_id="doc.alpha",
+        page_number=3,
+        chunk_id="chunk.alpha.3",
+        answer_span={"start_char": 13, "end_char": 31},
+    )
+    assert first == second
+    assert first != changed
+
+
+def test_run_fingerprint_is_order_invariant_for_config_keys() -> None:
+    first = build_run_determinism_fingerprint(
+        input_payload={"message": "policy"},
+        retrieval_config={"top_k": 5, "scope": {"documents": ["doc.a"]}},
+        retrieved_chunk_ids=["chunk.1", "chunk.2"],
+    )
+    second = build_run_determinism_fingerprint(
+        input_payload={"message": "policy"},
+        retrieval_config={"scope": {"documents": ["doc.a"]}, "top_k": 5},
+        retrieved_chunk_ids=["chunk.1", "chunk.2"],
+    )
+    changed = build_run_determinism_fingerprint(
+        input_payload={"message": "policy"},
+        retrieval_config={"scope": {"documents": ["doc.a"]}, "top_k": 5},
+        retrieved_chunk_ids=["chunk.2", "chunk.1"],
+    )
+    assert first == second
+    assert first != changed

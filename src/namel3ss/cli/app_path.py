@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Callable
 
+from namel3ss.cli.workspace.app_path_resolution import build_workspace_app_resolution
+from namel3ss.cli.workspace.resolution_warning import emit_workspace_resolution_warning
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 
@@ -13,6 +16,7 @@ def resolve_app_path(
     search_parents: bool = True,
     default_name: str = "app.ai",
     missing_message: str | None = None,
+    warning_printer: Callable[[str], None] | None = None,
 ) -> Path:
     """
     Resolve an app.ai path.
@@ -22,6 +26,17 @@ def resolve_app_path(
     base_root = Path(project_root).resolve() if project_root else Path.cwd()
     if app_path:
         return _resolve_explicit_path(app_path, base_root)
+    if project_root:
+        workspace_resolution = build_workspace_app_resolution(
+            search_root=base_root,
+            default_name=default_name,
+        )
+        if workspace_resolution.selected_app_path is not None:
+            emit_workspace_resolution_warning(
+                workspace_resolution,
+                printer=warning_printer,
+            )
+            return workspace_resolution.selected_app_path
     if search_parents:
         resolved = _resolve_with_parent_search(base_root, default_name)
         if resolved:

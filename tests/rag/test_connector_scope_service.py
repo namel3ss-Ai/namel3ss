@@ -6,7 +6,7 @@ from namel3ss.rag.retrieval import run_retrieval_service, upsert_collection_memb
 from namel3ss.rag.retrieval.scope_service import apply_retrieval_scope
 
 
-def test_phase3_connector_sync_checkpoint_and_jobs_are_deterministic() -> None:
+def test_connector_sync_checkpoint_and_jobs_are_deterministic() -> None:
     state: dict = {}
     records = [
         {
@@ -88,7 +88,7 @@ def test_phase3_connector_sync_checkpoint_and_jobs_are_deterministic() -> None:
     ]
 
 
-def test_phase3_connector_sync_delete_removes_doc_and_membership() -> None:
+def test_connector_sync_delete_removes_doc_and_membership() -> None:
     state: dict = {}
     inserted = run_connector_sync(
         state=state,
@@ -126,7 +126,7 @@ def test_phase3_connector_sync_delete_removes_doc_and_membership() -> None:
     assert state.get("rag_scope", {}).get("collections", []) == []
 
 
-def test_phase3_apply_retrieval_scope_filters_index_and_ingestion() -> None:
+def test_apply_retrieval_scope_filters_index_and_ingestion() -> None:
     state = {
         "index": {
             "chunks": [
@@ -169,7 +169,7 @@ def test_phase3_apply_retrieval_scope_filters_index_and_ingestion() -> None:
     assert [entry["document_id"] for entry in only_collection_state["index"]["chunks"]] == ["doc.a", "doc.b"]
 
 
-def test_phase3_retrieval_service_respects_collection_scope_end_to_end() -> None:
+def test_retrieval_service_respects_collection_scope_end_to_end() -> None:
     state: dict = {}
     first = run_ingestion_pipeline(
         state=state,

@@ -21,6 +21,16 @@ from namel3ss.runtime.server.cluster_control import ClusterControlPlane
 from namel3ss.runtime.server.concurrency import create_runtime_http_server, load_concurrency_config
 from namel3ss.runtime.server.headless_api import normalize_api_token, normalize_cors_origins
 from namel3ss.runtime.server.handlers import ServiceRequestHandler
+from namel3ss.runtime.server.lock import (
+    RuntimePortLease,
+    acquire_runtime_port_lock,
+    release_runtime_port_lock,
+)
+from namel3ss.runtime.server.startup import (
+    build_program_manifest_payload,
+    build_runtime_startup_context,
+    print_startup_banner,
+)
 from namel3ss.runtime.server.session_manager import DEFAULT_IDLE_TIMEOUT_SECONDS, ServiceSessionManager
 from namel3ss.runtime.server.service_process_model import configure_server_process_model
 from namel3ss.runtime.server.worker_pool import ServiceActionWorkerPool
@@ -75,6 +85,8 @@ class ServiceRunner:
         self._worker_pool: ServiceActionWorkerPool | None = None
         self._cluster_control: ClusterControlPlane | None = None
         self._lifecycle_snapshot = None
+        self._port_lease: RuntimePortLease | None = None
+        self._serve_started = False
         self.program_summary: dict[str, object] = {}
         self.concurrency = load_concurrency_config(app_path=self.app_path)
 
@@ -113,74 +125,115 @@ class ServiceRunner:
             getattr(program_ir, "project_root", None),
             getattr(program_ir, "app_path", None),
         )
-        server = create_runtime_http_server("0.0.0.0", self.port, ServiceRequestHandler, config=self.concurrency)
-        server.target = self.target  # type: ignore[attr-defined]
-        server.build_id = self.build_id  # type: ignore[attr-defined]
-        server.app_path = self.app_path.as_posix()  # type: ignore[attr-defined]
-        self._worker_pool = configure_server_process_model(
-            server=server,
-            program_ir=program_ir,
+        self._port_lease = acquire_runtime_port_lock(
+            host="0.0.0.0",
+            port=self.port,
             app_path=self.app_path,
-            concurrency=self.concurrency,
-            ui_mode=self.ui_mode,
-            diagnostics_enabled=self.diagnostics_enabled,
+            mode="service",
+            allow_reentrant=False,
         )
-        server.concurrency = self.concurrency.to_dict()  # type: ignore[attr-defined]
-        server.headless = self.headless  # type: ignore[attr-defined]
-        server.headless_api_token = self.headless_api_token  # type: ignore[attr-defined]
-        server.headless_cors_origins = self.headless_cors_origins  # type: ignore[attr-defined]
-        server.program_summary = self.program_summary  # type: ignore[attr-defined]
-        server.program_ir = program_ir  # type: ignore[attr-defined]
-        server.program_state = program_state  # type: ignore[attr-defined]
-        registry = RouteRegistry()
-        refresh_routes(program=program_ir, registry=registry, revision=program_state.revision, logger=print)
-        server.route_registry = registry  # type: ignore[attr-defined]
-        server.external_ui_root = None if self.headless else external_ui_root  # type: ignore[attr-defined]
-        server.external_ui_enabled = bool(not self.headless and external_ui_root is not None)  # type: ignore[attr-defined]
-        server.ui_mode = self.ui_mode  # type: ignore[attr-defined]
-        server.ui_diagnostics_enabled = self.diagnostics_enabled  # type: ignore[attr-defined]
-        server.lifecycle = self._lifecycle_snapshot.as_dict() if self._lifecycle_snapshot is not None else None  # type: ignore[attr-defined]
-        if has_service_capability:
-            idle_timeout = _service_idle_timeout()
-            base_store = create_store(config=resolved_config)
-            server.session_manager = ServiceSessionManager(  # type: ignore[attr-defined]
-                base_store=base_store,
-                project_root=getattr(program_ir, "project_root", None),
-                app_path=getattr(program_ir, "app_path", None),
-                allow_multi_user=allow_multi_user,
-                remote_studio_enabled=remote_studio_enabled,
-                idle_timeout_seconds=idle_timeout,
+        try:
+            server = create_runtime_http_server("0.0.0.0", self.port, ServiceRequestHandler, config=self.concurrency)
+        except Exception:
+            release_runtime_port_lock(self._port_lease)
+            self._port_lease = None
+            raise
+        self.port = int(server.server_address[1])
+        try:
+            server.target = self.target  # type: ignore[attr-defined]
+            server.build_id = self.build_id  # type: ignore[attr-defined]
+            server.app_path = self.app_path.as_posix()  # type: ignore[attr-defined]
+            self._worker_pool = configure_server_process_model(
+                server=server,
+                program_ir=program_ir,
+                app_path=self.app_path,
+                concurrency=self.concurrency,
+                ui_mode=self.ui_mode,
+                diagnostics_enabled=self.diagnostics_enabled,
             )
-        else:
-            server.session_manager = None  # type: ignore[attr-defined]
-        self.server = server
-        self._cluster_control = ClusterControlPlane(
-            project_root=self.app_path.parent,
-            app_path=self.app_path,
-            worker_pool=self._worker_pool,
-            server=server,
-        )
-        self._cluster_control.start()
-        self._trigger_stop.clear()
-        self._trigger_thread = threading.Thread(
-            target=run_service_trigger_loop,
-            kwargs={"stop_event": self._trigger_stop, "program_state": program_state, "flow_store": getattr(server, "flow_store", None)},
-            daemon=True,
-        )
-        self._trigger_thread.start()
-        self._retention_stop.clear()
-        self._retention_thread = threading.Thread(
-            target=run_retention_loop,
-            kwargs={"stop_event": self._retention_stop, "program_state": program_state},
-            daemon=True,
-        )
-        self._retention_thread.start()
-        if background:
-            thread = threading.Thread(target=server.serve_forever, daemon=True)
-            thread.start()
-            self._thread = thread
-        else:
-            server.serve_forever()
+            server.concurrency = self.concurrency.to_dict()  # type: ignore[attr-defined]
+            server.headless = self.headless  # type: ignore[attr-defined]
+            server.headless_api_token = self.headless_api_token  # type: ignore[attr-defined]
+            server.headless_cors_origins = self.headless_cors_origins  # type: ignore[attr-defined]
+            server.program_summary = self.program_summary  # type: ignore[attr-defined]
+            server.program_ir = program_ir  # type: ignore[attr-defined]
+            server.program_state = program_state  # type: ignore[attr-defined]
+            registry = RouteRegistry()
+            refresh_routes(program=program_ir, registry=registry, revision=program_state.revision, logger=print)
+            server.route_registry = registry  # type: ignore[attr-defined]
+            server.external_ui_root = None if self.headless else external_ui_root  # type: ignore[attr-defined]
+            server.external_ui_enabled = bool(not self.headless and external_ui_root is not None)  # type: ignore[attr-defined]
+            server.ui_mode = self.ui_mode  # type: ignore[attr-defined]
+            server.ui_diagnostics_enabled = self.diagnostics_enabled  # type: ignore[attr-defined]
+            server.lifecycle = self._lifecycle_snapshot.as_dict() if self._lifecycle_snapshot is not None else None  # type: ignore[attr-defined]
+            if has_service_capability:
+                idle_timeout = _service_idle_timeout()
+                base_store = create_store(config=resolved_config)
+                server.session_manager = ServiceSessionManager(  # type: ignore[attr-defined]
+                    base_store=base_store,
+                    project_root=getattr(program_ir, "project_root", None),
+                    app_path=getattr(program_ir, "app_path", None),
+                    allow_multi_user=allow_multi_user,
+                    remote_studio_enabled=remote_studio_enabled,
+                    idle_timeout_seconds=idle_timeout,
+                )
+            else:
+                server.session_manager = None  # type: ignore[attr-defined]
+            startup_manifest_payload = build_program_manifest_payload(
+                program=program_ir,
+                ui_mode=self.ui_mode,
+                diagnostics_enabled=self.diagnostics_enabled,
+            )
+            startup_context = build_runtime_startup_context(
+                app_path=self.app_path,
+                bind_host="0.0.0.0",
+                bind_port=self.port,
+                mode="service",
+                headless=self.headless,
+                manifest_payload=startup_manifest_payload,
+                lock_path=self._port_lease.lock_path if self._port_lease is not None else None,
+                lock_pid=self._port_lease.owner_pid if self._port_lease is not None else int(os.getpid()),
+                validate_registry=not self.headless,
+                enforce_parity=not self.headless,
+            )
+            print_startup_banner(startup_context)
+            self.server = server
+            self._cluster_control = ClusterControlPlane(
+                project_root=self.app_path.parent,
+                app_path=self.app_path,
+                worker_pool=self._worker_pool,
+                server=server,
+            )
+            self._cluster_control.start()
+            self._trigger_stop.clear()
+            self._trigger_thread = threading.Thread(
+                target=run_service_trigger_loop,
+                kwargs={
+                    "stop_event": self._trigger_stop,
+                    "program_state": program_state,
+                    "flow_store": getattr(server, "flow_store", None),
+                },
+                daemon=True,
+            )
+            self._trigger_thread.start()
+            self._retention_stop.clear()
+            self._retention_thread = threading.Thread(
+                target=run_retention_loop,
+                kwargs={"stop_event": self._retention_stop, "program_state": program_state},
+                daemon=True,
+            )
+            self._retention_thread.start()
+            if background:
+                thread = threading.Thread(target=server.serve_forever, daemon=True)
+                thread.start()
+                self._thread = thread
+                self._serve_started = True
+            else:
+                self._serve_started = True
+                server.serve_forever()
+        except Exception:
+            self.shutdown()
+            raise
 
     def shutdown(self) -> None:
         self._trigger_stop.set()
@@ -190,7 +243,9 @@ class ServiceRunner:
             self._cluster_control = None
         if self.server:
             try:
-                self.server.shutdown()
+                if self._serve_started:
+                    self.server.shutdown()
+                self.server.server_close()
             except Exception:
                 pass
         if self._thread and self._thread.is_alive():
@@ -202,6 +257,10 @@ class ServiceRunner:
         if self._worker_pool is not None:
             self._worker_pool.shutdown()
             self._worker_pool = None
+        release_runtime_port_lock(self._port_lease)
+        self._port_lease = None
+        self._serve_started = False
+        self.server = None
         run_shutdown_hooks(self._lifecycle_snapshot)
         self._lifecycle_snapshot = None
 

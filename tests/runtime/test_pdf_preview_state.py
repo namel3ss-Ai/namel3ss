@@ -20,7 +20,7 @@ def _program(tmp_path):
     return SimpleNamespace(app_path=app_path, project_root=tmp_path, routes=[])
 
 
-def test_phase2_pdf_preview_state_defaults_are_stable() -> None:
+def test_pdf_preview_state_defaults_are_stable() -> None:
     chat: dict = {}
     first = ensure_pdf_preview_state(chat)
     second = ensure_pdf_preview_state(chat)
@@ -39,7 +39,7 @@ def test_phase2_pdf_preview_state_defaults_are_stable() -> None:
     }
 
 
-def test_phase2_pdf_preview_selection_state_builds_stable_payload() -> None:
+def test_pdf_preview_selection_state_builds_stable_payload() -> None:
     chat: dict = {}
     citation = {
         "citation_id": "cit.7",
@@ -60,7 +60,7 @@ def test_phase2_pdf_preview_selection_state_builds_stable_payload() -> None:
     assert first["preview_url"] == "/api/documents/doc-a/pages/4?chunk_id=doc-a%3A2&citation_id=cit.7"
 
 
-def test_phase2_chat_thread_routes_roundtrip_pdf_preview_state(tmp_path) -> None:
+def test_chat_thread_routes_roundtrip_pdf_preview_state(tmp_path) -> None:
     program = _program(tmp_path)
     store = MemoryStore()
     store.save_state(

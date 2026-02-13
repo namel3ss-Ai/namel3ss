@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-def test_phase2_pdf_preview_renderer_wiring() -> None:
+def test_pdf_preview_renderer_wiring() -> None:
     index_html = Path("src/namel3ss/studio/web/index.html").read_text(encoding="utf-8")
     assert "/ui_renderer_pdf_preview.js" in index_html
 

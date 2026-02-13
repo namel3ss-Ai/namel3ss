@@ -34,7 +34,7 @@ class StaticProvider(AIProvider):
         return AIResponse(output=self.output)
 
 
-def test_phase5_golden_query_suite_normalization_is_deterministic() -> None:
+def test_golden_query_suite_normalization_is_deterministic() -> None:
     case_alpha = build_eval_case_model(
         query=" alpha policy ",
         expected={
@@ -63,15 +63,15 @@ def test_phase5_golden_query_suite_normalization_is_deterministic() -> None:
     )
 
 
-def test_phase5_eval_runner_is_deterministic_end_to_end() -> None:
+def test_eval_runner_is_deterministic_end_to_end() -> None:
     state: dict = {}
     run_ingestion_pipeline(
         state=state,
         content=b"Alpha policy clause.",
         source_name="policy.txt",
-        source_identity="fixtures/phase5-policy.txt",
+        source_identity="fixtures/eval-policy.txt",
         source_type="upload",
-        source_uri="upload://fixtures/phase5-policy.txt",
+        source_uri="upload://fixtures/eval-policy.txt",
         mime_type="text/plain",
     )
     chunks = list((state.get("index") or {}).get("chunks") or [])
@@ -82,7 +82,7 @@ def test_phase5_eval_runner_is_deterministic_end_to_end() -> None:
     provider = StaticProvider(f"Alpha policy clause. [{chunk_id}]")
 
     suite = build_golden_query_suite(
-        name="phase5-deterministic",
+        name="eval-deterministic",
         cases=[
             build_eval_case_model(
                 query="alpha",
@@ -118,9 +118,9 @@ def test_phase5_eval_runner_is_deterministic_end_to_end() -> None:
     assert first["summary"]["avg_answer_span_consistency"] == 1.0
 
 
-def test_phase5_answer_span_consistency_detects_invalid_spans() -> None:
+def test_answer_span_consistency_detects_invalid_spans() -> None:
     suite = build_golden_query_suite(
-        name="phase5-invalid-span",
+        name="eval-invalid-span",
         cases=[
             build_eval_case_model(
                 query="alpha",
@@ -162,9 +162,9 @@ def test_phase5_answer_span_consistency_detects_invalid_spans() -> None:
     assert case["passed"] is False
 
 
-def test_phase5_regression_gate_blocks_citation_drift() -> None:
+def test_regression_gate_blocks_citation_drift() -> None:
     suite = build_golden_query_suite(
-        name="phase5-regression",
+        name="eval-regression",
         cases=[
             build_eval_case_model(
                 query="alpha",
@@ -239,9 +239,9 @@ def test_phase5_regression_gate_blocks_citation_drift() -> None:
         raise_on_regression_failure(regression)
 
 
-def test_phase5_eval_and_regression_reports_are_snapshot_stable() -> None:
+def test_eval_and_regression_reports_are_snapshot_stable() -> None:
     suite = build_golden_query_suite(
-        name="phase5-snapshot",
+        name="eval-snapshot",
         cases=[
             build_eval_case_model(
                 query="alpha",

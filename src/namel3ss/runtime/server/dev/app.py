@@ -10,6 +10,15 @@ from namel3ss.runtime.server.concurrency import create_runtime_http_server, load
 from namel3ss.runtime.server.dev.routes import BrowserRequestHandler
 from namel3ss.runtime.server.dev.state import BrowserAppState
 from namel3ss.runtime.server.headless_api import normalize_api_token, normalize_cors_origins
+from namel3ss.runtime.server.lock import (
+    RuntimePortLease,
+    acquire_runtime_port_lock,
+    release_runtime_port_lock,
+)
+from namel3ss.runtime.server.startup import (
+    build_runtime_startup_context,
+    print_startup_banner,
+)
 from namel3ss.studio.startup import validate_renderer_registry_startup
 from namel3ss.ui.manifest.display_mode import (
     DISPLAY_MODE_PRODUCTION,
@@ -63,6 +72,8 @@ class BrowserRunner:
         self.concurrency = load_concurrency_config(app_path=self.app_path)
         if not self.headless:
             validate_renderer_registry_startup()
+        self._port_lease: RuntimePortLease | None = None
+        self._serve_started = False
         self.app_state = BrowserAppState(
             self.app_path,
             mode=mode,
@@ -76,21 +87,45 @@ class BrowserRunner:
     def bind(self) -> None:
         if self.server:
             return
-        server = _bind_http_server(self.port, BrowserRequestHandler, config=self.concurrency)
-        self.port = int(server.server_address[1])
-        server.browser_mode = self.mode  # type: ignore[attr-defined]
-        server.app_state = self.app_state  # type: ignore[attr-defined]
-        server.concurrency = self.concurrency.to_dict()  # type: ignore[attr-defined]
-        server.headless = self.headless  # type: ignore[attr-defined]
-        server.headless_api_token = self.headless_api_token  # type: ignore[attr-defined]
-        server.headless_cors_origins = self.headless_cors_origins  # type: ignore[attr-defined]
-        server.ui_diagnostics_enabled = self.diagnostics_enabled  # type: ignore[attr-defined]
-        self.app_state._refresh_if_needed()
-        registry = RouteRegistry()
-        if self.app_state.program is not None:
-            refresh_routes(program=self.app_state.program, registry=registry, revision=self.app_state.revision, logger=print)
-        server.route_registry = registry  # type: ignore[attr-defined]
-        self.server = server
+        server, lease = _bind_http_server(
+            self.port,
+            BrowserRequestHandler,
+            config=self.concurrency,
+            app_path=self.app_path,
+            mode=self.mode,
+        )
+        try:
+            self.port = int(server.server_address[1])
+            self._port_lease = lease
+            server.browser_mode = self.mode  # type: ignore[attr-defined]
+            server.app_state = self.app_state  # type: ignore[attr-defined]
+            server.concurrency = self.concurrency.to_dict()  # type: ignore[attr-defined]
+            server.headless = self.headless  # type: ignore[attr-defined]
+            server.headless_api_token = self.headless_api_token  # type: ignore[attr-defined]
+            server.headless_cors_origins = self.headless_cors_origins  # type: ignore[attr-defined]
+            server.ui_diagnostics_enabled = self.diagnostics_enabled  # type: ignore[attr-defined]
+            self.app_state._refresh_if_needed()
+            registry = RouteRegistry()
+            if self.app_state.program is not None:
+                refresh_routes(program=self.app_state.program, registry=registry, revision=self.app_state.revision, logger=print)
+            server.route_registry = registry  # type: ignore[attr-defined]
+            self.server = server
+            startup_context = build_runtime_startup_context(
+                app_path=self.app_path,
+                bind_host="127.0.0.1",
+                bind_port=self.port,
+                mode=self.mode,
+                headless=self.headless,
+                manifest_payload=self.app_state.manifest_payload(),
+                lock_path=lease.lock_path if lease is not None else None,
+                lock_pid=lease.owner_pid if lease is not None else int(os.getpid()),
+                validate_registry=not self.headless,
+                enforce_parity=not self.headless,
+            )
+            print_startup_banner(startup_context)
+        except Exception:
+            release_runtime_port_lock(lease)
+            raise
 
     def start(self, *, background: bool = False) -> None:
         self.bind()
@@ -99,18 +134,25 @@ class BrowserRunner:
             thread = threading.Thread(target=self.server.serve_forever, daemon=True)
             thread.start()
             self._thread = thread
+            self._serve_started = True
         else:
+            self._serve_started = True
             self.server.serve_forever()
 
     def shutdown(self) -> None:
         if self.server:
             try:
-                self.server.shutdown()
+                if self._serve_started:
+                    self.server.shutdown()
                 self.server.server_close()
             except Exception:
                 pass
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=1)
+        release_runtime_port_lock(self._port_lease)
+        self._port_lease = None
+        self._serve_started = False
+        self.server = None
 
     @property
     def bound_port(self) -> int:
@@ -119,16 +161,28 @@ class BrowserRunner:
         return self.port
 
 
-def _bind_http_server(port: int, handler, *, config) -> HTTPServer:
+def _bind_http_server(port: int, handler, *, config, app_path: Path, mode: str) -> tuple[HTTPServer, RuntimePortLease]:
     base = port or DEFAULT_BROWSER_PORT
     last_error: Exception | None = None
+    last_lease: RuntimePortLease | None = None
     for offset in range(0, 20):
         candidate = base + offset
+        lease = acquire_runtime_port_lock(
+            host="127.0.0.1",
+            port=candidate,
+            app_path=app_path,
+            mode=mode,
+            allow_reentrant=False,
+        )
+        last_lease = lease
         try:
-            return create_runtime_http_server("127.0.0.1", candidate, handler, config=config)
+            server = create_runtime_http_server("127.0.0.1", candidate, handler, config=config)
+            return server, lease
         except OSError as err:  # pragma: no cover - bind guard
+            release_runtime_port_lock(lease)
             last_error = err
             continue
+    release_runtime_port_lock(last_lease)
     raise last_error or OSError("Unable to bind HTTP server")
 
 

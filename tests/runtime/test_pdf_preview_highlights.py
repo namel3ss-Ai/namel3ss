@@ -3,7 +3,7 @@ from __future__ import annotations
 from namel3ss.runtime.backend.document_highlight import highlights_from_state
 
 
-def test_phase2_highlights_use_token_positions_fallback_deterministically() -> None:
+def test_highlights_use_token_positions_fallback_deterministically() -> None:
     state = {
         "index": {
             "chunks": [
@@ -39,7 +39,7 @@ def test_phase2_highlights_use_token_positions_fallback_deterministically() -> N
     ]
 
 
-def test_phase2_highlights_prefer_bbox_over_span() -> None:
+def test_highlights_prefer_bbox_over_span() -> None:
     state = {
         "index": {
             "chunks": [

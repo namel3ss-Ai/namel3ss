@@ -20,6 +20,9 @@ from namel3ss.runtime.data.data_routes import (
 from namel3ss.runtime.deploy_routes import get_build_payload, get_deploy_payload
 from namel3ss.runtime.dev_server import BrowserAppState
 from namel3ss.runtime.router.dispatch import dispatch_route
+from namel3ss.runtime.router.renderer_registry_health import (
+    handle_renderer_registry_health_get,
+)
 from namel3ss.runtime.router.refresh import refresh_routes
 from namel3ss.runtime.router.registry import RouteRegistry
 from namel3ss.runtime.server.prod import answer_explain, documents
@@ -46,6 +49,8 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
         if path == "/api/session":
             payload, status, headers = self._handle_session_get()
             self._respond_json(payload, status=status, headers=headers)
+            return
+        if handle_renderer_registry_health_get(self, path):
             return
         if path == "/api/ui":
             auth_context = self._auth_context_or_error(kind="manifest")

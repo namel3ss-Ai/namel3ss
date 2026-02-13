@@ -40,6 +40,9 @@ from namel3ss.runtime.server.service_sessions_api import (
 )
 from namel3ss.runtime.server.utils import dispatch_dynamic_route, get_or_create_route_registry, read_json_body
 from namel3ss.runtime.server.webhook_triggers import handle_webhook_trigger_post
+from namel3ss.runtime.router.renderer_registry_health import (
+    handle_renderer_registry_health_get,
+)
 from namel3ss.runtime.service_helpers import contract_kind_for_path, summarize_program
 from namel3ss.runtime.storage.factory import create_store
 from namel3ss.ui.actions.dispatch import dispatch_ui_action
@@ -168,6 +171,8 @@ class ServiceRequestHandler(BaseHTTPRequestHandler):
         normalized = parsed.path.rstrip("/") or "/"
         query = parse_qs(parsed.query or "")
         if handle_service_headless_get(self, path=normalized, query=query):
+            return
+        if handle_renderer_registry_health_get(self, normalized):
             return
         if normalized.startswith("/api/plugins/"):
             asset = resolve_plugin_asset(self._program(), normalized)
