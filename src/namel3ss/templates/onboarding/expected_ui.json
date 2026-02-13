@@ -1,381 +1,306 @@
 {
-  "actions": {
-    "page.onboarding.button.add_sample_task": {
-      "flow": "add_sample_task",
-      "id": "page.onboarding.button.add_sample_task",
-      "type": "call_flow"
-    }
-  },
-  "diagnostics_enabled": true,
-  "i18n": {
-    "available_locales": [
-      "en"
-    ],
-    "direction": "ltr",
-    "enabled": true,
-    "fallback_locale": "en",
-    "locale": "en",
-    "rtl": false
-  },
-  "mode": "studio",
   "pages": [
     {
+      "name": "onboarding",
+      "slug": "onboarding",
       "elements": [
         {
-          "column": 3,
+          "type": "title",
+          "value": "Onboarding",
           "element_id": "page.onboarding.title.0",
+          "page": "onboarding",
+          "page_slug": "onboarding",
           "index": 0,
           "line": 21,
-          "page": "onboarding",
-          "page_slug": "onboarding",
-          "type": "title",
-          "value": "Onboarding"
+          "column": 3
         },
         {
-          "column": 3,
+          "type": "text",
+          "value": "Give every new hire a clear path with visible ownership.",
           "element_id": "page.onboarding.text.1",
+          "page": "onboarding",
+          "page_slug": "onboarding",
           "index": 1,
           "line": 22,
-          "page": "onboarding",
-          "page_slug": "onboarding",
-          "type": "text",
-          "value": "Give every new hire a clear path with visible ownership."
+          "column": 3
         },
         {
+          "type": "section",
+          "label": "Day one focus",
           "children": [
             {
+              "type": "row",
               "children": [
                 {
+                  "type": "column",
                   "children": [
                     {
+                      "type": "card",
+                      "label": "Checklist",
                       "children": [
                         {
-                          "accessibility": {
-                            "label": "Onboarding Task",
-                            "role": "list"
-                          },
-                          "column": 11,
-                          "element_id": "page.onboarding.list.2.0.0.0.0",
-                          "empty_state": {
-                            "text": "No tasks yet.",
-                            "title": "No items"
-                          },
-                          "empty_text": "No tasks yet.",
+                          "type": "list",
                           "id": "page.onboarding.list.onboardingtask",
-                          "index": 0,
+                          "record": "OnboardingTask",
+                          "variant": "two_line",
                           "item": {
-                            "meta": "status",
                             "primary": "task",
-                            "secondary": "owner"
+                            "secondary": "owner",
+                            "meta": "status"
                           },
-                          "line": 28,
+                          "rows": [],
+                          "empty_state": {
+                            "title": "No items",
+                            "text": "No tasks yet."
+                          },
+                          "element_id": "page.onboarding.list.2.0.0.0.0",
                           "page": "onboarding",
                           "page_slug": "onboarding",
-                          "record": "OnboardingTask",
-                          "rows": [],
+                          "index": 0,
+                          "line": 28,
+                          "column": 11,
+                          "empty_text": "No tasks yet.",
                           "spacing": {
                             "item_gap": "m",
-                            "meta_gap": "s",
-                            "secondary_gap": "s"
+                            "secondary_gap": "s",
+                            "meta_gap": "s"
                           },
-                          "type": "list",
-                          "variant": "two_line"
+                          "accessibility": {
+                            "role": "list",
+                            "label": "Onboarding Task"
+                          }
                         }
                       ],
-                      "column": 9,
                       "element_id": "page.onboarding.card.2.0.0.0",
-                      "index": 0,
-                      "label": "Checklist",
-                      "line": 27,
                       "page": "onboarding",
                       "page_slug": "onboarding",
+                      "index": 0,
+                      "line": 27,
+                      "column": 9,
                       "spacing": {
-                        "actions_gap": "s",
-                        "gap": "m",
                         "padding": "m",
+                        "gap": "m",
+                        "title_gap": "s",
                         "stat_gap": "s",
-                        "title_gap": "s"
-                      },
-                      "type": "card"
+                        "actions_gap": "s"
+                      }
                     }
                   ],
-                  "column": 7,
                   "element_id": "page.onboarding.column.2.0.0",
+                  "page": "onboarding",
+                  "page_slug": "onboarding",
                   "index": 0,
                   "line": 26,
-                  "page": "onboarding",
-                  "page_slug": "onboarding",
+                  "column": 7,
                   "spacing": {
                     "gap": "m"
-                  },
-                  "type": "column"
+                  }
                 },
                 {
+                  "type": "column",
                   "children": [
                     {
+                      "type": "compose",
+                      "name": "intake",
+                      "slug": "intake",
                       "children": [
                         {
-                          "column": 11,
+                          "type": "text",
+                          "value": "Add a starter task to shape the checklist.",
                           "element_id": "page.onboarding.text.2.0.1.0.0",
+                          "page": "onboarding",
+                          "page_slug": "onboarding",
                           "index": 0,
                           "line": 37,
-                          "page": "onboarding",
-                          "page_slug": "onboarding",
-                          "type": "text",
-                          "value": "Add a starter task to shape the checklist."
+                          "column": 11
                         },
                         {
-                          "accessibility": {
-                            "label": "Add sample task",
-                            "role": "button",
-                            "tab_order": 1
-                          },
-                          "action": {
-                            "flow": "add_sample_task",
-                            "type": "call_flow"
-                          },
-                          "action_id": "page.onboarding.button.add_sample_task",
-                          "column": 11,
-                          "element_id": "page.onboarding.button_item.2.0.1.0.1",
-                          "id": "page.onboarding.button.add_sample_task",
-                          "index": 1,
+                          "type": "button",
                           "label": "Add sample task",
-                          "line": 38,
+                          "id": "page.onboarding.button.add_sample_task",
+                          "action_id": "page.onboarding.button.add_sample_task",
+                          "action": {
+                            "type": "call_flow",
+                            "flow": "add_sample_task"
+                          },
+                          "element_id": "page.onboarding.button_item.2.0.1.0.1",
                           "page": "onboarding",
                           "page_slug": "onboarding",
-                          "type": "button"
+                          "index": 1,
+                          "line": 38,
+                          "column": 11,
+                          "accessibility": {
+                            "role": "button",
+                            "label": "Add sample task",
+                            "tab_order": 1
+                          }
                         }
                       ],
-                      "column": 9,
                       "element_id": "page.onboarding.compose.2.0.1.0",
-                      "index": 0,
-                      "line": 36,
-                      "name": "intake",
                       "page": "onboarding",
                       "page_slug": "onboarding",
-                      "slug": "intake",
+                      "index": 0,
+                      "line": 36,
+                      "column": 9,
                       "spacing": {
-                        "gap": "m",
-                        "padding": "m"
-                      },
-                      "type": "compose"
+                        "padding": "m",
+                        "gap": "m"
+                      }
                     }
                   ],
-                  "column": 7,
                   "element_id": "page.onboarding.column.2.0.1",
+                  "page": "onboarding",
+                  "page_slug": "onboarding",
                   "index": 1,
                   "line": 35,
-                  "page": "onboarding",
-                  "page_slug": "onboarding",
+                  "column": 7,
                   "spacing": {
                     "gap": "m"
-                  },
-                  "type": "column"
+                  }
                 }
               ],
-              "column": 5,
               "element_id": "page.onboarding.row.2.0",
-              "index": 0,
-              "line": 25,
               "page": "onboarding",
               "page_slug": "onboarding",
+              "index": 0,
+              "line": 25,
+              "column": 5,
               "spacing": {
                 "gap": "m"
-              },
-              "type": "row"
+              }
             }
           ],
-          "column": 3,
           "element_id": "page.onboarding.section.2",
-          "index": 2,
-          "label": "Day one focus",
-          "line": 24,
           "page": "onboarding",
           "page_slug": "onboarding",
+          "index": 2,
+          "line": 24,
+          "column": 3,
           "spacing": {
-            "gap": "l",
             "padding": "m",
+            "gap": "l",
             "title_gap": "s"
-          },
-          "type": "section"
+          }
         },
         {
+          "type": "section",
+          "label": "Milestone guidance",
           "children": [
             {
+              "type": "card",
+              "label": "What good looks like",
               "children": [
                 {
-                  "children": [
-                    {
-                      "id": "page.onboarding.story.3.0.0.step.introduce_the_team",
-                      "index": 0,
-                      "next": {
-                        "target": "page.onboarding.story.3.0.0.step.confirm_access",
-                        "title": "Confirm access"
-                      },
-                      "text": "Schedule brief introductions and set expectations.",
-                      "title": "Introduce the team",
-                      "type": "story_step"
-                    },
-                    {
-                      "icon": "info",
-                      "id": "page.onboarding.story.3.0.0.step.confirm_access",
-                      "index": 1,
-                      "text": "Verify accounts and hardware by end of day one.",
-                      "title": "Confirm access",
-                      "tone": "informative",
-                      "type": "story_step"
-                    }
-                  ],
-                  "column": 7,
-                  "element_id": "page.onboarding.story.3.0.0",
+                  "type": "story",
+                  "title": "First week",
                   "id": "page.onboarding.story.3.0.0",
-                  "index": 0,
-                  "line": 43,
-                  "page": "onboarding",
-                  "page_slug": "onboarding",
                   "slug": "first_week",
                   "steps": [
                     {
+                      "type": "story_step",
+                      "title": "Introduce the team",
                       "id": "page.onboarding.story.3.0.0.step.introduce_the_team",
                       "index": 0,
-                      "next": {
-                        "target": "page.onboarding.story.3.0.0.step.confirm_access",
-                        "title": "Confirm access"
-                      },
                       "text": "Schedule brief introductions and set expectations.",
-                      "title": "Introduce the team",
-                      "type": "story_step"
+                      "next": {
+                        "title": "Confirm access",
+                        "target": "page.onboarding.story.3.0.0.step.confirm_access"
+                      }
                     },
                     {
-                      "icon": "info",
+                      "type": "story_step",
+                      "title": "Confirm access",
                       "id": "page.onboarding.story.3.0.0.step.confirm_access",
                       "index": 1,
                       "text": "Verify accounts and hardware by end of day one.",
-                      "title": "Confirm access",
-                      "tone": "informative",
-                      "type": "story_step"
+                      "icon": "info",
+                      "tone": "informative"
                     }
                   ],
-                  "title": "First week",
-                  "type": "story"
+                  "children": [
+                    {
+                      "type": "story_step",
+                      "title": "Introduce the team",
+                      "id": "page.onboarding.story.3.0.0.step.introduce_the_team",
+                      "index": 0,
+                      "text": "Schedule brief introductions and set expectations.",
+                      "next": {
+                        "title": "Confirm access",
+                        "target": "page.onboarding.story.3.0.0.step.confirm_access"
+                      }
+                    },
+                    {
+                      "type": "story_step",
+                      "title": "Confirm access",
+                      "id": "page.onboarding.story.3.0.0.step.confirm_access",
+                      "index": 1,
+                      "text": "Verify accounts and hardware by end of day one.",
+                      "icon": "info",
+                      "tone": "informative"
+                    }
+                  ],
+                  "element_id": "page.onboarding.story.3.0.0",
+                  "page": "onboarding",
+                  "page_slug": "onboarding",
+                  "index": 0,
+                  "line": 43,
+                  "column": 7
                 }
               ],
-              "column": 5,
               "element_id": "page.onboarding.card.3.0",
-              "index": 0,
-              "label": "What good looks like",
-              "line": 42,
               "page": "onboarding",
               "page_slug": "onboarding",
+              "index": 0,
+              "line": 42,
+              "column": 5,
               "spacing": {
-                "actions_gap": "s",
-                "gap": "m",
                 "padding": "m",
+                "gap": "m",
+                "title_gap": "s",
                 "stat_gap": "s",
-                "title_gap": "s"
-              },
-              "type": "card"
+                "actions_gap": "s"
+              }
             }
           ],
-          "column": 3,
           "element_id": "page.onboarding.section.3",
-          "index": 3,
-          "label": "Milestone guidance",
-          "line": 41,
           "page": "onboarding",
           "page_slug": "onboarding",
+          "index": 3,
+          "line": 41,
+          "column": 3,
           "spacing": {
-            "gap": "l",
             "padding": "m",
+            "gap": "l",
             "title_gap": "s"
-          },
-          "type": "section"
+          }
         }
       ],
-      "name": "onboarding",
-      "purpose": "Guide new hires through a calm, clear checklist.",
-      "slug": "onboarding"
+      "purpose": "Guide new hires through a calm, clear checklist."
     }
   ],
+  "actions": {
+    "page.onboarding.button.add_sample_task": {
+      "id": "page.onboarding.button.add_sample_task",
+      "type": "call_flow",
+      "flow": "add_sample_task"
+    }
+  },
+  "diagnostics_enabled": true,
   "theme": {
-    "base_theme": "default",
-    "config": {
-      "base_theme": "default",
-      "overrides": {}
-    },
-    "css": ":root {\n  --n3-primary-color: #2563EB;\n  --n3-secondary-color: #5856D6;\n  --n3-background-color: #FFFFFF;\n  --n3-foreground-color: #111827;\n  --n3-font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;\n  --n3-font-size-base: 14px;\n  --n3-font-weight: 500;\n  --n3-spacing-scale: 1.0;\n  --n3-border-radius: 10px;\n  --n3-shadow-elevation: 0 2px 6px rgba(15, 23, 42, 0.08);\n}\n\nbody.n3-runtime,\nbody {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  font-family: var(--n3-font-family);\n  font-size: var(--n3-font-size-base);\n  font-weight: var(--n3-font-weight);\n}\n\n.ui-body,\n.panel,\n.ui-element,\n.list-item,\n.trace-row,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  border-radius: var(--n3-border-radius);\n  box-shadow: var(--n3-shadow-elevation);\n}\n\n.btn.primary,\n.ui-chat-action,\n.ui-upload-label {\n  background: var(--n3-primary-color);\n  border-color: var(--n3-primary-color);\n  color: #FFFFFF;\n}\n\n.ui-link,\n.n3-chat-attachment-link,\n.n3-citation-chip {\n  color: var(--n3-primary-color);\n}\n\n.ui-card-title,\n.ui-section-title,\n.n3-chat-group-label {\n  color: var(--n3-secondary-color);\n}\n\n.ui-element,\n.panel,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  padding: calc(10px * var(--n3-spacing-scale));\n}\n\n.ui-row,\n.ui-column,\n.ui-card-group,\n.n3-layout-root,\n.n3-layout-body {\n  gap: calc(10px * var(--n3-spacing-scale));\n}\n",
-    "css_hash": "af84b4058b81de1bba97dd498d5b53bb92defe1f5de89914b9ee0633692c1446",
-    "current": "light",
-    "effective": "light",
-    "font_url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
-    "persisted_current": null,
-    "preference": {
-      "allow_override": false,
-      "persist": "none"
-    },
-    "runtime_supported": false,
-    "runtime_tokens": {},
     "schema_version": "1",
     "setting": "light",
+    "current": "light",
+    "persisted_current": null,
+    "effective": "light",
     "source": "app",
+    "runtime_supported": false,
     "theme_name": "default",
+    "base_theme": "default",
     "themes_available": [
       "default",
       "dark",
       "high_contrast"
     ],
-    "token_schema": {
-      "background_color": {
-        "category": "color",
-        "description": "Application background color.",
-        "type": "color"
-      },
-      "border_radius": {
-        "category": "radius",
-        "description": "Default corner radius in pixels.",
-        "type": "number"
-      },
-      "font_family": {
-        "category": "typography",
-        "description": "Font family stack.",
-        "type": "string"
-      },
-      "font_size_base": {
-        "category": "typography",
-        "description": "Base font size in pixels.",
-        "type": "number"
-      },
-      "font_weight": {
-        "category": "typography",
-        "description": "Default text weight.",
-        "type": "number"
-      },
-      "foreground_color": {
-        "category": "color",
-        "description": "Primary text color.",
-        "type": "color"
-      },
-      "primary_color": {
-        "category": "color",
-        "description": "Primary accent used for primary actions and links.",
-        "type": "color"
-      },
-      "secondary_color": {
-        "category": "color",
-        "description": "Secondary accent for supporting emphasis.",
-        "type": "color"
-      },
-      "shadow_level": {
-        "category": "elevation",
-        "description": "Shadow intensity level from 0 to 3.",
-        "type": "number"
-      },
-      "spacing_scale": {
-        "category": "spacing",
-        "description": "Global spacing multiplier.",
-        "type": "number"
-      }
-    },
     "tokens": {
       "background_color": "#FFFFFF",
       "border_radius": 10,
@@ -387,7 +312,71 @@
       "secondary_color": "#5856D6",
       "shadow_level": 1,
       "spacing_scale": 1.0
-    }
+    },
+    "runtime_tokens": {},
+    "css": ":root {\n  --n3-primary-color: #2563EB;\n  --n3-secondary-color: #5856D6;\n  --n3-background-color: #FFFFFF;\n  --n3-foreground-color: #111827;\n  --n3-font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;\n  --n3-font-size-base: 14px;\n  --n3-font-weight: 500;\n  --n3-spacing-scale: 1.0;\n  --n3-border-radius: 10px;\n  --n3-shadow-elevation: 0 2px 6px rgba(15, 23, 42, 0.08);\n}\n\nbody.n3-runtime,\nbody {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  font-family: var(--n3-font-family);\n  font-size: var(--n3-font-size-base);\n  font-weight: var(--n3-font-weight);\n}\n\n.ui-body,\n.panel,\n.ui-element,\n.list-item,\n.trace-row,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  border-radius: var(--n3-border-radius);\n  box-shadow: var(--n3-shadow-elevation);\n}\n\n.btn.primary,\n.ui-chat-action,\n.ui-upload-label {\n  background: var(--n3-primary-color);\n  border-color: var(--n3-primary-color);\n  color: #FFFFFF;\n}\n\n.ui-link,\n.n3-chat-attachment-link,\n.n3-citation-chip {\n  color: var(--n3-primary-color);\n}\n\n.ui-card-title,\n.ui-section-title,\n.n3-chat-group-label {\n  color: var(--n3-secondary-color);\n}\n\n.ui-element,\n.panel,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  padding: calc(10px * var(--n3-spacing-scale));\n}\n\n.ui-row,\n.ui-column,\n.ui-card-group,\n.n3-layout-root,\n.n3-layout-body {\n  gap: calc(10px * var(--n3-spacing-scale));\n}\n",
+    "css_hash": "af84b4058b81de1bba97dd498d5b53bb92defe1f5de89914b9ee0633692c1446",
+    "preference": {
+      "allow_override": false,
+      "persist": "none"
+    },
+    "config": {
+      "base_theme": "default",
+      "overrides": {}
+    },
+    "token_schema": {
+      "primary_color": {
+        "type": "color",
+        "category": "color",
+        "description": "Primary accent used for primary actions and links."
+      },
+      "secondary_color": {
+        "type": "color",
+        "category": "color",
+        "description": "Secondary accent for supporting emphasis."
+      },
+      "background_color": {
+        "type": "color",
+        "category": "color",
+        "description": "Application background color."
+      },
+      "foreground_color": {
+        "type": "color",
+        "category": "color",
+        "description": "Primary text color."
+      },
+      "font_family": {
+        "type": "string",
+        "category": "typography",
+        "description": "Font family stack."
+      },
+      "font_size_base": {
+        "type": "number",
+        "category": "typography",
+        "description": "Base font size in pixels."
+      },
+      "font_weight": {
+        "type": "number",
+        "category": "typography",
+        "description": "Default text weight."
+      },
+      "spacing_scale": {
+        "type": "number",
+        "category": "spacing",
+        "description": "Global spacing multiplier."
+      },
+      "border_radius": {
+        "type": "number",
+        "category": "radius",
+        "description": "Default corner radius in pixels."
+      },
+      "shadow_level": {
+        "type": "number",
+        "category": "elevation",
+        "description": "Shadow intensity level from 0 to 3."
+      }
+    },
+    "font_url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
   },
   "ui": {
     "persistence": {
@@ -397,24 +386,35 @@
       "schema_version": null
     },
     "settings": {
+      "theme": "light",
       "accent_color": "blue",
       "density": "comfortable",
       "motion": "subtle",
       "shape": "rounded",
-      "surface": "flat",
-      "theme": "light"
+      "surface": "flat"
     }
   },
+  "i18n": {
+    "enabled": true,
+    "locale": "en",
+    "fallback_locale": "en",
+    "available_locales": [
+      "en"
+    ],
+    "direction": "ltr",
+    "rtl": false
+  },
+  "mode": "studio",
   "warnings": [
     {
-      "category": "visibility",
       "code": "visibility.missing_empty_state_guard",
-      "column": 11,
-      "enforced_at": null,
-      "fix": "Add `visible when state.<path> > 0` or set `empty_state: hidden`.",
-      "line": 28,
       "message": "List on page \"onboarding\" may render empty-state copy without a visible guard.",
-      "path": "page.onboarding.list.2.0.0.0.0"
+      "fix": "Add `visible when state.<path> > 0` or set `empty_state: hidden`.",
+      "path": "page.onboarding.list.2.0.0.0.0",
+      "line": 28,
+      "column": 11,
+      "category": "visibility",
+      "enforced_at": null
     }
   ]
 }

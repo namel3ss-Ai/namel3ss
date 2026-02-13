@@ -1,46 +1,353 @@
 {
+  "pages": [
+    {
+      "name": "composition",
+      "slug": "composition",
+      "elements": [
+        {
+          "type": "title",
+          "value": "Composition Workspace",
+          "element_id": "page.composition.title.0",
+          "page": "composition",
+          "page_slug": "composition",
+          "index": 0,
+          "line": 147,
+          "column": 3
+        },
+        {
+          "type": "text",
+          "value": "Run deterministic pipelines and merges with explicit boundaries.",
+          "element_id": "page.composition.text.1",
+          "page": "composition",
+          "page_slug": "composition",
+          "index": 1,
+          "line": 148,
+          "column": 3
+        },
+        {
+          "type": "section",
+          "label": "Composition boundaries",
+          "children": [
+            {
+              "type": "compose",
+              "name": "boundaries",
+              "slug": "boundaries",
+              "children": [
+                {
+                  "type": "text",
+                  "value": "Pure flow: normalize_query.",
+                  "element_id": "page.composition.text.2.0.0",
+                  "page": "composition",
+                  "page_slug": "composition",
+                  "index": 0,
+                  "line": 152,
+                  "column": 7
+                },
+                {
+                  "type": "text",
+                  "value": "Effectful flows: ingest_upload, retrieve_primary, retrieve_secondary.",
+                  "element_id": "page.composition.text.2.0.1",
+                  "page": "composition",
+                  "page_slug": "composition",
+                  "index": 1,
+                  "line": 153,
+                  "column": 7
+                },
+                {
+                  "type": "text",
+                  "value": "Orchestration: run_retrieval merges branches with a prefer policy.",
+                  "element_id": "page.composition.text.2.0.2",
+                  "page": "composition",
+                  "page_slug": "composition",
+                  "index": 2,
+                  "line": 154,
+                  "column": 7
+                }
+              ],
+              "element_id": "page.composition.compose.2.0",
+              "page": "composition",
+              "page_slug": "composition",
+              "index": 0,
+              "line": 151,
+              "column": 5,
+              "spacing": {
+                "padding": "m",
+                "gap": "m"
+              }
+            }
+          ],
+          "element_id": "page.composition.section.2",
+          "page": "composition",
+          "page_slug": "composition",
+          "index": 2,
+          "line": 150,
+          "column": 3,
+          "spacing": {
+            "padding": "m",
+            "gap": "l",
+            "title_gap": "s"
+          }
+        },
+        {
+          "type": "section",
+          "label": "Ingestion",
+          "children": [
+            {
+              "type": "text",
+              "value": "Upload a file, then run ingestion.",
+              "element_id": "page.composition.text.3.0",
+              "page": "composition",
+              "page_slug": "composition",
+              "index": 0,
+              "line": 157,
+              "column": 5
+            },
+            {
+              "type": "upload",
+              "name": "intake",
+              "accept": [],
+              "multiple": false,
+              "required": false,
+              "label": "Upload",
+              "preview": false,
+              "files": [],
+              "id": "page.composition.upload.intake",
+              "action_id": "page.composition.upload.intake",
+              "clear_action_id": "page.composition.upload.intake.clear",
+              "element_id": "page.composition.upload.3.1",
+              "page": "composition",
+              "page_slug": "composition",
+              "index": 1,
+              "line": 158,
+              "column": 5,
+              "accessibility": {
+                "role": "button",
+                "label": "Upload",
+                "tab_order": 1
+              }
+            },
+            {
+              "type": "button",
+              "label": "Run ingestion",
+              "id": "page.composition.button.run_ingestion",
+              "action_id": "page.composition.button.run_ingestion",
+              "action": {
+                "type": "call_flow",
+                "flow": "run_ingestion"
+              },
+              "element_id": "page.composition.button_item.3.2",
+              "page": "composition",
+              "page_slug": "composition",
+              "index": 2,
+              "line": 159,
+              "column": 5,
+              "accessibility": {
+                "role": "button",
+                "label": "Run ingestion",
+                "tab_order": 2
+              }
+            },
+            {
+              "type": "table",
+              "id": "page.composition.table.ingestionreport",
+              "record": "IngestionReport",
+              "columns": [
+                {
+                  "name": "upload_id",
+                  "type": "text",
+                  "label": "Upload ID"
+                }
+              ],
+              "rows": [],
+              "element_id": "page.composition.table.3.3",
+              "page": "composition",
+              "page_slug": "composition",
+              "index": 3,
+              "line": 161,
+              "column": 5,
+              "columns_configured": true,
+              "pagination": {
+                "page_size": 5
+              },
+              "spacing": {
+                "header_gap": "m",
+                "row_gap": "s",
+                "cell_gap": "s",
+                "row_actions_gap": "s"
+              },
+              "accessibility": {
+                "role": "table",
+                "label": "Ingestion Report"
+              }
+            }
+          ],
+          "element_id": "page.composition.section.3",
+          "page": "composition",
+          "page_slug": "composition",
+          "index": 3,
+          "line": 156,
+          "column": 3,
+          "spacing": {
+            "padding": "m",
+            "gap": "l",
+            "title_gap": "s"
+          }
+        },
+        {
+          "type": "section",
+          "label": "Retrieval",
+          "children": [
+            {
+              "type": "text",
+              "value": "Submit a query, then run retrieval.",
+              "element_id": "page.composition.text.4.0",
+              "page": "composition",
+              "page_slug": "composition",
+              "index": 0,
+              "line": 168,
+              "column": 5
+            },
+            {
+              "type": "chat",
+              "children": [
+                {
+                  "type": "composer",
+                  "flow": "run_retrieval",
+                  "action_type": "call_flow",
+                  "id": "page.composition.composer.4.1.0.composer",
+                  "action_id": "page.composition.composer.4.1.0.composer",
+                  "action": {
+                    "type": "call_flow",
+                    "flow": "run_retrieval"
+                  },
+                  "element_id": "page.composition.composer.4.1.0",
+                  "page": "composition",
+                  "page_slug": "composition",
+                  "index": 0,
+                  "line": 170,
+                  "column": 7,
+                  "spacing": {
+                    "input_gap": "s",
+                    "action_gap": "s"
+                  },
+                  "accessibility": {
+                    "role": "textbox",
+                    "label": "run_retrieval",
+                    "tab_order": 3
+                  }
+                }
+              ],
+              "element_id": "page.composition.chat.4.1",
+              "page": "composition",
+              "page_slug": "composition",
+              "index": 1,
+              "line": 169,
+              "column": 5,
+              "style": "bubbles",
+              "show_avatars": false,
+              "group_messages": true,
+              "streaming": false,
+              "attachments": false,
+              "citations_enhanced": false,
+              "actions": [],
+              "spacing": {
+                "section_gap": "m",
+                "message_gap": "m",
+                "composer_gap": "m"
+              }
+            },
+            {
+              "type": "table",
+              "id": "page.composition.table.retrievalreport",
+              "record": "RetrievalReport",
+              "columns": [
+                {
+                  "name": "query",
+                  "type": "text",
+                  "label": "Query"
+                }
+              ],
+              "rows": [],
+              "element_id": "page.composition.table.4.2",
+              "page": "composition",
+              "page_slug": "composition",
+              "index": 2,
+              "line": 171,
+              "column": 5,
+              "columns_configured": true,
+              "pagination": {
+                "page_size": 5
+              },
+              "spacing": {
+                "header_gap": "m",
+                "row_gap": "s",
+                "cell_gap": "s",
+                "row_actions_gap": "s"
+              },
+              "accessibility": {
+                "role": "table",
+                "label": "Retrieval Report"
+              }
+            }
+          ],
+          "element_id": "page.composition.section.4",
+          "page": "composition",
+          "page_slug": "composition",
+          "index": 4,
+          "line": 167,
+          "column": 3,
+          "spacing": {
+            "padding": "m",
+            "gap": "l",
+            "title_gap": "s"
+          }
+        }
+      ],
+      "purpose": "Compose ingestion, retrieval, and orchestration with explicit contracts."
+    }
+  ],
   "actions": {
     "app.ingestion.review": {
-      "debug_only": true,
       "id": "app.ingestion.review",
-      "type": "ingestion_review"
+      "type": "ingestion_review",
+      "debug_only": true
     },
     "app.ingestion.skip": {
-      "debug_only": true,
       "id": "app.ingestion.skip",
-      "type": "ingestion_skip"
+      "type": "ingestion_skip",
+      "debug_only": true
     },
     "app.retrieval": {
-      "debug_only": true,
       "id": "app.retrieval",
-      "type": "retrieval_run"
+      "type": "retrieval_run",
+      "debug_only": true
     },
     "app.upload.replace": {
-      "debug_only": true,
       "id": "app.upload.replace",
-      "type": "upload_replace"
+      "type": "upload_replace",
+      "debug_only": true
     },
     "page.composition.button.run_ingestion": {
-      "flow": "run_ingestion",
       "id": "page.composition.button.run_ingestion",
-      "type": "call_flow"
+      "type": "call_flow",
+      "flow": "run_ingestion"
     },
     "page.composition.composer.4.1.0.composer": {
-      "flow": "run_retrieval",
       "id": "page.composition.composer.4.1.0.composer",
-      "type": "call_flow"
+      "type": "call_flow",
+      "flow": "run_retrieval"
     },
     "page.composition.upload.intake": {
       "id": "page.composition.upload.intake",
-      "multiple": false,
+      "type": "upload_select",
       "name": "intake",
-      "required": false,
-      "type": "upload_select"
+      "multiple": false,
+      "required": false
     },
     "page.composition.upload.intake.clear": {
       "id": "page.composition.upload.intake.clear",
-      "name": "intake",
-      "type": "upload_clear"
+      "type": "upload_clear",
+      "name": "intake"
     },
     "page.composition.upload.intake.ingestion": {
       "id": "page.composition.upload.intake.ingestion",
@@ -48,402 +355,21 @@
     }
   },
   "diagnostics_enabled": true,
-  "i18n": {
-    "available_locales": [
-      "en"
-    ],
-    "direction": "ltr",
-    "enabled": true,
-    "fallback_locale": "en",
-    "locale": "en",
-    "rtl": false
-  },
-  "mode": "studio",
-  "pages": [
-    {
-      "elements": [
-        {
-          "column": 3,
-          "element_id": "page.composition.title.0",
-          "index": 0,
-          "line": 147,
-          "page": "composition",
-          "page_slug": "composition",
-          "type": "title",
-          "value": "Composition Workspace"
-        },
-        {
-          "column": 3,
-          "element_id": "page.composition.text.1",
-          "index": 1,
-          "line": 148,
-          "page": "composition",
-          "page_slug": "composition",
-          "type": "text",
-          "value": "Run deterministic pipelines and merges with explicit boundaries."
-        },
-        {
-          "children": [
-            {
-              "children": [
-                {
-                  "column": 7,
-                  "element_id": "page.composition.text.2.0.0",
-                  "index": 0,
-                  "line": 152,
-                  "page": "composition",
-                  "page_slug": "composition",
-                  "type": "text",
-                  "value": "Pure flow: normalize_query."
-                },
-                {
-                  "column": 7,
-                  "element_id": "page.composition.text.2.0.1",
-                  "index": 1,
-                  "line": 153,
-                  "page": "composition",
-                  "page_slug": "composition",
-                  "type": "text",
-                  "value": "Effectful flows: ingest_upload, retrieve_primary, retrieve_secondary."
-                },
-                {
-                  "column": 7,
-                  "element_id": "page.composition.text.2.0.2",
-                  "index": 2,
-                  "line": 154,
-                  "page": "composition",
-                  "page_slug": "composition",
-                  "type": "text",
-                  "value": "Orchestration: run_retrieval merges branches with a prefer policy."
-                }
-              ],
-              "column": 5,
-              "element_id": "page.composition.compose.2.0",
-              "index": 0,
-              "line": 151,
-              "name": "boundaries",
-              "page": "composition",
-              "page_slug": "composition",
-              "slug": "boundaries",
-              "spacing": {
-                "gap": "m",
-                "padding": "m"
-              },
-              "type": "compose"
-            }
-          ],
-          "column": 3,
-          "element_id": "page.composition.section.2",
-          "index": 2,
-          "label": "Composition boundaries",
-          "line": 150,
-          "page": "composition",
-          "page_slug": "composition",
-          "spacing": {
-            "gap": "l",
-            "padding": "m",
-            "title_gap": "s"
-          },
-          "type": "section"
-        },
-        {
-          "children": [
-            {
-              "column": 5,
-              "element_id": "page.composition.text.3.0",
-              "index": 0,
-              "line": 157,
-              "page": "composition",
-              "page_slug": "composition",
-              "type": "text",
-              "value": "Upload a file, then run ingestion."
-            },
-            {
-              "accept": [],
-              "accessibility": {
-                "label": "Upload",
-                "role": "button",
-                "tab_order": 1
-              },
-              "action_id": "page.composition.upload.intake",
-              "clear_action_id": "page.composition.upload.intake.clear",
-              "column": 5,
-              "element_id": "page.composition.upload.3.1",
-              "files": [],
-              "id": "page.composition.upload.intake",
-              "index": 1,
-              "label": "Upload",
-              "line": 158,
-              "multiple": false,
-              "name": "intake",
-              "page": "composition",
-              "page_slug": "composition",
-              "preview": false,
-              "required": false,
-              "type": "upload"
-            },
-            {
-              "accessibility": {
-                "label": "Run ingestion",
-                "role": "button",
-                "tab_order": 2
-              },
-              "action": {
-                "flow": "run_ingestion",
-                "type": "call_flow"
-              },
-              "action_id": "page.composition.button.run_ingestion",
-              "column": 5,
-              "element_id": "page.composition.button_item.3.2",
-              "id": "page.composition.button.run_ingestion",
-              "index": 2,
-              "label": "Run ingestion",
-              "line": 159,
-              "page": "composition",
-              "page_slug": "composition",
-              "type": "button"
-            },
-            {
-              "accessibility": {
-                "label": "Ingestion Report",
-                "role": "table"
-              },
-              "column": 5,
-              "columns": [
-                {
-                  "label": "Upload ID",
-                  "name": "upload_id",
-                  "type": "text"
-                }
-              ],
-              "columns_configured": true,
-              "element_id": "page.composition.table.3.3",
-              "id": "page.composition.table.ingestionreport",
-              "index": 3,
-              "line": 161,
-              "page": "composition",
-              "page_slug": "composition",
-              "pagination": {
-                "page_size": 5
-              },
-              "record": "IngestionReport",
-              "rows": [],
-              "spacing": {
-                "cell_gap": "s",
-                "header_gap": "m",
-                "row_actions_gap": "s",
-                "row_gap": "s"
-              },
-              "type": "table"
-            }
-          ],
-          "column": 3,
-          "element_id": "page.composition.section.3",
-          "index": 3,
-          "label": "Ingestion",
-          "line": 156,
-          "page": "composition",
-          "page_slug": "composition",
-          "spacing": {
-            "gap": "l",
-            "padding": "m",
-            "title_gap": "s"
-          },
-          "type": "section"
-        },
-        {
-          "children": [
-            {
-              "column": 5,
-              "element_id": "page.composition.text.4.0",
-              "index": 0,
-              "line": 168,
-              "page": "composition",
-              "page_slug": "composition",
-              "type": "text",
-              "value": "Submit a query, then run retrieval."
-            },
-            {
-              "actions": [],
-              "attachments": false,
-              "children": [
-                {
-                  "accessibility": {
-                    "label": "run_retrieval",
-                    "role": "textbox",
-                    "tab_order": 3
-                  },
-                  "action": {
-                    "flow": "run_retrieval",
-                    "type": "call_flow"
-                  },
-                  "action_id": "page.composition.composer.4.1.0.composer",
-                  "column": 7,
-                  "element_id": "page.composition.composer.4.1.0",
-                  "flow": "run_retrieval",
-                  "id": "page.composition.composer.4.1.0.composer",
-                  "index": 0,
-                  "line": 170,
-                  "page": "composition",
-                  "page_slug": "composition",
-                  "spacing": {
-                    "action_gap": "s",
-                    "input_gap": "s"
-                  },
-                  "type": "composer"
-                }
-              ],
-              "citations_enhanced": false,
-              "column": 5,
-              "element_id": "page.composition.chat.4.1",
-              "group_messages": true,
-              "index": 1,
-              "line": 169,
-              "page": "composition",
-              "page_slug": "composition",
-              "show_avatars": false,
-              "spacing": {
-                "composer_gap": "m",
-                "message_gap": "m",
-                "section_gap": "m"
-              },
-              "streaming": false,
-              "style": "bubbles",
-              "type": "chat"
-            },
-            {
-              "accessibility": {
-                "label": "Retrieval Report",
-                "role": "table"
-              },
-              "column": 5,
-              "columns": [
-                {
-                  "label": "Query",
-                  "name": "query",
-                  "type": "text"
-                }
-              ],
-              "columns_configured": true,
-              "element_id": "page.composition.table.4.2",
-              "id": "page.composition.table.retrievalreport",
-              "index": 2,
-              "line": 171,
-              "page": "composition",
-              "page_slug": "composition",
-              "pagination": {
-                "page_size": 5
-              },
-              "record": "RetrievalReport",
-              "rows": [],
-              "spacing": {
-                "cell_gap": "s",
-                "header_gap": "m",
-                "row_actions_gap": "s",
-                "row_gap": "s"
-              },
-              "type": "table"
-            }
-          ],
-          "column": 3,
-          "element_id": "page.composition.section.4",
-          "index": 4,
-          "label": "Retrieval",
-          "line": 167,
-          "page": "composition",
-          "page_slug": "composition",
-          "spacing": {
-            "gap": "l",
-            "padding": "m",
-            "title_gap": "s"
-          },
-          "type": "section"
-        }
-      ],
-      "name": "composition",
-      "purpose": "Compose ingestion, retrieval, and orchestration with explicit contracts.",
-      "slug": "composition"
-    }
-  ],
   "theme": {
-    "base_theme": "default",
-    "config": {
-      "base_theme": "default",
-      "overrides": {}
-    },
-    "css": ":root {\n  --n3-primary-color: #2563EB;\n  --n3-secondary-color: #5856D6;\n  --n3-background-color: #FFFFFF;\n  --n3-foreground-color: #111827;\n  --n3-font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;\n  --n3-font-size-base: 14px;\n  --n3-font-weight: 500;\n  --n3-spacing-scale: 1.0;\n  --n3-border-radius: 10px;\n  --n3-shadow-elevation: 0 2px 6px rgba(15, 23, 42, 0.08);\n}\n\nbody.n3-runtime,\nbody {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  font-family: var(--n3-font-family);\n  font-size: var(--n3-font-size-base);\n  font-weight: var(--n3-font-weight);\n}\n\n.ui-body,\n.panel,\n.ui-element,\n.list-item,\n.trace-row,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  border-radius: var(--n3-border-radius);\n  box-shadow: var(--n3-shadow-elevation);\n}\n\n.btn.primary,\n.ui-chat-action,\n.ui-upload-label {\n  background: var(--n3-primary-color);\n  border-color: var(--n3-primary-color);\n  color: #FFFFFF;\n}\n\n.ui-link,\n.n3-chat-attachment-link,\n.n3-citation-chip {\n  color: var(--n3-primary-color);\n}\n\n.ui-card-title,\n.ui-section-title,\n.n3-chat-group-label {\n  color: var(--n3-secondary-color);\n}\n\n.ui-element,\n.panel,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  padding: calc(10px * var(--n3-spacing-scale));\n}\n\n.ui-row,\n.ui-column,\n.ui-card-group,\n.n3-layout-root,\n.n3-layout-body {\n  gap: calc(10px * var(--n3-spacing-scale));\n}\n",
-    "css_hash": "af84b4058b81de1bba97dd498d5b53bb92defe1f5de89914b9ee0633692c1446",
-    "current": "light",
-    "effective": "light",
-    "font_url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
-    "persisted_current": null,
-    "preference": {
-      "allow_override": false,
-      "persist": "none"
-    },
-    "runtime_supported": false,
-    "runtime_tokens": {},
     "schema_version": "1",
     "setting": "light",
+    "current": "light",
+    "persisted_current": null,
+    "effective": "light",
     "source": "app",
+    "runtime_supported": false,
     "theme_name": "default",
+    "base_theme": "default",
     "themes_available": [
       "default",
       "dark",
       "high_contrast"
     ],
-    "token_schema": {
-      "background_color": {
-        "category": "color",
-        "description": "Application background color.",
-        "type": "color"
-      },
-      "border_radius": {
-        "category": "radius",
-        "description": "Default corner radius in pixels.",
-        "type": "number"
-      },
-      "font_family": {
-        "category": "typography",
-        "description": "Font family stack.",
-        "type": "string"
-      },
-      "font_size_base": {
-        "category": "typography",
-        "description": "Base font size in pixels.",
-        "type": "number"
-      },
-      "font_weight": {
-        "category": "typography",
-        "description": "Default text weight.",
-        "type": "number"
-      },
-      "foreground_color": {
-        "category": "color",
-        "description": "Primary text color.",
-        "type": "color"
-      },
-      "primary_color": {
-        "category": "color",
-        "description": "Primary accent used for primary actions and links.",
-        "type": "color"
-      },
-      "secondary_color": {
-        "category": "color",
-        "description": "Secondary accent for supporting emphasis.",
-        "type": "color"
-      },
-      "shadow_level": {
-        "category": "elevation",
-        "description": "Shadow intensity level from 0 to 3.",
-        "type": "number"
-      },
-      "spacing_scale": {
-        "category": "spacing",
-        "description": "Global spacing multiplier.",
-        "type": "number"
-      }
-    },
     "tokens": {
       "background_color": "#FFFFFF",
       "border_radius": 10,
@@ -455,7 +381,71 @@
       "secondary_color": "#5856D6",
       "shadow_level": 1,
       "spacing_scale": 1.0
-    }
+    },
+    "runtime_tokens": {},
+    "css": ":root {\n  --n3-primary-color: #2563EB;\n  --n3-secondary-color: #5856D6;\n  --n3-background-color: #FFFFFF;\n  --n3-foreground-color: #111827;\n  --n3-font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;\n  --n3-font-size-base: 14px;\n  --n3-font-weight: 500;\n  --n3-spacing-scale: 1.0;\n  --n3-border-radius: 10px;\n  --n3-shadow-elevation: 0 2px 6px rgba(15, 23, 42, 0.08);\n}\n\nbody.n3-runtime,\nbody {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  font-family: var(--n3-font-family);\n  font-size: var(--n3-font-size-base);\n  font-weight: var(--n3-font-weight);\n}\n\n.ui-body,\n.panel,\n.ui-element,\n.list-item,\n.trace-row,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  border-radius: var(--n3-border-radius);\n  box-shadow: var(--n3-shadow-elevation);\n}\n\n.btn.primary,\n.ui-chat-action,\n.ui-upload-label {\n  background: var(--n3-primary-color);\n  border-color: var(--n3-primary-color);\n  color: #FFFFFF;\n}\n\n.ui-link,\n.n3-chat-attachment-link,\n.n3-citation-chip {\n  color: var(--n3-primary-color);\n}\n\n.ui-card-title,\n.ui-section-title,\n.n3-chat-group-label {\n  color: var(--n3-secondary-color);\n}\n\n.ui-element,\n.panel,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  padding: calc(10px * var(--n3-spacing-scale));\n}\n\n.ui-row,\n.ui-column,\n.ui-card-group,\n.n3-layout-root,\n.n3-layout-body {\n  gap: calc(10px * var(--n3-spacing-scale));\n}\n",
+    "css_hash": "af84b4058b81de1bba97dd498d5b53bb92defe1f5de89914b9ee0633692c1446",
+    "preference": {
+      "allow_override": false,
+      "persist": "none"
+    },
+    "config": {
+      "base_theme": "default",
+      "overrides": {}
+    },
+    "token_schema": {
+      "primary_color": {
+        "type": "color",
+        "category": "color",
+        "description": "Primary accent used for primary actions and links."
+      },
+      "secondary_color": {
+        "type": "color",
+        "category": "color",
+        "description": "Secondary accent for supporting emphasis."
+      },
+      "background_color": {
+        "type": "color",
+        "category": "color",
+        "description": "Application background color."
+      },
+      "foreground_color": {
+        "type": "color",
+        "category": "color",
+        "description": "Primary text color."
+      },
+      "font_family": {
+        "type": "string",
+        "category": "typography",
+        "description": "Font family stack."
+      },
+      "font_size_base": {
+        "type": "number",
+        "category": "typography",
+        "description": "Base font size in pixels."
+      },
+      "font_weight": {
+        "type": "number",
+        "category": "typography",
+        "description": "Default text weight."
+      },
+      "spacing_scale": {
+        "type": "number",
+        "category": "spacing",
+        "description": "Global spacing multiplier."
+      },
+      "border_radius": {
+        "type": "number",
+        "category": "radius",
+        "description": "Default corner radius in pixels."
+      },
+      "shadow_level": {
+        "type": "number",
+        "category": "elevation",
+        "description": "Shadow intensity level from 0 to 3."
+      }
+    },
+    "font_url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
   },
   "ui": {
     "persistence": {
@@ -465,44 +455,55 @@
       "schema_version": null
     },
     "settings": {
+      "theme": "light",
       "accent_color": "blue",
       "density": "comfortable",
       "motion": "subtle",
       "shape": "rounded",
-      "surface": "flat",
-      "theme": "light"
+      "surface": "flat"
     }
+  },
+  "i18n": {
+    "enabled": true,
+    "locale": "en",
+    "fallback_locale": "en",
+    "available_locales": [
+      "en"
+    ],
+    "direction": "ltr",
+    "rtl": false
   },
   "upload_requests": [
     {
-      "accept": [],
-      "label": "Upload",
-      "multiple": false,
       "name": "intake",
-      "preview": false,
-      "required": false
+      "accept": [],
+      "multiple": false,
+      "required": false,
+      "label": "Upload",
+      "preview": false
     }
   ],
+  "mode": "studio",
   "warnings": [
     {
-      "category": "visibility",
       "code": "visibility.missing_empty_state_guard",
-      "column": 5,
-      "enforced_at": null,
-      "fix": "Add `visible when state.<path> > 0` or set `empty_state: hidden`.",
-      "line": 161,
       "message": "Table on page \"composition\" may render empty-state copy without a visible guard.",
-      "path": "page.composition.table.3.3"
+      "fix": "Add `visible when state.<path> > 0` or set `empty_state: hidden`.",
+      "path": "page.composition.table.3.3",
+      "line": 161,
+      "column": 5,
+      "category": "visibility",
+      "enforced_at": null
     },
     {
-      "category": "visibility",
       "code": "visibility.missing_empty_state_guard",
-      "column": 5,
-      "enforced_at": null,
-      "fix": "Add `visible when state.<path> > 0` or set `empty_state: hidden`.",
-      "line": 171,
       "message": "Table on page \"composition\" may render empty-state copy without a visible guard.",
-      "path": "page.composition.table.4.2"
+      "fix": "Add `visible when state.<path> > 0` or set `empty_state: hidden`.",
+      "path": "page.composition.table.4.2",
+      "line": 171,
+      "column": 5,
+      "category": "visibility",
+      "enforced_at": null
     }
   ]
 }

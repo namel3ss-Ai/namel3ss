@@ -115,7 +115,13 @@ def test_studio_static_matches_cli_warnings(tmp_path) -> None:
 
     assert _normalize_warnings(cli_warnings) == _normalize_warnings(studio_warnings)
     defaults = studio_manifest.get("state_defaults", {}).get("pages", {}).get("home", {})
-    assert defaults.get("chat", {}) == {"messages": [], "citations": [], "memory": [], "thinking": False}
+    assert defaults.get("chat", {}) == {
+        "messages": [],
+        "citations": [],
+        "memory": [],
+        "thinking": False,
+        "stream_state": {},
+    }
     assert sorted(cli_manifest.get("actions", {}).keys()) == sorted(studio_manifest.get("actions", {}).keys())
 
     categories = {warn["code"]: warn["category"] for warn in _normalize_warnings(cli_warnings)}

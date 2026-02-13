@@ -218,6 +218,7 @@ Rules:
 - `rag_ui` must be the only page body entry.
 - Bases: `assistant`, `evidence`, `research`.
 - Features: `conversation`, `evidence`, `research_tools`.
+- Conversation defaults include deterministic `chat.stream_state` for replay-safe streaming status.
 - `binds:` is required when features are enabled (messages + on_send for conversation; citations for evidence; scope_options + scope_active for research_tools).
 - Allowed slots: `header`, `sidebar`, `drawer`, `chat`, `composer`.
 - Theme token overrides (size, radius, density, font, color_scheme) may appear inside `rag_ui` and apply after runtime settings.
