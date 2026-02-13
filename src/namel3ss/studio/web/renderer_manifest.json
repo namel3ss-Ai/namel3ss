@@ -38,8 +38,18 @@
         "renderCitationChipsElement",
         "renderTrustIndicatorElement"
       ],
-      "integrity_hash": "sha256:d5aafa2831bebb2f351b6436b92ffc3e6174f53e8edec5d5e9293e15dc24bb21",
+      "integrity_hash": "sha256:80a33c5ceb79c5ab674972a02c4b9a86b0c5ae12de94eb42a7930a05d2978725",
       "renderer_id": "chat",
+      "version": "1"
+    },
+    {
+      "entrypoint": "ui_renderer_chunk_inspection.js",
+      "entrypoint_hash": "sha256:868e3e8c05487101331576bd3dd9c221b3bef32678b1f827e8911665038ae806",
+      "exports": [
+        "renderChunkInspectorElement"
+      ],
+      "integrity_hash": "sha256:5751f7d4f6ece42f211b306b0f700a479011212d64da8084ebf3d6692462d84e",
+      "renderer_id": "chunk_inspection",
       "version": "1"
     },
     {
@@ -49,7 +59,7 @@
         "renderListElement",
         "renderTableElement"
       ],
-      "integrity_hash": "sha256:5a80adbb5f53ad58c1b357839df498188495de795c82e40faac0551a7e8797eb",
+      "integrity_hash": "sha256:13bacaf00797e1179cf17f5905d76dc71d2615feee7327df4153dc28df6d3892",
       "renderer_id": "collections",
       "version": "1"
     },
@@ -95,6 +105,22 @@
       "version": "1"
     },
     {
+      "entrypoint": "ui_renderer_pdf_preview.js",
+      "entrypoint_hash": "sha256:fd7a9f5d091b1e866e8f264cddec9de9b028285168d7b98199eec6ef8c6f1755",
+      "exports": [],
+      "integrity_hash": "sha256:7b9d91b13eacdd7900ee47994a7ae7fcdee26d831c1ec130ad1a2ecad406cb9a",
+      "renderer_id": "pdf_preview",
+      "version": "1"
+    },
+    {
+      "entrypoint": "ui_renderer_preview_basic.js",
+      "entrypoint_hash": "sha256:de3f71bda1ed78339c2a39f6062613fa3c44e424b39ebcd8b66c9caba48193d8",
+      "exports": [],
+      "integrity_hash": "sha256:dc29a114b53b4f49001ba65fb45002cabaead83fed363fea84ac408dd4160200",
+      "renderer_id": "preview_basic",
+      "version": "1"
+    },
+    {
       "entrypoint": "ui_renderer_rag.js",
       "entrypoint_hash": "sha256:9ac16a4e1af1b4419054970418aeb1197d55a458c65b52c10fd340018d43e36a",
       "exports": [
@@ -103,7 +129,7 @@
         "renderSourcePreviewElement",
         "renderTrustIndicatorElement"
       ],
-      "integrity_hash": "sha256:f24c8094760d142e3c486c84cc38673608c2d215434b43e9f0618bce134f3830",
+      "integrity_hash": "sha256:2d0a29f370df83e45e98305e60e44e3bedc4fc6d646f3f06e907f8fcde6c8d79",
       "renderer_id": "rag",
       "version": "1"
     },

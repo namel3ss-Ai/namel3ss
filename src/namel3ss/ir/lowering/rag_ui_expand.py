@@ -173,6 +173,28 @@ def _default_sidebar_items(
     feature_set: set[str],
 ) -> list[ast.PageItem]:
     items: list[ast.PageItem] = []
+    if binds.threads is not None and binds.active_thread is not None:
+        items.append(
+            _shell_scope_section(
+                rag,
+                label="Threads",
+                options_source=binds.threads,
+                active_source=binds.active_thread,
+                binding="threads",
+                selection="single",
+            )
+        )
+    if binds.models is not None and binds.active_models is not None:
+        items.append(
+            _shell_scope_section(
+                rag,
+                label="Models",
+                options_source=binds.models,
+                active_source=binds.active_models,
+                binding="models",
+                selection="multi",
+            )
+        )
     if "research_tools" in feature_set and binds.scope_options is not None and binds.scope_active is not None:
         items.append(
             ast.ScopeSelectorItem(
@@ -198,8 +220,13 @@ def _default_chat_items(
     binds: ast.RagUIBindings,
     feature_set: set[str],
 ) -> list[ast.PageItem]:
+    items: list[ast.PageItem] = []
+    if binds.suggestions is not None:
+        suggestions = _suggestions_list_item(rag, binds.suggestions)
+        _set_rag_binding_origin(suggestions, rag, binding="suggestions")
+        items.append(ast.SectionItem(label="Suggestions", children=[suggestions], line=rag.line, column=rag.column))
     if "conversation" not in feature_set:
-        return []
+        return items
     chat_children: list[ast.PageItem] = [
         ast.ChatMessagesItem(source=binds.messages, line=rag.line, column=rag.column) if binds.messages else None,
     ]
@@ -209,9 +236,61 @@ def _default_chat_items(
         chat_children.append(ast.ChatCitationsItem(source=binds.citations, line=rag.line, column=rag.column))
     chat_children = [child for child in chat_children if child is not None]
     if not chat_children:
-        return []
+        return items
     chat = ast.ChatItem(children=chat_children, streaming=True, line=rag.line, column=rag.column)
-    return [ast.SectionItem(label="Chat", children=[chat], line=rag.line, column=rag.column)]
+    items.append(ast.SectionItem(label="Chat", children=[chat], line=rag.line, column=rag.column))
+    return items
+
+
+def _shell_scope_section(
+    rag: ast.RagUIBlock,
+    *,
+    label: str,
+    options_source: ast.StatePath,
+    active_source: ast.StatePath,
+    binding: str,
+    selection: str,
+) -> ast.SectionItem:
+    selector = ast.ScopeSelectorItem(
+        options_source=options_source,
+        active=active_source,
+        line=rag.line,
+        column=rag.column,
+    )
+    _set_rag_binding_origin(selector, rag, binding=binding, selection=selection)
+    return ast.SectionItem(label=label, children=[selector], line=rag.line, column=rag.column)
+
+
+def _suggestions_list_item(rag: ast.RagUIBlock, source: ast.StatePath) -> ast.ListItem:
+    mapping = ast.ListItemMapping(primary="title", secondary="prompt", line=rag.line, column=rag.column)
+    return ast.ListItem(
+        source=source,
+        item=mapping,
+        empty_text="No suggestions yet.",
+        line=rag.line,
+        column=rag.column,
+    )
+
+
+def _set_rag_binding_origin(
+    item: ast.PageItem,
+    rag: ast.RagUIBlock,
+    *,
+    binding: str,
+    selection: str | None = None,
+    state_path: list[str] | None = None,
+) -> None:
+    origin = dict(getattr(item, "origin", {}) or {})
+    rag_origin = dict(origin.get("rag_ui", {}) or {})
+    rag_origin["base"] = rag.base
+    rag_origin["features"] = list(getattr(rag, "features", []) or [])
+    rag_origin["binding"] = binding
+    if selection:
+        rag_origin["selection"] = selection
+    if state_path:
+        rag_origin["state_path"] = list(state_path)
+    origin["rag_ui"] = rag_origin
+    setattr(item, "origin", origin)
 
 
 def _default_composer_items(
@@ -222,6 +301,13 @@ def _default_composer_items(
     if "conversation" not in feature_set or not binds.on_send:
         return []
     composer = ast.ChatComposerItem(flow_name=binds.on_send, fields=[], line=rag.line, column=rag.column)
+    if binds.composer_state is not None:
+        _set_rag_binding_origin(
+            composer,
+            rag,
+            binding="composer_state",
+            state_path=binds.composer_state.path,
+        )
     chat = ast.ChatItem(children=[composer], line=rag.line, column=rag.column)
     return [chat]
 
@@ -289,13 +375,13 @@ def _tag_region_items(items: list[ast.PageItem], rag: ast.RagUIBlock, *, region:
 
 def _tag_region(item: ast.PageItem, rag: ast.RagUIBlock, *, region: str, slot: str | None, recurse: bool) -> None:
     origin = dict(getattr(item, "origin", {}) or {})
-    origin["rag_ui"] = {
-        "base": rag.base,
-        "features": list(getattr(rag, "features", []) or []),
-        "region": region,
-    }
+    rag_origin = dict(origin.get("rag_ui", {}) or {})
+    rag_origin["base"] = rag.base
+    rag_origin["features"] = list(getattr(rag, "features", []) or [])
+    rag_origin["region"] = region
     if slot:
-        origin["rag_ui"]["slot"] = slot
+        rag_origin["slot"] = slot
+    origin["rag_ui"] = rag_origin
     setattr(item, "origin", origin)
     if recurse:
         _tag_children(item, rag, region=region, slot=slot)

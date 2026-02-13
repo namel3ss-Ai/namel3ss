@@ -88,6 +88,21 @@
         "id": "page.rag.composer.2.1.1.composer",
         "type": "call_flow"
       },
+      "page.rag.messages.2.1.0.branch_select": {
+        "id": "page.rag.messages.2.1.0.branch_select",
+        "target_state": "state.chat.messages_graph.active_message_id",
+        "type": "chat.branch.select"
+      },
+      "page.rag.messages.2.1.0.message_regenerate": {
+        "id": "page.rag.messages.2.1.0.message_regenerate",
+        "target_state": "state.chat.messages_graph.active_message_id",
+        "type": "chat.message.regenerate"
+      },
+      "page.rag.messages.2.1.0.stream_cancel": {
+        "id": "page.rag.messages.2.1.0.stream_cancel",
+        "target_state": "state.chat.stream_state.cancel_requested",
+        "type": "chat.stream.cancel"
+      },
       "page.rag.scope_selector.1.0.select": {
         "id": "page.rag.scope_selector.1.0.select",
         "target_state": "state.active_docs",
@@ -201,6 +216,8 @@
               "attachments": false,
               "children": [
                 {
+                  "active_message_id": null,
+                  "branch_action_id": "page.rag.messages.2.1.0.branch_select",
                   "column": 9,
                   "element_id": "page.rag.messages.2.1.0",
                   "index": 0,
@@ -214,11 +231,15 @@
                   ],
                   "page": "rag",
                   "page_slug": "rag",
+                  "regenerate_action_id": "page.rag.messages.2.1.0.message_regenerate",
                   "source": "state.chat.messages",
                   "spacing": {
                     "item_gap": "m",
                     "meta_gap": "s"
                   },
+                  "stream_cancel_action_id": "page.rag.messages.2.1.0.stream_cancel",
+                  "stream_cancel_requested": false,
+                  "stream_phase": "",
                   "type": "messages"
                 },
                 {
@@ -232,6 +253,7 @@
                     "type": "call_flow"
                   },
                   "action_id": "page.rag.composer.2.1.1.composer",
+                  "action_type": "call_flow",
                   "column": 9,
                   "element_id": "page.rag.composer.2.1.1",
                   "flow": "send",
@@ -269,6 +291,7 @@
           "sidebar_left": [
             {
               "action_id": "page.rag.scope_selector.1.0.select",
+              "action_type": "scope_select",
               "active": [
                 "policy"
               ],
@@ -291,6 +314,8 @@
               "options_source": "state.documents",
               "page": "rag",
               "page_slug": "rag",
+              "selection": "multi",
+              "title": "Retrieval scope",
               "type": "scope_selector"
             }
           ]
@@ -299,6 +324,16 @@
         "slug": "rag"
       }
     ],
+    "state_defaults": {
+      "app": {},
+      "pages": {
+        "rag": {
+          "chat": {
+            "stream_state": {}
+          }
+        }
+      }
+    },
     "theme": {
       "base_theme": "default",
       "config": {
@@ -423,6 +458,9 @@
   "summary": {
     "action_types": [
       "call_flow",
+      "chat.branch.select",
+      "chat.message.regenerate",
+      "chat.stream.cancel",
       "scope_select"
     ],
     "element_types": [

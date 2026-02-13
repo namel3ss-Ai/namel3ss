@@ -23,6 +23,7 @@ def handle_preview_page_request(
     page_number: object,
     state: dict | None,
     chunk_id: str | None,
+    citation_id: str | None,
     identity: dict | None,
     policy_decl: object | None,
 ) -> tuple[dict[str, object], int]:
@@ -33,6 +34,7 @@ def handle_preview_page_request(
             page_number=page_number,
             state=state,
             chunk_id=chunk_id,
+            citation_id=citation_id,
             identity=identity,
             policy_decl=policy_decl,
         )

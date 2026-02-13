@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from namel3ss.errors.base import Namel3ssError
-from namel3ss.ir import nodes as ir
 from namel3ss.runtime.execution.normalize import format_expression
 from namel3ss.runtime.ui.explain.normalize import stable_truncate
 from namel3ss.runtime.executor.expr_eval import evaluate_expression
@@ -68,13 +67,13 @@ def _format_pattern_param_value(value: object) -> str:
     return f"\"{text}\""
 
 
-def format_requires(expr: ir.Expression | None) -> str | None:
+def format_requires(expr: object | None) -> str | None:
     if expr is None:
         return None
     return format_expression(expr)
 
 
-def evaluate_requires(expr: ir.Expression | None, identity: dict, state: dict | None) -> bool | None:
+def evaluate_requires(expr: object | None, identity: dict, state: dict | None) -> bool | None:
     if expr is None:
         return None
     ctx = build_guard_context(identity=identity, state=state or {})

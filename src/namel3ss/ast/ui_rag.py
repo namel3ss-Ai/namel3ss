@@ -14,6 +14,12 @@ class RagUIBindings(Node):
     on_send: str | None = None
     citations: StatePath | None = None
     thinking: StatePath | None = None
+    threads: StatePath | None = None
+    active_thread: StatePath | None = None
+    models: StatePath | None = None
+    active_models: StatePath | None = None
+    suggestions: StatePath | None = None
+    composer_state: StatePath | None = None
     drawer_open: StatePath | None = None
     source_preview: StatePath | Literal | None = None
     sources: StatePath | None = None

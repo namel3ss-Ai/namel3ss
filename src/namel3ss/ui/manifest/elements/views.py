@@ -13,14 +13,14 @@ from namel3ss.ui.manifest.actions import (
 from namel3ss.ui.manifest.canonical import _element_id
 from namel3ss.ui.manifest.empty_state import _empty_state_for_list, _empty_state_for_table
 from namel3ss.ui.manifest.origin import _attach_origin
-from namel3ss.ui.manifest_chart import _build_chart_element, _resolve_state_list, _state_path_label
-from namel3ss.ui.manifest_chat import _chat_item_kind, _chat_item_to_manifest
-from namel3ss.ui.manifest_chat_enhanced import apply_chat_configuration
-from namel3ss.ui.manifest_form import _build_form_element
-from namel3ss.ui.manifest_list import _build_list_actions, _list_id, _list_id_field, _list_item_mapping, _list_state_id
+from namel3ss.ui.manifest.chart import _build_chart_element, _resolve_state_list, _state_path_label
+from namel3ss.ui.manifest.chat.items import _chat_item_kind, _chat_item_to_manifest
+from namel3ss.ui.manifest.chat.enhanced import apply_chat_configuration
+from namel3ss.ui.manifest.form import _build_form_element
+from namel3ss.ui.manifest.list import _build_list_actions, _list_id, _list_id_field, _list_item_mapping, _list_state_id
 from namel3ss.ui.manifest.state_defaults import StateContext
 from namel3ss.ui.manifest.visibility import apply_show_when, apply_visibility, evaluate_visibility
-from namel3ss.ui.manifest_table import _apply_table_pagination, _apply_table_sort, _build_row_actions, _resolve_state_table_columns, _resolve_table_columns, _table_id, _table_id_field, _table_state_id
+from namel3ss.ui.manifest.table import _apply_table_pagination, _apply_table_sort, _build_row_actions, _resolve_state_table_columns, _resolve_table_columns, _table_id, _table_id_field, _table_state_id
 from namel3ss.validation import ValidationMode
 from .base import _base_element, _require_record, _stable_rows_by_id, _view_representation
 from .uploads import build_upload_item

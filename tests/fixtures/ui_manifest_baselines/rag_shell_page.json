@@ -1,0 +1,1050 @@
+{
+  "css_contract": {
+    "selectors": {
+      ".btn": [
+        "border: 1px solid var(--border-soft); background: #fff; color: var(--text-main); padding: 10px 16px; border-radius: var(--radius-m); font-size: 13px; cursor: pointer; transition: background var(--transition-fast) var(--ease-soft), border-color var(--transition-fast) var(--ease-soft)",
+        "transition: none"
+      ],
+      ".btn.small": [
+        "padding: 6px 10px; font-size: 12px"
+      ],
+      ".n3-layout-col": [
+        "display: flex; flex-direction: column; gap: var(--n3-layout-column-gap); flex: 1; min-width: 220px"
+      ],
+      ".n3-layout-main-pane": [
+        "display: flex; flex-direction: column; gap: var(--n3-layout-gap); min-width: 0"
+      ],
+      ".n3-layout-row": [
+        "display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--n3-layout-row-gap); align-items: stretch"
+      ],
+      ".n3-layout-sidebar": [
+        "border: 1px solid #eaeaea; border-radius: 10px; background: #fff; padding: 10px; display: flex; flex-direction: column; gap: 10px; max-height: calc(100vh - 280px); overflow: auto",
+        "display: grid; gap: var(--n3-layout-sidebar-gap); grid-template-columns: minmax(0, var(--n3-layout-sidebar-width)) minmax(0, 1fr); align-items: start",
+        "display: none"
+      ],
+      ".n3-layout-sidebar-pane": [
+        "display: flex; flex-direction: column; gap: var(--n3-layout-gap)"
+      ],
+      ".n3-layout-stack": [
+        "display: flex; flex-direction: column; gap: var(--n3-layout-gap)"
+      ],
+      ".n3-layout-sticky": [
+        "position: sticky; z-index: 5; background: var(--n3-layout-sticky-bg); backdrop-filter: blur(6px); padding: 8px; border-radius: 10px; display: flex; flex-direction: column; gap: var(--n3-layout-gap)"
+      ],
+      ".topbar": [
+        "position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 12px 0; background: #f8f8f8; border-bottom: 1px solid var(--border-subtle)"
+      ],
+      ".ui-chat": [
+        "display: flex; flex-direction: column; gap: 14px"
+      ],
+      ".ui-chat-composer": [
+        "display: flex; flex-wrap: wrap; gap: 8px"
+      ],
+      ".ui-chat-message": [
+        "display: flex; gap: 8px; align-items: flex-end"
+      ],
+      ".ui-chat-messages": [
+        "display: flex; flex-direction: column; gap: 6px"
+      ],
+      ".ui-list": [
+        "display: flex; flex-direction: column; gap: 8px"
+      ],
+      ".ui-list-item": [
+        "display: flex; align-items: center; gap: 10px; border: 1px solid #eaeaea; border-radius: 8px; padding: 8px"
+      ],
+      ".ui-scope-option": [
+        "border: 1px solid #ccd2dc; border-radius: 999px; background: #fff; color: #223; padding: 4px 10px; font-size: 12px; cursor: pointer"
+      ],
+      ".ui-scope-selector": [
+        "border: 1px solid #eaeaea; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px"
+      ],
+      ".ui-section": [
+        "background: #fff; display: flex; flex-direction: column; gap: 10px"
+      ],
+      ".ui-section-title": [
+        "font-size: 14px; font-weight: 600; letter-spacing: 0.2px"
+      ],
+      ".ui-upload": [
+        "display: flex; flex-direction: column; gap: 10px"
+      ],
+      ".ui-upload-file-item": [
+        "border: 1px solid #eaeaea; border-radius: 8px; padding: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px"
+      ],
+      ".ui-upload-status": [
+        "font-size: 12px; color: #555"
+      ]
+    },
+    "sticky_topbar": true
+  },
+  "manifest": {
+    "actions": {
+      "page.rag.composer.0.1.1.0.0.2.0.0.composer": {
+        "flow": "send",
+        "id": "page.rag.composer.0.1.1.0.0.2.0.0.composer",
+        "type": "chat.message.send"
+      },
+      "page.rag.messages.0.1.1.0.0.1.0.0.branch_select": {
+        "id": "page.rag.messages.0.1.1.0.0.1.0.0.branch_select",
+        "target_state": "state.chat.messages_graph.active_message_id",
+        "type": "chat.branch.select"
+      },
+      "page.rag.messages.0.1.1.0.0.1.0.0.message_regenerate": {
+        "id": "page.rag.messages.0.1.1.0.0.1.0.0.message_regenerate",
+        "target_state": "state.chat.messages_graph.active_message_id",
+        "type": "chat.message.regenerate"
+      },
+      "page.rag.messages.0.1.1.0.0.1.0.0.stream_cancel": {
+        "id": "page.rag.messages.0.1.1.0.0.1.0.0.stream_cancel",
+        "target_state": "state.chat.stream_state.cancel_requested",
+        "type": "chat.stream.cancel"
+      },
+      "page.rag.scope_selector.0.1.0.0.0.select": {
+        "id": "page.rag.scope_selector.0.1.0.0.0.select",
+        "options_state": "state.chat.threads",
+        "target_state": "state.chat.active_thread",
+        "type": "chat.thread.select"
+      },
+      "page.rag.scope_selector.0.1.0.1.0.select": {
+        "id": "page.rag.scope_selector.0.1.0.1.0.select",
+        "options_state": "state.chat.models",
+        "target_state": "state.chat.active_models",
+        "type": "chat.model.select"
+      },
+      "page.rag.upload.intake": {
+        "id": "page.rag.upload.intake",
+        "multiple": false,
+        "name": "intake",
+        "required": false,
+        "type": "upload_select"
+      },
+      "page.rag.upload.intake.clear": {
+        "id": "page.rag.upload.intake.clear",
+        "name": "intake",
+        "type": "upload_clear"
+      },
+      "page.rag.upload.intake.ingestion": {
+        "id": "page.rag.upload.intake.ingestion",
+        "type": "ingestion_run"
+      }
+    },
+    "diagnostics_enabled": true,
+    "i18n": {
+      "available_locales": [
+        "en"
+      ],
+      "direction": "ltr",
+      "enabled": true,
+      "fallback_locale": "en",
+      "locale": "en",
+      "rtl": false
+    },
+    "mode": "studio",
+    "pages": [
+      {
+        "elements": [
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "column": 3,
+                        "element_id": "page.rag.title.0.0.0.0",
+                        "index": 0,
+                        "line": 10,
+                        "origin": {
+                          "rag_ui": {
+                            "base": "assistant",
+                            "features": [
+                              "conversation"
+                            ],
+                            "region": "header"
+                          }
+                        },
+                        "page": "RAG",
+                        "page_slug": "rag",
+                        "type": "title",
+                        "value": "RAG"
+                      }
+                    ],
+                    "column": 3,
+                    "element_id": "page.rag.layout_row.0.0.0",
+                    "id": "page.rag.layout_row.0.0.0",
+                    "index": 0,
+                    "line": 10,
+                    "origin": {
+                      "rag_ui": {
+                        "base": "assistant",
+                        "features": [
+                          "conversation"
+                        ],
+                        "region": "header"
+                      }
+                    },
+                    "page": "RAG",
+                    "page_slug": "rag",
+                    "spacing": {
+                      "gap": "m"
+                    },
+                    "type": "layout.row"
+                  }
+                ],
+                "column": 3,
+                "element_id": "page.rag.layout_sticky.0.0",
+                "id": "page.rag.layout_sticky.0.0",
+                "index": 0,
+                "line": 10,
+                "origin": {
+                  "rag_ui": {
+                    "base": "assistant",
+                    "features": [
+                      "conversation"
+                    ],
+                    "region": "header"
+                  }
+                },
+                "page": "RAG",
+                "page_slug": "rag",
+                "position": "top",
+                "spacing": {
+                  "gap": "m"
+                },
+                "type": "layout.sticky"
+              },
+              {
+                "column": 3,
+                "element_id": "page.rag.layout_sidebar.0.1",
+                "id": "page.rag.layout_sidebar.0.1",
+                "index": 1,
+                "line": 10,
+                "main": [
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "children": [
+                              {
+                                "column": 3,
+                                "element_id": "page.rag.list.0.1.1.0.0.0.0",
+                                "empty_state": {
+                                  "text": "No suggestions yet.",
+                                  "title": "No items"
+                                },
+                                "empty_text": "No suggestions yet.",
+                                "id": "page.rag.list.statechatsuggestions",
+                                "index": 0,
+                                "item": {
+                                  "primary": "title",
+                                  "secondary": "prompt"
+                                },
+                                "line": 10,
+                                "origin": {
+                                  "rag_ui": {
+                                    "base": "assistant",
+                                    "binding": "suggestions",
+                                    "features": [
+                                      "conversation"
+                                    ],
+                                    "region": "main"
+                                  }
+                                },
+                                "page": "RAG",
+                                "page_slug": "rag",
+                                "rows": [
+                                  {
+                                    "prompt": "Summarize latest changes",
+                                    "title": "Summarize changes"
+                                  },
+                                  {
+                                    "prompt": "List thread metadata",
+                                    "title": "Thread metadata"
+                                  }
+                                ],
+                                "source": "state.chat.suggestions",
+                                "spacing": {
+                                  "item_gap": "m",
+                                  "meta_gap": "s",
+                                  "secondary_gap": "s"
+                                },
+                                "type": "list",
+                                "variant": "two_line"
+                              }
+                            ],
+                            "column": 3,
+                            "element_id": "page.rag.section.0.1.1.0.0.0",
+                            "index": 0,
+                            "label": "Suggestions",
+                            "line": 10,
+                            "origin": {
+                              "rag_ui": {
+                                "base": "assistant",
+                                "features": [
+                                  "conversation"
+                                ],
+                                "region": "main"
+                              }
+                            },
+                            "page": "RAG",
+                            "page_slug": "rag",
+                            "spacing": {
+                              "gap": "l",
+                              "padding": "m",
+                              "title_gap": "s"
+                            },
+                            "type": "section"
+                          },
+                          {
+                            "children": [
+                              {
+                                "actions": [],
+                                "attachments": false,
+                                "children": [
+                                  {
+                                    "active_message_id": null,
+                                    "branch_action_id": "page.rag.messages.0.1.1.0.0.1.0.0.branch_select",
+                                    "column": 3,
+                                    "element_id": "page.rag.messages.0.1.1.0.0.1.0.0",
+                                    "index": 0,
+                                    "line": 10,
+                                    "messages": [
+                                      {
+                                        "content": "Grounded answer",
+                                        "group_start": true,
+                                        "id": "message.1",
+                                        "role": "assistant"
+                                      }
+                                    ],
+                                    "origin": {
+                                      "rag_ui": {
+                                        "base": "assistant",
+                                        "features": [
+                                          "conversation"
+                                        ],
+                                        "region": "main"
+                                      }
+                                    },
+                                    "page": "RAG",
+                                    "page_slug": "rag",
+                                    "regenerate_action_id": "page.rag.messages.0.1.1.0.0.1.0.0.message_regenerate",
+                                    "source": "state.chat.messages",
+                                    "spacing": {
+                                      "item_gap": "m",
+                                      "meta_gap": "s"
+                                    },
+                                    "stream_cancel_action_id": "page.rag.messages.0.1.1.0.0.1.0.0.stream_cancel",
+                                    "stream_cancel_requested": false,
+                                    "stream_phase": "",
+                                    "type": "messages"
+                                  }
+                                ],
+                                "citations_enhanced": false,
+                                "column": 3,
+                                "element_id": "page.rag.chat.0.1.1.0.0.1.0",
+                                "group_messages": true,
+                                "index": 0,
+                                "line": 10,
+                                "origin": {
+                                  "rag_ui": {
+                                    "base": "assistant",
+                                    "features": [
+                                      "conversation"
+                                    ],
+                                    "region": "main"
+                                  }
+                                },
+                                "page": "RAG",
+                                "page_slug": "rag",
+                                "show_avatars": false,
+                                "spacing": {
+                                  "composer_gap": "m",
+                                  "message_gap": "m",
+                                  "section_gap": "m"
+                                },
+                                "streaming": true,
+                                "style": "bubbles",
+                                "type": "chat"
+                              }
+                            ],
+                            "column": 3,
+                            "element_id": "page.rag.section.0.1.1.0.0.1",
+                            "index": 1,
+                            "label": "Chat",
+                            "line": 10,
+                            "origin": {
+                              "rag_ui": {
+                                "base": "assistant",
+                                "features": [
+                                  "conversation"
+                                ],
+                                "region": "main"
+                              }
+                            },
+                            "page": "RAG",
+                            "page_slug": "rag",
+                            "spacing": {
+                              "gap": "l",
+                              "padding": "m",
+                              "title_gap": "s"
+                            },
+                            "type": "section"
+                          },
+                          {
+                            "children": [
+                              {
+                                "actions": [],
+                                "attachments": false,
+                                "children": [
+                                  {
+                                    "action": {
+                                      "flow": "send",
+                                      "type": "chat.message.send"
+                                    },
+                                    "action_id": "page.rag.composer.0.1.1.0.0.2.0.0.composer",
+                                    "action_type": "chat.message.send",
+                                    "column": 3,
+                                    "composer_state": {
+                                      "attachments": [
+                                        "upload.policy"
+                                      ],
+                                      "draft": "Need docs",
+                                      "tools": [
+                                        "web.lookup"
+                                      ],
+                                      "web_search": true
+                                    },
+                                    "composer_state_source": "state.chat.composer_state",
+                                    "element_id": "page.rag.composer.0.1.1.0.0.2.0.0",
+                                    "flow": "send",
+                                    "id": "page.rag.composer.0.1.1.0.0.2.0.0.composer",
+                                    "index": 0,
+                                    "line": 10,
+                                    "origin": {
+                                      "rag_ui": {
+                                        "base": "assistant",
+                                        "binding": "composer_state",
+                                        "features": [
+                                          "conversation"
+                                        ],
+                                        "region": "composer",
+                                        "state_path": [
+                                          "chat",
+                                          "composer_state"
+                                        ]
+                                      }
+                                    },
+                                    "page": "RAG",
+                                    "page_slug": "rag",
+                                    "spacing": {
+                                      "action_gap": "s",
+                                      "input_gap": "s"
+                                    },
+                                    "type": "composer"
+                                  }
+                                ],
+                                "citations_enhanced": false,
+                                "column": 3,
+                                "element_id": "page.rag.chat.0.1.1.0.0.2.0",
+                                "group_messages": true,
+                                "index": 0,
+                                "line": 10,
+                                "origin": {
+                                  "rag_ui": {
+                                    "base": "assistant",
+                                    "features": [
+                                      "conversation"
+                                    ],
+                                    "region": "composer"
+                                  }
+                                },
+                                "page": "RAG",
+                                "page_slug": "rag",
+                                "show_avatars": false,
+                                "spacing": {
+                                  "composer_gap": "m",
+                                  "message_gap": "m",
+                                  "section_gap": "m"
+                                },
+                                "streaming": false,
+                                "style": "bubbles",
+                                "type": "chat"
+                              }
+                            ],
+                            "column": 3,
+                            "element_id": "page.rag.layout_sticky.0.1.1.0.0.2",
+                            "id": "page.rag.layout_sticky.0.1.1.0.0.2",
+                            "index": 2,
+                            "line": 10,
+                            "origin": {
+                              "rag_ui": {
+                                "base": "assistant",
+                                "features": [
+                                  "conversation"
+                                ],
+                                "region": "composer"
+                              }
+                            },
+                            "page": "RAG",
+                            "page_slug": "rag",
+                            "position": "bottom",
+                            "spacing": {
+                              "gap": "m"
+                            },
+                            "type": "layout.sticky"
+                          }
+                        ],
+                        "column": 3,
+                        "element_id": "page.rag.layout_col.0.1.1.0.0",
+                        "id": "page.rag.layout_col.0.1.1.0.0",
+                        "index": 0,
+                        "line": 10,
+                        "origin": {
+                          "rag_ui": {
+                            "base": "assistant",
+                            "features": [
+                              "conversation"
+                            ],
+                            "region": "shell"
+                          }
+                        },
+                        "page": "RAG",
+                        "page_slug": "rag",
+                        "spacing": {
+                          "gap": "m"
+                        },
+                        "type": "layout.col"
+                      }
+                    ],
+                    "column": 3,
+                    "element_id": "page.rag.layout_row.0.1.1.0",
+                    "id": "page.rag.layout_row.0.1.1.0",
+                    "index": 0,
+                    "line": 10,
+                    "origin": {
+                      "rag_ui": {
+                        "base": "assistant",
+                        "features": [
+                          "conversation"
+                        ],
+                        "region": "shell"
+                      }
+                    },
+                    "page": "RAG",
+                    "page_slug": "rag",
+                    "spacing": {
+                      "gap": "m"
+                    },
+                    "type": "layout.row"
+                  }
+                ],
+                "origin": {
+                  "rag_ui": {
+                    "base": "assistant",
+                    "features": [
+                      "conversation"
+                    ],
+                    "region": "shell"
+                  }
+                },
+                "page": "RAG",
+                "page_slug": "rag",
+                "sidebar": [
+                  {
+                    "children": [
+                      {
+                        "action_id": "page.rag.scope_selector.0.1.0.0.0.select",
+                        "action_type": "chat.thread.select",
+                        "active": [
+                          "thread.main"
+                        ],
+                        "active_source": "state.chat.active_thread",
+                        "column": 3,
+                        "element_id": "page.rag.scope_selector.0.1.0.0.0",
+                        "id": "page.rag.scope_selector.0.1.0.0.0.select",
+                        "index": 0,
+                        "line": 10,
+                        "options": [
+                          {
+                            "id": "thread.main",
+                            "name": "Main"
+                          },
+                          {
+                            "id": "thread.docs",
+                            "name": "Docs"
+                          }
+                        ],
+                        "options_source": "state.chat.threads",
+                        "origin": {
+                          "rag_ui": {
+                            "base": "assistant",
+                            "binding": "threads",
+                            "features": [
+                              "conversation"
+                            ],
+                            "region": "sidebar",
+                            "selection": "single"
+                          }
+                        },
+                        "page": "RAG",
+                        "page_slug": "rag",
+                        "selection": "single",
+                        "title": "Threads",
+                        "type": "scope_selector"
+                      }
+                    ],
+                    "column": 3,
+                    "element_id": "page.rag.section.0.1.0.0",
+                    "index": 0,
+                    "label": "Threads",
+                    "line": 10,
+                    "origin": {
+                      "rag_ui": {
+                        "base": "assistant",
+                        "features": [
+                          "conversation"
+                        ],
+                        "region": "sidebar"
+                      }
+                    },
+                    "page": "RAG",
+                    "page_slug": "rag",
+                    "spacing": {
+                      "gap": "l",
+                      "padding": "m",
+                      "title_gap": "s"
+                    },
+                    "type": "section"
+                  },
+                  {
+                    "children": [
+                      {
+                        "action_id": "page.rag.scope_selector.0.1.0.1.0.select",
+                        "action_type": "chat.model.select",
+                        "active": [
+                          "model.alpha",
+                          "model.beta"
+                        ],
+                        "active_source": "state.chat.active_models",
+                        "column": 3,
+                        "element_id": "page.rag.scope_selector.0.1.0.1.0",
+                        "id": "page.rag.scope_selector.0.1.0.1.0.select",
+                        "index": 0,
+                        "line": 10,
+                        "options": [
+                          {
+                            "id": "model.alpha",
+                            "name": "Alpha"
+                          },
+                          {
+                            "id": "model.beta",
+                            "name": "Beta"
+                          }
+                        ],
+                        "options_source": "state.chat.models",
+                        "origin": {
+                          "rag_ui": {
+                            "base": "assistant",
+                            "binding": "models",
+                            "features": [
+                              "conversation"
+                            ],
+                            "region": "sidebar",
+                            "selection": "multi"
+                          }
+                        },
+                        "page": "RAG",
+                        "page_slug": "rag",
+                        "selection": "multi",
+                        "title": "Models",
+                        "type": "scope_selector"
+                      }
+                    ],
+                    "column": 3,
+                    "element_id": "page.rag.section.0.1.0.1",
+                    "index": 1,
+                    "label": "Models",
+                    "line": 10,
+                    "origin": {
+                      "rag_ui": {
+                        "base": "assistant",
+                        "features": [
+                          "conversation"
+                        ],
+                        "region": "sidebar"
+                      }
+                    },
+                    "page": "RAG",
+                    "page_slug": "rag",
+                    "spacing": {
+                      "gap": "l",
+                      "padding": "m",
+                      "title_gap": "s"
+                    },
+                    "type": "section"
+                  },
+                  {
+                    "children": [
+                      {
+                        "accept": [],
+                        "action_id": "page.rag.upload.intake",
+                        "clear_action_id": "page.rag.upload.intake.clear",
+                        "column": 3,
+                        "element_id": "page.rag.upload.0.1.0.2.0",
+                        "files": [],
+                        "id": "page.rag.upload.intake",
+                        "index": 0,
+                        "label": "Upload",
+                        "line": 10,
+                        "multiple": false,
+                        "name": "intake",
+                        "origin": {
+                          "rag_ui": {
+                            "base": "assistant",
+                            "features": [
+                              "conversation"
+                            ],
+                            "region": "sidebar"
+                          }
+                        },
+                        "page": "RAG",
+                        "page_slug": "rag",
+                        "preview": false,
+                        "required": false,
+                        "type": "upload"
+                      },
+                      {
+                        "column": 3,
+                        "element_id": "page.rag.list.0.1.0.2.1",
+                        "empty_state": {
+                          "text": "No sources yet.",
+                          "title": "No items"
+                        },
+                        "empty_text": "No sources yet.",
+                        "id": "page.rag.list.statechatcitations",
+                        "index": 1,
+                        "item": {
+                          "meta": "url",
+                          "primary": "title",
+                          "secondary": "snippet"
+                        },
+                        "line": 10,
+                        "origin": {
+                          "rag_ui": {
+                            "base": "assistant",
+                            "features": [
+                              "conversation"
+                            ],
+                            "region": "sidebar"
+                          }
+                        },
+                        "page": "RAG",
+                        "page_slug": "rag",
+                        "rows": [],
+                        "source": "state.chat.citations",
+                        "spacing": {
+                          "item_gap": "m",
+                          "meta_gap": "s",
+                          "secondary_gap": "s"
+                        },
+                        "type": "list",
+                        "variant": "two_line"
+                      }
+                    ],
+                    "column": 3,
+                    "element_id": "page.rag.section.0.1.0.2",
+                    "index": 2,
+                    "label": "Sources",
+                    "line": 10,
+                    "origin": {
+                      "rag_ui": {
+                        "base": "assistant",
+                        "features": [
+                          "conversation"
+                        ],
+                        "region": "sidebar"
+                      }
+                    },
+                    "page": "RAG",
+                    "page_slug": "rag",
+                    "spacing": {
+                      "gap": "l",
+                      "padding": "m",
+                      "title_gap": "s"
+                    },
+                    "type": "section"
+                  }
+                ],
+                "spacing": {
+                  "gap": "m"
+                },
+                "type": "layout.sidebar"
+              }
+            ],
+            "column": 3,
+            "direction": "vertical",
+            "element_id": "page.rag.layout_stack.0",
+            "id": "page.rag.layout_stack.0",
+            "index": 0,
+            "line": 10,
+            "origin": {
+              "rag_ui": {
+                "base": "assistant",
+                "features": [
+                  "conversation"
+                ],
+                "region": "shell"
+              }
+            },
+            "page": "RAG",
+            "page_slug": "rag",
+            "spacing": {
+              "gap": "m"
+            },
+            "type": "layout.stack"
+          }
+        ],
+        "name": "RAG",
+        "slug": "rag"
+      }
+    ],
+    "state_defaults": {
+      "app": {},
+      "pages": {
+        "rag": {
+          "chat": {
+            "stream_state": {}
+          }
+        }
+      }
+    },
+    "theme": {
+      "base_theme": "default",
+      "config": {
+        "base_theme": "default",
+        "overrides": {}
+      },
+      "css": ":root {\n  --n3-primary-color: #2563EB;\n  --n3-secondary-color: #5856D6;\n  --n3-background-color: #FFFFFF;\n  --n3-foreground-color: #111827;\n  --n3-font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;\n  --n3-font-size-base: 14px;\n  --n3-font-weight: 500;\n  --n3-spacing-scale: 1.0;\n  --n3-border-radius: 10px;\n  --n3-shadow-elevation: 0 2px 6px rgba(15, 23, 42, 0.08);\n}\n\nbody.n3-runtime,\nbody {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  font-family: var(--n3-font-family);\n  font-size: var(--n3-font-size-base);\n  font-weight: var(--n3-font-weight);\n}\n\n.ui-body,\n.panel,\n.ui-element,\n.list-item,\n.trace-row,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  background: var(--n3-background-color);\n  color: var(--n3-foreground-color);\n  border-radius: var(--n3-border-radius);\n  box-shadow: var(--n3-shadow-elevation);\n}\n\n.btn.primary,\n.ui-chat-action,\n.ui-upload-label {\n  background: var(--n3-primary-color);\n  border-color: var(--n3-primary-color);\n  color: #FFFFFF;\n}\n\n.ui-link,\n.n3-chat-attachment-link,\n.n3-citation-chip {\n  color: var(--n3-primary-color);\n}\n\n.ui-card-title,\n.ui-section-title,\n.n3-chat-group-label {\n  color: var(--n3-secondary-color);\n}\n\n.ui-element,\n.panel,\n.n3-layout-header,\n.n3-layout-sidebar,\n.n3-layout-main,\n.n3-layout-drawer,\n.n3-layout-footer {\n  padding: calc(10px * var(--n3-spacing-scale));\n}\n\n.ui-row,\n.ui-column,\n.ui-card-group,\n.n3-layout-root,\n.n3-layout-body {\n  gap: calc(10px * var(--n3-spacing-scale));\n}\n",
+      "css_hash": "af84b4058b81de1bba97dd498d5b53bb92defe1f5de89914b9ee0633692c1446",
+      "current": "light",
+      "effective": "light",
+      "font_url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+      "persisted_current": null,
+      "preference": {
+        "allow_override": false,
+        "persist": "none"
+      },
+      "runtime_supported": false,
+      "runtime_tokens": {},
+      "schema_version": "1",
+      "setting": "light",
+      "source": "app",
+      "theme_name": "default",
+      "themes_available": [
+        "default",
+        "dark",
+        "high_contrast"
+      ],
+      "token_schema": {
+        "background_color": {
+          "category": "color",
+          "description": "Application background color.",
+          "type": "color"
+        },
+        "border_radius": {
+          "category": "radius",
+          "description": "Default corner radius in pixels.",
+          "type": "number"
+        },
+        "font_family": {
+          "category": "typography",
+          "description": "Font family stack.",
+          "type": "string"
+        },
+        "font_size_base": {
+          "category": "typography",
+          "description": "Base font size in pixels.",
+          "type": "number"
+        },
+        "font_weight": {
+          "category": "typography",
+          "description": "Default text weight.",
+          "type": "number"
+        },
+        "foreground_color": {
+          "category": "color",
+          "description": "Primary text color.",
+          "type": "color"
+        },
+        "primary_color": {
+          "category": "color",
+          "description": "Primary accent used for primary actions and links.",
+          "type": "color"
+        },
+        "secondary_color": {
+          "category": "color",
+          "description": "Secondary accent for supporting emphasis.",
+          "type": "color"
+        },
+        "shadow_level": {
+          "category": "elevation",
+          "description": "Shadow intensity level from 0 to 3.",
+          "type": "number"
+        },
+        "spacing_scale": {
+          "category": "spacing",
+          "description": "Global spacing multiplier.",
+          "type": "number"
+        }
+      },
+      "tokens": {
+        "background_color": "#FFFFFF",
+        "border_radius": 10,
+        "font_family": "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+        "font_size_base": 14,
+        "font_weight": 500,
+        "foreground_color": "#111827",
+        "primary_color": "#2563EB",
+        "secondary_color": "#5856D6",
+        "shadow_level": 1,
+        "spacing_scale": 1.0
+      }
+    },
+    "ui": {
+      "persistence": {
+        "enabled": false,
+        "kind": "memory",
+        "path": null,
+        "schema_version": null
+      },
+      "settings": {
+        "accent_color": "blue",
+        "density": "comfortable",
+        "motion": "subtle",
+        "shape": "rounded",
+        "surface": "flat",
+        "theme": "light"
+      }
+    },
+    "warnings": [
+      {
+        "category": "state",
+        "code": "state.default.missing",
+        "column": 3,
+        "enforced_at": "runtime",
+        "fix": "Declare a default for state.chat.citations to silence this warning.",
+        "line": 10,
+        "message": "State path 'state.chat.citations' is not declared; using empty list during static validation.",
+        "path": "state.chat.citations"
+      },
+      {
+        "category": "state",
+        "code": "state.default.missing",
+        "column": 3,
+        "enforced_at": "runtime",
+        "fix": "Declare a default for state.chat.suggestions to silence this warning.",
+        "line": 10,
+        "message": "State path 'state.chat.suggestions' is not declared; using empty list during static validation.",
+        "path": "state.chat.suggestions"
+      },
+      {
+        "category": "layout",
+        "code": "layout.deep_nesting",
+        "column": 3,
+        "enforced_at": null,
+        "fix": "Flatten container nesting to improve layout clarity.",
+        "line": 10,
+        "message": "Container layout.sticky on page \"RAG\" nests 5 levels deep.",
+        "path": "page.rag.layout_sticky.0.1.1.0.0.2"
+      },
+      {
+        "category": "layout",
+        "code": "layout.deep_nesting",
+        "column": 3,
+        "enforced_at": null,
+        "fix": "Flatten container nesting to improve layout clarity.",
+        "line": 10,
+        "message": "Container section on page \"RAG\" nests 5 levels deep.",
+        "path": "page.rag.section.0.1.1.0.0.0"
+      },
+      {
+        "category": "layout",
+        "code": "layout.deep_nesting",
+        "column": 3,
+        "enforced_at": null,
+        "fix": "Flatten container nesting to improve layout clarity.",
+        "line": 10,
+        "message": "Container section on page \"RAG\" nests 5 levels deep.",
+        "path": "page.rag.section.0.1.1.0.0.1"
+      },
+      {
+        "category": "visibility",
+        "code": "visibility.missing_empty_state_guard",
+        "column": 3,
+        "enforced_at": null,
+        "fix": "Add `visible when state.<path> > 0` or set `empty_state: hidden`.",
+        "line": 10,
+        "message": "List on page \"RAG\" may render empty-state copy without a visible guard.",
+        "path": "page.rag.list.0.1.0.2.1"
+      },
+      {
+        "category": "visibility",
+        "code": "visibility.missing_empty_state_guard",
+        "column": 3,
+        "enforced_at": null,
+        "fix": "Add `visible when state.<path> > 0` or set `empty_state: hidden`.",
+        "line": 10,
+        "message": "List on page \"RAG\" may render empty-state copy without a visible guard.",
+        "path": "page.rag.list.0.1.1.0.0.0.0"
+      },
+      {
+        "category": "copy",
+        "code": "copy.missing_page_title",
+        "column": null,
+        "enforced_at": null,
+        "fix": "Add a title item near the top of the page.",
+        "line": null,
+        "message": "Page \"RAG\" has no title.",
+        "path": "page.rag"
+      }
+    ]
+  },
+  "summary": {
+    "action_types": [
+      "chat.branch.select",
+      "chat.message.regenerate",
+      "chat.message.send",
+      "chat.model.select",
+      "chat.stream.cancel",
+      "chat.thread.select",
+      "ingestion_run",
+      "upload_clear",
+      "upload_select"
+    ],
+    "element_types": [
+      "chat",
+      "composer",
+      "layout.col",
+      "layout.row",
+      "layout.sidebar",
+      "layout.stack",
+      "layout.sticky",
+      "list",
+      "messages",
+      "scope_selector",
+      "section",
+      "title",
+      "upload"
+    ],
+    "warning_codes": [
+      "copy.missing_page_title",
+      "layout.deep_nesting",
+      "layout.deep_nesting",
+      "layout.deep_nesting",
+      "state.default.missing",
+      "state.default.missing",
+      "visibility.missing_empty_state_guard",
+      "visibility.missing_empty_state_guard"
+    ]
+  }
+}

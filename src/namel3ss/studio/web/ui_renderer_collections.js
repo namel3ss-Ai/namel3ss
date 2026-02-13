@@ -63,6 +63,36 @@
     return Boolean(node.closest("button, input, a, textarea, select, label"));
   }
 
+  function suggestionMessageFromRow(row, mapping) {
+    if (!row || typeof row !== "object") return "";
+    const secondaryField =
+      mapping && typeof mapping.secondary === "string" && mapping.secondary ? mapping.secondary : "prompt";
+    const primaryField = mapping && typeof mapping.primary === "string" && mapping.primary ? mapping.primary : "title";
+    const secondaryValue = row[secondaryField];
+    if (typeof secondaryValue === "string" && secondaryValue.trim()) return secondaryValue.trim();
+    const primaryValue = row[primaryField];
+    if (typeof primaryValue === "string" && primaryValue.trim()) return primaryValue.trim();
+    return "";
+  }
+
+  function resolveSuggestionAction(el) {
+    if (!el || typeof el !== "object") return null;
+    const source = typeof el.source === "string" ? el.source.trim() : "";
+    if (source !== "state.chat.suggestions") return null;
+    const studioRoot = window.N3Studio || {};
+    const studioState = studioRoot && studioRoot.state ? studioRoot.state : null;
+    if (!studioState || typeof studioState.getCachedManifest !== "function") return null;
+    const manifest = studioState.getCachedManifest();
+    const actions = manifest && manifest.actions && typeof manifest.actions === "object" ? manifest.actions : null;
+    if (!actions) return null;
+    const rows = Object.values(actions)
+      .filter((entry) => entry && typeof entry === "object" && entry.type === "chat.message.send")
+      .sort((left, right) => String((left && left.id) || "").localeCompare(String((right && right.id) || "")));
+    const chosen = rows[0];
+    if (!chosen || typeof chosen.id !== "string" || !chosen.id) return null;
+    return { id: chosen.id, type: "chat.message.send" };
+  }
+
   function renderListElement(el, handleAction) {
     const wrapper = document.createElement("div");
     wrapper.className = "ui-element";
@@ -76,6 +106,7 @@
     const idField = el.id_field || (rows[0] && (rows[0].id != null ? "id" : rows[0]._id != null ? "_id" : null));
     const selectedIds = new Set();
     const rowMap = new Map();
+    const suggestionAction = resolveSuggestionAction(el);
 
     if (!rows.length) {
       const empty = document.createElement("div");
@@ -203,6 +234,15 @@
           if (typeof root.openCitationPreview === "function") {
             root.openCitationPreview(citationEntry, item, [citationEntry]);
           }
+        });
+      }
+      if (suggestionAction && !citationEntry) {
+        item.classList.add("ui-list-suggestion-item");
+        item.addEventListener("click", (event) => {
+          if (interactiveListTarget(event.target)) return;
+          const message = suggestionMessageFromRow(row, mapping);
+          if (!message) return;
+          handleAction(suggestionAction, { message: message, source: "suggestion" }, item);
         });
       }
       listWrap.appendChild(item);

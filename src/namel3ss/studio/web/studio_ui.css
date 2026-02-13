@@ -1560,6 +1560,30 @@
   border-radius: 3px;
   padding: 0 1px;
 }
+.ui-citation-highlight-0 {
+  background: rgba(255, 216, 0, 0.25);
+}
+.ui-citation-highlight-1 {
+  background: rgba(64, 156, 255, 0.28);
+}
+.ui-citation-highlight-2 {
+  background: rgba(84, 206, 120, 0.24);
+}
+.ui-citation-highlight-3 {
+  background: rgba(255, 138, 101, 0.28);
+}
+.ui-citation-highlight-4 {
+  background: rgba(160, 132, 255, 0.24);
+}
+.ui-citation-highlight-5 {
+  background: rgba(255, 102, 146, 0.24);
+}
+.ui-citation-highlight-6 {
+  background: rgba(68, 201, 207, 0.24);
+}
+.ui-citation-highlight-7 {
+  background: rgba(194, 155, 69, 0.24);
+}
 .ui-citation-preview-controls {
   display: flex;
   align-items: center;
@@ -2029,4 +2053,91 @@
     width: auto;
     white-space: nowrap;
   }
+}
+
+.ui-chunk-inspector {
+  border: 1px solid #e4d9c5;
+  border-radius: 12px;
+  background: #fffdf8;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.ui-chunk-inspector-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #332f25;
+}
+
+.ui-chunk-inspector-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ui-chunk-inspector-select {
+  min-width: 220px;
+  padding: 4px 6px;
+}
+
+.ui-chunk-inspector-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.ui-chunk-inspector-table th,
+.ui-chunk-inspector-table td {
+  border: 1px solid #eadfcf;
+  padding: 6px;
+  vertical-align: top;
+}
+
+.ui-chunk-inspector-signature {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.74rem;
+}
+
+.ui-chunk-inspector-snippet {
+  max-width: 320px;
+}
+
+.ui-chunk-inspector-pages-title {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #4a4438;
+}
+
+.ui-chunk-inspector-pages {
+  display: grid;
+  gap: 8px;
+}
+
+.ui-chunk-inspector-page {
+  border: 1px solid #eadfcf;
+  border-radius: 8px;
+  padding: 8px;
+  background: #fff;
+}
+
+.ui-chunk-inspector-page-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6e6556;
+  margin-bottom: 4px;
+}
+
+.ui-chunk-inspector-page-snippet {
+  font-size: 0.82rem;
+}
+
+.ui-chunk-inspector-status {
+  font-size: 0.78rem;
+  color: #6e6556;
+}
+
+.ui-chunk-inspector-empty {
+  color: #7e7567;
+  font-size: 0.82rem;
 }

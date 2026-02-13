@@ -26,6 +26,7 @@
     pageCount: null,
     entrySnippet: null,
     chunkId: null,
+    citationId: null,
     citations: [],
     selectedCitationIndex: -1,
     tabButtons: [],
@@ -55,7 +56,7 @@
 
   function renderChatChild(child, handleAction, chatConfig) {
     if (!child || !child.type) return null;
-    if (child.type === "messages") return renderMessages(child, chatConfig);
+    if (child.type === "messages") return renderMessages(child, chatConfig, handleAction);
     if (child.type === "composer") return renderComposer(child, handleAction);
     if (child.type === "thinking") return renderThinking(child, chatConfig);
     if (child.type === "citations") return renderCitations(child);
@@ -63,11 +64,12 @@
     return null;
   }
 
-  function renderMessages(child, chatConfig) {
+  function renderMessages(child, chatConfig, handleAction) {
     const container = document.createElement("div");
     const style = chatConfig && chatConfig.style === "plain" ? "plain" : "bubbles";
     container.className = `ui-chat-messages ui-chat-messages-${style}`;
     const messages = Array.isArray(child.messages) ? child.messages : [];
+    const controlContract = resolveMessageControlContract(child);
     if (!messages.length) {
       if (chatConfig && chatConfig._hasCitationPanel) {
         container.appendChild(renderNoSourcesPanel());
@@ -80,8 +82,9 @@
       return container;
     }
     let previousRole = "";
-    messages.forEach((message, index) => {
+    messages.forEach((message) => {
       const roleValue = normalizeMessageRole(message && message.role);
+      const messageId = messageIdentity(message);
       const grouped =
         chatConfig && chatConfig.group_messages !== false && !message.group_start
           ? true
@@ -90,6 +93,13 @@
       previousRole = roleValue;
       const row = document.createElement("div");
       row.className = `ui-chat-message role-${roleValue} ${groupStart ? "group-start" : "group-continue"}`;
+      if (messageId) {
+        row.dataset.messageId = messageId;
+      }
+      const isActiveMessage = Boolean(controlContract.activeMessageId && messageId && controlContract.activeMessageId === messageId);
+      if (isActiveMessage) {
+        row.classList.add("active-branch");
+      }
       const showAvatar = Boolean(chatConfig && chatConfig.show_avatars && groupStart);
       if (showAvatar) {
         const avatar = document.createElement("div");
@@ -145,6 +155,14 @@
         created.textContent = String(message.created);
         bubble.appendChild(created);
       }
+      renderMessageGraphControls(bubble, {
+        actionContract: controlContract,
+        handleAction: handleAction,
+        isActiveMessage: isActiveMessage,
+        message: message,
+        messageId: messageId,
+        role: roleValue,
+      });
       renderMessageActions(bubble, actions, message, content);
       row.appendChild(bubble);
       container.appendChild(row);
@@ -177,6 +195,90 @@
       normalized.push(value);
     });
     return normalized;
+  }
+
+  function messageIdentity(message) {
+    if (!message || typeof message !== "object") return "";
+    if (typeof message.id !== "string") return "";
+    const text = message.id.trim();
+    return text || "";
+  }
+
+  function normalizeControlAction(actionId, type) {
+    if (typeof actionId !== "string") return null;
+    const text = actionId.trim();
+    if (!text) return null;
+    return { id: text, type: type };
+  }
+
+  function resolveMessageControlContract(child) {
+    const payload = child && typeof child === "object" ? child : {};
+    const phaseRaw = typeof payload.stream_phase === "string" ? payload.stream_phase.trim().toLowerCase() : "";
+    return {
+      activeMessageId: typeof payload.active_message_id === "string" ? payload.active_message_id.trim() : "",
+      branchAction: normalizeControlAction(payload.branch_action_id, "chat.branch.select"),
+      regenerateAction: normalizeControlAction(payload.regenerate_action_id, "chat.message.regenerate"),
+      streamCancelAction: normalizeControlAction(payload.stream_cancel_action_id, "chat.stream.cancel"),
+      streamCancelRequested: Boolean(payload.stream_cancel_requested),
+      streamPhase: phaseRaw,
+    };
+  }
+
+  function shouldRenderStreamCancel(contract, isActiveMessage) {
+    if (!isActiveMessage || !contract || !contract.streamCancelAction) return false;
+    if (contract.streamCancelRequested) return false;
+    return contract.streamPhase === "streaming" || contract.streamPhase === "thinking";
+  }
+
+  function renderMessageGraphControls(container, options) {
+    const config = options && typeof options === "object" ? options : {};
+    const contract = config.actionContract && typeof config.actionContract === "object" ? config.actionContract : null;
+    const handleAction = typeof config.handleAction === "function" ? config.handleAction : null;
+    const messageId = typeof config.messageId === "string" ? config.messageId : "";
+    const role = typeof config.role === "string" ? config.role : "";
+    const isActiveMessage = Boolean(config.isActiveMessage);
+    if (!contract || !handleAction) return;
+    const controls = [];
+    if (contract.branchAction && messageId && !isActiveMessage) {
+      controls.push({
+        action: contract.branchAction,
+        label: "Switch branch",
+        payload: { message_id: messageId },
+      });
+    }
+    if (contract.regenerateAction && messageId && role === "assistant") {
+      controls.push({
+        action: contract.regenerateAction,
+        label: "Regenerate",
+        payload: { message_id: messageId },
+      });
+    }
+    if (shouldRenderStreamCancel(contract, isActiveMessage)) {
+      controls.push({
+        action: contract.streamCancelAction,
+        label: "Stop",
+        payload: { message_id: messageId },
+      });
+    }
+    if (!controls.length) return;
+    const bar = document.createElement("div");
+    bar.className = "ui-chat-message-controls";
+    controls.forEach((entry) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn small ghost";
+      button.textContent = entry.label;
+      button.onclick = async () => {
+        button.disabled = true;
+        try {
+          await handleAction(entry.action, entry.payload, button);
+        } finally {
+          button.disabled = false;
+        }
+      };
+      bar.appendChild(button);
+    });
+    container.appendChild(bar);
   }
 
   function renderMessageAttachments(container, message, chatConfig, options) {
@@ -427,6 +529,25 @@
   function renderComposer(child, handleAction) {
     const form = document.createElement("form");
     form.className = "ui-chat-composer";
+    const composerState = normalizeComposerState(child);
+    const actionType =
+      child && typeof child.action_type === "string" && child.action_type
+        ? child.action_type
+        : child &&
+            child.action &&
+            typeof child.action.type === "string" &&
+            child.action.type
+          ? child.action.type
+          : "call_flow";
+    const actionFlow =
+      child && typeof child.flow === "string" && child.flow
+        ? child.flow
+        : child &&
+            child.action &&
+            typeof child.action.flow === "string" &&
+            child.action.flow
+          ? child.action.flow
+          : "";
     const fields = normalizeComposerFields(child);
     const inputs = new Map();
     fields.forEach((field) => {
@@ -447,12 +568,19 @@
             form.dispatchEvent(new Event("submit", { cancelable: true }));
           }
         });
+        if (name === "message" && composerState.draft) {
+          input.value = composerState.draft;
+        }
       }
       input.placeholder = placeholder;
       input.setAttribute("aria-label", placeholder);
       inputs.set(name, input);
       form.appendChild(input);
     });
+    const advancedControls = actionType === "chat.message.send" ? buildComposerAdvancedControls(composerState) : null;
+    if (advancedControls) {
+      form.appendChild(advancedControls.node);
+    }
     const button = document.createElement("button");
     button.type = "submit";
     button.className = "btn small";
@@ -467,11 +595,21 @@
         const input = inputs.get(name);
         payload[name] = input ? input.value || "" : "";
       });
+      if (advancedControls) {
+        const advancedPayload = advancedControls.read();
+        payload.attachments = advancedPayload.attachments;
+        payload.tools = advancedPayload.tools;
+        payload.web_search = advancedPayload.web_search;
+      }
       inputs.forEach((input) => {
         if (input) input.value = "";
       });
+      const action = { id: child.action_id, type: actionType };
+      if (actionFlow) {
+        action.flow = actionFlow;
+      }
       await handleAction(
-        { id: child.action_id, type: "call_flow", flow: child.flow },
+        action,
         payload,
         button
       );
@@ -481,6 +619,137 @@
       }
     };
     return form;
+  }
+
+  function normalizeComposerState(child) {
+    const raw =
+      child && typeof child === "object" && child.composer_state && typeof child.composer_state === "object"
+        ? child.composer_state
+        : {};
+    return {
+      attachments: normalizeComposerTokenList(raw.attachments),
+      draft: typeof raw.draft === "string" ? raw.draft : "",
+      tools: normalizeComposerTokenList(raw.tools),
+      web_search: Boolean(raw.web_search),
+    };
+  }
+
+  function normalizeComposerTokenList(value) {
+    const source = Array.isArray(value) ? value : [];
+    const normalized = [];
+    const seen = new Set();
+    source.forEach((entry) => {
+      if (typeof entry !== "string") return;
+      const text = entry.trim();
+      if (!text || seen.has(text)) return;
+      seen.add(text);
+      normalized.push(text);
+    });
+    return normalized;
+  }
+
+  function buildComposerAdvancedControls(state) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "ui-chat-composer-advanced";
+    const attachmentsEditor = buildComposerListEditor("Attachments", state.attachments, "Add attachment id");
+    const toolsEditor = buildComposerListEditor("Tools", state.tools, "Add tool id");
+    wrapper.appendChild(attachmentsEditor.node);
+    wrapper.appendChild(toolsEditor.node);
+
+    const webSearchRow = document.createElement("label");
+    webSearchRow.className = "ui-chat-composer-toggle";
+    const webSearchToggle = document.createElement("input");
+    webSearchToggle.type = "checkbox";
+    webSearchToggle.checked = Boolean(state.web_search);
+    const webSearchText = document.createElement("span");
+    webSearchText.textContent = "Web search";
+    webSearchRow.appendChild(webSearchToggle);
+    webSearchRow.appendChild(webSearchText);
+    wrapper.appendChild(webSearchRow);
+
+    return {
+      node: wrapper,
+      read: () => ({
+        attachments: attachmentsEditor.values(),
+        tools: toolsEditor.values(),
+        web_search: webSearchToggle.checked === true,
+      }),
+    };
+  }
+
+  function buildComposerListEditor(label, initialValues, placeholder) {
+    const values = Array.isArray(initialValues) ? initialValues.slice() : [];
+    const container = document.createElement("div");
+    container.className = "ui-chat-composer-list";
+    const title = document.createElement("div");
+    title.className = "ui-chat-composer-list-title";
+    title.textContent = label;
+    container.appendChild(title);
+    const chips = document.createElement("div");
+    chips.className = "ui-chat-composer-list-values";
+    container.appendChild(chips);
+    const inputRow = document.createElement("div");
+    inputRow.className = "ui-chat-composer-list-input";
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = placeholder;
+    input.setAttribute("aria-label", placeholder);
+    const addButton = document.createElement("button");
+    addButton.type = "button";
+    addButton.className = "btn small ghost";
+    addButton.textContent = "Add";
+    const renderValues = () => {
+      chips.textContent = "";
+      if (!values.length) {
+        const empty = document.createElement("span");
+        empty.className = "ui-chat-composer-list-empty";
+        empty.textContent = "none";
+        chips.appendChild(empty);
+        return;
+      }
+      values.forEach((entry, index) => {
+        const chip = document.createElement("span");
+        chip.className = "ui-chat-composer-chip";
+        const text = document.createElement("span");
+        text.textContent = entry;
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "btn small ghost";
+        remove.textContent = "x";
+        remove.setAttribute("aria-label", `Remove ${label} ${entry}`);
+        remove.onclick = () => {
+          values.splice(index, 1);
+          renderValues();
+        };
+        chip.appendChild(text);
+        chip.appendChild(remove);
+        chips.appendChild(chip);
+      });
+    };
+    const addValue = () => {
+      const nextValue = typeof input.value === "string" ? input.value.trim() : "";
+      if (!nextValue || values.includes(nextValue)) {
+        input.value = "";
+        return;
+      }
+      values.push(nextValue);
+      input.value = "";
+      renderValues();
+    };
+    addButton.onclick = () => addValue();
+    input.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      addValue();
+    });
+    inputRow.appendChild(input);
+    inputRow.appendChild(addButton);
+    container.appendChild(inputRow);
+    renderValues();
+    return {
+      node: container,
+      values: () => values.slice(),
+    };
   }
 
   function resolveCitationTarget(entry) {
@@ -798,7 +1067,15 @@
       preview.nextButton.disabled = true;
     } else {
       preview.chunkId = target.chunkId || null;
-      loadPreviewPage(target.documentId, target.pageNumber, preview.chunkId);
+      preview.citationId = typeof entry.citation_id === "string" ? entry.citation_id : null;
+      loadPreviewPage(target.documentId, target.pageNumber, preview.chunkId, preview.citationId);
+      if (typeof root.applyCitationDeepLinkState === "function") {
+        root.applyCitationDeepLinkState({
+          citation_id: preview.citationId || "",
+          document_id: target.documentId,
+          page_number: target.pageNumber,
+        });
+      }
     }
     if (config.openPreviewTab) {
       setCitationPreviewTab("preview");
@@ -833,6 +1110,7 @@
     preview.pageCount = null;
     preview.entrySnippet = null;
     preview.chunkId = null;
+    preview.citationId = null;
     preview.citations = [];
     preview.selectedCitationIndex = -1;
     preview.sourceItems = [];
@@ -847,13 +1125,14 @@
     if (!preview.documentId || !preview.pageNumber || !preview.pageCount) return;
     const nextPage = preview.pageNumber + delta;
     if (nextPage < 1 || nextPage > preview.pageCount) return;
-    loadPreviewPage(preview.documentId, nextPage, preview.chunkId);
+    loadPreviewPage(preview.documentId, nextPage, preview.chunkId, preview.citationId);
   }
 
-  async function loadPreviewPage(documentId, pageNumber, chunkId) {
+  async function loadPreviewPage(documentId, pageNumber, chunkId, citationId) {
     const preview = ensureCitationPreview();
     preview.documentId = documentId;
     preview.pageNumber = pageNumber;
+    preview.citationId = citationId || null;
     preview.meta.textContent = "Loading page...";
     preview.error.textContent = "";
     preview.pageLabel.textContent = "";
@@ -866,13 +1145,17 @@
     preview.frame.removeAttribute("src");
 
     try {
-      const params = new URLSearchParams();
-      if (chunkId) params.set("chunk_id", chunkId);
-      const query = params.toString();
       const url =
-        query.length > 0
-          ? `/api/documents/${encodeURIComponent(documentId)}/pages/${pageNumber}?${query}`
-          : `/api/documents/${encodeURIComponent(documentId)}/pages/${pageNumber}`;
+        typeof root.buildPdfPreviewRequestUrl === "function"
+          ? root.buildPdfPreviewRequestUrl(documentId, pageNumber, chunkId, citationId)
+          : (() => {
+              const params = new URLSearchParams();
+              if (chunkId) params.set("chunk_id", chunkId);
+              if (citationId) params.set("citation_id", citationId);
+              const query = params.toString();
+              const base = `/api/documents/${encodeURIComponent(documentId)}/pages/${pageNumber}`;
+              return query ? `${base}?${query}` : base;
+            })();
       const response = await fetch(url);
       const payload = await response.json();
       if (!payload || typeof payload !== "object") {
@@ -927,7 +1210,9 @@
       const pageText = typeof page.text === "string" ? page.text : "";
       const highlightsSource = Array.isArray(previewPayload.highlights) ? previewPayload.highlights : payload.highlights;
       const highlights = Array.isArray(highlightsSource) ? highlightsSource : [];
-      renderPageText(preview.pageText, pageText, highlights);
+      const fallbackColorIndex =
+        typeof root.citationColorIndex === "function" ? root.citationColorIndex(preview.citationId || "", 8) : 0;
+      renderPageText(preview.pageText, pageText, highlights, fallbackColorIndex);
       setHighlightNotice(preview.pageNotice, highlights);
       preview.snippet.textContent = formatSnippet(preview.entrySnippet, pageText);
     } catch (err) {
@@ -947,7 +1232,7 @@
     return trimmed;
   }
 
-  function renderPageText(container, pageText, highlights) {
+  function renderPageText(container, pageText, highlights, fallbackColorIndex) {
     if (!container) return;
     const text = typeof pageText === "string" ? pageText : "";
     container.textContent = "";
@@ -955,7 +1240,7 @@
       container.textContent = "No extracted text for this page.";
       return;
     }
-    const ranges = normalizeHighlightRanges(highlights, text.length);
+    const ranges = normalizeHighlightRanges(highlights, text.length, fallbackColorIndex);
     if (!ranges.length) {
       container.textContent = text;
       return;
@@ -968,6 +1253,7 @@
       }
       const mark = document.createElement("mark");
       mark.className = "ui-citation-highlight";
+      mark.classList.add(`ui-citation-highlight-${range.colorIndex}`);
       mark.textContent = text.slice(range.start, range.end);
       fragment.appendChild(mark);
       cursor = range.end;
@@ -978,9 +1264,10 @@
     container.appendChild(fragment);
   }
 
-  function normalizeHighlightRanges(highlights, length) {
+  function normalizeHighlightRanges(highlights, length, fallbackColorIndex) {
     const items = Array.isArray(highlights) ? highlights : [];
     const ranges = [];
+    const fallbackColor = Number.isFinite(fallbackColorIndex) ? Math.trunc(fallbackColorIndex) % 8 : 0;
     items.forEach((item) => {
       if (!item || item.status !== "exact") return;
       const start = Number(item.start_char);
@@ -989,14 +1276,16 @@
       const startValue = Math.max(0, Math.trunc(start));
       const endValue = Math.min(length, Math.trunc(end));
       if (endValue <= startValue) return;
-      ranges.push({ start: startValue, end: endValue });
+      const itemColor = Number(item.color_index);
+      const colorIndex = Number.isFinite(itemColor) ? Math.abs(Math.trunc(itemColor)) % 8 : fallbackColor;
+      ranges.push({ start: startValue, end: endValue, colorIndex: colorIndex });
     });
-    ranges.sort((a, b) => (a.start - b.start) || (a.end - b.end));
+    ranges.sort((a, b) => (a.start - b.start) || (a.end - b.end) || (a.colorIndex - b.colorIndex));
     const merged = [];
     ranges.forEach((range) => {
       const last = merged[merged.length - 1];
-      if (!last || range.start > last.end) {
-        merged.push({ start: range.start, end: range.end });
+      if (!last || range.start > last.end || range.colorIndex !== last.colorIndex) {
+        merged.push({ start: range.start, end: range.end, colorIndex: range.colorIndex });
       } else if (range.end > last.end) {
         last.end = range.end;
       }
@@ -1007,9 +1296,21 @@
   function setHighlightNotice(notice, highlights) {
     if (!notice) return;
     const items = Array.isArray(highlights) ? highlights : [];
-    const hasExact = items.some((item) => item && item.status === "exact");
+    const hasExactText = items.some(
+      (item) =>
+        item &&
+        item.status === "exact" &&
+        Number.isFinite(Number(item.start_char)) &&
+        Number.isFinite(Number(item.end_char))
+    );
+    const hasExactBBox = items.some((item) => item && item.status === "exact" && Array.isArray(item.bbox) && item.bbox.length === 4);
     const hasUnavailable = items.some((item) => item && item.status === "unavailable");
-    if (hasUnavailable && !hasExact) {
+    if (hasExactBBox && !hasExactText) {
+      notice.textContent = "Highlight is anchored in the PDF view.";
+      notice.hidden = false;
+      return;
+    }
+    if (hasUnavailable && !hasExactText) {
       notice.textContent = "Highlight unavailable for this citation.";
       notice.hidden = false;
       return;
@@ -1144,8 +1445,11 @@
       if (typeof entry.explain === "string" && entry.explain.trim()) payload.explain = entry.explain.trim();
       if (typeof entry.chunk_id === "string" && entry.chunk_id.trim()) payload.chunk_id = entry.chunk_id.trim();
       if (typeof entry.document_id === "string" && entry.document_id.trim()) payload.document_id = entry.document_id.trim();
+      if (typeof entry.deep_link_query === "string" && entry.deep_link_query.trim()) payload.deep_link_query = entry.deep_link_query.trim();
+      if (typeof entry.preview_url === "string" && entry.preview_url.trim()) payload.preview_url = entry.preview_url.trim();
       if (typeof entry.page === "number" || typeof entry.page === "string") payload.page = entry.page;
       if (typeof entry.page_number === "number" || typeof entry.page_number === "string") payload.page_number = entry.page_number;
+      if (typeof entry.color_index === "number" && Number.isFinite(entry.color_index)) payload.color_index = Math.abs(Math.trunc(entry.color_index)) % 8;
       normalized.push(payload);
     });
     return normalized;
@@ -1193,4 +1497,3 @@
   root.normalizeCitationEntries = normalizeCitationEntries;
   root.resolveCitationTarget = resolveCitationTarget;
 })();
-

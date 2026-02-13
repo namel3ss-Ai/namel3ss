@@ -129,9 +129,14 @@
   function renderScopeSelectorElement(el, handleAction) {
     const wrapper = document.createElement("div");
     wrapper.className = "ui-scope-selector";
+    const actionType = el && typeof el.action_type === "string" && el.action_type ? el.action_type : "scope_select";
+    const selectionMode = el && el.selection === "single" ? "single" : "multi";
+    const studioRoot = window.N3Studio || {};
+    const run = studioRoot && studioRoot.run ? studioRoot.run : null;
+    const isChatThreadSelector = actionType === "chat.thread.select";
     const title = document.createElement("div");
     title.className = "ui-scope-selector-title";
-    title.textContent = "Retrieval scope";
+    title.textContent = el && typeof el.title === "string" && el.title ? el.title : "Retrieval scope";
     wrapper.appendChild(title);
 
     const options = Array.isArray(el && el.options) ? el.options : [];
@@ -141,6 +146,8 @@
 
     const selected = new Set(Array.isArray(el && el.active) ? el.active.map(String) : []);
     const buttons = [];
+    const buttonById = new Map();
+    let emptyState = null;
 
     const applySelection = () => {
       buttons.forEach((entry) => {
@@ -150,41 +157,144 @@
       });
     };
 
-    options.forEach((option) => {
-      if (!option || typeof option !== "object") return;
-      const id = typeof option.id === "string" ? option.id : "";
-      const name = typeof option.name === "string" ? option.name : id;
-      if (!id) return;
+    const syncEmptyState = () => {
+      if (buttons.length) {
+        if (emptyState) {
+          emptyState.remove();
+          emptyState = null;
+        }
+        return;
+      }
+      if (!emptyState) {
+        emptyState = document.createElement("div");
+        emptyState.className = "ui-scope-selector-empty";
+        emptyState.textContent = "No scopes available.";
+        list.appendChild(emptyState);
+      }
+    };
+
+    const actionPayload = () => ({ active: Array.from(selected) });
+
+    const dispatchSelectorAction = async (button) => {
+      if (typeof handleAction !== "function" || !el || !el.action_id) {
+        return { ok: true };
+      }
+      return handleAction(
+        { id: el.action_id, type: actionType, target_state: el.active_source || "" },
+        actionPayload(),
+        button
+      );
+    };
+
+    const runThreadRouteSelection = async (threadId, previousSelected) => {
+      if (!run || typeof run.loadChatThread !== "function") {
+        return dispatchSelectorAction(buttonById.get(threadId));
+      }
+      const previousThreadId = previousSelected.length ? String(previousSelected[0]) : "";
+      if (previousThreadId && previousThreadId !== threadId && typeof run.saveChatThread === "function") {
+        const saveResponse = await run.saveChatThread(previousThreadId, {}, {
+          activate: false,
+          refreshData: false,
+          refreshUI: false,
+        });
+        if (saveResponse && saveResponse.ok === false) {
+          const fallback = await dispatchSelectorAction(buttonById.get(threadId));
+          return fallback || saveResponse;
+        }
+      }
+      const loadResponse = await run.loadChatThread(threadId, {
+        activate: true,
+        refreshData: true,
+        refreshUI: true,
+      });
+      if (loadResponse && loadResponse.ok === false) {
+        const fallback = await dispatchSelectorAction(buttonById.get(threadId));
+        return fallback || loadResponse;
+      }
+      return loadResponse || { ok: true };
+    };
+
+    const addOptionButton = (id, name, metadata) => {
+      if (!id || buttonById.has(id)) return;
       const button = document.createElement("button");
       button.type = "button";
       button.className = "ui-scope-option";
-      button.textContent = name || id;
+      button.textContent = scopeOptionLabel(name || id, metadata);
+      const tooltip = scopeOptionTooltip(metadata);
+      if (tooltip) {
+        button.title = tooltip;
+      }
       button.onclick = async () => {
-        if (selected.has(id)) selected.delete(id);
-        else selected.add(id);
+        const previous = Array.from(selected);
+        if (selectionMode === "single") {
+          selected.clear();
+          selected.add(id);
+        } else if (selected.has(id)) {
+          selected.delete(id);
+        } else {
+          selected.add(id);
+        }
         applySelection();
-        if (typeof handleAction !== "function" || !el || !el.action_id) return;
-        const payload = { active: Array.from(selected) };
-        const response = await handleAction(
-          { id: el.action_id, type: "scope_select", target_state: el.active_source || "" },
-          payload,
-          button
-        );
+        const response = isChatThreadSelector
+          ? await runThreadRouteSelection(id, previous)
+          : await dispatchSelectorAction(button);
         if (response && response.ok === false) {
-          if (selected.has(id)) selected.delete(id);
-          else selected.add(id);
+          selected.clear();
+          previous.forEach((entry) => selected.add(entry));
           applySelection();
         }
       };
       list.appendChild(button);
       buttons.push({ id: id, button: button });
-    });
+      buttonById.set(id, button);
+      syncEmptyState();
+    };
 
-    if (!buttons.length) {
-      const empty = document.createElement("div");
-      empty.className = "ui-scope-selector-empty";
-      empty.textContent = "No scopes available.";
-      list.appendChild(empty);
+    options.forEach((option) => {
+      if (!option || typeof option !== "object") return;
+      const id = typeof option.id === "string" ? option.id : "";
+      const name = typeof option.name === "string" ? option.name : id;
+      if (!id) return;
+      addOptionButton(id, name, null);
+    });
+    syncEmptyState();
+
+    if (isChatThreadSelector && run && typeof run.listChatThreads === "function") {
+      run
+        .listChatThreads()
+        .then((response) => {
+          const chat = response && typeof response === "object" ? response.chat : null;
+          const rows = Array.isArray(chat && chat.threads) ? chat.threads : [];
+          rows.forEach((row) => {
+            if (!row || typeof row !== "object") return;
+            const id = typeof row.id === "string" ? row.id : "";
+            if (!id) return;
+            const label = typeof row.name === "string" && row.name ? row.name : id;
+            const metadata = {
+              last_message_id: row.last_message_id,
+              message_count: row.message_count,
+            };
+            if (buttonById.has(id)) {
+              const button = buttonById.get(id);
+              button.textContent = scopeOptionLabel(label, metadata);
+              const tooltip = scopeOptionTooltip(metadata);
+              if (tooltip) {
+                button.title = tooltip;
+              }
+              return;
+            }
+            addOptionButton(id, label, metadata);
+          });
+          const explicitActive = chat && typeof chat.active_thread_id === "string" ? chat.active_thread_id : "";
+          const rowActive = rows.find((row) => row && row.active === true);
+          const nextActive = explicitActive || (rowActive && typeof rowActive.id === "string" ? rowActive.id : "");
+          if (nextActive) {
+            selected.clear();
+            selected.add(nextActive);
+            applySelection();
+          }
+        })
+        .catch(() => {});
     }
 
     applySelection();
@@ -224,6 +334,35 @@
         page_number:
           typeof entry.page_number === "number" || typeof entry.page_number === "string" ? entry.page_number : undefined,
       }));
+  }
+
+  function scopeOptionLabel(label, metadata) {
+    const base = typeof label === "string" ? label : "";
+    if (!metadata || typeof metadata !== "object") return base;
+    const messageCount = Number(metadata.message_count);
+    if (!Number.isFinite(messageCount) || messageCount < 0) return base;
+    const count = Math.trunc(messageCount);
+    const noun = count === 1 ? "msg" : "msgs";
+    return `${base} (${count} ${noun})`;
+  }
+
+  function scopeOptionTooltip(metadata) {
+    if (!metadata || typeof metadata !== "object") return "";
+    const labels = [];
+    const messageCount = Number(metadata.message_count);
+    if (Number.isFinite(messageCount) && messageCount >= 0) {
+      const count = Math.trunc(messageCount);
+      const noun = count === 1 ? "message" : "messages";
+      labels.push(`${count} ${noun}`);
+    }
+    const lastMessageId =
+      typeof metadata.last_message_id === "string" && metadata.last_message_id.trim()
+        ? metadata.last_message_id.trim()
+        : "";
+    if (lastMessageId) {
+      labels.push(`last: ${lastMessageId}`);
+    }
+    return labels.join(" | ");
   }
 
   function sourceMetaText(el) {

@@ -27,6 +27,7 @@ def handle_documents_get(handler: Any, raw_path: str) -> bool:
         return True
     query = parse_qs(parsed_url.query or "")
     chunk_id = _query_value(query, "chunk_id") or _query_value(query, "chunk")
+    citation_id = _query_value(query, "citation_id") or _query_value(query, "cit")
     ctx = SimpleNamespace(
         capabilities=getattr(program, "capabilities", ()),
         project_root=getattr(program, "project_root", None),
@@ -60,6 +61,7 @@ def handle_documents_get(handler: Any, raw_path: str) -> bool:
         page_number=parsed["page_number"],
         state=state_value if isinstance(state_value, dict) else None,
         chunk_id=chunk_id,
+        citation_id=citation_id,
         identity=identity,
         policy_decl=policy_decl,
     )

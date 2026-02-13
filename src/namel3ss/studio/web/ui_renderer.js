@@ -15,6 +15,7 @@ let renderUI = (manifest) => {
   const renderFormElement = collectionRender.renderFormElement;
   const renderChatElement = collectionRender.renderChatElement;
   const renderChartElement = collectionRender.renderChartElement;
+  const renderChunkInspectorElement = collectionRender.renderChunkInspectorElement;
   const renderCitationChipsElement = collectionRender.renderCitationChipsElement;
   const renderSourcePreviewElement = collectionRender.renderSourcePreviewElement;
   const renderTrustIndicatorElement = collectionRender.renderTrustIndicatorElement;
@@ -22,6 +23,7 @@ let renderUI = (manifest) => {
   const renderUploadElement = collectionRender.renderUploadElement;
   const renderIngestionStatusElement = collectionRender.renderIngestionStatusElement;
   const renderRuntimeErrorElement = collectionRender.renderRuntimeErrorElement;
+  const renderObservabilityPanel = collectionRender.renderObservabilityPanel || window.renderObservabilityPanel;
   const renderCapabilitiesElement = collectionRender.renderCapabilitiesElement;
   const renderStateInspectorElement = collectionRender.renderStateInspectorElement;
   const renderSliderElement = collectionRender.renderSliderElement;
@@ -1635,7 +1637,17 @@ let renderUI = (manifest) => {
       const empty = document.createElement("div");
       empty.textContent = "State inspector renderer unavailable.";
       wrapper.appendChild(empty);
+    } else if (el.type === "observability_panel") {
+      if (typeof renderObservabilityPanel === "function") {
+        return renderObservabilityPanel(el, handleAction);
+      }
+      const empty = document.createElement("div");
+      empty.textContent = "Observability renderer unavailable.";
+      wrapper.appendChild(empty);
     } else if (el.type === "retrieval_explain") {
+      if (typeof renderObservabilityPanel === "function") {
+        return renderObservabilityPanel({ type: "observability_panel", explain: el }, handleAction);
+      }
       if (typeof renderRetrievalExplainElement === "function") {
         return renderRetrievalExplainElement(el, handleAction);
       }
@@ -1721,6 +1733,13 @@ let renderUI = (manifest) => {
       }
       const empty = document.createElement("div");
       empty.textContent = "Chart renderer unavailable.";
+      wrapper.appendChild(empty);
+    } else if (el.type === "chunk_inspector") {
+      if (typeof renderChunkInspectorElement === "function") {
+        return renderChunkInspectorElement(el, handleAction);
+      }
+      const empty = document.createElement("div");
+      empty.textContent = "Chunk inspector renderer unavailable.";
       wrapper.appendChild(empty);
     }
     return wrapper;

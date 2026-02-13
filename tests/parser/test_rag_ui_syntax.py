@@ -66,3 +66,53 @@ def test_rag_ui_requires_binds():
     with pytest.raises(Namel3ssError) as err:
         parse_program(source)
     assert "rag_ui requires a binds block" in str(err.value)
+
+
+def test_rag_ui_parses_shell_bindings():
+    source = '''page "RAG":
+  rag_ui:
+    binds:
+      messages from is state.chat.messages
+      on_send calls flow "answer_question"
+      threads from is state.chat.threads
+      active_thread when is state.chat.active_thread
+      models from is state.chat.models
+      active_models when is state.chat.active_models
+      suggestions from is state.chat.suggestions
+      composer_state when is state.chat.composer_state
+'''
+    program = parse_program(source)
+    rag = program.pages[0].items[0]
+    assert isinstance(rag.bindings, ast.RagUIBindings)
+    assert isinstance(rag.bindings.threads, ast.StatePath)
+    assert isinstance(rag.bindings.active_thread, ast.StatePath)
+    assert isinstance(rag.bindings.models, ast.StatePath)
+    assert isinstance(rag.bindings.active_models, ast.StatePath)
+    assert isinstance(rag.bindings.suggestions, ast.StatePath)
+    assert isinstance(rag.bindings.composer_state, ast.StatePath)
+
+
+def test_rag_ui_threads_require_active_thread_binding():
+    source = '''page "RAG":
+  rag_ui:
+    binds:
+      messages from is state.chat.messages
+      on_send calls flow "answer_question"
+      threads from is state.chat.threads
+'''
+    with pytest.raises(Namel3ssError) as err:
+        parse_program(source)
+    assert "threads requires active_thread" in str(err.value)
+
+
+def test_rag_ui_models_require_active_models_binding():
+    source = '''page "RAG":
+  rag_ui:
+    binds:
+      messages from is state.chat.messages
+      on_send calls flow "answer_question"
+      models from is state.chat.models
+'''
+    with pytest.raises(Namel3ssError) as err:
+        parse_program(source)
+    assert "models requires active_models" in str(err.value)

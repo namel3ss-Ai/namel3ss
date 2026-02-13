@@ -23,6 +23,12 @@ _RAG_UI_BIND_KEYS = {
     "on_send",
     "citations",
     "thinking",
+    "threads",
+    "active_thread",
+    "models",
+    "active_models",
+    "suggestions",
+    "composer_state",
     "drawer_open",
     "source_preview",
     "sources",
@@ -118,7 +124,7 @@ def parse_rag_ui_block(parser) -> ast.RagUIBlock:
 
 
 def _parse_base_line(parser) -> str:
-    tok = parser._advance()
+    parser._advance()
     if not parser._match("IS"):
         parser._expect("IS", "Expected 'is' after base")
     value_tok = parser._current()
@@ -179,14 +185,23 @@ def _parse_binds_block(parser) -> ast.RagUIBindings:
             raise Namel3ssError(f"rag_ui bind '{key}' is already declared.", line=tok.line, column=tok.column)
         seen.add(key)
         parser._advance()
-        if key in {"messages", "citations", "sources"}:
+        if key in {"messages", "citations", "sources", "threads", "models", "suggestions"}:
             _expect_from_keyword(parser, f"{key} bind must use: {key} from is state.<path>")
             parser._expect("IS", "Expected 'is' after from")
             value = _parse_state_path_value(parser, allow_pattern_params=False)
             bindings = replace(bindings, **{key: value})
             parser._match("NEWLINE")
             continue
-        if key in {"thinking", "drawer_open", "trust", "scope_options", "scope_active"}:
+        if key in {
+            "thinking",
+            "drawer_open",
+            "trust",
+            "scope_options",
+            "scope_active",
+            "active_thread",
+            "active_models",
+            "composer_state",
+        }:
             _consume_when_or_is(parser, key)
             value = _parse_state_path_value(parser, allow_pattern_params=False)
             bindings = replace(bindings, **{key: value})
@@ -341,6 +356,39 @@ def _validate_required_binds(
                 line=line,
                 column=column,
             )
+    _validate_shell_binds(binds, line=line, column=column)
+
+
+def _validate_shell_binds(
+    binds: ast.RagUIBindings,
+    *,
+    line: int | None,
+    column: int | None,
+) -> None:
+    if binds.threads is not None and binds.active_thread is None:
+        raise Namel3ssError(
+            "rag_ui threads requires active_thread when is state.<path>.",
+            line=line,
+            column=column,
+        )
+    if binds.active_thread is not None and binds.threads is None:
+        raise Namel3ssError(
+            "rag_ui active_thread requires threads from is state.<path>.",
+            line=line,
+            column=column,
+        )
+    if binds.models is not None and binds.active_models is None:
+        raise Namel3ssError(
+            "rag_ui models requires active_models when is state.<path>.",
+            line=line,
+            column=column,
+        )
+    if binds.active_models is not None and binds.models is None:
+        raise Namel3ssError(
+            "rag_ui active_models requires models from is state.<path>.",
+            line=line,
+            column=column,
+        )
 
 
 def _expect_from_keyword(parser, message: str) -> None:

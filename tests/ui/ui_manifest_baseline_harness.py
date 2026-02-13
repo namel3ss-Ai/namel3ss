@@ -263,6 +263,69 @@ page "rag":
             required_element_types=("scope_selector", "citation_chips", "trust_indicator", "source_preview", "chat"),
             required_action_types=("scope_select", "call_flow"),
         ),
+        UIBaselineCase(
+            name="rag_shell_page",
+            source='''spec is "1.0"
+
+capabilities:
+  ui_rag
+
+flow "send":
+  return "ok"
+
+page "RAG":
+  rag_ui:
+    binds:
+      messages from is state.chat.messages
+      on_send calls flow "send"
+      threads from is state.chat.threads
+      active_thread when is state.chat.active_thread
+      models from is state.chat.models
+      active_models when is state.chat.active_models
+      suggestions from is state.chat.suggestions
+      composer_state when is state.chat.composer_state
+''',
+            state={
+                "chat": {
+                    "messages": [{"id": "message.1", "role": "assistant", "content": "Grounded answer"}],
+                    "threads": [
+                        {"id": "thread.main", "name": "Main"},
+                        {"id": "thread.docs", "name": "Docs"},
+                    ],
+                    "active_thread": "thread.main",
+                    "models": [
+                        {"id": "model.alpha", "name": "Alpha"},
+                        {"id": "model.beta", "name": "Beta"},
+                    ],
+                    "active_models": ["model.alpha", "model.beta"],
+                    "suggestions": [
+                        {"prompt": "Summarize latest changes", "title": "Summarize changes"},
+                        {"prompt": "List thread metadata", "title": "Thread metadata"},
+                    ],
+                    "composer_state": {
+                        "attachments": ["upload.policy"],
+                        "draft": "Need docs",
+                        "tools": ["web.lookup"],
+                        "web_search": True,
+                    },
+                }
+            },
+            expected_warning_codes=(
+                "copy.missing_page_title",
+                "layout.deep_nesting",
+                "state.default.missing",
+                "visibility.missing_empty_state_guard",
+            ),
+            required_element_types=("scope_selector", "messages", "composer", "list"),
+            required_action_types=(
+                "chat.branch.select",
+                "chat.message.regenerate",
+                "chat.message.send",
+                "chat.model.select",
+                "chat.stream.cancel",
+                "chat.thread.select",
+            ),
+        ),
     )
 
 

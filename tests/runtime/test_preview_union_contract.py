@@ -32,6 +32,7 @@ def test_preview_endpoint_returns_ok_union_payload(monkeypatch) -> None:
         page_number=2,
         state=None,
         chunk_id=None,
+        citation_id=None,
         identity=None,
         policy_decl=None,
     )
@@ -54,6 +55,7 @@ def test_preview_endpoint_returns_unavailable_union_for_non_pdf(monkeypatch) -> 
         page_number=1,
         state={"ingestion": {"doc-text": {"preview": "fallback text"}}},
         chunk_id=None,
+        citation_id=None,
         identity=None,
         policy_decl=None,
     )
@@ -79,6 +81,7 @@ def test_preview_endpoint_uses_4xx_for_true_errors(monkeypatch) -> None:
         page_number=99,
         state=None,
         chunk_id=None,
+        citation_id=None,
         identity=None,
         policy_decl=None,
     )
@@ -102,6 +105,7 @@ def test_preview_endpoint_reports_union_contract_violations(monkeypatch) -> None
         page_number=0,
         state=None,
         chunk_id=None,
+        citation_id=None,
         identity=None,
         policy_decl=None,
     )

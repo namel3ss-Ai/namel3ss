@@ -22,8 +22,17 @@ ask ai "assistant" with stream: true and input: "Explain photosynthesis." as rep
 ## Transport
 
 - Studio uses `POST /api/action/stream` with `text/event-stream`.
-- Events are deterministic and ordered by `sequence`.
-- Event types: `progress`, `token`, `finish`, `return`.
+- Dynamic routes and chat thread endpoints reuse the same SSE framing.
+- Events are deterministic and ordered by:
+  - `sequence`
+  - channel order
+  - event order contract
+- Event types by channel:
+  - flow channel: `yield`
+  - ai channel: `progress`, `token`, `finish`, `error`
+  - chat channel: `chat.thread.list`, `chat.thread.load`, `chat.thread.save`
+  - terminal frame: `return`
+- Chat channel events stream only when explicitly requested with `stream=true`, `Accept: text/event-stream`, or `X-N3-Stream: true`.
 
 ## Determinism
 

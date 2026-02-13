@@ -66,6 +66,21 @@
         "flow": "send",
         "id": "page.support.composer.2.0.0.1.composer",
         "type": "call_flow"
+      },
+      "page.support.messages.2.0.0.0.branch_select": {
+        "id": "page.support.messages.2.0.0.0.branch_select",
+        "target_state": "state.messages_graph.active_message_id",
+        "type": "chat.branch.select"
+      },
+      "page.support.messages.2.0.0.0.message_regenerate": {
+        "id": "page.support.messages.2.0.0.0.message_regenerate",
+        "target_state": "state.messages_graph.active_message_id",
+        "type": "chat.message.regenerate"
+      },
+      "page.support.messages.2.0.0.0.stream_cancel": {
+        "id": "page.support.messages.2.0.0.0.stream_cancel",
+        "target_state": "state.stream_state.cancel_requested",
+        "type": "chat.stream.cancel"
       }
     },
     "diagnostics_enabled": true,
@@ -154,6 +169,8 @@
                   "attachments": false,
                   "children": [
                     {
+                      "active_message_id": null,
+                      "branch_action_id": "page.support.messages.2.0.0.0.branch_select",
                       "column": 11,
                       "element_id": "page.support.messages.2.0.0.0",
                       "index": 0,
@@ -167,11 +184,15 @@
                       ],
                       "page": "support",
                       "page_slug": "support",
+                      "regenerate_action_id": "page.support.messages.2.0.0.0.message_regenerate",
                       "source": "state.messages",
                       "spacing": {
                         "item_gap": "m",
                         "meta_gap": "s"
                       },
+                      "stream_cancel_action_id": "page.support.messages.2.0.0.0.stream_cancel",
+                      "stream_cancel_requested": false,
+                      "stream_phase": "",
                       "type": "messages"
                     },
                     {
@@ -185,6 +206,7 @@
                         "type": "call_flow"
                       },
                       "action_id": "page.support.composer.2.0.0.1.composer",
+                      "action_type": "call_flow",
                       "column": 11,
                       "element_id": "page.support.composer.2.0.0.1",
                       "flow": "send",
@@ -268,6 +290,14 @@
         "slug": "support"
       }
     ],
+    "state_defaults": {
+      "app": {},
+      "pages": {
+        "support": {
+          "stream_state": {}
+        }
+      }
+    },
     "theme": {
       "base_theme": "default",
       "config": {
@@ -379,7 +409,10 @@
   },
   "summary": {
     "action_types": [
-      "call_flow"
+      "call_flow",
+      "chat.branch.select",
+      "chat.message.regenerate",
+      "chat.stream.cancel"
     ],
     "element_types": [
       "chat",

@@ -59,6 +59,7 @@ def handle_document_page(
     page_number: object,
     state: dict | None = None,
     chunk_id: str | None = None,
+    citation_id: str | None = None,
     identity: dict | None = None,
     policy_decl: object | None = None,
     secret_values: list[str] | None = None,
@@ -71,10 +72,17 @@ def handle_document_page(
         raise Namel3ssError(_page_range_message(page_value, payload.page_count))
     if state is None:
         cleaned = _page_text_from_pdf(ctx, payload, page_value, secret_values=secret_values)
-        highlights = fallback_highlights(payload.document_id, page_value, chunk_id)
+        highlights = fallback_highlights(payload.document_id, page_value, chunk_id, citation_id=citation_id)
     else:
         cleaned = _page_text_from_state(state, payload, page_value)
-        highlights = highlights_from_state(state, payload.document_id, page_value, chunk_id, cleaned)
+        highlights = highlights_from_state(
+            state,
+            payload.document_id,
+            page_value,
+            chunk_id,
+            cleaned,
+            citation_id=citation_id,
+        )
     return {
         "ok": True,
         "document": payload.info,

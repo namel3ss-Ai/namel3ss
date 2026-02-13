@@ -9,6 +9,8 @@ from namel3ss.runtime.executor import execute_program_flow
 from namel3ss.runtime.router.registry import RouteEntry, RouteMatch, RouteRegistry
 from namel3ss.runtime.router.request import coerce_params, query_params, read_json_body
 from namel3ss.runtime.router.authorization import enforce_route_permissions
+from namel3ss.runtime.router.chat.thread_routes import dispatch_chat_thread_route
+from namel3ss.runtime.router.chunk_inspection_routes import dispatch_chunk_inspection_route
 from namel3ss.runtime.router.upload import handle_route_upload, register_dataset
 from namel3ss.runtime.conventions.config import load_conventions_config
 from namel3ss.runtime.conventions.errors import build_error_envelope
@@ -30,11 +32,15 @@ from namel3ss.runtime.router.messages import (
     deprecation_warning,
     error_reason_code,
     filter_not_allowed_message,
-    format_not_allowed_message,
     log_deprecated_route_call,
     removed_version_message,
     requested_version,
     status_from_error,
+)
+from namel3ss.runtime.router.response_contract import (
+    format_flow_response,
+    list_response_fields,
+    resolve_response_format,
 )
 from namel3ss.runtime.router.streaming import (
     build_sse_body,
@@ -75,6 +81,48 @@ def dispatch_route(
     parsed = urlparse(raw_path)
     query = parse_qs(parsed.query or "")
     query_values = query_params(query)
+    chunk_route_payload = dispatch_chunk_inspection_route(
+        method=method,
+        path=parsed.path,
+        query_values=query_values,
+        store=store,
+        program=program,
+    )
+    if chunk_route_payload is not None:
+        if chunk_route_payload.status == 200 and should_stream_response(query_values, headers, chunk_route_payload.yield_messages):
+            return RouteDispatchResult(
+                payload=None,
+                body=build_sse_body(chunk_route_payload.yield_messages, chunk_route_payload.response),
+                content_type="text/event-stream; charset=utf-8",
+                status=chunk_route_payload.status,
+                headers={"Cache-Control": "no-cache"},
+            )
+        return RouteDispatchResult(
+            payload=chunk_route_payload.response,
+            status=chunk_route_payload.status,
+        )
+    chat_route_payload = dispatch_chat_thread_route(
+        method=method,
+        path=parsed.path,
+        query_values=query_values,
+        headers=headers,
+        rfile=rfile,
+        store=store,
+        program=program,
+    )
+    if chat_route_payload is not None:
+        if chat_route_payload.status == 200 and should_stream_response(query_values, headers, chat_route_payload.yield_messages):
+            return RouteDispatchResult(
+                payload=None,
+                body=build_sse_body(chat_route_payload.yield_messages, chat_route_payload.response),
+                content_type="text/event-stream; charset=utf-8",
+                status=chat_route_payload.status,
+                headers={"Cache-Control": "no-cache"},
+            )
+        return RouteDispatchResult(
+            payload=chat_route_payload.response,
+            status=chat_route_payload.status,
+        )
     requested_version_value = requested_version(query_values, headers)
     match = registry.match(method, parsed.path, requested_version=requested_version_value)
     if match is None:
@@ -125,7 +173,7 @@ def dispatch_route(
             getattr(program, "project_root", None),
             getattr(program, "app_path", None),
         )
-        format_name = _resolve_response_format(entry.name, query_values, headers, formats_config)
+        format_name = resolve_response_format(entry.name, query_values, headers, formats_config)
         conventions = load_conventions_config(
             getattr(program, "project_root", None),
             getattr(program, "app_path", None),
@@ -324,7 +372,7 @@ def _run_route(
     flow_executor=None,
 ) -> RouteRunPayload:
     entry = match.entry
-    list_fields = _list_response_fields(entry.response or {})
+    list_fields = list_response_fields(entry.response or {})
     route_conventions = conventions.for_route(entry.name)
     input_data: dict[str, object] = {}
     input_data.update(coerce_params(match.path_params, entry.parameters))
@@ -383,7 +431,7 @@ def _run_route(
             root=getattr(program, "project_root", None),
         ),
     )
-    response = _format_response(entry, result.last_value)
+    response = format_flow_response(entry, result.last_value)
     if list_fields:
         response = apply_filters(response, list_fields=list_fields, filters=filters)
         if route_conventions.pagination:
@@ -405,47 +453,6 @@ def _run_route(
         yield_messages=sorted_yield_messages(getattr(result, "yield_messages", None)),
     )
 
-
-def _format_response(entry: RouteEntry, value: object) -> dict:
-    if isinstance(value, dict):
-        return value
-    response_fields = list(entry.response.keys()) if entry.response else []
-    if len(response_fields) == 1:
-        return {response_fields[0]: value}
-    if not response_fields:
-        return {"result": value}
-    raise Namel3ssError("Flow response must be an object matching the route response schema.")
-
-
-def _list_response_fields(fields: dict) -> tuple[str, ...]:
-    if not fields:
-        return ()
-    names: list[str] = []
-    for name, field in fields.items():
-        type_name = getattr(field, "type_name", "")
-        if isinstance(type_name, str) and type_name.startswith("list<"):
-            names.append(name)
-    return tuple(sorted(names))
-
-
-def _resolve_response_format(route_name: str, query: dict[str, str], headers: dict[str, str], formats) -> str:
-    requested = None
-    if "format" in query:
-        requested = str(query.get("format") or "").strip().lower()
-    if not requested:
-        accept = headers.get("Accept") or headers.get("accept") or ""
-        lowered = accept.lower()
-        if "toon" in lowered:
-            requested = "toon"
-    if not requested:
-        requested = "json"
-    allowed = formats.formats_for_route(route_name)
-    if requested not in allowed:
-        raise Namel3ssError(
-            format_not_allowed_message(route_name, requested),
-            details={"http_status": 406, "category": "format", "reason_code": "format_not_allowed"},
-        )
-    return requested
 
 def _record_route_audit(program, entry: RouteEntry, *, user: str, status: str, details: dict[str, object]) -> None:
     record_audit_entry(

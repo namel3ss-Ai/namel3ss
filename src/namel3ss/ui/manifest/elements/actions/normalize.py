@@ -8,7 +8,7 @@ from namel3ss.media import MediaValidationMode
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.schema import records as schema
 from namel3ss.ui.manifest.origin import _attach_origin
-from namel3ss.ui.manifest_card import _build_card_actions, _build_card_stat
+from namel3ss.ui.manifest.card import _build_card_actions, _build_card_stat
 from namel3ss.ui.manifest.state_defaults import StateContext
 from namel3ss.ui.theme import resolve_component_style
 from namel3ss.validation import ValidationMode

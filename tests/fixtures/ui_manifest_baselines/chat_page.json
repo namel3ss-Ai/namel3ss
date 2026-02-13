@@ -56,6 +56,21 @@
         "flow": "send_message",
         "id": "page.chat.composer.2.0.1.composer",
         "type": "call_flow"
+      },
+      "page.chat.messages.2.0.0.branch_select": {
+        "id": "page.chat.messages.2.0.0.branch_select",
+        "target_state": "state.chat.messages_graph.active_message_id",
+        "type": "chat.branch.select"
+      },
+      "page.chat.messages.2.0.0.message_regenerate": {
+        "id": "page.chat.messages.2.0.0.message_regenerate",
+        "target_state": "state.chat.messages_graph.active_message_id",
+        "type": "chat.message.regenerate"
+      },
+      "page.chat.messages.2.0.0.stream_cancel": {
+        "id": "page.chat.messages.2.0.0.stream_cancel",
+        "target_state": "state.chat.stream_state.cancel_requested",
+        "type": "chat.stream.cancel"
       }
     },
     "diagnostics_enabled": true,
@@ -100,6 +115,8 @@
                 "attachments": false,
                 "children": [
                   {
+                    "active_message_id": null,
+                    "branch_action_id": "page.chat.messages.2.0.0.branch_select",
                     "column": 7,
                     "element_id": "page.chat.messages.2.0.0",
                     "index": 0,
@@ -113,11 +130,15 @@
                     ],
                     "page": "chat",
                     "page_slug": "chat",
+                    "regenerate_action_id": "page.chat.messages.2.0.0.message_regenerate",
                     "source": "state.chat.messages",
                     "spacing": {
                       "item_gap": "m",
                       "meta_gap": "s"
                     },
+                    "stream_cancel_action_id": "page.chat.messages.2.0.0.stream_cancel",
+                    "stream_cancel_requested": false,
+                    "stream_phase": "",
                     "type": "messages"
                   },
                   {
@@ -131,6 +152,7 @@
                       "type": "call_flow"
                     },
                     "action_id": "page.chat.composer.2.0.1.composer",
+                    "action_type": "call_flow",
                     "column": 7,
                     "element_id": "page.chat.composer.2.0.1",
                     "flow": "send_message",
@@ -240,6 +262,16 @@
         "slug": "chat"
       }
     ],
+    "state_defaults": {
+      "app": {},
+      "pages": {
+        "chat": {
+          "chat": {
+            "stream_state": {}
+          }
+        }
+      }
+    },
     "theme": {
       "base_theme": "default",
       "config": {
@@ -383,7 +415,10 @@
   },
   "summary": {
     "action_types": [
-      "call_flow"
+      "call_flow",
+      "chat.branch.select",
+      "chat.message.regenerate",
+      "chat.stream.cancel"
     ],
     "element_types": [
       "chat",
