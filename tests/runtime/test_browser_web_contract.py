@@ -13,6 +13,9 @@ def test_preview_html_excludes_overlay_and_status() -> None:
     html = Path("src/namel3ss/runtime/web/preview.html").read_text(encoding="utf-8")
     assert 'id="devOverlay"' not in html
     assert "runtimeStatus" not in html
+    assert "runtime-bar" not in html
+    assert "pageSelect" not in html
+    assert "appLabel" not in html
     assert 'mode: "preview"' in html
 
 
@@ -21,4 +24,7 @@ def test_prod_html_excludes_overlay_status_and_badge() -> None:
     assert 'id="devOverlay"' not in html
     assert "runtimeStatus" not in html
     assert "runtime-badge" not in html
+    assert "runtime-bar" not in html
+    assert "pageSelect" not in html
+    assert "appLabel" not in html
     assert 'mode: "preview"' in html
