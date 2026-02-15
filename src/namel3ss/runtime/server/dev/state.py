@@ -467,7 +467,6 @@ class BrowserAppState:
         except Exception:
             return {}
 
-
 def _scan_project_sources(project_root: Path) -> list[Path]:
     paths: list[Path] = []
     for path in sorted(project_root.rglob("*.ai"), key=lambda p: p.as_posix()):
@@ -498,5 +497,4 @@ def _read_source_fallback(app_path: Path) -> dict[Path, str]:
         return {app_path: app_path.read_text(encoding="utf-8")}
     except OSError:
         return {}
-
 __all__ = ["BrowserAppState"]
