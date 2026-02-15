@@ -60,12 +60,14 @@ def dispatch_ui_action(
     if isinstance(retrieval_result, dict) and isinstance(ui_payload, dict):
         inject_retrieval_explain_elements(ui_payload, retrieval_result)
     if isinstance(ui_payload, dict):
-        inject_audit_viewer_elements(
-            ui_payload,
-            run_artifact=response.get("run_artifact"),
-            audit_bundle=response.get("audit_bundle"),
-            audit_policy_status=response.get("audit_policy_status"),
-        )
+        ui_mode = str(ui_payload.get("mode") or "").strip().lower()
+        if ui_mode == DISPLAY_MODE_STUDIO:
+            inject_audit_viewer_elements(
+                ui_payload,
+                run_artifact=response.get("run_artifact"),
+                audit_bundle=response.get("audit_bundle"),
+                audit_policy_status=response.get("audit_policy_status"),
+            )
     return response
 
 

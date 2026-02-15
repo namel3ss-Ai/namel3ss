@@ -61,3 +61,29 @@ def test_attach_capability_contract_fields_blocks_invalid_explicit_request() -> 
     assert str(enriched["runtime_error"].get("stable_code", "")).startswith(
         "runtime.runtime_internal.capability_unknown."
     )
+
+
+def test_attach_capability_contract_fields_hides_viewer_in_production_mode() -> None:
+    config = AppConfig()
+    program = SimpleNamespace(capabilities=("http", "files"))
+    response = {
+        "ok": True,
+        "state": {},
+        "ui": {
+            "ok": True,
+            "mode": "production",
+            "diagnostics_enabled": True,
+            "pages": [
+                {
+                    "name": "home",
+                    "slug": "home",
+                    "elements": [{"type": "text", "text": "hello"}],
+                }
+            ],
+        },
+    }
+    enriched = attach_capability_contract_fields(response, program_ir=program, config=config)
+    ui = enriched["ui"]
+    assert ui["capabilities_enabled"] == enriched["capabilities_enabled"]
+    assert ui["capability_versions"] == enriched["capability_versions"]
+    assert ui["pages"][0]["elements"][0]["type"] == "text"

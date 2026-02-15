@@ -224,9 +224,7 @@ def _program_capabilities(program_ir: object | None) -> tuple[str, ...]:
 
 def _ui_capabilities_visible(payload: dict) -> bool:
     mode = _text(payload.get("mode"))
-    if mode == "studio":
-        return True
-    return bool(payload.get("diagnostics_enabled"))
+    return mode == "studio"
 
 
 def _inject_capabilities_viewer_elements(

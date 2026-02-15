@@ -7,6 +7,7 @@ from namel3ss.runtime.migrations.migration_runner import build_migration_status
 from namel3ss.runtime.migrations.schema_version import STATE_SCHEMA_VERSION
 from namel3ss.runtime.persistence import describe_persistence_backend
 from namel3ss.ui.manifest.elements.state_inspector import inject_state_inspector_elements
+from namel3ss.ui.manifest.display_mode import DISPLAY_MODE_STUDIO
 
 
 def attach_persistence_contract_fields(
@@ -35,12 +36,14 @@ def attach_persistence_contract_fields(
         ui_payload["persistence_backend"] = backend
         ui_payload["state_schema_version"] = response["state_schema_version"]
         ui_payload["migration_status"] = migration_status
-        inject_state_inspector_elements(
-            ui_payload,
-            persistence_backend=backend,
-            migration_status=migration_status,
-            state_schema_version=response["state_schema_version"],
-        )
+        ui_mode = str(ui_payload.get("mode") or "").strip().lower()
+        if ui_mode == DISPLAY_MODE_STUDIO:
+            inject_state_inspector_elements(
+                ui_payload,
+                persistence_backend=backend,
+                migration_status=migration_status,
+                state_schema_version=response["state_schema_version"],
+            )
     return response
 
 
