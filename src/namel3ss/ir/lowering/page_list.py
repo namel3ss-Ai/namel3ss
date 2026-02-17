@@ -29,9 +29,9 @@ def _lower_list_item_mapping(
                 column=mapping.column,
             )
     if mapping.icon:
-        if variant != "icon":
+        if variant not in {"icon", "icon_plain"}:
             raise Namel3ssError(
-                "List icon requires variant 'icon'",
+                "List icon requires variant 'icon' or 'icon_plain'",
                 line=mapping.line,
                 column=mapping.column,
             )
@@ -62,9 +62,9 @@ def _lower_state_list_item_mapping(
 ) -> ListItemMapping:
     if mapping is None:
         raise Namel3ssError("State lists require item mapping", line=line, column=column)
-    if mapping.icon and variant != "icon":
+    if mapping.icon and variant not in {"icon", "icon_plain"}:
         raise Namel3ssError(
-            "List icon requires variant 'icon'",
+            "List icon requires variant 'icon' or 'icon_plain'",
             line=mapping.line,
             column=mapping.column,
         )
@@ -132,6 +132,7 @@ def _lower_list_actions(
                 flow_name=action.flow_name,
                 kind=action.kind,
                 target=action.target,
+                ui_behavior=getattr(action, "ui_behavior", None),
                 availability_rule=availability_rule,
                 line=action.line,
                 column=action.column,

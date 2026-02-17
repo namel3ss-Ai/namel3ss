@@ -5,6 +5,8 @@ from namel3ss.ir import nodes as ir
 
 _ALLOWED_MESSAGE_ACTIONS = {"copy", "expand", "view_sources"}
 _ALLOWED_ATTACHMENT_TYPES = {"citation", "file", "image"}
+_ALLOWED_COMPOSER_SEND_STYLES = {"icon", "text"}
+_DEFAULT_COMPOSER_PLACEHOLDER = "Ask about your documents... use #project or @document"
 _SNIPPET_MAX_LENGTH = 220
 
 
@@ -21,6 +23,14 @@ def apply_chat_configuration(
     chat_element["group_messages"] = bool(getattr(item, "group_messages", True))
     chat_element["streaming"] = bool(getattr(item, "streaming", False))
     chat_element["attachments"] = bool(getattr(item, "attachments", False))
+    chat_element["composer_placeholder"] = _normalize_composer_placeholder(
+        getattr(item, "composer_placeholder", _DEFAULT_COMPOSER_PLACEHOLDER),
+    )
+    chat_element["composer_send_style"] = _normalize_composer_send_style(
+        getattr(item, "composer_send_style", "icon"),
+        line=item.line,
+        column=item.column,
+    )
     chat_element["citations_enhanced"] = bool(citations_enhanced_enabled)
     chat_element["actions"] = _normalize_actions(getattr(item, "actions", []), line=item.line, column=item.column)
 
@@ -147,6 +157,26 @@ def _normalize_actions(raw: object, *, line: int | None, column: int | None) -> 
     return normalized
 
 
+def _normalize_composer_placeholder(raw: object) -> str:
+    if not isinstance(raw, str):
+        return _DEFAULT_COMPOSER_PLACEHOLDER
+    value = raw.strip()
+    if not value:
+        return _DEFAULT_COMPOSER_PLACEHOLDER
+    return value
+
+
+def _normalize_composer_send_style(raw: object, *, line: int | None, column: int | None) -> str:
+    value = str(raw or "icon").strip().lower()
+    if value not in _ALLOWED_COMPOSER_SEND_STYLES:
+        raise Namel3ssError(
+            "composer_send_style must be icon or text.",
+            line=line,
+            column=column,
+        )
+    return value
+
+
 def _normalize_citations(value: object, *, line: int | None, column: int | None) -> list[dict]:
     if value is None:
         return []
@@ -175,6 +205,42 @@ def _normalize_citations(value: object, *, line: int | None, column: int | None)
         index = entry.get("index")
         if isinstance(index, int):
             citation["index"] = max(1, index)
+        chunk_id = entry.get("chunk_id")
+        if isinstance(chunk_id, str) and chunk_id.strip():
+            citation["chunk_id"] = chunk_id.strip()
+        document_id = entry.get("document_id")
+        if isinstance(document_id, str) and document_id.strip():
+            citation["document_id"] = document_id.strip()
+        deep_link_query = entry.get("deep_link_query")
+        if isinstance(deep_link_query, str) and deep_link_query.strip():
+            citation["deep_link_query"] = deep_link_query.strip()
+        preview_url = entry.get("preview_url")
+        if isinstance(preview_url, str) and preview_url.strip():
+            citation["preview_url"] = preview_url.strip()
+        explain = entry.get("explain")
+        if isinstance(explain, str) and explain.strip():
+            citation["explain"] = explain.strip()
+        highlight_color = entry.get("highlight_color")
+        if isinstance(highlight_color, str) and highlight_color.strip():
+            citation["highlight_color"] = highlight_color.strip()
+        color = entry.get("color")
+        if isinstance(color, str) and color.strip():
+            citation["color"] = color.strip()
+        color_hex = entry.get("color_hex")
+        if isinstance(color_hex, str) and color_hex.strip():
+            citation["color_hex"] = color_hex.strip()
+        page_number = _positive_int(entry.get("page_number"))
+        if page_number is not None:
+            citation["page_number"] = page_number
+        page_value = entry.get("page")
+        page_number_from_page = _positive_int(page_value)
+        if page_number_from_page is not None:
+            citation["page"] = page_number_from_page
+        elif isinstance(page_value, str) and page_value.strip():
+            citation["page"] = page_value.strip()
+        color_index = entry.get("color_index")
+        if isinstance(color_index, int):
+            citation["color_index"] = abs(color_index) % 8
         citations.append(citation)
     return citations
 
@@ -256,6 +322,19 @@ def _normalize_snippet(value: str) -> str:
         return compact
     truncated = compact[:_SNIPPET_MAX_LENGTH].rstrip()
     return f"{truncated}..."
+
+
+def _positive_int(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if value > 0 else None
+    if isinstance(value, str):
+        text = value.strip()
+        if text.isdigit():
+            parsed = int(text)
+            return parsed if parsed > 0 else None
+    return None
 
 
 __all__ = ["apply_chat_configuration"]

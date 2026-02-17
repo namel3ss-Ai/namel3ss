@@ -27,6 +27,8 @@ def _lower_chat_item(item: ast.ChatItem, flow_names: set[str], page_name: str, *
         actions=list(getattr(item, "actions", []) or []),
         streaming=bool(getattr(item, "streaming", False)),
         attachments=bool(getattr(item, "attachments", False)),
+        composer_placeholder=str(getattr(item, "composer_placeholder", "") or ""),
+        composer_send_style=str(getattr(item, "composer_send_style", "icon") or "icon"),
         line=item.line,
         column=item.column,
     )

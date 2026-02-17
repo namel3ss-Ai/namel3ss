@@ -34,6 +34,22 @@ page "home":
         calls flow "open_order"
 '''
 
+ACTION_WITH_INTERACTION_SOURCE = '''record "Order":
+  name text
+
+flow "rename_order":
+  return "ok"
+
+page "home":
+  list is "Order":
+    item:
+      primary is name
+    actions:
+      action "Rename":
+        calls flow "rename_order"
+        interaction is rename_modal
+'''
+
 
 ID_FALLBACK_SOURCE = '''record "Metric":
   value number
@@ -47,6 +63,24 @@ STATE_SOURCE = '''page "home":
     item:
       primary is name
       secondary is detail
+'''
+
+ICON_PLAIN_SOURCE = '''record "Project":
+  name text
+  icon text
+
+flow "open_project":
+  return "ok"
+
+page "home":
+  list is "Project":
+    variant is icon_plain
+    item:
+      primary is name
+      icon is icon
+    actions:
+      action "Open":
+        calls flow "open_project"
 '''
 
 def _load_record(program, name: str):
@@ -138,3 +172,29 @@ def test_state_list_requires_list_source():
     with pytest.raises(Namel3ssError) as exc:
         build_manifest(program, state={"items": "bad"}, store=MemoryStore())
     assert "list source must be a list" in str(exc.value).lower()
+
+
+def test_list_manifest_icon_plain_variant():
+    program = lower_ir_program(ICON_PLAIN_SOURCE)
+    store = MemoryStore()
+    record = _load_record(program, "Project")
+    store.save(record, {"name": "namel3ss", "icon": "folder_info"})
+    manifest = build_manifest(program, state={}, store=store)
+    list_el = next(el for el in manifest["pages"][0]["elements"] if el["type"] == "list")
+    assert list_el["variant"] == "icon_plain"
+    assert list_el["item"]["icon"] == "icon"
+    assert len(list_el.get("actions") or []) == 1
+
+
+def test_list_manifest_action_interaction_hint_is_exported():
+    program = lower_ir_program(ACTION_WITH_INTERACTION_SOURCE)
+    store = MemoryStore()
+    record = _load_record(program, "Order")
+    store.save(record, {"name": "Alpha"})
+    manifest = build_manifest(program, state={}, store=store)
+    list_el = next(el for el in manifest["pages"][0]["elements"] if el["type"] == "list")
+    actions = list_el.get("actions") or []
+    assert len(actions) == 1
+    assert actions[0]["ui_behavior"] == "rename_modal"
+    action_id = actions[0]["id"]
+    assert manifest["actions"][action_id]["ui_behavior"] == "rename_modal"

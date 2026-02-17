@@ -80,6 +80,17 @@ page "home":
     thinking when state.chat.thinking
 '''
 
+COMPOSER_UI_SOURCE = '''flow "ask_flow":
+  return "ok"
+
+page "home":
+  chat:
+    composer_placeholder is "Ask your project a question..."
+    composer_send_style is text
+    messages from is state.chat.messages
+    composer calls flow "ask_flow"
+'''
+
 ENHANCED_STATE = {
     "chat": {
         "messages": [
@@ -192,6 +203,8 @@ def test_chat_manifest_sets_enhanced_chat_defaults():
     assert chat["streaming"] is False
     assert chat["attachments"] is False
     assert chat["actions"] == []
+    assert chat["composer_placeholder"] == "Ask about your documents... use #project or @document"
+    assert chat["composer_send_style"] == "icon"
 
 
 def test_chat_manifest_applies_enhanced_configuration_and_grouping():
@@ -225,3 +238,11 @@ def test_chat_manifest_enhanced_is_deterministic():
     manifest_one = build_manifest(program, state=ENHANCED_STATE)
     manifest_two = build_manifest(program, state=ENHANCED_STATE)
     assert manifest_one == manifest_two
+
+
+def test_chat_manifest_includes_composer_ui_options():
+    program = lower_ir_program(COMPOSER_UI_SOURCE)
+    manifest = build_manifest(program, state={"chat": {"messages": []}})
+    chat = _chat_element(manifest)
+    assert chat["composer_placeholder"] == "Ask your project a question..."
+    assert chat["composer_send_style"] == "text"

@@ -25,12 +25,14 @@
     pageNumber: null,
     pageCount: null,
     entrySnippet: null,
+    highlightColor: "",
     chunkId: null,
     citationId: null,
     citations: [],
     selectedCitationIndex: -1,
     tabButtons: [],
     trapHandler: null,
+    lastDeepLinkKey: "",
   };
 
   function renderChatElement(el, handleAction) {
@@ -57,7 +59,7 @@
   function renderChatChild(child, handleAction, chatConfig) {
     if (!child || !child.type) return null;
     if (child.type === "messages") return renderMessages(child, chatConfig, handleAction);
-    if (child.type === "composer") return renderComposer(child, handleAction);
+    if (child.type === "composer") return renderComposer(child, handleAction, chatConfig);
     if (child.type === "thinking") return renderThinking(child, chatConfig);
     if (child.type === "citations") return renderCitations(child);
     if (child.type === "memory") return renderMemory(child);
@@ -69,6 +71,7 @@
     const style = chatConfig && chatConfig.style === "plain" ? "plain" : "bubbles";
     container.className = `ui-chat-messages ui-chat-messages-${style}`;
     const messages = Array.isArray(child.messages) ? child.messages : [];
+    const renderedCitations = [];
     const controlContract = resolveMessageControlContract(child);
     if (!messages.length) {
       if (chatConfig && chatConfig._hasCitationPanel) {
@@ -115,11 +118,13 @@
       const content = document.createElement("div");
       content.className = "ui-chat-content";
       const fullText = typeof message.content === "string" ? message.content : "";
+      const citations = collectMessageCitations(message);
+      appendUniqueCitations(renderedCitations, citations);
       const actions = normalizeMessageActions(message && message.actions, chatConfig && chatConfig.actions);
       if (actions.includes("expand") && fullText.length > 280) {
-        setExpandedContent(content, fullText, false);
+        setExpandedContent(content, fullText, false, citations);
       } else {
-        content.textContent = fullText;
+        setRenderedMessageContent(content, fullText, citations);
       }
       const isStreamingMessage =
         Boolean(chatConfig && chatConfig.streaming) &&
@@ -131,18 +136,9 @@
       bubble.appendChild(role);
       bubble.appendChild(content);
       if (isStreamingMessage) {
-        renderStreamingContent(content, message, () => revealMessageCitations(row));
+        renderStreamingContent(content, message, citations, () => revealMessageCitations(row));
       }
-      if (Object.prototype.hasOwnProperty.call(message, "trust") && typeof root.renderTrustIndicatorElement === "function") {
-        const trustNode = root.renderTrustIndicatorElement({
-          type: "trust_indicator",
-          value: message.trust,
-          compact: true,
-        });
-        trustNode.classList.add("ui-chat-trust-row");
-        bubble.appendChild(trustNode);
-      }
-      renderMessageAttachments(bubble, message, chatConfig, { deferCitations: isStreamingMessage });
+      renderMessageAttachments(bubble, message, chatConfig, { deferCitations: isStreamingMessage, citations: citations });
       if (typeof message.error === "string" && message.error.trim()) {
         const errorSurface = document.createElement("div");
         errorSurface.className = "ui-chat-error-surface";
@@ -163,10 +159,11 @@
         messageId: messageId,
         role: roleValue,
       });
-      renderMessageActions(bubble, actions, message, content);
+      renderMessageActions(bubble, actions, message, content, citations);
       row.appendChild(bubble);
       container.appendChild(row);
     });
+    maybeOpenCitationFromDeepLink(renderedCitations);
     return container;
   }
 
@@ -285,7 +282,7 @@
     const config = options && typeof options === "object" ? options : {};
     const attachmentsEnabled = Boolean(chatConfig && chatConfig.attachments);
     const attachments = Array.isArray(message && message.attachments) ? message.attachments : [];
-    const citations = collectMessageCitations(message);
+    const citations = Array.isArray(config.citations) ? config.citations : collectMessageCitations(message);
     if (!attachmentsEnabled && !citations.length) return;
     const block = document.createElement("div");
     block.className = "ui-chat-attachments";
@@ -331,7 +328,7 @@
     if (block.children.length > 0) container.appendChild(block);
   }
 
-  function renderMessageActions(container, actions, message, contentNode) {
+  function renderMessageActions(container, actions, message, contentNode, citations) {
     if (!actions.length) return;
     const bar = document.createElement("div");
     bar.className = "ui-chat-message-actions";
@@ -353,21 +350,22 @@
         button.textContent = "Expand";
         button.onclick = () => {
           const expanded = contentNode.dataset.expanded === "true";
-          setExpandedContent(contentNode, contentNode.dataset.fullText || contentNode.textContent || "", !expanded);
+          const fullText = typeof message.content === "string" ? message.content : contentNode.dataset.fullText || contentNode.textContent || "";
+          setExpandedContent(contentNode, fullText, !expanded, citations);
           button.textContent = expanded ? "Expand" : "Collapse";
         };
       } else if (action === "view_sources") {
         button.textContent = "Sources";
         button.onclick = () => {
-          const citations = collectMessageCitations(message);
-          if (!citations.length) {
+          const messageCitations = Array.isArray(citations) ? citations : collectMessageCitations(message);
+          if (!messageCitations.length) {
             button.textContent = "No sources";
             setTimeout(() => {
               button.textContent = "Sources";
             }, 1000);
             return;
           }
-          openCitationPreview(citations[0], button, citations);
+          openCitationPreview(messageCitations[0], button, messageCitations);
         };
       }
       bar.appendChild(button);
@@ -375,14 +373,74 @@
     container.appendChild(bar);
   }
 
-  function setExpandedContent(node, fullText, expanded) {
+  function setExpandedContent(node, fullText, expanded, citations) {
     node.dataset.fullText = fullText;
     node.dataset.expanded = expanded ? "true" : "false";
     if (expanded || fullText.length <= 280) {
-      node.textContent = fullText;
+      setRenderedMessageContent(node, fullText, citations);
       return;
     }
-    node.textContent = `${fullText.slice(0, 280)}...`;
+    setRenderedMessageContent(node, `${fullText.slice(0, 280)}...`, citations);
+  }
+
+  function setRenderedMessageContent(node, text, citations) {
+    renderInlineCitationText(node, typeof text === "string" ? text : "", citations);
+  }
+
+  function renderInlineCitationText(container, text, citations) {
+    container.textContent = "";
+    if (!text) return;
+    if (!Array.isArray(citations) || !citations.length || text.indexOf("[") === -1) {
+      container.textContent = text;
+      return;
+    }
+    const markerPattern = /\[(\d{1,3})\]/g;
+    let cursor = 0;
+    let match = markerPattern.exec(text);
+    while (match) {
+      if (match.index > cursor) {
+        container.appendChild(document.createTextNode(text.slice(cursor, match.index)));
+      }
+      const marker = Number.parseInt(match[1], 10);
+      const citationEntry = resolveInlineCitationEntry(citations, marker);
+      if (citationEntry) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "ui-chat-inline-citation";
+        button.textContent = match[0];
+        button.title = citationEntry.title ? `Open source: ${citationEntry.title}` : "Open source";
+        if (typeof citationEntry.citation_id === "string" && citationEntry.citation_id) {
+          button.dataset.citationId = citationEntry.citation_id;
+        }
+        button.onclick = () => {
+          if (typeof citationEntry.citation_id === "string" && citationEntry.citation_id && typeof root.selectCitationId === "function") {
+            root.selectCitationId(citationEntry.citation_id);
+          }
+          openCitationPreview(citationEntry, button, citations);
+        };
+        container.appendChild(button);
+      } else {
+        container.appendChild(document.createTextNode(match[0]));
+      }
+      cursor = markerPattern.lastIndex;
+      match = markerPattern.exec(text);
+    }
+    if (cursor < text.length) {
+      container.appendChild(document.createTextNode(text.slice(cursor)));
+    }
+  }
+
+  function resolveInlineCitationEntry(citations, marker) {
+    if (!Array.isArray(citations) || !citations.length) return null;
+    if (!Number.isFinite(marker) || marker < 1) return null;
+    for (const entry of citations) {
+      const value = Number(entry && entry.index);
+      if (Number.isFinite(value) && Math.max(1, Math.trunc(value)) === marker) {
+        return entry;
+      }
+    }
+    if (marker <= citations.length) return citations[marker - 1];
+    return null;
   }
 
   function renderNoSourcesPanel() {
@@ -425,21 +483,25 @@
 
   function collectMessageCitations(message) {
     const values = [];
-    const seen = new Set();
-    const pushUnique = (entry) => {
-      const key = citationIdentity(entry);
-      if (seen.has(key)) return;
-      seen.add(key);
-      values.push(entry);
-    };
     const direct = normalizeCitationEntries(message && message.citations);
-    direct.forEach((entry) => pushUnique(entry));
+    appendUniqueCitations(values, direct);
     const attachments = Array.isArray(message && message.attachments) ? message.attachments : [];
     attachments.forEach((attachment) => {
       if (!attachment || attachment.type !== "citation") return;
-      normalizeCitationEntries([attachment]).forEach((entry) => pushUnique(entry));
+      appendUniqueCitations(values, normalizeCitationEntries([attachment]));
     });
     return values;
+  }
+
+  function appendUniqueCitations(target, entries) {
+    if (!Array.isArray(target) || !Array.isArray(entries) || !entries.length) return;
+    const seen = new Set(target.map((entry) => citationIdentity(entry)));
+    entries.forEach((entry) => {
+      const key = citationIdentity(entry);
+      if (seen.has(key)) return;
+      seen.add(key);
+      target.push(entry);
+    });
   }
 
   function citationIdentity(entry) {
@@ -479,13 +541,13 @@
     document.body.removeChild(area);
   }
 
-  function renderStreamingContent(contentNode, message, onComplete) {
+  function renderStreamingContent(contentNode, message, citations, onComplete) {
     const fullText = typeof message.content === "string" ? message.content : "";
     const tokenValues = Array.isArray(message.tokens)
       ? message.tokens.filter((entry) => typeof entry === "string")
       : fullText.split(/(\s+)/).filter((entry) => entry.length > 0);
     if (!tokenValues.length) {
-      contentNode.textContent = fullText;
+      setRenderedMessageContent(contentNode, fullText, citations);
       contentNode.dataset.streamPhase = "complete";
       if (typeof onComplete === "function") onComplete();
       return;
@@ -504,6 +566,7 @@
       if (finalized) return;
       finalized = true;
       contentNode.dataset.streamPhase = "complete";
+      setRenderedMessageContent(contentNode, fullText, citations);
       if (typeof onComplete === "function") onComplete();
     };
     const interval = window.setInterval(() => {
@@ -526,9 +589,20 @@
     }, 14);
   }
 
-  function renderComposer(child, handleAction) {
+  function renderComposer(child, handleAction, chatConfig) {
     const form = document.createElement("form");
     form.className = "ui-chat-composer";
+    const composerSurface = document.createElement("div");
+    composerSurface.className = "ui-chat-composer-surface";
+    form.appendChild(composerSurface);
+    const composerPlaceholder =
+      chatConfig && typeof chatConfig.composer_placeholder === "string" && chatConfig.composer_placeholder.trim()
+        ? chatConfig.composer_placeholder.trim()
+        : "Ask about your documents... use #project or @document";
+    const composerSendStyle =
+      chatConfig && typeof chatConfig.composer_send_style === "string" && chatConfig.composer_send_style.trim()
+        ? chatConfig.composer_send_style.trim().toLowerCase()
+        : "icon";
     const composerState = normalizeComposerState(child);
     const actionType =
       child && typeof child.action_type === "string" && child.action_type
@@ -550,9 +624,10 @@
           : "";
     const fields = normalizeComposerFields(child);
     const inputs = new Map();
+    let messageInput = null;
     fields.forEach((field) => {
       const name = field.name || "message";
-      const placeholder = name === "message" ? "Type a message" : String(name);
+      const placeholder = name === "message" ? composerPlaceholder : String(name);
       const input = name === "message" ? document.createElement("textarea") : document.createElement("input");
       if (input.tagName.toLowerCase() === "input") {
         input.type = "text";
@@ -561,6 +636,9 @@
         input.rows = 1;
         input.addEventListener("keydown", (event) => {
           if (event.key !== "Enter" || event.shiftKey) return;
+          if (event.currentTarget && event.currentTarget.dataset && event.currentTarget.dataset.mentionMenuOpen === "true") {
+            return;
+          }
           event.preventDefault();
           if (typeof form.requestSubmit === "function") {
             form.requestSubmit();
@@ -575,20 +653,54 @@
       input.placeholder = placeholder;
       input.setAttribute("aria-label", placeholder);
       inputs.set(name, input);
-      form.appendChild(input);
+      composerSurface.appendChild(input);
+      if (name === "message") {
+        messageInput = input;
+      }
     });
+    const mentionController =
+      actionFlow === "rag_engine.ask_question" && messageInput ? setupComposerMentions(composerSurface, messageInput) : null;
     const advancedControls = actionType === "chat.message.send" ? buildComposerAdvancedControls(composerState) : null;
     if (advancedControls) {
       form.appendChild(advancedControls.node);
     }
     const button = document.createElement("button");
     button.type = "submit";
-    button.className = "btn small";
-    button.textContent = "Send";
-    form.appendChild(button);
+    button.className = "btn small ui-chat-composer-send";
+    button.setAttribute("aria-label", "Send message");
+    if (composerSendStyle === "text") {
+      button.textContent = "Send";
+    } else if (typeof root.createIconNode === "function") {
+      const icon = root.createIconNode("send", { size: "small", decorative: true });
+      icon.classList.add("ui-chat-composer-send-icon");
+      button.appendChild(icon);
+    } else {
+      button.textContent = "↑";
+    }
+    composerSurface.appendChild(button);
+
+    const updateSubmitState = () => {
+      const value = messageInput && typeof messageInput.value === "string" ? messageInput.value.trim() : "";
+      const enabled = value.length > 0;
+      button.disabled = !enabled;
+      button.classList.toggle("is-active", enabled);
+    };
+    if (messageInput) {
+      messageInput.addEventListener("input", updateSubmitState);
+    }
+    updateSubmitState();
+
+    composerSurface.addEventListener("click", (event) => {
+      if (event.target && event.target.closest && event.target.closest("button, input, textarea, select, a, label")) return;
+      if (messageInput && typeof messageInput.focus === "function") {
+        messageInput.focus();
+      }
+    });
 
     form.onsubmit = async (e) => {
       e.preventDefault();
+      updateSubmitState();
+      if (button.disabled) return;
       const payload = {};
       fields.forEach((field) => {
         const name = field.name || "message";
@@ -601,6 +713,17 @@
         payload.tools = advancedPayload.tools;
         payload.web_search = advancedPayload.web_search;
       }
+      if (mentionController) {
+        const messageValue = typeof payload.message === "string" ? payload.message : "";
+        const mentionPayload = mentionController.buildPayload(messageValue);
+        payload.query_text = mentionPayload.queryText;
+        payload.project_scope = mentionPayload.projectScope;
+        payload.project_scope_label = mentionPayload.projectScopeLabel;
+        payload.project_scope_conflict = mentionPayload.projectScopeConflict;
+        payload.document_scope = mentionPayload.documentScope;
+        payload.document_scope_mode = mentionPayload.documentScopeMode;
+      }
+      button.classList.add("is-sending");
       inputs.forEach((input) => {
         if (input) input.value = "";
       });
@@ -608,17 +731,454 @@
       if (actionFlow) {
         action.flow = actionFlow;
       }
-      await handleAction(
-        action,
-        payload,
-        button
-      );
-      const messageInput = inputs.get("message");
+      try {
+        await handleAction(
+          action,
+          payload,
+          button
+        );
+      } finally {
+        button.classList.remove("is-sending");
+        updateSubmitState();
+      }
       if (messageInput && typeof messageInput.focus === "function") {
         messageInput.focus();
       }
     };
     return form;
+  }
+
+  function setupComposerMentions(container, messageInput) {
+    const mentionSources = collectMentionSources();
+    if (!mentionSources.projects.length && !mentionSources.documents.length) {
+      return null;
+    }
+    const state = {
+      project: null,
+      documents: [],
+      activeSymbol: "",
+      activeToken: "",
+      options: [],
+      activeIndex: 0,
+    };
+
+    const chips = document.createElement("div");
+    chips.className = "ui-chat-mention-chips";
+    const menu = document.createElement("div");
+    menu.className = "ui-chat-mention-menu hidden";
+    menu.setAttribute("role", "listbox");
+    container.appendChild(chips);
+    container.appendChild(menu);
+
+    function clearMenu() {
+      state.activeSymbol = "";
+      state.activeToken = "";
+      state.options = [];
+      state.activeIndex = 0;
+      menu.classList.add("hidden");
+      menu.textContent = "";
+      messageInput.dataset.mentionMenuOpen = "false";
+    }
+
+    function addDocumentChip(option) {
+      if (!option || !option.id) return;
+      const alreadySelected = state.documents.some((entry) => entry.id === option.id);
+      if (alreadySelected) return;
+      state.documents.push(option);
+    }
+
+    function addProjectChip(option) {
+      if (!option || !option.id) return;
+      state.project = option;
+    }
+
+    function removeTokenAtCaret(symbol, token) {
+      const text = String(messageInput.value || "");
+      const caret = Number.isInteger(messageInput.selectionStart) ? messageInput.selectionStart : text.length;
+      const before = text.slice(0, caret);
+      const after = text.slice(caret);
+      const escapedSymbol = symbol === "#" ? "\\#" : "@";
+      const pattern = new RegExp(`(^|\\s)(${escapedSymbol}${escapeRegex(token)})$`);
+      const match = before.match(pattern);
+      if (!match) return;
+      const prefix = match[1] || "";
+      const replacementStart = before.length - match[0].length + prefix.length;
+      const nextBefore = `${before.slice(0, replacementStart)} `;
+      const nextValue = `${nextBefore}${after}`.replace(/\s+/g, " ").replace(/\s+$/, "");
+      messageInput.value = nextValue;
+      const nextCaret = Math.min(nextBefore.length, messageInput.value.length);
+      messageInput.setSelectionRange(nextCaret, nextCaret);
+    }
+
+    function renderChips() {
+      chips.textContent = "";
+      const renderChip = (kind, entry) => {
+        const chip = document.createElement("span");
+        chip.className = `ui-chat-mention-chip kind-${kind}`;
+        if (typeof root.createIconNode === "function") {
+          const icon = root.createIconNode(kind === "project" ? "folder_info" : "file", {
+            size: "xsmall",
+            decorative: true,
+          });
+          icon.classList.add("ui-chat-mention-chip-icon");
+          chip.appendChild(icon);
+        }
+        const label = document.createElement("span");
+        label.className = "ui-chat-mention-chip-label";
+        label.textContent = `${kind === "project" ? "#" : "@"}${entry.label}`;
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "ui-chat-mention-chip-remove";
+        remove.textContent = "×";
+        remove.setAttribute("aria-label", `Remove ${kind} ${entry.label}`);
+        remove.onclick = () => {
+          if (kind === "project") {
+            state.project = null;
+          } else {
+            state.documents = state.documents.filter((doc) => doc.id !== entry.id);
+          }
+          renderChips();
+        };
+        chip.appendChild(label);
+        chip.appendChild(remove);
+        chips.appendChild(chip);
+      };
+
+      if (state.project) {
+        renderChip("project", state.project);
+      }
+      state.documents.forEach((entry) => renderChip("document", entry));
+    }
+
+    function renderMenu() {
+      menu.textContent = "";
+      if (!state.options.length) {
+        clearMenu();
+        return;
+      }
+      let lastGroup = "";
+      state.options.forEach((option, index) => {
+        const optionGroup = typeof option.group === "string" ? option.group : "";
+        if (optionGroup && optionGroup !== lastGroup) {
+          const heading = document.createElement("div");
+          heading.className = "ui-chat-mention-group";
+          heading.textContent = optionGroup;
+          menu.appendChild(heading);
+          lastGroup = optionGroup;
+        }
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "ui-chat-mention-option";
+        if (index === state.activeIndex) {
+          item.classList.add("active");
+        }
+        if (typeof root.createIconNode === "function") {
+          const icon = root.createIconNode(option.kind === "project" ? "folder_info" : "file", {
+            size: "xsmall",
+            decorative: true,
+          });
+          icon.classList.add("ui-chat-mention-option-icon");
+          item.appendChild(icon);
+        }
+        const label = document.createElement("span");
+        label.className = "ui-chat-mention-option-label";
+        label.textContent = `${option.kind === "project" ? "#" : "@"}${option.label}`;
+        item.appendChild(label);
+        item.addEventListener("mousedown", (event) => {
+          event.preventDefault();
+        });
+        item.onclick = () => {
+          if (option.kind === "project") {
+            addProjectChip(option);
+          } else {
+            addDocumentChip(option);
+          }
+          removeTokenAtCaret(state.activeSymbol, state.activeToken);
+          renderChips();
+          clearMenu();
+          messageInput.focus();
+        };
+        menu.appendChild(item);
+      });
+      menu.classList.remove("hidden");
+      messageInput.dataset.mentionMenuOpen = "true";
+    }
+
+    function updateSuggestions() {
+      const text = String(messageInput.value || "");
+      const caret = Number.isInteger(messageInput.selectionStart) ? messageInput.selectionStart : text.length;
+      const before = text.slice(0, caret);
+      const mentionMatch = before.match(/(^|\s)([#@])([A-Za-z0-9._-]*)$/);
+      if (!mentionMatch) {
+        clearMenu();
+        return;
+      }
+      const symbol = mentionMatch[2];
+      const token = mentionMatch[3] || "";
+      const query = token.toLowerCase();
+      const options =
+        symbol === "#"
+          ? mentionSources.projects
+              .filter((entry) => entry.search.includes(query))
+              .map((entry) => ({ kind: "project", id: entry.id, label: entry.label, search: entry.search, group: "Projects" }))
+          : mentionSources.documents
+              .filter((entry) => entry.search.includes(query))
+              .map((entry) => ({
+                kind: "document",
+                id: entry.id,
+                label: entry.label,
+                search: entry.search,
+                group: entry.group || "Documents",
+              }));
+      state.activeSymbol = symbol;
+      state.activeToken = token;
+      state.options = options.slice(0, 8);
+      state.activeIndex = 0;
+      renderMenu();
+    }
+
+    function selectActiveOption() {
+      if (!state.options.length) return false;
+      const option = state.options[Math.max(0, Math.min(state.activeIndex, state.options.length - 1))];
+      if (!option) return false;
+      if (option.kind === "project") {
+        addProjectChip(option);
+      } else {
+        addDocumentChip(option);
+      }
+      removeTokenAtCaret(state.activeSymbol, state.activeToken);
+      renderChips();
+      clearMenu();
+      return true;
+    }
+
+    messageInput.addEventListener("input", () => updateSuggestions());
+    messageInput.addEventListener("click", () => updateSuggestions());
+    messageInput.addEventListener("blur", () => {
+      window.setTimeout(() => clearMenu(), 120);
+    });
+    messageInput.addEventListener("keydown", (event) => {
+      if (menu.classList.contains("hidden")) return;
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        state.activeIndex = (state.activeIndex + 1) % state.options.length;
+        renderMenu();
+        return;
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        state.activeIndex = (state.activeIndex - 1 + state.options.length) % state.options.length;
+        renderMenu();
+        return;
+      }
+      if (event.key === "Enter" && !event.shiftKey) {
+        if (selectActiveOption()) {
+          event.preventDefault();
+        }
+        return;
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        clearMenu();
+      }
+    });
+
+    renderChips();
+
+    function resolveDocumentScopeMode(projectScopeId, projectScopeLabel, documentIds) {
+      if (!Array.isArray(documentIds) || !documentIds.length) return "once";
+      const activeProjectId = mentionSources.activeProjectId || "";
+      const effectiveProjectId = projectScopeId || activeProjectId;
+      const outsideDocuments = [];
+      documentIds.forEach((docId) => {
+        const entry = mentionSources.documentById.get(String(docId));
+        const isInProject = Boolean(entry && entry.inProject && (!entry.projectId || entry.projectId === effectiveProjectId));
+        if (!isInProject) outsideDocuments.push(entry || { id: docId, label: String(docId) });
+      });
+      if (!outsideDocuments.length) return "once";
+      const label = projectScopeLabel || mentionSources.activeProjectLabel || "this project";
+      const docLabel =
+        outsideDocuments.length === 1
+          ? outsideDocuments[0].label
+          : `${outsideDocuments[0].label} and ${outsideDocuments.length - 1} more`;
+      const confirmMessage = `Add ${docLabel} to ${label} for future chats?\nOK = Add & continue\nCancel = Use once`;
+      const shouldAdd = window.confirm(confirmMessage);
+      return shouldAdd ? "add" : "once";
+    }
+
+    return {
+      buildPayload: (messageValue) => {
+        const inline = extractInlineMentionScopes(String(messageValue || ""), mentionSources);
+        const projectCandidates = [];
+        if (state.project && state.project.id) {
+          projectCandidates.push({ id: state.project.id, label: state.project.label });
+        }
+        inline.projectMentions.forEach((entry) => {
+          const exists = projectCandidates.some((candidate) => candidate.id === entry.id);
+          if (!exists) projectCandidates.push(entry);
+        });
+        const documentCandidates = [];
+        state.documents.forEach((entry) => {
+          if (!entry || !entry.id) return;
+          if (!documentCandidates.includes(entry.id)) documentCandidates.push(entry.id);
+        });
+        inline.documentMentions.forEach((entry) => {
+          if (!documentCandidates.includes(entry.id)) documentCandidates.push(entry.id);
+        });
+        const scopeConflict = projectCandidates.length > 1;
+        const projectScope = scopeConflict ? "" : projectCandidates.length ? projectCandidates[0].id : "";
+        const projectScopeLabel = scopeConflict ? "" : projectCandidates.length ? projectCandidates[0].label : "";
+        const documentScopeMode = resolveDocumentScopeMode(projectScope, projectScopeLabel, documentCandidates);
+        return {
+          queryText: inline.queryText,
+          projectScope: projectScope,
+          projectScopeLabel: projectScopeLabel,
+          projectScopeConflict: scopeConflict,
+          documentScope: documentCandidates,
+          documentScopeMode: documentScopeMode,
+        };
+      },
+    };
+  }
+
+  function collectMentionSources() {
+    const rowsByRecord = root.__listRowsByRecord && typeof root.__listRowsByRecord === "object" ? root.__listRowsByRecord : {};
+    const projectRows = Array.isArray(rowsByRecord["rag_engine.Project"]) ? rowsByRecord["rag_engine.Project"] : [];
+    const projectDocumentRows = Array.isArray(rowsByRecord["rag_engine.ProjectKnowledgeItem"])
+      ? rowsByRecord["rag_engine.ProjectKnowledgeItem"]
+      : [];
+    const libraryRows = Array.isArray(rowsByRecord["rag_engine.LibraryItem"]) ? rowsByRecord["rag_engine.LibraryItem"] : [];
+    const fallbackDocumentRows = Array.isArray(rowsByRecord["rag_engine.DocumentLibrary"]) ? rowsByRecord["rag_engine.DocumentLibrary"] : [];
+    const activeProject = projectRows.find((row) => row && row.active === true) || null;
+    const activeProjectId = textValue(activeProject && activeProject.id);
+    const activeProjectLabel = textValue(activeProject && activeProject.name);
+
+    const projects = projectRows
+      .map((row) => {
+        const id = textValue(row.id);
+        const label = textValue(row.name) || id;
+        if (!id || !label) return null;
+        const search = `${label.toLowerCase()} ${id.toLowerCase()} ${slugifyMentionToken(label)}`.trim();
+        return { id: id, label: label, search: search };
+      })
+      .filter(Boolean);
+
+    const documentById = new Map();
+    const projectDocuments = projectDocumentRows
+      .map((row) => {
+        const id = textValue(row.upload_id) || textValue(row.document_id) || textValue(row.id);
+        const label = textValue(row.source_name) || id;
+        if (!id || !label) return null;
+        const entry = {
+          id: id,
+          label: label,
+          search: `${label.toLowerCase()} ${id.toLowerCase()} ${slugifyMentionToken(label)}`.trim(),
+          group: "In this project",
+          inProject: true,
+          projectId: activeProjectId || textValue(row.project_id),
+        };
+        documentById.set(id, entry);
+        return entry;
+      })
+      .filter(Boolean);
+
+    const libraryDocuments = (libraryRows.length ? libraryRows : fallbackDocumentRows)
+      .map((row) => {
+        const id = textValue(row.upload_id) || textValue(row.document_id) || textValue(row.id);
+        const label = textValue(row.source_name) || id;
+        if (!id || !label) return null;
+        const inProject =
+          row && typeof row.in_active_project === "boolean"
+            ? row.in_active_project
+            : documentById.has(id);
+        const entry = {
+          id: id,
+          label: label,
+          search: `${label.toLowerCase()} ${id.toLowerCase()} ${slugifyMentionToken(label)}`.trim(),
+          group: inProject ? "In this project" : "From library",
+          inProject: Boolean(inProject),
+          projectId: activeProjectId,
+        };
+        const existing = documentById.get(id);
+        if (!existing || (!existing.inProject && entry.inProject)) {
+          documentById.set(id, entry);
+        }
+        return entry;
+      })
+      .filter(Boolean);
+
+    const documents = [];
+    projectDocuments.forEach((entry) => documents.push(entry));
+    libraryDocuments.forEach((entry) => {
+      if (!documents.some((candidate) => candidate.id === entry.id)) {
+        documents.push(entry);
+      }
+    });
+
+    return { projects, documents, activeProjectId, activeProjectLabel, documentById };
+  }
+
+  function extractInlineMentionScopes(messageText, mentionSources) {
+    const text = typeof messageText === "string" ? messageText : "";
+    const projectMentions = [];
+    const documentMentions = [];
+    const projectTokenPattern = /(^|\s)#([A-Za-z0-9._-]+)/g;
+    const documentTokenPattern = /(^|\s)@([A-Za-z0-9._-]+)/g;
+
+    let projectMatch = projectTokenPattern.exec(text);
+    while (projectMatch) {
+      const token = projectMatch[2];
+      const resolved = resolveMentionToken(token, mentionSources.projects);
+      if (resolved && !projectMentions.some((entry) => entry.id === resolved.id)) {
+        projectMentions.push(resolved);
+      }
+      projectMatch = projectTokenPattern.exec(text);
+    }
+
+    let documentMatch = documentTokenPattern.exec(text);
+    while (documentMatch) {
+      const token = documentMatch[2];
+      const resolved = resolveMentionToken(token, mentionSources.documents);
+      if (resolved && !documentMentions.some((entry) => entry.id === resolved.id)) {
+        documentMentions.push(resolved);
+      }
+      documentMatch = documentTokenPattern.exec(text);
+    }
+
+    const queryText = text
+      .replace(projectTokenPattern, "$1")
+      .replace(documentTokenPattern, "$1")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    return {
+      queryText: queryText,
+      projectMentions: projectMentions,
+      documentMentions: documentMentions,
+    };
+  }
+
+  function resolveMentionToken(token, sourceRows) {
+    const needle = typeof token === "string" ? token.trim().toLowerCase() : "";
+    if (!needle) return null;
+    const byId = sourceRows.find((entry) => entry.id.toLowerCase() === needle);
+    if (byId) return { id: byId.id, label: byId.label };
+    const bySlug = sourceRows.find((entry) => slugifyMentionToken(entry.label) === needle);
+    if (bySlug) return { id: bySlug.id, label: bySlug.label };
+    return null;
+  }
+
+  function slugifyMentionToken(value) {
+    const text = textValue(value);
+    if (!text) return "";
+    return text
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function escapeRegex(value) {
+    return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
   function normalizeComposerState(child) {
@@ -754,7 +1314,28 @@
 
   function resolveCitationTarget(entry) {
     if (!entry) return null;
-    const chunkId = textValue(entry.chunk_id) || textValue(entry.source_id) || null;
+    const citationId = textValue(entry.citation_id) || null;
+    const sourceId = textValue(entry.source_id);
+    const chunkId = textValue(entry.chunk_id) || sourceId || null;
+    const previewUrl = textValue(entry.preview_url) || textValue(entry.url);
+    const urlTarget = parsePreviewTargetFromUrl(previewUrl);
+    if (urlTarget && urlTarget.documentId && urlTarget.pageNumber) {
+      return {
+        documentId: urlTarget.documentId,
+        pageNumber: urlTarget.pageNumber,
+        chunkId: urlTarget.chunkId || chunkId,
+        citationId: urlTarget.citationId || citationId,
+      };
+    }
+    const deepLinkTarget = parsePreviewTargetFromDeepLink(textValue(entry.deep_link_query));
+    if (deepLinkTarget && deepLinkTarget.documentId && deepLinkTarget.pageNumber) {
+      return {
+        documentId: deepLinkTarget.documentId,
+        pageNumber: deepLinkTarget.pageNumber,
+        chunkId: deepLinkTarget.chunkId || chunkId,
+        citationId: deepLinkTarget.citationId || citationId,
+      };
+    }
     let documentId =
       textValue(entry.document_id) ||
       textValue(entry.documentId) ||
@@ -767,10 +1348,144 @@
         documentId = parts[0];
       }
     }
-    if (documentId && pageNumber) {
-      return { documentId: documentId, pageNumber: pageNumber, chunkId: chunkId };
+    if (!documentId && looksLikeDocumentId(sourceId)) {
+      documentId = sourceId;
+    }
+    const resolvedPageNumber = pageNumber || (documentId ? 1 : null);
+    if (documentId && resolvedPageNumber) {
+      return { documentId: documentId, pageNumber: resolvedPageNumber, chunkId: chunkId, citationId: citationId };
     }
     return null;
+  }
+
+  function looksLikeDocumentId(value) {
+    const text = textValue(value);
+    if (!text) return false;
+    if (/^[a-f0-9]{24,}$/i.test(text)) return true;
+    if (/^[A-Za-z0-9_-]{32,}$/.test(text)) return true;
+    return false;
+  }
+
+  function parsePreviewTargetFromUrl(urlValue) {
+    const text = textValue(urlValue);
+    if (!text) return null;
+    let parsed;
+    try {
+      parsed = new URL(text, window.location.origin);
+    } catch (_err) {
+      return null;
+    }
+    const chunkId = textValue(parsed.searchParams.get("chunk_id")) || null;
+    const citationId =
+      textValue(parsed.searchParams.get("citation_id")) || textValue(parsed.searchParams.get("cit")) || null;
+    const pathMatch = parsed.pathname.match(/^\/api\/documents\/([^/]+)\/pages\/(\d+)$/);
+    if (pathMatch) {
+      const documentId = decodeURIComponent(pathMatch[1] || "");
+      const pageNumber = toPageNumber(pathMatch[2]);
+      if (!documentId || !pageNumber) return null;
+      return {
+        documentId: documentId,
+        pageNumber: pageNumber,
+        chunkId: chunkId,
+        citationId: citationId,
+      };
+    }
+    const pdfMatch = parsed.pathname.match(/^\/api\/documents\/([^/]+)\/pdf$/);
+    if (!pdfMatch) return null;
+    const documentId = decodeURIComponent(pdfMatch[1] || "");
+    const hashQuery = parsed.hash.startsWith("#") ? parsed.hash.slice(1) : parsed.hash;
+    const hashParams = new URLSearchParams(hashQuery);
+    const pageNumber = toPageNumber(hashParams.get("page")) || toPageNumber(parsed.searchParams.get("page"));
+    if (!documentId || !pageNumber) return null;
+    const hashCitationId =
+      textValue(hashParams.get("citation_id")) || textValue(hashParams.get("cit")) || textValue(hashParams.get("n3_cit"));
+    return {
+      documentId: documentId,
+      pageNumber: pageNumber,
+      chunkId: chunkId,
+      citationId: hashCitationId || citationId,
+    };
+  }
+
+  function parsePreviewTargetFromDeepLink(queryValue) {
+    const text = textValue(queryValue);
+    if (!text) return null;
+    const query = text.startsWith("?") ? text.slice(1) : text;
+    const params = new URLSearchParams(query);
+    const documentId = textValue(params.get("n3_doc")) || textValue(params.get("doc"));
+    const pageText =
+      textValue(params.get("n3_doc_page")) || textValue(params.get("doc_page")) || textValue(params.get("n3_page"));
+    let pageNumber = toPageNumber(pageText);
+    if (!pageNumber && documentId) {
+      const legacyPageText = textValue(params.get("page"));
+      if (/^\d+$/.test(legacyPageText)) {
+        pageNumber = toPageNumber(legacyPageText);
+      }
+    }
+    const citationId =
+      textValue(params.get("n3_cit")) || textValue(params.get("citation_id")) || textValue(params.get("cit")) || null;
+    const chunkId = textValue(params.get("n3_chunk")) || textValue(params.get("chunk_id")) || null;
+    if (!documentId || !pageNumber) return null;
+    return {
+      chunkId: chunkId,
+      documentId: documentId,
+      pageNumber: pageNumber,
+      citationId: citationId,
+    };
+  }
+
+  function buildCitationPdfPreviewUrl(config) {
+    const options = config && typeof config === "object" ? config : {};
+    const documentId = textValue(options.documentId);
+    const pageNumber = toPageNumber(options.pageNumber) || 1;
+    const baseUrl = textValue(options.baseUrl);
+    const fallbackBase = documentId ? `/api/documents/${encodeURIComponent(documentId)}/pdf` : "/api/documents/unknown/pdf";
+    const resolvedBase = baseUrl || `${fallbackBase}#page=${pageNumber}`;
+    const hashIndex = resolvedBase.indexOf("#");
+    const urlBase = hashIndex >= 0 ? resolvedBase.slice(0, hashIndex) : resolvedBase;
+    const hash = hashIndex >= 0 ? resolvedBase.slice(hashIndex + 1) : "";
+    const params = new URLSearchParams(hash);
+    if (!params.get("page")) params.set("page", String(pageNumber));
+    const searchTerm = buildCitationSearchQuery(options.snippet);
+    if (searchTerm && !params.get("search")) {
+      params.set("search", searchTerm);
+    }
+    return `${urlBase}#${params.toString()}`;
+  }
+
+  function buildCitationSearchQuery(snippet) {
+    const text = textValue(snippet);
+    if (!text) return "";
+    const normalized = text
+      .replace(/\[[0-9]{1,3}\]/g, " ")
+      .replace(/[^A-Za-z0-9\s-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!normalized) return "";
+    const words = normalized.split(" ").filter((word) => word.length > 1);
+    if (!words.length) return "";
+    const phrase = words.slice(0, 14).join(" ");
+    return phrase.length > 140 ? `${phrase.slice(0, 140).trim()}` : phrase;
+  }
+
+  function sanitizeHighlightColor(value) {
+    const text = textValue(value);
+    if (!text) return "";
+    if (/^#[0-9a-f]{3,8}$/i.test(text)) return text;
+    if (/^(rgb|rgba|hsl|hsla)\(/i.test(text)) return text;
+    if (/^[A-Za-z]+$/.test(text)) return text;
+    return "";
+  }
+
+  function resolveCitationHighlightColor(entry) {
+    if (!entry || typeof entry !== "object") return "";
+    return (
+      sanitizeHighlightColor(entry.highlight_color) ||
+      sanitizeHighlightColor(entry.highlightColor) ||
+      sanitizeHighlightColor(entry.color) ||
+      sanitizeHighlightColor(entry.color_hex) ||
+      sanitizeHighlightColor(entry.hex_color)
+    );
   }
 
   function textValue(value) {
@@ -781,13 +1496,14 @@
 
   function toPageNumber(value) {
     if (typeof value === "number" && Number.isFinite(value)) {
-      return Math.trunc(value);
+      const parsed = Math.trunc(value);
+      return parsed > 0 ? parsed : null;
     }
     if (typeof value === "string" && value.trim()) {
       const trimmed = value.trim();
       if (/^\d+$/.test(trimmed)) {
         const parsed = Number.parseInt(trimmed, 10);
-        if (!Number.isNaN(parsed)) return parsed;
+        if (!Number.isNaN(parsed) && parsed > 0) return parsed;
       }
     }
     return null;
@@ -1051,6 +1767,7 @@
     }
     const entry = preview.citations[bounded];
     preview.entrySnippet = typeof entry.snippet === "string" ? entry.snippet : "";
+    preview.highlightColor = resolveCitationHighlightColor(entry);
     preview.title.textContent = entry.title || "Source";
     preview.explainText.textContent =
       typeof entry.explain === "string" && entry.explain.trim()
@@ -1067,11 +1784,15 @@
       preview.nextButton.disabled = true;
     } else {
       preview.chunkId = target.chunkId || null;
-      preview.citationId = typeof entry.citation_id === "string" ? entry.citation_id : null;
+      preview.citationId =
+        (typeof target.citationId === "string" && target.citationId) ||
+        (typeof entry.citation_id === "string" ? entry.citation_id : null);
+      preview.lastDeepLinkKey = `${target.documentId}|${target.pageNumber}|${preview.citationId || ""}|${preview.chunkId || ""}`;
       loadPreviewPage(target.documentId, target.pageNumber, preview.chunkId, preview.citationId);
       if (typeof root.applyCitationDeepLinkState === "function") {
         root.applyCitationDeepLinkState({
           citation_id: preview.citationId || "",
+          chunk_id: preview.chunkId || "",
           document_id: target.documentId,
           page_number: target.pageNumber,
         });
@@ -1093,11 +1814,59 @@
       citations.findIndex((item) => sameCitationEntry(item, entry))
     );
     renderPreviewSources(citations, selectedIndex);
-    selectPreviewCitation(selectedIndex, { openPreviewTab: false });
+    const hasPreviewTarget = Boolean(resolveCitationTarget(citations[selectedIndex]));
+    selectPreviewCitation(selectedIndex, { openPreviewTab: hasPreviewTarget });
     preview.container.classList.remove("hidden");
     preview.container.setAttribute("aria-hidden", "false");
-    setCitationPreviewTab("sources");
+    if (hasPreviewTarget) {
+      setCitationPreviewTab("preview");
+    } else {
+      setCitationPreviewTab("sources");
+    }
     preview.panel.focus();
+  }
+
+  function maybeOpenCitationFromDeepLink(citations) {
+    if (!Array.isArray(citations) || !citations.length) return;
+    if (typeof root.parseCitationDeepLink !== "function") return;
+    const deepLink = root.parseCitationDeepLink(window.location.search || "");
+    if (!deepLink || typeof deepLink !== "object") return;
+    const documentId = textValue(deepLink.document_id || deepLink.documentId);
+    const citationId = textValue(deepLink.citation_id || deepLink.citationId);
+    const chunkId = textValue(deepLink.chunk_id || deepLink.chunkId);
+    const pageNumber = toPageNumber(deepLink.page_number || deepLink.page);
+    if (!documentId && !citationId) return;
+    const deepLinkKey = `${documentId}|${pageNumber || ""}|${citationId}|${chunkId}`;
+    if (!deepLinkKey || previewState.lastDeepLinkKey === deepLinkKey) return;
+    let selected = null;
+    if (citationId) {
+      selected = citations.find((entry) => {
+        if (!entry || typeof entry.citation_id !== "string" || entry.citation_id.trim() !== citationId) return false;
+        const target = resolveCitationTarget(entry);
+        if (!target) return false;
+        if (documentId && target.documentId !== documentId) return false;
+        if (pageNumber && target.pageNumber !== pageNumber) return false;
+        if (chunkId && textValue(target.chunkId) !== chunkId) return false;
+        return true;
+      });
+      if (!selected) {
+        selected = citations.find(
+          (entry) => entry && typeof entry.citation_id === "string" && entry.citation_id.trim() === citationId
+        );
+      }
+    }
+    if (!selected && documentId) {
+      selected = citations.find((entry) => {
+        const target = resolveCitationTarget(entry);
+        if (!target || target.documentId !== documentId) return false;
+        if (pageNumber && target.pageNumber !== pageNumber) return false;
+        if (chunkId && textValue(target.chunkId) !== chunkId) return false;
+        return true;
+      });
+    }
+    if (!selected) return;
+    previewState.lastDeepLinkKey = deepLinkKey;
+    openCitationPreview(selected, null, citations);
   }
 
   function closeCitationPreview() {
@@ -1109,6 +1878,7 @@
     preview.pageNumber = null;
     preview.pageCount = null;
     preview.entrySnippet = null;
+    preview.highlightColor = "";
     preview.chunkId = null;
     preview.citationId = null;
     preview.citations = [];
@@ -1173,7 +1943,7 @@
         const fallback = typeof payload.fallback_snippet === "string" ? payload.fallback_snippet : "";
         const reason =
           typeof payload.reason === "string" && payload.reason.trim() ? payload.reason.trim() : "Preview unavailable for this citation.";
-        const unavailablePage = Number(docMeta.page_number) || pageNumber;
+        const unavailablePage = Number(docMeta.requested_page) || Number(docMeta.page_number) || pageNumber;
         const unavailablePageCount = Number(docMeta.page_count) || unavailablePage;
         preview.pageCount = unavailablePageCount;
         preview.pageNumber = unavailablePage;
@@ -1183,7 +1953,16 @@
         preview.error.textContent = reason;
         preview.prevButton.disabled = true;
         preview.nextButton.disabled = true;
-        preview.frame.removeAttribute("src");
+        const unavailablePdfUrl =
+          typeof payload.pdf_url === "string" && payload.pdf_url
+            ? payload.pdf_url
+            : `/api/documents/${encodeURIComponent(documentId)}/pdf#page=${unavailablePage}`;
+        preview.frame.src = buildCitationPdfPreviewUrl({
+          baseUrl: unavailablePdfUrl,
+          documentId: documentId,
+          pageNumber: unavailablePage,
+          snippet: preview.entrySnippet || fallback,
+        });
         preview.pageNotice.hidden = true;
         preview.pageNotice.textContent = "";
         preview.pageText.textContent = fallback || "No extracted text for this page.";
@@ -1205,14 +1984,20 @@
       preview.meta.textContent = `${name} - ${preview.pageLabel.textContent}`;
       preview.prevButton.disabled = preview.pageNumber <= 1;
       preview.nextButton.disabled = preview.pageNumber >= pageCount;
-      preview.frame.src =
-        previewPayload.pdf_url || payload.pdf_url || `/api/documents/${encodeURIComponent(documentId)}/pdf#page=${preview.pageNumber}`;
       const pageText = typeof page.text === "string" ? page.text : "";
       const highlightsSource = Array.isArray(previewPayload.highlights) ? previewPayload.highlights : payload.highlights;
       const highlights = Array.isArray(highlightsSource) ? highlightsSource : [];
+      const pdfSearchSnippet = resolvePdfSearchSnippet(preview.entrySnippet, pageText, highlights);
+      preview.frame.src = buildCitationPdfPreviewUrl({
+        baseUrl:
+          previewPayload.pdf_url || payload.pdf_url || `/api/documents/${encodeURIComponent(documentId)}/pdf#page=${preview.pageNumber}`,
+        documentId: documentId,
+        pageNumber: preview.pageNumber,
+        snippet: pdfSearchSnippet,
+      });
       const fallbackColorIndex =
         typeof root.citationColorIndex === "function" ? root.citationColorIndex(preview.citationId || "", 8) : 0;
-      renderPageText(preview.pageText, pageText, highlights, fallbackColorIndex);
+      renderPageText(preview.pageText, pageText, highlights, fallbackColorIndex, preview.highlightColor);
       setHighlightNotice(preview.pageNotice, highlights);
       preview.snippet.textContent = formatSnippet(preview.entrySnippet, pageText);
     } catch (err) {
@@ -1232,7 +2017,33 @@
     return trimmed;
   }
 
-  function renderPageText(container, pageText, highlights, fallbackColorIndex) {
+  function resolvePdfSearchSnippet(entrySnippet, pageText, highlights) {
+    const page = typeof pageText === "string" ? pageText : "";
+    const exactText = extractExactHighlightText(page, highlights);
+    if (exactText) return exactText;
+    if (typeof entrySnippet === "string" && entrySnippet.trim()) return entrySnippet.trim();
+    return page;
+  }
+
+  function extractExactHighlightText(pageText, highlights) {
+    const text = typeof pageText === "string" ? pageText : "";
+    if (!text) return "";
+    const items = Array.isArray(highlights) ? highlights : [];
+    for (const item of items) {
+      if (!item || item.status !== "exact") continue;
+      const start = Number(item.start_char);
+      const end = Number(item.end_char);
+      if (!Number.isFinite(start) || !Number.isFinite(end)) continue;
+      const startValue = Math.max(0, Math.trunc(start));
+      const endValue = Math.min(text.length, Math.trunc(end));
+      if (endValue <= startValue) continue;
+      const chunk = text.slice(startValue, endValue).trim();
+      if (chunk) return chunk;
+    }
+    return "";
+  }
+
+  function renderPageText(container, pageText, highlights, fallbackColorIndex, fallbackHighlightColor) {
     if (!container) return;
     const text = typeof pageText === "string" ? pageText : "";
     container.textContent = "";
@@ -1240,7 +2051,7 @@
       container.textContent = "No extracted text for this page.";
       return;
     }
-    const ranges = normalizeHighlightRanges(highlights, text.length, fallbackColorIndex);
+    const ranges = normalizeHighlightRanges(highlights, text.length, fallbackColorIndex, fallbackHighlightColor);
     if (!ranges.length) {
       container.textContent = text;
       return;
@@ -1254,6 +2065,10 @@
       const mark = document.createElement("mark");
       mark.className = "ui-citation-highlight";
       mark.classList.add(`ui-citation-highlight-${range.colorIndex}`);
+      if (range.highlightColor) {
+        mark.classList.add("ui-citation-highlight-custom");
+        mark.style.backgroundColor = range.highlightColor;
+      }
       mark.textContent = text.slice(range.start, range.end);
       fragment.appendChild(mark);
       cursor = range.end;
@@ -1264,10 +2079,11 @@
     container.appendChild(fragment);
   }
 
-  function normalizeHighlightRanges(highlights, length, fallbackColorIndex) {
+  function normalizeHighlightRanges(highlights, length, fallbackColorIndex, fallbackHighlightColor) {
     const items = Array.isArray(highlights) ? highlights : [];
     const ranges = [];
     const fallbackColor = Number.isFinite(fallbackColorIndex) ? Math.trunc(fallbackColorIndex) % 8 : 0;
+    const fallbackColorValue = sanitizeHighlightColor(fallbackHighlightColor);
     items.forEach((item) => {
       if (!item || item.status !== "exact") return;
       const start = Number(item.start_char);
@@ -1278,14 +2094,28 @@
       if (endValue <= startValue) return;
       const itemColor = Number(item.color_index);
       const colorIndex = Number.isFinite(itemColor) ? Math.abs(Math.trunc(itemColor)) % 8 : fallbackColor;
-      ranges.push({ start: startValue, end: endValue, colorIndex: colorIndex });
+      const highlightColor =
+        sanitizeHighlightColor(item.highlight_color) ||
+        sanitizeHighlightColor(item.color) ||
+        sanitizeHighlightColor(item.color_hex) ||
+        fallbackColorValue;
+      ranges.push({ start: startValue, end: endValue, colorIndex: colorIndex, highlightColor: highlightColor });
     });
-    ranges.sort((a, b) => (a.start - b.start) || (a.end - b.end) || (a.colorIndex - b.colorIndex));
+    ranges.sort((a, b) => {
+      const colorCompare = String(a.highlightColor || "").localeCompare(String(b.highlightColor || ""));
+      return (a.start - b.start) || (a.end - b.end) || (a.colorIndex - b.colorIndex) || colorCompare;
+    });
     const merged = [];
     ranges.forEach((range) => {
       const last = merged[merged.length - 1];
-      if (!last || range.start > last.end || range.colorIndex !== last.colorIndex) {
-        merged.push({ start: range.start, end: range.end, colorIndex: range.colorIndex });
+      const sameColor = String(last && last.highlightColor ? last.highlightColor : "") === String(range.highlightColor || "");
+      if (!last || range.start > last.end || range.colorIndex !== last.colorIndex || !sameColor) {
+        merged.push({
+          start: range.start,
+          end: range.end,
+          colorIndex: range.colorIndex,
+          highlightColor: range.highlightColor || "",
+        });
       } else if (range.end > last.end) {
         last.end = range.end;
       }
@@ -1450,6 +2280,8 @@
       if (typeof entry.page === "number" || typeof entry.page === "string") payload.page = entry.page;
       if (typeof entry.page_number === "number" || typeof entry.page_number === "string") payload.page_number = entry.page_number;
       if (typeof entry.color_index === "number" && Number.isFinite(entry.color_index)) payload.color_index = Math.abs(Math.trunc(entry.color_index)) % 8;
+      const highlightColor = resolveCitationHighlightColor(entry);
+      if (highlightColor) payload.highlight_color = highlightColor;
       normalized.push(payload);
     });
     return normalized;
