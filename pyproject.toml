@@ -14,7 +14,9 @@ authors = [
 ]
 keywords = ["ai", "agents", "dsl", "programming-language", "ollama", "openai"]
 dependencies = [
+    "pypdfium2>=5.4.0",
     "pypdf>=5.0.0",
+    "rapidocr-onnxruntime>=1.2.3",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",

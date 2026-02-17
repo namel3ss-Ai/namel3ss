@@ -55,3 +55,21 @@ def test_extract_pages_fallback_prefers_pypdf_when_available(monkeypatch) -> Non
 
     assert pages == ["Recovered text"]
     assert method == "layout"
+
+
+def test_extract_pages_ocr_prefers_ocr_backend(monkeypatch) -> None:
+    monkeypatch.setattr(
+        extract_mod,
+        "_extract_pdf_pages_with_ocr",
+        lambda _content: ["Scanned OCR page"],
+    )
+
+    def _legacy_parser(*_args, **_kwargs):
+        raise AssertionError("legacy parser should not run when OCR page text exists")
+
+    monkeypatch.setattr(extract_mod, "_extract_pdf_pages_with_pypdf", _legacy_parser)
+
+    pages, method = extract_mod.extract_pages(b"%PDF-1.4\n", detected={"type": "pdf"}, mode="ocr")
+
+    assert pages == ["Scanned OCR page"]
+    assert method == "ocr"

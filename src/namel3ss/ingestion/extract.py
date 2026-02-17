@@ -6,6 +6,9 @@ import zipfile
 from io import BytesIO
 import zlib
 
+from namel3ss.runtime.ingest.extractors.ocr_backend import extract_image_text_with_ocr
+from namel3ss.runtime.ingest.extractors.pdf_ocr_extractor import create_default_pdf_ocr_extractor
+
 
 _PDF_STRING_RE = re.compile(rb"\((?:\\.|[^\\)])*\)")
 _PDF_HEX_STRING_RE = re.compile(rb"<([0-9A-Fa-f\s]{4,})>")
@@ -19,6 +22,8 @@ _PDF_TYPE_RE = re.compile(rb"/Type\s*/([A-Za-z]+)\b")
 _PDF_PAGES_RE = re.compile(rb"/Pages\s+(\d+)\s+(\d+)\s+R")
 _PDF_KIDS_RE = re.compile(rb"/Kids\s*\[(.*?)\]", re.S)
 
+_DEFAULT_PDF_OCR_EXTRACTOR = None
+
 
 def extract_text(content: bytes, *, detected: dict, mode: str) -> tuple[str, str]:
     kind = str(detected.get("type") or "text")
@@ -28,6 +33,9 @@ def extract_text(content: bytes, *, detected: dict, mode: str) -> tuple[str, str
         return _extract_pdf_text(content, layout=True), "layout"
     if mode == "ocr":
         if kind == "pdf":
+            pages = _extract_pdf_pages_with_ocr(content)
+            if _has_non_empty_pages(pages):
+                return _join_pages_text(pages), "ocr"
             return _extract_pdf_text(content, layout=True), "ocr"
         if kind != "image":
             return "", "ocr"
@@ -64,6 +72,9 @@ def extract_pages(content: bytes, *, detected: dict, mode: str) -> tuple[list[st
         return pages, "layout"
     if mode == "ocr":
         if kind == "pdf":
+            pages = _extract_pdf_pages_with_ocr(content)
+            if _has_non_empty_pages(pages):
+                return pages, "ocr"
             pages = _extract_pdf_pages_with_pypdf(content)
             if _has_non_empty_pages(pages):
                 return pages, "ocr"
@@ -537,6 +548,34 @@ def _extract_pdf_pages_with_pypdf(content: bytes) -> list[str] | None:
     return pages
 
 
+def _extract_pdf_pages_with_ocr(content: bytes) -> list[str] | None:
+    extractor = _get_pdf_ocr_extractor()
+    if extractor is None or not extractor.is_available():
+        return None
+    try:
+        result = extractor.extract(content, content_type="application/pdf")
+    except Exception:
+        return None
+    pages: list[str] = []
+    for page in result.pages:
+        text = page.text if isinstance(page.text, str) else ""
+        pages.append(text.strip())
+    return pages
+
+
+def _get_pdf_ocr_extractor():
+    global _DEFAULT_PDF_OCR_EXTRACTOR
+    if _DEFAULT_PDF_OCR_EXTRACTOR is None:
+        _DEFAULT_PDF_OCR_EXTRACTOR = create_default_pdf_ocr_extractor()
+    return _DEFAULT_PDF_OCR_EXTRACTOR
+
+
+def _join_pages_text(pages: list[str] | None) -> str:
+    if not pages:
+        return ""
+    return "\f".join(page for page in pages if isinstance(page, str))
+
+
 def _has_non_empty_pages(pages: list[str] | None) -> bool:
     if pages is None:
         return False
@@ -551,7 +590,7 @@ def _extract_image_primary(content: bytes) -> str:
 
 
 def _extract_image_ocr(content: bytes) -> str:
-    return ""
+    return extract_image_text_with_ocr(content)
 
 
 __all__ = ["extract_pages", "extract_pages_fallback", "extract_text", "extract_fallback"]

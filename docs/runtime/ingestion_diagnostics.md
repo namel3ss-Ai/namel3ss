@@ -50,7 +50,7 @@ Outcomes:
 | `table_heavy` | Content is heavily table-like and may chunk poorly. | Convert critical tables to readable prose or CSV with context. |
 | `many_empty_pages` | Many pages are empty after extraction. | Remove blank pages or upload a text-based source file. |
 | `empty_text` | No extractable text was found. | Run OCR or upload a PDF with embedded text. |
-| `ocr_failed` | OCR fallback failed; provide a text-based PDF. | Upload a PDF with embedded text or fix local OCR dependencies. |
+| `ocr_failed` | OCR fallback failed; provide a text-based PDF. | Upload a PDF with embedded text or reinstall `namel3ss` to restore bundled OCR runtime files. |
 | `skipped` | Ingestion was skipped for this upload. | Run ingestion again or replace the upload with a better source file. |
 
 Unknown codes are rendered with generic guidance so diagnostics remain stable even when new codes are introduced.

@@ -13,6 +13,8 @@ python -m namel3ss --help
 deactivate
 ```
 
+This install path includes the default OCR runtime for scanned PDFs; no extra OCR package setup is required.
+
 ## Docker (local) — CLI
 
 ```bash
