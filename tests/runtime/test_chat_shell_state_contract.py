@@ -64,6 +64,35 @@ def test_chat_shell_contract_migrates_legacy_fields_and_builds_graph() -> None:
     }
 
 
+def test_chat_shell_contract_rebuilds_graph_when_messages_outdate_graph_nodes() -> None:
+    state = {
+        "chat": {
+            "messages": [
+                {"role": "user", "content": "Question"},
+                {"role": "assistant", "content": "Answer"},
+            ],
+            "messages_graph": {
+                "active_message_id": "message.1",
+                "edges": [],
+                "nodes": [{"id": "message.1", "role": "assistant", "content": "Old answer only"}],
+            },
+        }
+    }
+    chat = ensure_chat_shell_state(state)
+    assert chat["messages_graph"] == {
+        "active_message_id": "message.2",
+        "edges": [{"from": "message.1", "to": "message.2"}],
+        "nodes": [
+            {"content": "Question", "id": "message.1", "role": "user"},
+            {"content": "Answer", "id": "message.2", "role": "assistant"},
+        ],
+    }
+    assert chat["messages"] == [
+        {"content": "Question", "role": "user"},
+        {"content": "Answer", "role": "assistant"},
+    ]
+
+
 def test_select_chat_thread_updates_canonical_and_legacy_keys() -> None:
     state = {"chat": {"threads": [{"id": "thread.main", "name": "Main"}, {"id": "thread.docs", "name": "Docs"}]}}
     select_chat_thread(state, "thread.docs")

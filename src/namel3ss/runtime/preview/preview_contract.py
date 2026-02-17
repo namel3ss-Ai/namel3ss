@@ -45,6 +45,7 @@ def build_preview_unavailable_payload(
     source_name: str = "",
     page_count: int = 0,
     checksum: str = "",
+    pdf_url: str = "",
 ) -> dict[str, object]:
     return {
         "doc_meta": {
@@ -57,7 +58,7 @@ def build_preview_unavailable_payload(
         "fallback_snippet": fallback_snippet.strip(),
         "highlights": [],
         "page": {"number": _int_value(page_number), "text": ""},
-        "pdf_url": "",
+        "pdf_url": pdf_url.strip(),
         "reason": reason.strip(),
         "reason_code": reason_code.strip() or PREVIEW_UNAVAILABLE_REASON_UNKNOWN,
         "status": PREVIEW_STATUS_UNAVAILABLE,

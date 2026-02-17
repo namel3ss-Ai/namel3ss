@@ -34,7 +34,12 @@ from namel3ss.traces.schema import TraceEventType
 from namel3ss.utils.json_tools import dumps_pretty
 
 
-def run_run_command(args: list[str]) -> int:
+def run_run_command(
+    args: list[str],
+    *,
+    ui_mode: str | None = None,
+    diagnostics_enabled: bool | None = None,
+) -> int:
     sources: dict = {}
     project_root: Path | None = None
     first_run = is_first_run(None, args)
@@ -90,6 +95,8 @@ def run_run_command(args: list[str]) -> int:
                 headless=params.headless,
                 headless_api_token=resolved_api_token,
                 headless_cors_origins=resolved_cors_origins,
+                ui_mode=ui_mode,
+                diagnostics_enabled=diagnostics_enabled,
             )
             try:
                 runner.bind()
@@ -128,6 +135,7 @@ def run_run_command(args: list[str]) -> int:
                 headless=params.headless,
                 headless_api_token=resolved_api_token,
                 headless_cors_origins=resolved_cors_origins,
+                ui_mode=ui_mode,
                 require_service_capability=True,
             )
             if params.dry:

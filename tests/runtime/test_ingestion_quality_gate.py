@@ -55,6 +55,14 @@ def test_probe_counts_use_canonical_newlines() -> None:
     assert probe["sample_bytes"] == probe["bytes"]
 
 
+def test_probe_does_not_block_pdf_binary_markers() -> None:
+    payload = b"%PDF-1.4\n1 0 obj\n<<>>\nstream\n\x00\x00binary\nendstream\n%%EOF\n"
+    probe = probe_content(payload, metadata={"content_type": "application/pdf"}, detected={"type": "pdf"})
+    assert probe["status"] == "pass"
+    assert "null_bytes" not in probe["block_reasons"]
+    assert probe["pdf_eof"] is True
+
+
 def test_gate_blocks_null_bytes_and_writes_quarantine(tmp_path: Path) -> None:
     payload = (FIXTURE_DIR / "cracked_null.bin").read_bytes()
     metadata = _store_upload(tmp_path, payload, filename="cracked_null.bin", content_type="application/octet-stream")
@@ -105,6 +113,55 @@ def test_gate_cache_hit_is_deterministic(tmp_path: Path) -> None:
     assert root is not None
     cache_path = root / ".namel3ss" / "ingestion" / "cache" / f"{cache_key}.json"
     assert cache_path.exists()
+
+
+def test_gate_ignores_stale_cached_decision(tmp_path: Path) -> None:
+    payload = (FIXTURE_DIR / "valid.txt").read_bytes()
+    metadata = _store_upload(tmp_path, payload, filename="valid.txt")
+    first = run_ingestion(
+        upload_id=metadata["checksum"],
+        mode=None,
+        state={},
+        project_root=str(tmp_path),
+        app_path=(tmp_path / "app.ai").as_posix(),
+    )
+    first_gate = first["report"]["gate"]
+    cache_key = first_gate.get("cache", {}).get("key")
+    root = resolve_persistence_root(str(tmp_path), (tmp_path / "app.ai").as_posix(), allow_create=False)
+    assert root is not None
+    cache_path = root / ".namel3ss" / "ingestion" / "cache" / f"{cache_key}.json"
+    assert cache_path.exists()
+    stale = _load_json(cache_path)
+    stale["decision"]["status"] = "blocked"
+    stale["decision"]["quality"] = "block"
+    stale["decision"]["reasons"] = ["null_bytes", "text_too_short"]
+    stale["decision"]["probe"] = {
+        "status": "block",
+        "block_reasons": ["null_bytes"],
+        "warn_reasons": [],
+        "bytes": 0,
+        "null_bytes": 1,
+        "utf8_valid": False,
+        "binary_ratio": 1000,
+        "sniff": "binary",
+        "sample_bytes": 1,
+        "content_type": "text/plain",
+        "detected_type": "text",
+        "pdf_eof": None,
+    }
+    cache_path.write_text(json.dumps(stale), encoding="utf-8")
+
+    second = run_ingestion(
+        upload_id=metadata["checksum"],
+        mode=None,
+        state={},
+        project_root=str(tmp_path),
+        app_path=(tmp_path / "app.ai").as_posix(),
+    )
+    second_gate = second["report"]["gate"]
+    assert second_gate["status"] == "allowed"
+    assert second_gate["quality"] != "block"
+    assert "null_bytes" not in second_gate["reasons"]
 
 
 def test_gate_evidence_is_redacted_and_bounded(tmp_path: Path) -> None:

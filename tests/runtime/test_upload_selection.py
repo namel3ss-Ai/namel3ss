@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import json
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -149,6 +150,35 @@ page "home":
     assert entry["checksum"] == second["checksum"]
     assert entry["state"] == "stored"
     assert entry["preview"]["checksum"] == second["checksum"]
+
+
+def test_upload_selection_preserves_production_ui_mode(tmp_path: Path) -> None:
+    source = '''
+spec is "1.0"
+
+page "home":
+  upload receipt
+'''.lstrip()
+    program = lower_ir_program(source)
+    action_id = _upload_action_id(program)
+    metadata = _upload_metadata(tmp_path, b"hello", filename="receipt.txt")
+
+    response = handle_action(
+        program,
+        action_id=action_id,
+        payload={"upload": metadata},
+        state={},
+        store=MemoryStore(),
+        ui_mode="production",
+        diagnostics_enabled=False,
+    )
+
+    manifest = response["ui"]
+    assert manifest.get("mode") == "production"
+    assert manifest.get("diagnostics_enabled") is False
+    manifest_text = json.dumps(manifest, sort_keys=True)
+    assert "state_inspector" not in manifest_text
+    assert "audit_viewer" not in manifest_text
 
 
 def test_upload_selection_requires_metadata() -> None:

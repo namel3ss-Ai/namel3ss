@@ -20,6 +20,7 @@
     revision: "",
   };
   const rendererRegistryReady = resolveRendererRegistryReady();
+  const REGISTRY_RETRY_KEY = "__n3_renderer_registry_retry";
 
   function resolveRendererRegistryReady() {
     const registry = window.N3RendererRegistry;
@@ -28,6 +29,30 @@
       return Promise.reject(new Error("Renderer registry readiness promise is missing."));
     }
     return registry.ready;
+  }
+
+  function clearRendererRetryFlag() {
+    if (typeof window === "undefined" || !window.sessionStorage) return;
+    try {
+      window.sessionStorage.removeItem(REGISTRY_RETRY_KEY);
+    } catch (_err) {
+      // no-op
+    }
+  }
+
+  function maybeRetryRendererBootstrap() {
+    if (typeof window === "undefined" || !window.sessionStorage) return false;
+    try {
+      const alreadyRetried = window.sessionStorage.getItem(REGISTRY_RETRY_KEY) === "1";
+      if (alreadyRetried) return false;
+      window.sessionStorage.setItem(REGISTRY_RETRY_KEY, "1");
+      const next = new URL(window.location.href);
+      next.searchParams.set("_n3rr", String(Date.now()));
+      window.location.replace(next.toString());
+      return true;
+    } catch (_err) {
+      return false;
+    }
   }
 
   function showEmpty(container, message) {
@@ -324,6 +349,7 @@
 
   rendererRegistryReady
     .then(() => {
+      clearRendererRetryFlag();
       refreshUI();
       if (mode === "dev") {
         setStatus("Watching for changes");
@@ -331,7 +357,11 @@
       }
     })
     .catch((err) => {
+      if (maybeRetryRendererBootstrap()) {
+        return;
+      }
       const stableCode = err && err.error_code ? String(err.error_code) : "N3E_RENDERER_REGISTRY_INVALID";
-      handleError({ message: `${stableCode}: renderer registry failed to load.` });
+      const detail = err && err.message ? ` (${String(err.message)})` : "";
+      handleError({ message: `${stableCode}: renderer registry failed to load.${detail}` });
     });
 })();

@@ -18,6 +18,7 @@ from namel3ss.runtime.server.lock import (
 from namel3ss.runtime.server.startup import (
     build_runtime_startup_context,
     print_startup_banner,
+    require_static_runtime_manifest_parity,
 )
 from namel3ss.studio.startup import validate_renderer_registry_startup
 from namel3ss.ui.manifest.display_mode import (
@@ -110,13 +111,20 @@ class BrowserRunner:
                 refresh_routes(program=self.app_state.program, registry=registry, revision=self.app_state.revision, logger=print)
             server.route_registry = registry  # type: ignore[attr-defined]
             self.server = server
+            startup_manifest_payload = self.app_state.manifest_payload()
+            require_static_runtime_manifest_parity(
+                program=self.app_state.program,
+                runtime_manifest_payload=startup_manifest_payload,
+                ui_mode=self.ui_mode,
+                diagnostics_enabled=self.diagnostics_enabled,
+            )
             startup_context = build_runtime_startup_context(
                 app_path=self.app_path,
                 bind_host="127.0.0.1",
                 bind_port=self.port,
                 mode=self.mode,
                 headless=self.headless,
-                manifest_payload=self.app_state.manifest_payload(),
+                manifest_payload=startup_manifest_payload,
                 lock_path=lease.lock_path if lease is not None else None,
                 lock_pid=lease.owner_pid if lease is not None else int(os.getpid()),
                 validate_registry=not self.headless,

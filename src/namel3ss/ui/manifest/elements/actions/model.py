@@ -162,6 +162,9 @@ def build_button_item(
         "action": element_action,
         **base,
     }
+    button_icon = getattr(item, "icon", None)
+    if isinstance(button_icon, str) and button_icon:
+        element["icon"] = {"name": button_icon, "size": "small", "role": "decorative"}
     if variant is not None:
         element["variant"] = variant
     if style_hooks:

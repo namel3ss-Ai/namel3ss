@@ -24,6 +24,24 @@ page "home":
         calls flow "open_order"
 '''
 
+PLAIN_ICON_SOURCE = '''record "Project":
+  name text
+  icon text
+
+flow "open_project":
+  return "ok"
+
+page "home":
+  list is "Project":
+    variant is icon_plain
+    item:
+      primary is name
+      icon is icon
+    actions:
+      action "Open":
+        calls flow "open_project"
+'''
+
 
 def test_parse_list_block():
     program = parse_program(SOURCE)
@@ -52,3 +70,12 @@ page "home":
     assert list_item.record_name == "Order"
     assert list_item.variant is None
     assert list_item.item is None
+
+
+def test_parse_list_icon_plain_variant():
+    program = parse_program(PLAIN_ICON_SOURCE)
+    list_item = next(item for item in program.pages[0].items if isinstance(item, ast.ListItem))
+    assert list_item.record_name == "Project"
+    assert list_item.variant == "icon_plain"
+    assert list_item.item is not None
+    assert list_item.item.icon == "icon"

@@ -35,11 +35,9 @@
       "entrypoint": "ui_renderer_chat.js",
       "entrypoint_hash": "sha256:0d475cbe66b23390440e1deda4167154373df78cdc5fcaafa0f52b8148f0436b",
       "exports": [
-        "renderChatElement",
-        "renderCitationChipsElement",
-        "renderTrustIndicatorElement"
+        "renderChatElement"
       ],
-      "integrity_hash": "sha256:80a33c5ceb79c5ab674972a02c4b9a86b0c5ae12de94eb42a7930a05d2978725",
+      "integrity_hash": "sha256:9ef53185f3e47c534cac9ffa62dd9bec3f5260bc318f86f9341aade293232bdf",
       "renderer_id": "chat",
       "version": "1"
     },
@@ -109,7 +107,7 @@
       "entrypoint": "ui_renderer_pdf_preview.js",
       "entrypoint_hash": "sha256:fd7a9f5d091b1e866e8f264cddec9de9b028285168d7b98199eec6ef8c6f1755",
       "exports": [],
-      "integrity_hash": "sha256:7b9d91b13eacdd7900ee47994a7ae7fcdee26d831c1ec130ad1a2ecad406cb9a",
+      "integrity_hash": "sha256:0cf993a5e297ebfdf5edd92604a3af6f27245b4d979dc6bad030ee5b6b7e76e5",
       "renderer_id": "pdf_preview",
       "version": "1"
     },
@@ -130,7 +128,7 @@
         "renderSourcePreviewElement",
         "renderTrustIndicatorElement"
       ],
-      "integrity_hash": "sha256:2d0a29f370df83e45e98305e60e44e3bedc4fc6d646f3f06e907f8fcde6c8d79",
+      "integrity_hash": "sha256:4a1e4d4a25ad9d201ad50c86349b0b4d832c4552524f518facab65f9ad5a0dcb",
       "renderer_id": "rag",
       "version": "1"
     },

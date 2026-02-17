@@ -256,6 +256,9 @@ def build_manifest(
                 "slug": page_slug,
                 "layout": layout_payload,
             }
+            layout_options = _layout_options_payload(page_layout)
+            if layout_options:
+                page_payload["layout_options"] = layout_options
             if diagnostics_elements:
                 page_payload["diagnostics_blocks"] = diagnostics_elements
         if ui_theme_enabled:
@@ -411,6 +414,21 @@ def build_manifest(
         display_mode=display_mode,
         diagnostics_enabled=diagnostics_enabled,
     )
+
+
+def _layout_options_payload(page_layout: object) -> dict[str, object]:
+    options: dict[str, object] = {}
+    for key in ("sidebar_width", "drawer_width", "panel_height"):
+        value = getattr(page_layout, key, None)
+        if not isinstance(value, str):
+            continue
+        normalized = value.strip().lower()
+        if normalized:
+            options[key] = normalized
+    resizable = getattr(page_layout, "resizable_panels", None)
+    if isinstance(resizable, bool):
+        options["resizable_panels"] = resizable
+    return options
 
 
 def _resolve_persistence(store: Storage | None) -> dict:

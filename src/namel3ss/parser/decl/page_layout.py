@@ -6,6 +6,12 @@ from namel3ss.page_layout import PAGE_LAYOUT_SLOT_ORDER, PAGE_LAYOUT_SLOT_SET
 from namel3ss.parser.decl.page_items import parse_page_item
 
 _DIAGNOSTICS_BLOCK_NAME = "diagnostics"
+_LAYOUT_OPTION_ALLOWED: dict[str, tuple[str, ...]] = {
+    "sidebar_width": ("compact", "standard", "wide"),
+    "drawer_width": ("compact", "standard", "wide"),
+    "panel_height": ("compact", "standard", "tall", "full"),
+}
+_LAYOUT_BOOLEAN_OPTIONS = {"resizable_panels"}
 
 
 def parse_page_layout_block(parser) -> ast.PageLayout:
@@ -16,6 +22,8 @@ def parse_page_layout_block(parser) -> ast.PageLayout:
     parser._expect("INDENT", "Expected indented layout block")
     slot_items: dict[str, list[ast.PageItem]] = {slot: [] for slot in PAGE_LAYOUT_SLOT_ORDER}
     diagnostics_items: list[ast.PageItem] = []
+    layout_options: dict[str, str | None] = {key: None for key in _LAYOUT_OPTION_ALLOWED}
+    layout_bool_options: dict[str, bool | None] = {key: None for key in _LAYOUT_BOOLEAN_OPTIONS}
     seen: set[str] = set()
 
     while parser._current().type != "DEDENT":
@@ -32,6 +40,41 @@ def parse_page_layout_block(parser) -> ast.PageLayout:
                 )
             parser._expect("COLON", "Expected ':' after diagnostics")
             diagnostics_items = _parse_layout_slot_items(parser, slot_name)
+            seen.add(slot_name)
+            continue
+        if slot_name in _LAYOUT_OPTION_ALLOWED:
+            if slot_name in seen:
+                raise Namel3ssError(
+                    f'Layout option "{slot_name}" is already declared.',
+                    line=slot_tok.line,
+                    column=slot_tok.column,
+                )
+            parser._expect("IS", f"Expected 'is' after {slot_name}")
+            value_tok = parser._expect("STRING", f"Expected quoted value for {slot_name}")
+            value = str(value_tok.value).strip().lower()
+            allowed_values = _LAYOUT_OPTION_ALLOWED[slot_name]
+            if value not in allowed_values:
+                allowed_label = ", ".join(allowed_values)
+                raise Namel3ssError(
+                    f'Invalid {slot_name} "{value}". Allowed values: {allowed_label}.',
+                    line=value_tok.line,
+                    column=value_tok.column,
+                )
+            parser._expect("NEWLINE", f"Expected newline after {slot_name}")
+            layout_options[slot_name] = value
+            seen.add(slot_name)
+            continue
+        if slot_name in _LAYOUT_BOOLEAN_OPTIONS:
+            if slot_name in seen:
+                raise Namel3ssError(
+                    f'Layout option "{slot_name}" is already declared.',
+                    line=slot_tok.line,
+                    column=slot_tok.column,
+                )
+            parser._expect("IS", f"Expected 'is' after {slot_name}")
+            value_tok = parser._expect("BOOLEAN", f"Expected true/false for {slot_name}")
+            parser._expect("NEWLINE", f"Expected newline after {slot_name}")
+            layout_bool_options[slot_name] = bool(value_tok.value)
             seen.add(slot_name)
             continue
         if slot_name not in PAGE_LAYOUT_SLOT_SET:
@@ -62,6 +105,10 @@ def parse_page_layout_block(parser) -> ast.PageLayout:
         drawer_right=slot_items["drawer_right"],
         footer=slot_items["footer"],
         diagnostics=diagnostics_items,
+        sidebar_width=layout_options["sidebar_width"],
+        drawer_width=layout_options["drawer_width"],
+        panel_height=layout_options["panel_height"],
+        resizable_panels=layout_bool_options["resizable_panels"],
         line=layout_tok.line,
         column=layout_tok.column,
     )

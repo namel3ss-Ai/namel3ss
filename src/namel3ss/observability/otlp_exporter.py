@@ -10,6 +10,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.observability.config import load_observability_config
 from namel3ss.observability.trace_runs import list_trace_runs, read_trace_entries, trace_runs_root
+from namel3ss.utils.http_tls import open_url_with_tls_fallback
 
 
 OTLP_RETRY_FILENAME = "otlp_retry.json"
@@ -99,7 +100,7 @@ def _post_json(*, endpoint: str, payload: dict[str, object], auth: dict[str, obj
     auth_headers = _auth_headers(auth)
     headers.update(auth_headers)
     request = Request(endpoint, data=body, headers=headers, method="POST")
-    with urlopen(request, timeout=5) as response:  # nosec B310 - controlled via user config
+    with open_url_with_tls_fallback(urlopen, request, timeout_seconds=5) as response:  # nosec B310 - controlled via user config
         _ = response.read()
 
 

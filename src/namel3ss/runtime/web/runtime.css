@@ -111,12 +111,13 @@ body.n3-runtime {
 .runtime-canvas {
   flex: 1;
   display: flex;
-  justify-content: center;
+  justify-content: stretch;
   width: 100%;
 }
 
 .ui-body {
-  width: min(1100px, 100%);
+  width: 100%;
+  max-width: none;
 }
 
 .runtime-overlay.hidden {

@@ -47,7 +47,13 @@ def handle_document_pdf(
     identity: dict | None = None,
     policy_decl: object | None = None,
 ) -> tuple[bytes, dict, str]:
-    payload = _load_document(ctx, document_id=document_id, identity=identity, policy_decl=policy_decl)
+    payload = _load_document(
+        ctx,
+        document_id=document_id,
+        identity=identity,
+        policy_decl=policy_decl,
+        require_page_metadata=False,
+    )
     filename = clean_upload_filename(payload.source_name)
     return payload.content, payload.info, filename
 
@@ -101,6 +107,7 @@ def _load_document(
     document_id: str,
     identity: dict | None,
     policy_decl: object | None,
+    require_page_metadata: bool = True,
 ) -> DocumentPayload:
     doc_id = _normalize_document_id(document_id)
     _require_uploads_capability(ctx)
@@ -112,9 +119,11 @@ def _load_document(
     doc_type = str(detected.get("type") or "")
     if doc_type != "pdf":
         raise Namel3ssError(_pdf_only_message(source_name))
-    page_count = detected.get("page_count")
-    if not isinstance(page_count, int) or page_count <= 0:
+    page_count_raw = detected.get("page_count")
+    has_page_count = isinstance(page_count_raw, int) and not isinstance(page_count_raw, bool) and page_count_raw > 0
+    if require_page_metadata and not has_page_count:
         raise Namel3ssError(_pdf_page_count_message(source_name))
+    page_count = int(page_count_raw) if has_page_count else 0
     checksum = metadata.get("checksum")
     checksum_value = checksum if isinstance(checksum, str) and checksum else doc_id
     return DocumentPayload(

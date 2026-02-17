@@ -17,6 +17,8 @@ def _run_retrieval_run(ctx: ActionDispatchContext) -> tuple[dict, Exception | No
         identity=ctx.identity,
         auth_context=ctx.auth_context,
         secret_values=ctx.secret_values,
+        ui_mode=ctx.ui_mode,
+        diagnostics_enabled=ctx.diagnostics_enabled,
     )
     return response, None
 

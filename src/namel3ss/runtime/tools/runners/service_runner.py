@@ -13,6 +13,7 @@ from namel3ss.runtime.capabilities.gates.base import REASON_COVERAGE_MISSING
 from namel3ss.runtime.capabilities.model import CapabilityCheck, CapabilityContext
 from namel3ss.runtime.tools.python_subprocess import PROTOCOL_VERSION
 from namel3ss.runtime.tools.runners.base import ToolRunnerRequest, ToolRunnerResult
+from namel3ss.utils.http_tls import open_url_with_tls_fallback
 
 
 class ServiceRunner:
@@ -287,7 +288,7 @@ def _post_json(url: str, payload: dict, timeout_seconds: int) -> dict:
     data = json.dumps(payload).encode("utf-8")
     request = Request(url, data=data, headers={"Content-Type": "application/json"})
     try:
-        with urlopen(request, timeout=timeout_seconds) as response:
+        with open_url_with_tls_fallback(urlopen, request, timeout_seconds=timeout_seconds) as response:
             body = response.read()
     except (HTTPError, URLError, TimeoutError) as err:
         raise Namel3ssError(

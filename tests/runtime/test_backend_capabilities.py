@@ -1,4 +1,6 @@
 from pathlib import Path
+import ssl
+from urllib.error import URLError
 
 import pytest
 
@@ -92,7 +94,7 @@ flow "demo":
             status=200,
         )
 
-    monkeypatch.setattr("namel3ss.runtime.backend.http_capability.safe_urlopen", fake_urlopen)
+    monkeypatch.setattr("namel3ss_safeio.safe_urlopen", fake_urlopen)
 
     executor = _build_executor(tmp_path, source)
     result = executor.run()
@@ -115,6 +117,52 @@ flow "demo":
     assert event["input"]["url"] == "https://example.com"
     assert event["output"]["status"] == 200
     assert event["output"]["body"]["type"] == "text"
+
+
+def test_http_tool_retries_with_macos_tls_fallback(monkeypatch, tmp_path: Path) -> None:
+    source = '''spec is "1.0"
+
+capabilities:
+  http
+
+tool "fetch status":
+  implemented using http
+
+  input:
+    url is text
+
+  output:
+    status is number
+    body is text
+
+flow "demo":
+  let response is fetch status:
+    url is "https://example.com"
+  return response
+'''
+
+    calls: list[dict] = []
+
+    def fake_urlopen(_req, timeout, **kwargs):
+        calls.append(dict(kwargs))
+        if "context" not in kwargs:
+            raise URLError(
+                "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: "
+                "unable to get local issuer certificate"
+            )
+        return FakeResponse("ok", [("Content-Type", "text/plain")], status=200)
+
+    monkeypatch.setattr("namel3ss_safeio.safe_urlopen", fake_urlopen)
+    monkeypatch.setattr("namel3ss.utils.http_tls._should_retry_with_macos_trust", lambda _err: True)
+    monkeypatch.setattr("namel3ss.utils.http_tls._macos_ssl_context", lambda: ssl.create_default_context())
+
+    executor = _build_executor(tmp_path, source)
+    result = executor.run()
+
+    assert result.last_value["status"] == 200
+    assert result.last_value["body"] == "ok"
+    assert len(calls) == 2
+    assert "context" in calls[1]
 
 
 def test_file_tool_scoped_and_traced(tmp_path: Path) -> None:

@@ -14,6 +14,7 @@ from namel3ss.runtime.storage.factory import create_store
 from namel3ss.studio.api_routes import handle_api_get, handle_api_post
 from namel3ss.studio.session import SessionState
 from namel3ss.studio.startup import validate_renderer_registry_startup
+from namel3ss.ui.external.serve import resolve_builtin_icon_file
 from namel3ss.utils.json_tools import dumps as json_dumps
 
 
@@ -55,6 +56,15 @@ class StudioRequestHandler(SimpleHTTPRequestHandler):
         web_root = studio_web_root()
         parsed = urlparse(self.path)
         path_only = parsed.path
+        icon_path, icon_type = resolve_builtin_icon_file(path_only)
+        if icon_path and icon_type:
+            content = icon_path.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", icon_type)
+            self.send_header("Content-Length", str(len(content)))
+            self.end_headers()
+            self.wfile.write(content)
+            return
         if path_only in {"/", "/index.html", "/console", "/console/"}:
             file_path = web_root / "index.html"
         else:

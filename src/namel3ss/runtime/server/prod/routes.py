@@ -31,7 +31,7 @@ from namel3ss.runtime.server.observability_helpers import (
     load_observability_builder,
     observability_enabled,
 )
-from namel3ss.ui.external.serve import resolve_external_ui_file
+from namel3ss.ui.external.serve import resolve_builtin_icon_file, resolve_external_ui_file
 from namel3ss.utils.json_tools import dumps as json_dumps
 from namel3ss.version import get_version
 class ProductionRequestHandler(BaseHTTPRequestHandler):
@@ -467,6 +467,21 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             return None
 
     def _handle_static(self, path: str) -> bool:
+        icon_path, icon_type = resolve_builtin_icon_file(path)
+        if icon_path and icon_type:
+            try:
+                content = icon_path.read_bytes()
+            except OSError:  # pragma: no cover - IO guard
+                return False
+            headers = _static_cache_headers(path, icon_type)
+            self.send_response(200)
+            self.send_header("Content-Type", icon_type)
+            self.send_header("Content-Length", str(len(content)))
+            for key, value in headers.items():
+                self.send_header(key, value)
+            self.end_headers()
+            self.wfile.write(content)
+            return True
         web_root = getattr(self.server, "web_root", None)  # type: ignore[attr-defined]
         if web_root is None:
             return False
@@ -477,9 +492,12 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             content = file_path.read_bytes()
         except OSError:  # pragma: no cover - IO guard
             return False
+        headers = _static_cache_headers(path, content_type)
         self.send_response(200)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(content)))
+        for key, value in headers.items():
+            self.send_header(key, value)
         self.end_headers()
         self.wfile.write(content)
         return True
@@ -497,4 +515,19 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
 
     def _state(self) -> BrowserAppState:
         return self.server.app_state  # type: ignore[attr-defined]
+
+
+def _static_cache_headers(path: str, content_type: str) -> dict[str, str]:
+    normalized_path = (path or "").lower()
+    normalized_type = (content_type or "").lower()
+    is_shell_html = normalized_path in {"/", "/index.html"} or normalized_type.startswith("text/html")
+    is_runtime_script = normalized_path.endswith(".js")
+    is_runtime_style = normalized_path.endswith(".css")
+    if is_shell_html or is_runtime_script or is_runtime_style:
+        return {
+            "Cache-Control": "no-store, max-age=0, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        }
+    return {}
 __all__ = ["ProductionRequestHandler"]

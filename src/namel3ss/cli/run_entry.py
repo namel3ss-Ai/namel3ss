@@ -28,12 +28,15 @@ def dispatch_run_command(args: list[str]) -> int:
     normalized_args = _strip_mode_tokens(args)
     with _temporary_ui_mode(mode):
         with _temporary_diagnostics_flag(diagnostics_enabled):
-            return run_run_command(normalized_args)
+            return run_run_command(
+                normalized_args,
+                ui_mode=mode,
+                diagnostics_enabled=diagnostics_enabled,
+            )
 
 
 def _resolve_requested_mode(args: list[str]) -> str:
-    env_mode = _env_mode_or_error()
-    mode = env_mode or DISPLAY_MODE_PRODUCTION
+    mode = DISPLAY_MODE_PRODUCTION
 
     first = args[0] if args else None
     if first in {DISPLAY_MODE_STUDIO, DISPLAY_MODE_PRODUCTION}:
@@ -62,16 +65,6 @@ def _strip_mode_tokens(args: list[str]) -> list[str]:
 def _resolve_requested_diagnostics(args: list[str]) -> bool:
     env_enabled = _env_diagnostics_enabled()
     return "--diagnostics" in args or env_enabled
-
-
-def _env_mode_or_error() -> str | None:
-    raw = os.getenv(_ENV_UI_MODE)
-    if raw is None:
-        return None
-    try:
-        return normalize_display_mode(raw, default=DISPLAY_MODE_PRODUCTION)
-    except ValueError as err:
-        raise Namel3ssError(str(err)) from err
 
 
 def _env_diagnostics_enabled() -> bool:

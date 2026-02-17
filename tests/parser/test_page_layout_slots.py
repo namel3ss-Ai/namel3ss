@@ -80,3 +80,33 @@ def test_layout_rejects_top_level_items_outside_layout():
     with pytest.raises(Namel3ssError) as err:
         parse_program(source)
     assert "outside layout" in str(err.value).lower()
+
+
+def test_layout_parses_sizing_options():
+    source = '''page "chat":
+  layout:
+    sidebar_width is "compact"
+    drawer_width is "wide"
+    panel_height is "full"
+    resizable_panels is true
+    main:
+      text is "Body"
+'''
+    page = parse_program(source).pages[0]
+    assert isinstance(page.layout, ast.PageLayout)
+    assert page.layout.sidebar_width == "compact"
+    assert page.layout.drawer_width == "wide"
+    assert page.layout.panel_height == "full"
+    assert page.layout.resizable_panels is True
+
+
+def test_layout_rejects_invalid_sizing_option_value():
+    source = '''page "chat":
+  layout:
+    sidebar_width is "huge"
+    main:
+      text is "Body"
+'''
+    with pytest.raises(Namel3ssError) as err:
+        parse_program(source)
+    assert "invalid sidebar_width" in str(err.value).lower()

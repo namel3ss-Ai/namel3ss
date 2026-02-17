@@ -22,6 +22,20 @@ def build_actions_list(actions: dict) -> list[dict]:
             record = entry.get("record")
             if record is not None:
                 item["record"] = record
+        if action_type == "upload_select":
+            name = entry.get("name")
+            if isinstance(name, str) and name:
+                item["name"] = name
+            multiple = entry.get("multiple")
+            if isinstance(multiple, bool):
+                item["multiple"] = multiple
+            required = entry.get("required")
+            if isinstance(required, bool):
+                item["required"] = required
+        if action_type == "upload_clear":
+            name = entry.get("name")
+            if isinstance(name, str) and name:
+                item["name"] = name
         items.append(item)
     return items
 

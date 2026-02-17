@@ -34,6 +34,8 @@ def evaluate_gate(
     enable_chunk_plan: bool | None = None,
 ) -> dict:
     probe_result = probe or probe_content(content, metadata=metadata, detected=detected)
+    merged_reasons = _merge_reasons(probe_result, quality_reasons)
+    gate_status = _gate_status(probe_result, quality_status)
     canonical_bytes, basis, encoding = _canonical_bytes(content, normalized_text)
     content_hash = hash_bytes(canonical_bytes)
     runtime_signature = gate_runtime_signature()
@@ -50,6 +52,15 @@ def evaluate_gate(
     cached = read_cache_entry(root, cache_key)
     decision = _cached_decision(cached, content_hash, runtime_signature)
     if decision is not None:
+        if not _cache_matches_inputs(
+            decision=decision,
+            probe=probe_result,
+            quality_status=quality_status,
+            gate_status=gate_status,
+            merged_reasons=merged_reasons,
+        ):
+            decision = None
+    if decision is not None:
         decision["evidence"] = {
             "excerpt": evidence_excerpt,
             "excerpt_bytes": len(evidence_excerpt.encode("utf-8")),
@@ -62,8 +73,7 @@ def evaluate_gate(
     if _chunk_plan_enabled(enable_chunk_plan) and normalized_text is not None:
         chunk_plan = plan_chunks(normalized_text)
 
-    gate_reasons = _merge_reasons(probe_result, quality_reasons)
-    gate_status = _gate_status(probe_result, quality_status)
+    gate_reasons = merged_reasons
     evidence = {
         "excerpt": evidence_excerpt,
         "excerpt_bytes": len(evidence_excerpt.encode("utf-8")),
@@ -123,6 +133,29 @@ def _cached_decision(cache_entry: dict | None, content_hash: str, runtime_signat
     if fingerprint.get("runtime_signature") != runtime_signature:
         return None
     return dict(decision)
+
+
+def _cache_matches_inputs(
+    *,
+    decision: dict,
+    probe: dict,
+    quality_status: str,
+    gate_status: str,
+    merged_reasons: list[str],
+) -> bool:
+    cached_status = decision.get("status")
+    cached_quality = decision.get("quality")
+    cached_reasons = decision.get("reasons")
+    if cached_status != gate_status:
+        return False
+    if cached_quality != quality_status:
+        return False
+    if list(cached_reasons or []) != list(merged_reasons):
+        return False
+    cached_probe = decision.get("probe")
+    if not isinstance(cached_probe, dict):
+        return False
+    return cached_probe == probe
 
 
 def _gate_status(probe: dict, quality_status: str) -> str:

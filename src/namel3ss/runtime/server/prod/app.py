@@ -21,6 +21,7 @@ from namel3ss.runtime.server.prod.routes import ProductionRequestHandler
 from namel3ss.runtime.server.startup import (
     build_runtime_startup_context,
     print_startup_banner,
+    require_static_runtime_manifest_parity,
 )
 from namel3ss.runtime.router.refresh import refresh_routes
 from namel3ss.runtime.router.registry import RouteRegistry
@@ -112,13 +113,20 @@ class ProductionRunner:
                 refresh_routes(program=self.app_state.program, registry=registry, revision=self.app_state.revision, logger=print)
             server.route_registry = registry  # type: ignore[attr-defined]
             self.server = server
+            startup_manifest_payload = self.app_state.manifest_payload()
+            require_static_runtime_manifest_parity(
+                program=self.app_state.program,
+                runtime_manifest_payload=startup_manifest_payload,
+                ui_mode=self.app_state.ui_mode,
+                diagnostics_enabled=self.app_state.diagnostics_enabled,
+            )
             startup_context = build_runtime_startup_context(
                 app_path=self.app_path,
                 bind_host="0.0.0.0",
                 bind_port=self.port,
                 mode=self.target or "service",
                 headless=self.headless,
-                manifest_payload=self.app_state.manifest_payload(),
+                manifest_payload=startup_manifest_payload,
                 lock_path=self._port_lease.lock_path if self._port_lease is not None else None,
                 lock_pid=self._port_lease.owner_pid if self._port_lease is not None else int(os.getpid()),
                 validate_registry=not self.headless,

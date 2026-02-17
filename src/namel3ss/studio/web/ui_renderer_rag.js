@@ -330,6 +330,7 @@
         snippet: typeof entry.snippet === "string" ? entry.snippet : undefined,
         chunk_id: typeof entry.chunk_id === "string" ? entry.chunk_id : undefined,
         document_id: typeof entry.document_id === "string" ? entry.document_id : undefined,
+        highlight_color: typeof entry.highlight_color === "string" ? entry.highlight_color : undefined,
         page: typeof entry.page === "number" || typeof entry.page === "string" ? entry.page : undefined,
         page_number:
           typeof entry.page_number === "number" || typeof entry.page_number === "string" ? entry.page_number : undefined,
@@ -382,6 +383,7 @@
       url: el && el.url,
       chunk_id: el && el.chunk_id,
       document_id: el && el.document_id,
+      highlight_color: el && el.highlight_color,
       page: el && el.page,
       page_number: el && el.page_number,
     };

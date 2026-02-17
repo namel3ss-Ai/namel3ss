@@ -6,7 +6,7 @@ from namel3ss.errors.base import Namel3ssError
 
 
 COMPONENT_VARIANTS: dict[str, tuple[str, ...]] = {
-    "button": ("primary", "secondary", "success", "danger"),
+    "button": ("primary", "secondary", "success", "danger", "plain"),
     "card": ("default", "elevated", "outlined"),
 }
 
@@ -93,6 +93,7 @@ def variant_token_defaults(component: str, variant: str | None) -> dict[str, str
             "secondary": {"background": "color.secondary", "text": "color.on_secondary", "border": "color.secondary.dark"},
             "success": {"background": "color.success", "text": "color.on_success", "border": "color.success"},
             "danger": {"background": "color.error", "text": "color.on_error", "border": "color.error"},
+            "plain": {"background": "color.background", "text": "color.on_background", "border": "color.background"},
         }
         return dict(mapping.get(key, mapping["primary"]))
     if component == "card":

@@ -15,6 +15,7 @@ from namel3ss.runtime.ui.state.state_target import (
     state_path_label,
 )
 from namel3ss.ui.manifest import build_manifest
+from namel3ss.ui.manifest.display_mode import DISPLAY_MODE_STUDIO
 
 
 def handle_chat_stream_cancel_action(
@@ -30,6 +31,8 @@ def handle_chat_stream_cancel_action(
     identity: dict | None = None,
     auth_context: object | None = None,
     secret_values: list[str] | None = None,
+    ui_mode: str = DISPLAY_MODE_STUDIO,
+    diagnostics_enabled: bool = False,
 ) -> dict:
     ensure_chat_shell_state(state)
     target_path = parse_optional_path(
@@ -62,6 +65,8 @@ def handle_chat_stream_cancel_action(
         runtime_theme=runtime_theme,
         identity=identity,
         auth_context=auth_context,
+        display_mode=ui_mode,
+        diagnostics_enabled=diagnostics_enabled,
     )
     ensure_json_serializable(response)
     response = finalize_run_payload(response, secret_values)

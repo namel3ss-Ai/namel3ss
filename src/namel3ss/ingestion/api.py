@@ -210,7 +210,9 @@ def _validate_page_provenance(*, pages: list[str], detected: dict, source_name: 
         return pages if pages else [""]
     page_count = detected.get("page_count")
     if not isinstance(page_count, int) or page_count <= 0:
-        raise Namel3ssError(_pdf_page_count_message(source_name))
+        # Some valid PDFs omit readable page object markers for the lightweight detector.
+        # Keep deterministic ingestion by deriving page provenance from extracted pages.
+        return pages if pages else [""]
     if not pages:
         pages = [""]
     if len(pages) != page_count:

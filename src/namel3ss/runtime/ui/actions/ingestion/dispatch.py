@@ -19,6 +19,8 @@ def _run_ingestion_run(ctx: ActionDispatchContext) -> tuple[dict, Exception | No
         identity=ctx.identity,
         auth_context=ctx.auth_context,
         secret_values=ctx.secret_values,
+        ui_mode=ctx.ui_mode,
+        diagnostics_enabled=ctx.diagnostics_enabled,
     )
     return response, None
 
@@ -35,6 +37,8 @@ def _run_ingestion_review(ctx: ActionDispatchContext) -> tuple[dict, Exception |
         identity=ctx.identity,
         auth_context=ctx.auth_context,
         secret_values=ctx.secret_values,
+        ui_mode=ctx.ui_mode,
+        diagnostics_enabled=ctx.diagnostics_enabled,
     )
     return response, None
 
@@ -51,6 +55,8 @@ def _run_ingestion_skip(ctx: ActionDispatchContext) -> tuple[dict, Exception | N
         identity=ctx.identity,
         auth_context=ctx.auth_context,
         secret_values=ctx.secret_values,
+        ui_mode=ctx.ui_mode,
+        diagnostics_enabled=ctx.diagnostics_enabled,
     )
     return response, None
 

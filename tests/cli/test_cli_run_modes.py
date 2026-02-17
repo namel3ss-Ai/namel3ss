@@ -9,9 +9,11 @@ from namel3ss.errors.base import Namel3ssError
 def test_dispatch_run_defaults_to_production_mode(monkeypatch):
     seen: dict[str, object] = {}
 
-    def fake_run(args):
+    def fake_run(args, *, ui_mode=None, diagnostics_enabled=None):
         seen["args"] = list(args)
-        seen["mode"] = os.getenv("N3_UI_MODE")
+        seen["mode"] = ui_mode
+        seen["env_mode"] = os.getenv("N3_UI_MODE")
+        seen["diagnostics"] = diagnostics_enabled
         return 7
 
     monkeypatch.setattr("namel3ss.cli.run_entry.run_run_command", fake_run)
@@ -20,14 +22,18 @@ def test_dispatch_run_defaults_to_production_mode(monkeypatch):
     assert code == 7
     assert seen["args"] == ["app.ai", "--dry"]
     assert seen["mode"] == "production"
+    assert seen["env_mode"] == "production"
+    assert seen["diagnostics"] is False
 
 
 def test_dispatch_run_accepts_studio_subcommand(monkeypatch):
     seen: dict[str, object] = {}
 
-    def fake_run(args):
+    def fake_run(args, *, ui_mode=None, diagnostics_enabled=None):
         seen["args"] = list(args)
-        seen["mode"] = os.getenv("N3_UI_MODE")
+        seen["mode"] = ui_mode
+        seen["env_mode"] = os.getenv("N3_UI_MODE")
+        seen["diagnostics"] = diagnostics_enabled
         return 0
 
     monkeypatch.setattr("namel3ss.cli.run_entry.run_run_command", fake_run)
@@ -36,14 +42,40 @@ def test_dispatch_run_accepts_studio_subcommand(monkeypatch):
     assert code == 0
     assert seen["args"] == ["app.ai", "--dry"]
     assert seen["mode"] == "studio"
+    assert seen["env_mode"] == "studio"
+    assert seen["diagnostics"] is False
+
+
+def test_dispatch_run_ignores_env_mode_without_explicit_studio(monkeypatch):
+    seen: dict[str, object] = {}
+
+    def fake_run(args, *, ui_mode=None, diagnostics_enabled=None):
+        seen["args"] = list(args)
+        seen["mode"] = ui_mode
+        seen["env_mode"] = os.getenv("N3_UI_MODE")
+        seen["diagnostics"] = diagnostics_enabled
+        return 0
+
+    monkeypatch.setenv("N3_UI_MODE", "studio")
+    monkeypatch.setattr("namel3ss.cli.run_entry.run_run_command", fake_run)
+    code = dispatch_run_command(["app.ai", "--dry"])
+
+    assert code == 0
+    assert seen["args"] == ["app.ai", "--dry"]
+    assert seen["mode"] == "production"
+    assert seen["env_mode"] == "production"
+    assert seen["diagnostics"] is False
+    assert os.getenv("N3_UI_MODE") == "studio"
 
 
 def test_dispatch_run_mode_flags_override_env(monkeypatch):
     seen: dict[str, object] = {}
 
-    def fake_run(args):
+    def fake_run(args, *, ui_mode=None, diagnostics_enabled=None):
         seen["args"] = list(args)
-        seen["mode"] = os.getenv("N3_UI_MODE")
+        seen["mode"] = ui_mode
+        seen["env_mode"] = os.getenv("N3_UI_MODE")
+        seen["diagnostics"] = diagnostics_enabled
         return 0
 
     monkeypatch.setenv("N3_UI_MODE", "studio")
@@ -52,6 +84,8 @@ def test_dispatch_run_mode_flags_override_env(monkeypatch):
 
     assert seen["args"] == ["app.ai"]
     assert seen["mode"] == "production"
+    assert seen["env_mode"] == "production"
+    assert seen["diagnostics"] is False
     assert os.getenv("N3_UI_MODE") == "studio"
 
 
@@ -72,10 +106,12 @@ def test_dispatch_run_rejects_conflicting_mode_flags():
 def test_dispatch_run_sets_diagnostics_flag(monkeypatch):
     seen: dict[str, object] = {}
 
-    def fake_run(args):
+    def fake_run(args, *, ui_mode=None, diagnostics_enabled=None):
         seen["args"] = list(args)
-        seen["mode"] = os.getenv("N3_UI_MODE")
-        seen["diagnostics"] = os.getenv("N3_UI_DIAGNOSTICS")
+        seen["mode"] = ui_mode
+        seen["env_mode"] = os.getenv("N3_UI_MODE")
+        seen["diagnostics"] = diagnostics_enabled
+        seen["env_diagnostics"] = os.getenv("N3_UI_DIAGNOSTICS")
         return 0
 
     monkeypatch.setattr("namel3ss.cli.run_entry.run_run_command", fake_run)
@@ -84,16 +120,20 @@ def test_dispatch_run_sets_diagnostics_flag(monkeypatch):
     assert code == 0
     assert seen["args"] == ["app.ai"]
     assert seen["mode"] == "production"
-    assert seen["diagnostics"] == "true"
+    assert seen["env_mode"] == "production"
+    assert seen["diagnostics"] is True
+    assert seen["env_diagnostics"] == "true"
 
 
 def test_dispatch_run_warns_when_diagnostics_flag_is_used_in_studio(monkeypatch, capsys):
     seen: dict[str, object] = {}
 
-    def fake_run(args):
+    def fake_run(args, *, ui_mode=None, diagnostics_enabled=None):
         seen["args"] = list(args)
-        seen["mode"] = os.getenv("N3_UI_MODE")
-        seen["diagnostics"] = os.getenv("N3_UI_DIAGNOSTICS")
+        seen["mode"] = ui_mode
+        seen["env_mode"] = os.getenv("N3_UI_MODE")
+        seen["diagnostics"] = diagnostics_enabled
+        seen["env_diagnostics"] = os.getenv("N3_UI_DIAGNOSTICS")
         return 0
 
     monkeypatch.setattr("namel3ss.cli.run_entry.run_run_command", fake_run)
@@ -103,5 +143,7 @@ def test_dispatch_run_warns_when_diagnostics_flag_is_used_in_studio(monkeypatch,
     assert code == 0
     assert seen["args"] == ["app.ai"]
     assert seen["mode"] == "studio"
-    assert seen["diagnostics"] == "true"
+    assert seen["env_mode"] == "studio"
+    assert seen["diagnostics"] is True
+    assert seen["env_diagnostics"] == "true"
     assert "--diagnostics is ignored in Studio mode" in captured.err

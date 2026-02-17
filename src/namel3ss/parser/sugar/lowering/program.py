@@ -241,6 +241,10 @@ def _lower_page_layout(layout: ast.PageLayout | None) -> ast.PageLayout | None:
         drawer_right=[_lower_page_item(item) for item in layout.drawer_right],
         footer=[_lower_page_item(item) for item in layout.footer],
         diagnostics=[_lower_page_item(item) for item in layout.diagnostics],
+        sidebar_width=getattr(layout, "sidebar_width", None),
+        drawer_width=getattr(layout, "drawer_width", None),
+        panel_height=getattr(layout, "panel_height", None),
+        resizable_panels=getattr(layout, "resizable_panels", None),
         line=layout.line,
         column=layout.column,
     )

@@ -6,6 +6,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.preview.preview_contract import (
     PREVIEW_STATUS_OK,
     PREVIEW_STATUS_UNAVAILABLE,
+    PREVIEW_UNAVAILABLE_REASON_UNKNOWN,
     PREVIEW_UNION_CONTRACT_ERROR_CODE,
 )
 from namel3ss.runtime.preview.preview_endpoint import handle_preview_page_request
@@ -63,6 +64,35 @@ def test_preview_endpoint_returns_unavailable_union_for_non_pdf(monkeypatch) -> 
     assert payload["status"] == PREVIEW_STATUS_UNAVAILABLE
     assert payload["reason_code"] == "preview_non_pdf"
     assert payload["fallback_snippet"] == "fallback text"
+    assert payload["pdf_url"] == ""
+
+
+def test_preview_endpoint_returns_unavailable_union_for_missing_pdf_metadata(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "namel3ss.runtime.preview.preview_endpoint.handle_document_page",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            Namel3ssError(
+                'What happened: PDF "demo.pdf" is missing page metadata.\n'
+                "Why: Page previews require deterministic page numbers."
+            )
+        ),
+    )
+    payload, status = handle_preview_page_request(
+        SimpleNamespace(),
+        document_id="doc-metadata",
+        page_number=1,
+        state={"ingestion": {"doc-metadata": {"preview": "Fallback preview text"}}},
+        chunk_id=None,
+        citation_id=None,
+        identity=None,
+        policy_decl=None,
+    )
+    assert status == 200
+    assert payload["status"] == PREVIEW_STATUS_UNAVAILABLE
+    assert payload["reason_code"] == PREVIEW_UNAVAILABLE_REASON_UNKNOWN
+    assert payload["reason"].startswith('What happened: PDF "demo.pdf" is missing page metadata.')
+    assert payload["fallback_snippet"] == "Fallback preview text"
+    assert payload["pdf_url"] == "/api/documents/doc-metadata/pdf#page=1"
 
 
 def test_preview_endpoint_uses_4xx_for_true_errors(monkeypatch) -> None:

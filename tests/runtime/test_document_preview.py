@@ -75,6 +75,52 @@ def test_document_pdf_bytes_retrievable(tmp_path: Path) -> None:
     }
 
 
+def test_document_pdf_bytes_retrievable_without_page_metadata(tmp_path: Path, monkeypatch) -> None:
+    ctx = _ctx(tmp_path)
+    pdf_bytes = _build_pdf(["Single page text."])
+    metadata = store_upload(
+        ctx,
+        filename="metadata-missing.pdf",
+        content_type="application/pdf",
+        stream=io.BytesIO(pdf_bytes),
+    )
+    monkeypatch.setattr(
+        "namel3ss.runtime.backend.document_handler.detect_upload",
+        lambda *_args, **_kwargs: {"type": "pdf", "page_count": 0},
+    )
+
+    content, info, filename = handle_document_pdf(ctx, document_id=metadata["checksum"])
+
+    assert content == pdf_bytes
+    assert filename == "metadata-missing.pdf"
+    assert info == {
+        "document_id": metadata["checksum"],
+        "source_name": "metadata-missing.pdf",
+        "page_count": 0,
+        "checksum": metadata["checksum"],
+    }
+
+
+def test_document_page_still_requires_page_metadata(tmp_path: Path, monkeypatch) -> None:
+    ctx = _ctx(tmp_path)
+    pdf_bytes = _build_pdf(["Single page text."])
+    metadata = store_upload(
+        ctx,
+        filename="metadata-required.pdf",
+        content_type="application/pdf",
+        stream=io.BytesIO(pdf_bytes),
+    )
+    monkeypatch.setattr(
+        "namel3ss.runtime.backend.document_handler.detect_upload",
+        lambda *_args, **_kwargs: {"type": "pdf", "page_count": 0},
+    )
+
+    with pytest.raises(Namel3ssError) as excinfo:
+        handle_document_page(ctx, document_id=metadata["checksum"], page_number=1)
+
+    assert "missing page metadata" in str(excinfo.value).lower()
+
+
 def test_document_page_render_is_deterministic(tmp_path: Path) -> None:
     ctx = _ctx(tmp_path)
     pdf_bytes = _build_pdf(["Alpha page one.", "Beta page two."])

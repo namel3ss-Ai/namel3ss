@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.icons.registry import validate_icon_name
 from namel3ss.lang.keywords import is_keyword
 from namel3ss.parser.decl.page_common import (
     _parse_action_availability_rule_block,
@@ -144,6 +145,7 @@ def parse_button_item(parser, tok, *, allow_pattern_params: bool = False) -> ast
     target: str | None = None
     visibility_rule = None
     availability_rule = None
+    icon = None
     variant = None
     style_hooks = None
     theme_overrides: ast.ThemeTokenOverrides | None = None
@@ -183,6 +185,21 @@ def parse_button_item(parser, tok, *, allow_pattern_params: bool = False) -> ast
             if style_hooks is not None:
                 raise Namel3ssError("style_hooks is declared more than once", line=tok_action.line, column=tok_action.column)
             style_hooks = _parse_style_hooks_block(parser)
+            parser._match("NEWLINE")
+            continue
+        if tok_action.type == "IDENT" and tok_action.value == "icon":
+            if icon is not None:
+                raise Namel3ssError("Icon is declared more than once", line=tok_action.line, column=tok_action.column)
+            parser._advance()
+            if parser._match("COLON"):
+                pass
+            else:
+                parser._expect("IS", "Expected ':' or 'is' after icon")
+            value_tok = parser._current()
+            if value_tok.type not in {"STRING", "IDENT"}:
+                raise Namel3ssError("icon must be an identifier or string", line=value_tok.line, column=value_tok.column)
+            parser._advance()
+            icon = validate_icon_name(str(value_tok.value), line=value_tok.line, column=value_tok.column)
             parser._match("NEWLINE")
             continue
         if tok_action.type == "CALLS":
@@ -282,6 +299,7 @@ def parse_button_item(parser, tok, *, allow_pattern_params: bool = False) -> ast
         flow_name=flow_name,
         action_kind=action_kind,
         target=target,
+        icon=icon,
         visibility=visibility,
         visibility_rule=visibility_rule,
         show_when=show_when,

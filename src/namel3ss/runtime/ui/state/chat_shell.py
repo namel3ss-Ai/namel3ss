@@ -271,6 +271,7 @@ def _normalize_selected_model_ids(chat: dict, models: list[dict]) -> list[str]:
 
 
 def _normalize_messages_graph(raw_graph: object, raw_messages: object) -> dict:
+    message_nodes = _messages_to_nodes(raw_messages)
     nodes: list[dict] = []
     edges: list[dict] = []
     active_message_id: str | None = None
@@ -281,11 +282,30 @@ def _normalize_messages_graph(raw_graph: object, raw_messages: object) -> dict:
         active_message_id = _normalized_text(raw_graph.get("active_message_id"))
         if active_message_id not in node_ids:
             active_message_id = None
+        if message_nodes and not _graph_nodes_match_messages(nodes, message_nodes):
+            nodes = message_nodes
+            edges = _linear_edges(nodes)
+            active_message_id = nodes[-1]["id"] if nodes else None
     if not nodes:
-        nodes = _messages_to_nodes(raw_messages)
+        nodes = message_nodes
         edges = _linear_edges(nodes)
         active_message_id = nodes[-1]["id"] if nodes else None
     return {"active_message_id": active_message_id, "edges": edges, "nodes": nodes}
+
+
+def _graph_nodes_match_messages(graph_nodes: list[dict], message_nodes: list[dict]) -> bool:
+    if len(graph_nodes) != len(message_nodes):
+        return False
+    for index in range(len(graph_nodes)):
+        graph_node = graph_nodes[index]
+        message_node = message_nodes[index]
+        if graph_node.get("id") != message_node.get("id"):
+            return False
+        if graph_node.get("role") != message_node.get("role"):
+            return False
+        if graph_node.get("content") != message_node.get("content"):
+            return False
+    return True
 
 
 def _normalize_graph_nodes(value: object) -> list[dict]:

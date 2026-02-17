@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "namel3ss"
-version = "0.1.0a20"
+version = "0.1.0a23"
 description = "AI-native programming language for deterministic, inspectable applications."
 readme = "README.md"
 requires-python = ">=3.14"
@@ -13,7 +13,9 @@ authors = [
     { name = "namel3ss", email = "info@namel3ss.com" },
 ]
 keywords = ["ai", "agents", "dsl", "programming-language", "ollama", "openai"]
-dependencies = []
+dependencies = [
+    "pypdf>=5.0.0",
+]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
