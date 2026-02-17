@@ -625,6 +625,35 @@
     const fields = normalizeComposerFields(child);
     const inputs = new Map();
     let messageInput = null;
+    const attachmentsEnabled = Boolean(chatConfig && chatConfig.attachments);
+    let attachButton = null;
+    if (attachmentsEnabled) {
+      attachButton = document.createElement("button");
+      attachButton.type = "button";
+      attachButton.className = "btn small ghost ui-chat-composer-attach";
+      attachButton.setAttribute("aria-label", "Attach files");
+      attachButton.title = "Attach files";
+      if (typeof root.createIconNode === "function") {
+        const icon = root.createIconNode("add", { size: "small", decorative: true });
+        attachButton.appendChild(icon);
+      } else {
+        attachButton.textContent = "+";
+      }
+      const syncAttachState = () => {
+        const uploadInput = findQuestionUploadInput(form);
+        attachButton.disabled = !(uploadInput && uploadInput.disabled !== true);
+      };
+      attachButton.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const uploadInput = findQuestionUploadInput(form);
+        if (uploadInput && uploadInput.disabled !== true) {
+          uploadInput.click();
+        }
+      };
+      syncAttachState();
+      composerSurface.appendChild(attachButton);
+    }
     fields.forEach((field) => {
       const name = field.name || "message";
       const placeholder = name === "message" ? composerPlaceholder : String(name);
@@ -746,6 +775,29 @@
       }
     };
     return form;
+  }
+
+  function findQuestionUploadInput(anchorNode) {
+    const roots = [];
+    if (anchorNode && typeof anchorNode.closest === "function") {
+      const sectionRoot = anchorNode.closest(".ui-section");
+      if (sectionRoot) {
+        roots.push(sectionRoot);
+      }
+    }
+    roots.push(document);
+    const uploadNames = ["question_files", "chat_files"];
+    for (const rootNode of roots) {
+      if (!rootNode || typeof rootNode.querySelector !== "function") continue;
+      for (const uploadName of uploadNames) {
+        const selector = `.ui-upload[data-upload-name="${uploadName}"] .ui-upload-input`;
+        const input = rootNode.querySelector(selector);
+        if (input && input.tagName && input.tagName.toLowerCase() === "input") {
+          return input;
+        }
+      }
+    }
+    return null;
   }
 
   function setupComposerMentions(container, messageInput) {
