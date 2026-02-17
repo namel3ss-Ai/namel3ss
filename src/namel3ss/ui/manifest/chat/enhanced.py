@@ -31,6 +31,9 @@ def apply_chat_configuration(
         line=item.line,
         column=item.column,
     )
+    chat_element["composer_attach_upload"] = _normalize_composer_attach_upload(
+        getattr(item, "composer_attach_upload", None),
+    )
     chat_element["citations_enhanced"] = bool(citations_enhanced_enabled)
     chat_element["actions"] = _normalize_actions(getattr(item, "actions", []), line=item.line, column=item.column)
 
@@ -175,6 +178,10 @@ def _normalize_composer_send_style(raw: object, *, line: int | None, column: int
             column=column,
         )
     return value
+
+
+def _normalize_composer_attach_upload(raw: object) -> str:
+    return str(raw or "").strip()
 
 
 def _normalize_citations(value: object, *, line: int | None, column: int | None) -> list[dict]:

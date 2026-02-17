@@ -87,6 +87,7 @@ page "home":
   chat:
     composer_placeholder is "Ask your project a question..."
     composer_send_style is text
+    composer_attach_upload is "question_files"
     messages from is state.chat.messages
     composer calls flow "ask_flow"
 '''
@@ -246,3 +247,4 @@ def test_chat_manifest_includes_composer_ui_options():
     chat = _chat_element(manifest)
     assert chat["composer_placeholder"] == "Ask your project a question..."
     assert chat["composer_send_style"] == "text"
+    assert chat["composer_attach_upload"] == "question_files"

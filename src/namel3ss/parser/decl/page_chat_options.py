@@ -20,6 +20,7 @@ class ChatOptions:
     attachments: bool = False
     composer_placeholder: str = _DEFAULT_COMPOSER_PLACEHOLDER
     composer_send_style: str = "icon"
+    composer_attach_upload: str | None = None
 
 
 def parse_chat_option_line(
@@ -98,6 +99,16 @@ def parse_chat_option_line(
             parser,
             allowed=_ALLOWED_COMPOSER_SEND_STYLES,
             message="composer_send_style must be icon or text.",
+        )
+        parser._match("NEWLINE")
+        return True
+    if name == "composer_attach_upload":
+        _ensure_not_duplicate(name, seen, tok.line, tok.column)
+        parser._advance()
+        parser._expect("IS", "Expected 'is' after composer_attach_upload")
+        options.composer_attach_upload = _parse_required_text(
+            parser,
+            message="composer_attach_upload must be text.",
         )
         parser._match("NEWLINE")
         return True

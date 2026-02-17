@@ -622,9 +622,39 @@
             child.action.flow
           ? child.action.flow
           : "";
+    const composerAttachUpload =
+      chatConfig && typeof chatConfig.composer_attach_upload === "string" ? chatConfig.composer_attach_upload.trim() : "";
     const fields = normalizeComposerFields(child);
     const inputs = new Map();
     let messageInput = null;
+    const attachmentsEnabled = Boolean(chatConfig && chatConfig.attachments);
+    if (attachmentsEnabled && composerAttachUpload) {
+      const attachButton = document.createElement("button");
+      attachButton.type = "button";
+      attachButton.className = "btn small ghost ui-chat-composer-attach";
+      attachButton.setAttribute("aria-label", "Attach files");
+      attachButton.title = "Attach files";
+      if (typeof root.createIconNode === "function") {
+        const icon = root.createIconNode("add", { size: "small", decorative: true });
+        attachButton.appendChild(icon);
+      } else {
+        attachButton.textContent = "+";
+      }
+      const syncAttachState = () => {
+        const uploadInput = findComposerUploadInput(form, composerAttachUpload);
+        attachButton.disabled = !(uploadInput && uploadInput.disabled !== true);
+      };
+      attachButton.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const uploadInput = findComposerUploadInput(form, composerAttachUpload);
+        if (uploadInput && uploadInput.disabled !== true) {
+          uploadInput.click();
+        }
+      };
+      syncAttachState();
+      composerSurface.appendChild(attachButton);
+    }
     fields.forEach((field) => {
       const name = field.name || "message";
       const placeholder = name === "message" ? composerPlaceholder : String(name);
@@ -746,6 +776,26 @@
       }
     };
     return form;
+  }
+
+  function findComposerUploadInput(anchorNode, uploadName) {
+    const target = typeof uploadName === "string" ? uploadName.trim() : "";
+    if (!target) return null;
+    const roots = [];
+    if (anchorNode && typeof anchorNode.closest === "function") {
+      const sectionRoot = anchorNode.closest(".ui-section");
+      if (sectionRoot) roots.push(sectionRoot);
+    }
+    roots.push(document);
+    for (const rootNode of roots) {
+      if (!rootNode || typeof rootNode.querySelector !== "function") continue;
+      const selector = `.ui-upload[data-upload-name="${target}"] .ui-upload-input`;
+      const input = rootNode.querySelector(selector);
+      if (input && input.tagName && input.tagName.toLowerCase() === "input") {
+        return input;
+      }
+    }
+    return null;
   }
 
   function setupComposerMentions(container, messageInput) {

@@ -19,6 +19,7 @@ def _lower_chat_item(item: ast.ChatItem, flow_names: set[str], page_name: str, *
     children = [_lower_chat_child(child, flow_names, page_name, attach_origin=attach_origin) for child in item.children]
     if not children:
         raise Namel3ssError("Chat block has no entries", line=item.line, column=item.column)
+    composer_attach_upload = str(getattr(item, "composer_attach_upload", "") or "").strip()
     return ir.ChatItem(
         children=children,
         style=getattr(item, "style", "bubbles"),
@@ -29,6 +30,7 @@ def _lower_chat_item(item: ast.ChatItem, flow_names: set[str], page_name: str, *
         attachments=bool(getattr(item, "attachments", False)),
         composer_placeholder=str(getattr(item, "composer_placeholder", "") or ""),
         composer_send_style=str(getattr(item, "composer_send_style", "icon") or "icon"),
+        composer_attach_upload=(composer_attach_upload or None),
         line=item.line,
         column=item.column,
     )

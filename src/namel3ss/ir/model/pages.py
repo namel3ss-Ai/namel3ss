@@ -352,6 +352,7 @@ class ChatItem(PageItem):
     attachments: bool = False
     composer_placeholder: str | None = None
     composer_send_style: str = "icon"
+    composer_attach_upload: str | None = None
 
 
 @dataclass

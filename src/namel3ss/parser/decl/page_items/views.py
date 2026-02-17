@@ -351,6 +351,7 @@ def parse_chat_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.C
         attachments=options.attachments,
         composer_placeholder=options.composer_placeholder,
         composer_send_style=options.composer_send_style,
+        composer_attach_upload=options.composer_attach_upload,
         visibility=visibility,
         visibility_rule=visibility_rule,
         show_when=show_when,
