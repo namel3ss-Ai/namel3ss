@@ -92,6 +92,16 @@ page "home":
     composer calls flow "ask_flow"
 '''
 
+CUSTOM_ACTIONS_SOURCE = '''flow "send_message":
+  return "ok"
+
+page "home":
+  chat:
+    actions are [copy, pin_to_project, open_in_drawer]
+    messages from is state.chat.messages
+    composer calls flow "send_message"
+'''
+
 ENHANCED_STATE = {
     "chat": {
         "messages": [
@@ -241,6 +251,30 @@ def test_chat_manifest_enhanced_is_deterministic():
     assert manifest_one == manifest_two
 
 
+def test_chat_manifest_supports_structured_message_actions():
+    program = lower_ir_program(SOURCE)
+    state = {
+        "chat": {
+            "messages": [
+                {
+                    "role": "assistant",
+                    "content": "Grounded response.",
+                    "actions": [
+                        {"id": "copy", "label": "Copy", "icon": "content_copy"},
+                        {"id": "view_sources", "label": "Sources", "icon": "source_notes"},
+                    ],
+                }
+            ]
+        }
+    }
+    manifest = build_manifest(program, state=state)
+    messages = _chat_children(manifest)["messages"]["messages"]
+    assert messages[0]["actions"] == [
+        {"id": "copy", "label": "Copy", "icon": "content_copy"},
+        {"id": "view_sources", "label": "Sources", "icon": "source_notes"},
+    ]
+
+
 def test_chat_manifest_includes_composer_ui_options():
     program = lower_ir_program(COMPOSER_UI_SOURCE)
     manifest = build_manifest(program, state={"chat": {"messages": []}})
@@ -248,3 +282,50 @@ def test_chat_manifest_includes_composer_ui_options():
     assert chat["composer_placeholder"] == "Ask your project a question..."
     assert chat["composer_send_style"] == "text"
     assert chat["composer_attach_upload"] == "question_files"
+
+
+def test_chat_manifest_allows_custom_chat_action_ids():
+    program = lower_ir_program(CUSTOM_ACTIONS_SOURCE)
+    manifest = build_manifest(program, state={"chat": {"messages": [{"role": "assistant", "content": "ok"}]}})
+    chat = _chat_element(manifest)
+    assert chat["actions"] == ["copy", "pin_to_project", "open_in_drawer"]
+
+
+def test_chat_manifest_preserves_structured_action_dispatch_contract():
+    program = lower_ir_program(SOURCE)
+    state = {
+        "chat": {
+            "messages": [
+                {
+                    "role": "assistant",
+                    "content": "Grounded response.",
+                    "actions": [
+                        {
+                            "id": "pin_to_project",
+                            "label": "Pin",
+                            "icon": "push_pin",
+                            "action_id": "page.home.actions.pin_to_project",
+                            "action_type": "call_flow",
+                            "flow": "pin_project_file",
+                            "target": "project_drawer",
+                            "payload": {"scope": "active_project"},
+                        }
+                    ],
+                }
+            ]
+        }
+    }
+    manifest = build_manifest(program, state=state)
+    message = _chat_children(manifest)["messages"]["messages"][0]
+    assert message["actions"] == [
+        {
+            "id": "pin_to_project",
+            "label": "Pin",
+            "icon": "push_pin",
+            "action_id": "page.home.actions.pin_to_project",
+            "action_type": "call_flow",
+            "flow": "pin_project_file",
+            "target": "project_drawer",
+            "payload": {"scope": "active_project"},
+        }
+    ]

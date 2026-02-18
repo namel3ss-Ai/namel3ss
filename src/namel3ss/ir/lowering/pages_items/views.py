@@ -186,6 +186,10 @@ def lower_list_item(
     if not item.record_name and source is None:
         raise Namel3ssError("Lists must use a record or state source", line=item.line, column=item.column)
     variant = item.variant or "two_line"
+    group_by = getattr(item, "group_by", None)
+    group_label = getattr(item, "group_label", None)
+    if group_label and not group_by:
+        raise Namel3ssError("List group_label requires group_by.", line=item.line, column=item.column)
     if item.record_name:
         if item.record_name not in record_map:
             raise Namel3ssError(
@@ -194,6 +198,18 @@ def lower_list_item(
                 column=item.column,
             )
         record = record_map[item.record_name]
+        if group_by and group_by not in record.field_map:
+            raise Namel3ssError(
+                f"List group_by references unknown field '{group_by}' in record '{record.name}'",
+                line=item.line,
+                column=item.column,
+            )
+        if group_label and group_label not in record.field_map:
+            raise Namel3ssError(
+                f"List group_label references unknown field '{group_label}' in record '{record.name}'",
+                line=item.line,
+                column=item.column,
+            )
         mapping = _lower_list_item_mapping(item.item, record, variant, item.line, item.column)
         actions = _lower_list_actions(item.actions, flow_names, page_name, page_names, overlays)
         return attach_origin(
@@ -206,6 +222,8 @@ def lower_list_item(
                 empty_state_hidden=bool(getattr(item, "empty_state_hidden", False)),
                 selection=item.selection,
                 actions=actions,
+                group_by=group_by,
+                group_label=group_label,
                 line=item.line,
                 column=item.column,
             ),
@@ -226,6 +244,8 @@ def lower_list_item(
             empty_state_hidden=bool(getattr(item, "empty_state_hidden", False)),
             selection=None,
             actions=None,
+            group_by=group_by,
+            group_label=group_label,
             line=item.line,
             column=item.column,
         ),

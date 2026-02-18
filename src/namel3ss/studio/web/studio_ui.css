@@ -498,6 +498,30 @@ body.n3-resize-dragging * {
   flex-direction: column;
   gap: 10px;
 }
+.ui-upload.ui-upload-hidden-surface {
+  border: 0 !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  height: 1px !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  position: absolute !important;
+  white-space: nowrap !important;
+  width: 1px !important;
+}
+.ui-upload-input {
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
 .ui-upload-header {
   display: flex;
   align-items: center;
@@ -1148,6 +1172,15 @@ body.n3-resize-dragging * {
   gap: 6px;
   flex-wrap: wrap;
 }
+.ui-chat-message-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ui-chat-message-action-btn.ui-chat-message-action-icon {
+  min-width: 34px;
+  padding: 6px;
+}
 .ui-chat-composer {
   display: block;
   margin-top: auto;
@@ -1198,6 +1231,37 @@ body.n3-resize-dragging * {
   border: 1px solid #eaeaea;
   border-radius: 8px;
 }
+.ui-chat-composer-attach {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #5b6b84;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+.ui-chat-composer-attach:hover {
+  background: #edf2fa;
+  color: #1f2b3d;
+}
+.ui-chat-composer-attach:focus-visible {
+  outline: 2px solid #9fb9f3;
+  outline-offset: 1px;
+}
+.ui-chat-composer-attach:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .ui-chat-composer-send {
   flex: 0 0 auto;
   width: 38px;
@@ -1233,6 +1297,75 @@ body.n3-resize-dragging * {
 }
 .ui-chat-composer-send.is-sending {
   transform: scale(0.95);
+}
+.ui-chat-composer-files {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 8px 4px 0;
+}
+.ui-chat-composer-files.hidden {
+  display: none;
+}
+.ui-chat-composer-file-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.ui-chat-composer-file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 4px 10px;
+  border: 1px solid #d6deec;
+  border-radius: 999px;
+  background: #f3f7ff;
+  color: #1f2b3d;
+}
+.ui-chat-composer-file-name {
+  font-size: 12px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+}
+.ui-chat-composer-file-remove {
+  border: 0;
+  background: transparent;
+  color: #52607a;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  font-size: 13px;
+}
+.ui-chat-composer-file-remove:hover {
+  color: #1f2b3d;
+}
+.ui-chat-composer-file-remove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.ui-chat-composer-file-clear {
+  border: 1px solid #d6deec;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1.3;
+  padding: 4px 10px;
+}
+.ui-chat-composer-file-clear:hover {
+  background: #f8fbff;
+}
+.ui-chat-composer-file-clear:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .ui-chat-mention-chips {
   flex: 1 1 100%;
@@ -1632,6 +1765,18 @@ body.n3-resize-dragging * {
 .ui-list-item.selected {
   background: #f8f8f8;
 }
+.ui-list-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.ui-list-group-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #4f5f7a;
+  padding: 2px 2px 0;
+}
 .ui-list-select input {
   margin: 0;
 }
@@ -1749,6 +1894,13 @@ body.n3-resize-dragging * {
 .ui-list-menu-trigger {
   min-width: 36px;
   padding: 0 8px;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.ui-list-menu-trigger:hover,
+.ui-list-menu-trigger:active {
+  border: 0;
 }
 .ui-list-menu-trigger-icon {
   width: 16px;
@@ -1853,6 +2005,13 @@ body.n3-resize-dragging * {
 .ui-list-item.ui-list-icon_plain .ui-list-secondary,
 .ui-list-item.ui-list-icon_plain .ui-list-meta {
   display: none;
+}
+.ui-list-item.ui-list-icon_plain .ui-list-secondary {
+  display: block;
+  font-size: 12px;
+  color: #63728c;
+  margin-top: 2px;
+  word-break: break-word;
 }
 .ui-list-item.ui-list-icon_plain .ui-list-icon {
   width: 28px;

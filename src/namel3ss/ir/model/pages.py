@@ -249,6 +249,7 @@ class ListItemMapping(Node):
     secondary: str | None = None
     meta: str | None = None
     icon: str | None = None
+    icon_color: str | None = None
 
 
 @dataclass
@@ -271,6 +272,8 @@ class ListItem(PageItem):
     empty_state_hidden: bool = False
     selection: str | None = None
     actions: List[ListAction] | None = None
+    group_by: str | None = None
+    group_label: str | None = None
 
 
 @dataclass

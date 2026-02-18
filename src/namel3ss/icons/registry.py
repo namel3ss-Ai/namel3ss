@@ -9,6 +9,20 @@ from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.resources import icons_root
 
 
+def _is_ignored_icon_path(path: Path, root: Path) -> bool:
+    try:
+        parts = path.relative_to(root).parts
+    except ValueError:
+        parts = path.parts
+    for part in parts:
+        token = str(part or "").strip()
+        if not token:
+            continue
+        if token.startswith("~") or token.endswith("~") or token.startswith("."):
+            return True
+    return False
+
+
 def normalize_icon_name(value: str | None) -> str:
     if value is None:
         return ""
@@ -23,6 +37,8 @@ def icon_registry() -> dict[str, Path]:
     mapping: dict[str, Path] = {}
     paths = sorted(root.rglob("*.svg"), key=lambda p: (p.stem, p.as_posix()))
     for path in paths:
+        if _is_ignored_icon_path(path, root):
+            continue
         name = path.stem
         if name in mapping:
             raise Namel3ssError(f"Duplicate icon id '{name}' in registry.")

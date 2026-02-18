@@ -365,11 +365,54 @@ def _normalize_messages(messages: list, line: int | None, column: int | None) ->
             if isinstance(actions, str):
                 message_payload["actions"] = [actions]
             elif isinstance(actions, list):
-                values: list[str] = []
+                values: list[object] = []
                 for action in actions:
-                    if not isinstance(action, str):
-                        raise Namel3ssError(f"Message {idx} actions must be text", line=line, column=column)
-                    values.append(action)
+                    if isinstance(action, str):
+                        values.append(action)
+                        continue
+                    if isinstance(action, dict):
+                        action_id = action.get("id")
+                        if not isinstance(action_id, str) or not action_id.strip():
+                            raise Namel3ssError(f"Message {idx} action id must be text", line=line, column=column)
+                        action_payload: dict[str, object] = {"id": action_id.strip()}
+                        label = action.get("label")
+                        if label is not None and not isinstance(label, str):
+                            raise Namel3ssError(f"Message {idx} action label must be text", line=line, column=column)
+                        if isinstance(label, str) and label.strip():
+                            action_payload["label"] = label.strip()
+                        icon = action.get("icon")
+                        if icon is not None and not isinstance(icon, str):
+                            raise Namel3ssError(f"Message {idx} action icon must be text", line=line, column=column)
+                        if isinstance(icon, str) and icon.strip():
+                            action_payload["icon"] = icon.strip()
+                        action_target_id = action.get("action_id")
+                        if action_target_id is not None and not isinstance(action_target_id, str):
+                            raise Namel3ssError(f"Message {idx} action action_id must be text", line=line, column=column)
+                        if isinstance(action_target_id, str) and action_target_id.strip():
+                            action_payload["action_id"] = action_target_id.strip()
+                        action_type = action.get("action_type")
+                        if action_type is not None and not isinstance(action_type, str):
+                            raise Namel3ssError(f"Message {idx} action action_type must be text", line=line, column=column)
+                        if isinstance(action_type, str) and action_type.strip():
+                            action_payload["action_type"] = action_type.strip()
+                        flow = action.get("flow")
+                        if flow is not None and not isinstance(flow, str):
+                            raise Namel3ssError(f"Message {idx} action flow must be text", line=line, column=column)
+                        if isinstance(flow, str) and flow.strip():
+                            action_payload["flow"] = flow.strip()
+                        target = action.get("target")
+                        if target is not None and not isinstance(target, str):
+                            raise Namel3ssError(f"Message {idx} action target must be text", line=line, column=column)
+                        if isinstance(target, str) and target.strip():
+                            action_payload["target"] = target.strip()
+                        payload = action.get("payload")
+                        if payload is not None:
+                            if not isinstance(payload, dict):
+                                raise Namel3ssError(f"Message {idx} action payload must be an object", line=line, column=column)
+                            action_payload["payload"] = dict(payload)
+                        values.append(action_payload)
+                        continue
+                    raise Namel3ssError(f"Message {idx} actions must be text", line=line, column=column)
                 message_payload["actions"] = values
             else:
                 raise Namel3ssError(f"Message {idx} actions must be text or list", line=line, column=column)

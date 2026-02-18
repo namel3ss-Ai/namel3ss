@@ -1,6 +1,128 @@
 (() => {
   const root = window.N3UIRender || {};
 
+  function _uploadStateRegistry() {
+    const registry = root.__uploadStateByName;
+    if (!registry || typeof registry !== "object") {
+      const next = {};
+      root.__uploadStateByName = next;
+      return next;
+    }
+    return registry;
+  }
+
+  function _composerUploadRegistry() {
+    const registry = root.__hiddenComposerUploads;
+    if (!registry || typeof registry !== "object") {
+      return {};
+    }
+    return registry;
+  }
+
+  function _manifestComposerUploadRegistry() {
+    const uploads = {};
+    const studioRoot = window.N3Studio || {};
+    const studioState = studioRoot && studioRoot.state ? studioRoot.state : null;
+    const manifest =
+      studioState && typeof studioState.getCachedManifest === "function" ? studioState.getCachedManifest() : null;
+
+    function scan(value) {
+      if (!value) return;
+      if (Array.isArray(value)) {
+        value.forEach((entry) => scan(entry));
+        return;
+      }
+      if (typeof value !== "object") return;
+      const type = typeof value.type === "string" ? value.type.trim().toLowerCase() : "";
+      if (type === "chat") {
+        const attach = typeof value.composer_attach_upload === "string" ? value.composer_attach_upload.trim() : "";
+        if (attach) {
+          uploads[attach] = true;
+        }
+      }
+      for (const nested of Object.values(value)) {
+        scan(nested);
+      }
+    }
+
+    scan(manifest && manifest.pages);
+    return uploads;
+  }
+
+  function _isComposerManagedUpload(uploadName) {
+    const key = typeof uploadName === "string" ? uploadName.trim() : "";
+    if (!key) return false;
+    const registry = _composerUploadRegistry();
+    if (registry[key] === true) {
+      return true;
+    }
+    const manifestRegistry = _manifestComposerUploadRegistry();
+    return manifestRegistry[key] === true;
+  }
+
+  function _normalizeUploadFile(file) {
+    if (!file || typeof file !== "object") return null;
+    const normalized = {};
+    if (typeof file.id === "string" && file.id) normalized.id = file.id;
+    if (typeof file.name === "string" && file.name) normalized.name = file.name;
+    if (typeof file.type === "string" && file.type) normalized.type = file.type;
+    if (typeof file.checksum === "string" && file.checksum) normalized.checksum = file.checksum;
+    if (typeof file.size === "number" && Number.isFinite(file.size) && file.size >= 0) normalized.size = file.size;
+    return normalized;
+  }
+
+  function _buildUploadStateSnapshot(el, uploadName, clearActionId, selectActionId) {
+    const files = Array.isArray(el && el.files)
+      ? el.files.map((entry) => _normalizeUploadFile(entry)).filter((entry) => entry && typeof entry === "object")
+      : [];
+    return {
+      name: uploadName,
+      label: typeof el.label === "string" ? el.label : "",
+      files: files,
+      clear_action_id: clearActionId,
+      action_id: selectActionId,
+    };
+  }
+
+  function _notifyUploadStateChanged(uploadName, snapshot) {
+    if (!uploadName || typeof document === "undefined" || typeof document.dispatchEvent !== "function") return;
+    if (typeof window !== "undefined" && typeof window.CustomEvent === "function") {
+      document.dispatchEvent(new window.CustomEvent("n3:upload-state", { detail: { name: uploadName, snapshot: snapshot } }));
+    }
+  }
+
+  function _setUploadStateSnapshot(wrapper, uploadName, snapshot) {
+    const key = typeof uploadName === "string" ? uploadName.trim() : "";
+    if (!key) return;
+    const registry = _uploadStateRegistry();
+    if (snapshot && typeof snapshot === "object") {
+      registry[key] = snapshot;
+    } else {
+      delete registry[key];
+    }
+    if (wrapper && wrapper.dataset) {
+      if (snapshot && typeof snapshot === "object") {
+        try {
+          wrapper.dataset.uploadState = JSON.stringify(snapshot);
+        } catch (error) {
+          delete wrapper.dataset.uploadState;
+        }
+      } else {
+        delete wrapper.dataset.uploadState;
+      }
+    }
+    _notifyUploadStateChanged(key, snapshot && typeof snapshot === "object" ? snapshot : null);
+  }
+
+  function getUploadStateSnapshot(uploadName) {
+    const key = typeof uploadName === "string" ? uploadName.trim() : "";
+    if (!key) return null;
+    const registry = _uploadStateRegistry();
+    const snapshot = registry[key];
+    if (!snapshot || typeof snapshot !== "object") return null;
+    return snapshot;
+  }
+
   function _formatBytes(value) {
     if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
       return "";
@@ -50,10 +172,47 @@
     return payload.upload;
   }
 
+  function _openUploadInputPicker(input) {
+    if (!input || input.disabled === true) return false;
+    const restoreHidden = input.hidden === true;
+    if (restoreHidden) {
+      input.hidden = false;
+    }
+    try {
+      if (typeof input.showPicker === "function") {
+        input.showPicker();
+        return true;
+      }
+      if (typeof input.click === "function") {
+        input.click();
+        return true;
+      }
+    } catch (error) {
+      try {
+        if (typeof input.click === "function") {
+          input.click();
+          return true;
+        }
+      } catch (fallbackError) {
+        return false;
+      }
+    } finally {
+      if (restoreHidden) {
+        input.hidden = true;
+      }
+    }
+    return false;
+  }
+
   function renderUploadElement(el, handleAction) {
     const wrapper = document.createElement("div");
     wrapper.className = "ui-element ui-upload";
-    wrapper.dataset.uploadName = typeof el.name === "string" ? el.name : "";
+    const uploadName = typeof el.name === "string" ? el.name : "";
+    wrapper.dataset.uploadName = uploadName;
+    const hideSurface = el && el.hide_surface === true;
+    if (hideSurface || _isComposerManagedUpload(uploadName)) {
+      wrapper.classList.add("ui-upload-hidden-surface");
+    }
 
     const header = document.createElement("div");
     header.className = "ui-upload-header";
@@ -83,7 +242,8 @@
     const input = document.createElement("input");
     input.type = "file";
     input.className = "ui-upload-input";
-    input.hidden = true;
+    input.tabIndex = -1;
+    input.setAttribute("aria-hidden", "true");
     if (Array.isArray(el.accept) && el.accept.length) {
       input.accept = el.accept.join(",");
     }
@@ -106,6 +266,7 @@
 
     const clearActionId = typeof el.clear_action_id === "string" ? el.clear_action_id : "";
     const selectActionId = typeof el.action_id === "string" ? el.action_id : typeof el.id === "string" ? el.id : "";
+    _setUploadStateSnapshot(wrapper, uploadName, _buildUploadStateSnapshot(el, uploadName, clearActionId, selectActionId));
 
     async function removeFile(uploadId, opener) {
       if (!clearActionId) return;
@@ -123,6 +284,7 @@
       filesSection.innerHTML = "";
       previewSection.innerHTML = "";
       const files = Array.isArray(el.files) ? el.files.filter((entry) => entry && typeof entry === "object") : [];
+      _setUploadStateSnapshot(wrapper, uploadName, _buildUploadStateSnapshot(el, uploadName, clearActionId, selectActionId));
       if (!files.length) {
         const empty = document.createElement("div");
         empty.className = "ui-upload-empty";
@@ -191,7 +353,7 @@
     chooseButton.onclick = (event) => {
       event.preventDefault();
       if (disabled) return;
-      input.click();
+      _openUploadInputPicker(input);
     };
 
     input.onchange = async () => {
@@ -212,12 +374,30 @@
             chooseButton
           );
         }
+        const postAction =
+          input.__n3UploadPickerPostAction && typeof input.__n3UploadPickerPostAction === "object"
+            ? input.__n3UploadPickerPostAction
+            : null;
+        if (postAction && typeof postAction.id === "string" && postAction.id) {
+          status.textContent = "Upload complete. Refreshing...";
+          const actionPayload =
+            postAction.payload && typeof postAction.payload === "object" ? { ...postAction.payload } : {};
+          await handleAction(
+            {
+              id: postAction.id,
+              type: typeof postAction.type === "string" && postAction.type ? postAction.type : "call_flow",
+            },
+            actionPayload,
+            chooseButton
+          );
+        }
         status.textContent = "Upload complete.";
       } catch (error) {
         status.classList.add("is-error");
         status.textContent = error && error.message ? error.message : "Upload failed.";
       } finally {
         chooseButton.disabled = disabled;
+        input.__n3UploadPickerPostAction = null;
         input.value = "";
       }
     };
@@ -226,6 +406,19 @@
     return wrapper;
   }
 
+  function refreshUploadVisibility(scope) {
+    const rootNode = scope && typeof scope.querySelectorAll === "function" ? scope : document;
+    const uploads = rootNode.querySelectorAll(".ui-upload[data-upload-name]");
+    uploads.forEach((uploadNode) => {
+      const uploadName = uploadNode && uploadNode.dataset ? String(uploadNode.dataset.uploadName || "").trim() : "";
+      const managed = _isComposerManagedUpload(uploadName);
+      uploadNode.classList.toggle("ui-upload-hidden-surface", managed);
+    });
+  }
+
   root.renderUploadElement = renderUploadElement;
+  root.refreshUploadVisibility = refreshUploadVisibility;
+  root.openUploadInputPicker = _openUploadInputPicker;
+  root.getUploadStateSnapshot = getUploadStateSnapshot;
   window.N3UIRender = root;
 })();

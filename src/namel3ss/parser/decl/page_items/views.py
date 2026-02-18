@@ -189,10 +189,18 @@ def parse_list_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.L
     show_when = _parse_show_when_clause(parser, allow_pattern_params=allow_pattern_params)
     debug_only = _parse_debug_only_clause(parser)
     if parser._match("COLON"):
-        variant, item, empty_text, empty_state_hidden, selection, actions, visibility_rule, theme_overrides = parse_list_block(
-            parser,
-            allow_pattern_params=allow_pattern_params,
-        )
+        (
+            variant,
+            item,
+            empty_text,
+            empty_state_hidden,
+            selection,
+            actions,
+            group_by,
+            group_label,
+            visibility_rule,
+            theme_overrides,
+        ) = parse_list_block(parser, allow_pattern_params=allow_pattern_params)
         _validate_visibility_combo(visibility, visibility_rule, line=tok.line, column=tok.column)
         list_item = ast.ListItem(
             record_name=record_name,
@@ -203,6 +211,8 @@ def parse_list_item(parser, tok, *, allow_pattern_params: bool = False) -> ast.L
             empty_state_hidden=empty_state_hidden,
             selection=selection,
             actions=actions,
+            group_by=group_by,
+            group_label=group_label,
             visibility=visibility,
             visibility_rule=visibility_rule,
             show_when=show_when,

@@ -44,10 +44,7 @@
     wrapper.classList.add(`ui-chat-style-${style}`);
 
     const children = Array.isArray(chat.children) ? chat.children : [];
-    const chatConfig = {
-      ...chat,
-      _hasCitationPanel: children.some((child) => child && child.type === "citations"),
-    };
+    const chatConfig = { ...chat };
     children.forEach((child) => {
       const node = renderChatChild(child, handleAction, chatConfig);
       if (node) wrapper.appendChild(node);
@@ -74,14 +71,12 @@
     const renderedCitations = [];
     const controlContract = resolveMessageControlContract(child);
     if (!messages.length) {
-      if (chatConfig && chatConfig._hasCitationPanel) {
-        container.appendChild(renderNoSourcesPanel());
-      } else {
-        const empty = document.createElement("div");
-        empty.className = "ui-chat-empty";
-        empty.textContent = "No messages yet.";
-        container.appendChild(empty);
-      }
+      const empty = document.createElement("div");
+      empty.className = "ui-chat-empty";
+      const emptyText =
+        child && typeof child.empty_text === "string" && child.empty_text.trim() ? child.empty_text.trim() : "No messages yet.";
+      empty.textContent = emptyText;
+      container.appendChild(empty);
       return container;
     }
     let previousRole = "";
@@ -121,7 +116,7 @@
       const citations = collectMessageCitations(message);
       appendUniqueCitations(renderedCitations, citations);
       const actions = normalizeMessageActions(message && message.actions, chatConfig && chatConfig.actions);
-      if (actions.includes("expand") && fullText.length > 280) {
+      if (actions.some((entry) => entry && entry.id === "expand") && fullText.length > 280) {
         setExpandedContent(content, fullText, false, citations);
       } else {
         setRenderedMessageContent(content, fullText, citations);
@@ -159,7 +154,7 @@
         messageId: messageId,
         role: roleValue,
       });
-      renderMessageActions(bubble, actions, message, content, citations);
+      renderMessageActions(bubble, actions, message, content, citations, handleAction);
       row.appendChild(bubble);
       container.appendChild(row);
     });
@@ -182,16 +177,63 @@
   }
 
   function normalizeMessageActions(raw, defaults) {
-    const values = Array.isArray(raw) ? raw : Array.isArray(defaults) ? defaults : [];
-    const allowed = new Set(["copy", "expand", "view_sources"]);
+    const contract = new Map();
+    if (Array.isArray(defaults)) {
+      defaults.forEach((entry) => {
+        const normalized = normalizeMessageActionEntry(entry);
+        if (!normalized || contract.has(normalized.id)) return;
+        contract.set(normalized.id, normalized);
+      });
+    }
+    const values = Array.isArray(raw) ? raw : Array.from(contract.values());
     const normalized = [];
+    const seen = new Set();
     values.forEach((entry) => {
-      if (typeof entry !== "string") return;
-      const value = entry.trim().toLowerCase();
-      if (!allowed.has(value) || normalized.includes(value)) return;
-      normalized.push(value);
+      const next = normalizeMessageActionEntry(entry);
+      if (!next || seen.has(next.id)) return;
+      if (contract.size > 0 && !contract.has(next.id)) return;
+      const configured = contract.get(next.id);
+      if (configured && !next.label) next.label = configured.label;
+      if (configured && !next.icon) next.icon = configured.icon;
+      if (configured && !next.action_id) next.action_id = configured.action_id;
+      if (configured && !next.action_type) next.action_type = configured.action_type;
+      if (configured && !next.flow) next.flow = configured.flow;
+      if (configured && !next.target) next.target = configured.target;
+      if (configured && (!next.payload || typeof next.payload !== "object")) next.payload = configured.payload;
+      normalized.push(next);
+      seen.add(next.id);
     });
     return normalized;
+  }
+
+  function normalizeMessageActionEntry(entry) {
+    if (typeof entry === "string") {
+      const id = entry.trim().toLowerCase();
+      if (!id) return null;
+      return { id: id, label: "", icon: "" };
+    }
+    if (!entry || typeof entry !== "object") return null;
+    const rawId = typeof entry.id === "string" ? entry.id : typeof entry.action === "string" ? entry.action : "";
+    const id = rawId.trim().toLowerCase();
+    if (!id) return null;
+    const label = typeof entry.label === "string" ? entry.label.trim() : "";
+    const icon = typeof entry.icon === "string" ? entry.icon.trim().toLowerCase().replace(/[\s-]+/g, "_") : "";
+    const actionId = typeof entry.action_id === "string" ? entry.action_id.trim() : "";
+    const actionType = typeof entry.action_type === "string" ? entry.action_type.trim() : "";
+    const flow = typeof entry.flow === "string" ? entry.flow.trim() : "";
+    const target = typeof entry.target === "string" ? entry.target.trim() : "";
+    const payload =
+      entry.payload && typeof entry.payload === "object" && !Array.isArray(entry.payload) ? { ...entry.payload } : null;
+    return {
+      id: id,
+      label: label,
+      icon: icon,
+      action_id: actionId,
+      action_type: actionType,
+      flow: flow,
+      target: target,
+      payload: payload,
+    };
   }
 
   function messageIdentity(message) {
@@ -328,49 +370,121 @@
     if (block.children.length > 0) container.appendChild(block);
   }
 
-  function renderMessageActions(container, actions, message, contentNode, citations) {
+  function renderMessageActions(container, actions, message, contentNode, citations, handleAction) {
     if (!actions.length) return;
     const bar = document.createElement("div");
     bar.className = "ui-chat-message-actions";
-    actions.forEach((action) => {
+    actions.forEach((actionEntry) => {
+      const action = actionEntry && typeof actionEntry.id === "string" ? actionEntry.id : "";
+      if (!action) return;
       const button = document.createElement("button");
       button.type = "button";
-      button.className = "btn small ghost";
+      button.className = "btn small ghost ui-chat-message-action-btn";
+      const label = actionEntry.label || defaultMessageActionLabel(action);
+      setMessageActionVisual(button, { label: label, icon: actionEntry.icon || "" });
+      const dispatch = resolveMessageActionDispatch(actionEntry, action);
       if (action === "copy") {
-        button.textContent = "Copy";
         button.onclick = async () => {
           const text = typeof message.content === "string" ? message.content : "";
           await copyToClipboard(text);
-          button.textContent = "Copied";
+          button.dataset.state = "copied";
+          button.title = "Copied";
           setTimeout(() => {
-            button.textContent = "Copy";
+            button.dataset.state = "";
+            button.title = label;
           }, 800);
         };
       } else if (action === "expand") {
-        button.textContent = "Expand";
         button.onclick = () => {
           const expanded = contentNode.dataset.expanded === "true";
           const fullText = typeof message.content === "string" ? message.content : contentNode.dataset.fullText || contentNode.textContent || "";
           setExpandedContent(contentNode, fullText, !expanded, citations);
-          button.textContent = expanded ? "Expand" : "Collapse";
+          const nextLabel = expanded ? "Expand" : "Collapse";
+          button.setAttribute("aria-label", nextLabel);
+          button.title = nextLabel;
         };
       } else if (action === "view_sources") {
-        button.textContent = "Sources";
         button.onclick = () => {
           const messageCitations = Array.isArray(citations) ? citations : collectMessageCitations(message);
           if (!messageCitations.length) {
-            button.textContent = "No sources";
+            button.dataset.state = "empty";
+            button.title = "No sources";
             setTimeout(() => {
-              button.textContent = "Sources";
+              button.dataset.state = "";
+              button.title = label;
             }, 1000);
             return;
           }
           openCitationPreview(messageCitations[0], button, messageCitations);
         };
+      } else if (dispatch && typeof handleAction === "function") {
+        button.onclick = async () => {
+          button.disabled = true;
+          try {
+            await handleAction(dispatch.action, dispatch.payload, button);
+          } finally {
+            button.disabled = false;
+          }
+        };
+      } else {
+        button.disabled = true;
+        button.dataset.state = "unavailable";
+        button.title = `${label} unavailable`;
       }
       bar.appendChild(button);
     });
     container.appendChild(bar);
+  }
+
+  function defaultMessageActionLabel(action) {
+    if (typeof action !== "string" || !action) return "Action";
+    const words = action
+      .trim()
+      .replace(/[\s\-]+/g, "_")
+      .split("_")
+      .filter(Boolean);
+    if (!words.length) return "Action";
+    return words.map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+  }
+
+  function resolveMessageActionDispatch(actionEntry, fallbackActionId) {
+    if (!actionEntry || typeof actionEntry !== "object") return null;
+    const actionId = typeof actionEntry.action_id === "string" ? actionEntry.action_id.trim() : "";
+    const actionType = typeof actionEntry.action_type === "string" ? actionEntry.action_type.trim() : "";
+    const flow = typeof actionEntry.flow === "string" ? actionEntry.flow.trim() : "";
+    const target = typeof actionEntry.target === "string" ? actionEntry.target.trim() : "";
+    const payload =
+      actionEntry.payload && typeof actionEntry.payload === "object" && !Array.isArray(actionEntry.payload)
+        ? { ...actionEntry.payload }
+        : {};
+    if (!actionId && !actionType && !flow && !target && Object.keys(payload).length === 0) {
+      return null;
+    }
+    const fallbackId = typeof fallbackActionId === "string" ? fallbackActionId.trim() : "";
+    const resolvedId = actionId || fallbackId;
+    if (!resolvedId) return null;
+    const action = {
+      id: resolvedId,
+      type: actionType || "call_flow",
+    };
+    if (flow) action.flow = flow;
+    if (target) action.target = target;
+    return { action: action, payload: payload };
+  }
+
+  function setMessageActionVisual(button, config) {
+    const label = config && typeof config.label === "string" ? config.label : "Action";
+    const iconName = config && typeof config.icon === "string" ? config.icon : "";
+    button.setAttribute("aria-label", label);
+    button.title = label;
+    if (iconName && typeof root.createIconNode === "function") {
+      button.classList.add("icon-button", "ui-chat-message-action-icon");
+      const icon = root.createIconNode(iconName, { size: "small", decorative: true });
+      button.textContent = "";
+      button.appendChild(icon);
+      return;
+    }
+    button.textContent = label;
   }
 
   function setExpandedContent(node, fullText, expanded, citations) {
@@ -441,36 +555,6 @@
     }
     if (marker <= citations.length) return citations[marker - 1];
     return null;
-  }
-
-  function renderNoSourcesPanel() {
-    const wrapper = document.createElement("div");
-    wrapper.className = "ui-empty-sources-panel";
-    const title = document.createElement("div");
-    title.className = "ui-empty-sources-title";
-    title.textContent = "No sources available";
-    const text = document.createElement("div");
-    text.className = "ui-empty-sources-text";
-    text.textContent = "Upload a document to ground answers with citations.";
-    const actions = document.createElement("div");
-    actions.className = "ui-empty-sources-actions";
-    const upload = document.createElement("button");
-    upload.type = "button";
-    upload.className = "btn small";
-    upload.textContent = "Upload document";
-    upload.onclick = () => {
-      const fileInput = document.querySelector(".ui-upload-input");
-      if (fileInput && typeof fileInput.click === "function") {
-        fileInput.click();
-        return;
-      }
-      document.dispatchEvent(new CustomEvent("n3:upload-document"));
-    };
-    actions.appendChild(upload);
-    wrapper.appendChild(title);
-    wrapper.appendChild(text);
-    wrapper.appendChild(actions);
-    return wrapper;
   }
 
   function revealMessageCitations(rowNode) {
@@ -589,12 +673,154 @@
     }, 14);
   }
 
+  function formatUploadSize(value) {
+    if (typeof value !== "number" || !Number.isFinite(value) || value < 0) return "";
+    if (value < 1024) return `${value} B`;
+    if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+    return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  function normalizeUploadSnapshotFile(file) {
+    if (!file || typeof file !== "object") return null;
+    const normalized = {};
+    if (typeof file.id === "string" && file.id) normalized.id = file.id;
+    if (typeof file.name === "string" && file.name) normalized.name = file.name;
+    if (typeof file.type === "string" && file.type) normalized.type = file.type;
+    if (typeof file.checksum === "string" && file.checksum) normalized.checksum = file.checksum;
+    if (typeof file.size === "number" && Number.isFinite(file.size) && file.size >= 0) normalized.size = file.size;
+    return normalized;
+  }
+
+  function normalizeUploadSnapshot(snapshot, fallbackName) {
+    if (!snapshot || typeof snapshot !== "object") return null;
+    const name = typeof snapshot.name === "string" && snapshot.name ? snapshot.name : fallbackName || "";
+    const files = Array.isArray(snapshot.files)
+      ? snapshot.files.map((entry) => normalizeUploadSnapshotFile(entry)).filter((entry) => entry && typeof entry === "object")
+      : [];
+    return {
+      name: name,
+      label: typeof snapshot.label === "string" ? snapshot.label : "",
+      files: files,
+      clear_action_id: typeof snapshot.clear_action_id === "string" ? snapshot.clear_action_id : "",
+      action_id: typeof snapshot.action_id === "string" ? snapshot.action_id : "",
+    };
+  }
+
+  function parseUploadSnapshotFromNode(uploadNode, uploadName) {
+    if (!uploadNode || !uploadNode.dataset || !uploadNode.dataset.uploadState) return null;
+    try {
+      const parsed = JSON.parse(uploadNode.dataset.uploadState);
+      return normalizeUploadSnapshot(parsed, uploadName);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function findComposerUploadSnapshot(anchorNode, uploadName) {
+    const key = typeof uploadName === "string" ? uploadName.trim() : "";
+    if (!key) return null;
+    if (typeof root.getUploadStateSnapshot === "function") {
+      const snapshot = normalizeUploadSnapshot(root.getUploadStateSnapshot(key), key);
+      if (snapshot) return snapshot;
+    }
+    const stateByName = root.__uploadStateByName && typeof root.__uploadStateByName === "object" ? root.__uploadStateByName : null;
+    if (stateByName && stateByName[key]) {
+      const snapshot = normalizeUploadSnapshot(stateByName[key], key);
+      if (snapshot) return snapshot;
+    }
+    const uploadNode = findComposerUploadNode(anchorNode, key);
+    const snapshot = parseUploadSnapshotFromNode(uploadNode, key);
+    return snapshot || null;
+  }
+
+  function renderComposerUploadFiles(container, snapshot, handleAction) {
+    if (!container) return;
+    container.textContent = "";
+    const normalized = normalizeUploadSnapshot(snapshot, "");
+    const files = normalized && Array.isArray(normalized.files) ? normalized.files : [];
+    if (!files.length) {
+      container.classList.add("hidden");
+      return;
+    }
+    container.classList.remove("hidden");
+    const list = document.createElement("div");
+    list.className = "ui-chat-composer-file-list";
+    const clearActionId = normalized && typeof normalized.clear_action_id === "string" ? normalized.clear_action_id : "";
+    files.forEach((file) => {
+      const chip = document.createElement("div");
+      chip.className = "ui-chat-composer-file-chip";
+      const name = typeof file.name === "string" && file.name ? file.name : "File";
+      const size = formatUploadSize(file.size);
+      const text = document.createElement("span");
+      text.className = "ui-chat-composer-file-name";
+      text.textContent = size ? `${name} (${size})` : name;
+      chip.appendChild(text);
+      if (clearActionId) {
+        const removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.className = "ui-chat-composer-file-remove";
+        removeButton.setAttribute("aria-label", `Remove ${name}`);
+        removeButton.title = `Remove ${name}`;
+        removeButton.textContent = "x";
+        const uploadId =
+          (typeof file.id === "string" && file.id) ||
+          (typeof file.checksum === "string" && file.checksum) ||
+          "";
+        removeButton.onclick = async (event) => {
+          event.preventDefault();
+          removeButton.disabled = true;
+          try {
+            await handleAction(
+              {
+                id: clearActionId,
+                type: "upload_clear",
+              },
+              uploadId ? { upload_id: uploadId } : {},
+              event.currentTarget
+            );
+          } finally {
+            removeButton.disabled = false;
+          }
+        };
+        chip.appendChild(removeButton);
+      }
+      list.appendChild(chip);
+    });
+    container.appendChild(list);
+    if (clearActionId && files.length > 1) {
+      const clearAll = document.createElement("button");
+      clearAll.type = "button";
+      clearAll.className = "ui-chat-composer-file-clear";
+      clearAll.textContent = "Clear";
+      clearAll.onclick = async (event) => {
+        event.preventDefault();
+        clearAll.disabled = true;
+        try {
+          await handleAction(
+            {
+              id: clearActionId,
+              type: "upload_clear",
+            },
+            {},
+            event.currentTarget
+          );
+        } finally {
+          clearAll.disabled = false;
+        }
+      };
+      container.appendChild(clearAll);
+    }
+  }
+
   function renderComposer(child, handleAction, chatConfig) {
     const form = document.createElement("form");
     form.className = "ui-chat-composer";
     const composerSurface = document.createElement("div");
     composerSurface.className = "ui-chat-composer-surface";
     form.appendChild(composerSurface);
+    const composerFiles = document.createElement("div");
+    composerFiles.className = "ui-chat-composer-files hidden";
+    form.appendChild(composerFiles);
     const composerPlaceholder =
       chatConfig && typeof chatConfig.composer_placeholder === "string" && chatConfig.composer_placeholder.trim()
         ? chatConfig.composer_placeholder.trim()
@@ -627,11 +853,22 @@
     const fields = normalizeComposerFields(child);
     const inputs = new Map();
     let messageInput = null;
+    let refreshComposerFiles = null;
     const attachmentsEnabled = Boolean(chatConfig && chatConfig.attachments);
     if (attachmentsEnabled && composerAttachUpload) {
+      registerComposerAttachUpload(composerAttachUpload);
+      hideComposerUploadSurface(document, composerAttachUpload);
+      window.setTimeout(() => {
+        hideComposerUploadSurface(form, composerAttachUpload);
+      }, 0);
+      refreshComposerFiles = () => {
+        const snapshot = findComposerUploadSnapshot(form, composerAttachUpload);
+        renderComposerUploadFiles(composerFiles, snapshot, handleAction);
+      };
+      refreshComposerFiles();
       const attachButton = document.createElement("button");
       attachButton.type = "button";
-      attachButton.className = "btn small ghost ui-chat-composer-attach";
+      attachButton.className = "ui-chat-composer-attach";
       attachButton.setAttribute("aria-label", "Attach files");
       attachButton.title = "Attach files";
       if (typeof root.createIconNode === "function") {
@@ -640,20 +877,24 @@
       } else {
         attachButton.textContent = "+";
       }
-      const syncAttachState = () => {
-        const uploadInput = findComposerUploadInput(form, composerAttachUpload);
-        attachButton.disabled = !(uploadInput && uploadInput.disabled !== true);
-      };
       attachButton.onclick = (event) => {
         event.preventDefault();
         event.stopPropagation();
         const uploadInput = findComposerUploadInput(form, composerAttachUpload);
         if (uploadInput && uploadInput.disabled !== true) {
-          uploadInput.click();
+          uploadInput.__n3UploadPickerPostAction = null;
+          const openPicker = typeof root.openUploadInputPicker === "function" ? root.openUploadInputPicker : null;
+          if (openPicker) {
+            openPicker(uploadInput);
+          } else {
+            uploadInput.click();
+          }
         }
       };
-      syncAttachState();
       composerSurface.appendChild(attachButton);
+      window.setTimeout(() => {
+        if (typeof refreshComposerFiles === "function") refreshComposerFiles();
+      }, 0);
     }
     fields.forEach((field) => {
       const name = field.name || "message";
@@ -688,8 +929,7 @@
         messageInput = input;
       }
     });
-    const mentionController =
-      actionFlow === "rag_engine.ask_question" && messageInput ? setupComposerMentions(composerSurface, messageInput) : null;
+    const mentionController = messageInput ? setupComposerMentions(composerSurface, messageInput) : null;
     const advancedControls = actionType === "chat.message.send" ? buildComposerAdvancedControls(composerState) : null;
     if (advancedControls) {
       form.appendChild(advancedControls.node);
@@ -774,11 +1014,40 @@
       if (messageInput && typeof messageInput.focus === "function") {
         messageInput.focus();
       }
+      if (typeof refreshComposerFiles === "function") {
+        refreshComposerFiles();
+      }
     };
     return form;
   }
 
-  function findComposerUploadInput(anchorNode, uploadName) {
+  function hideComposerUploadSurface(anchorNode, uploadName) {
+    const input = findComposerUploadInput(anchorNode, uploadName);
+    if (!input || typeof input.closest !== "function") return false;
+    const wrapper = input.closest(".ui-upload");
+    if (!wrapper || !wrapper.classList) return false;
+    wrapper.classList.add("ui-upload-hidden-surface");
+    return true;
+  }
+
+  function registerComposerAttachUpload(uploadName) {
+    const key = typeof uploadName === "string" ? uploadName.trim() : "";
+    if (!key) return;
+    const registry =
+      root.__hiddenComposerUploads && typeof root.__hiddenComposerUploads === "object"
+        ? root.__hiddenComposerUploads
+        : {};
+    registry[key] = true;
+    root.__hiddenComposerUploads = registry;
+    if (root.__manifestComposerUploads && typeof root.__manifestComposerUploads === "object") {
+      root.__manifestComposerUploads[key] = true;
+    }
+    if (typeof root.refreshUploadVisibility === "function") {
+      root.refreshUploadVisibility(document);
+    }
+  }
+
+  function findComposerUploadNode(anchorNode, uploadName) {
     const target = typeof uploadName === "string" ? uploadName.trim() : "";
     if (!target) return null;
     const roots = [];
@@ -786,14 +1055,29 @@
       const sectionRoot = anchorNode.closest(".ui-section");
       if (sectionRoot) roots.push(sectionRoot);
     }
+    if (anchorNode && typeof anchorNode.querySelectorAll === "function") {
+      roots.push(anchorNode);
+    }
     roots.push(document);
+    const visited = new Set();
     for (const rootNode of roots) {
-      if (!rootNode || typeof rootNode.querySelector !== "function") continue;
-      const selector = `.ui-upload[data-upload-name="${target}"] .ui-upload-input`;
-      const input = rootNode.querySelector(selector);
-      if (input && input.tagName && input.tagName.toLowerCase() === "input") {
-        return input;
+      if (!rootNode || typeof rootNode.querySelectorAll !== "function" || visited.has(rootNode)) continue;
+      visited.add(rootNode);
+      const uploads = rootNode.querySelectorAll(".ui-upload[data-upload-name]");
+      for (const upload of uploads) {
+        const currentName = upload && upload.dataset ? String(upload.dataset.uploadName || "").trim() : "";
+        if (currentName === target) return upload;
       }
+    }
+    return null;
+  }
+
+  function findComposerUploadInput(anchorNode, uploadName) {
+    const uploadNode = findComposerUploadNode(anchorNode, uploadName);
+    if (!uploadNode || typeof uploadNode.querySelector !== "function") return null;
+    const input = uploadNode.querySelector(".ui-upload-input");
+    if (input && input.tagName && input.tagName.toLowerCase() === "input") {
+      return input;
     }
     return null;
   }
@@ -1093,76 +1377,116 @@
 
   function collectMentionSources() {
     const rowsByRecord = root.__listRowsByRecord && typeof root.__listRowsByRecord === "object" ? root.__listRowsByRecord : {};
-    const projectRows = Array.isArray(rowsByRecord["rag_engine.Project"]) ? rowsByRecord["rag_engine.Project"] : [];
-    const projectDocumentRows = Array.isArray(rowsByRecord["rag_engine.ProjectKnowledgeItem"])
-      ? rowsByRecord["rag_engine.ProjectKnowledgeItem"]
-      : [];
-    const libraryRows = Array.isArray(rowsByRecord["rag_engine.LibraryItem"]) ? rowsByRecord["rag_engine.LibraryItem"] : [];
-    const fallbackDocumentRows = Array.isArray(rowsByRecord["rag_engine.DocumentLibrary"]) ? rowsByRecord["rag_engine.DocumentLibrary"] : [];
-    const activeProject = projectRows.find((row) => row && row.active === true) || null;
-    const activeProjectId = textValue(activeProject && activeProject.id);
-    const activeProjectLabel = textValue(activeProject && activeProject.name);
+    const entries = [];
+    Object.entries(rowsByRecord).forEach(([recordName, rows]) => {
+      if (!Array.isArray(rows)) return;
+      rows.forEach((row) => {
+        if (!row || typeof row !== "object") return;
+        entries.push({ recordName: String(recordName || ""), row: row });
+      });
+    });
 
-    const projects = projectRows
-      .map((row) => {
-        const id = textValue(row.id);
-        const label = textValue(row.name) || id;
-        if (!id || !label) return null;
-        const search = `${label.toLowerCase()} ${id.toLowerCase()} ${slugifyMentionToken(label)}`.trim();
-        return { id: id, label: label, search: search };
-      })
-      .filter(Boolean);
+    const projectsById = new Map();
+    let activeProjectId = "";
+    let activeProjectLabel = "";
+
+    entries.forEach(({ recordName, row }) => {
+      const recordKey = recordName.toLowerCase();
+      const id = textValue(row.project_id) || textValue(row.projectId) || textValue(row.id);
+      const label = textValue(row.project_name) || textValue(row.projectName) || textValue(row.name) || textValue(row.label) || id;
+      const hasDocumentFields = Boolean(
+        textValue(row.upload_id) ||
+          textValue(row.uploadId) ||
+          textValue(row.document_id) ||
+          textValue(row.documentId) ||
+          textValue(row.source_name) ||
+          textValue(row.sourceName) ||
+          textValue(row.file_name) ||
+          textValue(row.filename)
+      );
+      const recordLooksProject = /project/.test(recordKey) && !/knowledge|document|library|file/.test(recordKey);
+      const rowLooksProject = Boolean(id && label && !hasDocumentFields);
+      if (!recordLooksProject && !rowLooksProject) return;
+      if (!id || !label) return;
+      if (!projectsById.has(id)) {
+        projectsById.set(id, {
+          id: id,
+          label: label,
+          search: `${label.toLowerCase()} ${id.toLowerCase()} ${slugifyMentionToken(label)}`.trim(),
+        });
+      }
+      if (row.active === true || row.is_active === true || row.selected === true || row.current === true) {
+        activeProjectId = id;
+        activeProjectLabel = label;
+      }
+    });
 
     const documentById = new Map();
-    const projectDocuments = projectDocumentRows
-      .map((row) => {
-        const id = textValue(row.upload_id) || textValue(row.document_id) || textValue(row.id);
-        const label = textValue(row.source_name) || id;
-        if (!id || !label) return null;
-        const entry = {
-          id: id,
-          label: label,
-          search: `${label.toLowerCase()} ${id.toLowerCase()} ${slugifyMentionToken(label)}`.trim(),
-          group: "In this project",
-          inProject: true,
-          projectId: activeProjectId || textValue(row.project_id),
-        };
-        documentById.set(id, entry);
-        return entry;
-      })
-      .filter(Boolean);
+    entries.forEach(({ recordName, row }) => {
+      const recordKey = recordName.toLowerCase();
+      const id =
+        textValue(row.upload_id) ||
+        textValue(row.uploadId) ||
+        textValue(row.document_id) ||
+        textValue(row.documentId) ||
+        textValue(row.id);
+      const label =
+        textValue(row.source_name) ||
+        textValue(row.sourceName) ||
+        textValue(row.file_name) ||
+        textValue(row.filename) ||
+        textValue(row.title) ||
+        id;
+      const rowProjectId = textValue(row.project_id) || textValue(row.projectId);
+      const hasDocumentFields = Boolean(
+        textValue(row.upload_id) ||
+          textValue(row.uploadId) ||
+          textValue(row.document_id) ||
+          textValue(row.documentId) ||
+          textValue(row.source_name) ||
+          textValue(row.sourceName) ||
+          textValue(row.file_name) ||
+          textValue(row.filename) ||
+          textValue(row.title)
+      );
+      const recordLooksDocument = /knowledge|document|library|file/.test(recordKey);
+      if (!id || !label) return;
+      if (!recordLooksDocument && !hasDocumentFields) return;
 
-    const libraryDocuments = (libraryRows.length ? libraryRows : fallbackDocumentRows)
-      .map((row) => {
-        const id = textValue(row.upload_id) || textValue(row.document_id) || textValue(row.id);
-        const label = textValue(row.source_name) || id;
-        if (!id || !label) return null;
-        const inProject =
-          row && typeof row.in_active_project === "boolean"
-            ? row.in_active_project
-            : documentById.has(id);
-        const entry = {
-          id: id,
-          label: label,
-          search: `${label.toLowerCase()} ${id.toLowerCase()} ${slugifyMentionToken(label)}`.trim(),
-          group: inProject ? "In this project" : "From library",
-          inProject: Boolean(inProject),
-          projectId: activeProjectId,
-        };
-        const existing = documentById.get(id);
-        if (!existing || (!existing.inProject && entry.inProject)) {
-          documentById.set(id, entry);
-        }
-        return entry;
-      })
-      .filter(Boolean);
-
-    const documents = [];
-    projectDocuments.forEach((entry) => documents.push(entry));
-    libraryDocuments.forEach((entry) => {
-      if (!documents.some((candidate) => candidate.id === entry.id)) {
-        documents.push(entry);
+      let inProject = false;
+      if (typeof row.in_active_project === "boolean") {
+        inProject = row.in_active_project;
+      } else if (typeof row.in_project === "boolean") {
+        inProject = row.in_project;
+      } else if (rowProjectId) {
+        inProject = activeProjectId ? rowProjectId === activeProjectId : true;
       }
+      const projectId = rowProjectId || activeProjectId;
+      const entry = {
+        id: id,
+        label: label,
+        search: `${label.toLowerCase()} ${id.toLowerCase()} ${slugifyMentionToken(label)}`.trim(),
+        group: inProject ? "In this project" : "From library",
+        inProject: Boolean(inProject),
+        projectId: projectId,
+      };
+      const existing = documentById.get(id);
+      if (!existing || (!existing.inProject && entry.inProject)) {
+        documentById.set(id, entry);
+      }
+    });
+
+    const projects = Array.from(projectsById.values());
+    if (!activeProjectId && projects.length === 1) {
+      activeProjectId = projects[0].id;
+      activeProjectLabel = projects[0].label;
+    } else if (activeProjectId && !activeProjectLabel) {
+      const active = projectsById.get(activeProjectId);
+      if (active) activeProjectLabel = active.label;
+    }
+    const documents = Array.from(documentById.values()).sort((left, right) => {
+      if (left.inProject !== right.inProject) return left.inProject ? -1 : 1;
+      return left.label.localeCompare(right.label);
     });
 
     return { projects, documents, activeProjectId, activeProjectLabel, documentById };

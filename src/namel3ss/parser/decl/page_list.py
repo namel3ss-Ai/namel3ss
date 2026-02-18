@@ -10,7 +10,8 @@ from namel3ss.parser.decl.page_common import _is_visibility_rule_start, _parse_s
 from namel3ss.parser.decl.page_items.size_radius import apply_theme_override, parse_theme_override_line
 from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
-_ALLOWED_LIST_ACTION_INTERACTIONS = {"rename_modal", "confirm_destructive", "project_picker"}
+_ALLOWED_LIST_ACTION_INTERACTIONS = {"rename_modal", "confirm_destructive", "project_picker", "upload_picker"}
+_ALLOWED_LIST_ACTION_INTERACTIONS_TEXT = ", ".join(sorted(_ALLOWED_LIST_ACTION_INTERACTIONS))
 
 
 def parse_list_block(parser, *, allow_pattern_params: bool = False):
@@ -22,6 +23,8 @@ def parse_list_block(parser, *, allow_pattern_params: bool = False):
     empty_state_hidden = False
     selection = None
     actions = None
+    group_by = None
+    group_label = None
     visibility_rule = None
     theme_overrides: ast.ThemeTokenOverrides | None = None
     while parser._current().type != "DEDENT":
@@ -120,13 +123,44 @@ def parse_list_block(parser, *, allow_pattern_params: bool = False):
             parser._advance()
             actions = _parse_list_actions_block(parser, allow_pattern_params=allow_pattern_params)
             continue
+        if tok.type == "IDENT" and tok.value == "group_by":
+            if group_by is not None:
+                raise Namel3ssError("group_by is declared more than once", line=tok.line, column=tok.column)
+            parser._advance()
+            parser._expect("IS", "Expected 'is' after group_by")
+            group_by = _parse_list_field_name(parser)
+            if parser._match("NEWLINE"):
+                continue
+            continue
+        if tok.type == "IDENT" and tok.value == "group_label":
+            if group_label is not None:
+                raise Namel3ssError("group_label is declared more than once", line=tok.line, column=tok.column)
+            parser._advance()
+            parser._expect("IS", "Expected 'is' after group_label")
+            group_label = _parse_list_field_name(parser)
+            if parser._match("NEWLINE"):
+                continue
+            continue
         raise Namel3ssError(
             f"Unknown list setting '{tok.value}'",
             line=tok.line,
             column=tok.column,
         )
     parser._expect("DEDENT", "Expected end of list block")
-    return variant, item, empty_text, empty_state_hidden, selection, actions, visibility_rule, theme_overrides
+    if group_label is not None and group_by is None:
+        raise Namel3ssError("group_label requires group_by.", line=parser._current().line, column=parser._current().column)
+    return (
+        variant,
+        item,
+        empty_text,
+        empty_state_hidden,
+        selection,
+        actions,
+        group_by,
+        group_label,
+        visibility_rule,
+        theme_overrides,
+    )
 
 
 def _parse_list_item_block(parser, line: int, column: int) -> ast.ListItemMapping:
@@ -139,6 +173,7 @@ def _parse_list_item_block(parser, line: int, column: int) -> ast.ListItemMappin
     secondary = None
     meta = None
     icon = None
+    icon_color = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
@@ -179,6 +214,15 @@ def _parse_list_item_block(parser, line: int, column: int) -> ast.ListItemMappin
             if parser._match("NEWLINE"):
                 continue
             continue
+        if tok.type == "IDENT" and tok.value == "icon_color":
+            if icon_color is not None:
+                raise Namel3ssError("Icon color is declared more than once", line=tok.line, column=tok.column)
+            parser._advance()
+            parser._expect("IS", "Expected 'is' after icon_color")
+            icon_color = _parse_list_field_name(parser)
+            if parser._match("NEWLINE"):
+                continue
+            continue
         raise Namel3ssError(
             f"Unknown item setting '{tok.value}'",
             line=tok.line,
@@ -192,6 +236,7 @@ def _parse_list_item_block(parser, line: int, column: int) -> ast.ListItemMappin
         secondary=secondary,
         meta=meta,
         icon=icon,
+        icon_color=icon_color,
         line=line,
         column=column,
     )
@@ -301,7 +346,7 @@ def _parse_list_actions_block(parser, *, allow_pattern_params: bool) -> List[ast
                 value_tok = parser._current()
                 if value_tok.type not in {"IDENT", "STRING"}:
                     raise Namel3ssError(
-                        "Action interaction must be rename_modal, confirm_destructive, or project_picker.",
+                        f"Action interaction must be one of: {_ALLOWED_LIST_ACTION_INTERACTIONS_TEXT}.",
                         line=value_tok.line,
                         column=value_tok.column,
                     )
@@ -309,7 +354,7 @@ def _parse_list_actions_block(parser, *, allow_pattern_params: bool) -> List[ast
                 value = str(value_tok.value).strip().lower()
                 if value not in _ALLOWED_LIST_ACTION_INTERACTIONS:
                     raise Namel3ssError(
-                        "Action interaction must be rename_modal, confirm_destructive, or project_picker.",
+                        f"Action interaction must be one of: {_ALLOWED_LIST_ACTION_INTERACTIONS_TEXT}.",
                         line=value_tok.line,
                         column=value_tok.column,
                     )

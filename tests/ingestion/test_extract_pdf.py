@@ -73,3 +73,39 @@ def test_extract_pages_ocr_prefers_ocr_backend(monkeypatch) -> None:
 
     assert pages == ["Scanned OCR page"]
     assert method == "ocr"
+
+
+def test_extract_pages_pdf_repairs_recoverable_mojibake(monkeypatch) -> None:
+    monkeypatch.setattr(
+        extract_mod,
+        "_extract_pdf_pages_with_pypdf",
+        lambda _content: ["Caf\u00c3\u00a9 policy summary"],
+    )
+
+    def _legacy_parser(*_args, **_kwargs):
+        raise AssertionError("legacy parser should not run when repaired pypdf text is readable")
+
+    monkeypatch.setattr(extract_mod, "_extract_pdf_pages", _legacy_parser)
+
+    pages, method = extract_mod.extract_pages(b"%PDF-1.4\n", detected={"type": "pdf"}, mode="primary")
+
+    assert pages == ["Caf\u00e9 policy summary"]
+    assert method == "primary"
+
+
+def test_extract_pages_pdf_falls_back_when_pypdf_text_is_unreadable(monkeypatch) -> None:
+    monkeypatch.setattr(
+        extract_mod,
+        "_extract_pdf_pages_with_pypdf",
+        lambda _content: ["\u00c3\u00c3\u00c3\u00c3\u00c3\u00c3\u00c3\u00c3"],
+    )
+    monkeypatch.setattr(
+        extract_mod,
+        "_extract_pdf_pages",
+        lambda _content, *, layout: ["Recovered text page"],
+    )
+
+    pages, method = extract_mod.extract_pages(b"%PDF-1.4\n", detected={"type": "pdf"}, mode="primary")
+
+    assert pages == ["Recovered text page"]
+    assert method == "primary"

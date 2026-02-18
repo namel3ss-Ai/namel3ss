@@ -16,7 +16,7 @@
     const snapshot = {};
     if (!row || typeof row !== "object") return snapshot;
     if (!mapping) return snapshot;
-    ["primary", "secondary", "meta", "icon"].forEach((key) => {
+    ["primary", "secondary", "meta", "icon", "icon_color"].forEach((key) => {
       const field = mapping[key];
       if (field) snapshot[field] = row[field] ?? null;
     });
@@ -149,6 +149,68 @@
     if (behavior) return behavior === "project_picker";
     const label = actionLabel(action);
     return label.startsWith("move to project");
+  }
+
+  function isUploadPickerAction(action) {
+    const behavior = actionBehavior(action);
+    if (behavior) return behavior === "upload_picker";
+    return actionLabel(action).startsWith("upload");
+  }
+
+  function findEnabledUploadInput(scope) {
+    if (!scope || typeof scope.querySelectorAll !== "function") return null;
+    const inputs = Array.from(scope.querySelectorAll("input.ui-upload-input[type='file']"));
+    for (const input of inputs) {
+      if (!input || input.disabled === true) continue;
+      if (input.isConnected === false) continue;
+      return input;
+    }
+    return null;
+  }
+
+  function cloneActionPayload(payload) {
+    if (!payload || typeof payload !== "object") return {};
+    try {
+      return JSON.parse(JSON.stringify(payload));
+    } catch {
+      return { ...payload };
+    }
+  }
+
+  function openUploadPickerFromActionTarget(target, options) {
+    let input = null;
+    if (target && typeof target.closest === "function") {
+      const section = target.closest(".ui-section");
+      input = findEnabledUploadInput(section);
+      if (!input) {
+        const panel = target.closest(".n3-layout-sidebar, .n3-layout-main, .n3-layout-drawer");
+        input = findEnabledUploadInput(panel);
+      }
+    }
+    if (!input) {
+      input = findEnabledUploadInput(document);
+    }
+    if (!input) return false;
+    const postAction =
+      options && options.postAction && typeof options.postAction === "object" ? options.postAction : null;
+    if (postAction && typeof postAction.id === "string" && postAction.id) {
+      input.__n3UploadPickerPostAction = {
+        id: postAction.id,
+        type: typeof postAction.type === "string" && postAction.type ? postAction.type : "call_flow",
+        payload: cloneActionPayload(postAction.payload),
+      };
+    } else {
+      input.__n3UploadPickerPostAction = null;
+    }
+    const openPicker = typeof root.openUploadInputPicker === "function" ? root.openUploadInputPicker : null;
+    if (openPicker) {
+      return openPicker(input) === true;
+    }
+    if (typeof input.click === "function") {
+      input.click();
+      return true;
+    }
+    return false;
   }
 
   function resolveRenameValue(payload) {
@@ -309,15 +371,44 @@
 
   function projectRowsForActionPrompt() {
     const rowsByRecord = root.__listRowsByRecord && typeof root.__listRowsByRecord === "object" ? root.__listRowsByRecord : {};
-    const projects = Array.isArray(rowsByRecord["rag_engine.Project"]) ? rowsByRecord["rag_engine.Project"] : [];
-    return projects
-      .map((row) => {
-        const id = typeof row.id === "string" ? row.id.trim() : "";
-        if (!id) return null;
-        const name = typeof row.name === "string" && row.name.trim() ? row.name.trim() : id;
-        return { id: id, name: name, active: row.active === true };
-      })
-      .filter(Boolean);
+    const projectsById = new Map();
+    Object.entries(rowsByRecord).forEach(([recordName, rows]) => {
+      if (!Array.isArray(rows)) return;
+      const recordKey = String(recordName || "").toLowerCase();
+      rows.forEach((row) => {
+        if (!row || typeof row !== "object") return;
+        const id = textValue(row.id) || textValue(row.project_id) || textValue(row.projectId);
+        if (!id) return;
+        const name = textValue(row.name) || textValue(row.project_name) || textValue(row.projectName) || id;
+        const hasDocumentFields = Boolean(
+          textValue(row.upload_id) ||
+            textValue(row.uploadId) ||
+            textValue(row.document_id) ||
+            textValue(row.documentId) ||
+            textValue(row.source_name) ||
+            textValue(row.sourceName)
+        );
+        const recordLooksProject = /project/.test(recordKey) && !/knowledge|document|library|file/.test(recordKey);
+        const rowLooksProject = Boolean(name && !hasDocumentFields);
+        if (!recordLooksProject && !rowLooksProject) return;
+        const next = {
+          id: id,
+          name: name,
+          active: row.active === true || row.is_active === true || row.selected === true,
+        };
+        const existing = projectsById.get(id);
+        if (!existing || (!existing.active && next.active)) {
+          projectsById.set(id, next);
+        }
+      });
+    });
+    return Array.from(projectsById.values());
+  }
+
+  function textValue(value) {
+    if (typeof value !== "string") return "";
+    const trimmed = value.trim();
+    return trimmed ? trimmed : "";
   }
 
   function promptProjectDestination() {
@@ -372,6 +463,19 @@
     }
     const preparedPayload = prepareListActionPayload(action, payload);
     if (!preparedPayload) return;
+    const opensUploadPicker = isUploadPickerAction(action);
+    if (opensUploadPicker) {
+      const postAction = {
+        id: action.id,
+        type: action.type,
+        payload: preparedPayload,
+      };
+      const opened = openUploadPickerFromActionTarget(target, { postAction: postAction });
+      if (!opened) {
+        await execute(preparedPayload, target);
+      }
+      return;
+    }
     await execute(preparedPayload, target);
   }
 
@@ -475,6 +579,8 @@
     const selectedIds = new Set();
     const rowMap = new Map();
     const suggestionAction = resolveSuggestionAction(el);
+    const groupByField = typeof el.group_by === "string" && el.group_by.trim() ? el.group_by.trim() : "";
+    const groupLabelField = typeof el.group_label === "string" && el.group_label.trim() ? el.group_label.trim() : "";
 
     if (!rows.length) {
       const empty = document.createElement("div");
@@ -497,7 +603,38 @@
       return wrapper;
     }
 
-    rows.forEach((row) => {
+    const groupedRows = [];
+    if (groupByField) {
+      const groupsByKey = new Map();
+      rows.forEach((row) => {
+        const keyText = formatListValue(row[groupByField]);
+        const key = typeof keyText === "string" && keyText.trim() ? keyText.trim() : "Ungrouped";
+        const labelText = groupLabelField ? formatListValue(row[groupLabelField]) : "";
+        const label = typeof labelText === "string" && labelText.trim() ? labelText.trim() : key;
+        if (!groupsByKey.has(key)) {
+          groupsByKey.set(key, { key: key, label: label, rows: [] });
+        }
+        groupsByKey.get(key).rows.push(row);
+      });
+      groupsByKey.forEach((group) => groupedRows.push(group));
+    } else {
+      groupedRows.push({ key: "", label: "", rows: rows });
+    }
+
+    groupedRows.forEach((group) => {
+      if (groupByField) {
+        const groupNode = document.createElement("div");
+        groupNode.className = "ui-list-group";
+        const title = document.createElement("div");
+        title.className = "ui-list-group-title";
+        title.textContent = group.label || group.key || "Group";
+        groupNode.appendChild(title);
+        listWrap.appendChild(groupNode);
+      }
+
+      const groupHost = groupByField ? listWrap.lastElementChild : listWrap;
+      const rowList = Array.isArray(group.rows) ? group.rows : [];
+      rowList.forEach((row) => {
       const rowId = idField ? row[idField] : null;
       const item = document.createElement("div");
       item.className = `ui-list-item ui-list-${variant}`;
@@ -546,7 +683,14 @@
       if (isIconVariant && mapping.icon) {
         const iconWrap = document.createElement("div");
         iconWrap.className = "ui-list-icon";
-        iconWrap.appendChild(createListIconNode(row[mapping.icon]));
+        const iconNode = createListIconNode(row[mapping.icon]);
+        if (mapping.icon_color) {
+          const iconColor = formatListValue(row[mapping.icon_color]).trim();
+          if (iconColor) {
+            iconNode.style.color = iconColor;
+          }
+        }
+        iconWrap.appendChild(iconNode);
         content.appendChild(iconWrap);
       }
       const text = document.createElement("div");
@@ -651,7 +795,8 @@
           handleAction(suggestionAction, { message: message, source: "suggestion" }, item);
         });
       }
-      listWrap.appendChild(item);
+      groupHost.appendChild(item);
+    });
     });
     wrapper.appendChild(listWrap);
     return wrapper;

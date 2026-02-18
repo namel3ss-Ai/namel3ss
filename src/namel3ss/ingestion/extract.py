@@ -63,35 +63,35 @@ def extract_pages(content: bytes, *, detected: dict, mode: str) -> tuple[list[st
     if mode == "layout":
         if kind != "pdf":
             return [""], "layout"
-        pages = _extract_pdf_pages_with_pypdf(content)
-        if _has_non_empty_pages(pages):
+        pages = _normalize_extracted_pages(_extract_pdf_pages_with_pypdf(content))
+        if _has_readable_pages(pages):
             return pages, "layout"
-        pages = _extract_pdf_pages(content, layout=True)
+        pages = _normalize_extracted_pages(_extract_pdf_pages(content, layout=True))
         if pages is None:
-            pages = _split_pages(_extract_pdf_text(content, layout=True))
+            pages = _split_pages(_normalize_extracted_text(_extract_pdf_text(content, layout=True)))
         return pages, "layout"
     if mode == "ocr":
         if kind == "pdf":
-            pages = _extract_pdf_pages_with_ocr(content)
-            if _has_non_empty_pages(pages):
+            pages = _normalize_extracted_pages(_extract_pdf_pages_with_ocr(content))
+            if _has_readable_pages(pages):
                 return pages, "ocr"
-            pages = _extract_pdf_pages_with_pypdf(content)
-            if _has_non_empty_pages(pages):
+            pages = _normalize_extracted_pages(_extract_pdf_pages_with_pypdf(content))
+            if _has_readable_pages(pages):
                 return pages, "ocr"
-            pages = _extract_pdf_pages(content, layout=True)
+            pages = _normalize_extracted_pages(_extract_pdf_pages(content, layout=True))
             if pages is None:
-                pages = _split_pages(_extract_pdf_text(content, layout=True))
+                pages = _split_pages(_normalize_extracted_text(_extract_pdf_text(content, layout=True)))
             return pages, "ocr"
         if kind != "image":
             return [""], "ocr"
         return _split_pages(_extract_image_ocr(content)), "ocr"
     if kind == "pdf":
-        pages = _extract_pdf_pages_with_pypdf(content)
-        if _has_non_empty_pages(pages):
+        pages = _normalize_extracted_pages(_extract_pdf_pages_with_pypdf(content))
+        if _has_readable_pages(pages):
             return pages, "primary"
-        pages = _extract_pdf_pages(content, layout=False)
+        pages = _normalize_extracted_pages(_extract_pdf_pages(content, layout=False))
         if pages is None:
-            pages = _split_pages(_extract_pdf_text(content, layout=False))
+            pages = _split_pages(_normalize_extracted_text(_extract_pdf_text(content, layout=False)))
         return pages, "primary"
     if kind == "docx":
         return _split_pages(_extract_docx_text(content)), "primary"
@@ -103,12 +103,12 @@ def extract_pages(content: bytes, *, detected: dict, mode: str) -> tuple[list[st
 def extract_pages_fallback(content: bytes, *, detected: dict) -> tuple[list[str], str]:
     kind = str(detected.get("type") or "text")
     if kind == "pdf":
-        pages = _extract_pdf_pages_with_pypdf(content)
-        if _has_non_empty_pages(pages):
+        pages = _normalize_extracted_pages(_extract_pdf_pages_with_pypdf(content))
+        if _has_readable_pages(pages):
             return pages, "layout"
-        pages = _extract_pdf_pages(content, layout=True)
+        pages = _normalize_extracted_pages(_extract_pdf_pages(content, layout=True))
         if pages is None:
-            pages = _split_pages(_extract_pdf_text(content, layout=True))
+            pages = _split_pages(_normalize_extracted_text(_extract_pdf_text(content, layout=True)))
         return pages, "layout"
     if kind == "image":
         return _split_pages(_extract_image_ocr(content)), "ocr"
@@ -425,7 +425,7 @@ def _iter_pdf_streams(content: bytes) -> list[tuple[bytes, bytes]]:
 
 
 def _decode_pdf_string(raw: bytes) -> str:
-    output = []
+    output = bytearray()
     idx = 0
     while idx < len(raw):
         char = raw[idx]
@@ -435,9 +435,9 @@ def _decode_pdf_string(raw: bytes) -> str:
                 break
             esc = raw[idx]
             if esc in b"nrtbf":
-                output.append({"n": "\n", "r": "\r", "t": "\t", "b": "\b", "f": "\f"}[chr(esc)])
+                output.extend({"n": b"\n", "r": b"\r", "t": b"\t", "b": b"\b", "f": b"\f"}[chr(esc)])
             elif esc in b"\\()":
-                output.append(chr(esc))
+                output.append(esc)
             elif 48 <= esc <= 55:
                 octal = bytes([esc])
                 for _ in range(2):
@@ -447,15 +447,15 @@ def _decode_pdf_string(raw: bytes) -> str:
                     else:
                         break
                 try:
-                    output.append(chr(int(octal, 8)))
+                    output.append(int(octal, 8))
                 except Exception:
                     pass
             else:
-                output.append(chr(esc))
+                output.append(esc)
         else:
-            output.append(chr(char))
+            output.append(char)
         idx += 1
-    return "".join(output)
+    return _decode_pdf_payload(bytes(output))
 
 
 def _decode_pdf_hex_string(raw: bytes) -> str:
@@ -470,22 +470,33 @@ def _decode_pdf_hex_string(raw: bytes) -> str:
         payload = bytes.fromhex(compact.decode("ascii"))
     except Exception:
         return ""
+    return _decode_pdf_payload(payload)
+
+
+def _decode_pdf_payload(payload: bytes) -> str:
     if not payload:
         return ""
     try:
         if payload.startswith(b"\xfe\xff") or payload.startswith(b"\xff\xfe"):
-            return payload.decode("utf-16", errors="ignore")
+            return _normalize_extracted_text(payload.decode("utf-16", errors="ignore"))
     except Exception:
         pass
     if payload.count(b"\x00") * 2 >= len(payload):
         try:
-            return payload.decode("utf-16-be", errors="ignore")
+            return _normalize_extracted_text(payload.decode("utf-16-be", errors="ignore"))
         except Exception:
             return ""
     try:
-        return payload.decode("utf-8", errors="ignore")
+        return _normalize_extracted_text(payload.decode("utf-8"))
     except Exception:
-        return payload.decode("latin-1", errors="ignore")
+        pass
+    for encoding in ("cp1252", "latin-1"):
+        try:
+            decoded = payload.decode(encoding, errors="ignore")
+        except Exception:
+            continue
+        return _normalize_extracted_text(decoded)
+    return ""
 
 
 def _is_probable_text_stream(payload: bytes) -> bool:
@@ -544,7 +555,7 @@ def _extract_pdf_pages_with_pypdf(content: bytes) -> list[str] | None:
                 text = extracted
         except Exception:
             text = ""
-        pages.append(text.strip())
+        pages.append(_normalize_extracted_text(text).strip())
     return pages
 
 
@@ -559,7 +570,7 @@ def _extract_pdf_pages_with_ocr(content: bytes) -> list[str] | None:
     pages: list[str] = []
     for page in result.pages:
         text = page.text if isinstance(page.text, str) else ""
-        pages.append(text.strip())
+        pages.append(_normalize_extracted_text(text).strip())
     return pages
 
 
@@ -583,6 +594,101 @@ def _has_non_empty_pages(pages: list[str] | None) -> bool:
         if isinstance(page, str) and page.strip():
             return True
     return False
+
+
+def _normalize_extracted_pages(pages: list[str] | None) -> list[str] | None:
+    if pages is None:
+        return None
+    normalized: list[str] = []
+    for page in pages:
+        if isinstance(page, str):
+            normalized.append(_normalize_extracted_text(page).strip())
+        else:
+            normalized.append("")
+    return normalized
+
+
+def _normalize_extracted_text(text: str) -> str:
+    if not text:
+        return ""
+    cleaned = text.replace("\r\n", "\n").replace("\r", "\n")
+    return _repair_utf8_mojibake(cleaned)
+
+
+def _repair_utf8_mojibake(text: str) -> str:
+    if not text:
+        return text
+    best = text
+    best_score = _readability_score(text)
+    for source_encoding in ("latin-1", "cp1252"):
+        try:
+            candidate = text.encode(source_encoding, errors="strict").decode("utf-8", errors="strict")
+        except Exception:
+            continue
+        candidate_score = _readability_score(candidate)
+        if candidate_score > best_score + 1.0:
+            best = candidate
+            best_score = candidate_score
+    return best
+
+
+def _has_readable_pages(pages: list[str] | None) -> bool:
+    if not _has_non_empty_pages(pages):
+        return False
+    if pages is None:
+        return False
+    for page in pages:
+        if _is_readable_page(page):
+            return True
+    return False
+
+
+def _is_readable_page(text: str | None) -> bool:
+    if not isinstance(text, str):
+        return False
+    trimmed = text.strip()
+    if len(trimmed) < 2:
+        return False
+    letter_count = sum(1 for ch in trimmed if ch.isalpha())
+    if letter_count == 0:
+        return False
+    mojibake_pairs = _mojibake_pair_count(trimmed)
+    if mojibake_pairs >= 3 and mojibake_pairs * 5 >= letter_count:
+        return False
+    return _readability_score(trimmed) > 0
+
+
+def _mojibake_pair_count(text: str) -> int:
+    count = 0
+    if len(text) < 2:
+        return count
+    for idx in range(len(text) - 1):
+        ch = text[idx]
+        nxt = text[idx + 1]
+        if ch in {"Ã", "Â", "â"} and 0x80 <= ord(nxt) <= 0xBF:
+            count += 1
+    return count
+
+
+def _readability_score(text: str) -> float:
+    if not text:
+        return -1000.0
+    letters = sum(1 for ch in text if ch.isalpha())
+    digits = sum(1 for ch in text if ch.isdigit())
+    spaces = sum(1 for ch in text if ch.isspace())
+    controls = sum(1 for ch in text if ord(ch) < 32 and ch not in "\n\r\t")
+    replacement = text.count("\ufffd")
+    mojibake_leads = sum(1 for ch in text if ch in {"Ã", "Â", "â"})
+    mojibake_pairs = _mojibake_pair_count(text)
+    return (
+        float(letters)
+        + float(digits) * 0.35
+        + float(spaces) * 0.1
+        - float(controls) * 3.0
+        - float(replacement) * 6.0
+        - float(mojibake_leads) * 1.25
+        - float(mojibake_pairs) * 4.0
+    )
 
 
 def _extract_image_primary(content: bytes) -> str:

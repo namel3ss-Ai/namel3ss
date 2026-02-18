@@ -30,6 +30,7 @@ STATE_SOURCE = '''page "home":
 ICON_PLAIN_SOURCE = '''record "Project":
   name text
   icon text
+  icon_color text
 
 flow "open_project":
   return "ok"
@@ -40,6 +41,7 @@ page "home":
     item:
       primary is name
       icon is icon
+      icon_color is icon_color
     actions:
       action "Open":
         calls flow "open_project"
@@ -108,6 +110,7 @@ def test_lowering_icon_plain_list_variant():
     item = page.items[0]
     assert isinstance(item, ir.ListItem)
     assert item.variant == "icon_plain"
+    assert item.item.icon_color == "icon_color"
 
 
 def test_lowering_button_icon():

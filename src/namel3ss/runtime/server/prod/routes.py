@@ -523,7 +523,8 @@ def _static_cache_headers(path: str, content_type: str) -> dict[str, str]:
     is_shell_html = normalized_path in {"/", "/index.html"} or normalized_type.startswith("text/html")
     is_runtime_script = normalized_path.endswith(".js")
     is_runtime_style = normalized_path.endswith(".css")
-    if is_shell_html or is_runtime_script or is_runtime_style:
+    is_icon_svg = normalized_path.startswith("/icons/") and normalized_path.endswith(".svg")
+    if is_shell_html or is_runtime_script or is_runtime_style or is_icon_svg:
         return {
             "Cache-Control": "no-store, max-age=0, must-revalidate",
             "Pragma": "no-cache",

@@ -54,12 +54,33 @@ let renderUI = (manifest) => {
   const pageBySlug = new Map(pageEntries.map((entry) => [entry.slug, entry]));
   const pageByName = new Map(pageEntries.map((entry) => [entry.name, entry]));
   const actionsById = manifest && typeof manifest.actions === "object" && manifest.actions ? manifest.actions : {};
+  const composerAttachUploads = collectComposerAttachUploadsFromManifest(pages);
   const keyboardShortcutMap = new Map();
 
   function hasAppPermission(permission) {
     if (!explicitPermissionsEnabled) return true;
     if (typeof permission !== "string" || !permission) return false;
     return declaredPermissionMatrix[permission] === true;
+  }
+
+  function collectComposerAttachUploadsFromManifest(rootValue) {
+    const uploadNames = new Set();
+    function scan(value) {
+      if (!value) return;
+      if (Array.isArray(value)) {
+        value.forEach((entry) => scan(entry));
+        return;
+      }
+      if (typeof value !== "object") return;
+      const type = typeof value.type === "string" ? value.type.trim().toLowerCase() : "";
+      if (type === "chat") {
+        const attach = typeof value.composer_attach_upload === "string" ? value.composer_attach_upload.trim() : "";
+        if (attach) uploadNames.add(attach);
+      }
+      Object.values(value).forEach((entry) => scan(entry));
+    }
+    scan(rootValue);
+    return uploadNames;
   }
 
   function normalizeShortcut(value) {
@@ -1790,7 +1811,10 @@ let renderUI = (manifest) => {
       wrapper.appendChild(empty);
     } else if (el.type === "upload") {
       if (typeof renderUploadElement === "function") {
-        return renderUploadElement(el, handleAction);
+        const uploadName = typeof el.name === "string" ? el.name.trim() : "";
+        const uploadElement =
+          uploadName && composerAttachUploads.has(uploadName) ? { ...el, hide_surface: true } : el;
+        return renderUploadElement(uploadElement, handleAction);
       }
       const empty = document.createElement("div");
       empty.textContent = "Upload renderer unavailable.";

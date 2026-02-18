@@ -6,6 +6,7 @@ SOURCE = '''record "Order":
   name text
   status text
   icon text
+  icon_color text
 
 flow "open_order":
   return "ok"
@@ -17,6 +18,7 @@ page "home":
       primary is name
       secondary is status
       icon is icon
+      icon_color is icon_color
     empty_text is "No orders yet."
     selection is single
     actions:
@@ -54,6 +56,7 @@ def test_parse_list_block():
     assert list_item.item.primary == "name"
     assert list_item.item.secondary == "status"
     assert list_item.item.icon == "icon"
+    assert list_item.item.icon_color == "icon_color"
     assert list_item.actions is not None
     assert list_item.actions[0].label == "Open"
 

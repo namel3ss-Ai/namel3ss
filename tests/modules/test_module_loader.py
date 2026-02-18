@@ -188,3 +188,35 @@ def test_unexported_ui_pack_is_blocked(tmp_path: Path) -> None:
     with pytest.raises(Namel3ssError) as excinfo:
         load_project(app)
     assert "does not export ui pack" in str(excinfo.value).lower()
+
+
+def test_module_merge_preserves_app_policy_block(tmp_path: Path) -> None:
+    app = tmp_path / "app.ai"
+    _write(
+        app,
+        'spec is "1.0"\n\n'
+        'policy\n'
+        '  allow ingestion.run\n'
+        '  allow ingestion.review\n'
+        '  allow ingestion.override\n'
+        '  allow retrieval.include_warn\n\n'
+        'use "inventory" as inv\n'
+        'flow "demo":\n'
+        '  return "ok"\n',
+    )
+    _write(
+        tmp_path / "modules" / "inventory" / "capsule.ai",
+        'capsule "inventory":\n'
+        "  exports:\n"
+        '    flow "calc_total"\n',
+    )
+    _write(
+        tmp_path / "modules" / "inventory" / "logic.ai",
+        'flow "calc_total":\n'
+        "  return 42\n",
+    )
+    project = load_project(app)
+    policy = getattr(project.program, "policy", None)
+    assert policy is not None
+    rules = {(rule.action, rule.mode) for rule in policy.rules}
+    assert ("ingestion.override", "allow") in rules

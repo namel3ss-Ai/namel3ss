@@ -35,6 +35,8 @@ def _list_item_mapping(mapping: ir.ListItemMapping) -> dict:
         payload["meta"] = mapping.meta
     if mapping.icon is not None:
         payload["icon"] = mapping.icon
+    if mapping.icon_color is not None:
+        payload["icon_color"] = mapping.icon_color
     return payload
 
 

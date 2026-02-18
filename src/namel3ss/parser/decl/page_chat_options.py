@@ -5,7 +5,6 @@ from dataclasses import dataclass, field
 from namel3ss.errors.base import Namel3ssError
 
 _ALLOWED_CHAT_STYLES = {"bubbles", "plain"}
-_ALLOWED_CHAT_ACTIONS = {"copy", "expand", "view_sources"}
 _ALLOWED_COMPOSER_SEND_STYLES = {"icon", "text"}
 _DEFAULT_COMPOSER_PLACEHOLDER = "Ask about your documents... use #project or @document"
 
@@ -152,9 +151,6 @@ def _parse_action_list(parser) -> list[str]:
             raise Namel3ssError("Chat actions must be text names.", line=tok.line, column=tok.column)
         parser._advance()
         value = str(tok.value).strip().lower()
-        if value not in _ALLOWED_CHAT_ACTIONS:
-            allowed = ", ".join(sorted(_ALLOWED_CHAT_ACTIONS))
-            raise Namel3ssError(f"Unknown chat action '{value}'. Expected one of: {allowed}.", line=tok.line, column=tok.column)
         if value not in seen:
             seen.add(value)
             actions.append(value)
