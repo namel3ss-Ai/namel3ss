@@ -48,7 +48,7 @@ def handle_action(
     source: str | None = None,
     raise_on_error: bool = True,
     ui_mode: str = DISPLAY_MODE_STUDIO,
-    diagnostics_enabled: bool = False,
+    diagnostics_enabled: bool = True,
 ) -> tuple[dict, Exception | None]:
     start_time = time.time()
     if payload is not None and not isinstance(payload, dict):

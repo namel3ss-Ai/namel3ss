@@ -14,14 +14,32 @@
       ".ui-chat": [
         "display: flex; flex-direction: column; gap: 14px; font-family: -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"SF Pro Display\", \"Helvetica Neue\", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale"
       ],
+      ".ui-chat-citation": [
+        "display: flex; flex-direction: column; gap: 4px"
+      ],
+      ".ui-chat-citation-actions": [
+        "display: flex; gap: 6px"
+      ],
+      ".ui-chat-citations": [
+        "border: 1px solid #eaeaea; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px"
+      ],
       ".ui-chat-composer": [
         "display: block; margin-top: auto"
+      ],
+      ".ui-chat-memory": [
+        "border: 1px solid #eaeaea; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px"
+      ],
+      ".ui-chat-memory-item": [
+        "display: flex; gap: 10px; align-items: baseline"
       ],
       ".ui-chat-message": [
         "display: flex; gap: 8px; align-items: flex-end"
       ],
       ".ui-chat-messages": [
         "display: flex; flex-direction: column; gap: 6px"
+      ],
+      ".ui-chat-thinking": [
+        "font-size: 12px; color: #555; font-style: italic"
       ],
       ".ui-section": [
         "background: #fff; display: flex; flex-direction: column; gap: 10px"
@@ -55,7 +73,7 @@
         "type": "chat.stream.cancel"
       }
     },
-    "diagnostics_enabled": false,
+    "diagnostics_enabled": true,
     "i18n": {
       "available_locales": [
         "en"
@@ -148,6 +166,62 @@
                       "input_gap": "s"
                     },
                     "type": "composer"
+                  },
+                  {
+                    "active": false,
+                    "column": 7,
+                    "debug_only": true,
+                    "element_id": "page.chat.thinking.2.0.2",
+                    "index": 2,
+                    "line": 13,
+                    "page": "chat",
+                    "page_slug": "chat",
+                    "spacing": {
+                      "status_gap": "s"
+                    },
+                    "type": "thinking",
+                    "when": "state.chat.thinking"
+                  },
+                  {
+                    "citations": [
+                      {
+                        "title": "Spec",
+                        "url": "https://example.com/spec"
+                      }
+                    ],
+                    "column": 7,
+                    "debug_only": true,
+                    "element_id": "page.chat.citations.2.0.3",
+                    "index": 3,
+                    "line": 14,
+                    "page": "chat",
+                    "page_slug": "chat",
+                    "source": "state.chat.citations",
+                    "spacing": {
+                      "item_gap": "s"
+                    },
+                    "type": "citations"
+                  },
+                  {
+                    "column": 7,
+                    "debug_only": true,
+                    "element_id": "page.chat.memory.2.0.4",
+                    "index": 4,
+                    "items": [
+                      {
+                        "kind": "fact",
+                        "text": "Account active"
+                      }
+                    ],
+                    "lane": "system",
+                    "line": 15,
+                    "page": "chat",
+                    "page_slug": "chat",
+                    "source": "state.chat.memory",
+                    "spacing": {
+                      "item_gap": "s"
+                    },
+                    "type": "memory"
                   }
                 ],
                 "citations_enhanced": false,
@@ -351,10 +425,13 @@
     ],
     "element_types": [
       "chat",
+      "citations",
       "composer",
+      "memory",
       "messages",
       "section",
       "text",
+      "thinking",
       "title"
     ],
     "warning_codes": [

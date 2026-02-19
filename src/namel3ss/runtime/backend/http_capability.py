@@ -69,7 +69,7 @@ def execute_http_tool(
         )
         try:
             req = request.Request(url, method=method, headers=_header_dict(send_headers), data=None)
-            with safe_urlopen_with_tls_fallback(req, timeout_seconds=timeout_seconds) as resp:
+            with safe_urlopen(req, timeout_seconds) as resp:
                 status = int(getattr(resp, "status", None) or resp.getcode())
                 raw = resp.read()
                 body_text = raw.decode("utf-8", errors="replace")
@@ -109,6 +109,10 @@ def execute_http_tool(
     finally:
         if span_id:
             obs.end_span(ctx, span_id, status=span_status)
+
+
+def safe_urlopen(req, timeout):
+    return safe_urlopen_with_tls_fallback(req, timeout_seconds=timeout)
 
 
 def _build_output(

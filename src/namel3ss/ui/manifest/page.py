@@ -37,7 +37,7 @@ from namel3ss.ui.manifest.actions import (
 )
 from namel3ss.ui.manifest.canonical import _slugify
 from namel3ss.ui.manifest.accessibility import apply_accessibility_contract
-from namel3ss.ui.manifest.display_mode import DISPLAY_MODE_STUDIO
+from namel3ss.ui.manifest.display_mode import DISPLAY_MODE_STUDIO, normalize_display_mode
 from namel3ss.ui.manifest.elements import _build_children
 from namel3ss.ui.manifest.filter_mode import apply_display_mode_filter
 from namel3ss.ui.manifest.i18n_builder import build_i18n_manifest
@@ -85,9 +85,11 @@ def build_manifest(
     warnings: list | None = None,
     state_defaults: dict | None = None,
     media_mode: MediaValidationMode | str | None = None,
-    display_mode: str = DISPLAY_MODE_STUDIO,
+    display_mode: str | None = None,
     diagnostics_enabled: bool = False,
 ) -> dict:
+    resolved_display_mode = normalize_display_mode(display_mode, default=DISPLAY_MODE_STUDIO)
+    display_mode_explicit = display_mode is not None
     mode = ValidationMode.from_value(mode)
     media_mode = MediaValidationMode.from_value(media_mode)
     ui_schema_version = "1"
@@ -137,7 +139,7 @@ def build_manifest(
     append_capability_deprecation_warnings(capabilities, warnings)
     ui_theme_enabled = has_ui_theming_capability(capabilities)
     runtime_theme_settings = theme_settings_from_state(state_base) if ui_theme_enabled else {}
-    diagnostics_enabled = bool(diagnostics_enabled)
+    diagnostics_enabled = bool(diagnostics_enabled or not display_mode_explicit)
     upload_requests_with_location = collect_upload_requests(program)
     upload_requests = [public_upload_request(entry) for entry in upload_requests_with_location]
     upload_reference_names = tuple(sorted(collect_upload_reference_names(program)))
@@ -299,7 +301,7 @@ def build_manifest(
         taken_actions=taken_actions,
         state=state_base,
         capabilities=capabilities,
-        display_mode=display_mode,
+        display_mode=resolved_display_mode,
     )
     if injected_upload:
         warning_context["studio_injected_upload"] = True
@@ -356,7 +358,7 @@ def build_manifest(
             program,
             capabilities=capabilities,
             state=state_base,
-            studio_mode=display_mode == DISPLAY_MODE_STUDIO,
+            studio_mode=resolved_display_mode == DISPLAY_MODE_STUDIO,
         ),
     }
     plugin_assets = build_plugin_assets_manifest(ui_plugin_registry)
@@ -365,7 +367,7 @@ def build_manifest(
     if upload_requests:
         manifest["upload_requests"] = upload_requests
     hook_manager = getattr(program, "extension_hook_manager", None)
-    if display_mode == DISPLAY_MODE_STUDIO and hook_manager is not None:
+    if resolved_display_mode == DISPLAY_MODE_STUDIO and hook_manager is not None:
         session_id = None
         if isinstance(identity, dict):
             candidate = identity.get("session_id")
@@ -411,7 +413,7 @@ def build_manifest(
     manifest = apply_rtl_to_manifest(manifest, locale=i18n_locale)
     return apply_display_mode_filter(
         manifest,
-        display_mode=display_mode,
+        display_mode=resolved_display_mode,
         diagnostics_enabled=diagnostics_enabled,
     )
 

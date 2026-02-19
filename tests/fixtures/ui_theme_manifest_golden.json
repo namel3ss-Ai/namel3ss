@@ -5,7 +5,7 @@
       "type": "theme_settings_update"
     }
   },
-  "diagnostics_enabled": false,
+  "diagnostics_enabled": true,
   "i18n": {
     "available_locales": [
       "en"

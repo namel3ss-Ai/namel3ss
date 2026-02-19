@@ -37,7 +37,7 @@
       "exports": [
         "renderChatElement"
       ],
-      "integrity_hash": "sha256:9ef53185f3e47c534cac9ffa62dd9bec3f5260bc318f86f9341aade293232bdf",
+      "integrity_hash": "sha256:d4f7f439b1e7594d99e4b234b0c1ac73cab34231a9d4de014568daafc95c8f86",
       "renderer_id": "chat",
       "version": "1"
     },
@@ -58,7 +58,7 @@
         "renderListElement",
         "renderTableElement"
       ],
-      "integrity_hash": "sha256:13bacaf00797e1179cf17f5905d76dc71d2615feee7327df4153dc28df6d3892",
+      "integrity_hash": "sha256:a2d2139893ee530078c6a97f9b7cca11a823a568afa41e2231e74f88d470fdeb",
       "renderer_id": "collections",
       "version": "1"
     },
@@ -128,7 +128,7 @@
         "renderSourcePreviewElement",
         "renderTrustIndicatorElement"
       ],
-      "integrity_hash": "sha256:4a1e4d4a25ad9d201ad50c86349b0b4d832c4552524f518facab65f9ad5a0dcb",
+      "integrity_hash": "sha256:b562e5daaa93e7e37e4554f31bf83927a8ae6bda49f2ff5e69bb31ef90ace1f3",
       "renderer_id": "rag",
       "version": "1"
     },
@@ -188,7 +188,7 @@
       "exports": [
         "renderUploadElement"
       ],
-      "integrity_hash": "sha256:e1fbfbc821e0bf4b8468b37c1b372d51ade4347d0dd8a6bf17ba077dc0357597",
+      "integrity_hash": "sha256:1cb5523ee796e75c1f2a1a63abd31f22f8ec5e8bf395fdb4504b5731c06397e9",
       "renderer_id": "upload",
       "version": "1"
     }

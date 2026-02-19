@@ -23,7 +23,7 @@ def build_contract_manifest(
     identity: dict | None = None,
     config=None,
     ui_mode: str = DISPLAY_MODE_STUDIO,
-    diagnostics_enabled: bool = False,
+    diagnostics_enabled: bool = True,
 ) -> dict:
     resolved_config = config or load_config(
         app_path=getattr(program_ir, "app_path", None),
@@ -59,7 +59,7 @@ def build_ui_contract_payload(
     identity: dict | None = None,
     config=None,
     ui_mode: str = DISPLAY_MODE_STUDIO,
-    diagnostics_enabled: bool = False,
+    diagnostics_enabled: bool = True,
 ) -> dict:
     resolved_config = config or load_config(
         app_path=getattr(program_ir, "app_path", None),

@@ -124,7 +124,12 @@
   display: none;
 }
 
+.ui-chat-composer {
+  display: block;
+}
+
 .ui-chat-composer-surface {
+  /* grid-template-columns: minmax(0, 1fr) auto; */
   background: var(--n3-surface-raised, #ffffff);
   border: 1px solid #ffffff;
 }

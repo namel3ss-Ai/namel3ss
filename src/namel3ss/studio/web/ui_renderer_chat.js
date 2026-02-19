@@ -2106,10 +2106,32 @@
     preview.explainView.hidden = selected !== "explain";
   }
 
+  function renderNoSourcesPanel(container) {
+    if (!(container instanceof HTMLElement)) return;
+    const panel = document.createElement("div");
+    panel.className = "ui-empty-sources-panel";
+    const message = document.createElement("div");
+    message.textContent = "No sources available yet.";
+    const actions = document.createElement("div");
+    actions.className = "ui-empty-sources-actions";
+    const uploadButton = document.createElement("button");
+    uploadButton.type = "button";
+    uploadButton.className = "btn small";
+    uploadButton.textContent = "Upload document";
+    actions.appendChild(uploadButton);
+    panel.appendChild(message);
+    panel.appendChild(actions);
+    container.appendChild(panel);
+  }
+
   function renderPreviewSources(citations, selectedIndex) {
     const preview = ensureCitationPreview();
     preview.sourcesList.textContent = "";
     preview.sourceItems = [];
+    if (!Array.isArray(citations) || !citations.length) {
+      renderNoSourcesPanel(preview.sourcesList);
+      return;
+    }
     citations.forEach((entry, index) => {
       const item = document.createElement("button");
       item.type = "button";

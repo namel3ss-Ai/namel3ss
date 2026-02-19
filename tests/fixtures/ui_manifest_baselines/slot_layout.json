@@ -83,7 +83,7 @@
         "type": "chat.stream.cancel"
       }
     },
-    "diagnostics_enabled": false,
+    "diagnostics_enabled": true,
     "i18n": {
       "available_locales": [
         "en"

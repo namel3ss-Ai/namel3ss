@@ -1,8 +1,14 @@
 from __future__ import annotations
 
 from namel3ss.errors.base import Namel3ssError
+from namel3ss.runtime.ui.state.chat_shell_normalization import (
+    first_text_value as _first_text_value,
+    normalize_role as _normalize_role,
+    normalize_text_list as _normalize_text_list,
+    normalized_text as _normalized_text,
+    slug_text as _slug_text,
+)
 
-_ROLE_VALUES = {"assistant", "system", "tool", "user"}
 _STREAM_PHASE_VALUES = {"complete", "error", "idle", "streaming", "thinking"}
 
 
@@ -404,65 +410,6 @@ def _normalize_stream_state(value: object, *, node_ids: set[str]) -> dict:
         "phase": phase,
         "tokens": _normalize_text_list(value.get("tokens")),
     }
-
-
-def _normalize_role(value: object) -> str:
-    role = (_normalized_text(value) or "assistant").lower()
-    if role in _ROLE_VALUES:
-        return role
-    return "assistant"
-
-
-def _normalize_text_list(value: object) -> list[str]:
-    if value is None:
-        return []
-    values = value if isinstance(value, list) else [value]
-    normalized: list[str] = []
-    seen: set[str] = set()
-    for entry in values:
-        text = _normalized_text(entry)
-        if text is None or text in seen:
-            continue
-        seen.add(text)
-        normalized.append(text)
-    return normalized
-
-
-def _first_text_value(value: object) -> str | None:
-    if isinstance(value, list):
-        for entry in value:
-            text = _normalized_text(entry)
-            if text is not None:
-                return text
-        return None
-    return _normalized_text(value)
-
-
-def _normalized_text(value: object) -> str | None:
-    if not isinstance(value, str):
-        return None
-    text = value.strip()
-    if not text:
-        return None
-    return text
-
-
-def _slug_text(value: str | None) -> str:
-    if value is None:
-        return ""
-    allowed: list[str] = []
-    last_dot = False
-    for char in value.lower():
-        if char.isalnum():
-            allowed.append(char)
-            last_dot = False
-            continue
-        if last_dot:
-            continue
-        allowed.append(".")
-        last_dot = True
-    slug = "".join(allowed).strip(".")
-    return slug
 
 
 __all__ = ["append_chat_user_message", "begin_chat_message_regeneration", "create_chat_thread", "ensure_chat_shell_state", "request_chat_stream_cancel", "select_chat_branch", "select_chat_models", "select_chat_thread"]

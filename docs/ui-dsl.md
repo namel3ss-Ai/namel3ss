@@ -524,10 +524,12 @@ Rules:
 - For plain `state.<path>` visibility clauses, a path is visible only when the state value exists and is truthy.
 - For `only when`, missing state paths or type mismatches fail at build time.
 - Page-level visibility is evaluated before page layout. If false, the page is omitted from the manifest and navigation.
-- In Studio mode, hidden elements remain in the manifest with `visible: false` for diagnostics; hidden elements do not emit actions.
+- In Studio display mode (`display_mode: studio`), diagnostics are off by default: hidden items, diagnostics pages, and `debug_only` items/actions are filtered.
+- When diagnostics are enabled, hidden elements remain in the manifest with `visible: false` and diagnostics/debug-only pages, blocks, and actions are included.
 - In production mode, hidden elements are omitted from the emitted manifest.
-- Elements and pages with `debug_only: true` are omitted in production mode and rendered in Studio mode.
-- Pages with `diagnostics is true` and `layout.diagnostics` blocks are omitted in production unless diagnostics mode is enabled.
+- Elements and pages with `debug_only: true` are omitted unless diagnostics mode is enabled.
+- Pages with `diagnostics is true` and `layout.diagnostics` blocks are omitted unless diagnostics mode is enabled.
+- Backward-compatibility: internal callers that omit `display_mode` keep diagnostics enabled to preserve older manifest contracts.
 - `n3 run --diagnostics <app.ai>` enables diagnostics rendering outside Studio for local debugging.
 - UI explain output includes the predicate, referenced state paths, evaluated result, and the visibility reason.
 

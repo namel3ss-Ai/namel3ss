@@ -8,6 +8,7 @@ import sys
 
 _DISABLE_TLS_FALLBACK_ENV = "N3_DISABLE_MACOS_TLS_FALLBACK"
 _DISABLE_TLS_FALLBACK_VALUES = {"1", "true", "yes"}
+_DISABLE_TLS_FALLBACK = os.getenv(_DISABLE_TLS_FALLBACK_ENV, "").strip().lower() in _DISABLE_TLS_FALLBACK_VALUES
 
 
 def safe_urlopen_with_tls_fallback(req, *, timeout_seconds: int):
@@ -114,8 +115,7 @@ def _read_macos_system_root_bundle() -> str | None:
 
 
 def _tls_fallback_disabled() -> bool:
-    value = os.getenv(_DISABLE_TLS_FALLBACK_ENV, "")
-    return value.strip().lower() in _DISABLE_TLS_FALLBACK_VALUES
+    return _DISABLE_TLS_FALLBACK
 
 
 __all__ = ["open_url_with_tls_fallback", "safe_urlopen_with_tls_fallback"]
