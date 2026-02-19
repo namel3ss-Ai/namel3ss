@@ -1,7 +1,87 @@
 # namel3ss
 
-AI-native programming language for deterministic, inspectable applications.
-Deterministic execution with explicit AI boundaries and governed runtime.
+namel3ss is a deterministic AI application language.
+It keeps surface syntax minimal while making execution explicit, inspectable, and reproducible.
+
+## 10-line example
+
+```ai
+spec is "1.0"
+use preset "rag_chat":
+  title is "Assistant"
+override flow "rag.answer":
+  ask ai "gpt-4o-mini" with input:
+    query is input.query
+    context is input.context
+  as answer_text
+  return answer_text
+```
+
+Run `n3 expand app.ai` to inspect the generated program.
+
+## Try the RAG application
+
+[`apps/rag-application`](apps/rag-application) is an end-to-end RAG app (upload -> ingest -> ask -> citations) with deterministic flows and inspectable source previews.
+
+From repo root:
+
+```bash
+cd apps/rag-application
+n3 check app.ai
+n3 run app.ai --port 7360 --no-open
+```
+
+In the UI:
+1. Open `http://127.0.0.1:7360/`.
+2. Upload a PDF or text document.
+3. Run index/ingest actions.
+4. Ask a question in chat.
+5. Open citation chips/cards to inspect source evidence.
+
+## Why this exists
+
+- Prompt spaghetti across app code and runtime glue.
+- Hidden retrieval logic that is hard to inspect.
+- Hard debugging when answers are wrong.
+- No deterministic replay for reliable incident analysis.
+- Missing policy gating for ingestion and retrieval boundaries.
+
+## Under the hood: expand and override
+
+- `n3 expand app.ai` materializes the full expanded program so execution is deterministic and diffable.
+- `override` lets you change targeted behavior without copying hundreds of lines from a preset.
+
+```bash
+cd apps/rag-application
+n3 expand app.ai > expanded.ai
+```
+
+Small expanded shape (example):
+
+```ai
+flow "rag.retrieve":
+  ...
+flow "rag.answer":
+  ...
+```
+
+## Progressive depth
+
+Beginner:
+
+```ai
+use preset "rag_chat":
+  title is "Assistant"
+```
+
+Advanced:
+
+```ai
+override flow "rag.retrieve":
+  ...
+```
+
+Start simple. Expand when needed.
 
 <p align="center">
   <img

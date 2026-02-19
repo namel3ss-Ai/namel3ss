@@ -195,6 +195,7 @@
       const configured = contract.get(next.id);
       if (configured && !next.label) next.label = configured.label;
       if (configured && !next.icon) next.icon = configured.icon;
+      if (configured && !next.style) next.style = configured.style;
       if (configured && !next.action_id) next.action_id = configured.action_id;
       if (configured && !next.action_type) next.action_type = configured.action_type;
       if (configured && !next.flow) next.flow = configured.flow;
@@ -218,6 +219,7 @@
     if (!id) return null;
     const label = typeof entry.label === "string" ? entry.label.trim() : "";
     const icon = typeof entry.icon === "string" ? entry.icon.trim().toLowerCase().replace(/[\s-]+/g, "_") : "";
+    const style = normalizeMessageActionStyle(entry.style);
     const actionId = typeof entry.action_id === "string" ? entry.action_id.trim() : "";
     const actionType = typeof entry.action_type === "string" ? entry.action_type.trim() : "";
     const flow = typeof entry.flow === "string" ? entry.flow.trim() : "";
@@ -228,12 +230,25 @@
       id: id,
       label: label,
       icon: icon,
+      style: style,
       action_id: actionId,
       action_type: actionType,
       flow: flow,
       target: target,
       payload: payload,
     };
+  }
+
+  function normalizeMessageActionStyle(value) {
+    if (typeof value !== "string") return "";
+    const style = value
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, "_");
+    if (style === "icon" || style === "icon_plain" || style === "text") {
+      return style;
+    }
+    return "";
   }
 
   function messageIdentity(message) {
@@ -381,7 +396,7 @@
       button.type = "button";
       button.className = "btn small ghost ui-chat-message-action-btn";
       const label = actionEntry.label || defaultMessageActionLabel(action);
-      setMessageActionVisual(button, { label: label, icon: actionEntry.icon || "" });
+      setMessageActionVisual(button, { label: label, icon: actionEntry.icon || "", style: actionEntry.style || "" });
       const dispatch = resolveMessageActionDispatch(actionEntry, action);
       if (action === "copy") {
         button.onclick = async () => {
@@ -475,10 +490,14 @@
   function setMessageActionVisual(button, config) {
     const label = config && typeof config.label === "string" ? config.label : "Action";
     const iconName = config && typeof config.icon === "string" ? config.icon : "";
+    const style = normalizeMessageActionStyle(config && typeof config.style === "string" ? config.style : "");
     button.setAttribute("aria-label", label);
     button.title = label;
-    if (iconName && typeof root.createIconNode === "function") {
+    if (iconName && style !== "text" && typeof root.createIconNode === "function") {
       button.classList.add("icon-button", "ui-chat-message-action-icon");
+      if (style === "icon_plain") {
+        button.classList.add("ui-chat-message-action-icon-plain");
+      }
       const icon = root.createIconNode(iconName, { size: "small", decorative: true });
       button.textContent = "";
       button.appendChild(icon);
@@ -509,6 +528,7 @@
       return;
     }
     const markerPattern = /\[(\d{1,3})\]/g;
+    let displayCounter = 0;
     let cursor = 0;
     let match = markerPattern.exec(text);
     while (match) {
@@ -518,11 +538,12 @@
       const marker = Number.parseInt(match[1], 10);
       const citationEntry = resolveInlineCitationEntry(citations, marker);
       if (citationEntry) {
+        displayCounter += 1;
         const button = document.createElement("button");
         button.type = "button";
         button.className = "ui-chat-inline-citation";
-        button.textContent = match[0];
-        button.title = citationEntry.title ? `Open source: ${citationEntry.title}` : "Open source";
+        button.textContent = String(displayCounter);
+        button.title = citationEntry.title ? `Open source ${displayCounter}: ${citationEntry.title}` : `Open source ${displayCounter}`;
         if (typeof citationEntry.citation_id === "string" && citationEntry.citation_id) {
           button.dataset.citationId = citationEntry.citation_id;
         }
@@ -2108,10 +2129,12 @@
       const target = resolveCitationTarget(entry);
       if (target && target.pageNumber) {
         meta.textContent = `Page ${target.pageNumber}`;
-      } else if (entry.url) {
-        meta.textContent = entry.url;
+      } else if (citationDisplayUrl(entry.url)) {
+        meta.textContent = "Source link available";
+      } else if (citationDisplaySource(entry.source_id)) {
+        meta.textContent = citationDisplaySource(entry.source_id);
       } else if (entry.source_id) {
-        meta.textContent = entry.source_id;
+        meta.textContent = "Source available";
       } else {
         meta.textContent = "Preview unavailable";
       }
@@ -2579,7 +2602,8 @@
       }
       const heading = document.createElement("div");
       heading.className = "ui-chat-citation-title";
-      heading.textContent = entry.title || "Source";
+      const entryIndex = Number.isFinite(Number(entry.index)) ? Math.max(1, Math.trunc(Number(entry.index))) : 1;
+      heading.textContent = `${entryIndex}. ${entry.title || "Source"}`;
       item.appendChild(heading);
       const target = resolveCitationTarget(entry);
       if (target && target.pageNumber) {
@@ -2588,17 +2612,18 @@
         meta.textContent = `Page ${target.pageNumber}`;
         item.appendChild(meta);
       }
-      if (entry.url) {
+      const displayUrl = citationDisplayUrl(entry.url);
+      if (displayUrl) {
         const link = document.createElement("a");
-        link.href = entry.url;
+        link.href = displayUrl;
         link.target = "_blank";
         link.rel = "noopener noreferrer";
-        link.textContent = entry.url;
+        link.textContent = displayUrl;
         item.appendChild(link);
-      } else if (entry.source_id) {
+      } else if (citationDisplaySource(entry.source_id)) {
         const sourceId = document.createElement("div");
         sourceId.className = "ui-chat-citation-source";
-        sourceId.textContent = entry.source_id;
+        sourceId.textContent = citationDisplaySource(entry.source_id);
         item.appendChild(sourceId);
       }
       if (target) {
@@ -2631,7 +2656,7 @@
     const normalized = [];
     entries.forEach((entry, idx) => {
       if (!entry || typeof entry !== "object") return;
-      const title = typeof entry.title === "string" && entry.title.trim() ? entry.title.trim() : "Source";
+      const title = sanitizeCitationTitle(entry.title, idx + 1);
       const payload = {
         citation_id:
           typeof entry.citation_id === "string" && entry.citation_id.trim()
@@ -2643,7 +2668,8 @@
             : idx + 1,
         title: title,
       };
-      if (typeof entry.url === "string" && entry.url.trim()) payload.url = entry.url.trim();
+      const safeUrl = citationDisplayUrl(entry.url);
+      if (safeUrl) payload.url = safeUrl;
       if (typeof entry.source_id === "string" && entry.source_id.trim()) payload.source_id = entry.source_id.trim();
       if (typeof entry.snippet === "string" && entry.snippet.trim()) payload.snippet = entry.snippet.trim();
       if (typeof entry.explain === "string" && entry.explain.trim()) payload.explain = entry.explain.trim();
@@ -2659,6 +2685,43 @@
       normalized.push(payload);
     });
     return normalized;
+  }
+
+  function sanitizeCitationTitle(value, fallbackIndex) {
+    const text = textValue(value);
+    if (!text) return `Source ${fallbackIndex}`;
+    if (looksLikeInternalCitationPath(text)) return `Source ${fallbackIndex}`;
+    return text;
+  }
+
+  function citationDisplaySource(value) {
+    const text = textValue(value);
+    if (!text) return "";
+    if (looksLikeInternalCitationPath(text)) return "";
+    return text;
+  }
+
+  function citationDisplayUrl(value) {
+    const text = textValue(value);
+    if (!text) return "";
+    if (looksLikeInternalCitationPath(text)) return "";
+    try {
+      const url = new URL(text, window.location.origin);
+      const protocol = String(url.protocol || "").toLowerCase();
+      if (protocol !== "http:" && protocol !== "https:") return "";
+      return url.toString();
+    } catch (_error) {
+      return "";
+    }
+  }
+
+  function looksLikeInternalCitationPath(value) {
+    const text = textValue(value).toLowerCase();
+    if (!text) return false;
+    if (text.indexOf("/tests/") >= 0 || text.indexOf("\\tests\\") >= 0) return true;
+    if (text.indexOf("__pycache__") >= 0) return true;
+    if (/\.(py|pyi|ipynb)([#?].*)?$/.test(text)) return true;
+    return false;
   }
 
   function renderMemory(child) {

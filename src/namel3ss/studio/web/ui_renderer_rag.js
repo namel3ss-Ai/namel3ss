@@ -17,7 +17,7 @@
       const button = document.createElement("button");
       button.type = "button";
       button.className = "ui-citation-chip";
-      button.textContent = `[${entry.index}]`;
+      button.textContent = `${entry.index}`;
       button.title = entry.title || "Source";
       button.setAttribute("aria-label", `Open source ${entry.index}: ${entry.title || "Source"}`);
       if (typeof entry.citation_id === "string" && entry.citation_id) {
@@ -87,9 +87,10 @@
       openCitation(toCitationEntry(el), previewButton, [toCitationEntry(el)]);
     };
     actions.appendChild(previewButton);
-    if (el && typeof el.url === "string" && el.url.trim()) {
+    const safeUrl = citationDisplayUrl(el && el.url);
+    if (safeUrl) {
       const link = document.createElement("a");
-      link.href = el.url;
+      link.href = safeUrl;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
       link.className = "btn small ghost";
@@ -324,8 +325,8 @@
           typeof entry.index === "number" && Number.isFinite(entry.index)
             ? Math.max(1, Math.trunc(entry.index))
             : idx + 1,
-        title: typeof entry.title === "string" && entry.title.trim() ? entry.title.trim() : "Source",
-        url: typeof entry.url === "string" ? entry.url : undefined,
+        title: sanitizeCitationTitle(entry.title, idx + 1),
+        url: citationDisplayUrl(entry.url) || undefined,
         source_id: typeof entry.source_id === "string" ? entry.source_id : undefined,
         snippet: typeof entry.snippet === "string" ? entry.snippet : undefined,
         chunk_id: typeof entry.chunk_id === "string" ? entry.chunk_id : undefined,
@@ -368,8 +369,10 @@
 
   function sourceMetaText(el) {
     if (!el || typeof el !== "object") return "Unavailable";
-    if (typeof el.source_id === "string" && el.source_id) return `Source id: ${el.source_id}`;
-    if (typeof el.url === "string" && el.url) return el.url;
+    const safeSourceId = citationDisplaySource(el.source_id);
+    if (safeSourceId) return `Source id: ${safeSourceId}`;
+    const safeUrl = citationDisplayUrl(el.url);
+    if (safeUrl) return safeUrl;
     if (typeof el.source === "string" && el.source) return el.source;
     return "Unavailable";
   }
@@ -401,9 +404,47 @@
       root.openCitationPreview(entry, opener, citations);
       return;
     }
-    if (entry && typeof entry.url === "string" && entry.url.trim()) {
-      window.open(entry.url, "_blank", "noopener,noreferrer");
+    const safeUrl = citationDisplayUrl(entry && entry.url);
+    if (safeUrl) {
+      window.open(safeUrl, "_blank", "noopener,noreferrer");
     }
+  }
+
+  function sanitizeCitationTitle(value, fallbackIndex) {
+    const label = typeof value === "string" ? value.trim() : "";
+    if (!label) return `Source ${fallbackIndex}`;
+    if (looksLikeInternalCitationPath(label)) return `Source ${fallbackIndex}`;
+    return label;
+  }
+
+  function citationDisplaySource(value) {
+    const text = typeof value === "string" ? value.trim() : "";
+    if (!text) return "";
+    if (looksLikeInternalCitationPath(text)) return "";
+    return text;
+  }
+
+  function citationDisplayUrl(value) {
+    const text = typeof value === "string" ? value.trim() : "";
+    if (!text) return "";
+    if (looksLikeInternalCitationPath(text)) return "";
+    try {
+      const url = new URL(text, window.location.origin);
+      const protocol = String(url.protocol || "").toLowerCase();
+      if (protocol !== "http:" && protocol !== "https:") return "";
+      return url.toString();
+    } catch (_error) {
+      return "";
+    }
+  }
+
+  function looksLikeInternalCitationPath(value) {
+    const text = typeof value === "string" ? value.trim().toLowerCase() : "";
+    if (!text) return false;
+    if (text.indexOf("/tests/") >= 0 || text.indexOf("\\tests\\") >= 0) return true;
+    if (text.indexOf("__pycache__") >= 0) return true;
+    if (/\.(py|pyi|ipynb)([#?].*)?$/.test(text)) return true;
+    return false;
   }
 
   function normalizeTrustValue(value) {
