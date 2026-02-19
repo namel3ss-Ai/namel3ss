@@ -29,21 +29,19 @@ def test_dispatch_run_defaults_to_production_mode(monkeypatch):
 def test_dispatch_run_accepts_studio_subcommand(monkeypatch):
     seen: dict[str, object] = {}
 
-    def fake_run(args, *, ui_mode=None, diagnostics_enabled=None):
-        seen["args"] = list(args)
-        seen["mode"] = ui_mode
-        seen["env_mode"] = os.getenv("N3_UI_MODE")
-        seen["diagnostics"] = diagnostics_enabled
+    def fake_studio(path, port, dry):
+        seen["path"] = path
+        seen["port"] = port
+        seen["dry"] = dry
         return 0
 
-    monkeypatch.setattr("namel3ss.cli.run_entry.run_run_command", fake_run)
+    monkeypatch.setattr("namel3ss.cli.run_entry.run_studio", fake_studio)
     code = dispatch_run_command(["studio", "app.ai", "--dry"])
 
     assert code == 0
-    assert seen["args"] == ["app.ai", "--dry"]
-    assert seen["mode"] == "studio"
-    assert seen["env_mode"] == "studio"
-    assert seen["diagnostics"] is False
+    assert seen["path"] == "app.ai"
+    assert seen["port"] == 7333
+    assert seen["dry"] is True
 
 
 def test_dispatch_run_ignores_env_mode_without_explicit_studio(monkeypatch):
@@ -125,25 +123,27 @@ def test_dispatch_run_sets_diagnostics_flag(monkeypatch):
     assert seen["env_diagnostics"] == "true"
 
 
-def test_dispatch_run_warns_when_diagnostics_flag_is_used_in_studio(monkeypatch, capsys):
+def test_dispatch_run_allows_diagnostics_flag_in_studio(monkeypatch, capsys):
     seen: dict[str, object] = {}
 
-    def fake_run(args, *, ui_mode=None, diagnostics_enabled=None):
-        seen["args"] = list(args)
-        seen["mode"] = ui_mode
-        seen["env_mode"] = os.getenv("N3_UI_MODE")
-        seen["diagnostics"] = diagnostics_enabled
-        seen["env_diagnostics"] = os.getenv("N3_UI_DIAGNOSTICS")
+    def fake_studio(path, port, dry):
+        seen["path"] = path
+        seen["port"] = port
+        seen["dry"] = dry
         return 0
 
-    monkeypatch.setattr("namel3ss.cli.run_entry.run_run_command", fake_run)
+    monkeypatch.setattr("namel3ss.cli.run_entry.run_studio", fake_studio)
     code = dispatch_run_command(["studio", "app.ai", "--diagnostics"])
     captured = capsys.readouterr()
 
     assert code == 0
-    assert seen["args"] == ["app.ai"]
-    assert seen["mode"] == "studio"
-    assert seen["env_mode"] == "studio"
-    assert seen["diagnostics"] is True
-    assert seen["env_diagnostics"] == "true"
-    assert "--diagnostics is ignored in Studio mode" in captured.err
+    assert seen["path"] == "app.ai"
+    assert seen["port"] == 7333
+    assert seen["dry"] is False
+    assert captured.err == ""
+
+
+def test_dispatch_run_rejects_runtime_flags_in_studio_mode():
+    with pytest.raises(Namel3ssError) as exc:
+        dispatch_run_command(["studio", "app.ai", "--target", "service"])
+    assert "Unsupported flag '--target' for Studio mode." in str(exc.value)

@@ -58,14 +58,47 @@ def test_rag_ui_invalid_base():
     assert "Unknown rag_ui base" in str(err.value)
 
 
-def test_rag_ui_requires_binds():
+def test_rag_ui_allows_omitting_binds():
     source = '''page "RAG":
   rag_ui:
     base is "assistant"
 '''
-    with pytest.raises(Namel3ssError) as err:
-        parse_program(source)
-    assert "rag_ui requires a binds block" in str(err.value)
+    program = parse_program(source)
+    rag = program.pages[0].items[0]
+    assert isinstance(rag, ast.RagUIBlock)
+    assert rag.base == "assistant"
+    assert rag.bindings is None
+
+
+def test_rag_ui_research_allows_default_state_binds():
+    source = '''page "RAG":
+  rag_ui:
+    base is "research"
+    binds:
+      on_send calls flow "answer_question"
+'''
+    program = parse_program(source)
+    rag = program.pages[0].items[0]
+    assert isinstance(rag, ast.RagUIBlock)
+    assert rag.base == "research"
+    assert isinstance(rag.bindings, ast.RagUIBindings)
+    assert rag.bindings.on_send == "answer_question"
+    assert rag.bindings.messages is None
+    assert rag.bindings.citations is None
+    assert rag.bindings.scope_options is None
+    assert rag.bindings.scope_active is None
+
+
+def test_rag_ui_research_allows_omitting_binds():
+    source = '''page "RAG":
+  rag_ui:
+    base is "research"
+'''
+    program = parse_program(source)
+    rag = program.pages[0].items[0]
+    assert isinstance(rag, ast.RagUIBlock)
+    assert rag.base == "research"
+    assert rag.bindings is None
 
 
 def test_rag_ui_parses_shell_bindings():

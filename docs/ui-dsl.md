@@ -219,7 +219,11 @@ Rules:
 - Bases: `assistant`, `evidence`, `research`.
 - Features: `conversation`, `evidence`, `research_tools`.
 - Conversation defaults include deterministic `chat.stream_state` for replay-safe streaming status.
-- `binds:` is required when features are enabled (messages + on_send for conversation; citations for evidence; scope_options + scope_active for research_tools).
+- `binds:` is optional.
+- Missing state binds default deterministically by feature:
+  - `conversation`: `on_send -> flow "ask_question"`, `messages -> state.chat.messages`
+  - `evidence`: `citations -> state.chat.citations`
+  - `research_tools`: `scope_options -> state.chat.scope_options`, `scope_active -> state.chat.scope_active`
 - Allowed slots: `header`, `sidebar`, `drawer`, `chat`, `composer`.
 - Theme token overrides (size, radius, density, font, color_scheme) may appear inside `rag_ui` and apply after runtime settings.
 
@@ -256,8 +260,20 @@ page "RAG Shell":
 
     slots:
       sidebar:
-        section "Sources":
-          text is "Custom sidebar"
+            section "Sources":
+              text is "Custom sidebar"
+```
+
+Minimal research shell (<10 lines of code):
+```ai
+spec is "1.0"
+capabilities:
+  ui_rag
+flow "ask_question":
+  return "ok"
+page "RAG":
+  rag_ui:
+    base is "research"
 ```
 
 Structural:

@@ -9,10 +9,15 @@ from namel3ss.config.loader import load_config
 from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
+from namel3ss.runtime.capabilities.contract_fields import attach_capability_manifest_fields
+from namel3ss.runtime.errors.normalize import merge_runtime_errors
+from namel3ss.runtime.providers.guardrails import provider_guardrail_diagnostics
 from namel3ss.runtime.server.headless_api import build_manifest_hash
 from namel3ss.runtime.ui.renderer.manifest_parity_guard import require_renderer_manifest_parity
 from namel3ss.studio.renderer_registry.manifest_loader import load_renderer_manifest_json
 from namel3ss.studio.startup import validate_renderer_registry_startup
+from namel3ss.ui.manifest.display_mode import DISPLAY_MODE_STUDIO
+from namel3ss.ui.manifest.elements.runtime_error import inject_runtime_error_elements
 from namel3ss.validation_entrypoint import build_static_manifest
 
 
@@ -26,6 +31,7 @@ _MANIFEST_PARITY_IGNORED_KEYS = {
     "persistence_backend",
     "run_artifact",
     "state_schema_version",
+    "warnings",
 }
 
 
@@ -157,6 +163,15 @@ def build_static_startup_manifest_payload(
         diagnostics_enabled=diagnostics_enabled,
     )
     manifest = payload if isinstance(payload, dict) else {}
+    manifest, capability_errors = attach_capability_manifest_fields(
+        manifest,
+        program_ir=program,
+        config=config,
+    )
+    runtime_errors = provider_guardrail_diagnostics(config) if ui_mode == DISPLAY_MODE_STUDIO else []
+    runtime_errors = merge_runtime_errors(runtime_errors, capability_errors)
+    if runtime_errors:
+        inject_runtime_error_elements(manifest, runtime_errors)
     if warnings:
         manifest = dict(manifest)
         manifest["warnings"] = [warning.to_dict() for warning in warnings if hasattr(warning, "to_dict")]

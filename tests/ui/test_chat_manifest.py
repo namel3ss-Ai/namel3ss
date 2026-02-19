@@ -135,7 +135,7 @@ def _chat_element(manifest: dict) -> dict:
 
 def test_chat_manifest_includes_children_and_actions():
     program = lower_ir_program(SOURCE)
-    manifest = build_manifest(program, state=STATE)
+    manifest = build_manifest(program, state=STATE, diagnostics_enabled=True)
     children = _chat_children(manifest)
 
     messages = children["messages"]
@@ -272,6 +272,28 @@ def test_chat_manifest_supports_structured_message_actions():
     assert messages[0]["actions"] == [
         {"id": "copy", "label": "Copy", "icon": "content_copy"},
         {"id": "view_sources", "label": "Sources", "icon": "source_notes"},
+    ]
+
+
+def test_chat_manifest_supports_structured_message_action_style():
+    program = lower_ir_program(SOURCE)
+    state = {
+        "chat": {
+            "messages": [
+                {
+                    "role": "assistant",
+                    "content": "Grounded response.",
+                    "actions": [
+                        {"id": "copy", "label": "Copy", "icon": "content_copy", "style": "icon-plain"},
+                    ],
+                }
+            ]
+        }
+    }
+    manifest = build_manifest(program, state=state)
+    messages = _chat_children(manifest)["messages"]["messages"]
+    assert messages[0]["actions"] == [
+        {"id": "copy", "label": "Copy", "icon": "content_copy", "style": "icon_plain"},
     ]
 
 

@@ -1,13 +1,26 @@
 from __future__ import annotations
 
-import html
 import re
-import zipfile
-from io import BytesIO
 import zlib
 
+from namel3ss.ingestion.extract_pdf_decoding import (
+    decode_pdf_hex_string as _decode_pdf_hex_string,
+    decode_pdf_string as _decode_pdf_string,
+    is_probable_text_stream as _is_probable_text_stream,
+    looks_like_readable_text as _looks_like_readable_text,
+)
+from namel3ss.ingestion.extract_text_utils import (
+    extract_docx_text as _extract_docx_text,
+    extract_pdf_pages_with_ocr as _extract_pdf_pages_with_ocr,
+    extract_pdf_pages_with_pypdf as _extract_pdf_pages_with_pypdf,
+    extract_text_bytes as _extract_text_bytes,
+    has_non_empty_pages as _has_non_empty_pages,
+    has_readable_pages as _has_readable_pages,
+    join_pages_text as _join_pages_text,
+    normalize_extracted_pages as _normalize_extracted_pages,
+    normalize_extracted_text as _normalize_extracted_text,
+)
 from namel3ss.runtime.ingest.extractors.ocr_backend import extract_image_text_with_ocr
-from namel3ss.runtime.ingest.extractors.pdf_ocr_extractor import create_default_pdf_ocr_extractor
 
 
 _PDF_STRING_RE = re.compile(rb"\((?:\\.|[^\\)])*\)")
@@ -21,9 +34,6 @@ _PDF_REF_RE = re.compile(rb"(\d+)\s+(\d+)\s+R")
 _PDF_TYPE_RE = re.compile(rb"/Type\s*/([A-Za-z]+)\b")
 _PDF_PAGES_RE = re.compile(rb"/Pages\s+(\d+)\s+(\d+)\s+R")
 _PDF_KIDS_RE = re.compile(rb"/Kids\s*\[(.*?)\]", re.S)
-
-_DEFAULT_PDF_OCR_EXTRACTOR = None
-
 
 def extract_text(content: bytes, *, detected: dict, mode: str) -> tuple[str, str]:
     kind = str(detected.get("type") or "text")
@@ -113,45 +123,6 @@ def extract_pages_fallback(content: bytes, *, detected: dict) -> tuple[list[str]
     if kind == "image":
         return _split_pages(_extract_image_ocr(content)), "ocr"
     return _split_pages(_extract_text_bytes(content)), "primary"
-
-
-def _extract_text_bytes(content: bytes) -> str:
-    if not content:
-        return ""
-    text = content.decode("utf-8", errors="replace")
-    if _replacement_ratio(text) > 0.05:
-        return content.decode("latin-1", errors="replace")
-    return text
-
-
-def _replacement_ratio(text: str) -> float:
-    if not text:
-        return 0.0
-    replaced = text.count("\ufffd")
-    return replaced / max(len(text), 1)
-
-
-def _extract_docx_text(content: bytes) -> str:
-    if not content:
-        return ""
-    try:
-        with zipfile.ZipFile(BytesIO(content)) as archive:
-            data = archive.read("word/document.xml")
-    except Exception:
-        return ""
-    try:
-        xml_text = data.decode("utf-8", errors="replace")
-    except Exception:
-        xml_text = data.decode("latin-1", errors="replace")
-    paragraphs = []
-    for para in re.findall(r"<w:p[\\s\\S]*?</w:p>", xml_text):
-        runs = re.findall(r"<w:t[^>]*>(.*?)</w:t>", para)
-        if not runs:
-            continue
-        text = "".join(html.unescape(run) for run in runs)
-        if text.strip():
-            paragraphs.append(text.strip())
-    return "\n\n".join(paragraphs)
 
 
 def _extract_pdf_text(content: bytes, *, layout: bool) -> str:
@@ -422,273 +393,6 @@ def _iter_pdf_streams(content: bytes) -> list[tuple[bytes, bytes]]:
         streams.append((stream_data.strip(b"\r\n"), header))
         idx = end.end()
     return streams
-
-
-def _decode_pdf_string(raw: bytes) -> str:
-    output = bytearray()
-    idx = 0
-    while idx < len(raw):
-        char = raw[idx]
-        if char == 92:  # backslash
-            idx += 1
-            if idx >= len(raw):
-                break
-            esc = raw[idx]
-            if esc in b"nrtbf":
-                output.extend({"n": b"\n", "r": b"\r", "t": b"\t", "b": b"\b", "f": b"\f"}[chr(esc)])
-            elif esc in b"\\()":
-                output.append(esc)
-            elif 48 <= esc <= 55:
-                octal = bytes([esc])
-                for _ in range(2):
-                    if idx + 1 < len(raw) and 48 <= raw[idx + 1] <= 55:
-                        idx += 1
-                        octal += bytes([raw[idx]])
-                    else:
-                        break
-                try:
-                    output.append(int(octal, 8))
-                except Exception:
-                    pass
-            else:
-                output.append(esc)
-        else:
-            output.append(char)
-        idx += 1
-    return _decode_pdf_payload(bytes(output))
-
-
-def _decode_pdf_hex_string(raw: bytes) -> str:
-    if not raw:
-        return ""
-    compact = b"".join(raw.split())
-    if not compact:
-        return ""
-    if len(compact) % 2:
-        compact += b"0"
-    try:
-        payload = bytes.fromhex(compact.decode("ascii"))
-    except Exception:
-        return ""
-    return _decode_pdf_payload(payload)
-
-
-def _decode_pdf_payload(payload: bytes) -> str:
-    if not payload:
-        return ""
-    try:
-        if payload.startswith(b"\xfe\xff") or payload.startswith(b"\xff\xfe"):
-            return _normalize_extracted_text(payload.decode("utf-16", errors="ignore"))
-    except Exception:
-        pass
-    if payload.count(b"\x00") * 2 >= len(payload):
-        try:
-            return _normalize_extracted_text(payload.decode("utf-16-be", errors="ignore"))
-        except Exception:
-            return ""
-    try:
-        return _normalize_extracted_text(payload.decode("utf-8"))
-    except Exception:
-        pass
-    for encoding in ("cp1252", "latin-1"):
-        try:
-            decoded = payload.decode(encoding, errors="ignore")
-        except Exception:
-            continue
-        return _normalize_extracted_text(decoded)
-    return ""
-
-
-def _is_probable_text_stream(payload: bytes) -> bool:
-    if not payload:
-        return False
-    if b"BT" in payload and b"ET" in payload:
-        return True
-    if b"Tj" in payload or b"TJ" in payload:
-        return True
-    sample = payload[:4096]
-    if not sample:
-        return False
-    control = 0
-    for value in sample:
-        if value == 0:
-            control += 1
-            continue
-        if value < 9:
-            control += 1
-            continue
-        if 14 <= value < 32:
-            control += 1
-            continue
-        if value == 127:
-            control += 1
-    return control <= len(sample) // 8
-
-
-def _looks_like_readable_text(text: str) -> bool:
-    if not text:
-        return False
-    cleaned = "".join(ch for ch in text if ch in {"\n", "\t", " "} or ord(ch) >= 32).strip()
-    if len(cleaned) < 2:
-        return False
-    alnum = sum(1 for ch in cleaned if ch.isalnum())
-    return alnum > 0
-
-
-def _extract_pdf_pages_with_pypdf(content: bytes) -> list[str] | None:
-    if not content:
-        return None
-    try:
-        from pypdf import PdfReader  # type: ignore
-    except Exception:
-        return None
-    try:
-        reader = PdfReader(BytesIO(content))
-    except Exception:
-        return None
-    pages: list[str] = []
-    for page in list(getattr(reader, "pages", []) or []):
-        text = ""
-        try:
-            extracted = page.extract_text()
-            if isinstance(extracted, str):
-                text = extracted
-        except Exception:
-            text = ""
-        pages.append(_normalize_extracted_text(text).strip())
-    return pages
-
-
-def _extract_pdf_pages_with_ocr(content: bytes) -> list[str] | None:
-    extractor = _get_pdf_ocr_extractor()
-    if extractor is None or not extractor.is_available():
-        return None
-    try:
-        result = extractor.extract(content, content_type="application/pdf")
-    except Exception:
-        return None
-    pages: list[str] = []
-    for page in result.pages:
-        text = page.text if isinstance(page.text, str) else ""
-        pages.append(_normalize_extracted_text(text).strip())
-    return pages
-
-
-def _get_pdf_ocr_extractor():
-    global _DEFAULT_PDF_OCR_EXTRACTOR
-    if _DEFAULT_PDF_OCR_EXTRACTOR is None:
-        _DEFAULT_PDF_OCR_EXTRACTOR = create_default_pdf_ocr_extractor()
-    return _DEFAULT_PDF_OCR_EXTRACTOR
-
-
-def _join_pages_text(pages: list[str] | None) -> str:
-    if not pages:
-        return ""
-    return "\f".join(page for page in pages if isinstance(page, str))
-
-
-def _has_non_empty_pages(pages: list[str] | None) -> bool:
-    if pages is None:
-        return False
-    for page in pages:
-        if isinstance(page, str) and page.strip():
-            return True
-    return False
-
-
-def _normalize_extracted_pages(pages: list[str] | None) -> list[str] | None:
-    if pages is None:
-        return None
-    normalized: list[str] = []
-    for page in pages:
-        if isinstance(page, str):
-            normalized.append(_normalize_extracted_text(page).strip())
-        else:
-            normalized.append("")
-    return normalized
-
-
-def _normalize_extracted_text(text: str) -> str:
-    if not text:
-        return ""
-    cleaned = text.replace("\r\n", "\n").replace("\r", "\n")
-    return _repair_utf8_mojibake(cleaned)
-
-
-def _repair_utf8_mojibake(text: str) -> str:
-    if not text:
-        return text
-    best = text
-    best_score = _readability_score(text)
-    for source_encoding in ("latin-1", "cp1252"):
-        try:
-            candidate = text.encode(source_encoding, errors="strict").decode("utf-8", errors="strict")
-        except Exception:
-            continue
-        candidate_score = _readability_score(candidate)
-        if candidate_score > best_score + 1.0:
-            best = candidate
-            best_score = candidate_score
-    return best
-
-
-def _has_readable_pages(pages: list[str] | None) -> bool:
-    if not _has_non_empty_pages(pages):
-        return False
-    if pages is None:
-        return False
-    for page in pages:
-        if _is_readable_page(page):
-            return True
-    return False
-
-
-def _is_readable_page(text: str | None) -> bool:
-    if not isinstance(text, str):
-        return False
-    trimmed = text.strip()
-    if len(trimmed) < 2:
-        return False
-    letter_count = sum(1 for ch in trimmed if ch.isalpha())
-    if letter_count == 0:
-        return False
-    mojibake_pairs = _mojibake_pair_count(trimmed)
-    if mojibake_pairs >= 3 and mojibake_pairs * 5 >= letter_count:
-        return False
-    return _readability_score(trimmed) > 0
-
-
-def _mojibake_pair_count(text: str) -> int:
-    count = 0
-    if len(text) < 2:
-        return count
-    for idx in range(len(text) - 1):
-        ch = text[idx]
-        nxt = text[idx + 1]
-        if ch in {"Ã", "Â", "â"} and 0x80 <= ord(nxt) <= 0xBF:
-            count += 1
-    return count
-
-
-def _readability_score(text: str) -> float:
-    if not text:
-        return -1000.0
-    letters = sum(1 for ch in text if ch.isalpha())
-    digits = sum(1 for ch in text if ch.isdigit())
-    spaces = sum(1 for ch in text if ch.isspace())
-    controls = sum(1 for ch in text if ord(ch) < 32 and ch not in "\n\r\t")
-    replacement = text.count("\ufffd")
-    mojibake_leads = sum(1 for ch in text if ch in {"Ã", "Â", "â"})
-    mojibake_pairs = _mojibake_pair_count(text)
-    return (
-        float(letters)
-        + float(digits) * 0.35
-        + float(spaces) * 0.1
-        - float(controls) * 3.0
-        - float(replacement) * 6.0
-        - float(mojibake_leads) * 1.25
-        - float(mojibake_pairs) * 4.0
-    )
 
 
 def _extract_image_primary(content: bytes) -> str:

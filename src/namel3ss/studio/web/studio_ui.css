@@ -1052,6 +1052,9 @@ body.n3-resize-dragging * {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 .ui-chat-messages {
   display: flex;
@@ -1221,6 +1224,7 @@ body.n3-resize-dragging * {
   resize: vertical;
   background: transparent;
   box-shadow: none;
+  font-family: inherit;
   font-size: 14px;
   line-height: 1.45;
 }
@@ -1230,6 +1234,7 @@ body.n3-resize-dragging * {
   padding: 10px 0;
   border: 1px solid #eaeaea;
   border-radius: 8px;
+  font-family: inherit;
 }
 .ui-chat-composer-attach {
   flex: 0 0 auto;

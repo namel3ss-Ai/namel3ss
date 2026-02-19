@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import os
-import sys
 from contextlib import contextmanager
 from pathlib import Path
 
 from namel3ss.cli.run_mode import run_run_command
+from namel3ss.cli.studio_mode import run_studio
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.guidance import build_guidance_message
 from namel3ss.ui.manifest.display_mode import (
@@ -21,11 +21,10 @@ _ENV_UI_DIAGNOSTICS = "N3_UI_DIAGNOSTICS"
 
 def dispatch_run_command(args: list[str]) -> int:
     mode = _resolve_requested_mode(args)
-    diagnostics_flag_in_args = "--diagnostics" in args
     diagnostics_enabled = _resolve_requested_diagnostics(args)
-    if mode == DISPLAY_MODE_STUDIO and diagnostics_flag_in_args:
-        print("Warning: --diagnostics is ignored in Studio mode (Studio already includes diagnostics).", file=sys.stderr)
     normalized_args = _strip_mode_tokens(args)
+    if mode == DISPLAY_MODE_STUDIO:
+        return _dispatch_studio_alias(normalized_args)
     with _temporary_ui_mode(mode):
         with _temporary_diagnostics_flag(diagnostics_enabled):
             return run_run_command(
@@ -65,6 +64,46 @@ def _strip_mode_tokens(args: list[str]) -> list[str]:
 def _resolve_requested_diagnostics(args: list[str]) -> bool:
     env_enabled = _env_diagnostics_enabled()
     return "--diagnostics" in args or env_enabled
+
+
+def _dispatch_studio_alias(args: list[str]) -> int:
+    app_path: str | None = None
+    port = 7333
+    dry = False
+    i = 0
+    while i < len(args):
+        token = args[i]
+        if token == "--port":
+            if i + 1 >= len(args):
+                raise Namel3ssError("Port requires a value. Example: --port 7340")
+            try:
+                port = int(args[i + 1])
+            except ValueError as err:
+                raise Namel3ssError("Port must be an integer") from err
+            i += 2
+            continue
+        if token == "--dry":
+            dry = True
+            i += 1
+            continue
+        if token in {"--no-open", "--diagnostics"}:
+            i += 1
+            continue
+        if token.startswith("-"):
+            raise Namel3ssError(
+                build_guidance_message(
+                    what=f"Unsupported flag '{token}' for Studio mode.",
+                    why="n3 run studio delegates to the Studio inspector command.",
+                    fix="Use only --port/--dry with n3 run studio, or use n3 run for runtime flags.",
+                    example="n3 run studio app.ai --port 7340",
+                )
+            )
+        if app_path is None:
+            app_path = token
+            i += 1
+            continue
+        raise Namel3ssError("Studio accepts only one app path.")
+    return run_studio(app_path, port, dry)
 
 
 def _env_diagnostics_enabled() -> bool:

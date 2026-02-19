@@ -334,28 +334,8 @@ def _validate_required_binds(
     line: int | None,
     column: int | None,
 ) -> None:
-    requires_conversation = "conversation" in set(features)
-    requires_evidence = "evidence" in set(features)
-    requires_research = "research_tools" in set(features)
     if binds is None:
-        if requires_conversation or requires_evidence or requires_research:
-            raise Namel3ssError("rag_ui requires a binds block.", line=line, column=column)
         return
-    if requires_conversation:
-        if binds.messages is None:
-            raise Namel3ssError("rag_ui binds must include messages from is state.<path>.", line=line, column=column)
-        if not binds.on_send:
-            raise Namel3ssError("rag_ui binds must include on_send calls flow \"<name>\".", line=line, column=column)
-    if requires_evidence:
-        if binds.citations is None:
-            raise Namel3ssError("rag_ui binds must include citations from is state.<path>.", line=line, column=column)
-    if requires_research:
-        if binds.scope_options is None or binds.scope_active is None:
-            raise Namel3ssError(
-                "rag_ui research_tools requires scope_options and scope_active bindings.",
-                line=line,
-                column=column,
-            )
     _validate_shell_binds(binds, line=line, column=column)
 
 

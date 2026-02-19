@@ -5,6 +5,7 @@ from namel3ss.ir import nodes as ir
 
 _ALLOWED_ATTACHMENT_TYPES = {"citation", "file", "image"}
 _ALLOWED_COMPOSER_SEND_STYLES = {"icon", "text"}
+_ALLOWED_ACTION_STYLES = {"icon", "icon_plain", "text"}
 _DEFAULT_COMPOSER_PLACEHOLDER = "Ask about your documents... use #project or @document"
 _SNIPPET_MAX_LENGTH = 220
 
@@ -184,6 +185,19 @@ def _normalize_action_entry(entry: object, *, line: int | None, column: int | No
         text = icon.strip().lower()
         if text:
             normalized["icon"] = text
+    style = entry.get("style")
+    if style is not None:
+        if not isinstance(style, str):
+            raise Namel3ssError("Chat action style must be text.", line=line, column=column)
+        text = "_".join(style.strip().lower().replace("-", " ").split())
+        if text:
+            if text not in _ALLOWED_ACTION_STYLES:
+                raise Namel3ssError(
+                    "Chat action style must be icon, icon_plain, or text.",
+                    line=line,
+                    column=column,
+                )
+            normalized["style"] = text
     action_id = entry.get("action_id")
     if action_id is not None:
         if not isinstance(action_id, str):

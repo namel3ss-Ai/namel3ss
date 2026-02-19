@@ -137,7 +137,7 @@ def build_manifest(
     append_capability_deprecation_warnings(capabilities, warnings)
     ui_theme_enabled = has_ui_theming_capability(capabilities)
     runtime_theme_settings = theme_settings_from_state(state_base) if ui_theme_enabled else {}
-    diagnostics_enabled = bool(diagnostics_enabled or display_mode == DISPLAY_MODE_STUDIO)
+    diagnostics_enabled = bool(diagnostics_enabled)
     upload_requests_with_location = collect_upload_requests(program)
     upload_requests = [public_upload_request(entry) for entry in upload_requests_with_location]
     upload_reference_names = tuple(sorted(collect_upload_reference_names(program)))

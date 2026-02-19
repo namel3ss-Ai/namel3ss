@@ -32,17 +32,17 @@ def apply_display_mode_filter(
     diagnostics_categories: tuple[str, ...] | None = None,
 ) -> dict:
     mode = normalize_display_mode(display_mode, default=DISPLAY_MODE_STUDIO)
+    diagnostics_on = bool(diagnostics_enabled)
     filtered = deepcopy(manifest if isinstance(manifest, dict) else {})
     filtered["mode"] = mode
-    filtered["diagnostics_enabled"] = bool(diagnostics_enabled or mode == DISPLAY_MODE_STUDIO)
-    if mode == DISPLAY_MODE_STUDIO:
+    filtered["diagnostics_enabled"] = diagnostics_on
+    if mode == DISPLAY_MODE_STUDIO and diagnostics_on:
         _strip_internal_action_source(filtered.get("actions"))
         return filtered
 
     pages = filtered.get("pages")
     kept_element_ids: set[str] = set()
     categories = set(diagnostics_categories or ())
-    diagnostics_on = bool(diagnostics_enabled)
     if isinstance(pages, list):
         filtered_pages: list[dict] = []
         for page in pages:

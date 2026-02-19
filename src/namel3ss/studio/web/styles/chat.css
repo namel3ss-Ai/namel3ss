@@ -45,6 +45,14 @@
   line-height: 1.45;
 }
 
+.ui-chat-message-action-btn.ui-chat-message-action-icon.ui-chat-message-action-icon-plain {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
 .ui-chat-inline-citation {
   border: 0;
   background: transparent;
@@ -118,14 +126,19 @@
 
 .ui-chat-composer-surface {
   background: var(--n3-surface-raised, #ffffff);
-  border-color: color-mix(in srgb, var(--n3-border-color, #d4dbe7) 30%, transparent);
+  border: 1px solid #ffffff;
+}
+
+.ui-chat-composer-surface:focus-within {
+  border-color: #ffffff;
 }
 
 .ui-chat-composer textarea,
 .ui-chat-composer input,
 .ui-chat-composer-message {
-  border-color: transparent;
+  border: 1px solid #ffffff;
   background: transparent;
+  box-shadow: none;
 }
 
 .ui-chat-composer-message {
@@ -245,7 +258,7 @@
 .ui-chat-message-actions .btn:focus-visible,
 .ui-citation-chip:focus-visible,
 .ui-chat-inline-citation:focus-visible {
-  outline: 2px solid var(--n3-chat-focus);
+  outline: 2px solid #ffffff;
   outline-offset: 2px;
 }
 

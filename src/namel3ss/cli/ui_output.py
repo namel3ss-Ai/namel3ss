@@ -19,7 +19,7 @@ Start
   n3 aid                          # support template
   n3 list                         # list templates
   n3 run [file.ai]                # run app in browser (production UI, default: ./app.ai)
-  n3 run studio [file.ai]         # run app with Studio instrumentation enabled
+  n3 run studio [file.ai]         # run Studio inspector (alias of `n3 studio`)
   n3 run [file.ai] --studio       # Studio mode flag alias
   n3 serve [file.ai]              # run app as long-running service mode
   n3 dev [file.ai]                # dev loop, alias of run (browser)
@@ -121,7 +121,7 @@ Notes:
   file.ai is optional and defaults to ./app.ai when present
   if app.ai is missing: run `n3 <command> <file.ai>` or create app.ai
   legacy forms like `n3 run app.ai --target T --json` and `n3 actions app.ai json` remain supported
-  n3 run defaults to production UI mode; use `n3 run studio` (or --studio) for instrumentation
+  n3 run defaults to production UI mode; use `n3 studio` (or `n3 run studio`) for Studio
   Studio inspects; the browser renders the app
 """
     print(usage.strip())
