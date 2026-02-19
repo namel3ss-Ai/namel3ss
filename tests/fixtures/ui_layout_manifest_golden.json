@@ -1,6 +1,6 @@
 {
   "actions": {},
-  "diagnostics_enabled": true,
+  "diagnostics_enabled": false,
   "i18n": {
     "available_locales": [
       "en"
@@ -193,19 +193,7 @@
               "line": 22,
               "page": "Layout Demo",
               "page_slug": "layout_demo",
-              "then_children": [
-                {
-                  "column": 9,
-                  "element_id": "page.layout_demo.text.2.1.0.0.0",
-                  "index": 0,
-                  "line": 23,
-                  "page": "Layout Demo",
-                  "page_slug": "layout_demo",
-                  "type": "text",
-                  "value": "Main On",
-                  "visible": false
-                }
-              ],
+              "then_children": [],
               "type": "conditional.if"
             },
             {

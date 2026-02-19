@@ -237,6 +237,9 @@
             }
           ],
           "column": 3,
+          "composer_attach_upload": null,
+          "composer_placeholder": "Ask about your documents... use #project or @document",
+          "composer_send_style": "icon",
           "group_messages": true,
           "line": 40,
           "show_avatars": false,

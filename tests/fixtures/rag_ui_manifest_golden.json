@@ -46,7 +46,7 @@
       "type": "ingestion_run"
     }
   },
-  "diagnostics_enabled": true,
+  "diagnostics_enabled": false,
   "i18n": {
     "available_locales": [
       "en"
@@ -240,45 +240,13 @@
                                   "type": "thinking",
                                   "user_visible": true,
                                   "when": "state.loading"
-                                },
-                                {
-                                  "citations": [
-                                    {
-                                      "snippet": "Example snippet",
-                                      "title": "Doc A",
-                                      "url": "https://example.com"
-                                    }
-                                  ],
-                                  "column": 3,
-                                  "debug_only": true,
-                                  "density": "regular",
-                                  "element_id": "page.rag_shell.citations.0.1.1.0.0.0.0.2",
-                                  "font": "md",
-                                  "index": 2,
-                                  "line": 14,
-                                  "origin": {
-                                    "rag_ui": {
-                                      "base": "evidence",
-                                      "features": [
-                                        "conversation",
-                                        "evidence"
-                                      ],
-                                      "region": "main"
-                                    }
-                                  },
-                                  "page": "RAG Shell",
-                                  "page_slug": "rag_shell",
-                                  "radius": "lg",
-                                  "size": "compact",
-                                  "source": "state.chat.citations",
-                                  "spacing": {
-                                    "item_gap": "s"
-                                  },
-                                  "type": "citations"
                                 }
                               ],
                               "citations_enhanced": false,
                               "column": 3,
+                              "composer_attach_upload": "",
+                              "composer_placeholder": "Ask about your documents... use #project or @document",
+                              "composer_send_style": "icon",
                               "density": "regular",
                               "element_id": "page.rag_shell.chat.0.1.1.0.0.0.0",
                               "font": "md",
@@ -382,6 +350,9 @@
                               ],
                               "citations_enhanced": false,
                               "column": 3,
+                              "composer_attach_upload": "",
+                              "composer_placeholder": "Ask about your documents... use #project or @document",
+                              "composer_send_style": "icon",
                               "density": "regular",
                               "element_id": "page.rag_shell.chat.0.1.1.0.0.1.0",
                               "font": "md",

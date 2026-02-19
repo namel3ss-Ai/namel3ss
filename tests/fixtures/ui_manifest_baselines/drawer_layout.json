@@ -55,7 +55,7 @@
         "type": "open_drawer"
       }
     },
-    "diagnostics_enabled": true,
+    "diagnostics_enabled": false,
     "i18n": {
       "available_locales": [
         "en"

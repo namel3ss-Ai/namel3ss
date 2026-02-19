@@ -17,9 +17,6 @@
       ".ui-section-title": [
         "font-size: 14px; font-weight: 600; letter-spacing: 0.2px"
       ],
-      ".ui-table": [
-        "width: 100%; border-collapse: collapse; font-size: 13px"
-      ],
       ".ui-upload": [
         "display: flex; flex-direction: column; gap: 10px"
       ],
@@ -34,26 +31,6 @@
   },
   "manifest": {
     "actions": {
-      "app.ingestion.review": {
-        "debug_only": true,
-        "id": "app.ingestion.review",
-        "type": "ingestion_review"
-      },
-      "app.ingestion.skip": {
-        "debug_only": true,
-        "id": "app.ingestion.skip",
-        "type": "ingestion_skip"
-      },
-      "app.retrieval": {
-        "debug_only": true,
-        "id": "app.retrieval",
-        "type": "retrieval_run"
-      },
-      "app.upload.replace": {
-        "debug_only": true,
-        "id": "app.upload.replace",
-        "type": "upload_replace"
-      },
       "page.intake.button.submit_receipt": {
         "flow": "submit_receipt",
         "id": "page.intake.button.submit_receipt",
@@ -76,7 +53,7 @@
         "type": "ingestion_run"
       }
     },
-    "diagnostics_enabled": true,
+    "diagnostics_enabled": false,
     "i18n": {
       "available_locales": [
         "en"
@@ -175,66 +152,6 @@
               "title_gap": "s"
             },
             "type": "section"
-          },
-          {
-            "children": [
-              {
-                "accessibility": {
-                  "label": "Receipt",
-                  "role": "table"
-                },
-                "column": 5,
-                "columns": [
-                  {
-                    "label": "Name",
-                    "name": "name",
-                    "type": "text"
-                  },
-                  {
-                    "label": "Amount",
-                    "name": "amount",
-                    "type": "number"
-                  }
-                ],
-                "element_id": "page.intake.table.3.0",
-                "id": "page.intake.table.receipt",
-                "index": 0,
-                "line": 24,
-                "page": "intake",
-                "page_slug": "intake",
-                "record": "Receipt",
-                "rows": [],
-                "spacing": {
-                  "cell_gap": "s",
-                  "header_gap": "m",
-                  "row_actions_gap": "s",
-                  "row_gap": "s"
-                },
-                "type": "table",
-                "visible": false
-              }
-            ],
-            "column": 3,
-            "element_id": "page.intake.section.3",
-            "index": 3,
-            "label": "Review",
-            "line": 23,
-            "page": "intake",
-            "page_slug": "intake",
-            "spacing": {
-              "gap": "l",
-              "padding": "m",
-              "title_gap": "s"
-            },
-            "type": "section",
-            "visibility": {
-              "predicate": "state.show_review",
-              "result": false,
-              "state_paths": [
-                "state.show_review"
-              ]
-            },
-            "visible": false
           }
         ],
         "name": "intake",
@@ -366,18 +283,13 @@
   "summary": {
     "action_types": [
       "call_flow",
-      "ingestion_review",
       "ingestion_run",
-      "ingestion_skip",
-      "retrieval_run",
       "upload_clear",
-      "upload_replace",
       "upload_select"
     ],
     "element_types": [
       "button",
       "section",
-      "table",
       "text",
       "title",
       "upload"

@@ -12,34 +12,16 @@
         "position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 12px 0; background: #f8f8f8; border-bottom: 1px solid var(--border-subtle)"
       ],
       ".ui-chat": [
-        "display: flex; flex-direction: column; gap: 14px"
-      ],
-      ".ui-chat-citation": [
-        "display: flex; flex-direction: column; gap: 4px"
-      ],
-      ".ui-chat-citation-actions": [
-        "display: flex; gap: 6px"
-      ],
-      ".ui-chat-citations": [
-        "border: 1px solid #eaeaea; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px"
+        "display: flex; flex-direction: column; gap: 14px; font-family: -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"SF Pro Display\", \"Helvetica Neue\", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale"
       ],
       ".ui-chat-composer": [
-        "display: flex; flex-wrap: wrap; gap: 8px"
-      ],
-      ".ui-chat-memory": [
-        "border: 1px solid #eaeaea; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px"
-      ],
-      ".ui-chat-memory-item": [
-        "display: flex; gap: 10px; align-items: baseline"
+        "display: block; margin-top: auto"
       ],
       ".ui-chat-message": [
         "display: flex; gap: 8px; align-items: flex-end"
       ],
       ".ui-chat-messages": [
         "display: flex; flex-direction: column; gap: 6px"
-      ],
-      ".ui-chat-thinking": [
-        "font-size: 12px; color: #555; font-style: italic"
       ],
       ".ui-section": [
         "background: #fff; display: flex; flex-direction: column; gap: 10px"
@@ -73,7 +55,7 @@
         "type": "chat.stream.cancel"
       }
     },
-    "diagnostics_enabled": true,
+    "diagnostics_enabled": false,
     "i18n": {
       "available_locales": [
         "en"
@@ -166,66 +148,13 @@
                       "input_gap": "s"
                     },
                     "type": "composer"
-                  },
-                  {
-                    "active": false,
-                    "column": 7,
-                    "debug_only": true,
-                    "element_id": "page.chat.thinking.2.0.2",
-                    "index": 2,
-                    "line": 13,
-                    "page": "chat",
-                    "page_slug": "chat",
-                    "spacing": {
-                      "status_gap": "s"
-                    },
-                    "type": "thinking",
-                    "when": "state.chat.thinking"
-                  },
-                  {
-                    "citations": [
-                      {
-                        "title": "Spec",
-                        "url": "https://example.com/spec"
-                      }
-                    ],
-                    "column": 7,
-                    "debug_only": true,
-                    "element_id": "page.chat.citations.2.0.3",
-                    "index": 3,
-                    "line": 14,
-                    "page": "chat",
-                    "page_slug": "chat",
-                    "source": "state.chat.citations",
-                    "spacing": {
-                      "item_gap": "s"
-                    },
-                    "type": "citations"
-                  },
-                  {
-                    "column": 7,
-                    "debug_only": true,
-                    "element_id": "page.chat.memory.2.0.4",
-                    "index": 4,
-                    "items": [
-                      {
-                        "kind": "fact",
-                        "text": "Account active"
-                      }
-                    ],
-                    "lane": "system",
-                    "line": 15,
-                    "page": "chat",
-                    "page_slug": "chat",
-                    "source": "state.chat.memory",
-                    "spacing": {
-                      "item_gap": "s"
-                    },
-                    "type": "memory"
                   }
                 ],
                 "citations_enhanced": false,
                 "column": 5,
+                "composer_attach_upload": "",
+                "composer_placeholder": "Ask about your documents... use #project or @document",
+                "composer_send_style": "icon",
                 "element_id": "page.chat.chat.2.0",
                 "group_messages": true,
                 "index": 0,
@@ -422,13 +351,10 @@
     ],
     "element_types": [
       "chat",
-      "citations",
       "composer",
-      "memory",
       "messages",
       "section",
       "text",
-      "thinking",
       "title"
     ],
     "warning_codes": [
