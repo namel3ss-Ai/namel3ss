@@ -36,7 +36,7 @@
       "exports": [
         "renderChatElement"
       ],
-      "integrity_hash": "sha256:d4f7f439b1e7594d99e4b234b0c1ac73cab34231a9d4de014568daafc95c8f86",
+      "integrity_hash": "sha256:03f8ba1785eb253c1e1c4b1100d67402ed426e06b7d1222684ca95e26ec2c2b5",
       "renderer_id": "chat",
       "version": "1"
     },

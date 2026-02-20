@@ -23,6 +23,7 @@ Start
 
 Quality
   n3 check [file.ai]              # static validation
+  n3 expand [file.ai]             # print preset-expanded source (deterministic)
   n3 fmt [file.ai]                # format app file
   n3 actions <file.ai> [--json]   # list actions (positional 'json' stays supported)
   n3 ui <file.ai>                 # print UI manifest

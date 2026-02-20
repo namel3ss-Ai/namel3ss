@@ -14,6 +14,7 @@ This is the authoritative description of the UI DSL. It is semantic and explicit
 - Studio renders the same UI manifest intent as `n3 ui` and does not add DSL semantics.
 - Console editing is a file-backed workflow; it writes the same `.ai` constructs a text editor writes and does not add hidden grammar behavior.
 - Run modes are explicit and deterministic: `n3 run` renders production UI, `n3 run studio` renders Studio-instrumented UI.
+- Preset-driven UI shells (for example `use preset "rag_chat":`) are compile-time expansions; run `n3 expand app.ai` to inspect the exact generated UI/flow program.
 
 ## 2) Core blocks and naming rules
 - `ui:` (optional global settings; order inside the block is free)
