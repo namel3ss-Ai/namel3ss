@@ -1,0 +1,6 @@
+[answer]
+provider = "openai"
+model = "gpt-4o-mini"
+
+[openai]
+base_url = "https://api.openai.com"

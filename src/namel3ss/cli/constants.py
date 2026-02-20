@@ -2,6 +2,7 @@ from __future__ import annotations
 
 RESERVED = {
     "check",
+    "expand",
     "ui",
     "flow",
     "help",

@@ -1,9 +1,15 @@
 from __future__ import annotations
 
 import json
+import re
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.secrets.redaction import collect_secret_values, redact_payload, redact_text
+
+_MOCK_STRUCTURED_ECHO_RE = re.compile(
+    r"^\[[^\]]+\]\s+(?P<payload>\{.*\})(?:\s+\|\s+mem:st=\d+)?$",
+    re.DOTALL,
+)
 
 
 def ensure_text_output(provider_name: str, text: object) -> str:
@@ -27,6 +33,9 @@ def normalize_ai_text(
 ) -> str:
     merged_secrets = _merge_secret_values(secret_values)
     if isinstance(value, str):
+        normalized = _normalize_mock_structured_echo(value, provider_name=provider_name)
+        if normalized is not None:
+            return _redact_text(normalized, merged_secrets)
         return _redact_text(value, merged_secrets)
     if isinstance(value, dict):
         for key in ("output", "output_text", "text", "content", "message"):
@@ -75,6 +84,31 @@ def _merge_secret_values(secret_values: list[str] | None) -> list[str]:
 
 def _redact_text(value: str, secret_values: list[str]) -> str:
     return redact_text(value, secret_values)
+
+
+def _normalize_mock_structured_echo(value: str, *, provider_name: str | None) -> str | None:
+    if str(provider_name or "").strip().lower() != "mock":
+        return None
+    match = _MOCK_STRUCTURED_ECHO_RE.match(value.strip())
+    if match is None:
+        return None
+    payload_raw = str(match.group("payload") or "").strip()
+    if not payload_raw:
+        return None
+    try:
+        payload = json.loads(payload_raw)
+    except Exception:
+        return None
+    if not isinstance(payload, dict):
+        return None
+    context = payload.get("context")
+    query = payload.get("query")
+    if not isinstance(context, str) or not isinstance(query, str):
+        return None
+    context_text = context.strip()
+    if not context_text:
+        return ""
+    return context_text
 
 
 __all__ = ["ensure_text_output", "json_loads_or_error", "normalize_ai_text"]

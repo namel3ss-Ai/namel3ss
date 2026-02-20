@@ -31,6 +31,7 @@ QUALITY_REASON_ORDER = (
     "repeated_lines",
     "table_heavy",
     "many_empty_pages",
+    "unreadable_text_pattern",
     "empty_text",
 )
 
@@ -45,6 +46,9 @@ QUALITY_THRESHOLDS = {
     "repeated_line_ratio_block": 0.7,
     "table_like_ratio_warn": 0.6,
     "empty_pages_ratio_warn": 0.5,
+    "uppercase_alpha_ratio_block": 0.9,
+    "vowel_alpha_ratio_block": 0.22,
+    "unreadable_text_chars_min": 80,
 }
 
 

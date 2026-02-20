@@ -57,6 +57,10 @@ _REASON_MESSAGES: dict[str, tuple[str, str]] = {
         "Many pages are empty after extraction.",
         "Remove blank pages or upload a text-based source file.",
     ),
+    "unreadable_text_pattern": (
+        "Extracted text appears unreadable (cipher-like uppercase pattern).",
+        "Upload a text-searchable PDF or OCR output, then re-run ingestion.",
+    ),
     "empty_text": (
         "No extractable text was found.",
         "Run OCR or upload a PDF with embedded text.",

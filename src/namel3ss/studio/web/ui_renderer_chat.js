@@ -523,42 +523,57 @@
   function renderInlineCitationText(container, text, citations) {
     container.textContent = "";
     if (!text) return;
-    if (!Array.isArray(citations) || !citations.length || text.indexOf("[") === -1) {
+    const hasCitationCandidates = Array.isArray(citations) && citations.length > 0 && text.indexOf("[") >= 0;
+    const hasBoldMarkers = text.indexOf("**") >= 0;
+    if (!hasCitationCandidates && !hasBoldMarkers) {
       container.textContent = text;
       return;
     }
-    const markerPattern = /\[(\d{1,3})\]/g;
+    const tokenPattern = /\*\*([^*]+)\*\*|\[(\d{1,3})\]/g;
     let displayCounter = 0;
     let cursor = 0;
-    let match = markerPattern.exec(text);
+    let match = tokenPattern.exec(text);
     while (match) {
       if (match.index > cursor) {
         container.appendChild(document.createTextNode(text.slice(cursor, match.index)));
       }
-      const marker = Number.parseInt(match[1], 10);
-      const citationEntry = resolveInlineCitationEntry(citations, marker);
-      if (citationEntry) {
-        displayCounter += 1;
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "ui-chat-inline-citation";
-        button.textContent = String(displayCounter);
-        button.title = citationEntry.title ? `Open source ${displayCounter}: ${citationEntry.title}` : `Open source ${displayCounter}`;
-        if (typeof citationEntry.citation_id === "string" && citationEntry.citation_id) {
-          button.dataset.citationId = citationEntry.citation_id;
-        }
-        button.onclick = () => {
-          if (typeof citationEntry.citation_id === "string" && citationEntry.citation_id && typeof root.selectCitationId === "function") {
-            root.selectCitationId(citationEntry.citation_id);
+      const citationToken = match[2];
+      if (typeof citationToken === "string" && citationToken) {
+        const marker = Number.parseInt(citationToken, 10);
+        const citationEntry = hasCitationCandidates ? resolveInlineCitationEntry(citations, marker) : null;
+        if (citationEntry) {
+          displayCounter += 1;
+          const markerLabel = Number.isFinite(displayCounter) && displayCounter > 0 ? displayCounter : 1;
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "ui-chat-inline-citation";
+          button.textContent = String(markerLabel);
+          button.title = citationEntry.title ? `Open source ${markerLabel}: ${citationEntry.title}` : `Open source ${markerLabel}`;
+          if (typeof citationEntry.citation_id === "string" && citationEntry.citation_id) {
+            button.dataset.citationId = citationEntry.citation_id;
           }
-          openCitationPreview(citationEntry, button, citations);
-        };
-        container.appendChild(button);
+          button.onclick = () => {
+            if (typeof citationEntry.citation_id === "string" && citationEntry.citation_id && typeof root.selectCitationId === "function") {
+              root.selectCitationId(citationEntry.citation_id);
+            }
+            openCitationPreview(citationEntry, button, citations);
+          };
+          container.appendChild(button);
+        } else {
+          container.appendChild(document.createTextNode(match[0]));
+        }
       } else {
-        container.appendChild(document.createTextNode(match[0]));
+        const boldText = typeof match[1] === "string" ? match[1] : "";
+        if (!boldText) {
+          container.appendChild(document.createTextNode(match[0]));
+        } else {
+          const strong = document.createElement("strong");
+          strong.textContent = boldText;
+          container.appendChild(strong);
+        }
       }
-      cursor = markerPattern.lastIndex;
-      match = markerPattern.exec(text);
+      cursor = tokenPattern.lastIndex;
+      match = tokenPattern.exec(text);
     }
     if (cursor < text.length) {
       container.appendChild(document.createTextNode(text.slice(cursor)));
@@ -568,14 +583,16 @@
   function resolveInlineCitationEntry(citations, marker) {
     if (!Array.isArray(citations) || !citations.length) return null;
     if (!Number.isFinite(marker) || marker < 1) return null;
+    let fallback = citations[0];
     for (const entry of citations) {
       const value = Number(entry && entry.index);
       if (Number.isFinite(value) && Math.max(1, Math.trunc(value)) === marker) {
         return entry;
       }
+      if (!fallback && entry) fallback = entry;
     }
-    if (marker <= citations.length) return citations[marker - 1];
-    return null;
+    if (marker <= citations.length) return citations[marker - 1] || fallback;
+    return citations[citations.length - 1] || fallback;
   }
 
   function revealMessageCitations(rowNode) {

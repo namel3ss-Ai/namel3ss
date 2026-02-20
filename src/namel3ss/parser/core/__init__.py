@@ -41,6 +41,7 @@ from namel3ss.parser.stmt.return_stmt import parse_return
 from namel3ss.parser.stmt.save import parse_save
 from namel3ss.parser.stmt.set import parse_set
 from namel3ss.parser.stmt.trycatch import parse_try
+from namel3ss.parser.preset_expansion import expand_language_presets
 
 
 class Parser(TokenStream):
@@ -69,14 +70,15 @@ class Parser(TokenStream):
         require_spec: bool = True,
         lower_sugar: bool = True,
     ) -> ast.Program:
-        lexer = Lexer(source)
+        expanded_source = expand_language_presets(source)
+        lexer = Lexer(expanded_source)
         tokens = lexer.tokenize()
         parser = cls(
             tokens,
             allow_legacy_type_aliases=allow_legacy_type_aliases,
             allow_capsule=allow_capsule,
             require_spec=require_spec,
-            source_lines=source.splitlines(),
+            source_lines=expanded_source.splitlines(),
         )
         program = parser._parse_program()
         if lower_sugar:

@@ -7,6 +7,10 @@ def test_chat_renderer_supports_clickable_inline_citations_contract() -> None:
         "renderInlineCitationText",
         "resolveInlineCitationEntry",
         "ui-chat-inline-citation",
+        r"const tokenPattern = /\*\*([^*]+)\*\*|\[(\d{1,3})\]/g;",
+        "const strong = document.createElement(\"strong\");",
+        "button.textContent = String(markerLabel);",
+        "return citations[citations.length - 1] || fallback;",
         "openCitationPreview(citationEntry, button, citations)",
     ]:
         assert marker in js

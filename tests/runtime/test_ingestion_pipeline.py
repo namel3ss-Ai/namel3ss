@@ -43,6 +43,8 @@ def test_signals_are_deterministic() -> None:
         "repeated_line_ratio": 1.0,
         "table_like_ratio": 0.0,
         "empty_pages_ratio": 0.0,
+        "uppercase_alpha_ratio": 0.0,
+        "vowel_alpha_ratio": 0.444444,
     }
 
 
@@ -59,6 +61,42 @@ def test_gate_blocks_repeated_lines() -> None:
     status, reasons = gate_quality(signals)
     assert status == "block"
     assert "repeated_lines" in reasons
+
+
+def test_gate_blocks_unreadable_text_pattern() -> None:
+    signals = {
+        "text_chars": 180,
+        "unique_token_ratio": 0.9,
+        "non_ascii_ratio": 0.0,
+        "line_break_ratio": 0.0,
+        "repeated_line_ratio": 0.0,
+        "table_like_ratio": 0.0,
+        "empty_pages_ratio": 0.0,
+        "uppercase_alpha_ratio": 1.0,
+        "vowel_alpha_ratio": 0.16,
+    }
+    status, reasons = gate_quality(signals)
+    assert status == "block"
+    assert "unreadable_text_pattern" in reasons
+
+
+def test_unreadable_ciphertext_upload_is_blocked(tmp_path: Path) -> None:
+    payload = (
+        b"%XLOGLQJ D 3U RIHVLRQDO *UDGH &XVWRPHU VXSSRUW &KDW $SS ZLWK QDPHO3VV "
+        b",QWURGXFWLRQ 7KH QDPHO3VV IUDPHZRUN DOORZV XV WR EXLOG $, GULYHQ DSSV "
+        b"XVLQJ D VLQJOH GHWHUPLQLVWLF ODQJXDJH"
+    )
+    metadata = _store_text_upload(tmp_path, payload, filename="cipher.txt")
+    state: dict = {}
+    result = run_ingestion(
+        upload_id=metadata["checksum"],
+        mode=None,
+        state=state,
+        project_root=str(tmp_path),
+        app_path=(tmp_path / "app.ai").as_posix(),
+    )
+    assert result["status"] == "block"
+    assert "unreadable_text_pattern" in result["report"]["reasons"]
 
 
 def test_blocked_uploads_do_not_index(tmp_path: Path) -> None:

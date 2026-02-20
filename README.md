@@ -7,14 +7,11 @@ It keeps surface syntax minimal while making execution explicit, inspectable, an
 
 ```ai
 spec is "1.0"
+
 use preset "rag_chat":
   title is "Assistant"
-override flow "rag.answer":
-  ask ai "gpt-4o-mini" with input:
-    query is input.query
-    context is input.context
-  as answer_text
-  return answer_text
+  model is "gpt-4o-mini"
+  answer_template is "summary_keypoints_recommendation_with_citations"
 ```
 
 Run `n3 expand app.ai` to inspect the generated program.
@@ -80,6 +77,8 @@ Advanced:
 override flow "rag.retrieve":
   ...
 ```
+
+Advanced custom answer flow: [docs/rag/advanced_custom_answer_flow.md](docs/rag/advanced_custom_answer_flow.md)
 
 Start simple. Expand when needed.
 
