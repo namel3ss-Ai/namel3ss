@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from namel3ss.runtime.ingest.extractors.pdf_ocr_extractor import OCR_NOT_AVAILABLE_ERROR_CODE, PdfOcrExtractor
+from namel3ss.runtime.ingest.extractors.pdf_ocr_extractor import (
+    OCR_NOT_AVAILABLE_ERROR_CODE,
+    create_default_pdf_ocr_extractor,
+)
 from namel3ss.runtime.preview.preview_contract import (
     PREVIEW_UNION_CONTRACT_ERROR_CODE,
     build_preview_unavailable_payload,
@@ -108,7 +111,7 @@ def _preview_union_check() -> dict[str, Any]:
 
 
 def _ocr_capability_check() -> dict[str, Any]:
-    extractor = PdfOcrExtractor()
+    extractor = create_default_pdf_ocr_extractor()
     if extractor.is_available():
         return _check(
             check_id="contract_ocr_capability",
@@ -122,7 +125,7 @@ def _ocr_capability_check() -> dict[str, Any]:
         check_id="contract_ocr_capability",
         status="warning",
         message="OCR capability is not available in this environment.",
-        fix="Install and configure an OCR backend if scanned PDF extraction is required.",
+        fix="Reinstall namel3ss so bundled OCR dependencies are available for scanned PDF extraction.",
         code="contract.ocr.unavailable",
         error_code=OCR_NOT_AVAILABLE_ERROR_CODE,
     )

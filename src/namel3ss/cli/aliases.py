@@ -18,6 +18,7 @@ ALIAS_MAP: Dict[str, str] = {
     "fmt": "fmt",
     "format": "fmt",
     "check": "check",
+    "expand": "expand",
     "ui": "ui",
     "actions": "actions",
     "studio": "studio",

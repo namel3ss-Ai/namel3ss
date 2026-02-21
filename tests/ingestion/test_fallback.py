@@ -63,6 +63,43 @@ def test_pdf_block_runs_ocr_fallback_and_converts_to_warn(tmp_path: Path, monkey
     assert result["chunks"]
 
 
+def test_pdf_with_binary_markers_still_runs_ocr_fallback(tmp_path: Path, monkeypatch) -> None:
+    metadata = _store_upload(
+        tmp_path,
+        b"%PDF-1.4\n/Type /Page\nstream\n\x00\x00\x00\nendstream\n%%EOF\n",
+        filename="scan.pdf",
+        content_type="application/pdf",
+    )
+    real_extract_pages = fallback_handler.extract_pages
+
+    def fake_extract_pages(content: bytes, *, detected: dict, mode: str) -> tuple[list[str], str]:
+        if mode == "ocr" and detected.get("type") == "pdf":
+            return (
+                [
+                    "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma "
+                    "tau upsilon phi chi psi omega"
+                ],
+                "ocr",
+            )
+        return real_extract_pages(content, detected=detected, mode=mode)
+
+    monkeypatch.setattr(fallback_handler, "extract_pages", fake_extract_pages)
+
+    result = run_ingestion(
+        upload_id=metadata["checksum"],
+        mode=None,
+        state={},
+        project_root=str(tmp_path),
+        app_path=(tmp_path / "app.ai").as_posix(),
+    )
+    report = result["report"]
+
+    assert report["status"] == "warn"
+    assert report["fallback_used"] == "ocr"
+    assert "null_bytes" not in report["gate"]["probe"]["block_reasons"]
+    assert result["chunks"]
+
+
 def test_pdf_fallback_failure_adds_ocr_failed_reason(tmp_path: Path, monkeypatch) -> None:
     metadata = _store_upload(
         tmp_path,

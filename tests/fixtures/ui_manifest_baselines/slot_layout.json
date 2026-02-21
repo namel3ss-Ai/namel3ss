@@ -9,12 +9,12 @@
         "padding: 6px 10px; font-size: 12px"
       ],
       ".n3-layout-body": [
-        "display: grid; grid-template-columns: minmax(200px, 260px) minmax(0, 1fr); gap: 12px; align-items: start",
+        "display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start",
         "grid-template-columns: minmax(0, 1fr)"
       ],
       ".n3-layout-drawer": [
         "background: var(--n3-layout-drawer-bg); border: 1px solid var(--n3-layout-drawer-border); border-radius: var(--n3-layout-drawer-radius); padding: 14px; display: flex; flex-direction: column; gap: 10px",
-        "border: 1px solid #eaeaea; border-radius: 10px; background: #fff; padding: 10px; display: flex; flex-direction: column; gap: 10px; max-height: calc(100vh - 280px); overflow: auto",
+        "border: 1px solid #eaeaea; border-radius: 10px; background: #fff; padding: 10px; display: flex; flex-direction: column; gap: 10px; max-height: var(--n3-layout-panel-max-height, calc(100vh - 280px)); overflow: auto",
         "display: none"
       ],
       ".n3-layout-footer": [
@@ -25,14 +25,14 @@
         "position: static"
       ],
       ".n3-layout-main": [
-        "border: 1px solid #eaeaea; border-radius: 10px; background: #fff; padding: 10px; display: flex; flex-direction: column; gap: 10px; max-height: calc(100vh - 280px); overflow: auto",
+        "border: 1px solid #eaeaea; border-radius: 10px; background: #fff; padding: 10px; display: flex; flex-direction: column; gap: 10px; max-height: var(--n3-layout-panel-max-height, calc(100vh - 280px)); overflow: auto",
         "display: flex; flex-direction: column; gap: var(--n3-layout-gap)"
       ],
       ".n3-layout-root": [
         "display: flex; flex-direction: column; gap: 12px; min-height: 100%"
       ],
       ".n3-layout-sidebar": [
-        "border: 1px solid #eaeaea; border-radius: 10px; background: #fff; padding: 10px; display: flex; flex-direction: column; gap: 10px; max-height: calc(100vh - 280px); overflow: auto",
+        "border: 1px solid #eaeaea; border-radius: 10px; background: #fff; padding: 10px; display: flex; flex-direction: column; gap: 10px; max-height: var(--n3-layout-panel-max-height, calc(100vh - 280px)); overflow: auto",
         "display: grid; gap: var(--n3-layout-sidebar-gap); grid-template-columns: minmax(0, var(--n3-layout-sidebar-width)) minmax(0, 1fr); align-items: start",
         "display: none"
       ],
@@ -40,10 +40,10 @@
         "position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 12px 0; background: #f8f8f8; border-bottom: 1px solid var(--border-subtle)"
       ],
       ".ui-chat": [
-        "display: flex; flex-direction: column; gap: 14px"
+        "display: flex; flex-direction: column; gap: 14px; font-family: -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"SF Pro Display\", \"Helvetica Neue\", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale"
       ],
       ".ui-chat-composer": [
-        "display: flex; flex-wrap: wrap; gap: 8px"
+        "display: block; margin-top: auto"
       ],
       ".ui-chat-message": [
         "display: flex; gap: 8px; align-items: flex-end"
@@ -224,6 +224,9 @@
                   ],
                   "citations_enhanced": false,
                   "column": 9,
+                  "composer_attach_upload": "",
+                  "composer_placeholder": "Ask about your documents... use #project or @document",
+                  "composer_send_style": "icon",
                   "element_id": "page.support.chat.2.0.0",
                   "group_messages": true,
                   "index": 0,

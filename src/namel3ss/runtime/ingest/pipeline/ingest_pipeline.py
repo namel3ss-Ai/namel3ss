@@ -9,7 +9,11 @@ from namel3ss.runtime.ingest.chunking.chunk_id import (
     stable_source_id,
 )
 from namel3ss.runtime.ingest.extractors.extractor_protocol import ExtractedPage, ExtractorResult
-from namel3ss.runtime.ingest.extractors.pdf_ocr_extractor import OcrNotAvailableError, PdfOcrExtractor
+from namel3ss.runtime.ingest.extractors.pdf_ocr_extractor import (
+    OcrNotAvailableError,
+    PdfOcrExtractor,
+    create_default_pdf_ocr_extractor,
+)
 from namel3ss.runtime.ingest.extractors.pdf_text_extractor import PdfTextExtractor
 
 
@@ -79,12 +83,21 @@ def run_ingest_pipeline(
     selected_result = primary_result
     ocr_used = False
     if enable_ocr and not _has_text(primary_result.pages):
-        if ocr_extractor is None:
+        resolved_ocr_extractor = ocr_extractor or create_default_pdf_ocr_extractor()
+        if not resolved_ocr_extractor.is_available():
+            extraction_engines.append(
+                {
+                    "engine_name": resolved_ocr_extractor.engine_name,
+                    "engine_version": resolved_ocr_extractor.engine_version,
+                    "error_code": "N3E_OCR_NOT_AVAILABLE",
+                    "status": "unavailable",
+                }
+            )
             if require_ocr:
                 raise OcrNotAvailableError()
         else:
             try:
-                ocr_result = ocr_extractor.extract(content, content_type=content_type)
+                ocr_result = resolved_ocr_extractor.extract(content, content_type=content_type)
                 extraction_engines.append(_engine_metadata(ocr_result, status="ok"))
                 if _has_text(ocr_result.pages):
                     selected_result = ocr_result
@@ -92,8 +105,8 @@ def run_ingest_pipeline(
             except OcrNotAvailableError:
                 extraction_engines.append(
                     {
-                        "engine_name": ocr_extractor.engine_name,
-                        "engine_version": ocr_extractor.engine_version,
+                        "engine_name": resolved_ocr_extractor.engine_name,
+                        "engine_version": resolved_ocr_extractor.engine_version,
                         "error_code": "N3E_OCR_NOT_AVAILABLE",
                         "status": "unavailable",
                     }

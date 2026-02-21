@@ -20,6 +20,8 @@ def _run_upload_select(ctx: ActionDispatchContext) -> tuple[dict, Exception | No
         identity=ctx.identity,
         auth_context=ctx.auth_context,
         secret_values=ctx.secret_values,
+        ui_mode=ctx.ui_mode,
+        diagnostics_enabled=ctx.diagnostics_enabled,
     )
     return response, None
 
@@ -37,6 +39,8 @@ def _run_upload_clear(ctx: ActionDispatchContext) -> tuple[dict, Exception | Non
         identity=ctx.identity,
         auth_context=ctx.auth_context,
         secret_values=ctx.secret_values,
+        ui_mode=ctx.ui_mode,
+        diagnostics_enabled=ctx.diagnostics_enabled,
     )
     return response, None
 
@@ -53,6 +57,8 @@ def _run_upload_replace(ctx: ActionDispatchContext) -> tuple[dict, Exception | N
         identity=ctx.identity,
         auth_context=ctx.auth_context,
         secret_values=ctx.secret_values,
+        ui_mode=ctx.ui_mode,
+        diagnostics_enabled=ctx.diagnostics_enabled,
     )
     return response, None
 

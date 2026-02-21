@@ -9,8 +9,8 @@ from namel3ss.ir import nodes as ir
 from namel3ss.runtime.backend import studio_effect_adapter
 from namel3ss.runtime.secrets_store import SecretValue
 from namel3ss.runtime.tools.schema_validate import validate_tool_fields
+from namel3ss.utils.http_tls import safe_urlopen_with_tls_fallback
 from namel3ss.utils.numbers import is_number
-from namel3ss_safeio import safe_urlopen
 
 
 ALLOWED_INPUT_FIELDS = {"url", "method", "headers", "body", "timeout_seconds"}
@@ -69,7 +69,7 @@ def execute_http_tool(
         )
         try:
             req = request.Request(url, method=method, headers=_header_dict(send_headers), data=None)
-            with safe_urlopen(req, timeout=timeout_seconds) as resp:
+            with safe_urlopen(req, timeout_seconds) as resp:
                 status = int(getattr(resp, "status", None) or resp.getcode())
                 raw = resp.read()
                 body_text = raw.decode("utf-8", errors="replace")
@@ -109,6 +109,10 @@ def execute_http_tool(
     finally:
         if span_id:
             obs.end_span(ctx, span_id, status=span_status)
+
+
+def safe_urlopen(req, timeout):
+    return safe_urlopen_with_tls_fallback(req, timeout_seconds=timeout)
 
 
 def _build_output(

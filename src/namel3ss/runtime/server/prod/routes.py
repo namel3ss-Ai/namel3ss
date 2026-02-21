@@ -1,5 +1,4 @@
 from __future__ import annotations
-import json
 from http.server import BaseHTTPRequestHandler
 from types import SimpleNamespace
 from typing import Any
@@ -26,29 +25,37 @@ from namel3ss.runtime.router.renderer_registry_health import (
 from namel3ss.runtime.router.refresh import refresh_routes
 from namel3ss.runtime.router.registry import RouteRegistry
 from namel3ss.runtime.server.prod import answer_explain, documents
+from namel3ss.runtime.server.prod.http_helpers import (
+    read_json_body,
+    respond_bytes,
+    respond_json,
+    static_cache_headers,
+)
 from namel3ss.runtime.server.observability_helpers import (
     empty_observability_payload,
     load_observability_builder,
     observability_enabled,
 )
-from namel3ss.ui.external.serve import resolve_external_ui_file
-from namel3ss.utils.json_tools import dumps as json_dumps
+from namel3ss.ui.external.serve import resolve_builtin_icon_file, resolve_external_ui_file
 from namel3ss.version import get_version
+
+
 class ProductionRequestHandler(BaseHTTPRequestHandler):
     def log_message(self, format: str, *args: Any) -> None:  # pragma: no cover - silence logs
         pass
+
     def do_GET(self) -> None:  # noqa: N802
         raw_path = self.path
         path = urlparse(raw_path).path
         if path.startswith("/health"):
-            self._respond_json(self._health_payload())
+            respond_json(self, self._health_payload())
             return
         if path.startswith("/version"):
-            self._respond_json(self._version_payload())
+            respond_json(self, self._version_payload())
             return
         if path == "/api/session":
             payload, status, headers = self._handle_session_get()
-            self._respond_json(payload, status=status, headers=headers)
+            respond_json(self, payload, status=status, headers=headers)
             return
         if handle_renderer_registry_health_get(self, path):
             return
@@ -61,23 +68,23 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
                 auth_context=auth_context,
             )
             status = 200 if payload.get("ok", True) else 400
-            self._respond_json(payload, status=status)
+            respond_json(self, payload, status=status)
             return
         if path == "/api/data/status":
             payload, status = self._handle_data_status()
-            self._respond_json(payload, status=status, sort_keys=True)
+            respond_json(self, payload, status=status, sort_keys=True)
             return
         if path == "/api/migrations/status":
             payload, status = self._handle_migrations(build_migrations_status_payload)
-            self._respond_json(payload, status=status, sort_keys=True)
+            respond_json(self, payload, status=status, sort_keys=True)
             return
         if path == "/api/migrations/plan":
             payload, status = self._handle_migrations(build_migrations_plan_payload)
-            self._respond_json(payload, status=status, sort_keys=True)
+            respond_json(self, payload, status=status, sort_keys=True)
             return
         if path == "/api/uploads":
             response, status = self._handle_upload_list()
-            self._respond_json(response, status=status)
+            respond_json(self, response, status=status)
             return
         if answer_explain.handle_answer_explain_get(self, path):
             return
@@ -85,27 +92,27 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             return
         if path == "/api/logs":
             payload, status = self._handle_observability("logs")
-            self._respond_json(payload, status=status, sort_keys=True)
+            respond_json(self, payload, status=status, sort_keys=True)
             return
         if path == "/api/traces":
             payload, status = self._handle_observability("traces")
-            self._respond_json(payload, status=status, sort_keys=True)
+            respond_json(self, payload, status=status, sort_keys=True)
             return
         if path == "/api/trace":
             payload, status = self._handle_observability("trace")
-            self._respond_json(payload, status=status, sort_keys=True)
+            respond_json(self, payload, status=status, sort_keys=True)
             return
         if path == "/api/metrics":
             payload, status = self._handle_observability("metrics")
-            self._respond_json(payload, status=status, sort_keys=True)
+            respond_json(self, payload, status=status, sort_keys=True)
             return
         if path == "/api/build":
             payload, status = self._handle_build()
-            self._respond_json(payload, status=status, sort_keys=True)
+            respond_json(self, payload, status=status, sort_keys=True)
             return
         if path == "/api/deploy":
             payload, status = self._handle_deploy()
-            self._respond_json(payload, status=status, sort_keys=True)
+            respond_json(self, payload, status=status, sort_keys=True)
             return
         if path.startswith("/api/"):
             if self._dispatch_dynamic_route():
@@ -122,29 +129,29 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
         if path == "/api/action":
-            body = self._read_json_body()
+            body = read_json_body(self)
             if body is None:
                 payload = build_error_payload("Invalid JSON body.", kind="engine")
-                self._respond_json(payload, status=400)
+                respond_json(self, payload, status=400)
                 return
             self._handle_action_post(body)
             return
         if path == "/api/login":
-            body = self._read_json_body()
+            body = read_json_body(self)
             if body is None:
                 payload = build_error_payload("Invalid JSON body.", kind="authentication")
-                self._respond_json(payload, status=400)
+                respond_json(self, payload, status=400)
                 return
             payload, status, headers = self._handle_login_post(body)
-            self._respond_json(payload, status=status, headers=headers)
+            respond_json(self, payload, status=status, headers=headers)
             return
         if path == "/api/logout":
             payload, status, headers = self._handle_logout_post()
-            self._respond_json(payload, status=status, headers=headers)
+            respond_json(self, payload, status=status, headers=headers)
             return
         if path == "/api/upload":
             response, status = self._handle_upload_post(parsed.query)
-            self._respond_json(response, status=status)
+            respond_json(self, response, status=status)
             return
         if self._dispatch_dynamic_route():
             return
@@ -165,48 +172,16 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             "target": getattr(self.server, "target", "service"),  # type: ignore[attr-defined]
             "build_id": getattr(self.server, "build_id", None),  # type: ignore[attr-defined]
         }
-    def _respond_json(
-        self,
-        payload: dict,
-        status: int = 200,
-        *,
-        sort_keys: bool = False,
-        headers: dict[str, str] | None = None,
-    ) -> None:
-        data = json_dumps(payload, sort_keys=sort_keys).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(data)))
-        if headers:
-            for key, value in headers.items():
-                self.send_header(key, value)
-        self.end_headers()
-        self.wfile.write(data)
-    def _respond_bytes(
-        self,
-        payload: bytes,
-        *,
-        status: int = 200,
-        content_type: str = "application/octet-stream",
-        headers: dict[str, str] | None = None,
-    ) -> None:
-        self.send_response(status)
-        self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(len(payload)))
-        if headers:
-            for key, value in headers.items():
-                self.send_header(key, value)
-        self.end_headers()
-        self.wfile.write(payload)
+
     def _dispatch_dynamic_route(self) -> bool:
         state = self._state()
         state._refresh_if_needed()
         if state.error_payload:
-            self._respond_json(state.error_payload, status=400)
+            respond_json(self, state.error_payload, status=400)
             return True
         program = state.program
         if program is None:
-            self._respond_json(build_error_payload("Program not loaded.", kind="engine"), status=500)
+            respond_json(self, build_error_payload("Program not loaded.", kind="engine"), status=500)
             return True
         auth_context = self._auth_context_or_error(kind="engine")
         if auth_context is None:
@@ -232,32 +207,33 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
         if result is None:
             return False
         if result.body is not None:
-            self._respond_bytes(
+            respond_bytes(
+                self,
                 result.body,
                 status=result.status,
                 content_type=result.content_type or "application/octet-stream",
                 headers=result.headers,
             )
             return True
-        self._respond_json(result.payload or {}, status=result.status, headers=result.headers)
+        respond_json(self, result.payload or {}, status=result.status, headers=result.headers)
         return True
     def _handle_action_post(self, body: dict) -> None:
         if not isinstance(body, dict):
             payload = build_error_payload("Body must be a JSON object.", kind="engine")
             payload = attach_runtime_error_payload(payload, status_code=400, endpoint="/api/action")
-            self._respond_json(payload, status=400)
+            respond_json(self, payload, status=400)
             return
         action_id = body.get("id")
         payload = body.get("payload") or {}
         if not isinstance(action_id, str):
             response = build_error_payload("Action id is required.", kind="engine")
             response = attach_runtime_error_payload(response, status_code=400, endpoint="/api/action")
-            self._respond_json(response, status=400)
+            respond_json(self, response, status=400)
             return
         if not isinstance(payload, dict):
             response = build_error_payload("Payload must be an object.", kind="engine")
             response = attach_runtime_error_payload(response, status_code=400, endpoint="/api/action")
-            self._respond_json(response, status=400)
+            respond_json(self, response, status=400)
             return
         auth_context = self._auth_context_or_error(kind="engine")
         if auth_context is None:
@@ -271,15 +247,15 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             )
             response = attach_runtime_error_payload(response, endpoint="/api/action")
             status = 200 if response.get("ok", True) else 400
-            self._respond_json(response, status=status)
+            respond_json(self, response, status=status)
         except Namel3ssError as err:
             payload = build_error_from_exception(err, kind="engine")
             payload = attach_runtime_error_payload(payload, status_code=400, endpoint="/api/action")
-            self._respond_json(payload, status=400)
+            respond_json(self, payload, status=400)
         except Exception as err:  # pragma: no cover - defensive guard rail
             payload = build_error_payload(str(err), kind="internal")
             payload = attach_runtime_error_payload(payload, status_code=500, endpoint="/api/action")
-            self._respond_json(payload, status=500)
+            respond_json(self, payload, status=500)
     def _handle_upload_post(self, query: str) -> tuple[dict, int]:
         program = getattr(self._state(), "program", None)
         if program is None:
@@ -463,10 +439,24 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             return self._resolve_auth_context()
         except Namel3ssError as err:
             payload = build_error_from_exception(err, kind=kind)
-            self._respond_json(payload, status=400)
+            respond_json(self, payload, status=400)
             return None
 
     def _handle_static(self, path: str) -> bool:
+        icon_path, icon_type = resolve_builtin_icon_file(path)
+        if icon_path and icon_type:
+            try:
+                content = icon_path.read_bytes()
+            except OSError:  # pragma: no cover - IO guard
+                return False
+            respond_bytes(
+                self,
+                content,
+                status=200,
+                content_type=icon_type,
+                headers=static_cache_headers(path, icon_type),
+            )
+            return True
         web_root = getattr(self.server, "web_root", None)  # type: ignore[attr-defined]
         if web_root is None:
             return False
@@ -477,24 +467,26 @@ class ProductionRequestHandler(BaseHTTPRequestHandler):
             content = file_path.read_bytes()
         except OSError:  # pragma: no cover - IO guard
             return False
-        self.send_response(200)
-        self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(len(content)))
-        self.end_headers()
-        self.wfile.write(content)
+        respond_bytes(
+            self,
+            content,
+            status=200,
+            content_type=content_type,
+            headers=static_cache_headers(path, content_type),
+        )
         return True
 
     def _read_json_body(self) -> dict | None:
-        length = int(self.headers.get("Content-Length", "0"))
-        raw_body = self.rfile.read(length) if length else b""
-        if not raw_body:
-            return {}
-        try:
-            decoded = raw_body.decode("utf-8")
-            return json.loads(decoded or "{}")
-        except Exception:
-            return None
+        return read_json_body(self)
+
+    def _respond_json(self, payload: dict, status: int = 200, sort_keys: bool = False, headers: dict[str, str] | None = None) -> None:
+        respond_json(self, payload, status=status, sort_keys=sort_keys, headers=headers)
+
+    def _respond_bytes(self, payload: bytes, status: int = 200, content_type: str = "application/octet-stream", headers: dict[str, str] | None = None) -> None:
+        respond_bytes(self, payload, status=status, content_type=content_type, headers=headers)
 
     def _state(self) -> BrowserAppState:
         return self.server.app_state  # type: ignore[attr-defined]
+
+
 __all__ = ["ProductionRequestHandler"]

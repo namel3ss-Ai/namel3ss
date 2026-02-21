@@ -13,7 +13,9 @@ from namel3ss.ingestion.policy import (
 )
 from namel3ss.retrieval.embedding_plan import build_embedding_plan
 from namel3ss.retrieval.explain import RetrievalExplainBuilder
+from namel3ss.retrieval.keyword_overlap import safe_keyword_overlap
 from namel3ss.retrieval.ordering import coerce_int, ordering_label, rank_key, select_tier
+from namel3ss.retrieval.readability_filter import should_skip_unreadable_chunk
 from namel3ss.retrieval.result_helpers import candidate_fields, normalize_tags
 from namel3ss.retrieval.tuning import read_tuning_from_state
 from namel3ss.retrieval.tuning_engine import apply_retrieval_tuning, build_tuning_summary
@@ -76,7 +78,7 @@ def run_retrieval(
         if quality == "block":
             blocked += 1
             if explain_builder is not None:
-                overlap = _safe_keyword_overlap(
+                overlap = safe_keyword_overlap(
                     entry,
                     text_value,
                     query_keywords,
@@ -111,6 +113,18 @@ def run_retrieval(
         source_name = _require_string_field(entry, "source_name")
         page_number = _require_page_number(entry)
         ingestion_phase = _require_ingestion_phase(entry)
+        if should_skip_unreadable_chunk(
+            text=clean_text,
+            explain_builder=explain_builder,
+            chunk_id=chunk_id_value,
+            ingestion_phase=ingestion_phase,
+            page_number=page_number,
+            chunk_index=chunk_index,
+            order_index=index,
+            quality=quality,
+            vector_score=embedding_score,
+        ):
+            continue
         keywords, keyword_source = _require_keywords(entry, clean_text)
         matches = keyword_matches(query_keywords, keywords)
         overlap = len(matches)
@@ -475,25 +489,6 @@ def _require_keywords(entry: dict, text_value: str) -> tuple[list[str], str]:
     if normalized is None:
         raise Namel3ssError(_invalid_keywords_message())
     return normalized, "stored"
-
-
-def _safe_keyword_overlap(
-    entry: dict,
-    text_value: str,
-    query_keywords: list[str],
-    *,
-    project_root: str | None,
-    app_path: str | None,
-    secret_values: list[str] | None,
-) -> int:
-    if not query_keywords:
-        return 0
-    keywords = normalize_keywords(entry.get("keywords"))
-    if keywords is None:
-        cleaned = sanitize_text(text_value, project_root=project_root, app_path=app_path, secret_values=secret_values)
-        keywords = extract_keywords(cleaned) if cleaned else []
-    matches = keyword_matches(query_keywords, keywords)
-    return len(matches)
 
 
 __all__ = ["run_retrieval"]

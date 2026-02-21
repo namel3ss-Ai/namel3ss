@@ -18,7 +18,7 @@
         "display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--n3-layout-row-gap); align-items: stretch"
       ],
       ".n3-layout-sidebar": [
-        "border: 1px solid #eaeaea; border-radius: 10px; background: #fff; padding: 10px; display: flex; flex-direction: column; gap: 10px; max-height: calc(100vh - 280px); overflow: auto",
+        "border: 1px solid #eaeaea; border-radius: 10px; background: #fff; padding: 10px; display: flex; flex-direction: column; gap: 10px; max-height: var(--n3-layout-panel-max-height, calc(100vh - 280px)); overflow: auto",
         "display: grid; gap: var(--n3-layout-sidebar-gap); grid-template-columns: minmax(0, var(--n3-layout-sidebar-width)) minmax(0, 1fr); align-items: start",
         "display: none"
       ],
@@ -35,10 +35,10 @@
         "position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 12px 0; background: #f8f8f8; border-bottom: 1px solid var(--border-subtle)"
       ],
       ".ui-chat": [
-        "display: flex; flex-direction: column; gap: 14px"
+        "display: flex; flex-direction: column; gap: 14px; font-family: -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"SF Pro Display\", \"Helvetica Neue\", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale"
       ],
       ".ui-chat-composer": [
-        "display: flex; flex-wrap: wrap; gap: 8px"
+        "display: block; margin-top: auto"
       ],
       ".ui-chat-message": [
         "display: flex; gap: 8px; align-items: flex-end"
@@ -341,6 +341,9 @@
                                 ],
                                 "citations_enhanced": false,
                                 "column": 3,
+                                "composer_attach_upload": "",
+                                "composer_placeholder": "Ask about your documents... use #project or @document",
+                                "composer_send_style": "icon",
                                 "element_id": "page.rag.chat.0.1.1.0.0.1.0",
                                 "group_messages": true,
                                 "index": 0,
@@ -445,6 +448,9 @@
                                 ],
                                 "citations_enhanced": false,
                                 "column": 3,
+                                "composer_attach_upload": "",
+                                "composer_placeholder": "Ask about your documents... use #project or @document",
+                                "composer_send_style": "icon",
                                 "element_id": "page.rag.chat.0.1.1.0.0.2.0",
                                 "group_messages": true,
                                 "index": 0,

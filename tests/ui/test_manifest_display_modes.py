@@ -116,30 +116,44 @@ def test_production_mode_filters_debug_only_ui_and_actions():
     program = lower_ir_program(SOURCE)
 
     studio = build_manifest(program, state=STATE, display_mode="studio")
+    studio_with_diagnostics = build_manifest(program, state=STATE, display_mode="studio", diagnostics_enabled=True)
     production = build_manifest(program, state=STATE, display_mode="production")
 
     assert studio["mode"] == "studio"
+    assert studio_with_diagnostics["mode"] == "studio"
     assert production["mode"] == "production"
+    assert studio["diagnostics_enabled"] is False
+    assert studio_with_diagnostics["diagnostics_enabled"] is True
 
     studio_pages = {page["slug"] for page in studio["pages"]}
+    studio_diagnostics_pages = {page["slug"] for page in studio_with_diagnostics["pages"]}
     production_pages = {page["slug"] for page in production["pages"]}
-    assert "devtools" in studio_pages
+    assert "devtools" not in studio_pages
+    assert "devtools" in studio_diagnostics_pages
     assert "devtools" not in production_pages
 
     studio_types = _all_element_types(studio)
+    studio_diagnostics_types = _all_element_types(studio_with_diagnostics)
     production_types = _all_element_types(production)
-    assert {"thinking", "citations", "memory"}.issubset(studio_types)
+    assert {"thinking", "citations", "memory"}.isdisjoint(studio_types)
+    assert {"thinking", "citations", "memory"}.issubset(studio_diagnostics_types)
     assert {"thinking", "citations", "memory"}.isdisjoint(production_types)
 
     studio_flow_actions = {action.get("flow") for action in studio["actions"].values() if action.get("type") == "call_flow"}
+    studio_diagnostics_flow_actions = {
+        action.get("flow") for action in studio_with_diagnostics["actions"].values() if action.get("type") == "call_flow"
+    }
     production_flow_actions = {action.get("flow") for action in production["actions"].values() if action.get("type") == "call_flow"}
-    assert "review" in studio_flow_actions
+    assert "review" not in studio_flow_actions
+    assert "review" in studio_diagnostics_flow_actions
     assert "review" not in production_flow_actions
     assert "send" in production_flow_actions
 
     studio_action_types = {action.get("type") for action in studio["actions"].values()}
+    studio_diagnostics_action_types = {action.get("type") for action in studio_with_diagnostics["actions"].values()}
     production_action_types = {action.get("type") for action in production["actions"].values()}
-    assert {"retrieval_run", "ingestion_review", "ingestion_skip", "upload_replace"}.issubset(studio_action_types)
+    assert {"retrieval_run", "ingestion_review", "ingestion_skip", "upload_replace"}.isdisjoint(studio_action_types)
+    assert {"retrieval_run", "ingestion_review", "ingestion_skip", "upload_replace"}.issubset(studio_diagnostics_action_types)
     assert {"retrieval_run", "ingestion_review", "ingestion_skip", "upload_replace"}.isdisjoint(production_action_types)
 
 

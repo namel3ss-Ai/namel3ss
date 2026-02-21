@@ -7,7 +7,7 @@ from typing import Any
 from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.payload import build_error_payload
 from namel3ss.resources import package_root, studio_web_root
-from namel3ss.ui.external.serve import resolve_external_ui_file
+from namel3ss.ui.external.serve import resolve_builtin_icon_file, resolve_external_ui_file
 
 
 def read_json_body(handler: Any) -> dict | None:
@@ -55,6 +55,21 @@ def respond_bytes(
 def handle_static(handler: Any, path: str) -> bool:
     if bool(getattr(handler.server, "headless", False)):  # type: ignore[attr-defined]
         return False
+    icon_path, icon_type = resolve_builtin_icon_file(path)
+    if icon_path and icon_type:
+        try:
+            content = icon_path.read_bytes()
+        except OSError:  # pragma: no cover - IO guard
+            return False
+        headers = _static_cache_headers(path, icon_type)
+        handler.send_response(200)
+        handler.send_header("Content-Type", icon_type)
+        handler.send_header("Content-Length", str(len(content)))
+        for key, value in headers.items():
+            handler.send_header(key, value)
+        handler.end_headers()
+        handler.wfile.write(content)
+        return True
     file_path, content_type = _resolve_runtime_file(path, handler._mode())
     if not file_path or not content_type:
         return False
@@ -62,9 +77,12 @@ def handle_static(handler: Any, path: str) -> bool:
         content = file_path.read_bytes()
     except OSError:  # pragma: no cover - IO guard
         return False
+    headers = _static_cache_headers(path, content_type)
     handler.send_response(200)
     handler.send_header("Content-Type", content_type)
     handler.send_header("Content-Length", str(len(content)))
+    for key, value in headers.items():
+        handler.send_header(key, value)
     handler.end_headers()
     handler.wfile.write(content)
     return True
@@ -131,6 +149,22 @@ def _resolve_runtime_file(path: str, mode: str) -> tuple[Path | None, str | None
         if file_path and content_type:
             return file_path, content_type
     return None, None
+
+
+def _static_cache_headers(path: str, content_type: str) -> dict[str, str]:
+    normalized_path = (path or "").lower()
+    normalized_type = (content_type or "").lower()
+    is_shell_html = normalized_path in {"/", "/index.html"} or normalized_type.startswith("text/html")
+    is_runtime_script = normalized_path.endswith(".js")
+    is_runtime_style = normalized_path.endswith(".css")
+    is_icon_svg = normalized_path.startswith("/icons/") and normalized_path.endswith(".svg")
+    if is_shell_html or is_runtime_script or is_runtime_style or is_icon_svg:
+        return {
+            "Cache-Control": "no-store, max-age=0, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        }
+    return {}
 
 
 def _runtime_web_root() -> Path:

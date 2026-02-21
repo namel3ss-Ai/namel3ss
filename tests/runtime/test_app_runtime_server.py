@@ -35,6 +35,24 @@ page "home":
 '''
 
 
+def _collect_element_types(payload: dict) -> list[str]:
+    types: list[str] = []
+
+    def visit(node: object) -> None:
+        if isinstance(node, dict):
+            node_type = node.get("type")
+            if isinstance(node_type, str) and node_type:
+                types.append(node_type)
+            for value in node.values():
+                visit(value)
+        elif isinstance(node, list):
+            for item in node:
+                visit(item)
+
+    visit(payload.get("pages", []))
+    return types
+
+
 def test_app_state_endpoints(tmp_path):
     """
     Smoke test the in-process app state surface without HTTP.
@@ -54,6 +72,15 @@ def test_app_state_endpoints(tmp_path):
     response = state.run_action(actions[0], {})
     assert response["ok"] is True
     assert response["state"]["counter"] == 1
+    action_ui = response.get("ui") if isinstance(response, dict) else {}
+    action_types = _collect_element_types(action_ui if isinstance(action_ui, dict) else {})
+    assert "audit_viewer" not in action_types
+    assert "state_inspector" not in action_types
+
+    manifest_after_action = state.manifest_payload()
+    manifest_types = _collect_element_types(manifest_after_action)
+    assert "audit_viewer" not in manifest_types
+    assert "state_inspector" not in manifest_types
 
     updated_state = state.state_payload()
     assert updated_state["state"]["counter"] == 1
@@ -79,6 +106,16 @@ def test_app_runtime_http_endpoints(tmp_path):
     action_resp = json.loads(conn.getresponse().read())
     assert action_resp["ok"] is True
     assert action_resp["state"]["counter"] == 1
+    action_ui = action_resp.get("ui") if isinstance(action_resp, dict) else {}
+    action_types = _collect_element_types(action_ui if isinstance(action_ui, dict) else {})
+    assert "audit_viewer" not in action_types
+    assert "state_inspector" not in action_types
+
+    conn.request("GET", "/api/ui")
+    manifest_after_action = json.loads(conn.getresponse().read())
+    manifest_types = _collect_element_types(manifest_after_action)
+    assert "audit_viewer" not in manifest_types
+    assert "state_inspector" not in manifest_types
 
     conn.request("GET", "/api/state")
     state_payload = json.loads(conn.getresponse().read())

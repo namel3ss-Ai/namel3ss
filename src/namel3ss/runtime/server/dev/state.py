@@ -300,12 +300,14 @@ class BrowserAppState:
                 response["ui"] = refreshed_manifest
         ui_payload = response.get("ui") if isinstance(response, dict) else None
         if isinstance(ui_payload, dict):
-            inject_audit_viewer_elements(
-                ui_payload,
-                run_artifact=response.get("run_artifact"),
-                audit_bundle=response.get("audit_bundle"),
-                audit_policy_status=response.get("audit_policy_status"),
-            )
+            ui_mode = str(ui_payload.get("mode") or "").strip().lower()
+            if ui_mode == DISPLAY_MODE_STUDIO:
+                inject_audit_viewer_elements(
+                    ui_payload,
+                    run_artifact=response.get("run_artifact"),
+                    audit_bundle=response.get("audit_bundle"),
+                    audit_policy_status=response.get("audit_policy_status"),
+                )
             resolved_cache_key = self._identity_cache_key(
                 identity_value,
                 auth_context=auth_context,
@@ -465,7 +467,6 @@ class BrowserAppState:
         except Exception:
             return {}
 
-
 def _scan_project_sources(project_root: Path) -> list[Path]:
     paths: list[Path] = []
     for path in sorted(project_root.rglob("*.ai"), key=lambda p: p.as_posix()):
@@ -496,5 +497,4 @@ def _read_source_fallback(app_path: Path) -> dict[Path, str]:
         return {app_path: app_path.read_text(encoding="utf-8")}
     except OSError:
         return {}
-
 __all__ = ["BrowserAppState"]

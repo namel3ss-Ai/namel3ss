@@ -157,6 +157,39 @@ def test_retrieval_metadata_and_scrubbing(tmp_path: Path) -> None:
         assert "C:\\" not in item["text"]
 
 
+def test_retrieval_ignores_unreadable_chunks() -> None:
+    state = {
+        "ingestion": {
+            "doc-1": {"status": "pass"},
+        },
+        "index": {
+            "chunks": [
+                {
+                    "upload_id": "doc-1",
+                    "chunk_id": "doc-1:0",
+                    "document_id": "doc-1",
+                    "source_name": "cipher.txt",
+                    "page_number": 1,
+                    "chunk_index": 0,
+                    "ingestion_phase": "deep",
+                    "keywords": ["alpha"],
+                    "text": (
+                        "%XLOGLQJ D 3U RIHVLRQDO *UDGH &XVWRPHU VXSSRUW &KDW $SS ZLWK QDPHO3VV "
+                        ",QWURGXFWLRQ 7KH QDPHO3VV IUDPHZRUN DOORZV XV WR EXLOG $, GULYHQ DSSV"
+                    ),
+                }
+            ]
+        },
+    }
+    result = run_retrieval(
+        query="",
+        state=state,
+        project_root=None,
+        app_path=None,
+    )
+    assert result["results"] == []
+
+
 def test_retrieval_action_runs(tmp_path: Path) -> None:
     source = '''
 spec is "1.0"

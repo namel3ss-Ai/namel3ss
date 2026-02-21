@@ -7,8 +7,9 @@ from urllib import request
 from namel3ss.determinism import canonical_json_dumps
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.packs.runtime_paths import pack_job_queue_path
+from namel3ss.utils.http_tls import safe_urlopen_with_tls_fallback
 from namel3ss_safeio import filesystem_root as safeio_filesystem_root
-from namel3ss_safeio import safe_open, safe_urlopen
+from namel3ss_safeio import safe_open
 
 
 def read_text(path: str | Path, *, encoding: str = "utf-8") -> str:
@@ -55,7 +56,7 @@ def http_get_json(
         raise ValueError("url must be a non-empty string")
     header_map = _normalize_headers(headers)
     req = request.Request(url, method="GET", headers=header_map)
-    with safe_urlopen(req, timeout=timeout_seconds) as resp:
+    with safe_urlopen_with_tls_fallback(req, timeout_seconds=timeout_seconds) as resp:
         status = int(getattr(resp, "status", None) or resp.getcode())
         raw = resp.read()
         body = raw.decode("utf-8", errors="replace")

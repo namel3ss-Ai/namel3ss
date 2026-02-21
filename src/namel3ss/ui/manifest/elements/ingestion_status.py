@@ -45,6 +45,7 @@ def build_ingestion_status_element(
         "source": source,
         "upload_name": upload_name,
         "upload_id": upload_id,
+        "debug_only": True,
         **base,
     }
     fallback_used = report.get("fallback_used")

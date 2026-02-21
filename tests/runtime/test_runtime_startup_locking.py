@@ -49,3 +49,21 @@ def test_browser_runner_emits_startup_banner(tmp_path, capsys) -> None:
         assert "renderer_registry_hash" in output
     finally:
         runner.shutdown()
+
+
+def test_browser_runner_fails_startup_on_manifest_hash_drift(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app_path = tmp_path / "app.ai"
+    app_path.write_text(APP_SOURCE, encoding="utf-8")
+    runner = BrowserRunner(app_path, mode="run", port=_free_port(), watch_sources=False, headless=True)
+    monkeypatch.setattr(
+        "namel3ss.runtime.server.dev.app.require_static_runtime_manifest_parity",
+        lambda **_: (_ for _ in ()).throw(Namel3ssError("manifest drift")),
+    )
+    try:
+        with pytest.raises(Namel3ssError, match="manifest drift"):
+            runner.bind()
+    finally:
+        runner.shutdown()

@@ -10,6 +10,7 @@ from namel3ss.cli.constants import RESERVED
 from namel3ss.cli.devex import parse_project_overrides
 from namel3ss.cli.editor_mode import run_editor_command
 from namel3ss.cli.explain_mode import run_explain_command
+from namel3ss.cli.expand_mode import run_expand_command
 from namel3ss.cli.exports_mode import run_exports
 from namel3ss.cli.format_mode import run_format
 from namel3ss.cli.graph_mode import run_graph
@@ -236,6 +237,8 @@ def handle_app_commands(path: str | None, remainder: list[str], context: dict | 
         return run_explain_command([path_posix, *tail])
     if cmd == "editor":
         return run_editor_command([path_posix, *tail])
+    if cmd == "expand":
+        return run_expand_command([path_posix, *tail])
     if cmd in RESERVED:
         raise Namel3ssError(
             f"Unknown command: '{remainder[0]}'.\nWhy: command is reserved or out of place.\nFix: run `n3 help` for usage."

@@ -32,21 +32,27 @@ def apply_display_mode_filter(
     diagnostics_categories: tuple[str, ...] | None = None,
 ) -> dict:
     mode = normalize_display_mode(display_mode, default=DISPLAY_MODE_STUDIO)
+    diagnostics_on = bool(diagnostics_enabled)
     filtered = deepcopy(manifest if isinstance(manifest, dict) else {})
     filtered["mode"] = mode
-    filtered["diagnostics_enabled"] = bool(diagnostics_enabled or mode == DISPLAY_MODE_STUDIO)
-    if mode == DISPLAY_MODE_STUDIO:
+    filtered["diagnostics_enabled"] = diagnostics_on
+    if mode == DISPLAY_MODE_STUDIO and diagnostics_on:
         _strip_internal_action_source(filtered.get("actions"))
         return filtered
 
     pages = filtered.get("pages")
     kept_element_ids: set[str] = set()
     categories = set(diagnostics_categories or ())
-    diagnostics_on = bool(diagnostics_enabled)
+    preserve_hidden = mode == DISPLAY_MODE_STUDIO
     if isinstance(pages, list):
         filtered_pages: list[dict] = []
         for page in pages:
-            page_result = _filter_page(page, diagnostics_enabled=diagnostics_on, diagnostics_categories=categories)
+            page_result = _filter_page(
+                page,
+                diagnostics_enabled=diagnostics_on,
+                diagnostics_categories=categories,
+                preserve_hidden=preserve_hidden,
+            )
             if page_result is None:
                 continue
             page_payload, page_element_ids = page_result
@@ -72,6 +78,7 @@ def _filter_page(
     *,
     diagnostics_enabled: bool,
     diagnostics_categories: set[str],
+    preserve_hidden: bool,
 ) -> tuple[dict, set[str]] | None:
     if not isinstance(page, dict):
         return None
@@ -90,6 +97,7 @@ def _filter_page(
                 normalized_layout.get(slot_name, []),
                 diagnostics_enabled=diagnostics_enabled,
                 diagnostics_categories=diagnostics_categories,
+                preserve_hidden=preserve_hidden,
             )
             filtered_layout[slot_name] = filtered_elements
             page_element_ids.update(element_ids)
@@ -102,6 +110,7 @@ def _filter_page(
                 elements,
                 diagnostics_enabled=diagnostics_enabled,
                 diagnostics_categories=diagnostics_categories,
+                preserve_hidden=preserve_hidden,
             )
             next_page["elements"] = filtered_elements
             page_element_ids.update(element_ids)
@@ -114,6 +123,7 @@ def _filter_page(
                 diagnostics_blocks,
                 diagnostics_enabled=diagnostics_enabled,
                 diagnostics_categories=diagnostics_categories,
+                preserve_hidden=preserve_hidden,
             )
             next_page["diagnostics_blocks"] = filtered_blocks
             page_element_ids.update(block_ids)
@@ -129,6 +139,7 @@ def _filter_elements(
     *,
     diagnostics_enabled: bool,
     diagnostics_categories: set[str],
+    preserve_hidden: bool,
 ) -> tuple[list[dict], set[str]]:
     kept: list[dict] = []
     kept_ids: set[str] = set()
@@ -137,7 +148,8 @@ def _filter_elements(
             continue
         if _is_debug_only(entry, diagnostics_enabled=diagnostics_enabled, diagnostics_categories=diagnostics_categories):
             continue
-        if entry.get("visible") is False:
+        element_hidden = entry.get("visible") is False
+        if element_hidden and not preserve_hidden:
             continue
         element = dict(entry)
         for child_key in ("children", "sidebar", "main", "then_children", "else_children"):
@@ -147,11 +159,13 @@ def _filter_elements(
                     children,
                     diagnostics_enabled=diagnostics_enabled,
                     diagnostics_categories=diagnostics_categories,
+                    preserve_hidden=preserve_hidden,
                 )
                 element[child_key] = filtered_children
-                kept_ids.update(child_ids)
+                if not element_hidden:
+                    kept_ids.update(child_ids)
         element_id = element.get("element_id")
-        if isinstance(element_id, str) and element_id:
+        if isinstance(element_id, str) and element_id and not element_hidden:
             kept_ids.add(element_id)
         kept.append(element)
     return kept, kept_ids

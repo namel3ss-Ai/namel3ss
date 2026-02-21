@@ -147,7 +147,8 @@ def _resolve_source_reference(
 ) -> dict:
     if isinstance(source, ir.StatePath):
         source_path = _state_path_label(source)
-        value = _resolve_state_path(source, state_ctx, default=None, register_default=True)
+        # Missing preview state should degrade to the unavailable preview surface, not raise.
+        value = _resolve_state_path(source, state_ctx, default="", register_default=True)
         resolved = _normalize_source_payload(value, line=line, column=column)
         resolved["source"] = source_path
         return resolved

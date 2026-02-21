@@ -27,6 +27,26 @@ STATE_SOURCE = '''page "home":
       primary is name
 '''
 
+ICON_PLAIN_SOURCE = '''record "Project":
+  name text
+  icon text
+  icon_color text
+
+flow "open_project":
+  return "ok"
+
+page "home":
+  list is "Project":
+    variant is icon_plain
+    item:
+      primary is name
+      icon is icon
+      icon_color is icon_color
+    actions:
+      action "Open":
+        calls flow "open_project"
+'''
+
 INPUT_SOURCE = '''contract flow "answer":
   input:
     question is text
@@ -39,6 +59,15 @@ flow "answer":
 page "home":
   input text as question
     send to flow "answer"
+'''
+
+BUTTON_ICON_SOURCE = '''flow "create_user":
+  return "ok"
+
+page "home":
+  button "Create":
+    icon is add
+    calls flow "create_user"
 '''
 
 def test_lowering_includes_pages_and_items():
@@ -73,3 +102,20 @@ def test_lowering_text_input_item():
     assert isinstance(item, ir.TextInputItem)
     assert item.name == "question"
     assert item.flow_name == "answer"
+
+
+def test_lowering_icon_plain_list_variant():
+    program = lower_ir_program(ICON_PLAIN_SOURCE)
+    page = program.pages[0]
+    item = page.items[0]
+    assert isinstance(item, ir.ListItem)
+    assert item.variant == "icon_plain"
+    assert item.item.icon_color == "icon_color"
+
+
+def test_lowering_button_icon():
+    program = lower_ir_program(BUTTON_ICON_SOURCE)
+    page = program.pages[0]
+    item = page.items[0]
+    assert isinstance(item, ir.ButtonItem)
+    assert item.icon == "add"

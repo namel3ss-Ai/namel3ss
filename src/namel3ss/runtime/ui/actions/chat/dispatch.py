@@ -112,6 +112,8 @@ def _run_chat_model_select(ctx: ActionDispatchContext) -> tuple[dict, Exception 
         identity=ctx.identity,
         auth_context=ctx.auth_context,
         secret_values=ctx.secret_values,
+        ui_mode=ctx.ui_mode,
+        diagnostics_enabled=ctx.diagnostics_enabled,
     )
     return response, None
 
@@ -129,6 +131,8 @@ def _run_chat_thread_select(ctx: ActionDispatchContext) -> tuple[dict, Exception
         identity=ctx.identity,
         auth_context=ctx.auth_context,
         secret_values=ctx.secret_values,
+        ui_mode=ctx.ui_mode,
+        diagnostics_enabled=ctx.diagnostics_enabled,
     )
     return response, None
 
@@ -146,6 +150,8 @@ def _run_chat_thread_new(ctx: ActionDispatchContext) -> tuple[dict, Exception | 
         identity=ctx.identity,
         auth_context=ctx.auth_context,
         secret_values=ctx.secret_values,
+        ui_mode=ctx.ui_mode,
+        diagnostics_enabled=ctx.diagnostics_enabled,
     )
     return response, None
 
@@ -191,6 +197,8 @@ def _run_chat_message_regenerate(ctx: ActionDispatchContext) -> tuple[dict, Exce
         identity=ctx.identity,
         auth_context=ctx.auth_context,
         secret_values=ctx.secret_values,
+        ui_mode=ctx.ui_mode,
+        diagnostics_enabled=ctx.diagnostics_enabled,
     )
     return response, None
 
@@ -208,6 +216,8 @@ def _run_chat_branch_select(ctx: ActionDispatchContext) -> tuple[dict, Exception
         identity=ctx.identity,
         auth_context=ctx.auth_context,
         secret_values=ctx.secret_values,
+        ui_mode=ctx.ui_mode,
+        diagnostics_enabled=ctx.diagnostics_enabled,
     )
     return response, None
 
@@ -225,6 +235,8 @@ def _run_chat_stream_cancel(ctx: ActionDispatchContext) -> tuple[dict, Exception
         identity=ctx.identity,
         auth_context=ctx.auth_context,
         secret_values=ctx.secret_values,
+        ui_mode=ctx.ui_mode,
+        diagnostics_enabled=ctx.diagnostics_enabled,
     )
     return response, None
 

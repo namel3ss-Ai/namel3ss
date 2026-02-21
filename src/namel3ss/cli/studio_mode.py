@@ -12,7 +12,7 @@ from namel3ss.cli.text_output import prepare_cli_text
 from namel3ss.studio.server import start_server
 
 
-def run_studio(path: str, port: int, dry: bool) -> int:
+def run_studio(path: str | None, port: int, dry: bool) -> int:
     sources: dict = {}
     try:
         app_path = _resolve_studio_app_path(path)

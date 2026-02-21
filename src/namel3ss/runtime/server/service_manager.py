@@ -30,6 +30,7 @@ from namel3ss.runtime.server.startup import (
     build_program_manifest_payload,
     build_runtime_startup_context,
     print_startup_banner,
+    require_static_runtime_manifest_parity,
 )
 from namel3ss.runtime.server.session_manager import DEFAULT_IDLE_TIMEOUT_SECONDS, ServiceSessionManager
 from namel3ss.runtime.server.service_process_model import configure_server_process_model
@@ -181,6 +182,13 @@ class ServiceRunner:
                 server.session_manager = None  # type: ignore[attr-defined]
             startup_manifest_payload = build_program_manifest_payload(
                 program=program_ir,
+                ui_mode=self.ui_mode,
+                diagnostics_enabled=self.diagnostics_enabled,
+            )
+            require_static_runtime_manifest_parity(
+                program=program_ir,
+                runtime_manifest_payload=startup_manifest_payload,
+                static_manifest_payload=startup_manifest_payload,
                 ui_mode=self.ui_mode,
                 diagnostics_enabled=self.diagnostics_enabled,
             )

@@ -8,6 +8,7 @@ from namel3ss.runtime.ingest.extractors.extractor_protocol import (
     normalize_extractor_metadata,
     normalize_pages,
 )
+from namel3ss.runtime.ingest.extractors.ocr_backend import build_pdf_ocr_backend, is_ocr_backend_available
 
 
 OCR_NOT_AVAILABLE_ERROR_CODE = "N3E_OCR_NOT_AVAILABLE"
@@ -67,4 +68,19 @@ class PdfOcrExtractor:
         )
 
 
-__all__ = ["OCR_NOT_AVAILABLE_ERROR_CODE", "OcrNotAvailableError", "PdfOcrExtractor"]
+def create_default_pdf_ocr_extractor(*, settings: Mapping[str, object] | None = None) -> PdfOcrExtractor:
+    backend = build_pdf_ocr_backend(settings=settings)
+    return PdfOcrExtractor(backend=backend, settings=settings)
+
+
+def default_pdf_ocr_available() -> bool:
+    return is_ocr_backend_available()
+
+
+__all__ = [
+    "OCR_NOT_AVAILABLE_ERROR_CODE",
+    "OcrNotAvailableError",
+    "PdfOcrExtractor",
+    "create_default_pdf_ocr_extractor",
+    "default_pdf_ocr_available",
+]

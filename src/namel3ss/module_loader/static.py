@@ -129,6 +129,7 @@ def _merge_programs(
         plugin_uses=_dedupe_plugin_uses(combined_plugin_uses),
         capsule=None,
         identity=identity_decl,
+        policy=getattr(app_ast, "policy", None),
         line=app_ast.line,
         column=app_ast.column,
     )

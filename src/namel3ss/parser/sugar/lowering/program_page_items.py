@@ -132,6 +132,7 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
         _copy_page_metadata(lowered, item)
         return lowered
     if isinstance(item, ast.ChatItem):
+        composer_attach_upload = str(getattr(item, "composer_attach_upload", "") or "").strip()
         lowered = ast.ChatItem(
             children=[_lower_page_item(child) for child in item.children],
             style=getattr(item, "style", "bubbles"),
@@ -140,6 +141,9 @@ def _lower_page_item(item: ast.PageItem) -> ast.PageItem:
             actions=list(getattr(item, "actions", []) or []),
             streaming=bool(getattr(item, "streaming", False)),
             attachments=bool(getattr(item, "attachments", False)),
+            composer_placeholder=getattr(item, "composer_placeholder", None),
+            composer_send_style=str(getattr(item, "composer_send_style", "icon") or "icon"),
+            composer_attach_upload=(composer_attach_upload or None),
             visibility=getattr(item, "visibility", None),
             visibility_rule=getattr(item, "visibility_rule", None),
             show_when=getattr(item, "show_when", None),

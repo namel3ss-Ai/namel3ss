@@ -235,6 +235,10 @@ def build_list_item(
         }
         if item.empty_text:
             element["empty_text"] = item.empty_text
+        if item.group_by:
+            element["group_by"] = item.group_by
+        if item.group_label:
+            element["group_label"] = item.group_label
         if item.selection is not None:
             element["selection"] = item.selection
         if action_entries:
@@ -266,6 +270,10 @@ def build_list_item(
     }
     if item.empty_text:
         element["empty_text"] = item.empty_text
+    if item.group_by:
+        element["group_by"] = item.group_by
+    if item.group_label:
+        element["group_label"] = item.group_label
     if empty_state_hidden and not rows:
         element["visible"] = False
     return _attach_origin(element, item), {}

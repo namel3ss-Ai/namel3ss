@@ -10,6 +10,9 @@ from namel3ss.parser.decl.page_common import _is_visibility_rule_start, _parse_s
 from namel3ss.parser.decl.page_items.size_radius import apply_theme_override, parse_theme_override_line
 from namel3ss.parser.diagnostics import reserved_identifier_diagnostic
 
+_ALLOWED_LIST_ACTION_INTERACTIONS = {"rename_modal", "confirm_destructive", "project_picker", "upload_picker"}
+_ALLOWED_LIST_ACTION_INTERACTIONS_TEXT = ", ".join(sorted(_ALLOWED_LIST_ACTION_INTERACTIONS))
+
 
 def parse_list_block(parser, *, allow_pattern_params: bool = False):
     parser._expect("NEWLINE", "Expected newline after list header")
@@ -20,6 +23,8 @@ def parse_list_block(parser, *, allow_pattern_params: bool = False):
     empty_state_hidden = False
     selection = None
     actions = None
+    group_by = None
+    group_label = None
     visibility_rule = None
     theme_overrides: ast.ThemeTokenOverrides | None = None
     while parser._current().type != "DEDENT":
@@ -51,15 +56,15 @@ def parse_list_block(parser, *, allow_pattern_params: bool = False):
             value_tok = parser._current()
             if value_tok.type not in {"STRING", "IDENT"}:
                 raise Namel3ssError(
-                    "Variant must be 'single_line', 'two_line', or 'icon'",
+                    "Variant must be 'single_line', 'two_line', 'icon', or 'icon_plain'",
                     line=value_tok.line,
                     column=value_tok.column,
                 )
             parser._advance()
             variant_value = str(value_tok.value).lower()
-            if variant_value not in {"single_line", "two_line", "icon"}:
+            if variant_value not in {"single_line", "two_line", "icon", "icon_plain"}:
                 raise Namel3ssError(
-                    "Variant must be 'single_line', 'two_line', or 'icon'",
+                    "Variant must be 'single_line', 'two_line', 'icon', or 'icon_plain'",
                     line=value_tok.line,
                     column=value_tok.column,
                 )
@@ -118,13 +123,44 @@ def parse_list_block(parser, *, allow_pattern_params: bool = False):
             parser._advance()
             actions = _parse_list_actions_block(parser, allow_pattern_params=allow_pattern_params)
             continue
+        if tok.type == "IDENT" and tok.value == "group_by":
+            if group_by is not None:
+                raise Namel3ssError("group_by is declared more than once", line=tok.line, column=tok.column)
+            parser._advance()
+            parser._expect("IS", "Expected 'is' after group_by")
+            group_by = _parse_list_field_name(parser)
+            if parser._match("NEWLINE"):
+                continue
+            continue
+        if tok.type == "IDENT" and tok.value == "group_label":
+            if group_label is not None:
+                raise Namel3ssError("group_label is declared more than once", line=tok.line, column=tok.column)
+            parser._advance()
+            parser._expect("IS", "Expected 'is' after group_label")
+            group_label = _parse_list_field_name(parser)
+            if parser._match("NEWLINE"):
+                continue
+            continue
         raise Namel3ssError(
             f"Unknown list setting '{tok.value}'",
             line=tok.line,
             column=tok.column,
         )
     parser._expect("DEDENT", "Expected end of list block")
-    return variant, item, empty_text, empty_state_hidden, selection, actions, visibility_rule, theme_overrides
+    if group_label is not None and group_by is None:
+        raise Namel3ssError("group_label requires group_by.", line=parser._current().line, column=parser._current().column)
+    return (
+        variant,
+        item,
+        empty_text,
+        empty_state_hidden,
+        selection,
+        actions,
+        group_by,
+        group_label,
+        visibility_rule,
+        theme_overrides,
+    )
 
 
 def _parse_list_item_block(parser, line: int, column: int) -> ast.ListItemMapping:
@@ -137,6 +173,7 @@ def _parse_list_item_block(parser, line: int, column: int) -> ast.ListItemMappin
     secondary = None
     meta = None
     icon = None
+    icon_color = None
     while parser._current().type != "DEDENT":
         if parser._match("NEWLINE"):
             continue
@@ -177,6 +214,15 @@ def _parse_list_item_block(parser, line: int, column: int) -> ast.ListItemMappin
             if parser._match("NEWLINE"):
                 continue
             continue
+        if tok.type == "IDENT" and tok.value == "icon_color":
+            if icon_color is not None:
+                raise Namel3ssError("Icon color is declared more than once", line=tok.line, column=tok.column)
+            parser._advance()
+            parser._expect("IS", "Expected 'is' after icon_color")
+            icon_color = _parse_list_field_name(parser)
+            if parser._match("NEWLINE"):
+                continue
+            continue
         raise Namel3ssError(
             f"Unknown item setting '{tok.value}'",
             line=tok.line,
@@ -190,6 +236,7 @@ def _parse_list_item_block(parser, line: int, column: int) -> ast.ListItemMappin
         secondary=secondary,
         meta=meta,
         icon=icon,
+        icon_color=icon_color,
         line=line,
         column=column,
     )
@@ -281,18 +328,51 @@ def _parse_list_actions_block(parser, *, allow_pattern_params: bool) -> List[ast
         kind = None
         flow_name = None
         target = None
+        ui_behavior = None
         availability_rule = None
         while parser._current().type != "DEDENT":
             if parser._match("NEWLINE"):
                 continue
+            action_tok = parser._current()
+            if action_tok.type == "IDENT" and action_tok.value == "interaction":
+                if ui_behavior is not None:
+                    raise Namel3ssError(
+                        "Action interaction is declared more than once.",
+                        line=action_tok.line,
+                        column=action_tok.column,
+                    )
+                parser._advance()
+                parser._expect("IS", "Expected 'is' after interaction")
+                value_tok = parser._current()
+                if value_tok.type not in {"IDENT", "STRING"}:
+                    raise Namel3ssError(
+                        f"Action interaction must be one of: {_ALLOWED_LIST_ACTION_INTERACTIONS_TEXT}.",
+                        line=value_tok.line,
+                        column=value_tok.column,
+                    )
+                parser._advance()
+                value = str(value_tok.value).strip().lower()
+                if value not in _ALLOWED_LIST_ACTION_INTERACTIONS:
+                    raise Namel3ssError(
+                        f"Action interaction must be one of: {_ALLOWED_LIST_ACTION_INTERACTIONS_TEXT}.",
+                        line=value_tok.line,
+                        column=value_tok.column,
+                    )
+                ui_behavior = value
+                parser._match("NEWLINE")
+                continue
+            if kind is not None:
+                raise Namel3ssError(
+                    "Action body may only declare one action command.",
+                    line=action_tok.line,
+                    column=action_tok.column,
+                )
             kind, flow_name, target, availability_rule = parse_ui_action_body(
                 parser,
                 entry_label="Action",
                 allow_pattern_params=allow_pattern_params,
             )
-            if parser._match("NEWLINE"):
-                continue
-            break
+            parser._match("NEWLINE")
         parser._expect("DEDENT", "Expected end of action body")
         if kind is None:
             raise Namel3ssError("Action body must include 'calls flow \"<name>\"'", line=tok.line, column=tok.column)
@@ -310,6 +390,7 @@ def _parse_list_actions_block(parser, *, allow_pattern_params: bool) -> List[ast
                 flow_name=flow_name,
                 kind=kind,
                 target=target,
+                ui_behavior=ui_behavior,
                 availability_rule=availability_rule,
                 line=tok.line,
                 column=tok.column,

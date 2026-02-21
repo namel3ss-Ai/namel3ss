@@ -131,6 +131,34 @@ def test_actions_contract_is_stable_list() -> None:
     assert [item["id"] for item in payload["actions"]] == ["a.action", "b.action"]
 
 
+def test_actions_contract_preserves_upload_action_metadata() -> None:
+    manifest = {
+        "ok": True,
+        "actions": {
+            "page.home.upload.receipt": {
+                "type": "upload_select",
+                "name": "receipt",
+                "multiple": True,
+                "required": True,
+            },
+            "page.home.upload.receipt.clear": {
+                "type": "upload_clear",
+                "name": "receipt",
+            },
+        },
+    }
+
+    payload = build_ui_actions_payload(manifest)
+    action_map = {entry["id"]: entry for entry in payload["actions"]}
+    select_action = action_map["page.home.upload.receipt"]
+    clear_action = action_map["page.home.upload.receipt.clear"]
+
+    assert select_action["name"] == "receipt"
+    assert select_action["multiple"] is True
+    assert select_action["required"] is True
+    assert clear_action["name"] == "receipt"
+
+
 def test_state_and_action_result_contracts() -> None:
     state_payload = build_ui_state_payload({"ok": True, "state": {"counter": 1, "page": "home"}, "revision": "rev1"})
     assert state_payload["contract_version"] == RUNTIME_UI_CONTRACT_VERSION

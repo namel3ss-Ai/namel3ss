@@ -11,6 +11,7 @@ from namel3ss.runtime.executor import execute_program_flow
 from namel3ss.runtime.server.session_manager import ServiceSession
 from namel3ss.runtime.ui.actions import handle_action
 from namel3ss.ui.manifest.elements.audit_viewer import inject_audit_viewer_elements
+from namel3ss.ui.manifest.display_mode import DISPLAY_MODE_STUDIO
 from namel3ss.ui.manifest import build_manifest
 from namel3ss.ui.settings import UI_DEFAULTS
 
@@ -127,12 +128,14 @@ def handle_session_action_post(handler, body: dict, *, action_id: str, payload: 
                 session.state = deepcopy(response["state"])
             ui_payload = response.get("ui")
             if isinstance(ui_payload, dict):
-                inject_audit_viewer_elements(
-                    ui_payload,
-                    run_artifact=response.get("run_artifact"),
-                    audit_bundle=response.get("audit_bundle"),
-                    audit_policy_status=response.get("audit_policy_status"),
-                )
+                ui_mode = str(ui_payload.get("mode") or "").strip().lower()
+                if ui_mode == DISPLAY_MODE_STUDIO:
+                    inject_audit_viewer_elements(
+                        ui_payload,
+                        run_artifact=response.get("run_artifact"),
+                        audit_bundle=response.get("audit_bundle"),
+                        audit_policy_status=response.get("audit_policy_status"),
+                    )
                 theme_current = (ui_payload.get("theme") or {}).get("current")
                 if isinstance(theme_current, str) and theme_current:
                     session.runtime_theme = theme_current

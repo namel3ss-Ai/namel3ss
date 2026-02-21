@@ -9,6 +9,7 @@ from namel3ss.runtime.run_pipeline import finalize_run_payload
 from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.ui.actions.validation.validate import ensure_json_serializable
 from namel3ss.ui.manifest import build_manifest
+from namel3ss.ui.manifest.display_mode import DISPLAY_MODE_STUDIO
 from namel3ss.ui.theme_tokens import UI_THEME_TOKEN_ORDER, normalize_ui_theme_token_value
 
 
@@ -25,6 +26,8 @@ def handle_theme_settings_update_action(
     identity: dict | None = None,
     auth_context: object | None = None,
     secret_values: list[str] | None = None,
+    ui_mode: str = DISPLAY_MODE_STUDIO,
+    diagnostics_enabled: bool = False,
 ) -> dict:
     del action
     settings = _parse_settings(payload)
@@ -45,6 +48,8 @@ def handle_theme_settings_update_action(
         runtime_theme=runtime_theme,
         identity=identity,
         auth_context=auth_context,
+        display_mode=ui_mode,
+        diagnostics_enabled=diagnostics_enabled,
     )
     ensure_json_serializable(response)
     response = finalize_run_payload(response, secret_values)

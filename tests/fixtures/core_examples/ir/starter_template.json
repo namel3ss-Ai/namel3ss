@@ -248,6 +248,7 @@
             {
               "column": 5,
               "flow_name": "seed_note",
+              "icon": null,
               "label": "add sample note",
               "line": 45,
               "show_when": null,

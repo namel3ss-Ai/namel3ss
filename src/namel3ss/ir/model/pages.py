@@ -32,6 +32,10 @@ class PageLayout(Node):
     drawer_right: list["PageItem"]
     footer: list["PageItem"]
     diagnostics: list["PageItem"] = field(default_factory=list)
+    sidebar_width: str | None = None
+    drawer_width: str | None = None
+    panel_height: str | None = None
+    resizable_panels: bool | None = None
 
 
 @dataclass
@@ -244,6 +248,7 @@ class ListItemMapping(Node):
     secondary: str | None = None
     meta: str | None = None
     icon: str | None = None
+    icon_color: str | None = None
 
 
 @dataclass
@@ -252,6 +257,7 @@ class ListAction(Node):
     flow_name: str | None = None
     kind: str = "call_flow"
     target: str | None = None
+    ui_behavior: str | None = None
     availability_rule: ActionAvailabilityRule | None = field(default=None, kw_only=True)
 
 
@@ -265,6 +271,8 @@ class ListItem(PageItem):
     empty_state_hidden: bool = False
     selection: str | None = None
     actions: List[ListAction] | None = None
+    group_by: str | None = None
+    group_label: str | None = None
 
 
 @dataclass
@@ -277,73 +285,19 @@ class ChartItem(PageItem):
     explain: str | None = None
 
 
-@dataclass
-class ChatMessagesItem(PageItem):
-    source: StatePath
-
-
-@dataclass
-class ChatComposerField(Node):
-    name: str
-    type_name: str
-    type_was_alias: bool = False
-    raw_type_name: str | None = None
-    type_line: int | None = None
-    type_column: int | None = None
-
-
-@dataclass
-class ChatComposerItem(PageItem):
-    flow_name: str
-    fields: list[ChatComposerField] = field(default_factory=list)
-
-
-@dataclass
-class ChatThinkingItem(PageItem):
-    when: StatePath
-
-
-@dataclass
-class ChatCitationsItem(PageItem):
-    source: StatePath
-
-
-@dataclass
-class ChatMemoryItem(PageItem):
-    source: StatePath
-    lane: str | None = None
-
-
-@dataclass
-class CitationChipsItem(PageItem):
-    source: StatePath
-
-
-@dataclass
-class SourcePreviewItem(PageItem):
-    source: StatePath | Literal
-
-
-@dataclass
-class TrustIndicatorItem(PageItem):
-    source: StatePath
-
-
-@dataclass
-class ScopeSelectorItem(PageItem):
-    options_source: StatePath
-    active: StatePath
-
-
-@dataclass
-class ChatItem(PageItem):
-    children: List["PageItem"]
-    style: str = "bubbles"
-    show_avatars: bool = False
-    group_messages: bool = True
-    actions: list[str] = field(default_factory=list)
-    streaming: bool = False
-    attachments: bool = False
+from namel3ss.ir.model.page_chat_items import (  # noqa: E402
+    ChatCitationsItem,
+    ChatComposerField,
+    ChatComposerItem,
+    ChatItem,
+    ChatMemoryItem,
+    ChatMessagesItem,
+    ChatThinkingItem,
+    CitationChipsItem,
+    ScopeSelectorItem,
+    SourcePreviewItem,
+    TrustIndicatorItem,
+)
 
 
 @dataclass
@@ -392,6 +346,7 @@ class ButtonItem(PageItem):
     flow_name: str | None = None
     action_kind: str = "call_flow"
     target: str | None = None
+    icon: str | None = None
     availability_rule: ActionAvailabilityRule | None = field(default=None, kw_only=True)
 
 

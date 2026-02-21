@@ -14,6 +14,7 @@ This is the authoritative description of the UI DSL. It is semantic and explicit
 - Studio renders the same UI manifest intent as `n3 ui` and does not add DSL semantics.
 - Console editing is a file-backed workflow; it writes the same `.ai` constructs a text editor writes and does not add hidden grammar behavior.
 - Run modes are explicit and deterministic: `n3 run` renders production UI, `n3 run studio` renders Studio-instrumented UI.
+- Preset-driven UI shells (for example `use preset "rag_chat":`) are compile-time expansions; run `n3 expand app.ai` to inspect the exact generated UI/flow program.
 
 ## 2) Core blocks and naming rules
 - `ui:` (optional global settings; order inside the block is free)
@@ -219,7 +220,11 @@ Rules:
 - Bases: `assistant`, `evidence`, `research`.
 - Features: `conversation`, `evidence`, `research_tools`.
 - Conversation defaults include deterministic `chat.stream_state` for replay-safe streaming status.
-- `binds:` is required when features are enabled (messages + on_send for conversation; citations for evidence; scope_options + scope_active for research_tools).
+- `binds:` is optional.
+- Missing state binds default deterministically by feature:
+  - `conversation`: `on_send -> flow "ask_question"`, `messages -> state.chat.messages`
+  - `evidence`: `citations -> state.chat.citations`
+  - `research_tools`: `scope_options -> state.chat.scope_options`, `scope_active -> state.chat.scope_active`
 - Allowed slots: `header`, `sidebar`, `drawer`, `chat`, `composer`.
 - Theme token overrides (size, radius, density, font, color_scheme) may appear inside `rag_ui` and apply after runtime settings.
 
@@ -256,8 +261,20 @@ page "RAG Shell":
 
     slots:
       sidebar:
-        section "Sources":
-          text is "Custom sidebar"
+            section "Sources":
+              text is "Custom sidebar"
+```
+
+Minimal research shell (<10 lines of code):
+```ai
+spec is "1.0"
+capabilities:
+  ui_rag
+flow "ask_question":
+  return "ok"
+page "RAG":
+  rag_ui:
+    base is "research"
 ```
 
 Structural:
@@ -509,10 +526,12 @@ Rules:
 - For plain `state.<path>` visibility clauses, a path is visible only when the state value exists and is truthy.
 - For `only when`, missing state paths or type mismatches fail at build time.
 - Page-level visibility is evaluated before page layout. If false, the page is omitted from the manifest and navigation.
-- In Studio mode, hidden elements remain in the manifest with `visible: false` for diagnostics; hidden elements do not emit actions.
+- In Studio display mode (`display_mode: studio`), diagnostics are off by default: hidden items, diagnostics pages, and `debug_only` items/actions are filtered.
+- When diagnostics are enabled, hidden elements remain in the manifest with `visible: false` and diagnostics/debug-only pages, blocks, and actions are included.
 - In production mode, hidden elements are omitted from the emitted manifest.
-- Elements and pages with `debug_only: true` are omitted in production mode and rendered in Studio mode.
-- Pages with `diagnostics is true` and `layout.diagnostics` blocks are omitted in production unless diagnostics mode is enabled.
+- Elements and pages with `debug_only: true` are omitted unless diagnostics mode is enabled.
+- Pages with `diagnostics is true` and `layout.diagnostics` blocks are omitted unless diagnostics mode is enabled.
+- Backward-compatibility: internal callers that omit `display_mode` keep diagnostics enabled to preserve older manifest contracts.
 - `n3 run --diagnostics <app.ai>` enables diagnostics rendering outside Studio for local debugging.
 - UI explain output includes the predicate, referenced state paths, evaluated result, and the visibility reason.
 

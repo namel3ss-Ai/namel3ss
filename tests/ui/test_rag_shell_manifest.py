@@ -38,6 +38,18 @@ page "RAG":
 '''
 
 
+SOURCE_MINIMAL_RESEARCH = '''capabilities:
+  ui_rag
+
+flow "ask_question":
+  return "ok"
+
+page "RAG":
+  rag_ui:
+    base is "research"
+'''
+
+
 STATE = {
     "chat": {
         "messages": [{"id": "message.1", "role": "user", "content": "Hello"}],
@@ -113,6 +125,40 @@ def test_rag_shell_includes_suggestion_board_binding() -> None:
     elements = list(_walk_page_elements(manifest["pages"][0]))
     suggestions = [entry for entry in elements if entry.get("type") == "list" and entry.get("source") == "state.chat.suggestions"]
     assert suggestions
+
+
+def test_rag_shell_research_defaults_wire_send_and_scope_selectors() -> None:
+    program = lower_ir_program(SOURCE_MINIMAL_RESEARCH)
+    state = {
+        "chat": {
+            "messages": [],
+            "scope_options": [{"id": "all", "name": "All"}],
+            "scope_active": ["all"],
+            "citations": [],
+        }
+    }
+    manifest = build_manifest(program, state=state)
+    elements = list(_walk_page_elements(manifest["pages"][0]))
+    composer = next((entry for entry in elements if entry.get("type") == "composer"), None)
+    assert isinstance(composer, dict)
+    composer_action = manifest["actions"][composer["action_id"]]
+    assert composer_action["flow"] == "ask_question"
+    composer_chat = next(
+        (
+            entry
+            for entry in elements
+            if entry.get("type") == "chat"
+            and isinstance(entry.get("children"), list)
+            and any(isinstance(child, dict) and child.get("type") == "composer" for child in entry["children"])
+        ),
+        None,
+    )
+    assert isinstance(composer_chat, dict)
+    assert composer_chat["attachments"] is True
+    assert composer_chat["composer_attach_upload"] == "intake"
+
+    selectors = [entry for entry in elements if entry.get("type") == "scope_selector"]
+    assert selectors
 
 
 def _walk_page_elements(page: dict):

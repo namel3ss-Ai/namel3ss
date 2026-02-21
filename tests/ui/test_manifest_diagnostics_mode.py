@@ -56,29 +56,36 @@ def test_manifest_separates_and_filters_diagnostics_content():
     program = lower_ir_program(SOURCE)
 
     studio = build_manifest(program, state={}, display_mode="studio")
+    studio_with_diagnostics = build_manifest(program, state={}, display_mode="studio", diagnostics_enabled=True)
     production = build_manifest(program, state={}, display_mode="production")
     production_with_diagnostics = build_manifest(program, state={}, display_mode="production", diagnostics_enabled=True)
 
     studio_pages = {page["slug"]: page for page in studio["pages"]}
+    studio_diagnostics_pages = {page["slug"]: page for page in studio_with_diagnostics["pages"]}
     production_pages = {page["slug"]: page for page in production["pages"]}
     diagnostics_pages = {page["slug"]: page for page in production_with_diagnostics["pages"]}
 
-    assert "explain" in studio_pages
+    assert "explain" not in studio_pages
+    assert "explain" in studio_diagnostics_pages
     assert "explain" not in production_pages
     assert "explain" in diagnostics_pages
 
     chat_studio = studio_pages["chat"]
+    chat_studio_diagnostics = studio_diagnostics_pages["chat"]
     chat_production = production_pages["chat"]
     chat_diagnostics = diagnostics_pages["chat"]
-    assert isinstance(chat_studio.get("diagnostics_blocks"), list)
+    assert "diagnostics_blocks" not in chat_studio
+    assert isinstance(chat_studio_diagnostics.get("diagnostics_blocks"), list)
     assert "diagnostics_blocks" not in chat_production
     assert isinstance(chat_diagnostics.get("diagnostics_blocks"), list)
 
-    assert "Trace action" in _element_labels(chat_studio)
+    assert "Trace action" not in _element_labels(chat_studio)
+    assert "Trace action" in _element_labels(chat_studio_diagnostics)
     assert "Trace action" not in _element_labels(chat_production)
     assert "Trace action" in _element_labels(chat_diagnostics)
 
-    assert studio["diagnostics_enabled"] is True
+    assert studio["diagnostics_enabled"] is False
+    assert studio_with_diagnostics["diagnostics_enabled"] is True
     assert production["diagnostics_enabled"] is False
     assert production_with_diagnostics["diagnostics_enabled"] is True
 

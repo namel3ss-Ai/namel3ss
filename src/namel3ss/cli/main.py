@@ -26,6 +26,7 @@ from namel3ss.cli.eval_mode import run_eval_command
 from namel3ss.cli.export_mode import run_export_command
 from namel3ss.cli.exists_mode import run_exists_command
 from namel3ss.cli.explain_mode import run_explain_command
+from namel3ss.cli.expand_mode import run_expand_command
 from namel3ss.cli.conventions_mode import run_conventions_command
 from namel3ss.cli.concurrency_mode import run_concurrency_command
 from namel3ss.cli.compile_mode import run_compile_command
@@ -212,6 +213,8 @@ def main(argv: list[str] | None = None) -> int:
             return run_studio_connect_command(args[2:])
         if cmd == "manifest":
             return run_manifest_command(args[1:])
+        if cmd == "expand":
+            return run_expand_command(args[1:])
         if cmd == "inspect":
             return run_inspect_command(args[1:])
         if cmd == "validate":

@@ -124,6 +124,7 @@ def lower_button_item(
             flow_name=item.flow_name,
             action_kind=action_kind,
             target=target,
+            icon=getattr(item, "icon", None),
             availability_rule=availability_rule,
             line=item.line,
             column=item.column,

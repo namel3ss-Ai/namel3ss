@@ -197,6 +197,7 @@ class ListItemMapping(Node):
     secondary: str | None = None
     meta: str | None = None
     icon: str | None = None
+    icon_color: str | None = None
 
 @dataclass
 class ListAction(Node):
@@ -204,6 +205,7 @@ class ListAction(Node):
     flow_name: str | None = None
     kind: str = "call_flow"
     target: str | None = None
+    ui_behavior: str | None = None
     availability_rule: ActionAvailabilityRule | None = field(default=None, kw_only=True)
 
 @dataclass
@@ -216,6 +218,8 @@ class ListItem(PageItem):
     empty_state_hidden: bool = False
     selection: str | None = None
     actions: List[ListAction] | None = None
+    group_by: str | None = None
+    group_label: str | None = None
 
 @dataclass
 class ChartItem(PageItem):
@@ -293,6 +297,9 @@ class ChatItem(PageItem):
     actions: list[str] = field(default_factory=list)
     streaming: bool = False
     attachments: bool = False
+    composer_placeholder: str | None = None
+    composer_send_style: str = "icon"
+    composer_attach_upload: str | None = None
 
 @dataclass
 class CustomComponentProp(Node):
@@ -334,6 +341,7 @@ class ButtonItem(PageItem):
     flow_name: str | None = None
     action_kind: str = "call_flow"
     target: str | None = None
+    icon: str | None = None
     availability_rule: ActionAvailabilityRule | None = field(default=None, kw_only=True)
 
 @dataclass
@@ -427,6 +435,10 @@ class PageLayout(Node):
     drawer_right: list["PageItem"] = field(default_factory=list)
     footer: list["PageItem"] = field(default_factory=list)
     diagnostics: list["PageItem"] = field(default_factory=list)
+    sidebar_width: str | None = None
+    drawer_width: str | None = None
+    panel_height: str | None = None
+    resizable_panels: bool | None = None
 
 @dataclass
 class PageDecl(Node):
@@ -442,4 +454,3 @@ class PageDecl(Node):
     diagnostics: bool | None = None
     status: StatusBlock | None = None
     theme_tokens: ThemeTokens | None = None
-

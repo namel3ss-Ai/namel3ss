@@ -67,6 +67,7 @@
         {
           "column": 3,
           "flow_name": "admin_only",
+          "icon": null,
           "label": "Run",
           "line": 8,
           "show_when": null,

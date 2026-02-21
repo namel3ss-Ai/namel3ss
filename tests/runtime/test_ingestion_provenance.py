@@ -244,6 +244,40 @@ def test_pdf_missing_page_info_fails_explicitly(tmp_path: Path) -> None:
     assert str(excinfo.value) == expected
 
 
+def test_pdf_missing_page_metadata_degrades_gracefully(tmp_path: Path) -> None:
+    text = (
+        "Deterministic fallback keeps ingestion running when page metadata is missing "
+        "but readable content still exists in the PDF payload."
+    )
+    pdf_bytes = (
+        "%PDF-1.4\n"
+        "1 0 obj\n<< /Length 220 >>\nstream\n"
+        f"({text})\n"
+        "endstream\nendobj\n%%EOF\n"
+    ).encode("utf-8")
+    metadata = store_upload(
+        _ctx(tmp_path),
+        filename="metadata-missing.pdf",
+        content_type="application/pdf",
+        stream=io.BytesIO(pdf_bytes),
+    )
+    state: dict = {}
+    result = run_ingestion(
+        upload_id=metadata["checksum"],
+        mode=None,
+        state=state,
+        project_root=str(tmp_path),
+        app_path=(tmp_path / "app.ai").as_posix(),
+    )
+
+    assert result["status"] in {"pass", "warn"}
+    assert result["report"]["detected"]["page_count"] == 0
+    assert result["chunks"]
+    first = result["chunks"][0]
+    assert first["page_number"] == 1
+    assert first["source_name"] == "metadata-missing.pdf"
+
+
 def test_text_ingestion_single_page_provenance_is_compatible(tmp_path: Path) -> None:
     payload = (
         b"Simple text with enough distinct words to pass the deterministic quality gate for ingestion and retrieval."

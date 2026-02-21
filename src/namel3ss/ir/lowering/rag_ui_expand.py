@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from namel3ss.ast import nodes as ast
 from namel3ss.errors.base import Namel3ssError
@@ -8,8 +8,12 @@ from namel3ss.lang.capabilities import has_ui_theming_capability
 
 _DEFAULT_DRAWER_OPEN_PATH = ["ui", "show_drawer"]
 _DEFAULT_UPLOAD_NAME = "intake"
+_DEFAULT_ON_SEND_FLOW = "ask_question"
+_DEFAULT_MESSAGES_PATH = ["chat", "messages"]
+_DEFAULT_CITATIONS_PATH = ["chat", "citations"]
+_DEFAULT_SCOPE_OPTIONS_PATH = ["chat", "scope_options"]
+_DEFAULT_SCOPE_ACTIVE_PATH = ["chat", "scope_active"]
 _DEFAULT_SOURCES_PATH = ["chat", "citations"]
-_DEFAULT_THINKING_PATH = ["loading"]
 
 
 @dataclass(frozen=True)
@@ -54,7 +58,11 @@ def _expand_rag_ui_block(
 ) -> list[ast.PageItem]:
     features = tuple(getattr(rag, "features", []) or [])
     feature_set = set(features)
-    binds = rag.bindings or ast.RagUIBindings(line=rag.line, column=rag.column)
+    binds = _resolve_default_binds(
+        rag,
+        rag.bindings or ast.RagUIBindings(line=rag.line, column=rag.column),
+        feature_set=feature_set,
+    )
     slots = dict(getattr(rag, "slots", {}) or {})
     header_items = slots.get("header")
     sidebar_items = slots.get("sidebar")
@@ -167,6 +175,32 @@ def _default_header_items(
     return items
 
 
+def _resolve_default_binds(
+    rag: ast.RagUIBlock,
+    binds: ast.RagUIBindings,
+    *,
+    feature_set: set[str],
+) -> ast.RagUIBindings:
+    resolved = binds
+    if "conversation" in feature_set:
+        if not resolved.on_send:
+            resolved = replace(resolved, on_send=_DEFAULT_ON_SEND_FLOW)
+        if resolved.messages is None:
+            resolved = replace(resolved, messages=_state_path(rag, _DEFAULT_MESSAGES_PATH))
+    if "evidence" in feature_set and resolved.citations is None:
+        resolved = replace(resolved, citations=_state_path(rag, _DEFAULT_CITATIONS_PATH))
+    if "research_tools" in feature_set:
+        if resolved.scope_options is None:
+            resolved = replace(resolved, scope_options=_state_path(rag, _DEFAULT_SCOPE_OPTIONS_PATH))
+        if resolved.scope_active is None:
+            resolved = replace(resolved, scope_active=_state_path(rag, _DEFAULT_SCOPE_ACTIVE_PATH))
+    return resolved
+
+
+def _state_path(rag: ast.RagUIBlock, path: list[str]) -> ast.StatePath:
+    return ast.StatePath(path=list(path), line=rag.line, column=rag.column)
+
+
 def _default_sidebar_items(
     rag: ast.RagUIBlock,
     binds: ast.RagUIBindings,
@@ -205,7 +239,7 @@ def _default_sidebar_items(
             )
         )
     section_children: list[ast.PageItem] = []
-    upload_name = binds.upload or _DEFAULT_UPLOAD_NAME
+    upload_name = _resolve_upload_name(binds.upload)
     section_children.append(ast.UploadItem(name=upload_name, line=rag.line, column=rag.column))
     if binds.ingest_flow:
         section_children.append(_flow_button("Run ingestion", binds.ingest_flow, rag))
@@ -308,8 +342,21 @@ def _default_composer_items(
             binding="composer_state",
             state_path=binds.composer_state.path,
         )
-    chat = ast.ChatItem(children=[composer], line=rag.line, column=rag.column)
+    attachments_enabled = "research_tools" in feature_set
+    composer_attach_upload = _resolve_upload_name(binds.upload) if attachments_enabled else None
+    chat = ast.ChatItem(
+        children=[composer],
+        attachments=attachments_enabled,
+        composer_attach_upload=composer_attach_upload,
+        line=rag.line,
+        column=rag.column,
+    )
     return [chat]
+
+
+def _resolve_upload_name(upload_name: str | None) -> str:
+    normalized = str(upload_name or "").strip()
+    return normalized or _DEFAULT_UPLOAD_NAME
 
 
 def _default_drawer_items(

@@ -12,6 +12,7 @@ from namel3ss.cli.headless_api_flags import (
 from namel3ss.cli.app_path import default_missing_app_message, resolve_app_path
 from namel3ss.cli.devex import parse_project_overrides
 from namel3ss.cli.demo_support import DEMO_NAME, is_demo_project
+from namel3ss.cli.run_explain import print_explain_traces
 from namel3ss.cli.first_run import is_first_run
 from namel3ss.cli.run_helpers import detect_demo_provider, resolve_run_path
 from namel3ss.cli.open_url import open_url, should_open_url
@@ -30,11 +31,14 @@ from namel3ss.runtime.performance.guard import require_performance_capability
 from namel3ss.runtime.capabilities.feature_gate import require_app_capability
 from namel3ss.secrets import set_audit_root, set_engine_target
 from namel3ss.traces.plain import format_plain
-from namel3ss.traces.schema import TraceEventType
-from namel3ss.utils.json_tools import dumps_pretty
 
 
-def run_run_command(args: list[str]) -> int:
+def run_run_command(
+    args: list[str],
+    *,
+    ui_mode: str | None = None,
+    diagnostics_enabled: bool | None = None,
+) -> int:
     sources: dict = {}
     project_root: Path | None = None
     first_run = is_first_run(None, args)
@@ -78,7 +82,7 @@ def run_run_command(args: list[str]) -> int:
                 else:
                     print(format_plain(render_payload))
                     if params.explain:
-                        _print_explain_traces(render_payload)
+                        print_explain_traces(render_payload)
                 return 0
             runner = BrowserRunner(
                 run_path,
@@ -90,6 +94,8 @@ def run_run_command(args: list[str]) -> int:
                 headless=params.headless,
                 headless_api_token=resolved_api_token,
                 headless_cors_origins=resolved_cors_origins,
+                ui_mode=ui_mode,
+                diagnostics_enabled=diagnostics_enabled,
             )
             try:
                 runner.bind()
@@ -128,6 +134,7 @@ def run_run_command(args: list[str]) -> int:
                 headless=params.headless,
                 headless_api_token=resolved_api_token,
                 headless_cors_origins=resolved_cors_origins,
+                ui_mode=ui_mode,
                 require_service_capability=True,
             )
             if params.dry:
@@ -468,28 +475,6 @@ def _validate_performance_settings(*, app_path: Path, project_root: Path, force_
         runtime_config,
         where="run configuration",
     )
-
-
-def _print_explain_traces(output: dict) -> None:
-    traces = output.get("traces") if isinstance(output, dict) else None
-    if not isinstance(traces, list):
-        print("Explain traces: none")
-        return
-    explain_types = {
-        TraceEventType.BOUNDARY_START,
-        TraceEventType.BOUNDARY_END,
-        TraceEventType.EXPRESSION_EXPLAIN,
-        TraceEventType.FLOW_START,
-        TraceEventType.FLOW_STEP,
-        TraceEventType.MUTATION_ALLOWED,
-        TraceEventType.MUTATION_BLOCKED,
-    }
-    explain = [trace for trace in traces if trace.get("type") in explain_types]
-    if not explain:
-        print("Explain traces: none")
-        return
-    print("Explain traces:")
-    print(dumps_pretty(explain))
 
 
 __all__ = ["run_run_command"]

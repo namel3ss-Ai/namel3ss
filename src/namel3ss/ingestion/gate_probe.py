@@ -32,13 +32,14 @@ def probe_content(content: bytes | None, *, metadata: dict, detected: dict) -> d
 
     block_reasons: list[str] = []
     warn_reasons: list[str] = []
+    text_like_upload = detected_type in {None, "", "text"}
     if byte_count == 0:
         block_reasons.append(REASON_EMPTY_CONTENT)
-    if null_bytes:
+    if null_bytes and text_like_upload:
         block_reasons.append(REASON_NULL_BYTES)
     if byte_count > PROBE_MAX_BYTES:
         block_reasons.append(REASON_SIZE_LIMIT)
-    if not utf8_valid:
+    if not utf8_valid and text_like_upload:
         warn_reasons.append(REASON_UTF8_INVALID)
     if sniff == "binary" and detected_type == "text":
         warn_reasons.append(REASON_BINARY_MARKERS)

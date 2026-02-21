@@ -18,8 +18,8 @@ ENTRYPOINT_PREFIX = "ui_renderer_"
 ENTRYPOINT_SUFFIX = ".js"
 REQUIRED_RENDERERS: tuple[str, ...] = ("audit_viewer", "state_inspector")
 RENDERER_ID_ALIASES = {"state_viewer": "state_inspector"}
-RENDERER_EXPORT_PATTERN = re.compile(r"(?:root|window(?:\.N3UIRender)?)\.([A-Za-z_][A-Za-z0-9_]*)\s*=")
-WINDOW_EXPORT_PATTERN = re.compile(r"window\.([A-Za-z_][A-Za-z0-9_]*)\s*=")
+RENDERER_EXPORT_PATTERN = re.compile(r"(?:root|window(?:\.N3UIRender)?)\.([A-Za-z_][A-Za-z0-9_]*)\s*=(?!=)")
+WINDOW_EXPORT_PATTERN = re.compile(r"window\.([A-Za-z_][A-Za-z0-9_]*)\s*=(?!=)")
 
 
 def main(argv: list[str] | None = None) -> int:

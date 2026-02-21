@@ -175,6 +175,7 @@
             {
               "column": 5,
               "flow_name": "demo",
+              "icon": null,
               "label": "Run",
               "line": 23,
               "show_when": null,

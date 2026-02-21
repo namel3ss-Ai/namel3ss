@@ -3,8 +3,10 @@ from __future__ import annotations
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
 
-_ALLOWED_MESSAGE_ACTIONS = {"copy", "expand", "view_sources"}
 _ALLOWED_ATTACHMENT_TYPES = {"citation", "file", "image"}
+_ALLOWED_COMPOSER_SEND_STYLES = {"icon", "text"}
+_ALLOWED_ACTION_STYLES = {"icon", "icon_plain", "text"}
+_DEFAULT_COMPOSER_PLACEHOLDER = "Ask about your documents... use #project or @document"
 _SNIPPET_MAX_LENGTH = 220
 
 
@@ -21,6 +23,17 @@ def apply_chat_configuration(
     chat_element["group_messages"] = bool(getattr(item, "group_messages", True))
     chat_element["streaming"] = bool(getattr(item, "streaming", False))
     chat_element["attachments"] = bool(getattr(item, "attachments", False))
+    chat_element["composer_placeholder"] = _normalize_composer_placeholder(
+        getattr(item, "composer_placeholder", _DEFAULT_COMPOSER_PLACEHOLDER),
+    )
+    chat_element["composer_send_style"] = _normalize_composer_send_style(
+        getattr(item, "composer_send_style", "icon"),
+        line=item.line,
+        column=item.column,
+    )
+    chat_element["composer_attach_upload"] = _normalize_composer_attach_upload(
+        getattr(item, "composer_attach_upload", None),
+    )
     chat_element["citations_enhanced"] = bool(citations_enhanced_enabled)
     chat_element["actions"] = _normalize_actions(getattr(item, "actions", []), line=item.line, column=item.column)
 
@@ -61,7 +74,7 @@ def apply_chat_configuration(
 def _apply_message_configuration(
     messages_element: dict,
     *,
-    default_actions: list[str],
+    default_actions: list[object],
     attachments_enabled: bool,
     group_messages: bool,
     streaming_enabled: bool,
@@ -127,24 +140,122 @@ def _normalize_style(value: object, *, line: int | None, column: int | None) -> 
     return style
 
 
-def _normalize_actions(raw: object, *, line: int | None, column: int | None) -> list[str]:
+def _normalize_actions(raw: object, *, line: int | None, column: int | None) -> list[object]:
     if raw is None:
         return []
     values = raw if isinstance(raw, list) else [raw]
-    normalized: list[str] = []
+    normalized: list[object] = []
     seen: set[str] = set()
     for entry in values:
-        if not isinstance(entry, str):
-            raise Namel3ssError("Chat actions must be text values.", line=line, column=column)
-        value = entry.strip().lower()
-        if value not in _ALLOWED_MESSAGE_ACTIONS:
-            allowed = ", ".join(sorted(_ALLOWED_MESSAGE_ACTIONS))
-            raise Namel3ssError(f"Unknown chat action '{value}'. Expected one of: {allowed}.", line=line, column=column)
+        action = _normalize_action_entry(entry, line=line, column=column)
+        value = action["id"]
         if value in seen:
             continue
         seen.add(value)
-        normalized.append(value)
+        if set(action.keys()) == {"id"}:
+            normalized.append(value)
+        else:
+            normalized.append(action)
     return normalized
+
+
+def _normalize_action_entry(entry: object, *, line: int | None, column: int | None) -> dict[str, object]:
+    if isinstance(entry, str):
+        value = entry.strip().lower()
+        if not value:
+            raise Namel3ssError("Chat actions must be text values.", line=line, column=column)
+        return {"id": value}
+    if not isinstance(entry, dict):
+        raise Namel3ssError("Chat actions must be text values.", line=line, column=column)
+    raw_id = entry.get("id")
+    if not isinstance(raw_id, str) or not raw_id.strip():
+        raise Namel3ssError("Chat action id must be text.", line=line, column=column)
+    normalized: dict[str, object] = {"id": raw_id.strip().lower()}
+    label = entry.get("label")
+    if label is not None:
+        if not isinstance(label, str):
+            raise Namel3ssError("Chat action label must be text.", line=line, column=column)
+        text = label.strip()
+        if text:
+            normalized["label"] = text
+    icon = entry.get("icon")
+    if icon is not None:
+        if not isinstance(icon, str):
+            raise Namel3ssError("Chat action icon must be text.", line=line, column=column)
+        text = icon.strip().lower()
+        if text:
+            normalized["icon"] = text
+    style = entry.get("style")
+    if style is not None:
+        if not isinstance(style, str):
+            raise Namel3ssError("Chat action style must be text.", line=line, column=column)
+        text = "_".join(style.strip().lower().replace("-", " ").split())
+        if text:
+            if text not in _ALLOWED_ACTION_STYLES:
+                raise Namel3ssError(
+                    "Chat action style must be icon, icon_plain, or text.",
+                    line=line,
+                    column=column,
+                )
+            normalized["style"] = text
+    action_id = entry.get("action_id")
+    if action_id is not None:
+        if not isinstance(action_id, str):
+            raise Namel3ssError("Chat action action_id must be text.", line=line, column=column)
+        text = action_id.strip()
+        if text:
+            normalized["action_id"] = text
+    action_type = entry.get("action_type")
+    if action_type is not None:
+        if not isinstance(action_type, str):
+            raise Namel3ssError("Chat action action_type must be text.", line=line, column=column)
+        text = action_type.strip()
+        if text:
+            normalized["action_type"] = text
+    flow = entry.get("flow")
+    if flow is not None:
+        if not isinstance(flow, str):
+            raise Namel3ssError("Chat action flow must be text.", line=line, column=column)
+        text = flow.strip()
+        if text:
+            normalized["flow"] = text
+    target = entry.get("target")
+    if target is not None:
+        if not isinstance(target, str):
+            raise Namel3ssError("Chat action target must be text.", line=line, column=column)
+        text = target.strip()
+        if text:
+            normalized["target"] = text
+    payload = entry.get("payload")
+    if payload is not None:
+        if not isinstance(payload, dict):
+            raise Namel3ssError("Chat action payload must be an object.", line=line, column=column)
+        normalized["payload"] = dict(payload)
+    return normalized
+
+
+def _normalize_composer_placeholder(raw: object) -> str:
+    if not isinstance(raw, str):
+        return _DEFAULT_COMPOSER_PLACEHOLDER
+    value = raw.strip()
+    if not value:
+        return _DEFAULT_COMPOSER_PLACEHOLDER
+    return value
+
+
+def _normalize_composer_send_style(raw: object, *, line: int | None, column: int | None) -> str:
+    value = str(raw or "icon").strip().lower()
+    if value not in _ALLOWED_COMPOSER_SEND_STYLES:
+        raise Namel3ssError(
+            "composer_send_style must be icon or text.",
+            line=line,
+            column=column,
+        )
+    return value
+
+
+def _normalize_composer_attach_upload(raw: object) -> str:
+    return str(raw or "").strip()
 
 
 def _normalize_citations(value: object, *, line: int | None, column: int | None) -> list[dict]:
@@ -175,6 +286,42 @@ def _normalize_citations(value: object, *, line: int | None, column: int | None)
         index = entry.get("index")
         if isinstance(index, int):
             citation["index"] = max(1, index)
+        chunk_id = entry.get("chunk_id")
+        if isinstance(chunk_id, str) and chunk_id.strip():
+            citation["chunk_id"] = chunk_id.strip()
+        document_id = entry.get("document_id")
+        if isinstance(document_id, str) and document_id.strip():
+            citation["document_id"] = document_id.strip()
+        deep_link_query = entry.get("deep_link_query")
+        if isinstance(deep_link_query, str) and deep_link_query.strip():
+            citation["deep_link_query"] = deep_link_query.strip()
+        preview_url = entry.get("preview_url")
+        if isinstance(preview_url, str) and preview_url.strip():
+            citation["preview_url"] = preview_url.strip()
+        explain = entry.get("explain")
+        if isinstance(explain, str) and explain.strip():
+            citation["explain"] = explain.strip()
+        highlight_color = entry.get("highlight_color")
+        if isinstance(highlight_color, str) and highlight_color.strip():
+            citation["highlight_color"] = highlight_color.strip()
+        color = entry.get("color")
+        if isinstance(color, str) and color.strip():
+            citation["color"] = color.strip()
+        color_hex = entry.get("color_hex")
+        if isinstance(color_hex, str) and color_hex.strip():
+            citation["color_hex"] = color_hex.strip()
+        page_number = _positive_int(entry.get("page_number"))
+        if page_number is not None:
+            citation["page_number"] = page_number
+        page_value = entry.get("page")
+        page_number_from_page = _positive_int(page_value)
+        if page_number_from_page is not None:
+            citation["page"] = page_number_from_page
+        elif isinstance(page_value, str) and page_value.strip():
+            citation["page"] = page_value.strip()
+        color_index = entry.get("color_index")
+        if isinstance(color_index, int):
+            citation["color_index"] = abs(color_index) % 8
         citations.append(citation)
     return citations
 
@@ -256,6 +403,19 @@ def _normalize_snippet(value: str) -> str:
         return compact
     truncated = compact[:_SNIPPET_MAX_LENGTH].rstrip()
     return f"{truncated}..."
+
+
+def _positive_int(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if value > 0 else None
+    if isinstance(value, str):
+        text = value.strip()
+        if text.isdigit():
+            parsed = int(text)
+            return parsed if parsed > 0 else None
+    return None
 
 
 __all__ = ["apply_chat_configuration"]

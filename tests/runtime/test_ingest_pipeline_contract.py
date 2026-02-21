@@ -70,14 +70,33 @@ def test_ingest_pipeline_uses_ocr_when_text_is_empty() -> None:
     assert result.chunks[0].source_id == "doc-scan:1:0"
 
 
+def test_ingest_pipeline_auto_configures_default_ocr_extractor(monkeypatch) -> None:
+    text_extractor = StubTextExtractor(pages=(ExtractedPage(page_number=1, text=""),))
+    monkeypatch.setattr(
+        "namel3ss.runtime.ingest.pipeline.ingest_pipeline.create_default_pdf_ocr_extractor",
+        lambda: PdfOcrExtractor(backend=lambda _content: ["Default OCR text."]),
+    )
+    result = run_ingest_pipeline(
+        doc_id="doc-auto",
+        content=SCANNED_PDF_FIXTURE,
+        text_extractor=text_extractor,
+        ocr_extractor=None,
+        enable_ocr=True,
+    )
+    assert result.method_used == "ocr"
+    assert result.ocr_used is True
+    assert result.chunks
+
+
 def test_ingest_pipeline_raises_when_ocr_required_but_unavailable() -> None:
     text_extractor = StubTextExtractor(pages=(ExtractedPage(page_number=1, text=""),))
+    unavailable_ocr = PdfOcrExtractor(backend=None)
     with pytest.raises(OcrNotAvailableError) as excinfo:
         run_ingest_pipeline(
             doc_id="doc-scan",
             content=SCANNED_PDF_FIXTURE,
             text_extractor=text_extractor,
-            ocr_extractor=None,
+            ocr_extractor=unavailable_ocr,
             enable_ocr=True,
             require_ocr=True,
         )

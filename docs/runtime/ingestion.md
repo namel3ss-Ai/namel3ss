@@ -102,6 +102,7 @@ enable_ocr_fallback = true
 
 - `enable_diagnostics = true` adds `reason_details` to ingestion reports using stable reason-code mappings.
 - `enable_ocr_fallback = true` runs OCR exactly once for blocked PDFs when reasons include `text_too_short`, `empty_text`, or `low_unique_tokens`.
+- OCR runtime is bundled with `namel3ss` installs and is auto-configured at runtime.
 
 If OCR fallback succeeds, ingestion status is forced to `warn` and indexing proceeds. If OCR fallback fails, status remains `block` and `ocr_failed` is added.
 

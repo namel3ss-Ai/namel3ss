@@ -18,6 +18,8 @@ def _run_theme_settings_update(ctx: ActionDispatchContext) -> tuple[dict, Except
         identity=ctx.identity,
         auth_context=ctx.auth_context,
         secret_values=ctx.secret_values,
+        ui_mode=ctx.ui_mode,
+        diagnostics_enabled=ctx.diagnostics_enabled,
     )
     return response, None
 

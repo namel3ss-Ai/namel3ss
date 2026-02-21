@@ -12,7 +12,7 @@
         "position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 12px 0; background: #f8f8f8; border-bottom: 1px solid var(--border-subtle)"
       ],
       ".ui-chat": [
-        "display: flex; flex-direction: column; gap: 14px"
+        "display: flex; flex-direction: column; gap: 14px; font-family: -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"SF Pro Display\", \"Helvetica Neue\", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale"
       ],
       ".ui-chat-citation": [
         "display: flex; flex-direction: column; gap: 4px"
@@ -24,7 +24,7 @@
         "border: 1px solid #eaeaea; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px"
       ],
       ".ui-chat-composer": [
-        "display: flex; flex-wrap: wrap; gap: 8px"
+        "display: block; margin-top: auto"
       ],
       ".ui-chat-memory": [
         "border: 1px solid #eaeaea; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px"
@@ -226,6 +226,9 @@
                 ],
                 "citations_enhanced": false,
                 "column": 5,
+                "composer_attach_upload": "",
+                "composer_placeholder": "Ask about your documents... use #project or @document",
+                "composer_send_style": "icon",
                 "element_id": "page.chat.chat.2.0",
                 "group_messages": true,
                 "index": 0,

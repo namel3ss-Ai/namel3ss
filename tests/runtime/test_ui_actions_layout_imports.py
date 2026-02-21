@@ -90,6 +90,7 @@ def test_ui_action_package_has_domain_first_layout() -> None:
     assert state_files == [
         "__init__.py",
         "chat_shell.py",
+        "chat_shell_normalization.py",
         "dispatch.py",
         "form_policy.py",
         "model.py",

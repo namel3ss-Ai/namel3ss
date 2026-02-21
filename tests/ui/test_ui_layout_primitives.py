@@ -10,6 +10,10 @@ flow "send":
 
 page "chat":
   layout:
+    sidebar_width is "compact"
+    drawer_width is "wide"
+    panel_height is "full"
+    resizable_panels is true
     header:
       title is "Chat"
     sidebar_left:
@@ -48,6 +52,12 @@ def test_manifest_emits_layout_object_for_layout_pages():
     assert page["layout"]["main"][0]["type"] == "section"
     assert page["layout"]["drawer_right"][0]["type"] == "section"
     assert page["layout"]["footer"][0]["type"] == "text"
+    assert page["layout_options"] == {
+        "sidebar_width": "compact",
+        "drawer_width": "wide",
+        "panel_height": "full",
+        "resizable_panels": True,
+    }
 
 
 def test_manifest_layout_generation_is_deterministic():

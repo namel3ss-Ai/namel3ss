@@ -91,6 +91,22 @@ page "home":
     assert "Unknown variant" in str(exc.value)
 
 
+def test_button_plain_variant_is_allowed() -> None:
+    source = '''
+flow "demo":
+  return "ok"
+
+page "home":
+  button "New project":
+    variant is "plain"
+    calls flow "demo"
+'''
+    program = lower_ir_program(source)
+    page = program.pages[0]
+    button = next(item for item in _walk_items(page.items) if type(item).__name__ == "ButtonItem")
+    assert getattr(button, "variant", None) == "plain"
+
+
 def test_style_hooks_require_known_tokens() -> None:
     source = '''
 capabilities:

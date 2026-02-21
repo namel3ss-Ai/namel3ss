@@ -1,7 +1,7 @@
 {
   "cache": {
     "hit": false,
-    "key": "0a7eed6280c354e6ea7dbc1062384e2de5e47bb1b37bc605406d89e1874b2098.5fe1ea8721363af09b9d4e41a09e8507684a1b1ad4975dc2edec87f71e630190"
+    "key": "0a7eed6280c354e6ea7dbc1062384e2de5e47bb1b37bc605406d89e1874b2098.7a4b3da014ecf4129c72c3ffa62b9af4d5c77405e90d2f567888c066490ea819"
   },
   "evidence": {
     "excerpt": "This is a safe ingestion sample with enough distinct words to pass the quality gate.",
@@ -10,7 +10,7 @@
   },
   "fingerprint": {
     "content_hash": "0a7eed6280c354e6ea7dbc1062384e2de5e47bb1b37bc605406d89e1874b2098",
-    "runtime_signature": "5fe1ea8721363af09b9d4e41a09e8507684a1b1ad4975dc2edec87f71e630190"
+    "runtime_signature": "7a4b3da014ecf4129c72c3ffa62b9af4d5c77405e90d2f567888c066490ea819"
   },
   "normalize": {
     "basis": "raw_bytes",

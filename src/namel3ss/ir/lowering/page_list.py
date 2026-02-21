@@ -18,8 +18,16 @@ def _lower_list_item_mapping(
 ) -> ListItemMapping:
     if mapping is None:
         primary = _default_list_primary(record)
-        return ListItemMapping(primary=primary, secondary=None, meta=None, icon=None, line=line, column=column)
-    for name in (mapping.primary, mapping.secondary, mapping.meta, mapping.icon):
+        return ListItemMapping(
+            primary=primary,
+            secondary=None,
+            meta=None,
+            icon=None,
+            icon_color=None,
+            line=line,
+            column=column,
+        )
+    for name in (mapping.primary, mapping.secondary, mapping.meta, mapping.icon, mapping.icon_color):
         if not name:
             continue
         if name not in record.field_map:
@@ -29,9 +37,9 @@ def _lower_list_item_mapping(
                 column=mapping.column,
             )
     if mapping.icon:
-        if variant != "icon":
+        if variant not in {"icon", "icon_plain"}:
             raise Namel3ssError(
-                "List icon requires variant 'icon'",
+                "List icon requires variant 'icon' or 'icon_plain'",
                 line=mapping.line,
                 column=mapping.column,
             )
@@ -43,11 +51,27 @@ def _lower_list_item_mapping(
                 line=mapping.line,
                 column=mapping.column,
             )
+    if mapping.icon_color:
+        if variant not in {"icon", "icon_plain"}:
+            raise Namel3ssError(
+                "List icon color requires variant 'icon' or 'icon_plain'",
+                line=mapping.line,
+                column=mapping.column,
+            )
+        field = record.field_map.get(mapping.icon_color)
+        text_types = {"text", "string", "str"}
+        if field is None or field.type_name.lower() not in text_types:
+            raise Namel3ssError(
+                f"List icon color field '{mapping.icon_color}' must be text",
+                line=mapping.line,
+                column=mapping.column,
+            )
     return ListItemMapping(
         primary=mapping.primary,
         secondary=mapping.secondary,
         meta=mapping.meta,
         icon=mapping.icon,
+        icon_color=mapping.icon_color,
         line=mapping.line,
         column=mapping.column,
     )
@@ -62,9 +86,15 @@ def _lower_state_list_item_mapping(
 ) -> ListItemMapping:
     if mapping is None:
         raise Namel3ssError("State lists require item mapping", line=line, column=column)
-    if mapping.icon and variant != "icon":
+    if mapping.icon and variant not in {"icon", "icon_plain"}:
         raise Namel3ssError(
-            "List icon requires variant 'icon'",
+            "List icon requires variant 'icon' or 'icon_plain'",
+            line=mapping.line,
+            column=mapping.column,
+        )
+    if mapping.icon_color and variant not in {"icon", "icon_plain"}:
+        raise Namel3ssError(
+            "List icon color requires variant 'icon' or 'icon_plain'",
             line=mapping.line,
             column=mapping.column,
         )
@@ -73,6 +103,7 @@ def _lower_state_list_item_mapping(
         secondary=mapping.secondary,
         meta=mapping.meta,
         icon=mapping.icon,
+        icon_color=mapping.icon_color,
         line=mapping.line,
         column=mapping.column,
     )
@@ -132,6 +163,7 @@ def _lower_list_actions(
                 flow_name=action.flow_name,
                 kind=action.kind,
                 target=action.target,
+                ui_behavior=getattr(action, "ui_behavior", None),
                 availability_rule=availability_rule,
                 line=action.line,
                 column=action.column,

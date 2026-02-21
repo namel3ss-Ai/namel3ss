@@ -18,6 +18,7 @@ from namel3ss.runtime.storage.base import Storage
 from namel3ss.runtime.ui.actions.validation.validate import ensure_json_serializable
 from namel3ss.traces.schema import TraceEventType
 from namel3ss.ui.manifest import build_manifest
+from namel3ss.ui.manifest.display_mode import DISPLAY_MODE_STUDIO
 from namel3ss.errors.payload import build_error_from_exception
 
 
@@ -33,6 +34,8 @@ def handle_upload_replace_action(
     identity: dict | None = None,
     auth_context: object | None = None,
     secret_values: list[str] | None = None,
+    ui_mode: str = DISPLAY_MODE_STUDIO,
+    diagnostics_enabled: bool = False,
 ) -> dict:
     _require_uploads_capability(program_ir)
     if not isinstance(payload, dict):
@@ -58,6 +61,8 @@ def handle_upload_replace_action(
             identity=identity,
             auth_context=auth_context,
             secret_values=secret_values,
+            ui_mode=ui_mode,
+            diagnostics_enabled=diagnostics_enabled,
             error=policy_error(ACTION_UPLOAD_REPLACE, decision),
         )
     result = {"upload_id": upload_id.strip(), "status": "placeholder"}
@@ -85,6 +90,8 @@ def handle_upload_replace_action(
         runtime_theme=runtime_theme,
         identity=identity,
         auth_context=auth_context,
+        display_mode=ui_mode,
+        diagnostics_enabled=diagnostics_enabled,
     )
     ensure_json_serializable(response)
     response = finalize_run_payload(response, secret_values)
@@ -134,6 +141,8 @@ def _policy_denied_response(
     identity: dict | None,
     auth_context: object | None,
     secret_values: list[str] | None,
+    ui_mode: str,
+    diagnostics_enabled: bool,
     error: Namel3ssError,
 ) -> dict:
     error_payload = build_error_from_exception(error, kind="runtime")
@@ -154,6 +163,8 @@ def _policy_denied_response(
         runtime_theme=runtime_theme,
         identity=identity,
         auth_context=auth_context,
+        display_mode=ui_mode,
+        diagnostics_enabled=diagnostics_enabled,
     )
     ensure_json_serializable(response)
     response = finalize_run_payload(response, secret_values)

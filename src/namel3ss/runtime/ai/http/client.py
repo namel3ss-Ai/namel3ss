@@ -9,6 +9,7 @@ from namel3ss.errors.base import Namel3ssError
 from namel3ss.runtime.ai.providers._shared.errors import map_http_error
 from namel3ss.runtime.ai.providers._shared.parse import json_loads_or_error
 from namel3ss.security import guard_network
+from namel3ss.utils.http_tls import open_url_with_tls_fallback
 
 
 def post_json(
@@ -24,7 +25,7 @@ def post_json(
     request = Request(url, data=data, headers=headers)
     guard_network(url, "POST")
     try:
-        with urlopen(request, timeout=timeout_seconds) as response:
+        with open_url_with_tls_fallback(urlopen, request, timeout_seconds=timeout_seconds) as response:
             body = response.read()
     except HTTPError as err:
         try:

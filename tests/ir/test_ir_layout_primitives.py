@@ -9,6 +9,9 @@ flow "reply":
 
 page "support":
   layout:
+    sidebar_width is "compact"
+    panel_height is "tall"
+    resizable_panels is true
     header:
       title is "Support Inbox"
     sidebar_left:
@@ -36,4 +39,7 @@ def test_lowering_preserves_layout_slots():
     assert isinstance(page.layout.main[0], ir.SectionItem)
     assert isinstance(page.layout.drawer_right[0], ir.SectionItem)
     assert isinstance(page.layout.footer[0], ir.TextItem)
+    assert page.layout.sidebar_width == "compact"
+    assert page.layout.panel_height == "tall"
+    assert page.layout.resizable_panels is True
     assert len(page.items) == 5

@@ -34,6 +34,12 @@ let renderUI = (manifest) => {
   const LAYOUT_SLOTS = ["header", "sidebar_left", "main", "drawer_right", "footer"];
   const diagnosticsEnabled = Boolean(manifest && manifest.diagnostics_enabled) || manifest.mode === "studio";
   const diagnosticsVisibilityByPage = new Map();
+  const persistedLayoutState =
+    typeof window !== "undefined"
+      ? window.N3LayoutState || (window.N3LayoutState = { resizeByPage: {}, scrollByPage: {}, currentPageSlug: "" })
+      : { resizeByPage: {}, scrollByPage: {}, currentPageSlug: "" };
+  const layoutResizeStateByPage = new Map(Object.entries(persistedLayoutState.resizeByPage || {}));
+  const layoutScrollStateByPage = new Map(Object.entries(persistedLayoutState.scrollByPage || {}));
   const loadedPluginAssets = window.N3LoadedPluginAssets || (window.N3LoadedPluginAssets = { js: {}, css: {} });
   if (!uiContainer) return;
   ensurePluginAssets(manifest);
@@ -48,12 +54,33 @@ let renderUI = (manifest) => {
   const pageBySlug = new Map(pageEntries.map((entry) => [entry.slug, entry]));
   const pageByName = new Map(pageEntries.map((entry) => [entry.name, entry]));
   const actionsById = manifest && typeof manifest.actions === "object" && manifest.actions ? manifest.actions : {};
+  const composerAttachUploads = collectComposerAttachUploadsFromManifest(pages);
   const keyboardShortcutMap = new Map();
 
   function hasAppPermission(permission) {
     if (!explicitPermissionsEnabled) return true;
     if (typeof permission !== "string" || !permission) return false;
     return declaredPermissionMatrix[permission] === true;
+  }
+
+  function collectComposerAttachUploadsFromManifest(rootValue) {
+    const uploadNames = new Set();
+    function scan(value) {
+      if (!value) return;
+      if (Array.isArray(value)) {
+        value.forEach((entry) => scan(entry));
+        return;
+      }
+      if (typeof value !== "object") return;
+      const type = typeof value.type === "string" ? value.type.trim().toLowerCase() : "";
+      if (type === "chat") {
+        const attach = typeof value.composer_attach_upload === "string" ? value.composer_attach_upload.trim() : "";
+        if (attach) uploadNames.add(attach);
+      }
+      Object.values(value).forEach((entry) => scan(entry));
+    }
+    scan(rootValue);
+    return uploadNames;
   }
 
   function normalizeShortcut(value) {
@@ -191,9 +218,15 @@ let renderUI = (manifest) => {
     diagnosticsVisibilityByPage.set(slug, Boolean(visible));
   }
 
+  function persistLayoutState() {
+    persistedLayoutState.resizeByPage = Object.fromEntries(layoutResizeStateByPage.entries());
+    persistedLayoutState.scrollByPage = Object.fromEntries(layoutScrollStateByPage.entries());
+    persistedLayoutState.currentPageSlug = currentPageSlug;
+  }
+
   const activeSlug = activePage ? resolvePageSlug(activePage.slug || activePage.name) : "";
   const navigationLocked = Boolean(activeSlug);
-  let currentPageSlug = "";
+  let currentPageSlug = resolvePageSlug(persistedLayoutState.currentPageSlug || "");
 
   function readRouteSlug() {
     if (typeof window === "undefined") return "";
@@ -233,6 +266,28 @@ let renderUI = (manifest) => {
     return `${url.pathname}${url.search}${url.hash}`;
   }
 
+  function captureExistingLayoutScroll() {
+    if (!uiContainer) return;
+    const sidebar = uiContainer.querySelector(".n3-layout-body > .n3-layout-sidebar");
+    const main = uiContainer.querySelector(".n3-layout-body > .n3-layout-main");
+    const drawer = uiContainer.querySelector(".n3-layout-body > .n3-layout-drawer");
+    if (!sidebar && !main && !drawer) return;
+    const routeSlug = readRouteSlug();
+    const selectSlug = select ? resolvePageSlug(select.value) : "";
+    const fallbackSlug = pageEntries[0] ? pageEntries[0].slug : "";
+    const slug = routeSlug || currentPageSlug || selectSlug || fallbackSlug;
+    if (!slug) return;
+    layoutScrollStateByPage.set(slug, {
+      sidebarTop: sidebar && Number.isFinite(sidebar.scrollTop) ? sidebar.scrollTop : 0,
+      mainTop: main && Number.isFinite(main.scrollTop) ? main.scrollTop : 0,
+      drawerTop: drawer && Number.isFinite(drawer.scrollTop) ? drawer.scrollTop : 0,
+    });
+    currentPageSlug = slug;
+    persistLayoutState();
+  }
+
+  captureExistingLayoutScroll();
+
   const currentSelection = select ? select.value : "";
   const urlSelection = readRouteSlug();
   const initialSelection =
@@ -254,10 +309,40 @@ let renderUI = (manifest) => {
   function renderChildren(container, children, pageName) {
     (children || []).forEach((child) => {
       if (child && child.visible === false) return;
-      const node = renderElement(child, pageName);
+      const node = renderElementSafely(child, pageName);
       applyThemeClasses(node, child);
       container.appendChild(node);
     });
+  }
+
+  function renderElementErrorNode(el, err) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "ui-element";
+    const box = document.createElement("div");
+    box.className = "empty-state status-error";
+    const elementType = el && typeof el.type === "string" ? el.type : "element";
+    const message = document.createElement("div");
+    message.textContent = `Failed to render ${elementType}.`;
+    box.appendChild(message);
+    if (err && err.message) {
+      box.title = String(err.message);
+    }
+    wrapper.appendChild(box);
+    return wrapper;
+  }
+
+  function renderElementSafely(el, pageName) {
+    try {
+      return renderElement(el, pageName);
+    } catch (err) {
+      try {
+        // Keep rendering the rest of the page when one element fails.
+        console.error("n3 ui render failed", { element: el, page: pageName, error: err });
+      } catch (_err) {
+        // Ignore logging failures.
+      }
+      return renderElementErrorNode(el, err);
+    }
   }
   function applyPageTheme(page) {
     if (typeof applyThemeBundle !== "function") return;
@@ -292,6 +377,94 @@ let renderUI = (manifest) => {
     if (density) node.classList.add(`n3-density-${density}`);
     if (font) node.classList.add(`n3-font-${font}`);
   }
+
+  function normalizeIconName(value) {
+    if (typeof value !== "string") return "";
+    return value
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, "_")
+      .replace(/[^a-z0-9_]/g, "");
+  }
+
+  function normalizeIconSize(value) {
+    const normalized = typeof value === "string" ? value.trim().toLowerCase() : "";
+    if (normalized === "xsmall" || normalized === "small" || normalized === "medium" || normalized === "large" || normalized === "xlarge") {
+      return normalized;
+    }
+    return "medium";
+  }
+
+  function iconFallbackGlyph(name) {
+    const normalized = normalizeIconName(name);
+    const fallbackByName = {
+      add: "+",
+      check: "✓",
+      check_circle: "✓",
+      close: "×",
+      delete: "×",
+      edit: "✎",
+      folder: "◼",
+      folder_info: "◼",
+      send: "➤",
+      upload: "↑",
+    };
+    if (fallbackByName[normalized]) return fallbackByName[normalized];
+    if (!normalized) return "?";
+    return normalized.slice(0, 1).toUpperCase();
+  }
+
+  function iconAssetUrl(name) {
+    const normalized = normalizeIconName(name);
+    if (!normalized) return "";
+    return `/icons/${encodeURIComponent(normalized)}.svg`;
+  }
+
+  function createIconNode(name, options = {}) {
+    const normalized = normalizeIconName(name);
+    const decorative = options.decorative !== false;
+    const label = typeof options.label === "string" ? options.label.trim() : "";
+    const size = normalizeIconSize(options.size);
+    const icon = document.createElement("span");
+    icon.className = `ui-icon ui-icon-${size}`;
+    icon.dataset.icon = normalized || String(name || "");
+    if (decorative) {
+      icon.setAttribute("aria-hidden", "true");
+    } else {
+      icon.setAttribute("role", "img");
+      icon.setAttribute("aria-label", label || normalized || "icon");
+    }
+
+    const img = document.createElement("img");
+    img.className = "ui-icon-image";
+    img.alt = decorative ? "" : label || normalized || "icon";
+    const src = iconAssetUrl(normalized);
+    if (src) {
+      img.src = src;
+      img.loading = "lazy";
+      img.addEventListener(
+        "error",
+        () => {
+          icon.classList.add("ui-icon-fallback-mode");
+        },
+        { once: true }
+      );
+      icon.appendChild(img);
+    } else {
+      icon.classList.add("ui-icon-fallback-mode");
+    }
+
+    const fallback = document.createElement("span");
+    fallback.className = "ui-icon-fallback";
+    fallback.textContent = iconFallbackGlyph(normalized);
+    icon.appendChild(fallback);
+    return icon;
+  }
+
+  if (collectionRender && typeof collectionRender === "object") {
+    collectionRender.createIconNode = createIconNode;
+  }
+
   function _focusable(container) {
     return Array.from(
       container.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
@@ -1452,6 +1625,17 @@ let renderUI = (manifest) => {
         p.textContent = value;
         wrapper.appendChild(p);
       }
+    } else if (el.type === "icon") {
+      const role = typeof el.role === "string" ? el.role : "decorative";
+      const aria = el.aria && typeof el.aria === "object" ? el.aria : {};
+      const label = typeof aria.label === "string" ? aria.label : "";
+      const icon = createIconNode(el.name, {
+        size: el.size,
+        decorative: role !== "semantic",
+        label: label,
+      });
+      wrapper.classList.add("ui-icon-wrapper");
+      wrapper.appendChild(icon);
     } else if (el.type === "error") {
       const box = document.createElement("div");
       box.className = "empty-state status-error";
@@ -1518,7 +1702,30 @@ let renderUI = (manifest) => {
       const btn = document.createElement("button");
       const enabled = el.enabled !== false;
       btn.className = "btn primary";
-      btn.textContent = el.label;
+      if (typeof el.variant === "string" && el.variant) {
+        btn.dataset.variant = el.variant;
+        if (el.variant === "plain") {
+          btn.classList.add("btn-plain");
+          wrapper.classList.add("ui-element-inline-button");
+        }
+      }
+      const labelWrap = document.createElement("span");
+      labelWrap.className = "ui-button-label";
+      const iconConfig = el && typeof el.icon === "object" ? el.icon : null;
+      const iconName = iconConfig && typeof iconConfig.name === "string" ? iconConfig.name : typeof el.icon === "string" ? el.icon : "";
+      if (iconName) {
+        const iconNode = createIconNode(iconName, {
+          size: iconConfig && typeof iconConfig.size === "string" ? iconConfig.size : "small",
+          decorative: true,
+        });
+        iconNode.classList.add("ui-button-icon");
+        labelWrap.appendChild(iconNode);
+      }
+      const textNode = document.createElement("span");
+      textNode.className = "ui-button-text";
+      textNode.textContent = el.label;
+      labelWrap.appendChild(textNode);
+      btn.appendChild(labelWrap);
       btn.disabled = !enabled;
       btn.onclick = (e) => {
         e.stopPropagation();
@@ -1604,7 +1811,10 @@ let renderUI = (manifest) => {
       wrapper.appendChild(empty);
     } else if (el.type === "upload") {
       if (typeof renderUploadElement === "function") {
-        return renderUploadElement(el, handleAction);
+        const uploadName = typeof el.name === "string" ? el.name.trim() : "";
+        const uploadElement =
+          uploadName && composerAttachUploads.has(uploadName) ? { ...el, hide_surface: true } : el;
+        return renderUploadElement(uploadElement, handleAction);
       }
       const empty = document.createElement("div");
       empty.textContent = "Upload renderer unavailable.";
@@ -1772,7 +1982,7 @@ let renderUI = (manifest) => {
   function appendRenderedItems(container, elements, pageName) {
     (elements || []).forEach((el) => {
       if (!el || el.visible === false) return;
-      const node = renderElement(el, pageName);
+      const node = renderElementSafely(el, pageName);
       applyThemeClasses(node, el);
       container.appendChild(node);
     });
@@ -1863,6 +2073,265 @@ let renderUI = (manifest) => {
     return nav;
   }
 
+  function clampNumber(value, minValue, maxValue) {
+    const min = Number.isFinite(minValue) ? minValue : value;
+    const max = Number.isFinite(maxValue) ? maxValue : value;
+    if (min > max) return min;
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function resolveLayoutStateKey(page) {
+    if (!page || typeof page !== "object") return "";
+    const candidate = page.slug || page.name || page.id || "";
+    return resolvePageSlug(candidate);
+  }
+
+  function parseLayoutBoolean(value) {
+    if (value === true) return true;
+    if (typeof value === "string") {
+      const normalized = value.trim().toLowerCase();
+      return normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "on";
+    }
+    return false;
+  }
+
+  function getResizeHandleWidth(body) {
+    if (!body || typeof window === "undefined" || typeof window.getComputedStyle !== "function") return 14;
+    const cssValue = window.getComputedStyle(body).getPropertyValue("--n3-layout-resize-handle-size").trim();
+    const numeric = Number.parseFloat(cssValue);
+    return Number.isFinite(numeric) && numeric > 0 ? numeric : 14;
+  }
+
+  function computeResizableBounds(kind, body, sidebar, main, drawer) {
+    const bodyWidth = body ? body.getBoundingClientRect().width : 0;
+    const sidebarWidth = sidebar ? sidebar.getBoundingClientRect().width : 0;
+    const drawerWidth = drawer ? drawer.getBoundingClientRect().width : 0;
+    const hasMain = Boolean(main);
+    const mainMinWidth = hasMain ? 420 : 120;
+    const handleCount = (sidebar ? 1 : 0) + (drawer ? 1 : 0);
+    const handleReserve = handleCount * getResizeHandleWidth(body) + 16;
+    const minWidth = 180;
+    const occupiedByOther = kind === "sidebar" ? drawerWidth : sidebarWidth;
+    const maxWidth = Math.max(minWidth, bodyWidth - mainMinWidth - occupiedByOther - handleReserve);
+    return { minWidth, maxWidth };
+  }
+
+  function attachResizeBehavior(config) {
+    const handle = config && config.handle;
+    const body = config && config.body;
+    const sidebar = config && config.sidebar;
+    const main = config && config.main;
+    const drawer = config && config.drawer;
+    const kind = config && config.kind;
+    const page = config && config.page;
+    if (!handle || !body || (kind !== "sidebar" && kind !== "drawer")) return;
+
+    const stateKey = resolveLayoutStateKey(page);
+    const persistWidth = (width) => {
+      if (!stateKey || !Number.isFinite(width)) return;
+      const existing = layoutResizeStateByPage.get(stateKey);
+      const next = existing && typeof existing === "object" ? { ...existing } : {};
+      if (kind === "sidebar") {
+        next.sidebarWidthPx = Math.round(width);
+      } else {
+        next.drawerWidthPx = Math.round(width);
+      }
+      layoutResizeStateByPage.set(stateKey, next);
+      persistLayoutState();
+    };
+
+    const updateWidth = (delta) => {
+      const bounds = computeResizableBounds(kind, body, sidebar, main, drawer);
+      if (kind === "sidebar") {
+        const current = sidebar ? sidebar.getBoundingClientRect().width : 0;
+        const next = clampNumber(current + delta, bounds.minWidth, bounds.maxWidth);
+        body.style.setProperty("--n3-layout-sidebar-width", `${Math.round(next)}px`);
+        body.dataset.sidebarWidth = "custom";
+        persistWidth(next);
+      } else {
+        const current = drawer ? drawer.getBoundingClientRect().width : 0;
+        const next = clampNumber(current + delta, bounds.minWidth, bounds.maxWidth);
+        body.style.setProperty("--n3-layout-drawer-width", `${Math.round(next)}px`);
+        body.dataset.drawerWidth = "custom";
+        persistWidth(next);
+      }
+    };
+
+    let dragging = false;
+    let startX = 0;
+    let startWidth = 0;
+    let activePointerId = null;
+
+    const endDrag = () => {
+      if (!dragging) return;
+      dragging = false;
+      handle.classList.remove("dragging");
+      if (typeof document !== "undefined" && document.body) {
+        document.body.classList.remove("n3-resize-dragging");
+      }
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
+      activePointerId = null;
+    };
+
+    const onPointerMove = (event) => {
+      if (!dragging) return;
+      if (activePointerId !== null && event.pointerId !== activePointerId) return;
+      const delta = event.clientX - startX;
+      if (kind === "sidebar") {
+        const bounds = computeResizableBounds(kind, body, sidebar, main, drawer);
+        const next = clampNumber(startWidth + delta, bounds.minWidth, bounds.maxWidth);
+        body.style.setProperty("--n3-layout-sidebar-width", `${Math.round(next)}px`);
+        body.dataset.sidebarWidth = "custom";
+        persistWidth(next);
+      } else {
+        const bounds = computeResizableBounds(kind, body, sidebar, main, drawer);
+        const next = clampNumber(startWidth - delta, bounds.minWidth, bounds.maxWidth);
+        body.style.setProperty("--n3-layout-drawer-width", `${Math.round(next)}px`);
+        body.dataset.drawerWidth = "custom";
+        persistWidth(next);
+      }
+    };
+
+    const onPointerUp = (event) => {
+      if (activePointerId !== null && event && event.pointerId !== activePointerId) return;
+      endDrag();
+    };
+
+    handle.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      if (typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches) return;
+      event.preventDefault();
+      dragging = true;
+      startX = event.clientX;
+      startWidth = kind === "sidebar" ? (sidebar ? sidebar.getBoundingClientRect().width : 0) : drawer ? drawer.getBoundingClientRect().width : 0;
+      activePointerId = event.pointerId;
+      if (typeof handle.setPointerCapture === "function") {
+        try {
+          handle.setPointerCapture(event.pointerId);
+        } catch {
+          // Continue with window listeners when pointer capture fails.
+        }
+      }
+      handle.classList.add("dragging");
+      if (typeof document !== "undefined" && document.body) {
+        document.body.classList.add("n3-resize-dragging");
+      }
+      window.addEventListener("pointermove", onPointerMove);
+      window.addEventListener("pointerup", onPointerUp);
+      window.addEventListener("pointercancel", onPointerUp);
+    });
+
+    handle.addEventListener("keydown", (event) => {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      event.preventDefault();
+      const step = event.key === "ArrowRight" ? 20 : -20;
+      updateWidth(step);
+    });
+  }
+
+  function createResizeHandle(kind) {
+    const handle = document.createElement("div");
+    handle.className = "n3-layout-resize-handle";
+    handle.dataset.kind = kind;
+    handle.setAttribute("role", "separator");
+    handle.setAttribute("aria-orientation", "vertical");
+    handle.tabIndex = 0;
+    return handle;
+  }
+
+  function applyLayoutSizingOptions(body, page) {
+    if (!body || !body.style || !page || typeof page !== "object") return { resizablePanels: false };
+    const options = page.layout_options && typeof page.layout_options === "object" ? page.layout_options : {};
+    const sidebarWidth = typeof options.sidebar_width === "string" ? options.sidebar_width.trim().toLowerCase() : "";
+    const drawerWidth = typeof options.drawer_width === "string" ? options.drawer_width.trim().toLowerCase() : "";
+    const panelHeight = typeof options.panel_height === "string" ? options.panel_height.trim().toLowerCase() : "";
+    const resizablePanels = parseLayoutBoolean(options.resizable_panels);
+
+    if (sidebarWidth === "compact") {
+      body.style.setProperty("--n3-layout-sidebar-width", "minmax(180px, 220px)");
+      body.dataset.sidebarWidth = "compact";
+    } else if (sidebarWidth === "wide") {
+      body.style.setProperty("--n3-layout-sidebar-width", "minmax(260px, 340px)");
+      body.dataset.sidebarWidth = "wide";
+    } else {
+      body.style.setProperty("--n3-layout-sidebar-width", "minmax(200px, 260px)");
+      body.dataset.sidebarWidth = "standard";
+    }
+
+    if (drawerWidth === "compact") {
+      body.style.setProperty("--n3-layout-drawer-width", "minmax(200px, 260px)");
+      body.dataset.drawerWidth = "compact";
+    } else if (drawerWidth === "wide") {
+      body.style.setProperty("--n3-layout-drawer-width", "minmax(300px, 420px)");
+      body.dataset.drawerWidth = "wide";
+    } else {
+      body.style.setProperty("--n3-layout-drawer-width", "minmax(220px, 300px)");
+      body.dataset.drawerWidth = "standard";
+    }
+
+    if (panelHeight === "compact") {
+      body.style.setProperty("--n3-layout-panel-max-height", "calc(100vh - 340px)");
+      body.dataset.panelHeight = "compact";
+    } else if (panelHeight === "tall") {
+      body.style.setProperty("--n3-layout-panel-max-height", "calc(100vh - 220px)");
+      body.dataset.panelHeight = "tall";
+    } else if (panelHeight === "full") {
+      body.style.setProperty("--n3-layout-panel-max-height", "calc(100vh - 120px)");
+      body.dataset.panelHeight = "full";
+    } else {
+      body.style.setProperty("--n3-layout-panel-max-height", "calc(100vh - 280px)");
+      body.dataset.panelHeight = "standard";
+    }
+
+    return { resizablePanels };
+  }
+
+  function applyStoredResizeState(body, page) {
+    if (!body || !body.style) return;
+    const stateKey = resolveLayoutStateKey(page);
+    if (!stateKey) return;
+    const stored = layoutResizeStateByPage.get(stateKey);
+    if (!stored || typeof stored !== "object") return;
+    if (Number.isFinite(stored.sidebarWidthPx)) {
+      body.style.setProperty("--n3-layout-sidebar-width", `${Math.round(stored.sidebarWidthPx)}px`);
+      body.dataset.sidebarWidth = "custom";
+    }
+    if (Number.isFinite(stored.drawerWidthPx)) {
+      body.style.setProperty("--n3-layout-drawer-width", `${Math.round(stored.drawerWidthPx)}px`);
+      body.dataset.drawerWidth = "custom";
+    }
+  }
+
+  function captureLayoutScrollState(pageSlug) {
+    if (!pageSlug || !uiContainer) return;
+    const sidebar = uiContainer.querySelector(".n3-layout-body > .n3-layout-sidebar");
+    const main = uiContainer.querySelector(".n3-layout-body > .n3-layout-main");
+    const drawer = uiContainer.querySelector(".n3-layout-body > .n3-layout-drawer");
+    if (!sidebar && !main && !drawer) return;
+    layoutScrollStateByPage.set(pageSlug, {
+      sidebarTop: sidebar && Number.isFinite(sidebar.scrollTop) ? sidebar.scrollTop : 0,
+      mainTop: main && Number.isFinite(main.scrollTop) ? main.scrollTop : 0,
+      drawerTop: drawer && Number.isFinite(drawer.scrollTop) ? drawer.scrollTop : 0,
+    });
+    persistLayoutState();
+  }
+
+  function restoreLayoutScrollState(pageSlug, mountNode) {
+    if (!pageSlug) return;
+    const state = layoutScrollStateByPage.get(pageSlug);
+    if (!state || typeof state !== "object") return;
+    const root = mountNode && typeof mountNode.querySelector === "function" ? mountNode : uiContainer;
+    if (!root) return;
+    const sidebar = root.querySelector(".n3-layout-body > .n3-layout-sidebar");
+    const main = root.querySelector(".n3-layout-body > .n3-layout-main");
+    const drawer = root.querySelector(".n3-layout-body > .n3-layout-drawer");
+    if (sidebar && Number.isFinite(state.sidebarTop)) sidebar.scrollTop = state.sidebarTop;
+    if (main && Number.isFinite(state.mainTop)) main.scrollTop = state.mainTop;
+    if (drawer && Number.isFinite(state.drawerTop)) drawer.scrollTop = state.drawerTop;
+  }
+
   function renderLayoutPage(page, mountNode) {
     const targetNode = mountNode || uiContainer;
     const layout = normalizeLayout(page);
@@ -1880,6 +2349,7 @@ let renderUI = (manifest) => {
     let sidebarDrawer = null;
     let sidebarToggle = null;
     const hasSidebar = slots.sidebar_left.length > 0;
+    const hasDrawer = slots.drawer_right.length > 0;
 
     function setSidebarDrawerOpen(open) {
       if (!sidebarDrawer) return;
@@ -1910,13 +2380,23 @@ let renderUI = (manifest) => {
 
     const body = document.createElement("div");
     body.className = "n3-layout-body";
-    body.dataset.hasDrawer = slots.drawer_right.length > 0 ? "true" : "false";
+    body.dataset.hasSidebar = hasSidebar ? "true" : "false";
+    body.dataset.hasDrawer = hasDrawer ? "true" : "false";
+    const layoutSizing = applyLayoutSizingOptions(body, page);
+    applyStoredResizeState(body, page);
+    const resizablePanels = Boolean(layoutSizing && layoutSizing.resizablePanels) && (hasSidebar || hasDrawer);
+    if (resizablePanels) {
+      body.classList.add("n3-layout-resizable");
+      body.dataset.resizablePanels = "true";
+    } else {
+      body.dataset.resizablePanels = "false";
+    }
 
+    let sidebar = null;
     if (hasSidebar) {
-      const sidebar = document.createElement("aside");
+      sidebar = document.createElement("aside");
       sidebar.className = "n3-layout-sidebar";
       appendRenderedItems(sidebar, slots.sidebar_left, page.name);
-      body.appendChild(sidebar);
 
       sidebarDrawer = document.createElement("div");
       sidebarDrawer.className = "n3-layout-sidebar-drawer";
@@ -1939,18 +2419,60 @@ let renderUI = (manifest) => {
       root.appendChild(sidebarDrawer);
     }
 
+    let main = null;
     if (slots.main.length) {
-      const main = document.createElement("section");
+      main = document.createElement("section");
       main.className = "n3-layout-main";
       appendRenderedItems(main, slots.main, page.name);
-      body.appendChild(main);
     }
 
-    if (slots.drawer_right.length) {
-      const drawer = document.createElement("aside");
+    let drawer = null;
+    if (hasDrawer) {
+      drawer = document.createElement("aside");
       drawer.className = "n3-layout-drawer";
       appendRenderedItems(drawer, slots.drawer_right, page.name);
+    }
+
+    const sidebarHandle = resizablePanels && sidebar && (main || drawer) ? createResizeHandle("sidebar") : null;
+    const drawerHandle = resizablePanels && drawer && (main || sidebar) ? createResizeHandle("drawer") : null;
+
+    if (sidebar) {
+      body.appendChild(sidebar);
+    }
+    if (sidebarHandle) {
+      body.appendChild(sidebarHandle);
+    }
+    if (main) {
+      body.appendChild(main);
+    }
+    if (drawerHandle) {
+      body.appendChild(drawerHandle);
+    }
+    if (drawer) {
       body.appendChild(drawer);
+    }
+
+    if (sidebarHandle) {
+      attachResizeBehavior({
+        kind: "sidebar",
+        handle: sidebarHandle,
+        body: body,
+        sidebar: sidebar,
+        main: main,
+        drawer: drawer,
+        page: page,
+      });
+    }
+    if (drawerHandle) {
+      attachResizeBehavior({
+        kind: "drawer",
+        handle: drawerHandle,
+        body: body,
+        sidebar: sidebar,
+        main: main,
+        drawer: drawer,
+        page: page,
+      });
     }
 
     if (body.children.length) {
@@ -1984,6 +2506,9 @@ let renderUI = (manifest) => {
   }
 
   function renderPage(pageKey, options = {}) {
+    if (currentPageSlug) {
+      captureLayoutScrollState(currentPageSlug);
+    }
     uiContainer.innerHTML = "";
     overlayRegistry.clear();
     const entry = resolvePageEntry(pageKey) || pageEntries[0];
@@ -1994,6 +2519,7 @@ let renderUI = (manifest) => {
     }
     const resolvedSlug = entry ? entry.slug : "";
     currentPageSlug = resolvedSlug;
+    persistLayoutState();
     if (!navigationLocked && !options.skipRouteSync) {
       writeRouteSlug(resolvedSlug, { push: false });
     }
@@ -2012,11 +2538,12 @@ let renderUI = (manifest) => {
       pageContainer = content;
     }
     if (renderLayoutPage(page, pageContainer)) {
+      restoreLayoutScrollState(resolvedSlug, pageContainer);
       return;
     }
     const split = splitOverlayItems(page.elements || []);
     split.items.forEach((el) => {
-      const node = renderElement(el, page.name);
+      const node = renderElementSafely(el, page.name);
       applyThemeClasses(node, el);
       pageContainer.appendChild(node);
     });
@@ -2034,6 +2561,7 @@ let renderUI = (manifest) => {
     if (diagnosticsSection) {
       pageContainer.appendChild(diagnosticsSection);
     }
+    restoreLayoutScrollState(resolvedSlug, pageContainer);
   }
   if (select) {
     select.onchange = (e) => navigateToPage(e.target.value, { push: true });

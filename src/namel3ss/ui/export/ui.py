@@ -36,6 +36,13 @@ def _export_page(page: dict) -> dict:
             slot_name: [_export_element(element) for element in normalized.get(slot_name, [])]
             for slot_name in PAGE_LAYOUT_SLOT_ORDER
         }
+        layout_options = page.get("layout_options") if isinstance(page, dict) else None
+        if isinstance(layout_options, dict):
+            exported["layout_options"] = {
+                key: value
+                for key, value in layout_options.items()
+                if isinstance(key, str) and isinstance(value, (str, bool))
+            }
         diagnostics_blocks = page.get("diagnostics_blocks") if isinstance(page, dict) else None
         if isinstance(diagnostics_blocks, list):
             exported["diagnostics_blocks"] = [_export_element(element) for element in diagnostics_blocks]

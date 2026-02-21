@@ -35,6 +35,8 @@ def _list_item_mapping(mapping: ir.ListItemMapping) -> dict:
         payload["meta"] = mapping.meta
     if mapping.icon is not None:
         payload["icon"] = mapping.icon
+    if mapping.icon_color is not None:
+        payload["icon_color"] = mapping.icon_color
     return payload
 
 
@@ -53,6 +55,7 @@ def _build_list_actions(
     action_map: Dict[str, dict] = {}
     for action in actions:
         action_id = _list_action_id(element_id, action.label)
+        ui_behavior = _normalize_ui_behavior(getattr(action, "ui_behavior", None))
         if action_id in seen:
             raise Namel3ssError(
                 f"List action '{action.label}' collides with another action id",
@@ -70,11 +73,15 @@ def _build_list_actions(
         )
         if action.kind == "call_flow":
             entry = {"id": action_id, "type": "call_flow", "flow": action.flow_name}
+            if ui_behavior is not None:
+                entry["ui_behavior"] = ui_behavior
             if availability is not None:
                 entry["enabled"] = enabled
                 entry["availability"] = availability
             action_map[action_id] = entry
             element_entry = {"id": action_id, "label": action.label, "flow": action.flow_name}
+            if ui_behavior is not None:
+                element_entry["ui_behavior"] = ui_behavior
             if availability is not None:
                 element_entry["enabled"] = enabled
             entries.append(element_entry)
@@ -82,11 +89,15 @@ def _build_list_actions(
         if action.kind in {"open_modal", "close_modal"}:
             target = _modal_id(page_slug, action.target or "")
             entry = {"id": action_id, "type": action.kind, "target": target}
+            if ui_behavior is not None:
+                entry["ui_behavior"] = ui_behavior
             if availability is not None:
                 entry["enabled"] = enabled
                 entry["availability"] = availability
             action_map[action_id] = entry
             element_entry = {"id": action_id, "label": action.label, "type": action.kind, "target": target}
+            if ui_behavior is not None:
+                element_entry["ui_behavior"] = ui_behavior
             if availability is not None:
                 element_entry["enabled"] = enabled
             entries.append(element_entry)
@@ -94,33 +105,45 @@ def _build_list_actions(
         if action.kind in {"open_drawer", "close_drawer"}:
             target = _drawer_id(page_slug, action.target or "")
             entry = {"id": action_id, "type": action.kind, "target": target}
+            if ui_behavior is not None:
+                entry["ui_behavior"] = ui_behavior
             if availability is not None:
                 entry["enabled"] = enabled
                 entry["availability"] = availability
             action_map[action_id] = entry
             element_entry = {"id": action_id, "label": action.label, "type": action.kind, "target": target}
+            if ui_behavior is not None:
+                element_entry["ui_behavior"] = ui_behavior
             if availability is not None:
                 element_entry["enabled"] = enabled
             entries.append(element_entry)
             continue
         if action.kind == "navigate_to":
             entry = {"id": action_id, "type": "open_page", "target": action.target}
+            if ui_behavior is not None:
+                entry["ui_behavior"] = ui_behavior
             if availability is not None:
                 entry["enabled"] = enabled
                 entry["availability"] = availability
             action_map[action_id] = entry
             element_entry = {"id": action_id, "label": action.label, "type": "open_page", "target": action.target}
+            if ui_behavior is not None:
+                element_entry["ui_behavior"] = ui_behavior
             if availability is not None:
                 element_entry["enabled"] = enabled
             entries.append(element_entry)
             continue
         if action.kind == "go_back":
             entry = {"id": action_id, "type": "go_back"}
+            if ui_behavior is not None:
+                entry["ui_behavior"] = ui_behavior
             if availability is not None:
                 entry["enabled"] = enabled
                 entry["availability"] = availability
             action_map[action_id] = entry
             element_entry = {"id": action_id, "label": action.label, "type": "go_back"}
+            if ui_behavior is not None:
+                element_entry["ui_behavior"] = ui_behavior
             if availability is not None:
                 element_entry["enabled"] = enabled
             entries.append(element_entry)
@@ -141,6 +164,13 @@ def _slugify(text: str) -> str:
     cleaned = re.sub(r"[^a-z0-9_]", "", normalized)
     collapsed = re.sub(r"_+", "_", cleaned).strip("_")
     return collapsed
+
+
+def _normalize_ui_behavior(raw: object) -> str | None:
+    if raw is None:
+        return None
+    value = str(raw).strip().lower()
+    return value or None
 
 
 __all__ = [

@@ -50,6 +50,7 @@ When disabled, retrieval is identical to keyword-based retrieval.
 See:
 - [Ingestion](docs/runtime/ingestion.md)
 - [Retrieval](docs/runtime/retrieval.md)
+- [Advanced custom answer flow](docs/rag/advanced_custom_answer_flow.md)
 
 ## Common failure cases
 - Uncited answers are rejected deterministically.

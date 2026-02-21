@@ -1,13 +1,30 @@
 from __future__ import annotations
 
-import html
 import re
-import zipfile
-from io import BytesIO
 import zlib
+
+from namel3ss.ingestion.extract_pdf_decoding import (
+    decode_pdf_hex_string as _decode_pdf_hex_string,
+    decode_pdf_string as _decode_pdf_string,
+    is_probable_text_stream as _is_probable_text_stream,
+    looks_like_readable_text as _looks_like_readable_text,
+)
+from namel3ss.ingestion.extract_text_utils import (
+    extract_docx_text as _extract_docx_text,
+    extract_pdf_pages_with_ocr as _extract_pdf_pages_with_ocr,
+    extract_pdf_pages_with_pypdf as _extract_pdf_pages_with_pypdf,
+    extract_text_bytes as _extract_text_bytes,
+    has_non_empty_pages as _has_non_empty_pages,
+    has_readable_pages as _has_readable_pages,
+    join_pages_text as _join_pages_text,
+    normalize_extracted_pages as _normalize_extracted_pages,
+    normalize_extracted_text as _normalize_extracted_text,
+)
+from namel3ss.runtime.ingest.extractors.ocr_backend import extract_image_text_with_ocr
 
 
 _PDF_STRING_RE = re.compile(rb"\((?:\\.|[^\\)])*\)")
+_PDF_HEX_STRING_RE = re.compile(rb"<([0-9A-Fa-f\s]{4,})>")
 _PDF_STREAM_RE = re.compile(rb"stream\r?\n", re.IGNORECASE)
 _PDF_ENDSTREAM_RE = re.compile(rb"endstream", re.IGNORECASE)
 _PDF_FLATE_RE = re.compile(rb"/FlateDecode\b")
@@ -18,7 +35,6 @@ _PDF_TYPE_RE = re.compile(rb"/Type\s*/([A-Za-z]+)\b")
 _PDF_PAGES_RE = re.compile(rb"/Pages\s+(\d+)\s+(\d+)\s+R")
 _PDF_KIDS_RE = re.compile(rb"/Kids\s*\[(.*?)\]", re.S)
 
-
 def extract_text(content: bytes, *, detected: dict, mode: str) -> tuple[str, str]:
     kind = str(detected.get("type") or "text")
     if mode == "layout":
@@ -27,6 +43,9 @@ def extract_text(content: bytes, *, detected: dict, mode: str) -> tuple[str, str
         return _extract_pdf_text(content, layout=True), "layout"
     if mode == "ocr":
         if kind == "pdf":
+            pages = _extract_pdf_pages_with_ocr(content)
+            if _has_non_empty_pages(pages):
+                return _join_pages_text(pages), "ocr"
             return _extract_pdf_text(content, layout=True), "ocr"
         if kind != "image":
             return "", "ocr"
@@ -54,23 +73,35 @@ def extract_pages(content: bytes, *, detected: dict, mode: str) -> tuple[list[st
     if mode == "layout":
         if kind != "pdf":
             return [""], "layout"
-        pages = _extract_pdf_pages(content, layout=True)
+        pages = _normalize_extracted_pages(_extract_pdf_pages_with_pypdf(content))
+        if _has_readable_pages(pages):
+            return pages, "layout"
+        pages = _normalize_extracted_pages(_extract_pdf_pages(content, layout=True))
         if pages is None:
-            pages = _split_pages(_extract_pdf_text(content, layout=True))
+            pages = _split_pages(_normalize_extracted_text(_extract_pdf_text(content, layout=True)))
         return pages, "layout"
     if mode == "ocr":
         if kind == "pdf":
-            pages = _extract_pdf_pages(content, layout=True)
+            pages = _normalize_extracted_pages(_extract_pdf_pages_with_ocr(content))
+            if _has_readable_pages(pages):
+                return pages, "ocr"
+            pages = _normalize_extracted_pages(_extract_pdf_pages_with_pypdf(content))
+            if _has_readable_pages(pages):
+                return pages, "ocr"
+            pages = _normalize_extracted_pages(_extract_pdf_pages(content, layout=True))
             if pages is None:
-                pages = _split_pages(_extract_pdf_text(content, layout=True))
+                pages = _split_pages(_normalize_extracted_text(_extract_pdf_text(content, layout=True)))
             return pages, "ocr"
         if kind != "image":
             return [""], "ocr"
         return _split_pages(_extract_image_ocr(content)), "ocr"
     if kind == "pdf":
-        pages = _extract_pdf_pages(content, layout=False)
+        pages = _normalize_extracted_pages(_extract_pdf_pages_with_pypdf(content))
+        if _has_readable_pages(pages):
+            return pages, "primary"
+        pages = _normalize_extracted_pages(_extract_pdf_pages(content, layout=False))
         if pages is None:
-            pages = _split_pages(_extract_pdf_text(content, layout=False))
+            pages = _split_pages(_normalize_extracted_text(_extract_pdf_text(content, layout=False)))
         return pages, "primary"
     if kind == "docx":
         return _split_pages(_extract_docx_text(content)), "primary"
@@ -82,52 +113,16 @@ def extract_pages(content: bytes, *, detected: dict, mode: str) -> tuple[list[st
 def extract_pages_fallback(content: bytes, *, detected: dict) -> tuple[list[str], str]:
     kind = str(detected.get("type") or "text")
     if kind == "pdf":
-        pages = _extract_pdf_pages(content, layout=True)
+        pages = _normalize_extracted_pages(_extract_pdf_pages_with_pypdf(content))
+        if _has_readable_pages(pages):
+            return pages, "layout"
+        pages = _normalize_extracted_pages(_extract_pdf_pages(content, layout=True))
         if pages is None:
-            pages = _split_pages(_extract_pdf_text(content, layout=True))
+            pages = _split_pages(_normalize_extracted_text(_extract_pdf_text(content, layout=True)))
         return pages, "layout"
     if kind == "image":
         return _split_pages(_extract_image_ocr(content)), "ocr"
     return _split_pages(_extract_text_bytes(content)), "primary"
-
-
-def _extract_text_bytes(content: bytes) -> str:
-    if not content:
-        return ""
-    text = content.decode("utf-8", errors="replace")
-    if _replacement_ratio(text) > 0.05:
-        return content.decode("latin-1", errors="replace")
-    return text
-
-
-def _replacement_ratio(text: str) -> float:
-    if not text:
-        return 0.0
-    replaced = text.count("\ufffd")
-    return replaced / max(len(text), 1)
-
-
-def _extract_docx_text(content: bytes) -> str:
-    if not content:
-        return ""
-    try:
-        with zipfile.ZipFile(BytesIO(content)) as archive:
-            data = archive.read("word/document.xml")
-    except Exception:
-        return ""
-    try:
-        xml_text = data.decode("utf-8", errors="replace")
-    except Exception:
-        xml_text = data.decode("latin-1", errors="replace")
-    paragraphs = []
-    for para in re.findall(r"<w:p[\\s\\S]*?</w:p>", xml_text):
-        runs = re.findall(r"<w:t[^>]*>(.*?)</w:t>", para)
-        if not runs:
-            continue
-        text = "".join(html.unescape(run) for run in runs)
-        if text.strip():
-            paragraphs.append(text.strip())
-    return "\n\n".join(paragraphs)
 
 
 def _extract_pdf_text(content: bytes, *, layout: bool) -> str:
@@ -173,19 +168,29 @@ def _pdf_text_blocks(content: bytes) -> list[str]:
     for data in _pdf_text_sources(content):
         for raw in _PDF_STRING_RE.findall(data):
             text = _decode_pdf_string(raw[1:-1])
-            if text:
+            if _looks_like_readable_text(text):
+                blocks.append(text)
+        for raw_hex in _PDF_HEX_STRING_RE.findall(data):
+            text = _decode_pdf_hex_string(raw_hex)
+            if _looks_like_readable_text(text):
                 blocks.append(text)
     return blocks
 
 
 def _pdf_text_sources(content: bytes) -> list[bytes]:
-    sources = [content]
+    sources: list[bytes] = []
     for stream, header in _iter_pdf_streams(content):
         if _PDF_FLATE_RE.search(header):
             try:
-                sources.append(zlib.decompress(stream))
+                payload = zlib.decompress(stream)
             except Exception:
                 continue
+        else:
+            payload = stream
+        if _is_probable_text_stream(payload):
+            sources.append(payload)
+    if not sources:
+        sources.append(content)
     return sources
 
 
@@ -196,7 +201,11 @@ def _pdf_text_from_streams(streams: list[bytes], *, layout: bool) -> str:
     for data in streams:
         for raw in _PDF_STRING_RE.findall(data):
             text = _decode_pdf_string(raw[1:-1])
-            if text:
+            if _looks_like_readable_text(text):
+                blocks.append(text)
+        for raw_hex in _PDF_HEX_STRING_RE.findall(data):
+            text = _decode_pdf_hex_string(raw_hex)
+            if _looks_like_readable_text(text):
                 blocks.append(text)
     joiner = "\n" if layout else " "
     return joiner.join(blocks)
@@ -386,46 +395,12 @@ def _iter_pdf_streams(content: bytes) -> list[tuple[bytes, bytes]]:
     return streams
 
 
-def _decode_pdf_string(raw: bytes) -> str:
-    output = []
-    idx = 0
-    while idx < len(raw):
-        char = raw[idx]
-        if char == 92:  # backslash
-            idx += 1
-            if idx >= len(raw):
-                break
-            esc = raw[idx]
-            if esc in b"nrtbf":
-                output.append({"n": "\n", "r": "\r", "t": "\t", "b": "\b", "f": "\f"}[chr(esc)])
-            elif esc in b"\\()":
-                output.append(chr(esc))
-            elif 48 <= esc <= 55:
-                octal = bytes([esc])
-                for _ in range(2):
-                    if idx + 1 < len(raw) and 48 <= raw[idx + 1] <= 55:
-                        idx += 1
-                        octal += bytes([raw[idx]])
-                    else:
-                        break
-                try:
-                    output.append(chr(int(octal, 8)))
-                except Exception:
-                    pass
-            else:
-                output.append(chr(esc))
-        else:
-            output.append(chr(char))
-        idx += 1
-    return "".join(output)
-
-
 def _extract_image_primary(content: bytes) -> str:
     return ""
 
 
 def _extract_image_ocr(content: bytes) -> str:
-    return ""
+    return extract_image_text_with_ocr(content)
 
 
 __all__ = ["extract_pages", "extract_pages_fallback", "extract_text", "extract_fallback"]

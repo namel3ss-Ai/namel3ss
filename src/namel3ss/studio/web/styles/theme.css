@@ -361,3 +361,13 @@ textarea:focus-visible {
   outline: 2px solid var(--n3-focus-ring);
   outline-offset: 2px;
 }
+
+/* Page layout slot override: keep sidebar in a vertical stack.
+   This prevents clashes with generic .n3-layout-sidebar grid primitives. */
+.n3-layout-body > .n3-layout-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+  grid-template-columns: none;
+}

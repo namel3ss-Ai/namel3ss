@@ -130,6 +130,10 @@ def _lower_page(
             drawer_right=lowered_slot_items["drawer_right"],
             footer=lowered_slot_items["footer"],
             diagnostics=lowered_diagnostics_items,
+            sidebar_width=getattr(layout, "sidebar_width", None),
+            drawer_width=getattr(layout, "drawer_width", None),
+            panel_height=getattr(layout, "panel_height", None),
+            resizable_panels=getattr(layout, "resizable_panels", None),
             line=layout.line,
             column=layout.column,
         )

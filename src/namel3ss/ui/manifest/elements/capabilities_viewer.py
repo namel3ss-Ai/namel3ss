@@ -73,6 +73,7 @@ def _capabilities_element(
         "source": "runtime.capabilities",
         "capabilities_enabled": packs,
         "capability_versions": versions,
+        "debug_only": True,
     }
 
 

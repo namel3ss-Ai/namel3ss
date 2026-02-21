@@ -18,6 +18,32 @@ page "RAG":
 '''
 
 
+MINIMAL_RESEARCH_SOURCE = '''capabilities:
+  ui_rag
+
+flow "answer_question":
+  return "ok"
+
+page "RAG":
+  rag_ui:
+    base is "research"
+    binds:
+      on_send calls flow "answer_question"
+'''
+
+
+MINIMAL_RESEARCH_NO_BINDS_SOURCE = '''capabilities:
+  ui_rag
+
+flow "ask_question":
+  return "ok"
+
+page "RAG":
+  rag_ui:
+    base is "research"
+'''
+
+
 def test_rag_ui_expands_to_layout_nodes() -> None:
     program = lower_ir_program(SOURCE)
     page = program.pages[0]
@@ -71,6 +97,30 @@ page "RAG":
     rag_origin = (getattr(composer, "origin", {}) or {}).get("rag_ui", {})
     assert rag_origin.get("binding") == "composer_state"
     assert rag_origin.get("state_path") == ["chat", "composer_state"]
+
+
+def test_rag_ui_research_defaults_expand_when_binds_are_omitted() -> None:
+    program = lower_ir_program(MINIMAL_RESEARCH_SOURCE)
+    page = program.pages[0]
+    messages = next((item for item in _walk_page_items(page.items) if isinstance(item, ir.ChatMessagesItem)), None)
+    citations = next((item for item in _walk_page_items(page.items) if isinstance(item, ir.ChatCitationsItem)), None)
+    scope = next((item for item in _walk_page_items(page.items) if isinstance(item, ir.ScopeSelectorItem)), None)
+
+    assert isinstance(messages, ir.ChatMessagesItem)
+    assert messages.source.path == ["chat", "messages"]
+    assert isinstance(citations, ir.ChatCitationsItem)
+    assert citations.source.path == ["chat", "citations"]
+    assert isinstance(scope, ir.ScopeSelectorItem)
+    assert scope.options_source.path == ["chat", "scope_options"]
+    assert scope.active.path == ["chat", "scope_active"]
+
+
+def test_rag_ui_research_defaults_include_on_send_when_binds_are_omitted() -> None:
+    program = lower_ir_program(MINIMAL_RESEARCH_NO_BINDS_SOURCE)
+    page = program.pages[0]
+    composer = next((item for item in _walk_page_items(page.items) if isinstance(item, ir.ChatComposerItem)), None)
+    assert isinstance(composer, ir.ChatComposerItem)
+    assert composer.flow_name == "ask_question"
 
 
 def _walk_page_items(items: list[ir.PageItem]):

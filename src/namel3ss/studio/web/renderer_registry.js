@@ -35,11 +35,9 @@
       "entrypoint": "ui_renderer_chat.js",
       "entrypoint_hash": "sha256:0d475cbe66b23390440e1deda4167154373df78cdc5fcaafa0f52b8148f0436b",
       "exports": [
-        "renderChatElement",
-        "renderCitationChipsElement",
-        "renderTrustIndicatorElement"
+        "renderChatElement"
       ],
-      "integrity_hash": "sha256:80a33c5ceb79c5ab674972a02c4b9a86b0c5ae12de94eb42a7930a05d2978725",
+      "integrity_hash": "sha256:03f8ba1785eb253c1e1c4b1100d67402ed426e06b7d1222684ca95e26ec2c2b5",
       "renderer_id": "chat",
       "version": "1"
     },
@@ -60,7 +58,7 @@
         "renderListElement",
         "renderTableElement"
       ],
-      "integrity_hash": "sha256:13bacaf00797e1179cf17f5905d76dc71d2615feee7327df4153dc28df6d3892",
+      "integrity_hash": "sha256:a2d2139893ee530078c6a97f9b7cca11a823a568afa41e2231e74f88d470fdeb",
       "renderer_id": "collections",
       "version": "1"
     },
@@ -109,7 +107,7 @@
       "entrypoint": "ui_renderer_pdf_preview.js",
       "entrypoint_hash": "sha256:fd7a9f5d091b1e866e8f264cddec9de9b028285168d7b98199eec6ef8c6f1755",
       "exports": [],
-      "integrity_hash": "sha256:7b9d91b13eacdd7900ee47994a7ae7fcdee26d831c1ec130ad1a2ecad406cb9a",
+      "integrity_hash": "sha256:0cf993a5e297ebfdf5edd92604a3af6f27245b4d979dc6bad030ee5b6b7e76e5",
       "renderer_id": "pdf_preview",
       "version": "1"
     },
@@ -130,7 +128,7 @@
         "renderSourcePreviewElement",
         "renderTrustIndicatorElement"
       ],
-      "integrity_hash": "sha256:2d0a29f370df83e45e98305e60e44e3bedc4fc6d646f3f06e907f8fcde6c8d79",
+      "integrity_hash": "sha256:b562e5daaa93e7e37e4554f31bf83927a8ae6bda49f2ff5e69bb31ef90ace1f3",
       "renderer_id": "rag",
       "version": "1"
     },
@@ -190,7 +188,7 @@
       "exports": [
         "renderUploadElement"
       ],
-      "integrity_hash": "sha256:e1fbfbc821e0bf4b8468b37c1b372d51ade4347d0dd8a6bf17ba077dc0357597",
+      "integrity_hash": "sha256:1cb5523ee796e75c1f2a1a63abd31f22f8ec5e8bf395fdb4504b5731c06397e9",
       "renderer_id": "upload",
       "version": "1"
     }

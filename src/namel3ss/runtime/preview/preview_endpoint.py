@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from urllib.parse import quote
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.errors.payload import build_error_from_exception, build_error_payload
@@ -53,6 +54,7 @@ def handle_preview_page_request(
                 source_name=_source_name(state, document_id),
                 page_count=_page_count(state, document_id),
                 checksum=_checksum(state, document_id),
+                pdf_url=_fallback_pdf_url(document_id, page_number, reason_code),
             )
             normalized = validate_preview_union_payload(unavailable_payload)
             return normalized, 200
@@ -76,6 +78,10 @@ def _unavailable_reason(err: Namel3ssError) -> tuple[str, str] | None:
         return PREVIEW_UNAVAILABLE_REASON_NON_PDF, _first_line(message)
     if "page text for" in lowered:
         return PREVIEW_UNAVAILABLE_REASON_PAGE_TEXT, _first_line(message)
+    if "missing page metadata" in lowered:
+        return PREVIEW_UNAVAILABLE_REASON_UNKNOWN, _first_line(message)
+    if "expected" in lowered and "pages but found" in lowered:
+        return PREVIEW_UNAVAILABLE_REASON_UNKNOWN, _first_line(message)
     return None
 
 
@@ -145,6 +151,33 @@ def _checksum(state: dict | None, document_id: str) -> str:
         if isinstance(value, str) and value.strip():
             return value.strip()
     return document_id.strip()
+
+
+def _fallback_pdf_url(document_id: str, page_number: object, reason_code: str) -> str:
+    if reason_code == PREVIEW_UNAVAILABLE_REASON_NON_PDF:
+        return ""
+    normalized = document_id.strip()
+    if not normalized:
+        return ""
+    page_value = _page_number_value(page_number)
+    if page_value <= 0:
+        page_value = 1
+    encoded_document_id = quote(normalized, safe="")
+    return f"/api/documents/{encoded_document_id}/pdf#page={page_value}"
+
+
+def _page_number_value(value: object) -> int:
+    if isinstance(value, bool):
+        return 0
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    if isinstance(value, str):
+        stripped = value.strip()
+        if stripped.isdigit():
+            return int(stripped)
+    return 0
 
 
 __all__ = ["handle_preview_page_request"]

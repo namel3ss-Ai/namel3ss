@@ -31,3 +31,22 @@ def test_manifest_expands_records_and_actions():
     assert table["columns"][0]["name"] == "email"
     button = next(e for e in elements if e["type"] == "button")
     assert button["action"] == {"type": "call_flow", "flow": "create_user"}
+
+
+def test_manifest_button_icon_payload():
+    source = '''record "User":
+  email string must be unique
+
+flow "create_user":
+  return "ok"
+
+page "home":
+  button "Create user":
+    icon is add
+    calls flow "create_user"
+'''
+    program = lower_ir_program(source)
+    manifest = build_manifest(program)
+    button = next(e for e in manifest["pages"][0]["elements"] if e["type"] == "button")
+    assert button["label"] == "Create user"
+    assert button["icon"] == {"name": "add", "size": "small", "role": "decorative"}

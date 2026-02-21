@@ -102,6 +102,23 @@ page "home":
     assert chat.attachments is True
 
 
+def test_parse_chat_block_with_composer_attach_upload():
+    source = '''flow "send_message":
+  return "ok"
+
+page "home":
+  chat:
+    attachments are true
+    composer_attach_upload is "question_files"
+    messages from is state.chat.messages
+    composer calls flow "send_message"
+'''
+    program = parse_program(source)
+    chat = next(item for item in program.pages[0].items if isinstance(item, ast.ChatItem))
+    assert chat.attachments is True
+    assert chat.composer_attach_upload == "question_files"
+
+
 def test_parse_thinking_clause_without_is():
     source = '''flow "send_message":
   return "ok"
@@ -134,16 +151,16 @@ page "home":
     assert "declared more than once" in str(exc.value).lower()
 
 
-def test_chat_option_unknown_action_error():
+def test_chat_option_allows_custom_actions():
     source = '''flow "send_message":
   return "ok"
 
 page "home":
   chat:
-    actions are [copy, pin]
+    actions are [copy, pin, open_in_drawer, pin]
     messages from is state.chat.messages
     composer calls flow "send_message"
 '''
-    with pytest.raises(Namel3ssError) as exc:
-        parse_program(source)
-    assert "unknown chat action" in str(exc.value).lower()
+    program = parse_program(source)
+    chat = next(item for item in program.pages[0].items if isinstance(item, ast.ChatItem))
+    assert chat.actions == ["copy", "pin", "open_in_drawer"]
