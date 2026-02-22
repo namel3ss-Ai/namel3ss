@@ -2,6 +2,24 @@
 
 No breaking changes without an explicit changelog entry.
 
+## v0.1.0a24
+### Added
+- None.
+
+### Changed
+- Repository guidance now points the canonical RAG example to `namel3ss-apps/apps/rag-application`.
+- Runtime UI renderer marks chat and projects sections with explicit classes so chrome overrides are scoped and deterministic.
+
+### Fixed
+- Removed duplicate in-repo `apps/rag-application` example and its repo-local example test to keep `namel3ss` core clean.
+- Chat workspace and projects sidebar no longer render duplicate outer wrapper borders in the runtime shell.
+
+### Deprecated
+- None.
+
+### Removed
+- Duplicate `apps/rag-application` source files from `namel3ss` (canonical app remains in `namel3ss-apps`).
+
 ## v0.1.0a23
 ### Added
 - None.
