@@ -2,9 +2,9 @@
 
 ## Overview
 
-This document outlines the path from the current alpha release (v0.1.0a7) to production-ready v1.0. The roadmap is organized into three major phases: **Beta Preparation**, **Beta Release**, and **Production Release**.
+This document outlines the path from the current alpha release (v0.1.0a24) to production-ready v1.0. The roadmap is organized into three major phases: **Beta Preparation**, **Beta Release**, and **Production Release**.
 
-**Current Status**: Alpha v0.1.0a7  
+**Current Status**: Alpha v0.1.0a24  
 **Target Beta**: Q2 2026 (April-June)  
 **Target v1.0**: Q4 2026 (October-December)
 

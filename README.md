@@ -18,12 +18,12 @@ Run `n3 expand app.ai` to inspect the generated program.
 
 ## Try the RAG application
 
-[`apps/rag-application`](apps/rag-application) is an end-to-end RAG app (upload -> ingest -> ask -> citations) with deterministic flows and inspectable source previews.
+The canonical RAG example lives in [`namel3ss-apps/apps/rag-application`](https://github.com/namel3ss-Ai/namel3ss-apps/tree/main/apps/rag-application). It is an end-to-end RAG app (upload -> ingest -> ask -> citations) with deterministic flows and inspectable source previews.
 
-From repo root:
+From your workspace root (with `namel3ss-apps` cloned):
 
 ```bash
-cd apps/rag-application
+cd ../namel3ss-apps/apps/rag-application
 n3 check app.ai
 n3 run app.ai --port 7360 --no-open
 ```
@@ -49,7 +49,7 @@ In the UI:
 - `override` lets you change targeted behavior without copying hundreds of lines from a preset.
 
 ```bash
-cd apps/rag-application
+cd ../namel3ss-apps/apps/rag-application
 n3 expand app.ai > expanded.ai
 ```
 

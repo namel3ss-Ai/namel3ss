@@ -5,7 +5,7 @@
 **Status**: Draft (for beta/production use)
 
 > [!WARNING]
-> namel3ss is currently in **alpha** (v0.1.0a7). This deployment guide is prepared for future beta and production releases. Do not deploy alpha versions to production.
+> namel3ss is currently in **alpha** (v0.1.0a24). This deployment guide is prepared for future beta and production releases. Do not deploy alpha versions to production.
 
 ---
 

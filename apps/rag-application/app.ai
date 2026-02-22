@@ -1,6 +1,0 @@
-spec is "1.0"
-
-use preset "rag_chat":
-  title is "Assistant"
-  model is "gpt-4o-mini"
-  answer_template is "summary_keypoints_recommendation_with_citations"

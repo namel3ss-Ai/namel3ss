@@ -2,7 +2,7 @@
 
 Date: 2026-02-13  
 Scope: `apps/rag-demo`  
-Runtime target: `namel3ss==0.1.0a23`
+Runtime target: `namel3ss==0.1.0a24`
 
 ## Constraint
 

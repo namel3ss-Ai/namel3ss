@@ -821,11 +821,51 @@ let renderUI = (manifest) => {
     }
     return overlay;
   }
+  function containsElementType(nodes, type) {
+    const stack = Array.isArray(nodes) ? nodes.slice() : [];
+    while (stack.length) {
+      const node = stack.pop();
+      if (!node || typeof node !== "object") continue;
+      if (node.type === type) return true;
+      if (Array.isArray(node.children)) {
+        for (let index = 0; index < node.children.length; index += 1) {
+          stack.push(node.children[index]);
+        }
+      }
+    }
+    return false;
+  }
+  function containsSectionLabel(nodes, targetLabel) {
+    const normalizedTarget = typeof targetLabel === "string" ? targetLabel.trim().toLowerCase() : "";
+    if (!normalizedTarget) return false;
+    const stack = Array.isArray(nodes) ? nodes.slice() : [];
+    while (stack.length) {
+      const node = stack.pop();
+      if (!node || typeof node !== "object") continue;
+      if (node.type === "section") {
+        const label = typeof node.label === "string" ? node.label.trim().toLowerCase() : "";
+        if (label === normalizedTarget) return true;
+      }
+      if (Array.isArray(node.children)) {
+        for (let index = 0; index < node.children.length; index += 1) {
+          stack.push(node.children[index]);
+        }
+      }
+    }
+    return false;
+  }
   function renderElement(el, pageName) {
     if (!el) return document.createElement("div");
     if (el.type === "section") {
       const section = document.createElement("div");
       section.className = "ui-element ui-section";
+      if (containsElementType(el.children, "chat")) {
+        section.classList.add("ui-section-chat");
+      }
+      const sectionLabel = typeof el.label === "string" ? el.label.trim().toLowerCase() : "";
+      if (sectionLabel === "projects") {
+        section.classList.add("ui-section-projects");
+      }
       if (el.label) {
         const header = document.createElement("div");
         header.className = "ui-section-title";
@@ -2392,10 +2432,14 @@ let renderUI = (manifest) => {
       body.dataset.resizablePanels = "false";
     }
 
+    const sidebarHasProjects = containsSectionLabel(slots.sidebar_left, "projects");
     let sidebar = null;
     if (hasSidebar) {
       sidebar = document.createElement("aside");
       sidebar.className = "n3-layout-sidebar";
+      if (sidebarHasProjects) {
+        sidebar.classList.add("n3-layout-sidebar-projects");
+      }
       appendRenderedItems(sidebar, slots.sidebar_left, page.name);
 
       sidebarDrawer = document.createElement("div");
@@ -2407,6 +2451,9 @@ let renderUI = (manifest) => {
       drawerBackdrop.onclick = () => setSidebarDrawerOpen(false);
       const drawerPanel = document.createElement("div");
       drawerPanel.className = "n3-layout-sidebar-panel";
+      if (sidebarHasProjects) {
+        drawerPanel.classList.add("n3-layout-sidebar-panel-projects");
+      }
       const closeButton = document.createElement("button");
       closeButton.type = "button";
       closeButton.className = "btn small ghost n3-layout-sidebar-close";
@@ -2423,6 +2470,9 @@ let renderUI = (manifest) => {
     if (slots.main.length) {
       main = document.createElement("section");
       main.className = "n3-layout-main";
+      if (containsElementType(slots.main, "chat")) {
+        main.classList.add("n3-layout-main-chat");
+      }
       appendRenderedItems(main, slots.main, page.name);
     }
 

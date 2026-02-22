@@ -45,6 +45,7 @@
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.2px;
+  color: #000;
 }
 .ui-card {
   background: #fff;
@@ -260,6 +261,22 @@
   gap: 10px;
   max-height: var(--n3-layout-panel-max-height, calc(100vh - 280px));
   overflow: auto;
+}
+.n3-layout-main.n3-layout-main-chat {
+  border: 0;
+  background: transparent;
+}
+.n3-layout-main.n3-layout-main-chat > .ui-section.ui-section-chat {
+  border: 0;
+}
+.n3-layout-sidebar.n3-layout-sidebar-projects {
+  border: 0;
+  background: transparent;
+}
+.n3-layout-sidebar.n3-layout-sidebar-projects > .ui-section.ui-section-projects,
+.n3-layout-sidebar-panel.n3-layout-sidebar-panel-projects > .ui-section.ui-section-projects {
+  border: 0;
+  background: transparent;
 }
 .n3-layout-resize-handle {
   align-self: stretch;

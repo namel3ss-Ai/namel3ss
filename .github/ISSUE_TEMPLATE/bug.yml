@@ -28,7 +28,7 @@ body:
     attributes:
       label: Version
       description: Output of `n3 --version` (or the version in `VERSION`).
-      placeholder: "v0.1.0a7"
+      placeholder: "v0.1.0a24"
     validations:
       required: true
 

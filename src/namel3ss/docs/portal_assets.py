@@ -126,8 +126,6 @@ DOCS_HTML = """<!doctype html>
     <section>
       <h2>Endpoints</h2>
       <div id="endpoints"></div>
-      <h3>Error inspector</h3>
-      <pre id="errorSample"></pre>
     </section>
     <section>
       <h2>Try it</h2>
@@ -148,22 +146,12 @@ DOCS_HTML = """<!doctype html>
       <button id="sendBtn">Send request</button>
       <h3>Response</h3>
       <pre id="responseBox"></pre>
-      <h3>Metrics</h3>
-      <pre id="metricsBox"></pre>
-      <h3>Prompts</h3>
-      <pre id="promptsBox"></pre>
-      <h3>Prompt evals</h3>
-      <pre id="evalsBox"></pre>
     </section>
   </main>
   <script>
     const state = { spec: null };
     const endpointSelect = document.getElementById("endpointSelect");
     const responseBox = document.getElementById("responseBox");
-    const metricsBox = document.getElementById("metricsBox");
-    const promptsBox = document.getElementById("promptsBox");
-    const evalsBox = document.getElementById("evalsBox");
-    const errorSample = document.getElementById("errorSample");
 
     async function loadSpec() {
       const res = await fetch("/openapi.json");
@@ -175,7 +163,6 @@ DOCS_HTML = """<!doctype html>
           state.specText = specText;
           renderEndpoints(spec);
           renderSelect(spec);
-          renderErrorSample(spec);
         }
       }
     }
@@ -200,14 +187,6 @@ DOCS_HTML = """<!doctype html>
         option.textContent = `${item.method} ${item.path}`;
         endpointSelect.appendChild(option);
       });
-    }
-
-    function renderErrorSample(spec) {
-      const schema = spec?.components?.schemas?.ErrorEntry;
-      const sample = schema
-        ? { code: "runtime_error", message: "Something went wrong.", remediation: "Check the request and try again." }
-        : { code: "runtime_error", message: "Something went wrong.", remediation: "Check the request and try again." };
-      errorSample.textContent = JSON.stringify(sample, null, 2);
     }
 
     function collectEndpoints(spec) {
@@ -248,31 +227,10 @@ DOCS_HTML = """<!doctype html>
       responseBox.textContent = JSON.stringify(json, null, 2);
     }
 
-    async function loadMetrics() {
-      const res = await fetch("/metrics");
-      const json = await res.json();
-      metricsBox.textContent = JSON.stringify(json, null, 2);
-    }
-
-    async function loadPrompts() {
-      const res = await fetch("/prompts.json");
-      const json = await res.json();
-      promptsBox.textContent = JSON.stringify(json, null, 2);
-    }
-
-    async function loadEvals() {
-      const res = await fetch("/evals.json");
-      const json = await res.json();
-      evalsBox.textContent = JSON.stringify(json, null, 2);
-    }
-
     document.getElementById("sendBtn").addEventListener("click", sendRequest);
 
     async function refreshAll() {
       await loadSpec();
-      await loadMetrics();
-      await loadPrompts();
-      await loadEvals();
     }
 
     refreshAll();
