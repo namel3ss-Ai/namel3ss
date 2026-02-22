@@ -15,7 +15,7 @@
         "background: #fff; display: flex; flex-direction: column; gap: 10px"
       ],
       ".ui-section-title": [
-        "font-size: 14px; font-weight: 600; letter-spacing: 0.2px"
+        "font-size: 14px; font-weight: 600; letter-spacing: 0.2px; color: #000"
       ],
       ".ui-table": [
         "width: 100%; border-collapse: collapse; font-size: 13px"
