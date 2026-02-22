@@ -36,3 +36,7 @@ Namel3ss is organized into strict layers with deterministic contracts.
 - `docs/compatibility_policy.md`
 - `docs/deprecation_policy.md`
 - `SECURITY.md`
+
+## Roadmap link
+
+- `docs/roadmap.md`

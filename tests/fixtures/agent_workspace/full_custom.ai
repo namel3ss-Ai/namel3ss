@@ -1,0 +1,228 @@
+spec is "1.0"
+
+ai "planner_ai":
+  provider is "openai"
+  model is "gpt-4o-mini"
+  system_prompt is "Plan a deterministic grounded retrieval query. Keep output concise."
+  memory:
+    short_term is 0
+    semantic is false
+    profile is false
+
+ai "writer_ai":
+  provider is "openai"
+  model is "gpt-4o-mini"
+  system_prompt is "Answer only from provided context and keep evidence explicit."
+  memory:
+    short_term is 0
+    semantic is false
+    profile is false
+
+agent "planner":
+  ai is "planner_ai"
+  system_prompt is "Route and plan grounded retrieval."
+
+agent "writer":
+  ai is "writer_ai"
+  system_prompt is "Compose grounded answers with citations."
+
+contract flow "agent.route":
+  input:
+    message is text
+    context is optional text
+  output:
+    route is text
+    query is text
+    context is text
+
+contract flow "agent.plan":
+  input:
+    message is text
+    route is text
+  output:
+    planned_query is text
+
+contract flow "agent.retrieve":
+  input:
+    query is text
+    context is optional text
+  output:
+    context is text
+    citations is json
+
+contract flow "agent.tool_policy":
+  input:
+    tool_name is text
+  output:
+    allowed is boolean
+    reason is text
+
+contract flow "agent.fallback":
+  input:
+    message is text
+    context is optional text
+    error_text is optional text
+  output:
+    answer_text is text
+    citations is json
+
+contract flow "agent.citations.format":
+  input:
+    citations is json
+  output:
+    citations is json
+
+contract flow "agent.answer":
+  input:
+    message is text
+    context is optional text
+  output:
+    answer_text is text
+    citations is json
+
+flow "agent.route": requires true
+  let context_text is ""
+  try:
+    let provided_context is input.context
+    if provided_context is not "":
+      set context_text is provided_context
+  with catch err:
+    set context_text is context_text
+  return map:
+    "route" is "planner_executor"
+    "query" is input.message
+    "context" is context_text
+
+flow "agent.plan": requires true
+  let planned_query is input.message
+  try:
+    ask ai "planner_ai" with structured input from map:
+      "query" is "Plan one grounded retrieval query for: " + input.message
+      "context" is input.route
+    as planner_output
+    if planner_output is not "":
+      set planned_query is planner_output
+  with catch err:
+    set planned_query is planned_query
+  return map:
+    "planned_query" is planned_query
+
+flow "agent.retrieve": requires true
+  if input.context is "":
+    return map:
+      "context" is ""
+      "citations" is list:
+  return map:
+    "context" is input.context
+    "citations" is list:
+      map:
+        "index" is 1
+        "title" is "Attached context"
+        "source_id" is "attached-context"
+
+flow "agent.tool_policy": requires true
+  return map:
+    "allowed" is true
+    "reason" is "allowed"
+
+flow "agent.fallback": requires true
+  if input.context is "":
+    return map:
+      "answer_text" is "No grounded support found in indexed sources for this query."
+      "citations" is list:
+  return map:
+    "answer_text" is "Grounded support exists. Open View Sources for evidence."
+    "citations" is list:
+      map:
+        "index" is 1
+        "title" is "Attached context"
+        "source_id" is "attached-context"
+
+flow "agent.citations.format": requires true
+  return map:
+    "citations" is input.citations
+
+flow "agent.answer": requires true
+  let route_result is call flow "agent.route":
+    input:
+      message is input.message
+      context is input.context
+    output:
+      route
+      query
+      context
+  let plan_result is call flow "agent.plan":
+    input:
+      message is map get route_result key "query"
+      route is map get route_result key "route"
+    output:
+      planned_query
+  let retrieve_result is call flow "agent.retrieve":
+    input:
+      query is map get plan_result key "planned_query"
+      context is map get route_result key "context"
+    output:
+      context
+      citations
+  let retrieved_context is map get retrieve_result key "context"
+  if retrieved_context is "":
+    return call flow "agent.fallback":
+      input:
+        message is input.message
+        context is retrieved_context
+        error_text is "empty context"
+      output:
+        answer_text
+        citations
+  let policy_result is call flow "agent.tool_policy":
+    input:
+      tool_name is "agent.answer"
+    output:
+      allowed
+      reason
+  let policy_allowed is map get policy_result key "allowed"
+  if policy_allowed is false:
+    return call flow "agent.fallback":
+      input:
+        message is input.message
+        context is retrieved_context
+        error_text is "policy denied"
+      output:
+        answer_text
+        citations
+  let answer_text is ""
+  try:
+    ask ai "writer_ai" with structured input from map:
+      "query" is input.message
+      "context" is retrieved_context
+    as writer_output
+    if writer_output is "":
+      set answer_text is "Grounded support exists. Open View Sources for evidence."
+    else:
+      set answer_text is writer_output
+  with catch err:
+    set answer_text is "Grounded support exists. Open View Sources for evidence."
+  let formatted_citations is call flow "agent.citations.format":
+    input:
+      citations is map get retrieve_result key "citations"
+    output:
+      citations
+  return map:
+    "answer_text" is answer_text
+    "citations" is map get formatted_citations key "citations"
+
+flow "agent.demo": requires true
+  let result is call flow "agent.answer":
+    input:
+      message is "What is in this workspace?"
+      context is "Workspace context for deterministic full-custom example."
+    output:
+      answer_text
+      citations
+  return map get result key "answer_text"
+
+page "home": requires true
+  title is "Agent Workspace Full Custom"
+  text is "Full custom agent graph without preset dependency."
+  button "Run demo":
+    calls flow "agent.demo"

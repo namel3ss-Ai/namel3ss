@@ -69,3 +69,7 @@ SDK guarantees:
 - No hidden state
 - Typed runtime errors
 - Deterministic schema validation on parsed responses
+
+## Related
+
+- `docs/runtime/agent_contracts.md`

@@ -1,0 +1,61 @@
+spec is "1.0"
+use preset "agent_workspace":
+  title is "Agent Workspace Controlled"
+  model is "gpt-4o-mini"
+  pattern is "single_agent"
+
+override flow "agent.route":
+  return map:
+    "route" is "single_agent"
+    "query" is "controlled: " + input.message
+    "context" is input.context
+
+override flow "agent.retrieve":
+  if input.context is "":
+    return map:
+      "context" is ""
+      "citations" is list:
+  return map:
+    "context" is input.context
+    "citations" is list:
+      map:
+        "index" is 1
+        "title" is "Controlled source"
+        "source_id" is "controlled-source"
+
+override flow "agent.tool_policy":
+  return map:
+    "allowed" is true
+    "reason" is "allowed"
+
+override flow "agent.fallback":
+  return map:
+    "answer_text" is "Controlled fallback: " + input.message
+    "citations" is list:
+
+override flow "agent.citations.format":
+  return map:
+    "citations" is input.citations
+
+override flow "agent.answer":
+  let retrieve_result is call flow "agent.retrieve":
+    input:
+      query is input.message
+      context is input.context
+    output:
+      context
+      citations
+  let retrieved_context is map get retrieve_result key "context"
+  if retrieved_context is "":
+    let fallback_result is call flow "agent.fallback":
+      input:
+        message is input.message
+        context is input.context
+        error_text is "empty context"
+      output:
+        answer_text
+        citations
+    return fallback_result
+  return map:
+    "answer_text" is "Controlled answer: " + retrieved_context
+    "citations" is map get retrieve_result key "citations"

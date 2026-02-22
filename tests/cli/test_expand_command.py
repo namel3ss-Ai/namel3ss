@@ -10,6 +10,13 @@ use preset "rag_chat":
   answer_template is "summary_keypoints_recommendation_with_citations"
 '''
 
+AGENT_SOURCE = '''spec is "1.0"
+use preset "agent_workspace":
+  title is "Assistant"
+  model is "gpt-4o-mini"
+  pattern is "single_agent"
+'''
+
 
 def test_expand_outputs_deterministic_rag_chat_template_source(tmp_path, capsys) -> None:
     app_path = tmp_path / "app.ai"
@@ -54,3 +61,18 @@ def test_expand_supports_app_first_command_shape(tmp_path, capsys) -> None:
     assert cli_main([app_path.as_posix(), "expand"]) == 0
     output = capsys.readouterr().out
     assert 'use preset "rag_chat"' not in output
+
+
+def test_expand_outputs_deterministic_agent_workspace_template_source(tmp_path, capsys) -> None:
+    app_path = tmp_path / "app.ai"
+    app_path.write_text(AGENT_SOURCE, encoding="utf-8")
+
+    assert cli_main(["expand", app_path.as_posix()]) == 0
+    first = capsys.readouterr().out
+    assert 'ai "__agent_workspace_ai":' in first
+    assert 'contract flow "agent.answer":' in first
+    assert 'flow "agent.answer": requires true' in first
+
+    assert cli_main(["expand", app_path.as_posix()]) == 0
+    second = capsys.readouterr().out
+    assert first == second

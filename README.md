@@ -3,6 +3,20 @@
 namel3ss is a deterministic AI application language.
 It keeps surface syntax minimal while making execution explicit, inspectable, and reproducible.
 
+## Architecture wireframe
+
+```mermaid
+flowchart LR
+  A[".ai Program<br/>records + flows + policy + ui"] --> B["Compile Plane<br/>parse + check + expand"]
+  B --> C["Deterministic Contract<br/>manifest + actions + state schema"]
+  C --> D["Runtime Plane<br/>flow engine + policy gates + providers"]
+  D --> E["API Plane<br/>/api/ui + /api/action + /api/v1/*"]
+  E --> F["Application UI"]
+  E --> G["Studio Inspector"]
+```
+
+Deep architecture reference: [docs/architecture_overview.md](docs/architecture_overview.md)
+
 ## 10-line example
 
 ```ai
@@ -292,6 +306,8 @@ If you must use reserved identifiers, escape them with backticks and use `n3 res
 Getting started:
 - [Install and run](docs/install-and-run.md)
 - [Quickstart](docs/quickstart.md)
+- [Agent contracts](docs/runtime/agent_contracts.md)
+- [Full custom agents](docs/runtime/agent_full_custom.md)
 
 Language & grammar:
 - [Grammar contract](docs/language/grammar_contract.md)

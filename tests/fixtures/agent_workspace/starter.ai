@@ -1,0 +1,6 @@
+spec is "1.0"
+use preset "agent_workspace":
+  title is "Assistant"
+  model is "gpt-4o-mini"
+  pattern is "single_agent"
+

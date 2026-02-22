@@ -20,6 +20,23 @@ The following are public contracts:
 
 Public APIs are declared in `src/namel3ss/lang/public_api.py`.
 
+## Agent contract compatibility
+
+For agent runtimes, the canonical boundary contracts are compatibility-governed:
+
+- `agent.route`
+- `agent.retrieve`
+- `agent.tool_policy`
+- `agent.fallback`
+- `agent.citations.format`
+- `agent.answer`
+
+Rules:
+
+- field renames/removals are breaking
+- field additions must be additive with deterministic defaults
+- flow names remain stable across Starter, Controlled, and Full custom tiers
+
 ## Breaking change definition
 
 A change is breaking if it:

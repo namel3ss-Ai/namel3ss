@@ -5,11 +5,18 @@ import re
 
 from namel3ss.errors.base import Namel3ssError
 from namel3ss.parser.presets import (
+    AGENT_WORKSPACE_PATTERN_SINGLE_AGENT,
     DEFAULT_RAG_CHAT_MODEL,
     DEFAULT_RAG_CHAT_TEMPERATURE,
+    DEFAULT_AGENT_WORKSPACE_MODEL,
+    DEFAULT_AGENT_WORKSPACE_TEMPERATURE,
+    SUPPORTED_AGENT_WORKSPACE_OVERRIDE_FLOWS,
+    SUPPORTED_AGENT_WORKSPACE_PATTERNS,
     RAG_CHAT_TEMPLATE_PLAIN_CONCISE,
     SUPPORTED_RAG_CHAT_ANSWER_TEMPLATES,
+    AgentWorkspacePresetConfig,
     RagChatPresetConfig,
+    render_agent_workspace_source,
     render_rag_chat_source,
 )
 
@@ -24,49 +31,72 @@ _ASK_INPUT_BLOCK_RE = re.compile(r'^(?P<indent>\s*)ask\s+ai\s+"(?P<ai>[^"]+)"\s+
 _ASK_INPUT_FIELD_RE = re.compile(r'^(?P<indent>\s*)(?P<key>[A-Za-z_][A-Za-z0-9_]*)\s+is\s+(?P<expr>.+)$')
 _RETURN_STMT_RE = re.compile(r'^(?P<indent>\s*)return\s+(?P<expr>.+)$')
 
+_RAG_OVERRIDE_FLOW = "rag.answer"
+_SUPPORTED_PRESETS = {"rag_chat", "agent_workspace"}
+
 
 @dataclass(frozen=True)
 class ParsedPresetBlocks:
-    config: RagChatPresetConfig
-    override_body: list[str] | None
+    preset_name: str
+    config: RagChatPresetConfig | AgentWorkspacePresetConfig
+    override_bodies: dict[str, list[str]]
     remaining_lines: list[str]
 
 
 def expand_language_presets(source: str) -> str:
     if "use preset" not in source and "override flow" not in source:
         return source
-    parsed = _parse_rag_chat_blocks(source)
+    parsed = _parse_preset_blocks(source)
     if parsed is None:
         return source
     spec_line, trailing = _extract_spec_line(parsed.remaining_lines)
-    rendered = render_rag_chat_source(
-        spec_line=spec_line,
-        config=parsed.config,
-        override_body=parsed.override_body,
-    )
+    if parsed.preset_name == "rag_chat":
+        if not isinstance(parsed.config, RagChatPresetConfig):
+            raise Namel3ssError("Internal error: rag_chat preset config type mismatch.")
+        rendered = render_rag_chat_source(
+            spec_line=spec_line,
+            config=parsed.config,
+            override_body=parsed.override_bodies.get(_RAG_OVERRIDE_FLOW),
+        )
+    elif parsed.preset_name == "agent_workspace":
+        if not isinstance(parsed.config, AgentWorkspacePresetConfig):
+            raise Namel3ssError("Internal error: agent_workspace preset config type mismatch.")
+        rendered = render_agent_workspace_source(
+            spec_line=spec_line,
+            config=parsed.config,
+            override_bodies=parsed.override_bodies,
+        )
+    else:
+        raise Namel3ssError(f'Unknown preset "{parsed.preset_name}".')
     if trailing:
         return rendered.rstrip() + "\n\n" + "\n".join(trailing).rstrip() + "\n"
     return rendered
 
 
-def _parse_rag_chat_blocks(source: str) -> ParsedPresetBlocks | None:
+def _parse_preset_blocks(source: str) -> ParsedPresetBlocks | None:
     lines = source.splitlines()
     consumed: set[int] = set()
-    preset_config: RagChatPresetConfig | None = None
-    override_body: list[str] | None = None
+    preset_name: str | None = None
+    preset_config: RagChatPresetConfig | AgentWorkspacePresetConfig | None = None
+    override_bodies_raw: dict[str, list[str]] = {}
+
     i = 0
     while i < len(lines):
         line = lines[i]
         preset_match = _USE_PRESET_RE.match(line)
         if preset_match:
-            preset_name = str(preset_match.group("name") or "").strip()
-            if preset_name != "rag_chat":
-                raise Namel3ssError(f'Unknown preset "{preset_name}".')
+            found_name = str(preset_match.group("name") or "").strip()
+            if found_name not in _SUPPORTED_PRESETS:
+                raise Namel3ssError(f'Unknown preset "{found_name}".')
             if preset_config is not None:
-                raise Namel3ssError('Duplicate `use preset "rag_chat"` declarations are not allowed.')
+                raise Namel3ssError("Duplicate `use preset` declarations are not allowed.")
+            preset_name = found_name
             base_indent = len(preset_match.group("indent") or "")
             block, end = _collect_indented_block(lines, start=i + 1, base_indent=base_indent)
-            preset_config = _parse_preset_settings(block)
+            if found_name == "rag_chat":
+                preset_config = _parse_rag_chat_settings(block)
+            else:
+                preset_config = _parse_agent_workspace_settings(block)
             consumed.update(range(i, end))
             i = end
             continue
@@ -74,28 +104,80 @@ def _parse_rag_chat_blocks(source: str) -> ParsedPresetBlocks | None:
         override_match = _OVERRIDE_FLOW_RE.match(line)
         if override_match:
             flow_name = str(override_match.group("name") or "").strip()
-            if flow_name != "rag.answer":
-                raise Namel3ssError(f'Unsupported override target "{flow_name}". Only "rag.answer" is supported.')
-            if override_body is not None:
-                raise Namel3ssError('Duplicate `override flow "rag.answer"` declarations are not allowed.')
+            if flow_name in override_bodies_raw:
+                raise Namel3ssError("Duplicate `override flow` declarations are not allowed.")
             base_indent = len(override_match.group("indent") or "")
             block, end = _collect_indented_block(lines, start=i + 1, base_indent=base_indent)
-            override_body = _normalize_override_body(block)
+            override_bodies_raw[flow_name] = block
             consumed.update(range(i, end))
             i = end
             continue
         i += 1
 
-    if preset_config is None and override_body is None:
+    if preset_config is None and not override_bodies_raw:
         return None
-    if preset_config is None and override_body is not None:
-        raise Namel3ssError('`override flow "rag.answer"` requires `use preset "rag_chat":`.')
+
+    if preset_config is None and override_bodies_raw:
+        _raise_missing_preset_for_overrides(override_bodies_raw)
+
+    if preset_name is None:
+        raise Namel3ssError("Internal error: preset name missing.")
+
+    override_bodies = _normalize_and_validate_overrides(
+        preset_name=preset_name,
+        override_bodies_raw=override_bodies_raw,
+    )
+
     remaining = [line for idx, line in enumerate(lines) if idx not in consumed]
     return ParsedPresetBlocks(
+        preset_name=preset_name,
         config=preset_config or RagChatPresetConfig(),
-        override_body=override_body,
+        override_bodies=override_bodies,
         remaining_lines=remaining,
     )
+
+
+def _raise_missing_preset_for_overrides(override_bodies_raw: dict[str, list[str]]) -> None:
+    targets = set(override_bodies_raw.keys())
+    agent_targets = set(SUPPORTED_AGENT_WORKSPACE_OVERRIDE_FLOWS)
+    if targets.issubset({_RAG_OVERRIDE_FLOW}):
+        raise Namel3ssError('`override flow "rag.answer"` requires `use preset "rag_chat":`.')
+    if targets.issubset(agent_targets):
+        raise Namel3ssError('`override flow "agent.*"` requires `use preset "agent_workspace":`.')
+    first_target = sorted(targets)[0]
+    raise Namel3ssError(f'Unsupported override target "{first_target}".')
+
+
+def _normalize_and_validate_overrides(
+    *,
+    preset_name: str,
+    override_bodies_raw: dict[str, list[str]],
+) -> dict[str, list[str]]:
+    if not override_bodies_raw:
+        return {}
+    normalized: dict[str, list[str]] = {}
+
+    if preset_name == "rag_chat":
+        for flow_name, block in override_bodies_raw.items():
+            if flow_name != _RAG_OVERRIDE_FLOW:
+                raise Namel3ssError(
+                    f'Unsupported override target "{flow_name}". Only "rag.answer" is supported.'
+                )
+            normalized[flow_name] = _normalize_rag_override_body(flow_name=flow_name, block_lines=block)
+        return normalized
+
+    if preset_name == "agent_workspace":
+        allowed = set(SUPPORTED_AGENT_WORKSPACE_OVERRIDE_FLOWS)
+        for flow_name, block in override_bodies_raw.items():
+            if flow_name not in allowed:
+                supported = ", ".join(sorted(allowed))
+                raise Namel3ssError(
+                    f'Unsupported override target "{flow_name}" for preset "agent_workspace". Supported: {supported}.'
+                )
+            normalized[flow_name] = _normalize_agent_override_body(flow_name=flow_name, block_lines=block)
+        return normalized
+
+    raise Namel3ssError(f'Unknown preset "{preset_name}".')
 
 
 def _collect_indented_block(lines: list[str], *, start: int, base_indent: int) -> tuple[list[str], int]:
@@ -113,7 +195,7 @@ def _collect_indented_block(lines: list[str], *, start: int, base_indent: int) -
     return collected, index
 
 
-def _parse_preset_settings(block_lines: list[str]) -> RagChatPresetConfig:
+def _parse_rag_chat_settings(block_lines: list[str]) -> RagChatPresetConfig:
     if not block_lines:
         return RagChatPresetConfig()
     normalized = _dedent_lines(block_lines)
@@ -133,16 +215,16 @@ def _parse_preset_settings(block_lines: list[str]) -> RagChatPresetConfig:
         key = str(match.group("key") or "")
         raw_value = str(match.group("value") or "").strip()
         if key == "title":
-            title = _expect_quoted_setting(key=key, value=raw_value)
+            title = _expect_quoted_setting(key=key, value=raw_value, preset_name="rag_chat")
             continue
         if key == "accept":
-            accept = _expect_quoted_setting(key=key, value=raw_value)
+            accept = _expect_quoted_setting(key=key, value=raw_value, preset_name="rag_chat")
             continue
         if key == "model":
-            model = _expect_quoted_setting(key=key, value=raw_value)
+            model = _expect_quoted_setting(key=key, value=raw_value, preset_name="rag_chat")
             continue
         if key == "system":
-            system = _expect_quoted_setting(key=key, value=raw_value)
+            system = _expect_quoted_setting(key=key, value=raw_value, preset_name="rag_chat")
             continue
         if key == "temperature":
             if not _SETTING_NUMBER_RE.match(raw_value):
@@ -153,7 +235,7 @@ def _parse_preset_settings(block_lines: list[str]) -> RagChatPresetConfig:
                 raise Namel3ssError("rag_chat preset temperature must be a number literal.") from err
             continue
         if key == "answer_template":
-            answer_template = _expect_quoted_setting(key=key, value=raw_value)
+            answer_template = _expect_quoted_setting(key=key, value=raw_value, preset_name="rag_chat")
             if answer_template not in set(SUPPORTED_RAG_CHAT_ANSWER_TEMPLATES):
                 supported = ", ".join(sorted(SUPPORTED_RAG_CHAT_ANSWER_TEMPLATES))
                 raise Namel3ssError(
@@ -171,20 +253,80 @@ def _parse_preset_settings(block_lines: list[str]) -> RagChatPresetConfig:
     )
 
 
-def _expect_quoted_setting(*, key: str, value: str) -> str:
+def _parse_agent_workspace_settings(block_lines: list[str]) -> AgentWorkspacePresetConfig:
+    if not block_lines:
+        return AgentWorkspacePresetConfig()
+    normalized = _dedent_lines(block_lines)
+    title = "Agent Workspace"
+    model = DEFAULT_AGENT_WORKSPACE_MODEL
+    system: str | None = None
+    temperature = DEFAULT_AGENT_WORKSPACE_TEMPERATURE
+    pattern = AGENT_WORKSPACE_PATTERN_SINGLE_AGENT
+    for line in normalized:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        match = _SETTING_LINE_RE.match(stripped)
+        if not match:
+            raise Namel3ssError(f"Invalid preset setting line: {stripped}")
+        key = str(match.group("key") or "")
+        raw_value = str(match.group("value") or "").strip()
+        if key == "title":
+            title = _expect_quoted_setting(key=key, value=raw_value, preset_name="agent_workspace")
+            continue
+        if key == "model":
+            model = _expect_quoted_setting(key=key, value=raw_value, preset_name="agent_workspace")
+            continue
+        if key == "system":
+            system = _expect_quoted_setting(key=key, value=raw_value, preset_name="agent_workspace")
+            continue
+        if key == "temperature":
+            if not _SETTING_NUMBER_RE.match(raw_value):
+                raise Namel3ssError("agent_workspace preset temperature must be a number literal.")
+            try:
+                temperature = float(raw_value)
+            except ValueError as err:
+                raise Namel3ssError("agent_workspace preset temperature must be a number literal.") from err
+            continue
+        if key == "pattern":
+            pattern = _expect_quoted_setting(key=key, value=raw_value, preset_name="agent_workspace")
+            if pattern not in set(SUPPORTED_AGENT_WORKSPACE_PATTERNS):
+                supported = ", ".join(sorted(SUPPORTED_AGENT_WORKSPACE_PATTERNS))
+                raise Namel3ssError(
+                    f'Unknown agent_workspace pattern "{pattern}". Supported: {supported}.'
+                )
+            continue
+        raise Namel3ssError(f'Unknown agent_workspace preset setting "{key}".')
+    return AgentWorkspacePresetConfig(
+        title=title,
+        model=model,
+        system=system,
+        temperature=temperature,
+        pattern=pattern,
+    )
+
+
+def _expect_quoted_setting(*, key: str, value: str, preset_name: str) -> str:
     match = _SETTING_STRING_RE.match(value)
     if match is None:
-        raise Namel3ssError(f'rag_chat preset setting "{key}" must be a quoted string.')
+        raise Namel3ssError(f'{preset_name} preset setting "{key}" must be a quoted string.')
     return str(match.group("value") or "")
 
 
-def _normalize_override_body(block_lines: list[str]) -> list[str]:
+def _normalize_rag_override_body(*, flow_name: str, block_lines: list[str]) -> list[str]:
     if not any(line.strip() for line in block_lines):
-        raise Namel3ssError('`override flow "rag.answer"` must include a body.')
+        raise Namel3ssError(f'`override flow "{flow_name}"` must include a body.')
     dedented = _dedent_lines(block_lines)
     rewritten = _rewrite_override_ask_blocks(dedented)
     rewritten = _rewrite_override_input_aliases(rewritten)
     return _rewrite_override_returns(rewritten)
+
+
+def _normalize_agent_override_body(*, flow_name: str, block_lines: list[str]) -> list[str]:
+    if not any(line.strip() for line in block_lines):
+        raise Namel3ssError(f'`override flow "{flow_name}"` must include a body.')
+    dedented = _dedent_lines(block_lines)
+    return _rewrite_override_ask_blocks(dedented)
 
 
 def _rewrite_override_ask_blocks(lines: list[str]) -> list[str]:
