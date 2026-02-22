@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, List
 
+from namel3ss.errors.base import Namel3ssError
 from namel3ss.ir import nodes as ir
 from namel3ss.media import MediaValidationMode
 from namel3ss.runtime.storage.base import Storage
@@ -72,6 +73,49 @@ def build_loading_item(item: ir.LoadingItem, *, page_name: str, page_slug: str, 
     return _attach_origin(element, item), {}
 
 
+def build_badge_item(
+    item: ir.BadgeItem,
+    *,
+    page_name: str,
+    page_slug: str,
+    path: List[int],
+    state_ctx: StateContext,
+) -> tuple[dict, Dict[str, dict]]:
+    index = path[-1] if path else 0
+    source = getattr(item, "source", None)
+    if not isinstance(source, ir.StatePath):
+        raise Namel3ssError(
+            "Badges must bind to state.<path>.",
+            line=getattr(item, "line", None),
+            column=getattr(item, "column", None),
+        )
+    label = f"state.{'.'.join(source.path)}"
+    if not state_ctx.has_value(source.path):
+        raise Namel3ssError(
+            f"Badge requires known state path '{label}'.",
+            line=getattr(item, "line", None),
+            column=getattr(item, "column", None),
+        )
+    try:
+        value, _ = state_ctx.value(source.path, default=None, register_default=False)
+    except KeyError as err:
+        raise Namel3ssError(
+            f"Badge requires known state path '{label}'.",
+            line=getattr(item, "line", None),
+            column=getattr(item, "column", None),
+        ) from err
+
+    base = _base_element(_element_id(page_slug, "badge", path), page_name, page_slug, index, item)
+    element = {
+        "type": "badge",
+        "value": value,
+        "source": label,
+        "style": str(getattr(item, "style", "neutral") or "neutral"),
+        "aria": {"role": "status"},
+        **base,
+    }
+    return _attach_origin(element, item), {}
+
 def build_snackbar_item(item: ir.SnackbarItem, *, page_name: str, page_slug: str, path: List[int]) -> tuple[dict, Dict[str, dict]]:
     index = path[-1] if path else 0
     base = _base_element(_element_id(page_slug, "snackbar", path), page_name, page_slug, index, item)
@@ -121,6 +165,7 @@ __all__ = [
     "build_grid_item",
     "build_icon_item",
     "build_lightbox_item",
+    "build_badge_item",
     "build_loading_item",
     "build_snackbar_item",
 ]

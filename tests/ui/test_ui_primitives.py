@@ -201,3 +201,72 @@ page "home":
     with pytest.raises(Namel3ssError) as exc:
         lower_ir_program(source)
     assert "unknown flow" in str(exc.value).lower() or "missing flow" in str(exc.value).lower()
+
+
+def test_badge_renders_from_state():
+    source = '''
+spec is "1.0"
+
+page "home":
+  badge from state.status style is "success"
+'''.lstrip()
+    program = lower_ir_program(source)
+    manifest = build_manifest(program, state={"status": "ready"}, store=None)
+    page = manifest["pages"][0]
+    badge = page["elements"][0]
+    assert badge["type"] == "badge"
+    assert badge["value"] == "ready"
+    assert badge["source"] == "state.status"
+    assert badge["style"] == "success"
+
+
+def test_badge_style_defaults_to_neutral():
+    source = '''
+spec is "1.0"
+
+page "home":
+  badge from state.status
+'''.lstrip()
+    program = lower_ir_program(source)
+    manifest = build_manifest(program, state={"status": "pending"}, store=None)
+    badge = manifest["pages"][0]["elements"][0]
+    assert badge["style"] == "neutral"
+
+
+def test_badge_invalid_style_errors():
+    source = '''
+spec is "1.0"
+
+page "home":
+  badge from state.status style is "danger"
+'''.lstrip()
+    with pytest.raises(Namel3ssError) as exc:
+        lower_ir_program(source)
+    assert "Badge style must be one of" in str(exc.value)
+
+
+def test_badge_missing_state_path_errors():
+    source = '''
+spec is "1.0"
+
+page "home":
+  badge from state.status
+'''.lstrip()
+    program = lower_ir_program(source)
+    with pytest.raises(Namel3ssError) as exc:
+        build_manifest(program, state={}, store=None)
+    assert "Badge requires known state path 'state.status'" in str(exc.value)
+
+
+def test_badge_manifest_is_deterministic():
+    source = '''
+spec is "1.0"
+
+page "home":
+  badge from state.status style is "success"
+'''.lstrip()
+    program = lower_ir_program(source)
+    state = {"status": "ok"}
+    first = build_manifest(program, state=state, store=None)
+    second = build_manifest(program, state=state, store=None)
+    assert first == second

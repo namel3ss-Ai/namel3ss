@@ -274,6 +274,8 @@ def _lower_page_item(
         return views_mod.lower_upload_item(item, attach_origin=_attach_origin)
     if isinstance(item, ast.LoadingItem):
         return polish_mod.lower_loading_item(item, attach_origin=_attach_origin)
+    if isinstance(item, ast.BadgeItem):
+        return polish_mod.lower_badge_item(item, attach_origin=_attach_origin)
     if isinstance(item, ast.SnackbarItem):
         return polish_mod.lower_snackbar_item(item, attach_origin=_attach_origin)
     if isinstance(item, ast.IconItem):

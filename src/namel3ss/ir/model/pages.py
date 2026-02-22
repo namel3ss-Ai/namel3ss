@@ -24,7 +24,6 @@ class Page(Node):
     theme_tokens: ThemeTokens | None = None
     ui_theme_overrides: ThemeTokens | None = None
 
-
 @dataclass
 class PageLayout(Node):
     header: list["PageItem"]
@@ -423,6 +422,12 @@ class ImageItem(PageItem):
 @dataclass
 class LoadingItem(PageItem):
     variant: str = "spinner"
+
+
+@dataclass
+class BadgeItem(PageItem):
+    source: StatePath
+    style: str = "neutral"
 
 
 @dataclass
