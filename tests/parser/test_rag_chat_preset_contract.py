@@ -72,6 +72,17 @@ def test_rag_chat_preset_uses_message_as_canonical_composer_input() -> None:
     assert isinstance(project_create, ir.ButtonItem)
     assert project_create.flow_name == "rag.create_project"
 
+    project_ingest = next(
+        (
+            item
+            for item in _walk_page_items(page.items)
+            if isinstance(item, ir.ButtonItem) and getattr(item, "label", "") == "Index project files"
+        ),
+        None,
+    )
+    assert isinstance(project_ingest, ir.ButtonItem)
+    assert project_ingest.flow_name == "rag.ingest"
+
     chat_upload = next(
         (
             item
@@ -145,36 +156,41 @@ def test_rag_chat_preset_template_generated_blocks_snapshot() -> None:
         "    profile is false"
     )
 
-    override_start = lines.index("  let __rag_template_question is query_text")
-    override_block = "\n".join(lines[override_start : override_start + 19])
+    override_start = lines.index('  if __rag_answer_text is "":')
+    override_block = "\n".join(lines[override_start : override_start + 20])
     assert override_block == (
-        "  let __rag_template_question is query_text\n"
-        "  let __rag_template_context is context_text\n"
-        '  let __rag_answer_text is ""\n'
-        "  try:\n"
-        '    ask ai "__rag_answer_ai" with structured input from map:\n'
-        '      "query" is "Answer this user question with this exact plain-text template and no extra sections:\\n'
+        '  if __rag_answer_text is "":\n'
+        "    let __rag_template_question is query_text\n"
+        "    let __rag_template_context is context_text\n"
+        "    try:\n"
+        '      ask ai "__rag_answer_ai" with structured input from map:\n'
+        '        "query" is "Answer this user question with this exact plain-text template and no extra sections:\\n'
         'Summary:\\n<2-3 sentences>\\n\\nKey Points:\\n1. <one sentence>\\n2. <one sentence>\\n3. <one sentence>'
         '\\n\\nRecommendation:\\n<one sentence>\\n\\nRules: use only provided context, keep wording concise and '
         "professional, end factual lines with [1], [2], [3] citations, never output raw context, file paths, URLs, "
         'internal filenames, JSON, YAML, markdown tables, or code blocks.\\n\\nQuestion: " + __rag_template_question\n'
-        '      "context" is __rag_template_context\n'
-        "    as model_answer\n"
-        '    if model_answer is "":\n'
-        '      if __rag_template_context is "":\n'
-        '        set __rag_answer_text is "No grounded support found in indexed sources for this query."\n'
-        "      else:\n"
-        '        set __rag_answer_text is "Summary:\\nGrounded evidence was found for this question [1]. A synthesized '
+        '        "context" is __rag_template_context\n'
+        "      as model_answer\n"
+        '      if model_answer is "":\n'
+        '        if __rag_template_context is "":\n'
+        '          set __rag_answer_text is "No grounded support found in indexed sources for this query."\n'
+        "        else:\n"
+        '          set __rag_answer_text is "Summary:\\nGrounded evidence was found for this question [1]. A synthesized '
         "response is temporarily unavailable, but the source evidence is indexed and accessible [1].\\n\\nKey Points:"
         '\\n1. Relevant support exists in the indexed sources [1].\\n2. Open View Sources to verify exact snippets '
         "and provenance [1].\\n3. Retry once synthesis is available to receive a fuller narrative [1].\\n\\n"
         'Recommendation:\\nReview the cited evidence now and rerun the same question after provider recovery [1]."\n'
-        "    else:\n"
-        "      set __rag_answer_text is model_answer\n"
-        "  with catch err:\n"
-        '    if __rag_template_context is "":\n'
-        '      set __rag_answer_text is "No grounded support found in indexed sources for this query."\n'
-        "    else:"
+        "      else:\n"
+        "        set __rag_answer_text is model_answer\n"
+        "    with catch err:\n"
+        '      if __rag_template_context is "":\n'
+        '        set __rag_answer_text is "No grounded support found in indexed sources for this query."\n'
+        "      else:\n"
+        '        set __rag_answer_text is "Summary:\\nGrounded evidence was found for this question [1]. AI '
+        "synthesis is currently unavailable in this runtime [1].\\n\\nKey Points:\\n1. The indexed context contains "
+        "supporting information [1].\\n2. View Sources remains available for direct evidence review [1].\\n3. "
+        "Provider credentials are required for synthesized answers [1].\\n\\nRecommendation:\\nSet "
+        'NAMEL3SS_OPENAI_API_KEY, rerun the app, and ask again for a fully composed response [1]."'
     )
 
 

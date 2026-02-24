@@ -257,6 +257,17 @@
   cursor: not-allowed;
 }
 
+.ui-chat-composer-indexing-hint {
+  margin: 6px 4px 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--n3-muted-text-color, #6f7f9b);
+}
+
+.ui-chat-composer-indexing-hint.hidden {
+  display: none;
+}
+
 .ui-chat-composer textarea:focus-visible,
 .ui-chat-composer input:focus-visible,
 .ui-chat-composer-message:focus-visible,

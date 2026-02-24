@@ -11,6 +11,7 @@ from namel3ss.cli.devex_checks import (
     config_sources_check,
     import_path_check,
     optional_dependencies_check,
+    rag_preset_check,
     persistence_check,
     project_check,
     python_check,
@@ -149,6 +150,7 @@ def build_doctor_report(overrides: ProjectOverrides) -> dict[str, Any]:
     checks: list[DoctorCheck] = [
         python_check(),
         import_path_check(),
+        rag_preset_check(),
         optional_dependencies_check(context.config),
         _provider_env_check(context),
         _config_check(context),

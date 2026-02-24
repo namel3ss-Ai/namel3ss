@@ -204,6 +204,16 @@ docker run --rm namel3ss:local n3 --help
 
 ## Install + Verify
 
+`pip install` installs required Python package dependencies declared by namel3ss. It does not install a Python runtime, optional extras unless requested, external services/tools, or fix PATH precedence if an older `n3` appears first.
+
+Use a repo-local virtual environment (`.venv`) and verify immediately after install:
+
+```bash
+python -V
+which -a n3
+n3 doctor
+```
+
 Install (source, editable):
 ```bash
 python3 -m pip install --upgrade pip
@@ -351,3 +361,4 @@ Summary:
 - CLI not found: follow [docs/install-and-run.md](docs/install-and-run.md).
 - Icon registry missing: use Docker or install from source per [docs/install-and-run.md](docs/install-and-run.md).
 - Virtualenv confusion: recreate the venv per [docs/install-and-run.md](docs/install-and-run.md).
+- RAG setup failures (missing module, stale preset build, path mismatch, port conflicts): see [docs/rag_setup_troubleshooting.md](docs/rag_setup_troubleshooting.md).

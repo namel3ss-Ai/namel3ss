@@ -2,6 +2,34 @@
 
 This guide covers the supported install paths for namel3ss.
 
+## Prerequisite
+
+- Python `>=3.14` is required by the current release.
+
+Verify before install:
+
+```bash
+python3.14 -V
+```
+
+## What `pip install namel3ss` includes
+
+`pip install` installs all required Python package dependencies declared by `namel3ss`.
+
+It does not automatically:
+- change your Python runtime version,
+- install optional development extras unless requested (`.[dev]`),
+- install external services, API keys, or OS-level tools,
+- fix PATH precedence when an older `n3` is found first.
+
+After install, always verify:
+
+```bash
+python -V
+which -a n3
+n3 doctor
+```
+
 ## Install from source (development / contributors)
 
 ```bash
@@ -57,3 +85,8 @@ docker rm -f namel3ss_studio
 
 - **Docker (local):** prefer for an isolated runtime and consistent behavior across machines.
 - **Install from source:** prefer for development, debugging, and running tests.
+
+## Common RAG environment failures
+
+If you see missing module errors, preset parse failures, wrong local clone installs, or port collisions, use the dedicated runbook:
+- [RAG app setup troubleshooting](rag_setup_troubleshooting.md)

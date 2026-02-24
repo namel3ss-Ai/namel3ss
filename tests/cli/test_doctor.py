@@ -29,6 +29,7 @@ def test_doctor_json_contains_keys(monkeypatch, tmp_path, capsys):
     checks = {c["id"]: c for c in data["checks"]}
     assert data["status"] in {"ok", "warning", "error"}
     assert checks["python_version"]["status"] in {"ok", "error"}
+    assert checks["rag_chat_preset"]["status"] in {"ok", "error"}
     assert checks["provider_envs"]["status"] == "warning"
     # ensure secret value not present in output
     assert "secret-value" not in out
@@ -67,3 +68,20 @@ def test_doctor_warns_on_missing_provider_keys(monkeypatch, tmp_path, capsys):
     provider_check = checks["provider_envs"]
     assert provider_check["status"] == "warning"
     assert "NAMEL3SS_OPENAI_API_KEY" in provider_check["message"]
+
+
+def test_doctor_warns_when_active_venv_and_n3_path_mismatch(monkeypatch, tmp_path, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "app.ai").write_text("", encoding="utf-8")
+    monkeypatch.setenv("VIRTUAL_ENV", "/tmp/expected-venv")
+    monkeypatch.setattr("namel3ss.cli.devex_checks.shutil.which", lambda _name: "/tmp/other-venv/bin/n3")
+
+    rc = cli_main(["doctor", "--json"])
+    assert rc == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    checks = {c["id"]: c for c in payload["checks"]}
+    entry = checks["cli_entrypoint"]
+    assert entry["status"] == "warning"
+    assert entry["code"] == "cli.entrypoint.outside_venv"
+    assert "Active virtualenv does not match the n3 entrypoint" in entry["fix"]

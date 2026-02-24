@@ -38,6 +38,10 @@ use preset "rag_chat":
 '''
 
 NO_SUPPORT = "No grounded support found in indexed sources for this query."
+INDEXING_WAIT = (
+    "Scope: attached files\n"
+    "Attached files are still indexing. Wait for indexing to finish, then ask again."
+)
 PROVIDER_FALLBACK = (
     "Summary:\n"
     "Grounded evidence was found for this question [1]. AI synthesis is currently unavailable in this runtime [1].\n\n"
@@ -105,7 +109,7 @@ def test_rag_chat_preset_accepts_chat_upload_map_state_shape() -> None:
         "uploads": {
             "chat_files": {
                 "upload-1": {
-                    "id": "",
+                    "id": "upload-1",
                     "name": "doc.txt",
                 }
             }
@@ -122,11 +126,10 @@ def test_rag_chat_preset_accepts_chat_upload_map_state_shape() -> None:
     messages = response["state"]["chat"]["messages"]
     assert isinstance(messages, list)
     assert len(messages) == 2
-    assert (
-        messages[1]["content"]
-        == "Scope: attached files\nNo grounded support found in indexed sources for this query."
-    )
-    assert response["state"]["uploads"]["chat_files"] == []
+    assert messages[1]["content"] == INDEXING_WAIT
+    uploads = response["state"]["uploads"]["chat_files"]
+    assert isinstance(uploads, dict)
+    assert "upload-1" in uploads
 
 
 def test_rag_chat_preset_keeps_attachment_scope_when_query_has_no_match() -> None:
@@ -135,7 +138,7 @@ def test_rag_chat_preset_keeps_attachment_scope_when_query_has_no_match() -> Non
     state["uploads"] = {
         "chat_files": {
             "upload-1": {
-                "id": "",
+                "id": "upload-1",
                 "name": "doc.txt",
                 "type": "text/plain",
             }
@@ -152,11 +155,10 @@ def test_rag_chat_preset_keeps_attachment_scope_when_query_has_no_match() -> Non
     messages = response["state"]["chat"]["messages"]
     assert isinstance(messages, list)
     assert len(messages) == 2
-    assert (
-        messages[1]["content"]
-        == "Scope: attached files\nNo grounded support found in indexed sources for this query."
-    )
-    assert response["state"]["uploads"]["chat_files"] == []
+    assert messages[1]["content"] == INDEXING_WAIT
+    uploads = response["state"]["uploads"]["chat_files"]
+    assert isinstance(uploads, dict)
+    assert "upload-1" in uploads
 
 
 def test_rag_chat_preset_pdf_with_indexed_chunks_falls_back_to_attached_context(tmp_path: Path) -> None:
@@ -184,7 +186,22 @@ def test_rag_chat_preset_pdf_with_indexed_chunks_falls_back_to_attached_context(
                     "checksum": upload_id,
                 }
             }
-        }
+        },
+        "index": {
+            "chunks": [
+                {
+                    "upload_id": upload_id,
+                    "chunk_id": upload_id + ":0",
+                    "document_id": upload_id,
+                    "source_name": str(metadata["name"]),
+                    "page_number": 1,
+                    "chunk_index": 0,
+                    "ingestion_phase": "quick",
+                    "keywords": ["alpha", "context"],
+                    "text": "alpha context from pdf with enough readable words to pass quality gating and support deterministic indexing behavior in tests",
+                }
+            ]
+        },
     }
     action_id = _rag_answer_action_id(program, state=state)
     response = handle_action(
@@ -257,12 +274,18 @@ def test_rag_chat_preset_uses_pdf_fallback_message_when_pdf_has_no_context() -> 
         "uploads": {
             "chat_files": {
                 "upload-1": {
-                    "id": "",
+                    "id": "upload-1",
                     "name": "doc.pdf",
                     "type": "application/pdf",
+                    "checksum": "upload-1",
                 }
             }
-        }
+        },
+        "ingestion": {
+            "upload-1": {
+                "status": "failed",
+            }
+        },
     }
     action_id = _rag_answer_action_id(program, state=state)
     response = handle_action(

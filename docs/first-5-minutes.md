@@ -1,6 +1,6 @@
 # First 5 minutes
 
-0. If anything fails to run, start with `n3 doctor` for setup checks.
+0. If anything fails to run, start with `n3 doctor` for setup checks and use [RAG app setup troubleshooting](rag_setup_troubleshooting.md) for environment fixes.
 1. Scaffold Operations Dashboard and run it
    - `n3 new operations_dashboard ops_app`
    - `cd ops_app`

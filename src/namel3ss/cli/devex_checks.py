@@ -68,6 +68,27 @@ def import_path_check() -> DoctorCheck:
     return DoctorCheck(id="import_path", category="environment", code="python.import_path.ok", status="ok", message=message, fix=fix)
 
 
+def rag_preset_check() -> DoctorCheck:
+    spec = importlib.util.find_spec("namel3ss.parser.presets.rag_chat")
+    if spec is None:
+        return DoctorCheck(
+            id="rag_chat_preset",
+            category="environment",
+            code="preset.rag_chat.missing",
+            status="error",
+            message="rag_chat preset module is missing from this namel3ss install.",
+            fix="Reinstall from the latest source and ensure the active virtualenv n3 entrypoint is used.",
+        )
+    return DoctorCheck(
+        id="rag_chat_preset",
+        category="environment",
+        code="preset.rag_chat.ok",
+        status="ok",
+        message="rag_chat preset module is available.",
+        fix="No action needed.",
+    )
+
+
 def optional_dependencies_check(config: AppConfig | None) -> DoctorCheck:
     target = resolve_target(config)
     if target == "postgres" and not _has_postgres_driver():
@@ -203,10 +224,46 @@ def studio_assets_check() -> DoctorCheck:
 
 
 def cli_path_check() -> DoctorCheck:
-    n3_path = shutil.which("n3") or sys.argv[0]
-    message = f"n3 executable resolved to {n3_path} namel3ss {get_version()}"
+    n3_path_raw = shutil.which("n3") or sys.argv[0]
+    n3_path = Path(n3_path_raw).expanduser()
+    try:
+        n3_resolved = n3_path.resolve(strict=False)
+    except Exception:
+        n3_resolved = n3_path
+
+    message = f"n3 executable resolved to {n3_resolved} namel3ss {get_version()}"
     fix = "If this is unexpected, ensure your virtualenv/bin is first on PATH."
-    return DoctorCheck(id="cli_entrypoint", category="environment", code="cli.entrypoint", status="ok", message=message, fix=fix)
+    status = "ok"
+    code = "cli.entrypoint"
+
+    active_venv = os.getenv("VIRTUAL_ENV")
+    if active_venv:
+        bin_dir = Path(active_venv).expanduser() / ("Scripts" if os.name == "nt" else "bin")
+        if not _is_under(n3_resolved, bin_dir):
+            status = "warning"
+            code = "cli.entrypoint.outside_venv"
+            fix = (
+                "Active virtualenv does not match the n3 entrypoint. "
+                f"Activate the intended venv and ensure {bin_dir} is first on PATH, "
+                f"or run {(bin_dir / 'n3').as_posix()} directly."
+            )
+
+    return DoctorCheck(
+        id="cli_entrypoint",
+        category="environment",
+        code=code,
+        status=status,
+        message=message,
+        fix=fix,
+    )
+
+
+def _is_under(path: Path, root: Path) -> bool:
+    try:
+        path.resolve(strict=False).relative_to(root.resolve(strict=False))
+        return True
+    except Exception:
+        return False
 
 
 def resolve_target(config: AppConfig | None) -> str:
@@ -268,6 +325,7 @@ __all__ = [
     "config_sources_check",
     "import_path_check",
     "optional_dependencies_check",
+    "rag_preset_check",
     "persistence_check",
     "project_check",
     "python_check",

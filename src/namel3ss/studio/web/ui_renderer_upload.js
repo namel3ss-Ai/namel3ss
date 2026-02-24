@@ -68,10 +68,11 @@
     if (typeof file.type === "string" && file.type) normalized.type = file.type;
     if (typeof file.checksum === "string" && file.checksum) normalized.checksum = file.checksum;
     if (typeof file.size === "number" && Number.isFinite(file.size) && file.size >= 0) normalized.size = file.size;
+    if (typeof file.indexed === "boolean") normalized.indexed = file.indexed;
     return normalized;
   }
 
-  function _buildUploadStateSnapshot(el, uploadName, clearActionId, selectActionId) {
+  function _buildUploadStateSnapshot(el, uploadName, clearActionId, selectActionId, ingestionActionId) {
     const files = Array.isArray(el && el.files)
       ? el.files.map((entry) => _normalizeUploadFile(entry)).filter((entry) => entry && typeof entry === "object")
       : [];
@@ -81,6 +82,7 @@
       files: files,
       clear_action_id: clearActionId,
       action_id: selectActionId,
+      ingestion_action_id: ingestionActionId,
     };
   }
 
@@ -266,7 +268,12 @@
 
     const clearActionId = typeof el.clear_action_id === "string" ? el.clear_action_id : "";
     const selectActionId = typeof el.action_id === "string" ? el.action_id : typeof el.id === "string" ? el.id : "";
-    _setUploadStateSnapshot(wrapper, uploadName, _buildUploadStateSnapshot(el, uploadName, clearActionId, selectActionId));
+    const ingestionActionId = typeof el.ingestion_action_id === "string" ? el.ingestion_action_id : "";
+    _setUploadStateSnapshot(
+      wrapper,
+      uploadName,
+      _buildUploadStateSnapshot(el, uploadName, clearActionId, selectActionId, ingestionActionId)
+    );
 
     async function removeFile(uploadId, opener) {
       if (!clearActionId) return;
@@ -284,7 +291,11 @@
       filesSection.innerHTML = "";
       previewSection.innerHTML = "";
       const files = Array.isArray(el.files) ? el.files.filter((entry) => entry && typeof entry === "object") : [];
-      _setUploadStateSnapshot(wrapper, uploadName, _buildUploadStateSnapshot(el, uploadName, clearActionId, selectActionId));
+      _setUploadStateSnapshot(
+        wrapper,
+        uploadName,
+        _buildUploadStateSnapshot(el, uploadName, clearActionId, selectActionId, ingestionActionId)
+      );
       if (!files.length) {
         const empty = document.createElement("div");
         empty.className = "ui-upload-empty";
@@ -359,12 +370,14 @@
     input.onchange = async () => {
       const files = Array.from(input.files || []);
       if (!files.length || !selectActionId) return;
+      const uploadedMetadata = [];
       chooseButton.disabled = true;
       status.classList.remove("is-error");
       try {
         for (let index = 0; index < files.length; index += 1) {
           status.textContent = `Uploading ${index + 1}/${files.length}...`;
           const metadata = await _uploadFile(files[index], el.name);
+          uploadedMetadata.push(metadata);
           await handleAction(
             {
               id: selectActionId,
@@ -379,17 +392,31 @@
             ? input.__n3UploadPickerPostAction
             : null;
         if (postAction && typeof postAction.id === "string" && postAction.id) {
-          status.textContent = "Upload complete. Refreshing...";
-          const actionPayload =
-            postAction.payload && typeof postAction.payload === "object" ? { ...postAction.payload } : {};
-          await handleAction(
-            {
-              id: postAction.id,
-              type: typeof postAction.type === "string" && postAction.type ? postAction.type : "call_flow",
-            },
-            actionPayload,
-            chooseButton
-          );
+          for (let index = 0; index < uploadedMetadata.length; index += 1) {
+            const metadata = uploadedMetadata[index];
+            const actionPayload =
+              postAction.payload && typeof postAction.payload === "object" ? { ...postAction.payload } : {};
+            const metadataUploadId =
+              (metadata && typeof metadata.checksum === "string" && metadata.checksum) ||
+              (metadata && typeof metadata.id === "string" && metadata.id) ||
+              "";
+            if (
+              postAction.per_upload_payload === true &&
+              metadataUploadId &&
+              (actionPayload.upload_id === undefined || actionPayload.upload_id === null || actionPayload.upload_id === "")
+            ) {
+              actionPayload.upload_id = metadataUploadId;
+            }
+            status.textContent = `Indexing ${index + 1}/${uploadedMetadata.length}...`;
+            await handleAction(
+              {
+                id: postAction.id,
+                type: typeof postAction.type === "string" && postAction.type ? postAction.type : "call_flow",
+              },
+              actionPayload,
+              chooseButton
+            );
+          }
         }
         status.textContent = "Upload complete.";
       } catch (error) {

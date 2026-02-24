@@ -47,10 +47,10 @@ page "home":
     clear_action = manifest["actions"][clear_action_id]
     assert clear_action["type"] == "upload_clear"
     assert clear_action["name"] == "receipt"
-    ingestion_actions = [
-        entry for entry in manifest["actions"].values() if entry.get("type") == "ingestion_run"
-    ]
-    assert ingestion_actions
+    ingestion_action_id = upload.get("ingestion_action_id")
+    assert isinstance(ingestion_action_id, str) and ingestion_action_id
+    ingestion_action = manifest["actions"][ingestion_action_id]
+    assert ingestion_action["type"] == "ingestion_run"
 
 
 def test_upload_manifest_accept_and_multiple():
@@ -165,3 +165,34 @@ page "review":
     with pytest.raises(Namel3ssError) as exc:
         lower_ir_program(source)
     assert "upload name" in str(exc.value).lower()
+
+
+def test_upload_manifest_marks_file_indexed_when_ingestion_report_exists() -> None:
+    source = '''
+spec is "1.0"
+
+page "home":
+  upload receipt
+'''.lstrip()
+    state = {
+        "uploads": {
+            "receipt": {
+                "u1": {
+                    "id": "u1",
+                    "name": "doc.pdf",
+                    "type": "application/pdf",
+                    "checksum": "u1",
+                }
+            }
+        },
+        "ingestion": {
+            "u1": {
+                "status": "failed",
+            }
+        },
+    }
+    manifest = build_manifest(lower_ir_program(source), state=state, store=None)
+    upload = manifest["pages"][0]["elements"][0]
+    files = upload.get("files")
+    assert isinstance(files, list) and files
+    assert files[0].get("indexed") is True

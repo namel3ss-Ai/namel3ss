@@ -384,18 +384,21 @@ def _quote_ask_input_fields(lines: list[str]) -> list[str]:
 def _rewrite_override_returns(lines: list[str]) -> list[str]:
     non_empty = [line for line in lines if line.strip()]
     top_indent = min((_indent_width(line) for line in non_empty), default=0)
+    value_indent = top_indent + 2
     rewritten: list[str] = []
     replaced = False
     for line in lines:
         return_match = _RETURN_STMT_RE.match(line)
         if return_match and len(return_match.group("indent") or "") == top_indent:
             expr = str(return_match.group("expr") or "").strip()
-            rewritten.append(f'{" " * top_indent}set __rag_answer_text is {expr}')
+            rewritten.append(f'{" " * top_indent}if context_text is not "":')
+            rewritten.append(f'{" " * value_indent}set __rag_answer_text is {expr}')
             replaced = True
             continue
         rewritten.append(line)
     if not replaced:
-        rewritten.append(f'{" " * top_indent}set __rag_answer_text is input.message')
+        rewritten.append(f'{" " * top_indent}if context_text is not "":')
+        rewritten.append(f'{" " * value_indent}set __rag_answer_text is input.message')
     return rewritten
 
 

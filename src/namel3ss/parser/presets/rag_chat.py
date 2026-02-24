@@ -176,7 +176,8 @@ def _default_override_body(config: RagChatPresetConfig) -> list[str]:
     if config.answer_template == RAG_CHAT_TEMPLATE_SUMMARY_KEYPOINTS_RECOMMENDATION_WITH_CITATIONS:
         return _summary_template_override_body()
     return [
-        "set __rag_answer_text is context_text",
+        'if __rag_answer_text is "":',
+        "  set __rag_answer_text is context_text",
     ]
 
 
@@ -186,26 +187,26 @@ def _summary_template_override_body() -> list[str]:
     empty_output_fallback = _escape_string(SUMMARY_TEMPLATE_EMPTY_OUTPUT_FALLBACK)
     provider_error_fallback = _escape_string(SUMMARY_TEMPLATE_PROVIDER_ERROR_FALLBACK)
     return [
-        "let __rag_template_question is query_text",
-        "let __rag_template_context is context_text",
-        'let __rag_answer_text is ""',
-        "try:",
-        f'  ask ai "{RAG_CHAT_INTERNAL_ANSWER_AI_NAME}" with structured input from map:',
-        f'    "query" is "{prompt}" + __rag_template_question',
-        '    "context" is __rag_template_context',
-        "  as model_answer",
-        '  if model_answer is "":',
+        'if __rag_answer_text is "":',
+        "  let __rag_template_question is query_text",
+        "  let __rag_template_context is context_text",
+        "  try:",
+        f'    ask ai "{RAG_CHAT_INTERNAL_ANSWER_AI_NAME}" with structured input from map:',
+        f'      "query" is "{prompt}" + __rag_template_question',
+        '      "context" is __rag_template_context',
+        "    as model_answer",
+        '    if model_answer is "":',
+        '      if __rag_template_context is "":',
+        f'        set __rag_answer_text is "{no_support}"',
+        "      else:",
+        f'        set __rag_answer_text is "{empty_output_fallback}"',
+        "    else:",
+        "      set __rag_answer_text is model_answer",
+        "  with catch err:",
         '    if __rag_template_context is "":',
         f'      set __rag_answer_text is "{no_support}"',
         "    else:",
-        f'      set __rag_answer_text is "{empty_output_fallback}"',
-        "  else:",
-        "    set __rag_answer_text is model_answer",
-        "with catch err:",
-        '  if __rag_template_context is "":',
-        f'    set __rag_answer_text is "{no_support}"',
-        "  else:",
-        f'    set __rag_answer_text is "{provider_error_fallback}"',
+        f'      set __rag_answer_text is "{provider_error_fallback}"',
     ]
 
 

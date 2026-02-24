@@ -726,6 +726,7 @@
     if (typeof file.type === "string" && file.type) normalized.type = file.type;
     if (typeof file.checksum === "string" && file.checksum) normalized.checksum = file.checksum;
     if (typeof file.size === "number" && Number.isFinite(file.size) && file.size >= 0) normalized.size = file.size;
+    if (typeof file.indexed === "boolean") normalized.indexed = file.indexed;
     return normalized;
   }
 
@@ -741,6 +742,7 @@
       files: files,
       clear_action_id: typeof snapshot.clear_action_id === "string" ? snapshot.clear_action_id : "",
       action_id: typeof snapshot.action_id === "string" ? snapshot.action_id : "",
+      ingestion_action_id: typeof snapshot.ingestion_action_id === "string" ? snapshot.ingestion_action_id : "",
     };
   }
 
@@ -772,26 +774,41 @@
   }
 
   function renderComposerUploadFiles(container, snapshot, handleAction) {
-    if (!container) return;
+    if (!container) {
+      return {
+        hasFiles: false,
+        pendingCount: 0,
+        ingestionActionId: "",
+      };
+    }
     container.textContent = "";
     const normalized = normalizeUploadSnapshot(snapshot, "");
     const files = normalized && Array.isArray(normalized.files) ? normalized.files : [];
+    const ingestionActionId = normalized && typeof normalized.ingestion_action_id === "string" ? normalized.ingestion_action_id : "";
     if (!files.length) {
       container.classList.add("hidden");
-      return;
+      return {
+        hasFiles: false,
+        pendingCount: 0,
+        ingestionActionId: ingestionActionId,
+      };
     }
     container.classList.remove("hidden");
     const list = document.createElement("div");
     list.className = "ui-chat-composer-file-list";
     const clearActionId = normalized && typeof normalized.clear_action_id === "string" ? normalized.clear_action_id : "";
+    let pendingCount = 0;
     files.forEach((file) => {
       const chip = document.createElement("div");
       chip.className = "ui-chat-composer-file-chip";
       const name = typeof file.name === "string" && file.name ? file.name : "File";
       const size = formatUploadSize(file.size);
+      const indexed = file && file.indexed === true;
+      if (!indexed) pendingCount += 1;
       const text = document.createElement("span");
       text.className = "ui-chat-composer-file-name";
-      text.textContent = size ? `${name} (${size})` : name;
+      const baseName = size ? `${name} (${size})` : name;
+      text.textContent = indexed ? baseName : `${baseName} - indexing`;
       chip.appendChild(text);
       if (clearActionId) {
         const removeButton = document.createElement("button");
@@ -848,6 +865,11 @@
       };
       container.appendChild(clearAll);
     }
+    return {
+      hasFiles: true,
+      pendingCount: pendingCount,
+      ingestionActionId: ingestionActionId,
+    };
   }
 
   function renderComposer(child, handleAction, chatConfig) {
@@ -859,6 +881,9 @@
     const composerFiles = document.createElement("div");
     composerFiles.className = "ui-chat-composer-files hidden";
     form.appendChild(composerFiles);
+    const composerIndexHint = document.createElement("div");
+    composerIndexHint.className = "ui-chat-composer-indexing-hint hidden";
+    form.appendChild(composerIndexHint);
     const composerPlaceholder =
       chatConfig && typeof chatConfig.composer_placeholder === "string" && chatConfig.composer_placeholder.trim()
         ? chatConfig.composer_placeholder.trim()
@@ -892,6 +917,7 @@
     const inputs = new Map();
     let messageInput = null;
     let refreshComposerFiles = null;
+    let uploadGateState = { hasFiles: false, pendingCount: 0, ingestionActionId: "" };
     const attachmentsEnabled = Boolean(chatConfig && chatConfig.attachments);
     if (attachmentsEnabled && composerAttachUpload) {
       registerComposerAttachUpload(composerAttachUpload);
@@ -901,7 +927,7 @@
       }, 0);
       refreshComposerFiles = () => {
         const snapshot = findComposerUploadSnapshot(form, composerAttachUpload);
-        renderComposerUploadFiles(composerFiles, snapshot, handleAction);
+        uploadGateState = renderComposerUploadFiles(composerFiles, snapshot, handleAction);
       };
       refreshComposerFiles();
       const attachButton = document.createElement("button");
@@ -920,7 +946,17 @@
         event.stopPropagation();
         const uploadInput = findComposerUploadInput(form, composerAttachUpload);
         if (uploadInput && uploadInput.disabled !== true) {
-          uploadInput.__n3UploadPickerPostAction = null;
+          const ingestionActionId =
+            uploadGateState && typeof uploadGateState.ingestionActionId === "string"
+              ? uploadGateState.ingestionActionId
+              : "";
+          uploadInput.__n3UploadPickerPostAction = ingestionActionId
+            ? {
+                id: ingestionActionId,
+                type: "ingestion_run",
+                per_upload_payload: true,
+              }
+            : null;
           const openPicker = typeof root.openUploadInputPicker === "function" ? root.openUploadInputPicker : null;
           if (openPicker) {
             openPicker(uploadInput);
@@ -932,6 +968,7 @@
       composerSurface.appendChild(attachButton);
       window.setTimeout(() => {
         if (typeof refreshComposerFiles === "function") refreshComposerFiles();
+        updateSubmitState();
       }, 0);
     }
     fields.forEach((field) => {
@@ -989,9 +1026,22 @@
 
     const updateSubmitState = () => {
       const value = messageInput && typeof messageInput.value === "string" ? messageInput.value.trim() : "";
-      const enabled = value.length > 0;
+      const pendingCount =
+        uploadGateState && typeof uploadGateState.pendingCount === "number" ? uploadGateState.pendingCount : 0;
+      const hasPendingIndexing = pendingCount > 0;
+      const enabled = value.length > 0 && !hasPendingIndexing;
       button.disabled = !enabled;
       button.classList.toggle("is-active", enabled);
+      if (hasPendingIndexing) {
+        composerIndexHint.classList.remove("hidden");
+        composerIndexHint.textContent =
+          pendingCount === 1
+            ? "1 attached file is indexing. Wait for indexing to complete before asking."
+            : `${pendingCount} attached files are indexing. Wait for indexing to complete before asking.`;
+      } else {
+        composerIndexHint.classList.add("hidden");
+        composerIndexHint.textContent = "";
+      }
     };
     if (messageInput) {
       messageInput.addEventListener("input", updateSubmitState);
@@ -1055,6 +1105,7 @@
       if (typeof refreshComposerFiles === "function") {
         refreshComposerFiles();
       }
+      updateSubmitState();
     };
     return form;
   }
