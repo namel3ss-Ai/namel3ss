@@ -825,6 +825,7 @@
                       "font": "md",
                       "id": "page.rag_shell.upload.intake",
                       "index": 0,
+                      "ingestion_action_id": "page.rag_shell.upload.intake.ingestion",
                       "label": "Upload",
                       "line": 14,
                       "multiple": false,

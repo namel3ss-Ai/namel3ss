@@ -700,6 +700,7 @@
                         "files": [],
                         "id": "page.rag.upload.intake",
                         "index": 0,
+                        "ingestion_action_id": "page.rag.upload.intake.ingestion",
                         "label": "Upload",
                         "line": 10,
                         "multiple": false,

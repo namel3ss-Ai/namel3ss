@@ -130,6 +130,7 @@
                 "files": [],
                 "id": "page.intake.upload.receipt",
                 "index": 0,
+                "ingestion_action_id": "page.intake.upload.receipt.ingestion",
                 "label": "Upload",
                 "line": 18,
                 "multiple": true,
